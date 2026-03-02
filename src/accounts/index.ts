@@ -5,7 +5,11 @@ import { Timestamp } from '../crdt';
 import type { AccountRow } from '../db/types';
 import type { Account } from './types';
 
-type AccountWithBalance = AccountRow & { balance: number | null };
+type AccountWithBalance = AccountRow & {
+  balance: number | null;
+  clearedBalance: number | null;
+  unclearedBalance: number | null;
+};
 
 function rowToAccount(r: AccountWithBalance): Account {
   return {
@@ -16,12 +20,17 @@ function rowToAccount(r: AccountWithBalance): Account {
     sort_order: r.sort_order,
     tombstone: r.tombstone === 1,
     balance: r.balance ?? 0,
+    clearedBalance: r.clearedBalance ?? 0,
+    unclearedBalance: r.unclearedBalance ?? 0,
   };
 }
 
 export async function getAccounts(): Promise<Account[]> {
   const rows = await runQuery<AccountWithBalance>(
-    `SELECT a.*, COALESCE(SUM(CASE WHEN t.tombstone = 0 AND t.isParent = 0 THEN t.amount ELSE 0 END), 0) AS balance
+    `SELECT a.*,
+       COALESCE(SUM(CASE WHEN t.tombstone = 0 AND t.isParent = 0 THEN t.amount ELSE 0 END), 0) AS balance,
+       COALESCE(SUM(CASE WHEN t.tombstone = 0 AND t.isParent = 0 AND t.cleared = 1 THEN t.amount ELSE 0 END), 0) AS clearedBalance,
+       COALESCE(SUM(CASE WHEN t.tombstone = 0 AND t.isParent = 0 AND t.cleared = 0 THEN t.amount ELSE 0 END), 0) AS unclearedBalance
      FROM accounts a
      LEFT JOIN transactions t ON t.acct = a.id
      WHERE a.tombstone = 0

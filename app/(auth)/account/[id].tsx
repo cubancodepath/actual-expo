@@ -493,10 +493,31 @@ export default function AccountTransactionsScreen() {
     <View style={styles.container}>
       {/* Balance card */}
       <View style={styles.balanceCard}>
-        <Text style={styles.balanceLabel}>Current Balance</Text>
-        <Text style={[styles.balance, (account?.balance ?? 0) < 0 && styles.negative]}>
-          {formatBalance(account?.balance ?? 0)}
-        </Text>
+        <View style={styles.balanceTop}>
+          <Text style={styles.balanceLabel}>Current Balance</Text>
+          <Text style={[styles.balance, (account?.balance ?? 0) < 0 && styles.negative]}>
+            {formatBalance(account?.balance ?? 0)}
+          </Text>
+        </View>
+        {(account?.balance ?? 0) !== clearedBalance && (
+          <View style={styles.balanceBreakdown}>
+            <View style={styles.balanceStat}>
+              <Text style={styles.balanceStatIcon}>✓</Text>
+              <Text style={styles.balanceStatLabel}>Cleared</Text>
+              <Text style={[styles.balanceStatValue, clearedBalance < 0 && styles.negative]}>
+                {formatBalance(clearedBalance)}
+              </Text>
+            </View>
+            <View style={styles.balanceStatDivider} />
+            <View style={styles.balanceStat}>
+              <Text style={[styles.balanceStatIcon, styles.balanceStatIconUncleared]}>○</Text>
+              <Text style={styles.balanceStatLabel}>Uncleared</Text>
+              <Text style={[styles.balanceStatValue, ((account?.balance ?? 0) - clearedBalance) < 0 && styles.negative]}>
+                {formatBalance((account?.balance ?? 0) - clearedBalance)}
+              </Text>
+            </View>
+          </View>
+        )}
       </View>
 
       {/* Reconciliation banner */}
@@ -575,11 +596,29 @@ const styles = StyleSheet.create({
     backgroundColor: '#1e293b', marginHorizontal: 16, marginTop: 12,
     marginBottom: 8, borderRadius: 12, padding: 16,
     borderWidth: 1, borderColor: '#334155',
+  },
+  balanceTop: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
   },
   balanceLabel: { color: '#64748b', fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
   balance: { color: '#4ade80', fontSize: 22, fontWeight: '700' },
   negative: { color: '#f87171' },
+  balanceBreakdown: {
+    flexDirection: 'row', alignItems: 'center',
+    marginTop: 12, paddingTop: 12,
+    borderTopWidth: 1, borderTopColor: '#334155',
+    gap: 0,
+  },
+  balanceStat: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', gap: 5,
+  },
+  balanceStatDivider: {
+    width: 1, height: 16, backgroundColor: '#334155', marginHorizontal: 8,
+  },
+  balanceStatIcon: { color: '#4ade80', fontSize: 11, fontWeight: '700', width: 12 },
+  balanceStatIconUncleared: { color: '#64748b' },
+  balanceStatLabel: { color: '#64748b', fontSize: 12, flex: 1 },
+  balanceStatValue: { color: '#94a3b8', fontSize: 12, fontWeight: '600' },
 
   lockToggleIcon: { fontSize: 16, opacity: 0.3 },
   lockToggleIconActive: { opacity: 1 },

@@ -5,5 +5,7 @@ export type Account = {
   closed: boolean;
   sort_order: number | null;
   tombstone: boolean;
-  balance?: number;  // cents, computed from transactions
+  balance?: number;           // cents, total (cleared + uncleared)
+  clearedBalance?: number;    // cents, sum of cleared transactions
+  unclearedBalance?: number;  // cents, sum of uncleared transactions
 };

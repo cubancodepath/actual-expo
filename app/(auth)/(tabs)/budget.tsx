@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActionSheetIOS,
   ActivityIndicator,
@@ -14,10 +14,11 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useBudgetStore } from '../../../src/stores/budgetStore';
 import { useSyncStore } from '../../../src/stores/syncStore';
 import type { BudgetCategory, BudgetGroup } from '../../../src/budgets/types';
+import { getUncategorizedStats } from '../../../src/transactions';
 
 // ---------------------------------------------------------------------------
 // Column widths (consistent between headers and rows)
@@ -258,6 +259,37 @@ function OverspendingBanner({
 }
 
 // ---------------------------------------------------------------------------
+// Uncategorized transactions banner
+// ---------------------------------------------------------------------------
+
+function UncategorizedBanner({
+  count,
+  total,
+  onPress,
+}: {
+  count: number;
+  total: number;
+  onPress: () => void;
+}) {
+  const abs = (Math.abs(total) / 100).toFixed(2);
+  const fmtTotal = total < 0 ? `-$${abs}` : `$${abs}`;
+  return (
+    <Pressable style={uncatStyles.banner} onPress={onPress}>
+      <View style={uncatStyles.left}>
+        <Text style={uncatStyles.icon}>!</Text>
+        <View>
+          <Text style={uncatStyles.title}>
+            {count} uncategorized {count === 1 ? 'transaction' : 'transactions'}
+          </Text>
+          <Text style={uncatStyles.subtitle}>{fmtTotal} needs a category</Text>
+        </View>
+      </View>
+      <Text style={uncatStyles.arrow}>›</Text>
+    </Pressable>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Move Money modal (Transfer out / Cover overspending)
 // ---------------------------------------------------------------------------
 
@@ -398,10 +430,15 @@ export default function BudgetScreen() {
   const [moveMoneyTarget, setMoveMoneyTarget] = useState<{
     catId: string; catName: string; balance: number; mode: MoveMoneyMode;
   } | null>(null);
+  const [uncategorized, setUncategorized] = useState<{ count: number; total: number } | null>(null);
 
   useEffect(() => {
     load();
   }, [month]);
+
+  useFocusEffect(useCallback(() => {
+    getUncategorizedStats().then(setUncategorized);
+  }, []));
 
   function prevMonth() {
     const [y, m] = month.split('-').map(Number);
@@ -660,6 +697,14 @@ export default function BudgetScreen() {
         <OverspendingBanner count={overspentCategories.length} total={totalOverspent} />
       )}
 
+      {uncategorized && uncategorized.count > 0 && (
+        <UncategorizedBanner
+          count={uncategorized.count}
+          total={uncategorized.total}
+          onPress={() => router.push('/(auth)/(tabs)/accounts')}
+        />
+      )}
+
       {/* Column headers */}
       {data && (
         <View style={styles.colHeaders}>
@@ -915,6 +960,29 @@ const ovStyles = StyleSheet.create({
   icon: { fontSize: 18, color: '#fca5a5' },
   title: { color: '#fca5a5', fontSize: 13, fontWeight: '700' },
   subtitle: { color: '#f87171', fontSize: 12, marginTop: 1 },
+});
+
+const uncatStyles = StyleSheet.create({
+  banner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#1c1a07',
+    borderBottomWidth: 1,
+    borderTopWidth: 1,
+    borderColor: '#713f12',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  left: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
+  icon: {
+    width: 22, height: 22, borderRadius: 11,
+    backgroundColor: '#854d0e', textAlign: 'center', lineHeight: 22,
+    color: '#fef08a', fontSize: 13, fontWeight: '900', overflow: 'hidden',
+  },
+  title: { color: '#fef08a', fontSize: 13, fontWeight: '700' },
+  subtitle: { color: '#ca8a04', fontSize: 12, marginTop: 1 },
+  arrow: { color: '#854d0e', fontSize: 22 },
 });
 
 const holdStyles = StyleSheet.create({

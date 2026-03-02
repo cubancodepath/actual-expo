@@ -3,18 +3,30 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useAccountsStore } from '../../../src/stores/accountsStore';
 import {
+  addTransaction,
   deleteTransaction,
+  getClearedBalance,
   getTransactionsForAccount,
+  lockTransactions,
+  toggleCleared,
   type TransactionDisplay,
 } from '../../../src/transactions';
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
 function formatDate(date: number): string {
   const s = String(date);
@@ -36,15 +48,198 @@ function formatBalance(cents: number): string {
   return cents < 0 ? `-$${abs}` : `$${abs}`;
 }
 
+function todayInt(): number {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return parseInt(`${y}${m}${day}`, 10);
+}
+
+// ---------------------------------------------------------------------------
+// ReconcileEntryModal — step 1: user enters their bank balance
+// ---------------------------------------------------------------------------
+
+function ReconcileEntryModal({
+  visible,
+  clearedBalance,
+  onCancel,
+  onConfirm,
+}: {
+  visible: boolean;
+  clearedBalance: number;
+  onCancel: () => void;
+  /** Called with null if user confirms balance matches, or with cents if they enter a different amount */
+  onConfirm: (bankBalanceCents: number | null) => void;
+}) {
+  const [showInput, setShowInput] = useState(false);
+  const [input, setInput] = useState('');
+
+  function reset() {
+    setShowInput(false);
+    setInput('');
+  }
+
+  function handleNo() {
+    setShowInput(true);
+  }
+
+  function handleYes() {
+    reset();
+    onConfirm(null); // cleared balance matches → lock directly
+  }
+
+  function handleStart() {
+    const parsed = parseFloat(input.replace(/[^0-9.]/g, ''));
+    const cents = isNaN(parsed) ? 0 : Math.round(parsed * 100);
+    reset();
+    onConfirm(cents);
+  }
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={() => { reset(); onCancel(); }}>
+      <KeyboardAvoidingView
+        style={recon.overlay}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View style={recon.modal}>
+          <Text style={recon.modalTitle}>Reconcile Account</Text>
+
+          <View style={recon.infoRow}>
+            <Text style={recon.infoLabel}>Cleared balance</Text>
+            <Text style={recon.infoValue}>{formatBalance(clearedBalance)}</Text>
+          </View>
+
+          {!showInput ? (
+            <>
+              <Text style={recon.modalQuestion}>
+                Does this match your bank statement?
+              </Text>
+              <View style={recon.modalActions}>
+                <Pressable style={recon.noBtn} onPress={handleNo}>
+                  <Text style={recon.noText}>No</Text>
+                </Pressable>
+                <Pressable style={recon.yesBtn} onPress={handleYes}>
+                  <Text style={recon.yesText}>Yes, lock it ✓</Text>
+                </Pressable>
+              </View>
+              <Pressable style={recon.cancelLink} onPress={() => { reset(); onCancel(); }}>
+                <Text style={recon.cancelLinkText}>Cancel</Text>
+              </Pressable>
+            </>
+          ) : (
+            <>
+              <Text style={recon.inputLabel}>Enter your bank statement balance</Text>
+              <TextInput
+                style={recon.input}
+                placeholder="0.00"
+                placeholderTextColor="#475569"
+                value={input}
+                onChangeText={setInput}
+                keyboardType="decimal-pad"
+                autoFocus
+                selectTextOnFocus
+              />
+              <View style={recon.modalActions}>
+                <Pressable style={recon.cancelBtn} onPress={() => { reset(); onCancel(); }}>
+                  <Text style={recon.cancelText}>Cancel</Text>
+                </Pressable>
+                <Pressable style={recon.startBtn} onPress={handleStart}>
+                  <Text style={recon.startText}>Start Reconciling</Text>
+                </Pressable>
+              </View>
+            </>
+          )}
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ReconciliationBanner — shown during reconciliation
+// ---------------------------------------------------------------------------
+
+function ReconciliationBanner({
+  clearedBalance,
+  bankBalance,
+  onCreateAdjustment,
+  onLock,
+  onExit,
+}: {
+  clearedBalance: number;
+  bankBalance: number;
+  onCreateAdjustment: () => void;
+  onLock: () => void;
+  onExit: () => void;
+}) {
+  const diff = bankBalance - clearedBalance;
+  const balanced = diff === 0;
+
+  return (
+    <View style={recon.banner}>
+      <View style={recon.bannerHeader}>
+        <Text style={recon.bannerTitle}>Reconciling</Text>
+        <Pressable onPress={onExit} hitSlop={12}>
+          <Text style={recon.exitText}>✕ Exit</Text>
+        </Pressable>
+      </View>
+
+      <View style={recon.bannerRow}>
+        <Text style={recon.bannerLabel}>Cleared balance</Text>
+        <Text style={recon.bannerValue}>{formatBalance(clearedBalance)}</Text>
+      </View>
+      <View style={recon.bannerRow}>
+        <Text style={recon.bannerLabel}>Bank balance</Text>
+        <Text style={recon.bannerValue}>{formatBalance(bankBalance)}</Text>
+      </View>
+      <View style={[recon.bannerRow, recon.bannerDivider]}>
+        <Text style={recon.bannerLabel}>Difference</Text>
+        <Text style={[recon.bannerValue, !balanced && recon.bannerDiff]}>
+          {formatBalance(diff)}
+        </Text>
+      </View>
+
+      {balanced ? (
+        <View style={recon.bannerHint}>
+          <Text style={recon.bannerHintText}>✓ Balances match!</Text>
+        </View>
+      ) : (
+        <Pressable style={recon.adjustBtn} onPress={onCreateAdjustment}>
+          <Text style={recon.adjustText}>Create Adjustment Transaction</Text>
+        </Pressable>
+      )}
+
+      <Pressable
+        style={[recon.lockBtn, !balanced && recon.lockBtnDisabled]}
+        onPress={balanced ? onLock : undefined}
+        disabled={!balanced}
+      >
+        <Text style={[recon.lockText, !balanced && recon.lockTextDisabled]}>
+          🔒 Lock Transactions
+        </Text>
+      </Pressable>
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// TransactionRow
+// ---------------------------------------------------------------------------
+
 function TransactionRow({
   item,
   onPress,
   onDelete,
+  onToggleCleared,
 }: {
   item: TransactionDisplay;
   onPress: (id: string) => void;
   onDelete: (id: string) => void;
+  onToggleCleared: (id: string) => void;
 }) {
+  const statusIcon = item.reconciled ? '🔒' : item.cleared ? '✓' : '○';
+
   return (
     <Pressable
       style={styles.txRow}
@@ -79,11 +274,28 @@ function TransactionRow({
         <Text style={[styles.txAmount, item.amount < 0 ? styles.expense : styles.income]}>
           {formatAmount(item.amount)}
         </Text>
-        {item.cleared && <Text style={styles.clearedDot}>✓</Text>}
+        <Pressable
+          onPress={() => { if (!item.reconciled) onToggleCleared(item.id); }}
+          hitSlop={10}
+          style={styles.statusBtn}
+        >
+          <Text style={[
+            styles.statusIcon,
+            item.reconciled ? styles.statusReconciled :
+            item.cleared    ? styles.statusCleared    :
+                              styles.statusUncleared,
+          ]}>
+            {statusIcon}
+          </Text>
+        </Pressable>
       </View>
     </Pressable>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Main screen
+// ---------------------------------------------------------------------------
 
 export default function AccountTransactionsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -95,10 +307,21 @@ export default function AccountTransactionsScreen() {
   const [transactions, setTransactions] = useState<TransactionDisplay[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Reconciliation state
+  const [reconciling, setReconciling] = useState(false);
+  const [bankBalance, setBankBalance] = useState(0);
+  const [clearedBalance, setClearedBalance] = useState(0);
+  const [reconcileEntryVisible, setReconcileEntryVisible] = useState(false);
+
   const loadTransactions = useCallback(async () => {
     setLoading(true);
     try {
-      setTransactions(await getTransactionsForAccount(id));
+      const [txns, cleared] = await Promise.all([
+        getTransactionsForAccount(id),
+        getClearedBalance(id),
+      ]);
+      setTransactions(txns);
+      setClearedBalance(cleared);
     } finally {
       setLoading(false);
     }
@@ -110,15 +333,24 @@ export default function AccountTransactionsScreen() {
     navigation.setOptions({
       title: account?.name ?? 'Account',
       headerRight: () => (
-        <Pressable
-          onPress={() =>
-            router.push({ pathname: '/(auth)/account/settings', params: { id } })
-          }
-          hitSlop={12}
-          style={{ paddingHorizontal: 4 }}
-        >
-          <Text style={styles.settingsIcon}>⚙</Text>
-        </Pressable>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+          <Pressable
+            onPress={() => setReconcileEntryVisible(true)}
+            hitSlop={12}
+            style={{ paddingHorizontal: 6 }}
+          >
+            <Text style={styles.reconcileIcon}>⚖</Text>
+          </Pressable>
+          <Pressable
+            onPress={() =>
+              router.push({ pathname: '/(auth)/account/settings', params: { id } })
+            }
+            hitSlop={12}
+            style={{ paddingHorizontal: 4 }}
+          >
+            <Text style={styles.settingsIcon}>⚙</Text>
+          </Pressable>
+        </View>
       ),
     });
   }, [account?.name, id]);
@@ -137,6 +369,89 @@ export default function AccountTransactionsScreen() {
     ]);
   }
 
+  async function handleToggleCleared(txnId: string) {
+    await toggleCleared(txnId);
+    const [txns, cleared] = await Promise.all([
+      getTransactionsForAccount(id),
+      getClearedBalance(id),
+    ]);
+    setTransactions(txns);
+    setClearedBalance(cleared);
+    await loadAccounts(); // update account balance display
+  }
+
+  async function handleStartReconcile(bankBalanceCents: number | null) {
+    const cleared = await getClearedBalance(id);
+    setClearedBalance(cleared);
+    setReconcileEntryVisible(false);
+
+    if (bankBalanceCents === null) {
+      // User confirmed balance matches → lock immediately
+      await lockTransactions(id);
+      await Promise.all([loadAccounts(), loadTransactions()]);
+    } else {
+      setBankBalance(bankBalanceCents);
+      setReconciling(true);
+    }
+  }
+
+  async function handleCreateAdjustment() {
+    const diff = bankBalance - clearedBalance;
+    if (diff === 0) return;
+
+    await addTransaction({
+      acct: id,
+      date: todayInt(),
+      amount: diff,
+      description: null,
+      category: null,
+      notes: 'Reconciliation balance adjustment',
+      cleared: true,
+    });
+
+    const [txns, cleared] = await Promise.all([
+      getTransactionsForAccount(id),
+      getClearedBalance(id),
+    ]);
+    setTransactions(txns);
+    setClearedBalance(cleared);
+    await loadAccounts();
+  }
+
+  function handleEditTransaction(txnId: string) {
+    const txn = transactions.find(t => t.id === txnId);
+    if (txn?.reconciled) {
+      Alert.alert(
+        'Reconciled Transaction',
+        'This transaction has been locked after reconciliation. Editing it may throw your reconciliation out of balance.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Edit Anyway',
+            style: 'destructive',
+            onPress: () =>
+              router.push({ pathname: '/(auth)/transaction/new', params: { transactionId: txnId } }),
+          },
+        ],
+      );
+    } else {
+      router.push({ pathname: '/(auth)/transaction/new', params: { transactionId: txnId } });
+    }
+  }
+
+  async function handleLockTransactions() {
+    await lockTransactions(id);
+    setReconciling(false);
+    setBankBalance(0);
+    await Promise.all([loadAccounts(), loadTransactions()]);
+  }
+
+  function handleExitReconcile() {
+    setReconciling(false);
+    setBankBalance(0);
+    setReconcileEntryVisible(false);
+  }
+
   return (
     <View style={styles.container}>
       {/* Balance card */}
@@ -147,6 +462,17 @@ export default function AccountTransactionsScreen() {
         </Text>
       </View>
 
+      {/* Reconciliation banner */}
+      {reconciling && (
+        <ReconciliationBanner
+          clearedBalance={clearedBalance}
+          bankBalance={bankBalance}
+          onCreateAdjustment={handleCreateAdjustment}
+          onLock={handleLockTransactions}
+          onExit={handleExitReconcile}
+        />
+      )}
+
       {loading ? (
         <ActivityIndicator color="#3b82f6" style={{ marginTop: 40 }} />
       ) : (
@@ -156,10 +482,9 @@ export default function AccountTransactionsScreen() {
           renderItem={({ item }) => (
             <TransactionRow
               item={item}
-              onPress={txnId =>
-                router.push({ pathname: '/(auth)/transaction/new', params: { transactionId: txnId } })
-              }
+              onPress={handleEditTransaction}
               onDelete={handleDelete}
+              onToggleCleared={handleToggleCleared}
             />
           )}
           ItemSeparatorComponent={() => <View style={styles.separator} />}
@@ -182,9 +507,21 @@ export default function AccountTransactionsScreen() {
       >
         <Text style={styles.fabText}>+</Text>
       </Pressable>
+
+      {/* Reconcile entry modal */}
+      <ReconcileEntryModal
+        visible={reconcileEntryVisible}
+        clearedBalance={clearedBalance}
+        onCancel={() => setReconcileEntryVisible(false)}
+        onConfirm={handleStartReconcile}
+      />
     </View>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Styles
+// ---------------------------------------------------------------------------
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f172a' },
@@ -199,6 +536,7 @@ const styles = StyleSheet.create({
   balance: { color: '#4ade80', fontSize: 22, fontWeight: '700' },
   negative: { color: '#f87171' },
 
+  reconcileIcon: { color: '#818cf8', fontSize: 20 },
   settingsIcon: { color: '#94a3b8', fontSize: 20 },
 
   txRow: {
@@ -214,11 +552,16 @@ const styles = StyleSheet.create({
   txPayee: { color: '#f1f5f9', fontSize: 15, fontWeight: '500', flexShrink: 1 },
   txCategory: { color: '#64748b', fontSize: 12, marginTop: 2 },
   txNotes: { color: '#475569', fontSize: 12, marginTop: 1, fontStyle: 'italic' },
-  txRight: { alignItems: 'flex-end', minWidth: 72 },
+  txRight: { alignItems: 'flex-end', minWidth: 80 },
   txAmount: { fontSize: 15, fontWeight: '600' },
   income: { color: '#4ade80' },
   expense: { color: '#f87171' },
-  clearedDot: { color: '#4ade80', fontSize: 10, marginTop: 2 },
+
+  statusBtn: { marginTop: 4 },
+  statusIcon: { fontSize: 13, fontWeight: '600' },
+  statusReconciled: { color: '#818cf8' },
+  statusCleared: { color: '#4ade80' },
+  statusUncleared: { color: '#475569' },
 
   separator: { height: 1, backgroundColor: '#1e293b', marginLeft: 16 },
 
@@ -234,4 +577,87 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3, shadowRadius: 8, elevation: 8,
   },
   fabText: { color: '#fff', fontSize: 28, lineHeight: 32, fontWeight: '300' },
+});
+
+const recon = StyleSheet.create({
+  // Entry modal
+  overlay: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center', alignItems: 'center', padding: 24,
+  },
+  modal: {
+    backgroundColor: '#1e293b', borderRadius: 16, padding: 24,
+    width: '100%', borderWidth: 1, borderColor: '#334155',
+  },
+  modalTitle: { color: '#f1f5f9', fontSize: 18, fontWeight: '700', marginBottom: 16 },
+  modalQuestion: { color: '#cbd5e1', fontSize: 15, marginBottom: 20, lineHeight: 22, textAlign: 'center' },
+  infoRow: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    backgroundColor: '#0f172a', borderRadius: 8, padding: 12, marginBottom: 16,
+  },
+  infoLabel: { color: '#64748b', fontSize: 13 },
+  infoValue: { color: '#4ade80', fontSize: 15, fontWeight: '600' },
+  inputLabel: { color: '#94a3b8', fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 },
+  input: {
+    backgroundColor: '#0f172a', color: '#f1f5f9', borderRadius: 10,
+    paddingHorizontal: 14, paddingVertical: 14, fontSize: 20, fontWeight: '600',
+    borderWidth: 1, borderColor: '#334155', marginBottom: 20, textAlign: 'right',
+  },
+  modalActions: { flexDirection: 'row', gap: 10 },
+  // Yes/No buttons (step 1)
+  noBtn: {
+    flex: 1, backgroundColor: '#0f172a', borderRadius: 10, paddingVertical: 14,
+    alignItems: 'center', borderWidth: 1, borderColor: '#334155',
+  },
+  noText: { color: '#f87171', fontSize: 15, fontWeight: '600' },
+  yesBtn: {
+    flex: 1, backgroundColor: '#166534', borderRadius: 10,
+    paddingVertical: 14, alignItems: 'center',
+  },
+  yesText: { color: '#4ade80', fontSize: 15, fontWeight: '700' },
+  cancelLink: { alignItems: 'center', marginTop: 14 },
+  cancelLinkText: { color: '#475569', fontSize: 14 },
+  // Input path buttons (step 2)
+  cancelBtn: {
+    flex: 1, backgroundColor: '#0f172a', borderRadius: 10, paddingVertical: 14,
+    alignItems: 'center', borderWidth: 1, borderColor: '#334155',
+  },
+  cancelText: { color: '#94a3b8', fontSize: 15, fontWeight: '600' },
+  startBtn: {
+    flex: 1, backgroundColor: '#3b82f6', borderRadius: 10,
+    paddingVertical: 14, alignItems: 'center',
+  },
+  startText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+
+  // Banner
+  banner: {
+    backgroundColor: '#1e293b', marginHorizontal: 16, marginBottom: 8,
+    borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#818cf8',
+  },
+  bannerHeader: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    marginBottom: 12,
+  },
+  bannerTitle: { color: '#818cf8', fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+  exitText: { color: '#64748b', fontSize: 13 },
+  bannerRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+  bannerDivider: { borderTopWidth: 1, borderTopColor: '#334155', paddingTop: 8, marginTop: 4, marginBottom: 12 },
+  bannerLabel: { color: '#94a3b8', fontSize: 14 },
+  bannerValue: { color: '#f1f5f9', fontSize: 14, fontWeight: '600' },
+  bannerDiff: { color: '#f87171' },
+  bannerHint: { alignItems: 'center', marginBottom: 10 },
+  bannerHintText: { color: '#4ade80', fontSize: 14, fontWeight: '600' },
+  adjustBtn: {
+    backgroundColor: '#451a03', borderRadius: 8, paddingVertical: 12,
+    alignItems: 'center', marginBottom: 8,
+    borderWidth: 1, borderColor: '#92400e',
+  },
+  adjustText: { color: '#fbbf24', fontSize: 14, fontWeight: '600' },
+  lockBtn: {
+    backgroundColor: '#1d4ed8', borderRadius: 8, paddingVertical: 12,
+    alignItems: 'center',
+  },
+  lockBtnDisabled: { backgroundColor: '#1e293b', borderWidth: 1, borderColor: '#334155' },
+  lockText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  lockTextDisabled: { color: '#475569' },
 });

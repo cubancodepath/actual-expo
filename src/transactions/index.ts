@@ -153,6 +153,51 @@ export async function updateTransaction(
   }
 }
 
+/** Toggle the cleared flag on a transaction (skips reconciled transactions). */
+export async function toggleCleared(id: string): Promise<void> {
+  const row = await first<{ cleared: number }>('SELECT cleared FROM transactions WHERE id = ? AND tombstone = 0', [id]);
+  if (!row) return;
+  await sendMessages([
+    { timestamp: Timestamp.send()!, dataset: 'transactions', row: id, column: 'cleared', value: row.cleared === 1 ? 0 : 1 },
+  ]);
+}
+
+/**
+ * Sum of cleared (non-parent) transaction amounts for an account, in cents.
+ * Mirrors loot-core's cleared balance calculation.
+ */
+export async function getClearedBalance(accountId: string): Promise<number> {
+  const row = await first<{ total: number }>(
+    `SELECT COALESCE(SUM(amount), 0) AS total
+     FROM transactions
+     WHERE acct = ? AND cleared = 1 AND isParent = 0 AND tombstone = 0`,
+    [accountId],
+  );
+  return row?.total ?? 0;
+}
+
+/**
+ * Lock all cleared-but-not-yet-reconciled transactions for an account.
+ * Mirrors loot-core's lockTransactions().
+ */
+export async function lockTransactions(accountId: string): Promise<void> {
+  const rows = await runQuery<{ id: string }>(
+    `SELECT id FROM transactions
+     WHERE acct = ? AND cleared = 1 AND reconciled = 0 AND tombstone = 0`,
+    [accountId],
+  );
+  if (rows.length === 0) return;
+  await sendMessages(
+    rows.map(r => ({
+      timestamp: Timestamp.send()!,
+      dataset: 'transactions',
+      row: r.id,
+      column: 'reconciled',
+      value: 1,
+    })),
+  );
+}
+
 export async function deleteTransaction(id: string): Promise<void> {
   // Fetch transferred_id before tombstoning so we can delete the paired transaction
   const row = await first<{ transferred_id: string | null }>(

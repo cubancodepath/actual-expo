@@ -140,6 +140,7 @@ const ALLOWED_TABLES = new Set([
   'transactions',
   'categories',
   'category_groups',
+  'category_mapping',
   'payees',
   'payee_mapping',
   'zero_budgets',

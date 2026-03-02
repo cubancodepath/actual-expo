@@ -1,5 +1,5 @@
 import { randomUUID } from 'expo-crypto';
-import { runQuery, run } from '../db';
+import { runQuery } from '../db';
 import { sendMessages } from '../sync';
 import { Timestamp } from '../crdt';
 import type { CategoryGroupRow, CategoryRow } from '../db/types';
@@ -82,12 +82,15 @@ export async function createCategory(
     is_income: fields.is_income ? 1 : 0,
     sort_order: fields.sort_order ?? Date.now(),
   };
-  await sendMessages(
-    Object.entries(dbFields).map(([column, value]) => ({
+  await sendMessages([
+    ...Object.entries(dbFields).map(([column, value]) => ({
       timestamp: Timestamp.send()!, dataset: 'categories', row: id, column,
       value: value as string | number | null,
     })),
-  );
+    // Self-referential mapping — mirrors loot-core's insertCategory behaviour.
+    // Required so the chaining logic in deleteCategory can walk the full graph.
+    { timestamp: Timestamp.send()!, dataset: 'category_mapping', row: id, column: 'transferId', value: id },
+  ]);
   return id;
 }
 
@@ -111,17 +114,30 @@ export async function updateCategory(
 
 export async function deleteCategory(id: string, transferId?: string): Promise<void> {
   if (transferId) {
-    // Resolve any existing mappings pointing to `id` → forward them to `transferId`
-    // (handles chains: if A was already mapped to id, now A should map to transferId)
-    await run(
-      'UPDATE category_mapping SET transferId = ? WHERE transferId = ?',
-      [transferId, id],
+    // Walk every mapping that currently points to `id` and forward it to `transferId`.
+    // This handles chains: if A → id, after deletion A should point to transferId.
+    const chained = await runQuery<{ id: string }>(
+      'SELECT id FROM category_mapping WHERE transferId = ?',
+      [id],
     );
-    // Map this category to the transfer category
-    await run(
-      'INSERT OR REPLACE INTO category_mapping (id, transferId) VALUES (?, ?)',
-      [id, transferId],
-    );
+    const chainMsgs = chained.map(m => ({
+      timestamp: Timestamp.send()!,
+      dataset: 'category_mapping',
+      row: m.id,
+      column: 'transferId',
+      value: transferId as string | number | null,
+    }));
+
+    // Map this category itself to transferId
+    const selfMsg = {
+      timestamp: Timestamp.send()!,
+      dataset: 'category_mapping',
+      row: id,
+      column: 'transferId',
+      value: transferId as string | number | null,
+    };
+
+    await sendMessages([...chainMsgs, selfMsg]);
   }
   await sendMessages([
     { timestamp: Timestamp.send()!, dataset: 'categories', row: id, column: 'tombstone', value: 1 },

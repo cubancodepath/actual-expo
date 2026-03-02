@@ -19,8 +19,8 @@ type CategoriesState = {
   createGroup(name: string, is_income?: boolean): Promise<string>;
   createCategory(name: string, groupId: string): Promise<string>;
   updateCategory(id: string, fields: Partial<Pick<Category, 'name' | 'hidden' | 'sort_order' | 'goal_def'>>): Promise<void>;
-  deleteCategory(id: string): Promise<void>;
-  deleteCategoryGroup(id: string): Promise<void>;
+  deleteCategory(id: string, transferId?: string): Promise<void>;
+  deleteCategoryGroup(id: string, transferId?: string): Promise<void>;
 };
 
 export const useCategoriesStore = create<CategoriesState>((set) => ({
@@ -53,11 +53,11 @@ export const useCategoriesStore = create<CategoriesState>((set) => ({
     return updateCategory(id, fields);
   },
 
-  async deleteCategory(id) {
-    return deleteCategory(id);
+  async deleteCategory(id, transferId) {
+    return deleteCategory(id, transferId);
   },
 
-  async deleteCategoryGroup(id) {
-    return deleteCategoryGroup(id);
+  async deleteCategoryGroup(id, transferId) {
+    return deleteCategoryGroup(id, transferId);
   },
 }));

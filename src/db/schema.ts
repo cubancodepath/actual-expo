@@ -74,6 +74,11 @@ CREATE TABLE IF NOT EXISTS messages_crdt (
   value TEXT
 );
 
+CREATE TABLE IF NOT EXISTS category_mapping (
+  id TEXT PRIMARY KEY,
+  transferId TEXT
+);
+
 CREATE TABLE IF NOT EXISTS messages_clock (
   id INTEGER PRIMARY KEY,
   clock TEXT

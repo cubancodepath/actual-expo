@@ -53,6 +53,16 @@ export default function AuthLayout() {
           headerShadowVisible: false,
         }}
       />
+      <Stack.Screen
+        name="payees"
+        options={{
+          title: 'Manage Payees',
+          presentation: 'modal',
+          headerStyle: { backgroundColor: '#0f172a' },
+          headerTintColor: '#f1f5f9',
+          headerShadowVisible: false,
+        }}
+      />
     </Stack>
   );
 }

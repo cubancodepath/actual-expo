@@ -16,6 +16,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAccountsStore } from '../../../src/stores/accountsStore';
 import { useTransactionsStore } from '../../../src/stores/transactionsStore';
 import { useCategoriesStore } from '../../../src/stores/categoriesStore';
+import { usePayeesStore } from '../../../src/stores/payeesStore';
 import { findOrCreatePayee } from '../../../src/payees';
 
 // ---------------------------------------------------------------------------
@@ -56,6 +57,92 @@ function parseToCents(raw: string): number {
   const num = parseFloat(cleaned);
   if (isNaN(num)) return 0;
   return Math.round(num * 100);
+}
+
+// ---------------------------------------------------------------------------
+// Payee picker modal
+// ---------------------------------------------------------------------------
+
+function PayeePicker({
+  visible,
+  onClose,
+  onSelect,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onSelect: (name: string) => void;
+}) {
+  const { payees, load } = usePayeesStore();
+  const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    if (visible && payees.length === 0) load();
+  }, [visible]);
+
+  const sorted = [...payees].sort((a, b) => {
+    if (a.favorite !== b.favorite) return a.favorite ? -1 : 1;
+    return a.name.localeCompare(b.name);
+  });
+
+  const filtered = search
+    ? sorted.filter(p => p.name.toLowerCase().includes(search.toLowerCase()))
+    : sorted;
+
+  const exactMatch = payees.some(p => p.name.toLowerCase() === search.trim().toLowerCase());
+
+  function select(name: string) {
+    setSearch('');
+    onSelect(name);
+    onClose();
+  }
+
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      <View style={ppicker.container}>
+        <View style={ppicker.header}>
+          <Text style={ppicker.title}>Payee</Text>
+          <Pressable onPress={() => { setSearch(''); onClose(); }} hitSlop={12}>
+            <Text style={ppicker.cancel}>Cancel</Text>
+          </Pressable>
+        </View>
+
+        <View style={ppicker.searchWrap}>
+          <TextInput
+            style={ppicker.search}
+            placeholder="Search or enter new payee…"
+            placeholderTextColor="#475569"
+            value={search}
+            onChangeText={setSearch}
+            autoFocus
+            clearButtonMode="while-editing"
+            returnKeyType="done"
+            onSubmitEditing={() => { if (search.trim()) select(search.trim()); }}
+          />
+        </View>
+
+        <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+          {/* No payee */}
+          <Pressable style={ppicker.item} onPress={() => select('')}>
+            <Text style={ppicker.itemNone}>No payee</Text>
+          </Pressable>
+
+          {/* "Create new" row when typed text doesn't exactly match */}
+          {search.trim() !== '' && !exactMatch && (
+            <Pressable style={ppicker.item} onPress={() => select(search.trim())}>
+              <Text style={ppicker.itemCreate}>Create "{search.trim()}"</Text>
+            </Pressable>
+          )}
+
+          {filtered.map(p => (
+            <Pressable key={p.id} style={ppicker.item} onPress={() => select(p.name)}>
+              {p.favorite && <Text style={ppicker.star}>★ </Text>}
+              <Text style={ppicker.itemText}>{p.name}</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      </View>
+    </Modal>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -137,7 +224,8 @@ export default function NewTransactionScreen() {
   const [cleared, setCleared] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [pickerVisible, setPickerVisible] = useState(false);
+  const [categoryPickerVisible, setCategoryPickerVisible] = useState(false);
+  const [payeePickerVisible, setPayeePickerVisible] = useState(false);
 
   useEffect(() => {
     if (groups.length === 0) loadCategories();
@@ -218,18 +306,16 @@ export default function NewTransactionScreen() {
 
         {/* Payee */}
         <Text style={styles.label}>Payee</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="e.g. Grocery store"
-          placeholderTextColor="#475569"
-          value={payeeName}
-          onChangeText={setPayeeName}
-          returnKeyType="next"
-        />
+        <Pressable style={styles.picker} onPress={() => setPayeePickerVisible(true)}>
+          <Text style={payeeName ? styles.pickerValue : styles.pickerPlaceholder}>
+            {payeeName || 'Select or create payee'}
+          </Text>
+          <Text style={styles.pickerArrow}>›</Text>
+        </Pressable>
 
         {/* Category */}
         <Text style={styles.label}>Category</Text>
-        <Pressable style={styles.picker} onPress={() => setPickerVisible(true)}>
+        <Pressable style={styles.picker} onPress={() => setCategoryPickerVisible(true)}>
           <Text style={categoryId ? styles.pickerValue : styles.pickerPlaceholder}>
             {categoryId ? categoryName : 'No category'}
           </Text>
@@ -286,9 +372,14 @@ export default function NewTransactionScreen() {
 
       </ScrollView>
 
+      <PayeePicker
+        visible={payeePickerVisible}
+        onClose={() => setPayeePickerVisible(false)}
+        onSelect={name => setPayeeName(name)}
+      />
       <CategoryPicker
-        visible={pickerVisible}
-        onClose={() => setPickerVisible(false)}
+        visible={categoryPickerVisible}
+        onClose={() => setCategoryPickerVisible(false)}
         onSelect={(id, name) => { setCategoryId(id); setCategoryName(name); }}
       />
     </KeyboardAvoidingView>
@@ -366,4 +457,29 @@ const picker = StyleSheet.create({
   },
   itemText: { color: '#f1f5f9', fontSize: 16 },
   itemNone: { color: '#64748b', fontSize: 16 },
+});
+
+const ppicker = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#0f172a' },
+  header: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    padding: 16, borderBottomWidth: 1, borderBottomColor: '#1e293b',
+  },
+  title: { color: '#f1f5f9', fontSize: 17, fontWeight: '600' },
+  cancel: { color: '#3b82f6', fontSize: 16 },
+  searchWrap: { padding: 12, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
+  search: {
+    backgroundColor: '#1e293b', color: '#f1f5f9', borderRadius: 10,
+    paddingHorizontal: 14, paddingVertical: 10, fontSize: 15,
+    borderWidth: 1, borderColor: '#334155',
+  },
+  item: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 16, paddingVertical: 14,
+    borderBottomWidth: 1, borderBottomColor: '#1e293b',
+  },
+  star: { color: '#fbbf24', fontSize: 14, marginRight: 4 },
+  itemText: { color: '#f1f5f9', fontSize: 16 },
+  itemNone: { color: '#64748b', fontSize: 16 },
+  itemCreate: { color: '#3b82f6', fontSize: 16 },
 });

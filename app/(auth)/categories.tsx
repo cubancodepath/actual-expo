@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   FlatList,
+  Modal,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -10,6 +12,79 @@ import {
 } from 'react-native';
 import { useCategoriesStore } from '../../src/stores/categoriesStore';
 import type { Category, CategoryGroup } from '../../src/categories/types';
+
+// ---------------------------------------------------------------------------
+// Transfer picker modal — shown when deleting a category that has transactions
+// ---------------------------------------------------------------------------
+
+function TransferPicker({
+  visible,
+  kind,
+  deletingName,
+  candidates,
+  groups,
+  onTransfer,
+  onSkip,
+  onCancel,
+}: {
+  visible: boolean;
+  kind: 'category' | 'group';
+  deletingName: string;
+  candidates: Category[];
+  groups: CategoryGroup[];
+  onTransfer: (transferId: string) => void;
+  onSkip: () => void;
+  onCancel: () => void;
+}) {
+  // Build grouped list: only include expense groups that have at least one candidate
+  const grouped = groups
+    .filter(g => !g.is_income)
+    .map(g => ({ group: g, cats: candidates.filter(c => c.cat_group === g.id) }))
+    .filter(s => s.cats.length > 0);
+
+  const subtitle =
+    kind === 'group'
+      ? 'This group has categories with transactions. Transfer all of them to:'
+      : 'This category has transactions. Transfer them to:';
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
+      <Pressable style={styles.modalOverlay} onPress={onCancel}>
+        <Pressable style={styles.modalSheet} onPress={() => {}}>
+          <Text style={styles.modalTitle}>Delete "{deletingName}"</Text>
+          <Text style={styles.modalSubtitle}>{subtitle}</Text>
+          <ScrollView style={styles.modalList} bounces={false}>
+            {grouped.map(({ group, cats }) => (
+              <View key={group.id}>
+                <Text style={styles.modalGroupHeader}>{group.name}</Text>
+                {cats.map(cat => (
+                  <Pressable
+                    key={cat.id}
+                    style={styles.modalItem}
+                    onPress={() => onTransfer(cat.id)}
+                  >
+                    <Text style={styles.modalItemText}>{cat.name}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            ))}
+            {grouped.length === 0 && (
+              <Text style={styles.modalEmpty}>No other categories available</Text>
+            )}
+          </ScrollView>
+          <View style={styles.modalActions}>
+            <Pressable style={styles.modalActionBtn} onPress={onSkip}>
+              <Text style={styles.modalActionSkip}>Delete (leave uncategorized)</Text>
+            </Pressable>
+            <Pressable style={styles.modalActionBtn} onPress={onCancel}>
+              <Text style={styles.modalActionCancel}>Cancel</Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Inline name editor — shown in place of the name label when editing
@@ -173,9 +248,14 @@ function GroupSection({
 // Main screen
 // ---------------------------------------------------------------------------
 
+type PendingDelete =
+  | { kind: 'category'; id: string; name: string }
+  | { kind: 'group'; id: string; name: string };
+
 export default function CategoriesScreen() {
   const { groups, categories, load, createGroup, createCategory, updateCategory, deleteCategory, deleteCategoryGroup } =
     useCategoriesStore();
+  const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
 
   useEffect(() => { load(); }, []);
 
@@ -226,40 +306,66 @@ export default function CategoriesScreen() {
     load();
   }
 
-  function handleDeleteCategory(id: string, name: string) {
-    Alert.alert(
-      'Delete Category',
-      `Delete "${name}"? Transactions assigned to it will become uncategorized.`,
-      [
+  async function handleDeleteCategory(id: string, name: string) {
+    const { runQuery } = await import('../../src/db');
+    const row = await runQuery<{ n: number }>(
+      'SELECT COUNT(*) AS n FROM transactions WHERE category = ? AND tombstone = 0',
+      [id],
+    );
+    const hasTxns = (row[0]?.n ?? 0) > 0;
+
+    if (hasTxns) {
+      // Show transfer picker — candidates are non-deleted categories except the one being deleted
+      setPendingDelete({ kind: 'category', id, name });
+    } else {
+      Alert.alert('Delete Category', `Delete "${name}"?`, [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => { await deleteCategory(id); load(); },
         },
-      ],
-    );
+      ]);
+    }
   }
 
-  function handleDeleteGroup(id: string, name: string) {
-    Alert.alert(
-      'Delete Group',
-      `Delete "${name}" and all its categories?`,
-      [
+  async function handleDeleteGroup(id: string, name: string) {
+    const groupCatIds = categories.filter(c => c.cat_group === id).map(c => c.id);
+    let hasTxns = false;
+
+    if (groupCatIds.length > 0) {
+      const { runQuery } = await import('../../src/db');
+      const placeholders = groupCatIds.map(() => '?').join(',');
+      const row = await runQuery<{ n: number }>(
+        `SELECT COUNT(*) AS n FROM transactions WHERE category IN (${placeholders}) AND tombstone = 0`,
+        groupCatIds,
+      );
+      hasTxns = (row[0]?.n ?? 0) > 0;
+    }
+
+    if (hasTxns) {
+      setPendingDelete({ kind: 'group', id, name });
+    } else {
+      Alert.alert('Delete Group', `Delete "${name}" and all its categories?`, [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: async () => {
-            // Soft-delete all categories in the group first
-            const groupCats = categories.filter(c => c.cat_group === id);
-            await Promise.all(groupCats.map(c => deleteCategory(c.id)));
-            await deleteCategoryGroup(id);
-            load();
-          },
+          onPress: async () => { await deleteCategoryGroup(id); load(); },
         },
-      ],
-    );
+      ]);
+    }
+  }
+
+  async function confirmDelete(transferId?: string) {
+    if (!pendingDelete) return;
+    if (pendingDelete.kind === 'category') {
+      await deleteCategory(pendingDelete.id, transferId);
+    } else {
+      await deleteCategoryGroup(pendingDelete.id, transferId);
+    }
+    setPendingDelete(null);
+    load();
   }
 
   // ---------------------------------------------------------------------------
@@ -271,8 +377,32 @@ export default function CategoriesScreen() {
     cats: categories.filter(c => c.cat_group === g.id),
   }));
 
+  // Candidates for transfer: all live expense categories except the ones being deleted
+  const excludeIds = new Set(
+    pendingDelete
+      ? pendingDelete.kind === 'category'
+        ? [pendingDelete.id]
+        : categories.filter(c => c.cat_group === pendingDelete.id).map(c => c.id)
+      : [],
+  );
+  // All live expense categories except the ones being deleted (any group, including hidden)
+  const transferCandidates = categories.filter(
+    c => !excludeIds.has(c.id) && !c.tombstone &&
+      groups.find(g => g.id === c.cat_group && !g.is_income),
+  );
+
   return (
     <View style={styles.container}>
+      <TransferPicker
+        visible={pendingDelete !== null}
+        kind={pendingDelete?.kind ?? 'category'}
+        deletingName={pendingDelete?.name ?? ''}
+        candidates={transferCandidates}
+        groups={groups}
+        onTransfer={id => confirmDelete(id)}
+        onSkip={() => confirmDelete(undefined)}
+        onCancel={() => setPendingDelete(null)}
+      />
       <FlatList
         data={sections}
         keyExtractor={s => s.group.id}
@@ -400,4 +530,54 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   addGroupText: { color: '#3b82f6', fontSize: 14, fontWeight: '600' },
+
+  // Transfer picker modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-end',
+  },
+  modalSheet: {
+    backgroundColor: '#1e293b',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingTop: 20,
+    paddingHorizontal: 16,
+    paddingBottom: 36,
+    maxHeight: '70%',
+  },
+  modalTitle: {
+    color: '#f1f5f9',
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  modalSubtitle: {
+    color: '#94a3b8',
+    fontSize: 13,
+    marginBottom: 12,
+  },
+  modalList: { maxHeight: 260 },
+  modalGroupHeader: {
+    color: '#64748b',
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    paddingTop: 12,
+    paddingBottom: 4,
+    paddingHorizontal: 4,
+  },
+  modalItem: {
+    paddingVertical: 13,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#334155',
+  },
+  modalItemText: { color: '#e2e8f0', fontSize: 15 },
+  modalEmpty: { color: '#475569', fontSize: 13, paddingVertical: 16, textAlign: 'center' },
+  modalActions: { marginTop: 12, gap: 4 },
+  modalActionBtn: { paddingVertical: 12, alignItems: 'center' },
+  modalActionSkip: { color: '#f87171', fontSize: 14, fontWeight: '600' },
+  modalActionCancel: { color: '#64748b', fontSize: 14 },
 });

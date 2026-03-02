@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
+import { useCallback, useLayoutEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -8,7 +8,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useAccountsStore } from '../../../src/stores/accountsStore';
 import {
   deleteTransaction,
@@ -96,7 +96,7 @@ export default function AccountTransactionsScreen() {
     }
   }, [id]);
 
-  useEffect(() => { loadTransactions(); }, [loadTransactions]);
+  useFocusEffect(useCallback(() => { loadTransactions(); }, [loadTransactions]));
 
   useLayoutEffect(() => {
     navigation.setOptions({

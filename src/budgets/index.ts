@@ -32,15 +32,19 @@ export async function getBudgetMonth(month: string): Promise<BudgetMonth> {
   // NOTE: we do NOT filter starting_balance_flag — starting balance transactions
   // in actual-budget ARE assigned to an income category ("Starting Balances")
   // and must be counted. loot-core's v_transactions_internal_alive does the same.
+  // Resolve deleted categories through category_mapping so that transactions
+  // that belonged to a deleted-but-transferred category still count toward
+  // the transfer category's "spent" — mirrors loot-core's v_transactions_internal JOIN.
   const currentMonthRows = await runQuery<{ category: string; amount: number }>(
-    `SELECT t.category, SUM(t.amount) AS amount
+    `SELECT COALESCE(cm.transferId, t.category) AS category, SUM(t.amount) AS amount
      FROM transactions t
+     LEFT JOIN category_mapping cm ON cm.id = t.category
      JOIN accounts a ON t.acct = a.id AND a.offbudget = 0 AND a.tombstone = 0
      WHERE t.tombstone = 0
        AND t.isParent = 0
        AND t.date >= ? AND t.date <= ?
        AND t.category IS NOT NULL
-     GROUP BY t.category`,
+     GROUP BY COALESCE(cm.transferId, t.category)`,
     [startDate, endDate],
   );
   const currentMap = new Map(currentMonthRows.map(r => [r.category, r.amount]));
@@ -61,8 +65,9 @@ export async function getBudgetMonth(month: string): Promise<BudgetMonth> {
   const cumulativeIncomeRow = await first<{ total: number }>(
     `SELECT COALESCE(SUM(t.amount), 0) AS total
      FROM transactions t
-     JOIN accounts a   ON a.id = t.acct AND a.offbudget = 0 AND a.tombstone = 0
-     JOIN categories c ON c.id = t.category AND c.tombstone = 0
+     LEFT JOIN category_mapping cm ON cm.id = t.category
+     JOIN categories c  ON c.id = COALESCE(cm.transferId, t.category) AND c.tombstone = 0
+     JOIN accounts a    ON a.id = t.acct AND a.offbudget = 0 AND a.tombstone = 0
      JOIN category_groups g ON g.id = c.cat_group AND g.is_income = 1
      WHERE t.tombstone = 0
        AND t.isParent = 0

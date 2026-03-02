@@ -8,6 +8,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { usePrefsStore } from '../../../src/stores/prefsStore';
 import { useSyncStore } from '../../../src/stores/syncStore';
 
@@ -21,6 +22,7 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 export default function SettingsScreen() {
+  const router = useRouter();
   const { serverUrl, fileId, groupId, encryptKeyId, lastSyncedTimestamp, clearAll } = usePrefsStore();
   const { status, error, lastSync, sync } = useSyncStore();
   const [loggingOut, setLoggingOut] = useState(false);
@@ -78,6 +80,18 @@ export default function SettingsScreen() {
         </Pressable>
       </View>
 
+      <Text style={styles.sectionTitle}>Manage</Text>
+      <View style={styles.card}>
+        <Pressable style={styles.navRow} onPress={() => router.push('/(auth)/payees')}>
+          <Text style={styles.navLabel}>Payees</Text>
+          <Text style={styles.navArrow}>›</Text>
+        </Pressable>
+        <Pressable style={[styles.navRow, { borderBottomWidth: 0 }]} onPress={() => router.push('/(auth)/categories')}>
+          <Text style={styles.navLabel}>Categories</Text>
+          <Text style={styles.navArrow}>›</Text>
+        </Pressable>
+      </View>
+
       <Pressable
         style={[styles.logoutButton, loggingOut && styles.buttonDisabled]}
         onPress={handleLogout}
@@ -100,6 +114,9 @@ const styles = StyleSheet.create({
   rowLabel: { color: '#94a3b8', fontSize: 14 },
   rowValue: { color: '#f1f5f9', fontSize: 13, fontFamily: 'monospace', flex: 1, textAlign: 'right', marginLeft: 8 },
   errorText: { color: '#f87171', fontSize: 12, padding: 12 },
+  navRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 14, borderBottomWidth: 1, borderBottomColor: '#334155' },
+  navLabel: { color: '#f1f5f9', fontSize: 15 },
+  navArrow: { color: '#475569', fontSize: 20 },
   syncButton: {
     backgroundColor: '#1d4ed8',
     margin: 12,

@@ -1,5 +1,5 @@
 import { randomUUID } from 'expo-crypto';
-import { runQuery } from '../db';
+import { runQuery, run } from '../db';
 import { sendMessages } from '../sync';
 import { Timestamp } from '../crdt';
 import type { CategoryGroupRow, CategoryRow } from '../db/types';
@@ -109,7 +109,20 @@ export async function updateCategory(
   );
 }
 
-export async function deleteCategory(id: string): Promise<void> {
+export async function deleteCategory(id: string, transferId?: string): Promise<void> {
+  if (transferId) {
+    // Resolve any existing mappings pointing to `id` → forward them to `transferId`
+    // (handles chains: if A was already mapped to id, now A should map to transferId)
+    await run(
+      'UPDATE category_mapping SET transferId = ? WHERE transferId = ?',
+      [transferId, id],
+    );
+    // Map this category to the transfer category
+    await run(
+      'INSERT OR REPLACE INTO category_mapping (id, transferId) VALUES (?, ?)',
+      [id, transferId],
+    );
+  }
   await sendMessages([
     { timestamp: Timestamp.send()!, dataset: 'categories', row: id, column: 'tombstone', value: 1 },
   ]);
@@ -132,7 +145,15 @@ export async function updateCategoryGroup(
   );
 }
 
-export async function deleteCategoryGroup(id: string): Promise<void> {
+export async function deleteCategoryGroup(id: string, transferId?: string): Promise<void> {
+  // Cascade: delete every category in this group (mirrors loot-core behavior)
+  const groupCategories = await runQuery<{ id: string }>(
+    'SELECT id FROM categories WHERE cat_group = ? AND tombstone = 0',
+    [id],
+  );
+  for (const cat of groupCategories) {
+    await deleteCategory(cat.id, transferId);
+  }
   await sendMessages([
     { timestamp: Timestamp.send()!, dataset: 'category_groups', row: id, column: 'tombstone', value: 1 },
   ]);

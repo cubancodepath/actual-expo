@@ -65,6 +65,11 @@ export type ZeroBudgetRow = {
   long_goal: number | null;
 };
 
+export type ZeroBudgetMonthRow = {
+  id: string;      // YYYYMM as string
+  buffered: number; // cents held for next month
+};
+
 export type MessagesCrdtRow = {
   timestamp: string;
   dataset: string;

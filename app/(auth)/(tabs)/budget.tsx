@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Modal,
   Pressable,
   RefreshControl,
   SectionList,
@@ -109,6 +110,122 @@ function SummaryBar({
 }
 
 // ---------------------------------------------------------------------------
+// Hold for Next Month bar + modal
+// ---------------------------------------------------------------------------
+
+function HoldModal({
+  visible,
+  current,
+  maxAmount,
+  onSave,
+  onClose,
+}: {
+  visible: boolean;
+  current: number;
+  maxAmount: number;
+  onSave: (amount: number) => void;
+  onClose: () => void;
+}) {
+  const [value, setValue] = useState('');
+
+  // Pre-fill with current hold amount when modal opens
+  useEffect(() => {
+    if (visible) {
+      setValue(current > 0 ? (current / 100).toFixed(2) : '');
+    }
+  }, [visible, current]);
+
+  function handleSave() {
+    const cents = Math.round(parseFloat(value.replace(/[^0-9.]/g, '')) * 100);
+    if (!isNaN(cents) && cents >= 0) {
+      onSave(cents);
+    }
+    onClose();
+  }
+
+  const max = (maxAmount / 100).toFixed(2);
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable style={holdStyles.overlay} onPress={onClose}>
+        <Pressable style={holdStyles.sheet} onPress={e => e.stopPropagation()}>
+          <Text style={holdStyles.title}>Hold for Next Month</Text>
+          <Text style={holdStyles.subtitle}>
+            Move money from "To Budget" to next month.{'\n'}
+            Available to hold: <Text style={holdStyles.maxAmt}>${max}</Text>
+          </Text>
+
+          <View style={holdStyles.inputRow}>
+            <Text style={holdStyles.dollar}>$</Text>
+            <TextInput
+              style={holdStyles.input}
+              value={value}
+              onChangeText={setValue}
+              keyboardType="decimal-pad"
+              placeholder="0.00"
+              placeholderTextColor="#475569"
+              autoFocus
+              selectTextOnFocus
+              onSubmitEditing={handleSave}
+            />
+          </View>
+
+          <View style={holdStyles.actions}>
+            <Pressable style={holdStyles.cancelBtn} onPress={onClose}>
+              <Text style={holdStyles.cancelText}>Cancel</Text>
+            </Pressable>
+            <Pressable style={holdStyles.saveBtn} onPress={handleSave}>
+              <Text style={holdStyles.saveText}>Hold</Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
+function HoldBar({
+  buffered,
+  toBudget,
+  onHold,
+  onReset,
+}: {
+  buffered: number;
+  toBudget: number;
+  onHold: () => void;
+  onReset: () => void;
+}) {
+  // Show bar when there's an active hold OR when there's money available to hold
+  if (buffered === 0 && toBudget <= 0) return null;
+
+  return (
+    <View style={holdStyles.bar}>
+      <View style={holdStyles.barLeft}>
+        <Text style={holdStyles.barIcon}>→</Text>
+        <View>
+          <Text style={holdStyles.barLabel}>Held for Next Month</Text>
+          {buffered > 0 && (
+            <Text style={holdStyles.barAmt}>{fmt(buffered)}</Text>
+          )}
+        </View>
+      </View>
+      <View style={holdStyles.barRight}>
+        {buffered > 0 && (
+          <Pressable style={holdStyles.resetBtn} onPress={onReset} hitSlop={8}>
+            <Text style={holdStyles.resetText}>Reset</Text>
+          </Pressable>
+        )}
+        <Pressable style={holdStyles.holdBtn} onPress={onHold} hitSlop={8}>
+          <Text style={holdStyles.holdBtnText}>
+            {buffered > 0 ? 'Edit' : 'Hold'}
+          </Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Section type
 // ---------------------------------------------------------------------------
 
@@ -125,10 +242,11 @@ type BudgetSection = {
 
 export default function BudgetScreen() {
   const router = useRouter();
-  const { month, data, loading, setMonth, load, setAmount } = useBudgetStore();
+  const { month, data, loading, setMonth, load, setAmount, hold, resetHold } = useBudgetStore();
   const { refreshing, sync } = useSyncStore();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
+  const [holdModalVisible, setHoldModalVisible] = useState(false);
 
   useEffect(() => {
     load();
@@ -293,6 +411,17 @@ export default function BudgetScreen() {
         <SummaryBar income={data.income} budgeted={data.budgeted} toBudget={data.toBudget} />
       )}
 
+      {data && (
+        <HoldBar
+          buffered={data.buffered}
+          toBudget={data.toBudget}
+          onHold={() => setHoldModalVisible(true)}
+          onReset={async () => {
+            await resetHold();
+          }}
+        />
+      )}
+
       {/* Column headers */}
       {data && (
         <View style={styles.colHeaders}>
@@ -302,6 +431,14 @@ export default function BudgetScreen() {
           <Text style={[styles.colHeader, { width: COL_BAL }]}>BALANCE</Text>
         </View>
       )}
+
+      <HoldModal
+        visible={holdModalVisible}
+        current={data?.buffered ?? 0}
+        maxAmount={Math.max((data?.toBudget ?? 0) + (data?.buffered ?? 0), 0)}
+        onSave={async (amount) => { await hold(amount); }}
+        onClose={() => setHoldModalVisible(false)}
+      />
 
       {loading && !data ? (
         <ActivityIndicator color="#3b82f6" style={{ marginTop: 40 }} />
@@ -461,4 +598,68 @@ const styles = StyleSheet.create({
   empty: { alignItems: 'center', marginTop: 80, gap: 8 },
   emptyText: { color: '#94a3b8', fontSize: 16, fontWeight: '600' },
   emptyHint: { color: '#475569', fontSize: 13 },
+});
+
+const holdStyles = StyleSheet.create({
+  // Hold bar (below summary)
+  bar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#1a1f35',
+    borderBottomWidth: 1,
+    borderBottomColor: '#334155',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#1e3a5f',
+  },
+  barLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
+  barIcon: { fontSize: 18, color: '#818cf8' },
+  barLabel: { color: '#93c5fd', fontSize: 13, fontWeight: '600' },
+  barAmt: { color: '#818cf8', fontSize: 14, fontWeight: '700', marginTop: 1 },
+  barRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  resetBtn: {
+    paddingHorizontal: 10, paddingVertical: 5,
+    borderRadius: 6, borderWidth: 1, borderColor: '#475569',
+  },
+  resetText: { color: '#94a3b8', fontSize: 12, fontWeight: '600' },
+  holdBtn: {
+    paddingHorizontal: 12, paddingVertical: 5,
+    backgroundColor: '#3730a3', borderRadius: 6,
+  },
+  holdBtnText: { color: '#c7d2fe', fontSize: 12, fontWeight: '700' },
+
+  // Hold modal
+  overlay: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center', alignItems: 'center',
+  },
+  sheet: {
+    backgroundColor: '#1e293b', borderRadius: 16,
+    padding: 24, width: '85%', gap: 16,
+    borderWidth: 1, borderColor: '#334155',
+  },
+  title: { color: '#f1f5f9', fontSize: 17, fontWeight: '700' },
+  subtitle: { color: '#64748b', fontSize: 13, lineHeight: 19 },
+  maxAmt: { color: '#818cf8', fontWeight: '700' },
+  inputRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: '#0f172a', borderRadius: 10,
+    paddingHorizontal: 14, paddingVertical: 12,
+    borderWidth: 1, borderColor: '#334155',
+  },
+  dollar: { color: '#818cf8', fontSize: 20, fontWeight: '600' },
+  input: { flex: 1, color: '#f1f5f9', fontSize: 20, fontWeight: '600', padding: 0 },
+  actions: { flexDirection: 'row', gap: 10, marginTop: 4 },
+  cancelBtn: {
+    flex: 1, paddingVertical: 12, alignItems: 'center',
+    borderRadius: 10, borderWidth: 1, borderColor: '#334155',
+  },
+  cancelText: { color: '#94a3b8', fontWeight: '600', fontSize: 15 },
+  saveBtn: {
+    flex: 1, paddingVertical: 12, alignItems: 'center',
+    borderRadius: 10, backgroundColor: '#3730a3',
+  },
+  saveText: { color: '#c7d2fe', fontWeight: '700', fontSize: 15 },
 });

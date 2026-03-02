@@ -72,6 +72,7 @@ function AddButton() {
 export default function TabsLayout() {
   return (
     <Tabs
+      initialRouteName="budget"
       screenOptions={{
         tabBarStyle: { backgroundColor: '#0f172a', borderTopColor: '#1e293b' },
         tabBarActiveTintColor: '#3b82f6',
@@ -83,6 +84,13 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen
+        name="budget"
+        options={{
+          title: 'Budget',
+          tabBarIcon: ({ focused }) => <TabIcon icon="📊" focused={focused} />,
+        }}
+      />
+      <Tabs.Screen
         name="index"
         options={{
           title: 'Accounts',
@@ -93,13 +101,6 @@ export default function TabsLayout() {
             </View>
           ),
           tabBarIcon: ({ focused }) => <TabIcon icon="🏦" focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
-        name="budget"
-        options={{
-          title: 'Budget',
-          tabBarIcon: ({ focused }) => <TabIcon icon="📊" focused={focused} />,
         }}
       />
       <Tabs.Screen

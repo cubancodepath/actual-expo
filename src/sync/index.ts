@@ -142,6 +142,7 @@ const ALLOWED_TABLES = new Set([
   'category_groups',
   'payees',
   'zero_budgets',
+  'zero_budget_months',
 ]);
 
 export async function applyMessages(messages: SyncMessage[]): Promise<void> {

@@ -84,9 +84,19 @@ export async function getBudgetMonth(month: string): Promise<BudgetMonth> {
     [monthInt],
   );
 
+  // Read hold-for-next-month amount for this specific month.
+  // Math proof: the cumulative formula only needs the *current* month's
+  // buffered amount subtracted. Previous months' holds cancel algebraically:
+  //   toBudget[M] = SUM(income[0..M]) - SUM(budgeted[0..M]) - buffered[M]
+  const bufferedRow = await first<{ buffered: number }>(
+    'SELECT buffered FROM zero_budget_months WHERE id = ?',
+    [String(monthInt)],
+  );
+  const buffered = bufferedRow?.buffered ?? 0;
+
   const cumulativeIncome = cumulativeIncomeRow?.total ?? 0;
   const cumulativeBudgeted = cumulativeBudgetedRow?.total ?? 0;
-  const toBudget = cumulativeIncome - cumulativeBudgeted;
+  const toBudget = cumulativeIncome - cumulativeBudgeted - buffered;
 
   // ---------------------------------------------------------------------------
   // Build per-group / per-category data for the current month display
@@ -143,8 +153,85 @@ export async function getBudgetMonth(month: string): Promise<BudgetMonth> {
     budgeted: displayBudgeted,
     spent: displaySpent,
     toBudget,
+    buffered,
     groups: budgetGroups,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Hold for Next Month
+//
+// Mirrors loot-core's holdForNextMonth() + calcBufferedAmount().
+// The hold is stored in zero_budget_months via CRDT so it syncs across devices.
+// ---------------------------------------------------------------------------
+
+/**
+ * Clamp the hold delta so:
+ *   - buffered never goes below 0
+ *   - you can't hold more than what's available to budget
+ */
+function calcBufferedAmount(toBudget: number, buffered: number, delta: number): number {
+  const clamped = Math.min(Math.max(delta, -buffered), Math.max(toBudget, 0));
+  return buffered + clamped;
+}
+
+/**
+ * Hold `amount` cents for the next month.
+ * Pass the current `toBudget` so we can validate/clamp.
+ * Returns the actual new buffered amount (may differ from amount due to clamping).
+ */
+export async function holdForNextMonth(
+  month: string,
+  amount: number,
+  currentToBudget: number,
+): Promise<number> {
+  const monthInt = monthToInt(month);
+  const monthId = String(monthInt);
+
+  const row = await first<{ buffered: number }>(
+    'SELECT buffered FROM zero_budget_months WHERE id = ?',
+    [monthId],
+  );
+  const existing = row?.buffered ?? 0;
+
+  if (currentToBudget <= 0 && existing === 0) {
+    // Nothing available to hold and nothing already held
+    return 0;
+  }
+
+  // delta = how much to add (or remove) from the current hold
+  const delta = amount - existing;
+  const newBuffered = calcBufferedAmount(currentToBudget, existing, delta);
+
+  await sendMessages([
+    {
+      timestamp: Timestamp.send()!,
+      dataset: 'zero_budget_months',
+      row: monthId,
+      column: 'buffered',
+      value: newBuffered,
+    },
+  ]);
+
+  return newBuffered;
+}
+
+/**
+ * Clear the hold for a month — sets buffered back to 0.
+ */
+export async function resetHold(month: string): Promise<void> {
+  const monthInt = monthToInt(month);
+  const monthId = String(monthInt);
+
+  await sendMessages([
+    {
+      timestamp: Timestamp.send()!,
+      dataset: 'zero_budget_months',
+      row: monthId,
+      column: 'buffered',
+      value: 0,
+    },
+  ]);
 }
 
 export async function setBudgetAmount(

@@ -74,6 +74,11 @@ CREATE TABLE IF NOT EXISTS messages_crdt (
   value TEXT
 );
 
+CREATE TABLE IF NOT EXISTS zero_budget_months (
+  id TEXT PRIMARY KEY,
+  buffered INTEGER DEFAULT 0
+);
+
 CREATE TABLE IF NOT EXISTS category_mapping (
   id TEXT PRIMARY KEY,
   transferId TEXT

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { getBudgetMonth, setBudgetAmount } from '../budgets';
+import { getBudgetMonth, setBudgetAmount, holdForNextMonth, resetHold } from '../budgets';
 import type { BudgetMonth } from '../budgets/types';
 
 function currentMonth(): string {
@@ -16,6 +16,10 @@ type BudgetState = {
   setMonth(month: string): void;
   load(): Promise<void>;
   setAmount(categoryId: string, amount: number): Promise<void>;
+  /** Hold `amount` cents for the next month. */
+  hold(amount: number): Promise<void>;
+  /** Clear the hold for the current month. */
+  resetHold(): Promise<void>;
 };
 
 export const useBudgetStore = create<BudgetState>((set, get) => ({
@@ -40,5 +44,16 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
   async setAmount(categoryId, amount) {
     await setBudgetAmount(get().month, categoryId, amount);
     // load() will be called by applyMessages → refreshAllStores
+  },
+
+  async hold(amount) {
+    const { month, data } = get();
+    const currentToBudget = data?.toBudget ?? 0;
+    await holdForNextMonth(month, amount, currentToBudget);
+    // refreshAllStores will reload via applyMessages
+  },
+
+  async resetHold() {
+    await resetHold(get().month);
   },
 }));

@@ -22,5 +22,6 @@ export type BudgetMonth = {
   budgeted: number;
   spent: number;
   toBudget: number;
+  buffered: number;  // cents held for next month
   groups: BudgetGroup[];
 };

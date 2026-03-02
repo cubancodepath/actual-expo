@@ -12,6 +12,7 @@
     "@noble/ciphers": "^2.1.1",
     "@noble/hashes": "^2.0.1",
     "@react-native-async-storage/async-storage": "2.2.0",
+    "@shopify/flash-list": "^2.2.2",
     "expo": "~55.0.4",
     "expo-crypto": "^55.0.8",
     "expo-file-system": "~55.0.10",

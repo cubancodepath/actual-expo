@@ -119,6 +119,13 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="spending"
+        options={{
+          title: "Spending",
+          tabBarIcon: ({ focused }) => <TabIcon icon="💸" focused={focused} />,
+        }}
+      />
+      <Tabs.Screen
         name="settings"
         options={{
           title: "Settings",

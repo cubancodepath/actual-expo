@@ -259,14 +259,18 @@ export async function getTransactionById(id: string): Promise<TransactionDisplay
 export type TransactionDisplay = Transaction & {
   payeeName: string | null;
   categoryName: string | null;
+  accountName?: string | null; // populated by getAllTransactions
 };
 
-export async function getTransactionsForAccount(accountId: string): Promise<TransactionDisplay[]> {
-  // Mirrors loot-core's v_transactions_layer2 view:
-  //   LEFT JOIN payee_mapping pm ON pm.id = t.description
-  //   LEFT JOIN category_mapping cm ON cm.id = t.category
-  // Then resolve to the *target* payee/category, so that merged
-  // payees and transferred categories show the correct name.
+const PAGE_SIZE = 50;
+
+export async function getTransactionsForAccount(
+  accountId: string,
+  opts?: { limit?: number; offset?: number; hideReconciled?: boolean },
+): Promise<TransactionDisplay[]> {
+  const limit  = opts?.limit  ?? PAGE_SIZE;
+  const offset = opts?.offset ?? 0;
+  const reconciledClause = opts?.hideReconciled ? 'AND t.reconciled = 0' : '';
   const rows = await runQuery<TransactionRow & { payee_name: string | null; category_name: string | null }>(
     `SELECT t.*,
             COALESCE(a.name, p.name) AS payee_name,
@@ -277,8 +281,9 @@ export async function getTransactionsForAccount(accountId: string): Promise<Tran
      LEFT JOIN accounts          a ON p.transfer_acct = a.id AND a.tombstone = 0
      LEFT JOIN category_mapping cm ON cm.id = t.category
      LEFT JOIN categories        c ON COALESCE(cm.transferId, t.category) = c.id AND c.tombstone = 0
-     WHERE  t.acct = ? AND t.tombstone = 0
-     ORDER  BY t.date DESC, t.sort_order DESC`,
+     WHERE  t.acct = ? AND t.tombstone = 0 ${reconciledClause}
+     ORDER  BY t.date DESC, t.sort_order DESC
+     LIMIT ${limit} OFFSET ${offset}`,
     [accountId],
   );
   return rows.map(r => ({
@@ -299,5 +304,57 @@ export async function getTransactionsForAccount(accountId: string): Promise<Tran
     tombstone: r.tombstone === 1,
     payeeName: r.payee_name,
     categoryName: r.category_name,
+  }));
+}
+
+/** All transactions across every account with pagination. */
+export async function getAllTransactions(opts?: {
+  limit?: number;
+  offset?: number;
+  hideReconciled?: boolean;
+}): Promise<TransactionDisplay[]> {
+  const limit  = opts?.limit  ?? PAGE_SIZE;
+  const offset = opts?.offset ?? 0;
+  const reconciledClause = opts?.hideReconciled ? 'AND t.reconciled = 0' : '';
+
+  const rows = await runQuery<
+    TransactionRow & { payee_name: string | null; category_name: string | null; account_name: string | null }
+  >(
+    `SELECT t.*,
+            COALESCE(tr_acc.name, p.name) AS payee_name,
+            c.name                        AS category_name,
+            acc.name                      AS account_name
+     FROM   transactions t
+     JOIN   accounts          acc    ON acc.id = t.acct AND acc.tombstone = 0
+     LEFT JOIN payee_mapping    pm   ON pm.id = t.description
+     LEFT JOIN payees            p   ON COALESCE(pm.targetId, t.description) = p.id AND p.tombstone = 0
+     LEFT JOIN accounts          tr_acc ON p.transfer_acct = tr_acc.id AND tr_acc.tombstone = 0
+     LEFT JOIN category_mapping  cm  ON cm.id = t.category
+     LEFT JOIN categories        c   ON COALESCE(cm.transferId, t.category) = c.id AND c.tombstone = 0
+     WHERE  t.tombstone = 0 ${reconciledClause}
+     ORDER  BY t.date DESC, t.sort_order DESC
+     LIMIT ${limit} OFFSET ${offset}`,
+    [],
+  );
+
+  return rows.map(r => ({
+    id: r.id,
+    isParent: r.isParent === 1,
+    isChild: r.isChild === 1,
+    acct: r.acct,
+    date: r.date,
+    amount: r.amount,
+    category: r.category,
+    description: r.description,
+    notes: r.notes,
+    transferred_id: r.transferred_id,
+    cleared: r.cleared === 1,
+    reconciled: r.reconciled === 1,
+    sort_order: r.sort_order,
+    starting_balance_flag: r.starting_balance_flag === 1,
+    tombstone: r.tombstone === 1,
+    payeeName: r.payee_name,
+    categoryName: r.category_name,
+    accountName: r.account_name,
   }));
 }

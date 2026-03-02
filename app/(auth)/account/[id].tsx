@@ -1,8 +1,7 @@
-import { useCallback, useLayoutEffect, useState } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  FlatList,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -12,6 +11,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useAccountsStore } from '../../../src/stores/accountsStore';
 import {
@@ -306,6 +306,11 @@ export default function AccountTransactionsScreen() {
 
   const [transactions, setTransactions] = useState<TransactionDisplay[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const offsetRef = useRef(0);
+
+  const [hideReconciled, setHideReconciled] = useState(false);
 
   // Reconciliation state
   const [reconciling, setReconciling] = useState(false);
@@ -313,19 +318,38 @@ export default function AccountTransactionsScreen() {
   const [clearedBalance, setClearedBalance] = useState(0);
   const [reconcileEntryVisible, setReconcileEntryVisible] = useState(false);
 
-  const loadTransactions = useCallback(async () => {
+  const PAGE_SIZE = 50;
+
+  const loadTransactions = useCallback(async (hide = hideReconciled) => {
     setLoading(true);
+    offsetRef.current = 0;
     try {
       const [txns, cleared] = await Promise.all([
-        getTransactionsForAccount(id),
+        getTransactionsForAccount(id, { limit: PAGE_SIZE, offset: 0, hideReconciled: hide }),
         getClearedBalance(id),
       ]);
       setTransactions(txns);
       setClearedBalance(cleared);
+      setHasMore(txns.length === PAGE_SIZE);
+      offsetRef.current = txns.length;
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, hideReconciled]);
+
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const txns = await getTransactionsForAccount(id, { limit: PAGE_SIZE, offset: offsetRef.current, hideReconciled });
+      if (txns.length === 0) { setHasMore(false); return; }
+      setTransactions(prev => [...prev, ...txns]);
+      setHasMore(txns.length === PAGE_SIZE);
+      offsetRef.current += txns.length;
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [id, loadingMore, hasMore, hideReconciled]);
 
   useFocusEffect(useCallback(() => { loadTransactions(); }, [loadTransactions]));
 
@@ -334,6 +358,19 @@ export default function AccountTransactionsScreen() {
       title: account?.name ?? 'Account',
       headerRight: () => (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+          <Pressable
+            onPress={() => {
+              const next = !hideReconciled;
+              setHideReconciled(next);
+              loadTransactions(next);
+            }}
+            hitSlop={12}
+            style={{ paddingHorizontal: 6 }}
+          >
+            <Text style={[styles.lockToggleIcon, hideReconciled && styles.lockToggleIconActive]}>
+              🔒
+            </Text>
+          </Pressable>
           <Pressable
             onPress={() => setReconcileEntryVisible(true)}
             hitSlop={12}
@@ -476,9 +513,10 @@ export default function AccountTransactionsScreen() {
       {loading ? (
         <ActivityIndicator color="#3b82f6" style={{ marginTop: 40 }} />
       ) : (
-        <FlatList
+        <FlashList
           data={transactions}
           keyExtractor={t => t.id}
+          estimatedItemSize={62}
           renderItem={({ item }) => (
             <TransactionRow
               item={item}
@@ -488,6 +526,13 @@ export default function AccountTransactionsScreen() {
             />
           )}
           ItemSeparatorComponent={() => <View style={styles.separator} />}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.3}
+          ListFooterComponent={
+            loadingMore
+              ? <ActivityIndicator color="#3b82f6" style={{ paddingVertical: 20 }} />
+              : null
+          }
           ListEmptyComponent={
             <View style={styles.empty}>
               <Text style={styles.emptyText}>No transactions yet</Text>
@@ -536,6 +581,8 @@ const styles = StyleSheet.create({
   balance: { color: '#4ade80', fontSize: 22, fontWeight: '700' },
   negative: { color: '#f87171' },
 
+  lockToggleIcon: { fontSize: 16, opacity: 0.3 },
+  lockToggleIconActive: { opacity: 1 },
   reconcileIcon: { color: '#818cf8', fontSize: 20 },
   settingsIcon: { color: '#94a3b8', fontSize: 20 },
 

@@ -9,12 +9,6 @@ function monthToInt(month: string): number {
   return parseInt(month.replace('-', ''), 10);
 }
 
-/** Convert YYYYMM int to 'YYYY-MM' string */
-function intToMonth(m: number): string {
-  const s = String(m);
-  return `${s.slice(0, 4)}-${s.slice(4, 6)}`;
-}
-
 export async function getBudgetMonth(month: string): Promise<BudgetMonth> {
   const monthInt = monthToInt(month);
   // YYYYMMDD range for the month
@@ -34,35 +28,85 @@ export async function getBudgetMonth(month: string): Promise<BudgetMonth> {
 
   const budgetMap = new Map(budgetRows.map(r => [r.category, r.amount]));
 
-  // Calculate spent per category — only on-budget accounts (matches loot-core)
-  const spentRows = await runQuery<{ category: string; spent: number }>(
-    `SELECT t.category, SUM(t.amount) AS spent
+  // Current-month transaction amounts grouped by category.
+  // NOTE: we do NOT filter starting_balance_flag — starting balance transactions
+  // in actual-budget ARE assigned to an income category ("Starting Balances")
+  // and must be counted. loot-core's v_transactions_internal_alive does the same.
+  const currentMonthRows = await runQuery<{ category: string; amount: number }>(
+    `SELECT t.category, SUM(t.amount) AS amount
      FROM transactions t
      JOIN accounts a ON t.acct = a.id AND a.offbudget = 0 AND a.tombstone = 0
      WHERE t.tombstone = 0
        AND t.isParent = 0
-       AND t.starting_balance_flag = 0
        AND t.date >= ? AND t.date <= ?
        AND t.category IS NOT NULL
      GROUP BY t.category`,
     [startDate, endDate],
   );
-  const spentMap = new Map(spentRows.map(r => [r.category, r.spent]));
+  const currentMap = new Map(currentMonthRows.map(r => [r.category, r.amount]));
 
-  let totalIncome = 0;
-  let totalBudgeted = 0;
-  let totalSpent = 0;
+  // ---------------------------------------------------------------------------
+  // Cumulative To Budget calculation — mirrors loot-core's carry-forward logic.
+  //
+  // loot-core computes To Budget via a recursive "from-last-month" chain:
+  //   toBudget[M] = income[M] + toBudget[M-1] - budgeted[M]
+  //
+  // That's algebraically equivalent to:
+  //   toBudget[M] = SUM(all income up to end of M) - SUM(all budgeted up to M)
+  //
+  // This means a starting balance from January still flows into March's
+  // To Budget, just as it does in the original app.
+  // ---------------------------------------------------------------------------
+
+  const cumulativeIncomeRow = await first<{ total: number }>(
+    `SELECT COALESCE(SUM(t.amount), 0) AS total
+     FROM transactions t
+     JOIN accounts a   ON a.id = t.acct AND a.offbudget = 0 AND a.tombstone = 0
+     JOIN categories c ON c.id = t.category AND c.tombstone = 0
+     JOIN category_groups g ON g.id = c.cat_group AND g.is_income = 1
+     WHERE t.tombstone = 0
+       AND t.isParent = 0
+       AND t.date <= ?`,
+    [endDate],
+  );
+
+  const cumulativeBudgetedRow = await first<{ total: number }>(
+    `SELECT COALESCE(SUM(zb.amount), 0) AS total
+     FROM zero_budgets zb
+     JOIN categories c ON c.id = zb.category AND c.tombstone = 0
+     JOIN category_groups g ON g.id = c.cat_group AND g.is_income = 0
+     WHERE zb.month <= ?`,
+    [monthInt],
+  );
+
+  const cumulativeIncome = cumulativeIncomeRow?.total ?? 0;
+  const cumulativeBudgeted = cumulativeBudgetedRow?.total ?? 0;
+  const toBudget = cumulativeIncome - cumulativeBudgeted;
+
+  // ---------------------------------------------------------------------------
+  // Build per-group / per-category data for the current month display
+  // ---------------------------------------------------------------------------
+
+  const incomeGroupIds = new Set(groups.filter(g => g.is_income === 1).map(g => g.id));
+
+  let displayIncome = 0;
+  let displayBudgeted = 0;
+  let displaySpent = 0;
 
   const budgetGroups: BudgetGroup[] = groups.map(g => {
     const groupCats = categories.filter(c => c.cat_group === g.id);
+    const isIncome = g.is_income === 1;
 
     let groupBudgeted = 0;
     let groupSpent = 0;
 
     const budgetCats: BudgetCategory[] = groupCats.map(c => {
-      const budgeted = budgetMap.get(c.id) ?? 0;
-      const spent = spentMap.get(c.id) ?? 0;
-      const balance = budgeted + spent; // spent is negative for expenses
+      const budgeted = isIncome ? 0 : (budgetMap.get(c.id) ?? 0);
+      const amount = currentMap.get(c.id) ?? 0;
+      // For income groups, amount is positive (received).
+      // For expense groups, amount is negative (spent).
+      const spent = amount;
+      const balance = isIncome ? spent : budgeted + spent;
 
       groupBudgeted += budgeted;
       groupSpent += spent;
@@ -70,31 +114,29 @@ export async function getBudgetMonth(month: string): Promise<BudgetMonth> {
       return { id: c.id, name: c.name, budgeted, spent, balance };
     });
 
-    if (g.is_income) {
-      totalIncome += groupSpent; // income transactions are positive
+    if (isIncome) {
+      displayIncome += groupSpent;
     } else {
-      totalBudgeted += groupBudgeted;
-      totalSpent += groupSpent;
+      displayBudgeted += groupBudgeted;
+      displaySpent += groupSpent;
     }
 
     return {
       id: g.id,
       name: g.name,
-      is_income: g.is_income === 1,
+      is_income: isIncome,
       budgeted: groupBudgeted,
       spent: groupSpent,
-      balance: groupBudgeted + groupSpent,
+      balance: isIncome ? groupSpent : groupBudgeted + groupSpent,
       categories: budgetCats,
     };
   });
 
-  const toBudget = totalIncome - totalBudgeted;
-
   return {
     month,
-    income: totalIncome,
-    budgeted: totalBudgeted,
-    spent: totalSpent,
+    income: displayIncome,
+    budgeted: displayBudgeted,
+    spent: displaySpent,
     toBudget,
     groups: budgetGroups,
   };

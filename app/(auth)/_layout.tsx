@@ -63,6 +63,16 @@ export default function AuthLayout() {
           headerShadowVisible: false,
         }}
       />
+      <Stack.Screen
+        name="files"
+        options={{
+          title: 'Budget Files',
+          presentation: 'modal',
+          headerStyle: { backgroundColor: '#0f172a' },
+          headerTintColor: '#f1f5f9',
+          headerShadowVisible: false,
+        }}
+      />
     </Stack>
   );
 }

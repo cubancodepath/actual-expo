@@ -80,6 +80,14 @@ export default function SettingsScreen() {
         </Pressable>
       </View>
 
+      <Text style={styles.sectionTitle}>Budget</Text>
+      <View style={styles.card}>
+        <Pressable style={[styles.navRow, { borderBottomWidth: 0 }]} onPress={() => router.push('/(auth)/files')}>
+          <Text style={styles.navLabel}>Change Budget</Text>
+          <Text style={styles.navArrow}>›</Text>
+        </Pressable>
+      </View>
+
       <Text style={styles.sectionTitle}>Manage</Text>
       <View style={styles.card}>
         <Pressable style={styles.navRow} onPress={() => router.push('/(auth)/payees')}>

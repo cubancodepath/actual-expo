@@ -20,6 +20,7 @@ import { useCategoriesStore } from '../../../src/stores/categoriesStore';
 import { usePayeesStore } from '../../../src/stores/payeesStore';
 import { findOrCreatePayee } from '../../../src/payees';
 import { getTransactionById } from '../../../src/transactions';
+import { getCategoryBalancesForMonth } from '../../../src/budgets';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -52,6 +53,11 @@ function formatDateStr(s: string): string {
   if (d.length <= 4) return d;
   if (d.length <= 6) return `${d.slice(0, 4)}-${d.slice(4)}`;
   return `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}`;
+}
+
+function formatCategoryBalance(cents: number): string {
+  const abs = (Math.abs(cents) / 100).toFixed(2);
+  return cents < 0 ? `-$${abs}` : `$${abs}`;
 }
 
 function parseToCents(raw: string): number {
@@ -182,14 +188,23 @@ function PayeePicker({
 
 function CategoryPicker({
   visible,
+  month,
   onClose,
   onSelect,
 }: {
   visible: boolean;
+  month: string; // 'YYYY-MM'
   onClose: () => void;
   onSelect: (id: string | null, name: string) => void;
 }) {
   const { groups, categories } = useCategoriesStore();
+  const [balanceMap, setBalanceMap] = useState<Map<string, number>>(new Map());
+
+  useEffect(() => {
+    if (visible) {
+      getCategoryBalancesForMonth(month).then(setBalanceMap).catch(() => {});
+    }
+  }, [visible, month]);
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
@@ -216,15 +231,28 @@ function CategoryPicker({
             return (
               <View key={g.id}>
                 <Text style={picker.groupLabel}>{g.name}</Text>
-                {cats.map(c => (
-                  <Pressable
-                    key={c.id}
-                    style={picker.item}
-                    onPress={() => { onSelect(c.id, c.name); onClose(); }}
-                  >
-                    <Text style={picker.itemText}>{c.name}</Text>
-                  </Pressable>
-                ))}
+                {cats.map(c => {
+                  const balance = balanceMap.get(c.id);
+                  return (
+                    <Pressable
+                      key={c.id}
+                      style={picker.item}
+                      onPress={() => { onSelect(c.id, c.name); onClose(); }}
+                    >
+                      <Text style={picker.itemText}>{c.name}</Text>
+                      {balance !== undefined && (
+                        <Text style={[
+                          picker.itemBalance,
+                          balance > 0 ? picker.itemBalancePositive :
+                          balance < 0 ? picker.itemBalanceNegative :
+                                        picker.itemBalanceZero,
+                        ]}>
+                          {formatCategoryBalance(balance)}
+                        </Text>
+                      )}
+                    </Pressable>
+                  );
+                })}
               </View>
             );
           })}
@@ -448,6 +476,7 @@ export default function NewTransactionScreen() {
       />
       <CategoryPicker
         visible={categoryPickerVisible}
+        month={dateStr.slice(0, 7)}
         onClose={() => setCategoryPickerVisible(false)}
         onSelect={(id, name) => { setCategoryId(id); setCategoryName(name); }}
       />
@@ -521,11 +550,16 @@ const picker = StyleSheet.create({
     letterSpacing: 1, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#0f172a',
   },
   item: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: 16, paddingVertical: 14,
     borderBottomWidth: 1, borderBottomColor: '#1e293b',
   },
-  itemText: { color: '#f1f5f9', fontSize: 16 },
+  itemText: { color: '#f1f5f9', fontSize: 16, flex: 1 },
   itemNone: { color: '#64748b', fontSize: 16 },
+  itemBalance: { fontSize: 14, fontWeight: '600', marginLeft: 12 },
+  itemBalancePositive: { color: '#4ade80' },
+  itemBalanceNegative: { color: '#f87171' },
+  itemBalanceZero: { color: '#475569' },
 });
 
 const ppicker = StyleSheet.create({

@@ -431,6 +431,25 @@ export async function transferBetweenCategories(
 }
 
 // ---------------------------------------------------------------------------
+// Category balances for a month (used by transaction category picker)
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns a map of categoryId → balance (leftover) for the given month.
+ * This is the same "remaining" value shown in the budget screen.
+ */
+export async function getCategoryBalancesForMonth(month: string): Promise<Map<string, number>> {
+  const data = await getBudgetMonth(month);
+  const map = new Map<string, number>();
+  for (const group of data.groups) {
+    for (const cat of group.categories) {
+      map.set(cat.id, cat.balance);
+    }
+  }
+  return map;
+}
+
+// ---------------------------------------------------------------------------
 // Set budget amount
 // ---------------------------------------------------------------------------
 

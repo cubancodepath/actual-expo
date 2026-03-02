@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ActionSheetIOS,
   ActivityIndicator,
@@ -229,6 +229,34 @@ function HoldBar({
 }
 
 // ---------------------------------------------------------------------------
+// Overspending banner
+// ---------------------------------------------------------------------------
+
+function OverspendingBanner({
+  count,
+  total,
+}: {
+  count: number;
+  total: number; // negative cents, e.g. -3450 means $34.50 overspent
+}) {
+  return (
+    <View style={ovStyles.banner}>
+      <View style={ovStyles.left}>
+        <Text style={ovStyles.icon}>⚠</Text>
+        <View>
+          <Text style={ovStyles.title}>
+            {count} overspent {count === 1 ? 'category' : 'categories'}
+          </Text>
+          <Text style={ovStyles.subtitle}>
+            {fmt(total)} over budget this month
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Section type
 // ---------------------------------------------------------------------------
 
@@ -278,6 +306,18 @@ export default function BudgetScreen() {
     setEditingId(null);
     await setAmount(id, parseCents(editValue));
   }
+
+  const overspentCategories = useMemo(() => {
+    if (!data) return [];
+    return data.groups
+      .filter(g => !g.is_income)
+      .flatMap(g => g.categories.filter(c => c.balance < 0 && !c.carryover));
+  }, [data]);
+
+  const totalOverspent = useMemo(
+    () => overspentCategories.reduce((sum, c) => sum + c.balance, 0),
+    [overspentCategories],
+  );
 
   const sections: BudgetSection[] = (data?.groups ?? []).map(g => ({
     key: g.id,
@@ -456,6 +496,10 @@ export default function BudgetScreen() {
             await resetHold();
           }}
         />
+      )}
+
+      {overspentCategories.length > 0 && (
+        <OverspendingBanner count={overspentCategories.length} total={totalOverspent} />
       )}
 
       {/* Column headers */}
@@ -637,6 +681,24 @@ const styles = StyleSheet.create({
   empty: { alignItems: 'center', marginTop: 80, gap: 8 },
   emptyText: { color: '#94a3b8', fontSize: 16, fontWeight: '600' },
   emptyHint: { color: '#475569', fontSize: 13 },
+});
+
+const ovStyles = StyleSheet.create({
+  banner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#450a0a',
+    borderBottomWidth: 1,
+    borderTopWidth: 1,
+    borderColor: '#7f1d1d',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  left: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
+  icon: { fontSize: 18, color: '#fca5a5' },
+  title: { color: '#fca5a5', fontSize: 13, fontWeight: '700' },
+  subtitle: { color: '#f87171', fontSize: 12, marginTop: 1 },
 });
 
 const holdStyles = StyleSheet.create({

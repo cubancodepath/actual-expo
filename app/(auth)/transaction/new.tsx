@@ -12,12 +12,14 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLayoutEffect } from 'react';
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useAccountsStore } from '../../../src/stores/accountsStore';
 import { useTransactionsStore } from '../../../src/stores/transactionsStore';
 import { useCategoriesStore } from '../../../src/stores/categoriesStore';
 import { usePayeesStore } from '../../../src/stores/payeesStore';
 import { findOrCreatePayee } from '../../../src/payees';
+import { getTransactionById } from '../../../src/transactions';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -236,11 +238,18 @@ function CategoryPicker({
 // Main screen
 // ---------------------------------------------------------------------------
 
+function intToDateStr(n: number): string {
+  const s = String(n);
+  return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`;
+}
+
 export default function NewTransactionScreen() {
-  const { accountId } = useLocalSearchParams<{ accountId: string }>();
+  const { accountId, transactionId } = useLocalSearchParams<{ accountId: string; transactionId?: string }>();
+  const isEdit = !!transactionId;
   const router = useRouter();
+  const navigation = useNavigation();
   const { load: loadAccounts } = useAccountsStore();
-  const { add } = useTransactionsStore();
+  const { add, update } = useTransactionsStore();
   const { groups, categories, load: loadCategories } = useCategoriesStore();
 
   const [type, setType] = useState<'expense' | 'income'>('expense');
@@ -257,8 +266,26 @@ export default function NewTransactionScreen() {
   const [categoryPickerVisible, setCategoryPickerVisible] = useState(false);
   const [payeePickerVisible, setPayeePickerVisible] = useState(false);
 
+  useLayoutEffect(() => {
+    navigation.setOptions({ title: isEdit ? 'Edit Transaction' : 'New Transaction' });
+  }, [isEdit]);
+
   useEffect(() => {
     if (groups.length === 0) loadCategories();
+    if (isEdit) {
+      getTransactionById(transactionId).then(txn => {
+        if (!txn) return;
+        setType(txn.amount < 0 ? 'expense' : 'income');
+        setAmountStr((Math.abs(txn.amount) / 100).toFixed(2));
+        setPayeeId(txn.description);
+        setPayeeName(txn.payeeName ?? '');
+        setCategoryId(txn.category ?? null);
+        setCategoryName(txn.categoryName ?? '');
+        setDateStr(intToDateStr(txn.date));
+        setNotes(txn.notes ?? '');
+        setCleared(txn.cleared);
+      });
+    }
   }, []);
 
   async function handleSave() {
@@ -271,17 +298,28 @@ export default function NewTransactionScreen() {
     setError(null);
     setLoading(true);
     try {
-      // Use stored payeeId directly (transfer payees) or find/create by name (regular payees)
       const resolvedPayeeId = payeeId ?? await findOrCreatePayee(payeeName);
-      await add({
-        acct: accountId,
-        date,
-        amount: finalAmount,
-        description: resolvedPayeeId,
-        category: categoryId,
-        notes: notes.trim() || null,
-        cleared,
-      });
+
+      if (isEdit) {
+        await update(transactionId, {
+          date,
+          amount: finalAmount,
+          description: resolvedPayeeId,
+          category: categoryId,
+          notes: notes.trim() || null,
+          cleared,
+        });
+      } else {
+        await add({
+          acct: accountId,
+          date,
+          amount: finalAmount,
+          description: resolvedPayeeId,
+          category: categoryId,
+          notes: notes.trim() || null,
+          cleared,
+        });
+      }
       await loadAccounts();
       router.back();
     } catch (e: unknown) {
@@ -331,7 +369,7 @@ export default function NewTransactionScreen() {
             value={amountStr}
             onChangeText={v => { setAmountStr(v); setError(null); }}
             keyboardType="decimal-pad"
-            autoFocus
+            autoFocus={!isEdit}
           />
         </View>
 
@@ -397,7 +435,7 @@ export default function NewTransactionScreen() {
         >
           {loading
             ? <ActivityIndicator color="#fff" />
-            : <Text style={styles.buttonText}>Add Transaction</Text>
+            : <Text style={styles.buttonText}>{isEdit ? 'Save Changes' : 'Add Transaction'}</Text>
           }
         </Pressable>
 

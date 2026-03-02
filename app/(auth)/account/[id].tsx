@@ -38,14 +38,17 @@ function formatBalance(cents: number): string {
 
 function TransactionRow({
   item,
+  onPress,
   onDelete,
 }: {
   item: TransactionDisplay;
+  onPress: (id: string) => void;
   onDelete: (id: string) => void;
 }) {
   return (
     <Pressable
       style={styles.txRow}
+      onPress={() => onPress(item.id)}
       onLongPress={() => onDelete(item.id)}
       android_ripple={{ color: '#334155' }}
     >
@@ -151,7 +154,13 @@ export default function AccountTransactionsScreen() {
           data={transactions}
           keyExtractor={t => t.id}
           renderItem={({ item }) => (
-            <TransactionRow item={item} onDelete={handleDelete} />
+            <TransactionRow
+              item={item}
+              onPress={txnId =>
+                router.push({ pathname: '/(auth)/transaction/new', params: { transactionId: txnId } })
+              }
+              onDelete={handleDelete}
+            />
           )}
           ItemSeparatorComponent={() => <View style={styles.separator} />}
           ListEmptyComponent={

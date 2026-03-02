@@ -1,9 +1,11 @@
 export type BudgetCategory = {
   id: string;
   name: string;
-  budgeted: number;  // cents
-  spent: number;     // cents (negative = expense)
-  balance: number;   // cents
+  budgeted: number;    // cents
+  spent: number;       // cents (negative = expense)
+  balance: number;     // cents (includes carryIn)
+  carryIn: number;     // cents rolled in from previous month (0 if none)
+  carryover: boolean;  // whether this category rolls overspending to next month
 };
 
 export type BudgetGroup = {

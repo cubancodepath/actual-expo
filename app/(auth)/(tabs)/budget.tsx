@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 import {
+  ActionSheetIOS,
   ActivityIndicator,
+  Alert,
   Modal,
+  Platform,
   Pressable,
   RefreshControl,
   SectionList,
@@ -242,7 +245,7 @@ type BudgetSection = {
 
 export default function BudgetScreen() {
   const router = useRouter();
-  const { month, data, loading, setMonth, load, setAmount, hold, resetHold } = useBudgetStore();
+  const { month, data, loading, setMonth, load, setAmount, hold, resetHold, setCarryover } = useBudgetStore();
   const { refreshing, sync } = useSyncStore();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
@@ -323,6 +326,21 @@ export default function BudgetScreen() {
     );
   }
 
+  function handleCategoryLongPress(cat: BudgetCategory) {
+    const toggleLabel = cat.carryover ? 'Remove overspending rollover' : 'Rollover overspending';
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        { options: [toggleLabel, 'Cancel'], cancelButtonIndex: 1 },
+        idx => { if (idx === 0) setCarryover(cat.id, !cat.carryover); },
+      );
+    } else {
+      Alert.alert(cat.name, undefined, [
+        { text: toggleLabel, onPress: () => setCarryover(cat.id, !cat.carryover) },
+        { text: 'Cancel', style: 'cancel' },
+      ]);
+    }
+  }
+
   function renderItem({
     item: cat,
     section,
@@ -346,11 +364,23 @@ export default function BudgetScreen() {
       );
     }
 
+    const hasCarryIn = cat.carryIn !== 0;
+
     return (
-      <View style={styles.catRow}>
-        <Text style={styles.catName} numberOfLines={1}>
-          {cat.name}
-        </Text>
+      <Pressable
+        style={styles.catRow}
+        onLongPress={() => handleCategoryLongPress(cat)}
+        delayLongPress={400}
+      >
+        {/* Name + optional carryover indicator */}
+        <View style={styles.catNameWrap}>
+          <Text style={styles.catName} numberOfLines={1}>
+            {cat.name}
+          </Text>
+          {cat.carryover && (
+            <Text style={styles.carryoverDot}>↻</Text>
+          )}
+        </View>
 
         {/* Budgeted — tappable, inline editable */}
         <Pressable
@@ -380,21 +410,27 @@ export default function BudgetScreen() {
           {cat.spent !== 0 ? fmt(cat.spent) : '—'}
         </Text>
 
-        {/* Balance */}
-        <Text
-          style={[
-            styles.catAmt,
-            { width: COL_BAL },
-            cat.balance < 0
-              ? styles.colorNegative
-              : cat.balance > 0
-                ? styles.colorPositive
-                : styles.dimmed,
-          ]}
-        >
-          {fmt(cat.balance)}
-        </Text>
-      </View>
+        {/* Balance — show carry-in annotation when non-zero */}
+        <View style={{ width: COL_BAL, alignItems: 'flex-end' }}>
+          <Text
+            style={[
+              styles.catAmt,
+              cat.balance < 0
+                ? styles.colorNegative
+                : cat.balance > 0
+                  ? styles.colorPositive
+                  : styles.dimmed,
+            ]}
+          >
+            {fmt(cat.balance)}
+          </Text>
+          {hasCarryIn && (
+            <Text style={[styles.carryInLabel, cat.carryIn < 0 ? styles.colorNegative : styles.colorPositive]}>
+              {cat.carryIn > 0 ? '+' : ''}{fmt(cat.carryIn)}
+            </Text>
+          )}
+        </View>
+      </Pressable>
     );
   }
 
@@ -572,8 +608,11 @@ const styles = StyleSheet.create({
     borderBottomColor: '#1e293b',
     backgroundColor: '#0f172a',
   },
-  catName: { flex: 1, color: '#e2e8f0', fontSize: 14 },
+  catNameWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4, overflow: 'hidden' },
+  catName: { color: '#e2e8f0', fontSize: 14, flexShrink: 1 },
+  carryoverDot: { color: '#818cf8', fontSize: 11, fontWeight: '700' },
   catAmt: { fontSize: 14, fontWeight: '500', color: '#f1f5f9', textAlign: 'right' },
+  carryInLabel: { fontSize: 10, fontWeight: '600', textAlign: 'right', marginTop: 1 },
 
   // Inline budget input
   budgetInput: {

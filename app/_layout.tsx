@@ -1,15 +1,15 @@
-import { useEffect, useState } from 'react';
-import { AppState } from 'react-native';
-import { Stack } from 'expo-router';
-import { usePrefsStore } from '../src/stores/prefsStore';
-import { useAccountsStore } from '../src/stores/accountsStore';
-import { useCategoriesStore } from '../src/stores/categoriesStore';
-import { useBudgetStore } from '../src/stores/budgetStore';
-import { openDatabase } from '../src/db';
-import { loadClock, fullSync } from '../src/sync';
+import { useEffect, useState } from "react";
+import { AppState } from "react-native";
+import { Stack } from "expo-router";
+import { usePrefsStore } from "../src/stores/prefsStore";
+import { useAccountsStore } from "../src/stores/accountsStore";
+import { useCategoriesStore } from "../src/stores/categoriesStore";
+import { useBudgetStore } from "../src/stores/budgetStore";
+import { openDatabase } from "../src/db";
+import { loadClock, fullSync } from "../src/sync";
 
 export default function RootLayout() {
-  const isConfigured = usePrefsStore(s => s.isConfigured);
+  const isConfigured = usePrefsStore((s) => s.isConfigured);
   const [ready, setReady] = useState(false);
 
   // Bootstrap: load prefs + open DB + restore CRDT clock + pre-load stores
@@ -34,8 +34,8 @@ export default function RootLayout() {
 
   // Sync when app comes back to foreground — mirrors loot-core's app-focused handler
   useEffect(() => {
-    const sub = AppState.addEventListener('change', nextState => {
-      if (nextState === 'active' && usePrefsStore.getState().isConfigured) {
+    const sub = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "active" && usePrefsStore.getState().isConfigured) {
         fullSync().catch(console.warn);
       }
     });

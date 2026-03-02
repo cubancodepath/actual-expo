@@ -9,11 +9,156 @@ function monthToInt(month: string): number {
   return parseInt(month.replace('-', ''), 10);
 }
 
+// ---------------------------------------------------------------------------
+// Carryover chain computation
+//
+// loot-core models category balance as a per-month spreadsheet cell:
+//
+//   leftover[M, C] = budgeted[M,C] + spent[M,C]
+//                  + (prevCarryover ? prevLeftover : max(0, prevLeftover))
+//
+// Key insight: POSITIVE balances ALWAYS roll forward (regardless of flag).
+// The `carryover` flag only determines whether NEGATIVE balances (overspending)
+// also roll forward into the next month's category balance.
+//
+// When carryover=OFF and leftover<0, that negative is charged against the
+// general "To Budget" pool (loot-core's "last-month-overspent").
+//
+// We iterate month-by-month from the earliest history to M-1, then return
+// the carry-in for the current month and the accumulated overspending penalty.
+// ---------------------------------------------------------------------------
+
+type CarryoverResult = {
+  /** carry-in cents for each category for the *current* month */
+  carryIns: Map<string, number>;
+  /** carryover flag from *previous* month per category (controls current display) */
+  prevCoFlags: Map<string, boolean>;
+  /** current month's carryover flag per category (from zero_budgets for month M) */
+  currentCoFlags: Map<string, boolean>;
+  /** sum of min(0, leftover) for cats without carryover — reduces toBudget */
+  overspendingPenalty: number;
+};
+
+async function computeCarryoverChain(
+  monthInt: number,
+  categoryIds: string[],
+): Promise<CarryoverResult> {
+  const empty: CarryoverResult = {
+    carryIns: new Map(),
+    prevCoFlags: new Map(),
+    currentCoFlags: new Map(),
+    overspendingPenalty: 0,
+  };
+  if (categoryIds.length === 0) return empty;
+
+  // ── Load ALL historical zero_budgets rows (strictly before current month) ──
+  const histBudgets = await runQuery<ZeroBudgetRow>(
+    'SELECT * FROM zero_budgets WHERE month < ? ORDER BY month ASC',
+    [monthInt],
+  );
+
+  // ── Load current month's carryover flags ──
+  const currentMonthBudgets = await runQuery<ZeroBudgetRow>(
+    'SELECT * FROM zero_budgets WHERE month = ?',
+    [monthInt],
+  );
+  const currentCoFlags = new Map<string, boolean>(
+    currentMonthBudgets.map(r => [r.category, r.carryover === 1]),
+  );
+
+  if (histBudgets.length === 0) return { ...empty, currentCoFlags };
+
+  // ── Distinct historical months, ascending ──
+  const histMonths = [...new Set(histBudgets.map(r => r.month))].sort((a, b) => a - b);
+  const firstHistMonth = histMonths[0];
+  const lastHistMonth  = histMonths[histMonths.length - 1];
+
+  // ── Build lookup maps ──
+  const zbLookup = new Map<string, ZeroBudgetRow>();
+  for (const r of histBudgets) zbLookup.set(`${r.month}-${r.category}`, r);
+
+  // Spent amounts for all historical months per category (using same category_mapping join)
+  const histSpent = await runQuery<{ month: number; category: string; amount: number }>(
+    `SELECT t.date / 100 AS month,
+            COALESCE(cm.transferId, t.category) AS category,
+            SUM(t.amount) AS amount
+     FROM transactions t
+     LEFT JOIN category_mapping cm ON cm.id = t.category
+     JOIN accounts a ON a.id = t.acct AND a.offbudget = 0 AND a.tombstone = 0
+     WHERE t.tombstone = 0
+       AND t.isParent = 0
+       AND t.category IS NOT NULL
+       AND t.date >= ? AND t.date <= ?
+     GROUP BY t.date / 100, COALESCE(cm.transferId, t.category)`,
+    [firstHistMonth * 100 + 1, lastHistMonth * 100 + 31],
+  );
+  const spentLookup = new Map<string, number>();
+  for (const r of histSpent) spentLookup.set(`${r.month}-${r.category}`, r.amount);
+
+  // Union of all categories that ever appeared
+  const allCatIds = new Set<string>([
+    ...categoryIds,
+    ...histBudgets.map(r => r.category),
+  ]);
+
+  // ── Iterate month by month ──
+  let leftoverMap  = new Map<string, number>();  // catId → leftover
+  let prevCoFlagMap = new Map<string, boolean>(); // catId → carryover flag (for computing carry-in)
+  let totalPenalty = 0;
+
+  for (const m of histMonths) {
+    const newLeftover  = new Map<string, number>();
+    const newCoFlags   = new Map<string, boolean>();
+
+    for (const catId of allCatIds) {
+      const key     = `${m}-${catId}`;
+      const zbRow   = zbLookup.get(key);
+      const budgeted = zbRow?.amount ?? 0;
+      const thisFlag = zbRow?.carryover === 1;
+      const spent    = spentLookup.get(key) ?? 0;
+
+      const prevLeft   = leftoverMap.get(catId) ?? 0;
+      const prevFlag   = prevCoFlagMap.get(catId) ?? false;
+      const carryIn    = prevFlag ? prevLeft : Math.max(0, prevLeft);
+      const thisLeft   = budgeted + spent + carryIn;
+
+      newLeftover.set(catId, thisLeft);
+      newCoFlags.set(catId, thisFlag);
+
+      // Overspending penalty: negative leftover that WON'T roll into next month
+      // (because carryover flag is OFF), so it reduces the general pool instead.
+      if (!thisFlag && thisLeft < 0) {
+        totalPenalty += thisLeft; // negative cents
+      }
+    }
+
+    leftoverMap   = newLeftover;
+    prevCoFlagMap = newCoFlags;
+  }
+
+  // ── Build carry-ins for the current month ──
+  const carryIns    = new Map<string, number>();
+  const prevCoFlags = new Map<string, boolean>();
+
+  for (const catId of categoryIds) {
+    const prevLeft = leftoverMap.get(catId)   ?? 0;
+    const prevFlag = prevCoFlagMap.get(catId) ?? false;
+    const carryIn  = prevFlag ? prevLeft : Math.max(0, prevLeft);
+    carryIns.set(catId, carryIn);
+    prevCoFlags.set(catId, prevFlag);
+  }
+
+  return { carryIns, prevCoFlags, currentCoFlags, overspendingPenalty: totalPenalty };
+}
+
+// ---------------------------------------------------------------------------
+// getBudgetMonth
+// ---------------------------------------------------------------------------
+
 export async function getBudgetMonth(month: string): Promise<BudgetMonth> {
-  const monthInt = monthToInt(month);
-  // YYYYMMDD range for the month
+  const monthInt  = monthToInt(month);
   const startDate = monthInt * 100 + 1;
-  const endDate = monthInt * 100 + 31;
+  const endDate   = monthInt * 100 + 31;
 
   const groups = await runQuery<CategoryGroupRow>(
     'SELECT * FROM category_groups WHERE tombstone = 0 ORDER BY sort_order ASC',
@@ -25,16 +170,10 @@ export async function getBudgetMonth(month: string): Promise<BudgetMonth> {
     'SELECT * FROM zero_budgets WHERE month = ?',
     [monthInt],
   );
+  const budgetMap    = new Map(budgetRows.map(r => [r.category, r.amount]));
+  const carryoverMap = new Map(budgetRows.map(r => [r.category, r.carryover === 1]));
 
-  const budgetMap = new Map(budgetRows.map(r => [r.category, r.amount]));
-
-  // Current-month transaction amounts grouped by category.
-  // NOTE: we do NOT filter starting_balance_flag — starting balance transactions
-  // in actual-budget ARE assigned to an income category ("Starting Balances")
-  // and must be counted. loot-core's v_transactions_internal_alive does the same.
-  // Resolve deleted categories through category_mapping so that transactions
-  // that belonged to a deleted-but-transferred category still count toward
-  // the transfer category's "spent" — mirrors loot-core's v_transactions_internal JOIN.
+  // Current-month transaction amounts per category
   const currentMonthRows = await runQuery<{ category: string; amount: number }>(
     `SELECT COALESCE(cm.transferId, t.category) AS category, SUM(t.amount) AS amount
      FROM transactions t
@@ -49,18 +188,22 @@ export async function getBudgetMonth(month: string): Promise<BudgetMonth> {
   );
   const currentMap = new Map(currentMonthRows.map(r => [r.category, r.amount]));
 
-  // ---------------------------------------------------------------------------
-  // Cumulative To Budget calculation — mirrors loot-core's carry-forward logic.
+  // ── Carryover chain ──
+  const expenseCatIds = categories
+    .filter(c => {
+      const g = groups.find(g => g.id === c.cat_group);
+      return g && g.is_income === 0;
+    })
+    .map(c => c.id);
+
+  const { carryIns, prevCoFlags, currentCoFlags, overspendingPenalty } =
+    await computeCarryoverChain(monthInt, expenseCatIds);
+
+  // ── Cumulative To Budget ──
+  // toBudget[M] = SUM(income[0..M]) - SUM(expBudgeted[0..M]) - buffered[M] + overspendingPenalty
   //
-  // loot-core computes To Budget via a recursive "from-last-month" chain:
-  //   toBudget[M] = income[M] + toBudget[M-1] - budgeted[M]
-  //
-  // That's algebraically equivalent to:
-  //   toBudget[M] = SUM(all income up to end of M) - SUM(all budgeted up to M)
-  //
-  // This means a starting balance from January still flows into March's
-  // To Budget, just as it does in the original app.
-  // ---------------------------------------------------------------------------
+  // overspendingPenalty (negative) adjusts for months where expense categories
+  // were overspent WITHOUT carryover — those amounts reduce the general pool.
 
   const cumulativeIncomeRow = await first<{ total: number }>(
     `SELECT COALESCE(SUM(t.amount), 0) AS total
@@ -84,155 +227,168 @@ export async function getBudgetMonth(month: string): Promise<BudgetMonth> {
     [monthInt],
   );
 
-  // Read hold-for-next-month amount for this specific month.
-  // Math proof: the cumulative formula only needs the *current* month's
-  // buffered amount subtracted. Previous months' holds cancel algebraically:
-  //   toBudget[M] = SUM(income[0..M]) - SUM(budgeted[0..M]) - buffered[M]
   const bufferedRow = await first<{ buffered: number }>(
     'SELECT buffered FROM zero_budget_months WHERE id = ?',
     [String(monthInt)],
   );
   const buffered = bufferedRow?.buffered ?? 0;
 
-  const cumulativeIncome = cumulativeIncomeRow?.total ?? 0;
+  const cumulativeIncome   = cumulativeIncomeRow?.total   ?? 0;
   const cumulativeBudgeted = cumulativeBudgetedRow?.total ?? 0;
-  const toBudget = cumulativeIncome - cumulativeBudgeted - buffered;
+  const toBudget = cumulativeIncome - cumulativeBudgeted - buffered + overspendingPenalty;
 
-  // ---------------------------------------------------------------------------
-  // Build per-group / per-category data for the current month display
-  // ---------------------------------------------------------------------------
-
-  const incomeGroupIds = new Set(groups.filter(g => g.is_income === 1).map(g => g.id));
-
-  let displayIncome = 0;
+  // ── Build per-group / per-category data ──
+  let displayIncome   = 0;
   let displayBudgeted = 0;
-  let displaySpent = 0;
+  let displaySpent    = 0;
 
   const budgetGroups: BudgetGroup[] = groups.map(g => {
     const groupCats = categories.filter(c => c.cat_group === g.id);
-    const isIncome = g.is_income === 1;
+    const isIncome  = g.is_income === 1;
 
     let groupBudgeted = 0;
-    let groupSpent = 0;
+    let groupSpent    = 0;
+    let groupCarryIn  = 0;
 
     const budgetCats: BudgetCategory[] = groupCats.map(c => {
-      const budgeted = isIncome ? 0 : (budgetMap.get(c.id) ?? 0);
-      const amount = currentMap.get(c.id) ?? 0;
-      // For income groups, amount is positive (received).
-      // For expense groups, amount is negative (spent).
-      const spent = amount;
-      const balance = isIncome ? spent : budgeted + spent;
+      const budgeted   = isIncome ? 0 : (budgetMap.get(c.id) ?? 0);
+      const spent      = currentMap.get(c.id) ?? 0;
+      const carryIn    = isIncome ? 0 : (carryIns.get(c.id) ?? 0);
+      // carryover flag: current month's setting (controls what carries to NEXT month)
+      const carryover  = currentCoFlags.get(c.id) ?? carryoverMap.get(c.id) ?? false;
+      const balance    = isIncome ? spent : budgeted + spent + carryIn;
 
       groupBudgeted += budgeted;
-      groupSpent += spent;
+      groupSpent    += spent;
+      groupCarryIn  += carryIn;
 
-      return { id: c.id, name: c.name, budgeted, spent, balance };
+      return { id: c.id, name: c.name, budgeted, spent, balance, carryIn, carryover };
     });
 
     if (isIncome) {
       displayIncome += groupSpent;
     } else {
       displayBudgeted += groupBudgeted;
-      displaySpent += groupSpent;
+      displaySpent    += groupSpent;
     }
 
     return {
-      id: g.id,
-      name: g.name,
-      is_income: isIncome,
-      budgeted: groupBudgeted,
-      spent: groupSpent,
-      balance: isIncome ? groupSpent : groupBudgeted + groupSpent,
+      id:         g.id,
+      name:       g.name,
+      is_income:  isIncome,
+      budgeted:   groupBudgeted,
+      spent:      groupSpent,
+      balance:    isIncome ? groupSpent : groupBudgeted + groupSpent + groupCarryIn,
       categories: budgetCats,
     };
   });
 
   return {
     month,
-    income: displayIncome,
+    income:   displayIncome,
     budgeted: displayBudgeted,
-    spent: displaySpent,
+    spent:    displaySpent,
     toBudget,
     buffered,
-    groups: budgetGroups,
+    groups:   budgetGroups,
   };
 }
 
 // ---------------------------------------------------------------------------
-// Hold for Next Month
+// Set category carryover
 //
-// Mirrors loot-core's holdForNextMonth() + calcBufferedAmount().
-// The hold is stored in zero_budget_months via CRDT so it syncs across devices.
+// Mirrors loot-core's setCategoryCarryover(): sets the flag on the current
+// month AND all future months that already have a zero_budgets row.
+// When flag=true, also ensures a row exists for the current month.
 // ---------------------------------------------------------------------------
 
-/**
- * Clamp the hold delta so:
- *   - buffered never goes below 0
- *   - you can't hold more than what's available to budget
- */
+export async function setCategoryCarryover(
+  month: string,
+  categoryId: string,
+  flag: boolean,
+): Promise<void> {
+  const monthInt = monthToInt(month);
+
+  // Get all existing zero_budgets rows for this category from current month onward
+  const futureRows = await runQuery<ZeroBudgetRow>(
+    'SELECT * FROM zero_budgets WHERE category = ? AND month >= ?',
+    [categoryId, monthInt],
+  );
+
+  // Always ensure there's a row for the current month
+  const hasCurrentMonth = futureRows.some(r => r.month === monthInt);
+  const rowsToUpdate = hasCurrentMonth
+    ? futureRows
+    : [
+        // Synthetic row — just for generating the CRDT message for this month
+        { id: `${monthInt}-${categoryId}`, month: monthInt, category: categoryId,
+          amount: 0, carryover: 0, goal: null, long_goal: null } as ZeroBudgetRow,
+        ...futureRows,
+      ];
+
+  const messages = rowsToUpdate.flatMap(r => {
+    const id = r.id ?? `${r.month}-${r.category}`;
+    return [
+      // Ensure month + category columns are populated (no-op if row already exists)
+      { timestamp: Timestamp.send()!, dataset: 'zero_budgets', row: id, column: 'month',    value: r.month },
+      { timestamp: Timestamp.send()!, dataset: 'zero_budgets', row: id, column: 'category', value: categoryId },
+      { timestamp: Timestamp.send()!, dataset: 'zero_budgets', row: id, column: 'carryover', value: flag ? 1 : 0 },
+    ];
+  });
+
+  await sendMessages(messages);
+}
+
+// ---------------------------------------------------------------------------
+// Hold for Next Month
+// ---------------------------------------------------------------------------
+
 function calcBufferedAmount(toBudget: number, buffered: number, delta: number): number {
   const clamped = Math.min(Math.max(delta, -buffered), Math.max(toBudget, 0));
   return buffered + clamped;
 }
 
-/**
- * Hold `amount` cents for the next month.
- * Pass the current `toBudget` so we can validate/clamp.
- * Returns the actual new buffered amount (may differ from amount due to clamping).
- */
 export async function holdForNextMonth(
   month: string,
   amount: number,
   currentToBudget: number,
 ): Promise<number> {
   const monthInt = monthToInt(month);
-  const monthId = String(monthInt);
+  const monthId  = String(monthInt);
 
-  const row = await first<{ buffered: number }>(
-    'SELECT buffered FROM zero_budget_months WHERE id = ?',
-    [monthId],
-  );
+  const row      = await first<{ buffered: number }>('SELECT buffered FROM zero_budget_months WHERE id = ?', [monthId]);
   const existing = row?.buffered ?? 0;
 
-  if (currentToBudget <= 0 && existing === 0) {
-    // Nothing available to hold and nothing already held
-    return 0;
-  }
+  if (currentToBudget <= 0 && existing === 0) return 0;
 
-  // delta = how much to add (or remove) from the current hold
-  const delta = amount - existing;
+  const delta       = amount - existing;
   const newBuffered = calcBufferedAmount(currentToBudget, existing, delta);
 
-  await sendMessages([
-    {
-      timestamp: Timestamp.send()!,
-      dataset: 'zero_budget_months',
-      row: monthId,
-      column: 'buffered',
-      value: newBuffered,
-    },
-  ]);
+  await sendMessages([{
+    timestamp: Timestamp.send()!,
+    dataset:   'zero_budget_months',
+    row:       monthId,
+    column:    'buffered',
+    value:     newBuffered,
+  }]);
 
   return newBuffered;
 }
 
-/**
- * Clear the hold for a month — sets buffered back to 0.
- */
 export async function resetHold(month: string): Promise<void> {
   const monthInt = monthToInt(month);
-  const monthId = String(monthInt);
-
-  await sendMessages([
-    {
-      timestamp: Timestamp.send()!,
-      dataset: 'zero_budget_months',
-      row: monthId,
-      column: 'buffered',
-      value: 0,
-    },
-  ]);
+  await sendMessages([{
+    timestamp: Timestamp.send()!,
+    dataset:   'zero_budget_months',
+    row:       String(monthInt),
+    column:    'buffered',
+    value:     0,
+  }]);
 }
+
+// ---------------------------------------------------------------------------
+// Set budget amount
+// ---------------------------------------------------------------------------
 
 export async function setBudgetAmount(
   month: string,
@@ -240,11 +396,11 @@ export async function setBudgetAmount(
   amount: number,
 ): Promise<void> {
   const monthInt = monthToInt(month);
-  const id = `${monthInt}-${categoryId}`;
+  const id       = `${monthInt}-${categoryId}`;
 
   await sendMessages([
-    { timestamp: Timestamp.send()!, dataset: 'zero_budgets', row: id, column: 'month', value: monthInt },
+    { timestamp: Timestamp.send()!, dataset: 'zero_budgets', row: id, column: 'month',    value: monthInt },
     { timestamp: Timestamp.send()!, dataset: 'zero_budgets', row: id, column: 'category', value: categoryId },
-    { timestamp: Timestamp.send()!, dataset: 'zero_budgets', row: id, column: 'amount', value: amount },
+    { timestamp: Timestamp.send()!, dataset: 'zero_budgets', row: id, column: 'amount',   value: amount },
   ]);
 }

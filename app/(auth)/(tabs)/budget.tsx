@@ -7,6 +7,7 @@ import {
   Platform,
   Pressable,
   RefreshControl,
+  ScrollView,
   SectionList,
   StyleSheet,
   Text,
@@ -257,6 +258,122 @@ function OverspendingBanner({
 }
 
 // ---------------------------------------------------------------------------
+// Move Money modal (Transfer out / Cover overspending)
+// ---------------------------------------------------------------------------
+
+type MoveMoneyMode = 'transfer' | 'cover';
+
+type MoveMoneyCategory = { id: string; name: string; balance: number; groupName: string };
+
+function MoveMoneyModal({
+  visible,
+  mode,
+  sourceName,
+  prefilledAmount,
+  candidates,
+  onClose,
+  onConfirm,
+}: {
+  visible: boolean;
+  mode: MoveMoneyMode;
+  sourceName: string;
+  prefilledAmount: number; // positive cents
+  candidates: MoveMoneyCategory[];
+  onClose: () => void;
+  onConfirm: (otherCategoryId: string, amountCents: number) => void;
+}) {
+  const [amountStr, setAmountStr] = useState('');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (visible) {
+      setAmountStr((Math.abs(prefilledAmount) / 100).toFixed(2));
+      setSelectedId(null);
+    }
+  }, [visible, prefilledAmount]);
+
+  function handleConfirm() {
+    if (!selectedId) return;
+    const cents = Math.round(parseFloat(amountStr.replace(/[^0-9.]/g, '')) * 100);
+    if (!cents || cents <= 0) return;
+    onConfirm(selectedId, cents);
+  }
+
+  const isTransfer = mode === 'transfer';
+  const title = isTransfer ? `Transfer from ${sourceName}` : `Cover ${sourceName}`;
+  const pickLabel = isTransfer ? 'To category' : 'From category';
+  const confirmLabel = isTransfer ? 'Transfer' : 'Cover';
+
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      <View style={mmStyles.container}>
+        {/* Header */}
+        <View style={mmStyles.header}>
+          <Text style={mmStyles.title}>{title}</Text>
+          <Pressable onPress={onClose} hitSlop={12}>
+            <Text style={mmStyles.cancel}>Cancel</Text>
+          </Pressable>
+        </View>
+
+        {/* Amount */}
+        <View style={mmStyles.amountSection}>
+          <Text style={mmStyles.label}>Amount</Text>
+          <View style={mmStyles.amountRow}>
+            <Text style={mmStyles.dollar}>$</Text>
+            <TextInput
+              style={mmStyles.amountInput}
+              value={amountStr}
+              onChangeText={setAmountStr}
+              keyboardType="decimal-pad"
+              selectTextOnFocus
+              autoFocus
+            />
+          </View>
+        </View>
+
+        {/* Category picker */}
+        <Text style={mmStyles.label}>{pickLabel}</Text>
+        <ScrollView style={mmStyles.list} keyboardShouldPersistTaps="handled">
+          {candidates.map(cat => {
+            const selected = selectedId === cat.id;
+            return (
+              <Pressable
+                key={cat.id}
+                style={[mmStyles.item, selected && mmStyles.itemSelected]}
+                onPress={() => setSelectedId(cat.id)}
+              >
+                <View style={mmStyles.itemLeft}>
+                  <Text style={mmStyles.itemGroup}>{cat.groupName}</Text>
+                  <Text style={mmStyles.itemName}>{cat.name}</Text>
+                </View>
+                <View style={mmStyles.itemRight}>
+                  <Text style={[
+                    mmStyles.itemBalance,
+                    cat.balance < 0 ? mmStyles.negative : mmStyles.positive,
+                  ]}>
+                    {fmt(cat.balance)}
+                  </Text>
+                  {selected && <Text style={mmStyles.checkmark}>✓</Text>}
+                </View>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+
+        {/* Confirm */}
+        <Pressable
+          style={[mmStyles.confirmBtn, (!selectedId || !amountStr) && mmStyles.confirmDisabled]}
+          onPress={handleConfirm}
+          disabled={!selectedId || !amountStr}
+        >
+          <Text style={mmStyles.confirmText}>{confirmLabel}</Text>
+        </Pressable>
+      </View>
+    </Modal>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Section type
 // ---------------------------------------------------------------------------
 
@@ -273,11 +390,14 @@ type BudgetSection = {
 
 export default function BudgetScreen() {
   const router = useRouter();
-  const { month, data, loading, setMonth, load, setAmount, hold, resetHold, setCarryover } = useBudgetStore();
+  const { month, data, loading, setMonth, load, setAmount, hold, resetHold, setCarryover, transfer } = useBudgetStore();
   const { refreshing, sync } = useSyncStore();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
   const [holdModalVisible, setHoldModalVisible] = useState(false);
+  const [moveMoneyTarget, setMoveMoneyTarget] = useState<{
+    catId: string; catName: string; balance: number; mode: MoveMoneyMode;
+  } | null>(null);
 
   useEffect(() => {
     load();
@@ -325,6 +445,32 @@ export default function BudgetScreen() {
     group: g,
     data: g.categories,
   }));
+
+  // Candidates for the move-money modal: expense categories excluding the source
+  const moveMoneyCandidates = useMemo<MoveMoneyCategory[]>(() => {
+    if (!data || !moveMoneyTarget) return [];
+    return data.groups
+      .filter(g => !g.is_income)
+      .flatMap(g =>
+        g.categories
+          .filter(c => {
+            if (c.id === moveMoneyTarget.catId) return false;
+            // For "cover" mode: only show categories with positive balance
+            if (moveMoneyTarget.mode === 'cover') return c.balance > 0;
+            return true;
+          })
+          .map(c => ({ id: c.id, name: c.name, balance: c.balance, groupName: g.name })),
+      );
+  }, [data, moveMoneyTarget]);
+
+  async function handleMoveMoneyConfirm(otherCategoryId: string, amountCents: number) {
+    if (!moveMoneyTarget) return;
+    const { catId, mode } = moveMoneyTarget;
+    const fromId = mode === 'transfer' ? catId : otherCategoryId;
+    const toId   = mode === 'transfer' ? otherCategoryId : catId;
+    setMoveMoneyTarget(null);
+    await transfer(fromId, toId, amountCents);
+  }
 
   function renderSectionHeader({ section }: { section: BudgetSection }) {
     const g = section.group;
@@ -450,8 +596,20 @@ export default function BudgetScreen() {
           {cat.spent !== 0 ? fmt(cat.spent) : '—'}
         </Text>
 
-        {/* Balance — show carry-in annotation when non-zero */}
-        <View style={{ width: COL_BAL, alignItems: 'flex-end' }}>
+        {/* Balance — tappable to transfer/cover */}
+        <Pressable
+          style={{ width: COL_BAL, alignItems: 'flex-end' }}
+          onPress={() => {
+            if (cat.balance === 0) return;
+            setMoveMoneyTarget({
+              catId: cat.id,
+              catName: cat.name,
+              balance: cat.balance,
+              mode: cat.balance > 0 ? 'transfer' : 'cover',
+            });
+          }}
+          hitSlop={4}
+        >
           <Text
             style={[
               styles.catAmt,
@@ -469,7 +627,7 @@ export default function BudgetScreen() {
               {cat.carryIn > 0 ? '+' : ''}{fmt(cat.carryIn)}
             </Text>
           )}
-        </View>
+        </Pressable>
       </Pressable>
     );
   }
@@ -518,6 +676,16 @@ export default function BudgetScreen() {
         maxAmount={Math.max((data?.toBudget ?? 0) + (data?.buffered ?? 0), 0)}
         onSave={async (amount) => { await hold(amount); }}
         onClose={() => setHoldModalVisible(false)}
+      />
+
+      <MoveMoneyModal
+        visible={!!moveMoneyTarget}
+        mode={moveMoneyTarget?.mode ?? 'transfer'}
+        sourceName={moveMoneyTarget?.catName ?? ''}
+        prefilledAmount={Math.abs(moveMoneyTarget?.balance ?? 0)}
+        candidates={moveMoneyCandidates}
+        onClose={() => setMoveMoneyTarget(null)}
+        onConfirm={handleMoveMoneyConfirm}
       />
 
       {loading && !data ? (
@@ -681,6 +849,54 @@ const styles = StyleSheet.create({
   empty: { alignItems: 'center', marginTop: 80, gap: 8 },
   emptyText: { color: '#94a3b8', fontSize: 16, fontWeight: '600' },
   emptyHint: { color: '#475569', fontSize: 13 },
+});
+
+const mmStyles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#0f172a' },
+  header: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    padding: 16, borderBottomWidth: 1, borderBottomColor: '#1e293b',
+  },
+  title: { color: '#f1f5f9', fontSize: 17, fontWeight: '700', flexShrink: 1 },
+  cancel: { color: '#3b82f6', fontSize: 16 },
+
+  amountSection: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 },
+  label: {
+    color: '#64748b', fontSize: 11, fontWeight: '700',
+    textTransform: 'uppercase', letterSpacing: 0.5,
+    paddingHorizontal: 16, paddingTop: 12, paddingBottom: 6,
+  },
+  amountRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: '#1e293b', borderRadius: 10,
+    paddingHorizontal: 14, paddingVertical: 12,
+    borderWidth: 1, borderColor: '#334155',
+  },
+  dollar: { color: '#818cf8', fontSize: 20, fontWeight: '600' },
+  amountInput: { flex: 1, color: '#f1f5f9', fontSize: 20, fontWeight: '600', padding: 0 },
+
+  list: { flex: 1, marginTop: 4 },
+  item: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 16, paddingVertical: 14,
+    borderBottomWidth: 1, borderBottomColor: '#1e293b',
+  },
+  itemSelected: { backgroundColor: '#1e293b' },
+  itemLeft: { flex: 1, marginRight: 12 },
+  itemGroup: { color: '#475569', fontSize: 11, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4 },
+  itemName: { color: '#f1f5f9', fontSize: 15, marginTop: 1 },
+  itemRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  itemBalance: { fontSize: 14, fontWeight: '600' },
+  positive: { color: '#4ade80' },
+  negative: { color: '#f87171' },
+  checkmark: { color: '#4ade80', fontSize: 16, fontWeight: '700' },
+
+  confirmBtn: {
+    margin: 16, backgroundColor: '#3b82f6', borderRadius: 12,
+    paddingVertical: 16, alignItems: 'center',
+  },
+  confirmDisabled: { backgroundColor: '#1e293b', borderWidth: 1, borderColor: '#334155' },
+  confirmText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 });
 
 const ovStyles = StyleSheet.create({

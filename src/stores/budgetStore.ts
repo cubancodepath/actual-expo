@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { getBudgetMonth, setBudgetAmount, holdForNextMonth, resetHold, setCategoryCarryover } from '../budgets';
+import { getBudgetMonth, setBudgetAmount, holdForNextMonth, resetHold, setCategoryCarryover, transferBetweenCategories } from '../budgets';
 import type { BudgetMonth } from '../budgets/types';
 
 function currentMonth(): string {
@@ -22,6 +22,8 @@ type BudgetState = {
   resetHold(): Promise<void>;
   /** Toggle rollover overspending for a category (current month + future rows). */
   setCarryover(categoryId: string, flag: boolean): Promise<void>;
+  /** Move `amountCents` from one category budget to another for the current month. */
+  transfer(fromCategoryId: string, toCategoryId: string, amountCents: number): Promise<void>;
 };
 
 export const useBudgetStore = create<BudgetState>((set, get) => ({
@@ -61,5 +63,10 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
 
   async setCarryover(categoryId, flag) {
     await setCategoryCarryover(get().month, categoryId, flag);
+  },
+
+  async transfer(fromCategoryId, toCategoryId, amountCents) {
+    await transferBetweenCategories(get().month, fromCategoryId, toCategoryId, amountCents);
+    await get().load();
   },
 }));

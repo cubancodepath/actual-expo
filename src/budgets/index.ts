@@ -387,6 +387,50 @@ export async function resetHold(month: string): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
+// Transfer money between categories (cover overspending / move surplus)
+//
+// Mirrors loot-core's transferCategory() + coverOverspending():
+//   source budget  -= amount
+//   dest   budget  += amount
+// ---------------------------------------------------------------------------
+
+export async function transferBetweenCategories(
+  month: string,
+  fromCategoryId: string,
+  toCategoryId: string,
+  amountCents: number, // positive integer
+): Promise<void> {
+  if (amountCents <= 0) return;
+
+  const monthInt = monthToInt(month);
+
+  const [fromRow, toRow] = await Promise.all([
+    first<{ amount: number }>(
+      'SELECT amount FROM zero_budgets WHERE month = ? AND category = ?',
+      [monthInt, fromCategoryId],
+    ),
+    first<{ amount: number }>(
+      'SELECT amount FROM zero_budgets WHERE month = ? AND category = ?',
+      [monthInt, toCategoryId],
+    ),
+  ]);
+
+  const fromBudgeted = fromRow?.amount ?? 0;
+  const toBudgeted   = toRow?.amount   ?? 0;
+  const fromId       = `${monthInt}-${fromCategoryId}`;
+  const toId         = `${monthInt}-${toCategoryId}`;
+
+  await sendMessages([
+    { timestamp: Timestamp.send()!, dataset: 'zero_budgets', row: fromId, column: 'month',    value: monthInt },
+    { timestamp: Timestamp.send()!, dataset: 'zero_budgets', row: fromId, column: 'category', value: fromCategoryId },
+    { timestamp: Timestamp.send()!, dataset: 'zero_budgets', row: fromId, column: 'amount',   value: fromBudgeted - amountCents },
+    { timestamp: Timestamp.send()!, dataset: 'zero_budgets', row: toId,   column: 'month',    value: monthInt },
+    { timestamp: Timestamp.send()!, dataset: 'zero_budgets', row: toId,   column: 'category', value: toCategoryId },
+    { timestamp: Timestamp.send()!, dataset: 'zero_budgets', row: toId,   column: 'amount',   value: toBudgeted + amountCents },
+  ]);
+}
+
+// ---------------------------------------------------------------------------
 // Set budget amount
 // ---------------------------------------------------------------------------
 

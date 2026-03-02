@@ -1,0 +1,82 @@
+import type { SQLiteDatabase } from 'expo-sqlite';
+
+const TABLES = `
+CREATE TABLE IF NOT EXISTS accounts (
+  id TEXT PRIMARY KEY,
+  name TEXT,
+  offbudget INTEGER DEFAULT 0,
+  closed INTEGER DEFAULT 0,
+  sort_order REAL,
+  tombstone INTEGER DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS transactions (
+  id TEXT PRIMARY KEY,
+  isParent INTEGER DEFAULT 0,
+  isChild INTEGER DEFAULT 0,
+  acct TEXT,
+  date INTEGER,
+  amount INTEGER DEFAULT 0,
+  category TEXT,
+  description TEXT,
+  notes TEXT,
+  transferred_id TEXT,
+  cleared INTEGER DEFAULT 0,
+  reconciled INTEGER DEFAULT 0,
+  sort_order REAL,
+  starting_balance_flag INTEGER DEFAULT 0,
+  tombstone INTEGER DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS category_groups (
+  id TEXT PRIMARY KEY,
+  name TEXT,
+  is_income INTEGER DEFAULT 0,
+  sort_order REAL,
+  hidden INTEGER DEFAULT 0,
+  tombstone INTEGER DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS categories (
+  id TEXT PRIMARY KEY,
+  name TEXT,
+  is_income INTEGER DEFAULT 0,
+  cat_group TEXT,
+  sort_order REAL,
+  hidden INTEGER DEFAULT 0,
+  goal_def TEXT,
+  tombstone INTEGER DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS payees (
+  id TEXT PRIMARY KEY,
+  name TEXT,
+  transfer_acct TEXT,
+  favorite INTEGER DEFAULT 0,
+  tombstone INTEGER DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS zero_budgets (
+  id TEXT PRIMARY KEY,
+  month INTEGER,
+  category TEXT,
+  amount INTEGER DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS messages_crdt (
+  timestamp TEXT PRIMARY KEY,
+  dataset TEXT,
+  row TEXT,
+  column TEXT,
+  value TEXT
+);
+
+CREATE TABLE IF NOT EXISTS messages_clock (
+  id INTEGER PRIMARY KEY,
+  clock TEXT
+);
+`;
+
+export async function runSchema(db: SQLiteDatabase): Promise<void> {
+  await db.execAsync(TABLES);
+}

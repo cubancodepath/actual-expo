@@ -1,0 +1,17 @@
+services:
+  actual-server:
+    image: actualbudget/actual-server:latest
+    container_name: actual-server
+    ports:
+      - "5006:5006"
+    volumes:
+      - actual-data:/data
+    environment:
+      - ACTUAL_PORT=5006
+      # Uncomment to set a login password (default: no password required first run)
+      # - ACTUAL_LOGIN_METHOD=password
+    restart: unless-stopped
+
+volumes:
+  actual-data:
+    driver: local

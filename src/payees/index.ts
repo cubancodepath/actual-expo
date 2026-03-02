@@ -16,11 +16,27 @@ function rowToPayee(r: PayeeRow): Payee {
 }
 
 export async function getPayees(): Promise<Payee[]> {
-  return (
-    await runQuery<PayeeRow>(
-      'SELECT * FROM payees WHERE tombstone = 0 ORDER BY name ASC',
-    )
-  ).map(rowToPayee);
+  // Mirrors loot-core's getPayees(): join with accounts so transfer payees show
+  // the account name. Transfer payees are listed first (transfer_acct IS NOT NULL).
+  const rows = await runQuery<PayeeRow & { display_name: string }>(
+    `SELECT p.id,
+            COALESCE(a.name, p.name) AS display_name,
+            p.transfer_acct,
+            p.favorite,
+            p.tombstone
+     FROM payees p
+     LEFT JOIN accounts a ON p.transfer_acct = a.id AND a.tombstone = 0
+     WHERE p.tombstone = 0
+       AND (p.transfer_acct IS NULL OR a.id IS NOT NULL)
+     ORDER BY p.transfer_acct IS NULL, COALESCE(a.name, p.name) COLLATE NOCASE`,
+  );
+  return rows.map(r => ({
+    id: r.id,
+    name: r.display_name,
+    transfer_acct: r.transfer_acct,
+    favorite: r.favorite === 1,
+    tombstone: r.tombstone === 1,
+  }));
 }
 
 export async function createPayee(

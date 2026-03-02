@@ -1,9 +1,10 @@
 import { randomUUID } from 'expo-crypto';
-import { runQuery } from '../db';
+import { runQuery, first } from '../db';
 import { sendMessages } from '../sync';
 import { Timestamp } from '../crdt';
 import type { TransactionRow } from '../db/types';
 import type { Transaction, GetTransactionsOptions } from './types';
+import { onInsert, onUpdate, onDelete as onDeleteTransfer } from './transfer';
 
 function rowToTransaction(r: TransactionRow): Transaction {
   return {
@@ -86,6 +87,16 @@ export async function addTransaction(
     })),
   );
 
+  // Transfer hook: if payee is a transfer payee, create the paired transaction
+  await onInsert({
+    id,
+    acct: fields.acct,
+    amount: fields.amount,
+    date: fields.date,
+    description: fields.description ?? null,
+    notes: fields.notes ?? null,
+  });
+
   return id;
 }
 
@@ -93,6 +104,9 @@ export async function updateTransaction(
   id: string,
   fields: Omit<Partial<Transaction>, 'id' | 'tombstone'>,
 ): Promise<void> {
+  // Fetch current state before updating (needed for transfer hook)
+  const prev = await first<TransactionRow>('SELECT * FROM transactions WHERE id = ? AND tombstone = 0', [id]);
+
   const dbFields: Record<string, unknown> = {};
   const boolFields = ['isParent', 'isChild', 'cleared', 'reconciled', 'starting_balance_flag'] as const;
   const directFields = ['acct', 'date', 'amount', 'category', 'description', 'notes', 'transferred_id', 'sort_order'] as const;
@@ -115,12 +129,45 @@ export async function updateTransaction(
       value: value as string | number | null,
     })),
   );
+
+  // Transfer hook: sync changes to the paired transaction if needed
+  if (prev) {
+    await onUpdate(
+      {
+        id,
+        acct:          prev.acct,
+        amount:        prev.amount,
+        date:          prev.date,
+        description:   prev.description,
+        notes:         prev.notes,
+        transferred_id: prev.transferred_id,
+      },
+      {
+        acct:        fields.acct,
+        amount:      fields.amount,
+        date:        fields.date,
+        description: fields.description,
+        notes:       fields.notes,
+      },
+    );
+  }
 }
 
 export async function deleteTransaction(id: string): Promise<void> {
+  // Fetch transferred_id before tombstoning so we can delete the paired transaction
+  const row = await first<{ transferred_id: string | null }>(
+    'SELECT transferred_id FROM transactions WHERE id = ? AND tombstone = 0',
+    [id],
+  );
+
   await sendMessages([
     { timestamp: Timestamp.send()!, dataset: 'transactions', row: id, column: 'tombstone', value: 1 },
   ]);
+
+  // Transfer hook: tombstone the paired transaction
+  if (row?.transferred_id) {
+    await onDeleteTransfer(row.transferred_id);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -140,11 +187,12 @@ export async function getTransactionsForAccount(accountId: string): Promise<Tran
   // payees and transferred categories show the correct name.
   const rows = await runQuery<TransactionRow & { payee_name: string | null; category_name: string | null }>(
     `SELECT t.*,
-            p.name AS payee_name,
+            COALESCE(a.name, p.name) AS payee_name,
             c.name AS category_name
      FROM   transactions t
      LEFT JOIN payee_mapping    pm ON pm.id = t.description
      LEFT JOIN payees            p ON COALESCE(pm.targetId, t.description) = p.id AND p.tombstone = 0
+     LEFT JOIN accounts          a ON p.transfer_acct = a.id AND a.tombstone = 0
      LEFT JOIN category_mapping cm ON cm.id = t.category
      LEFT JOIN categories        c ON COALESCE(cm.transferId, t.category) = c.id AND c.tombstone = 0
      WHERE  t.acct = ? AND t.tombstone = 0

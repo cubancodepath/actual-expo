@@ -53,9 +53,14 @@ function TransactionRow({
         <Text style={styles.txDateText}>{formatDate(item.date)}</Text>
       </View>
       <View style={styles.txMid}>
-        <Text style={styles.txPayee} numberOfLines={1}>
-          {item.payeeName ?? '—'}
-        </Text>
+        <View style={styles.txPayeeRow}>
+          {item.transferred_id != null && (
+            <Text style={styles.txTransferIcon}>⇄</Text>
+          )}
+          <Text style={styles.txPayee} numberOfLines={1}>
+            {item.payeeName ?? '—'}
+          </Text>
+        </View>
         {item.categoryName ? (
           <Text style={styles.txCategory} numberOfLines={1}>
             {item.categoryName}
@@ -195,7 +200,9 @@ const styles = StyleSheet.create({
   txDate: { width: 44, marginRight: 12 },
   txDateText: { color: '#64748b', fontSize: 12, lineHeight: 16 },
   txMid: { flex: 1, marginRight: 12 },
-  txPayee: { color: '#f1f5f9', fontSize: 15, fontWeight: '500' },
+  txPayeeRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  txTransferIcon: { color: '#818cf8', fontSize: 13, fontWeight: '700' },
+  txPayee: { color: '#f1f5f9', fontSize: 15, fontWeight: '500', flexShrink: 1 },
   txCategory: { color: '#64748b', fontSize: 12, marginTop: 2 },
   txNotes: { color: '#475569', fontSize: 12, marginTop: 1, fontStyle: 'italic' },
   txRight: { alignItems: 'flex-end', minWidth: 72 },

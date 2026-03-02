@@ -63,6 +63,8 @@ function parseToCents(raw: string): number {
 // Payee picker modal
 // ---------------------------------------------------------------------------
 
+type PayeeSelection = { id: string | null; name: string };
+
 function PayeePicker({
   visible,
   onClose,
@@ -70,7 +72,7 @@ function PayeePicker({
 }: {
   visible: boolean;
   onClose: () => void;
-  onSelect: (name: string) => void;
+  onSelect: (selection: PayeeSelection) => void;
 }) {
   const { payees, load } = usePayeesStore();
   const [search, setSearch] = useState('');
@@ -79,20 +81,22 @@ function PayeePicker({
     if (visible && payees.length === 0) load();
   }, [visible]);
 
-  const sorted = [...payees].sort((a, b) => {
+  // Split into transfer payees (accounts) and regular payees
+  const transfers = payees.filter(p => p.transfer_acct != null);
+  const regular   = [...payees.filter(p => p.transfer_acct == null)].sort((a, b) => {
     if (a.favorite !== b.favorite) return a.favorite ? -1 : 1;
     return a.name.localeCompare(b.name);
   });
 
-  const filtered = search
-    ? sorted.filter(p => p.name.toLowerCase().includes(search.toLowerCase()))
-    : sorted;
+  const query = search.toLowerCase();
+  const filteredTransfers = query ? transfers.filter(p => p.name.toLowerCase().includes(query)) : transfers;
+  const filteredRegular   = query ? regular.filter(p => p.name.toLowerCase().includes(query))   : regular;
 
   const exactMatch = payees.some(p => p.name.toLowerCase() === search.trim().toLowerCase());
 
-  function select(name: string) {
+  function select(selection: PayeeSelection) {
     setSearch('');
-    onSelect(name);
+    onSelect(selection);
     onClose();
   }
 
@@ -109,36 +113,61 @@ function PayeePicker({
         <View style={ppicker.searchWrap}>
           <TextInput
             style={ppicker.search}
-            placeholder="Search or enter new payee…"
+            placeholder="Search payees or accounts…"
             placeholderTextColor="#475569"
             value={search}
             onChangeText={setSearch}
             autoFocus
             clearButtonMode="while-editing"
             returnKeyType="done"
-            onSubmitEditing={() => { if (search.trim()) select(search.trim()); }}
+            onSubmitEditing={() => { if (search.trim()) select({ id: null, name: search.trim() }); }}
           />
         </View>
 
         <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
           {/* No payee */}
-          <Pressable style={ppicker.item} onPress={() => select('')}>
+          <Pressable style={ppicker.item} onPress={() => select({ id: null, name: '' })}>
             <Text style={ppicker.itemNone}>No payee</Text>
           </Pressable>
 
-          {/* "Create new" row when typed text doesn't exactly match */}
-          {search.trim() !== '' && !exactMatch && (
-            <Pressable style={ppicker.item} onPress={() => select(search.trim())}>
+          {/* Transfer to account section */}
+          {filteredTransfers.length > 0 && (
+            <>
+              <Text style={ppicker.sectionHeader}>Transfer to Account</Text>
+              {filteredTransfers.map(p => (
+                <Pressable key={p.id} style={ppicker.item} onPress={() => select({ id: p.id, name: p.name })}>
+                  <Text style={ppicker.transferArrow}>⇄  </Text>
+                  <Text style={ppicker.itemText}>{p.name}</Text>
+                </Pressable>
+              ))}
+            </>
+          )}
+
+          {/* Regular payees */}
+          {filteredRegular.length > 0 && (
+            <>
+              {filteredTransfers.length > 0 && <Text style={ppicker.sectionHeader}>Payees</Text>}
+              {/* "Create new" row */}
+              {search.trim() !== '' && !exactMatch && (
+                <Pressable style={ppicker.item} onPress={() => select({ id: null, name: search.trim() })}>
+                  <Text style={ppicker.itemCreate}>Create "{search.trim()}"</Text>
+                </Pressable>
+              )}
+              {filteredRegular.map(p => (
+                <Pressable key={p.id} style={ppicker.item} onPress={() => select({ id: p.id, name: p.name })}>
+                  {p.favorite && <Text style={ppicker.star}>★ </Text>}
+                  <Text style={ppicker.itemText}>{p.name}</Text>
+                </Pressable>
+              ))}
+            </>
+          )}
+
+          {/* "Create new" when no regular payees shown */}
+          {filteredRegular.length === 0 && search.trim() !== '' && !exactMatch && (
+            <Pressable style={ppicker.item} onPress={() => select({ id: null, name: search.trim() })}>
               <Text style={ppicker.itemCreate}>Create "{search.trim()}"</Text>
             </Pressable>
           )}
-
-          {filtered.map(p => (
-            <Pressable key={p.id} style={ppicker.item} onPress={() => select(p.name)}>
-              {p.favorite && <Text style={ppicker.star}>★ </Text>}
-              <Text style={ppicker.itemText}>{p.name}</Text>
-            </Pressable>
-          ))}
         </ScrollView>
       </View>
     </Modal>
@@ -216,6 +245,7 @@ export default function NewTransactionScreen() {
 
   const [type, setType] = useState<'expense' | 'income'>('expense');
   const [amountStr, setAmountStr] = useState('');
+  const [payeeId, setPayeeId] = useState<string | null>(null);
   const [payeeName, setPayeeName] = useState('');
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [categoryName, setCategoryName] = useState<string>('');
@@ -241,12 +271,13 @@ export default function NewTransactionScreen() {
     setError(null);
     setLoading(true);
     try {
-      const payeeId = await findOrCreatePayee(payeeName);
+      // Use stored payeeId directly (transfer payees) or find/create by name (regular payees)
+      const resolvedPayeeId = payeeId ?? await findOrCreatePayee(payeeName);
       await add({
         acct: accountId,
         date,
         amount: finalAmount,
-        description: payeeId,
+        description: resolvedPayeeId,
         category: categoryId,
         notes: notes.trim() || null,
         cleared,
@@ -375,7 +406,7 @@ export default function NewTransactionScreen() {
       <PayeePicker
         visible={payeePickerVisible}
         onClose={() => setPayeePickerVisible(false)}
-        onSelect={name => setPayeeName(name)}
+        onSelect={({ id, name }) => { setPayeeId(id); setPayeeName(name); }}
       />
       <CategoryPicker
         visible={categoryPickerVisible}
@@ -482,4 +513,9 @@ const ppicker = StyleSheet.create({
   itemText: { color: '#f1f5f9', fontSize: 16 },
   itemNone: { color: '#64748b', fontSize: 16 },
   itemCreate: { color: '#3b82f6', fontSize: 16 },
+  sectionHeader: {
+    color: '#64748b', fontSize: 11, fontWeight: '700', textTransform: 'uppercase',
+    letterSpacing: 1, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#0f172a',
+  },
+  transferArrow: { color: '#60a5fa', fontSize: 14 },
 });

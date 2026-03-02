@@ -133,13 +133,20 @@ export type TransactionDisplay = Transaction & {
 };
 
 export async function getTransactionsForAccount(accountId: string): Promise<TransactionDisplay[]> {
+  // Mirrors loot-core's v_transactions_layer2 view:
+  //   LEFT JOIN payee_mapping pm ON pm.id = t.description
+  //   LEFT JOIN category_mapping cm ON cm.id = t.category
+  // Then resolve to the *target* payee/category, so that merged
+  // payees and transferred categories show the correct name.
   const rows = await runQuery<TransactionRow & { payee_name: string | null; category_name: string | null }>(
     `SELECT t.*,
-            p.name  AS payee_name,
-            c.name  AS category_name
+            p.name AS payee_name,
+            c.name AS category_name
      FROM   transactions t
-     LEFT JOIN payees     p ON t.description = p.id AND p.tombstone = 0
-     LEFT JOIN categories c ON t.category    = c.id AND c.tombstone = 0
+     LEFT JOIN payee_mapping    pm ON pm.id = t.description
+     LEFT JOIN payees            p ON COALESCE(pm.targetId, t.description) = p.id AND p.tombstone = 0
+     LEFT JOIN category_mapping cm ON cm.id = t.category
+     LEFT JOIN categories        c ON COALESCE(cm.transferId, t.category) = c.id AND c.tombstone = 0
      WHERE  t.acct = ? AND t.tombstone = 0
      ORDER  BY t.date DESC, t.sort_order DESC`,
     [accountId],

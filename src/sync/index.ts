@@ -141,6 +141,7 @@ const ALLOWED_TABLES = new Set([
   'categories',
   'category_groups',
   'payees',
+  'payee_mapping',
   'zero_budgets',
   'zero_budget_months',
 ]);

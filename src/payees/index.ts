@@ -32,12 +32,15 @@ export async function createPayee(
     transfer_acct: fields.transfer_acct ?? null,
     favorite: fields.favorite ? 1 : 0,
   };
-  await sendMessages(
-    Object.entries(dbFields).map(([column, value]) => ({
+  await sendMessages([
+    ...Object.entries(dbFields).map(([column, value]) => ({
       timestamp: Timestamp.send()!, dataset: 'payees', row: id, column,
       value: value as string | number | null,
     })),
-  );
+    // loot-core inserts a self-referencing mapping on every payee creation
+    // so that payee_mapping can later be updated when payees are merged
+    { timestamp: Timestamp.send()!, dataset: 'payee_mapping', row: id, column: 'targetId', value: id },
+  ]);
   return id;
 }
 
@@ -76,9 +79,11 @@ export async function findOrCreatePayee(name: string): Promise<string | null> {
 
   const id = randomUUID();
   await sendMessages([
-    { timestamp: Timestamp.send()!, dataset: 'payees', row: id, column: 'name', value: trimmed },
-    { timestamp: Timestamp.send()!, dataset: 'payees', row: id, column: 'transfer_acct', value: null },
-    { timestamp: Timestamp.send()!, dataset: 'payees', row: id, column: 'favorite', value: 0 },
+    { timestamp: Timestamp.send()!, dataset: 'payees',         row: id, column: 'name',         value: trimmed },
+    { timestamp: Timestamp.send()!, dataset: 'payees',         row: id, column: 'transfer_acct', value: null },
+    { timestamp: Timestamp.send()!, dataset: 'payees',         row: id, column: 'favorite',      value: 0 },
+    // Self-referencing mapping — same as loot-core's insertPayee()
+    { timestamp: Timestamp.send()!, dataset: 'payee_mapping',  row: id, column: 'targetId',      value: id },
   ]);
   return id;
 }

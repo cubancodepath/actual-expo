@@ -43,6 +43,16 @@ export default function AuthLayout() {
           headerShadowVisible: false,
         }}
       />
+      <Stack.Screen
+        name="categories"
+        options={{
+          title: 'Manage Categories',
+          presentation: 'modal',
+          headerStyle: { backgroundColor: '#0f172a' },
+          headerTintColor: '#f1f5f9',
+          headerShadowVisible: false,
+        }}
+      />
     </Stack>
   );
 }

@@ -13,7 +13,7 @@ import { downloadAndImportBudget } from '../../src/services/budgetfiles';
 import { fullSync } from '../../src/sync';
 
 export default function FilesScreen() {
-  const { serverUrl, token, setPrefs, saveToStorage } = usePrefsStore();
+  const { serverUrl, token, setPrefs } = usePrefsStore();
   const [files, setFiles] = useState<BudgetFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,14 +33,14 @@ export default function FilesScreen() {
       //    Mirrors loot-core's download() + importBuffer() flow in cloud-storage.ts.
       await downloadAndImportBudget(serverUrl, token, file.fileId, file.encryptKeyId);
 
-      // 2. Save the selected file prefs (makes isConfigured = true → nav to auth)
+      // 2. Save the selected file prefs (makes isConfigured = true → nav to auth).
+      //    persist middleware auto-saves to MMKV on every setPrefs call.
       setPrefs({
         fileId: file.fileId,
         groupId: file.groupId,
         encryptKeyId: file.encryptKeyId,
         lastSyncedTimestamp: undefined,
       });
-      await saveToStorage();
 
       // 3. Pre-load Zustand stores from the downloaded DB
       const [

@@ -2,13 +2,16 @@ import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
+  RefreshControl,
   SectionList,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useBudgetStore } from '../../../src/stores/budgetStore';
+import { useSyncStore } from '../../../src/stores/syncStore';
 import type { BudgetCategory, BudgetGroup } from '../../../src/budgets/types';
 
 // ---------------------------------------------------------------------------
@@ -121,7 +124,9 @@ type BudgetSection = {
 // ---------------------------------------------------------------------------
 
 export default function BudgetScreen() {
+  const router = useRouter();
   const { month, data, loading, setMonth, load, setAmount } = useBudgetStore();
+  const { refreshing, sync } = useSyncStore();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
 
@@ -277,7 +282,12 @@ export default function BudgetScreen() {
 
   return (
     <View style={styles.container}>
-      <MonthNav month={month} onPrev={prevMonth} onNext={nextMonth} />
+      <View style={styles.topBar}>
+        <MonthNav month={month} onPrev={prevMonth} onNext={nextMonth} />
+        <Pressable style={styles.manageBtn} onPress={() => router.push('/(auth)/categories')}>
+          <Text style={styles.manageBtnText}>Manage</Text>
+        </Pressable>
+      </View>
 
       {data && (
         <SummaryBar income={data.income} budgeted={data.budgeted} toBudget={data.toBudget} />
@@ -303,6 +313,14 @@ export default function BudgetScreen() {
           renderSectionHeader={renderSectionHeader}
           stickySectionHeadersEnabled={false}
           extraData={{ editingId, editValue }}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={sync}
+              tintColor="#3b82f6"
+              colors={['#3b82f6']}
+            />
+          }
           ListEmptyComponent={
             <View style={styles.empty}>
               <Text style={styles.emptyText}>No categories yet</Text>
@@ -322,6 +340,9 @@ export default function BudgetScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f172a' },
+  topBar: { flexDirection: 'row', alignItems: 'center' },
+  manageBtn: { paddingHorizontal: 14, paddingVertical: 12 },
+  manageBtnText: { color: '#3b82f6', fontSize: 13, fontWeight: '600' },
 
   // Month nav
   monthNav: {

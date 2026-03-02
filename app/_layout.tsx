@@ -15,7 +15,9 @@ export default function RootLayout() {
   // Bootstrap: load prefs + open DB + restore CRDT clock + pre-load stores
   useEffect(() => {
     async function bootstrap() {
-      await usePrefsStore.getState().loadFromStorage();
+      // MMKV config hydrates synchronously via persist middleware.
+      // Token needs an explicit async load from SecureStore.
+      await usePrefsStore.getState().loadToken();
       await openDatabase();
       await loadClock();
       // Pre-load stores from local DB so screens show cached data immediately

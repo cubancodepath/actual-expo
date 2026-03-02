@@ -182,7 +182,7 @@ export default function App() {
 
   useEffect(() => {
     // Bootstrap stores
-    usePrefsStore.getState().loadFromStorage().catch(console.warn);
+    usePrefsStore.getState().loadToken().catch(console.warn);
 
     Promise.all([
       runCrdtTests().then(setCrdtResults),

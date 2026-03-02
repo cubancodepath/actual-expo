@@ -115,6 +115,23 @@ export async function deleteCategory(id: string): Promise<void> {
   ]);
 }
 
+export async function updateCategoryGroup(
+  id: string,
+  fields: Partial<Pick<CategoryGroup, 'name' | 'hidden' | 'sort_order'>>,
+): Promise<void> {
+  const dbFields: Record<string, unknown> = {};
+  if (fields.name !== undefined) dbFields.name = fields.name;
+  if (fields.hidden !== undefined) dbFields.hidden = fields.hidden ? 1 : 0;
+  if (fields.sort_order !== undefined) dbFields.sort_order = fields.sort_order;
+  if (Object.keys(dbFields).length === 0) return;
+  await sendMessages(
+    Object.entries(dbFields).map(([column, value]) => ({
+      timestamp: Timestamp.send()!, dataset: 'category_groups', row: id, column,
+      value: value as string | number | null,
+    })),
+  );
+}
+
 export async function deleteCategoryGroup(id: string): Promise<void> {
   await sendMessages([
     { timestamp: Timestamp.send()!, dataset: 'category_groups', row: id, column: 'tombstone', value: 1 },

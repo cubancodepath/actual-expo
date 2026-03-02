@@ -265,10 +265,8 @@ export async function fullSync(attempt = 0): Promise<void> {
       await applyMessages(serverMessages);
     }
 
-    // Persist last synced timestamp
-    const now = new Date().toISOString();
-    prefs.setPrefs({ lastSyncedTimestamp: now });
-    await prefs.saveToStorage();
+    // Persist last synced timestamp — persist middleware auto-saves to MMKV
+    prefs.setPrefs({ lastSyncedTimestamp: new Date().toISOString() });
 
     // Check merkle divergence — retry up to 5 times
     const diffTime = merkle.diff(serverMerkle as any, getClock().merkle);

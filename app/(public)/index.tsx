@@ -17,7 +17,7 @@ import { usePrefsStore } from '../../src/stores/prefsStore';
 export default function LoginScreen() {
   const router = useRouter();
   const setPrefs = usePrefsStore(s => s.setPrefs);
-  const saveToStorage = usePrefsStore(s => s.saveToStorage);
+  const saveToken = usePrefsStore(s => s.saveToken);
 
   const [serverUrl, setServerUrl] = useState('');
   const [password, setPassword] = useState('');
@@ -32,8 +32,8 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       const token = await login(url, password.trim());
-      setPrefs({ serverUrl: url, token });
-      await saveToStorage();
+      setPrefs({ serverUrl: url });
+      await saveToken(token);  // saves to SecureStore + updates state
       router.push('/(public)/files');
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));

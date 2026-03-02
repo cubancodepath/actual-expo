@@ -3,12 +3,14 @@ import {
   ActivityIndicator,
   FlatList,
   Pressable,
+  RefreshControl,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAccountsStore } from '../../../src/stores/accountsStore';
+import { useSyncStore } from '../../../src/stores/syncStore';
 
 function formatBalance(cents: number): string {
   const sign = cents < 0 ? '-' : '';
@@ -18,6 +20,7 @@ function formatBalance(cents: number): string {
 export default function AccountsScreen() {
   const router = useRouter();
   const { accounts, loading, load } = useAccountsStore();
+  const { refreshing, sync } = useSyncStore();
 
   useEffect(() => { load(); }, []);
 
@@ -43,6 +46,14 @@ export default function AccountsScreen() {
         <FlatList
           data={items}
           keyExtractor={(item, i) => item.type === 'header' ? `h-${i}` : item.data.id}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={sync}
+              tintColor="#3b82f6"
+              colors={['#3b82f6']}
+            />
+          }
           renderItem={({ item }) => {
             if (item.type === 'header') {
               return <Text style={styles.sectionHeader}>{item.label}</Text>;

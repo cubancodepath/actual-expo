@@ -21,7 +21,7 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 export default function SettingsScreen() {
-  const { serverUrl, fileId, groupId, encryptKeyId, lastSyncedTimestamp, setPrefs, saveToStorage } = usePrefsStore();
+  const { serverUrl, fileId, groupId, encryptKeyId, lastSyncedTimestamp, clearAll } = usePrefsStore();
   const { status, error, lastSync, sync } = useSyncStore();
   const [loggingOut, setLoggingOut] = useState(false);
 
@@ -37,9 +37,7 @@ export default function SettingsScreen() {
           onPress: async () => {
             setLoggingOut(true);
             try {
-              setPrefs({ serverUrl: '', token: '', fileId: '', groupId: '', encryptKeyId: undefined, lastSyncedTimestamp: undefined });
-              await saveToStorage();
-              // isConfigured → false → Expo Router navigates to (public)
+              await clearAll(); // wipes MMKV + SecureStore, isConfigured → false
             } finally {
               setLoggingOut(false);
             }

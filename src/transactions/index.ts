@@ -59,7 +59,6 @@ export async function addTransaction(
   fields: Omit<Partial<Transaction>, 'id' | 'tombstone'> & { acct: string; date: number; amount: number },
 ): Promise<string> {
   const id = randomUUID();
-  const ts = Timestamp.send()!;
 
   const dbFields: Record<string, unknown> = {
     acct: fields.acct,
@@ -79,7 +78,7 @@ export async function addTransaction(
 
   await sendMessages(
     Object.entries(dbFields).map(([column, value]) => ({
-      timestamp: ts,
+      timestamp: Timestamp.send()!,
       dataset: 'transactions',
       row: id,
       column,
@@ -94,8 +93,6 @@ export async function updateTransaction(
   id: string,
   fields: Omit<Partial<Transaction>, 'id' | 'tombstone'>,
 ): Promise<void> {
-  const ts = Timestamp.send()!;
-
   const dbFields: Record<string, unknown> = {};
   const boolFields = ['isParent', 'isChild', 'cleared', 'reconciled', 'starting_balance_flag'] as const;
   const directFields = ['acct', 'date', 'amount', 'category', 'description', 'notes', 'transferred_id', 'sort_order'] as const;
@@ -111,7 +108,7 @@ export async function updateTransaction(
 
   await sendMessages(
     Object.entries(dbFields).map(([column, value]) => ({
-      timestamp: ts,
+      timestamp: Timestamp.send()!,
       dataset: 'transactions',
       row: id,
       column,
@@ -121,8 +118,49 @@ export async function updateTransaction(
 }
 
 export async function deleteTransaction(id: string): Promise<void> {
-  const ts = Timestamp.send()!;
   await sendMessages([
-    { timestamp: ts, dataset: 'transactions', row: id, column: 'tombstone', value: 1 },
+    { timestamp: Timestamp.send()!, dataset: 'transactions', row: id, column: 'tombstone', value: 1 },
   ]);
+}
+
+// ---------------------------------------------------------------------------
+// Display query — joins payee and category names
+// ---------------------------------------------------------------------------
+
+export type TransactionDisplay = Transaction & {
+  payeeName: string | null;
+  categoryName: string | null;
+};
+
+export async function getTransactionsForAccount(accountId: string): Promise<TransactionDisplay[]> {
+  const rows = await runQuery<TransactionRow & { payee_name: string | null; category_name: string | null }>(
+    `SELECT t.*,
+            p.name  AS payee_name,
+            c.name  AS category_name
+     FROM   transactions t
+     LEFT JOIN payees     p ON t.description = p.id AND p.tombstone = 0
+     LEFT JOIN categories c ON t.category    = c.id AND c.tombstone = 0
+     WHERE  t.acct = ? AND t.tombstone = 0
+     ORDER  BY t.date DESC, t.sort_order DESC`,
+    [accountId],
+  );
+  return rows.map(r => ({
+    id: r.id,
+    isParent: r.isParent === 1,
+    isChild: r.isChild === 1,
+    acct: r.acct,
+    date: r.date,
+    amount: r.amount,
+    category: r.category,
+    description: r.description,
+    notes: r.notes,
+    transferred_id: r.transferred_id,
+    cleared: r.cleared === 1,
+    reconciled: r.reconciled === 1,
+    sort_order: r.sort_order,
+    starting_balance_flag: r.starting_balance_flag === 1,
+    tombstone: r.tombstone === 1,
+    payeeName: r.payee_name,
+    categoryName: r.category_name,
+  }));
 }

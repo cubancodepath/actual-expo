@@ -56,19 +56,21 @@ async function getStartingBalancePayee(): Promise<{ id: string; categoryId: stri
     payeeId = existing.id;
   } else {
     payeeId = randomUUID();
-    const ts = Timestamp.send()!;
     await sendMessages([
-      { timestamp: ts, dataset: 'payees', row: payeeId, column: 'name', value: 'Starting Balance' },
-      { timestamp: ts, dataset: 'payees', row: payeeId, column: 'transfer_acct', value: null },
-      { timestamp: ts, dataset: 'payees', row: payeeId, column: 'favorite', value: 0 },
+      { timestamp: Timestamp.send()!, dataset: 'payees', row: payeeId, column: 'name', value: 'Starting Balance' },
+      { timestamp: Timestamp.send()!, dataset: 'payees', row: payeeId, column: 'transfer_acct', value: null },
+      { timestamp: Timestamp.send()!, dataset: 'payees', row: payeeId, column: 'favorite', value: 0 },
     ]);
   }
 
-  // Prefer category named "Starting Balances" (income), fall back to any income category
+  // Prefer category named "Starting Balances" (income), fall back to any income category.
+  // Check both categories.is_income AND category group membership (is_income on the group)
+  // to handle cases where the field isn't set directly on the category.
   const cat = await first<{ id: string }>(
-    `SELECT id FROM categories
-     WHERE is_income = 1 AND tombstone = 0
-     ORDER BY CASE WHEN LOWER(name) = 'starting balances' THEN 0 ELSE 1 END
+    `SELECT c.id FROM categories c
+     LEFT JOIN category_groups g ON c.cat_group = g.id
+     WHERE (c.is_income = 1 OR g.is_income = 1) AND c.tombstone = 0
+     ORDER BY CASE WHEN LOWER(c.name) = 'starting balances' THEN 0 ELSE 1 END
      LIMIT 1`,
   );
 
@@ -83,7 +85,6 @@ export async function createAccount(
 
   await batchMessages(async () => {
     // 1. Create the account
-    const ts = Timestamp.send()!;
     const dbFields: Record<string, unknown> = {
       name: fields.name ?? 'New Account',
       offbudget: fields.offbudget ? 1 : 0,
@@ -92,7 +93,7 @@ export async function createAccount(
     };
     await sendMessages(
       Object.entries(dbFields).map(([column, value]) => ({
-        timestamp: ts,
+        timestamp: Timestamp.send()!,
         dataset: 'accounts',
         row: id,
         column,
@@ -102,29 +103,27 @@ export async function createAccount(
 
     // 2. Create the transfer payee for this account (used in transfers between accounts)
     const transferPayeeId = randomUUID();
-    const ts2 = Timestamp.send()!;
     await sendMessages([
-      { timestamp: ts2, dataset: 'payees', row: transferPayeeId, column: 'name', value: '' },
-      { timestamp: ts2, dataset: 'payees', row: transferPayeeId, column: 'transfer_acct', value: id },
-      { timestamp: ts2, dataset: 'payees', row: transferPayeeId, column: 'favorite', value: 0 },
+      { timestamp: Timestamp.send()!, dataset: 'payees', row: transferPayeeId, column: 'name', value: '' },
+      { timestamp: Timestamp.send()!, dataset: 'payees', row: transferPayeeId, column: 'transfer_acct', value: id },
+      { timestamp: Timestamp.send()!, dataset: 'payees', row: transferPayeeId, column: 'favorite', value: 0 },
     ]);
 
     // 3. Create starting balance transaction if balance is non-zero
     if (startingBalance !== 0) {
       const { id: payeeId, categoryId } = await getStartingBalancePayee();
       const txId = randomUUID();
-      const ts3 = Timestamp.send()!;
       await sendMessages([
-        { timestamp: ts3, dataset: 'transactions', row: txId, column: 'acct', value: id },
-        { timestamp: ts3, dataset: 'transactions', row: txId, column: 'amount', value: startingBalance },
-        { timestamp: ts3, dataset: 'transactions', row: txId, column: 'date', value: todayInt() },
-        { timestamp: ts3, dataset: 'transactions', row: txId, column: 'description', value: payeeId },
+        { timestamp: Timestamp.send()!, dataset: 'transactions', row: txId, column: 'acct', value: id },
+        { timestamp: Timestamp.send()!, dataset: 'transactions', row: txId, column: 'amount', value: startingBalance },
+        { timestamp: Timestamp.send()!, dataset: 'transactions', row: txId, column: 'date', value: todayInt() },
+        { timestamp: Timestamp.send()!, dataset: 'transactions', row: txId, column: 'description', value: payeeId },
         {
-          timestamp: ts3, dataset: 'transactions', row: txId, column: 'category',
+          timestamp: Timestamp.send()!, dataset: 'transactions', row: txId, column: 'category',
           value: fields.offbudget ? null : categoryId,
         },
-        { timestamp: ts3, dataset: 'transactions', row: txId, column: 'cleared', value: 1 },
-        { timestamp: ts3, dataset: 'transactions', row: txId, column: 'starting_balance_flag', value: 1 },
+        { timestamp: Timestamp.send()!, dataset: 'transactions', row: txId, column: 'cleared', value: 1 },
+        { timestamp: Timestamp.send()!, dataset: 'transactions', row: txId, column: 'starting_balance_flag', value: 1 },
       ]);
     }
   });
@@ -136,8 +135,6 @@ export async function updateAccount(
   id: string,
   fields: Omit<Partial<Account>, 'id' | 'tombstone'>,
 ): Promise<void> {
-  const ts = Timestamp.send()!;
-
   const dbFields: Record<string, unknown> = {};
   if (fields.name !== undefined) dbFields.name = fields.name;
   if (fields.offbudget !== undefined) dbFields.offbudget = fields.offbudget ? 1 : 0;
@@ -148,7 +145,7 @@ export async function updateAccount(
 
   await sendMessages(
     Object.entries(dbFields).map(([column, value]) => ({
-      timestamp: ts,
+      timestamp: Timestamp.send()!,
       dataset: 'accounts',
       row: id,
       column,
@@ -162,8 +159,7 @@ export async function closeAccount(id: string): Promise<void> {
 }
 
 export async function deleteAccount(id: string): Promise<void> {
-  const ts = Timestamp.send()!;
   await sendMessages([
-    { timestamp: ts, dataset: 'accounts', row: id, column: 'tombstone', value: 1 },
+    { timestamp: Timestamp.send()!, dataset: 'accounts', row: id, column: 'tombstone', value: 1 },
   ]);
 }

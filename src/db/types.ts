@@ -60,6 +60,9 @@ export type ZeroBudgetRow = {
   month: number; // YYYYMM
   category: string;
   amount: number;
+  carryover: number;
+  goal: number | null;
+  long_goal: number | null;
 };
 
 export type MessagesCrdtRow = {

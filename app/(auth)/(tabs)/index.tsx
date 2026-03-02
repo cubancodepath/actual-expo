@@ -66,15 +66,23 @@ export default function AccountsScreen() {
               <Text style={styles.emptyHint}>Tap + to add your first account</Text>
             </View>
           }
-          contentContainerStyle={{ paddingBottom: 40 }}
+          contentContainerStyle={{ paddingBottom: 100 }}
         />
       )}
+
+      {/* FAB — add new account */}
+      <Pressable
+        style={styles.fab}
+        onPress={() => router.push('/(auth)/account/new')}
+      >
+        <Text style={styles.fabText}>+</Text>
+      </Pressable>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f172a', paddingHorizontal: 16, paddingTop: 8 },
+  container: { flex: 1, backgroundColor: '#0f172a', paddingHorizontal: 16, paddingTop: 8, position: 'relative' },
   sectionHeader: {
     color: '#64748b', fontSize: 11, fontWeight: '700', textTransform: 'uppercase',
     letterSpacing: 1, marginTop: 20, marginBottom: 8,
@@ -91,4 +99,12 @@ const styles = StyleSheet.create({
   empty: { alignItems: 'center', marginTop: 80, gap: 8 },
   emptyText: { color: '#f1f5f9', fontSize: 18, fontWeight: '600' },
   emptyHint: { color: '#64748b', fontSize: 13 },
+  fab: {
+    position: 'absolute', bottom: 28, right: 8,
+    backgroundColor: '#3b82f6', width: 56, height: 56,
+    borderRadius: 28, alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3, shadowRadius: 8, elevation: 8,
+  },
+  fabText: { color: '#fff', fontSize: 28, lineHeight: 32, fontWeight: '300' },
 });

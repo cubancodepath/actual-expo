@@ -1,239 +1,221 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  FlatList,
   Pressable,
-  ScrollView,
   StyleSheet,
-  Switch,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useAccountsStore } from '../../../src/stores/accountsStore';
+import {
+  deleteTransaction,
+  getTransactionsForAccount,
+  type TransactionDisplay,
+} from '../../../src/transactions';
 
-function formatBalance(cents: number): string {
-  const sign = cents < 0 ? '-' : '';
-  return `${sign}$${(Math.abs(cents) / 100).toFixed(2)}`;
+function formatDate(date: number): string {
+  const s = String(date);
+  const d = new Date(
+    parseInt(s.slice(0, 4)),
+    parseInt(s.slice(4, 6)) - 1,
+    parseInt(s.slice(6, 8)),
+  );
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-export default function AccountDetailScreen() {
+function formatAmount(cents: number): string {
+  const abs = (Math.abs(cents) / 100).toFixed(2);
+  return cents < 0 ? `-$${abs}` : `+$${abs}`;
+}
+
+function formatBalance(cents: number): string {
+  const abs = (Math.abs(cents) / 100).toFixed(2);
+  return cents < 0 ? `-$${abs}` : `$${abs}`;
+}
+
+function TransactionRow({
+  item,
+  onDelete,
+}: {
+  item: TransactionDisplay;
+  onDelete: (id: string) => void;
+}) {
+  return (
+    <Pressable
+      style={styles.txRow}
+      onLongPress={() => onDelete(item.id)}
+      android_ripple={{ color: '#334155' }}
+    >
+      <View style={styles.txDate}>
+        <Text style={styles.txDateText}>{formatDate(item.date)}</Text>
+      </View>
+      <View style={styles.txMid}>
+        <Text style={styles.txPayee} numberOfLines={1}>
+          {item.payeeName ?? '—'}
+        </Text>
+        {item.categoryName ? (
+          <Text style={styles.txCategory} numberOfLines={1}>
+            {item.categoryName}
+          </Text>
+        ) : null}
+        {item.notes ? (
+          <Text style={styles.txNotes} numberOfLines={1}>
+            {item.notes}
+          </Text>
+        ) : null}
+      </View>
+      <View style={styles.txRight}>
+        <Text style={[styles.txAmount, item.amount < 0 ? styles.expense : styles.income]}>
+          {formatAmount(item.amount)}
+        </Text>
+        {item.cleared && <Text style={styles.clearedDot}>✓</Text>}
+      </View>
+    </Pressable>
+  );
+}
+
+export default function AccountTransactionsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const navigation = useNavigation();
   const router = useRouter();
-  const { accounts, update, close, delete_, load } = useAccountsStore();
-
+  const { accounts, load: loadAccounts } = useAccountsStore();
   const account = accounts.find(a => a.id === id);
 
-  const [editingName, setEditingName] = useState(false);
-  const [nameValue, setNameValue] = useState(account?.name ?? '');
-  const [saving, setSaving] = useState(false);
-  const nameInputRef = useRef<TextInput>(null);
+  const [transactions, setTransactions] = useState<TransactionDisplay[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Sync nameValue if account reloads
-  useEffect(() => {
-    if (account && !editingName) setNameValue(account.name);
-  }, [account?.name]);
+  const loadTransactions = useCallback(async () => {
+    setLoading(true);
+    try {
+      setTransactions(await getTransactionsForAccount(id));
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
 
-  // Set header title to account name
+  useEffect(() => { loadTransactions(); }, [loadTransactions]);
+
   useLayoutEffect(() => {
-    navigation.setOptions({ title: account?.name ?? 'Account' });
-  }, [account?.name]);
+    navigation.setOptions({
+      title: account?.name ?? 'Account',
+      headerRight: () => (
+        <Pressable
+          onPress={() =>
+            router.push({ pathname: '/(auth)/account/settings', params: { id } })
+          }
+          hitSlop={12}
+          style={{ paddingHorizontal: 4 }}
+        >
+          <Text style={styles.settingsIcon}>⚙</Text>
+        </Pressable>
+      ),
+    });
+  }, [account?.name, id]);
 
-  if (!account) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator color="#3b82f6" />
-      </View>
-    );
-  }
-
-  async function saveName() {
-    const trimmed = nameValue.trim();
-    if (!trimmed || trimmed === account!.name) { setEditingName(false); return; }
-    setSaving(true);
-    try {
-      await update(id, { name: trimmed });
-      await load();
-    } finally {
-      setSaving(false);
-      setEditingName(false);
-    }
-  }
-
-  async function toggleOffBudget(value: boolean) {
-    setSaving(true);
-    try {
-      await update(id, { offbudget: value });
-      await load();
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleClose() {
-    Alert.alert(
-      account!.closed ? 'Reopen Account' : 'Close Account',
-      account!.closed
-        ? 'Reopen this account? It will appear in your budget again.'
-        : 'Close this account? It will be hidden but transactions are kept.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: account!.closed ? 'Reopen' : 'Close',
-          onPress: async () => {
-            setSaving(true);
-            try {
-              await update(id, { closed: !account!.closed });
-              await load();
-            } finally {
-              setSaving(false);
-            }
-          },
+  function handleDelete(txnId: string) {
+    Alert.alert('Delete Transaction', 'Delete this transaction?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          await deleteTransaction(txnId);
+          await Promise.all([loadAccounts(), loadTransactions()]);
         },
-      ],
-    );
-  }
-
-  async function handleDelete() {
-    Alert.alert(
-      'Delete Account',
-      'Permanently delete this account and all its transactions? This cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            setSaving(true);
-            try {
-              await delete_(id);
-              await load();
-              router.back();
-            } finally {
-              setSaving(false);
-            }
-          },
-        },
-      ],
-    );
+      },
+    ]);
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 60 }}>
-
-      {/* Balance */}
+    <View style={styles.container}>
+      {/* Balance card */}
       <View style={styles.balanceCard}>
         <Text style={styles.balanceLabel}>Current Balance</Text>
-        <Text style={[styles.balance, (account.balance ?? 0) < 0 && styles.negative]}>
-          {formatBalance(account.balance ?? 0)}
+        <Text style={[styles.balance, (account?.balance ?? 0) < 0 && styles.negative]}>
+          {formatBalance(account?.balance ?? 0)}
         </Text>
       </View>
 
-      {/* Name */}
-      <Text style={styles.sectionTitle}>Details</Text>
-      <View style={styles.card}>
-        <Pressable
-          style={styles.row}
-          onPress={() => {
-            setEditingName(true);
-            setTimeout(() => nameInputRef.current?.focus(), 50);
-          }}
-        >
-          <Text style={styles.rowLabel}>Name</Text>
-          {editingName ? (
-            <View style={styles.nameInputRow}>
-              <TextInput
-                ref={nameInputRef}
-                style={styles.nameInput}
-                value={nameValue}
-                onChangeText={setNameValue}
-                onBlur={saveName}
-                onSubmitEditing={saveName}
-                returnKeyType="done"
-                selectTextOnFocus
-              />
-              {saving && <ActivityIndicator size="small" color="#3b82f6" style={{ marginLeft: 8 }} />}
-            </View>
-          ) : (
-            <Text style={styles.rowValue}>{account.name}</Text>
+      {loading ? (
+        <ActivityIndicator color="#3b82f6" style={{ marginTop: 40 }} />
+      ) : (
+        <FlatList
+          data={transactions}
+          keyExtractor={t => t.id}
+          renderItem={({ item }) => (
+            <TransactionRow item={item} onDelete={handleDelete} />
           )}
-        </Pressable>
+          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <Text style={styles.emptyText}>No transactions yet</Text>
+              <Text style={styles.emptyHint}>Tap + to add one</Text>
+            </View>
+          }
+          contentContainerStyle={{ paddingBottom: 100 }}
+        />
+      )}
 
-        <View style={[styles.row, styles.rowBorderTop]}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.rowLabel}>Off budget</Text>
-            <Text style={styles.rowHint}>Won't affect your budget envelopes</Text>
-          </View>
-          <Switch
-            value={account.offbudget}
-            onValueChange={toggleOffBudget}
-            disabled={saving}
-            trackColor={{ false: '#334155', true: '#1d4ed8' }}
-            thumbColor={account.offbudget ? '#93c5fd' : '#64748b'}
-          />
-        </View>
-      </View>
-
-      {/* Actions */}
-      <Text style={styles.sectionTitle}>Actions</Text>
-      <View style={styles.card}>
-        <Pressable style={styles.row} onPress={handleClose} disabled={saving}>
-          <Text style={[styles.rowLabel, styles.actionText]}>
-            {account.closed ? 'Reopen account' : 'Close account'}
-          </Text>
-        </Pressable>
-      </View>
-
+      {/* FAB */}
       <Pressable
-        style={[styles.deleteButton, saving && { opacity: 0.5 }]}
-        onPress={handleDelete}
-        disabled={saving}
+        style={styles.fab}
+        onPress={() =>
+          router.push({ pathname: '/(auth)/transaction/new', params: { accountId: id } })
+        }
       >
-        <Text style={styles.deleteText}>Delete Account</Text>
+        <Text style={styles.fabText}>+</Text>
       </Pressable>
-
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f172a', paddingHorizontal: 16, paddingTop: 12 },
-  center: { flex: 1, backgroundColor: '#0f172a', alignItems: 'center', justifyContent: 'center' },
+  container: { flex: 1, backgroundColor: '#0f172a' },
 
   balanceCard: {
-    backgroundColor: '#1e293b', borderRadius: 12, padding: 20,
-    alignItems: 'center', marginBottom: 24,
+    backgroundColor: '#1e293b', marginHorizontal: 16, marginTop: 12,
+    marginBottom: 8, borderRadius: 12, padding: 16,
     borderWidth: 1, borderColor: '#334155',
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
   },
-  balanceLabel: { color: '#64748b', fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 },
-  balance: { color: '#4ade80', fontSize: 32, fontWeight: '700' },
+  balanceLabel: { color: '#64748b', fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
+  balance: { color: '#4ade80', fontSize: 22, fontWeight: '700' },
   negative: { color: '#f87171' },
 
-  sectionTitle: {
-    color: '#64748b', fontSize: 11, fontWeight: '700',
-    textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8, marginTop: 4,
+  settingsIcon: { color: '#94a3b8', fontSize: 20 },
+
+  txRow: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 16, paddingVertical: 12,
+    backgroundColor: '#0f172a',
   },
-  card: { backgroundColor: '#1e293b', borderRadius: 12, borderWidth: 1, borderColor: '#334155', marginBottom: 16, overflow: 'hidden' },
+  txDate: { width: 44, marginRight: 12 },
+  txDateText: { color: '#64748b', fontSize: 12, lineHeight: 16 },
+  txMid: { flex: 1, marginRight: 12 },
+  txPayee: { color: '#f1f5f9', fontSize: 15, fontWeight: '500' },
+  txCategory: { color: '#64748b', fontSize: 12, marginTop: 2 },
+  txNotes: { color: '#475569', fontSize: 12, marginTop: 1, fontStyle: 'italic' },
+  txRight: { alignItems: 'flex-end', minWidth: 72 },
+  txAmount: { fontSize: 15, fontWeight: '600' },
+  income: { color: '#4ade80' },
+  expense: { color: '#f87171' },
+  clearedDot: { color: '#4ade80', fontSize: 10, marginTop: 2 },
 
-  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14 },
-  rowBorderTop: { borderTopWidth: 1, borderTopColor: '#334155' },
-  rowLabel: { color: '#94a3b8', fontSize: 14 },
-  rowHint: { color: '#475569', fontSize: 11, marginTop: 2 },
-  rowValue: { color: '#f1f5f9', fontSize: 15, fontWeight: '500' },
+  separator: { height: 1, backgroundColor: '#1e293b', marginLeft: 16 },
 
-  nameInputRow: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' },
-  nameInput: {
-    flex: 1, color: '#f1f5f9', fontSize: 15, fontWeight: '500',
-    textAlign: 'right', padding: 0,
+  empty: { alignItems: 'center', marginTop: 80, gap: 8 },
+  emptyText: { color: '#94a3b8', fontSize: 16, fontWeight: '600' },
+  emptyHint: { color: '#475569', fontSize: 13 },
+
+  fab: {
+    position: 'absolute', bottom: 28, right: 24,
+    backgroundColor: '#3b82f6', width: 56, height: 56,
+    borderRadius: 28, alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3, shadowRadius: 8, elevation: 8,
   },
-
-  actionText: { color: '#f1f5f9', fontSize: 15 },
-
-  deleteButton: {
-    backgroundColor: '#7f1d1d', borderRadius: 12,
-    paddingVertical: 16, alignItems: 'center', marginTop: 8,
-  },
-  deleteText: { color: '#fca5a5', fontWeight: '700', fontSize: 15 },
+  fabText: { color: '#fff', fontSize: 28, lineHeight: 32, fontWeight: '300' },
 });

@@ -9,8 +9,8 @@ import {
 } from 'react-native';
 import { usePrefsStore } from '../../src/stores/prefsStore';
 import { listFiles, type BudgetFile } from '../../src/services/authService';
-import { clearLocalData } from '../../src/db';
-import { fullSync, loadClock } from '../../src/sync';
+import { downloadAndImportBudget } from '../../src/services/budgetfiles';
+import { fullSync } from '../../src/sync';
 
 export default function FilesScreen() {
   const { serverUrl, token, setPrefs, saveToStorage } = usePrefsStore();
@@ -29,11 +29,11 @@ export default function FilesScreen() {
   async function handleSelect(file: BudgetFile) {
     setSelecting(file.fileId);
     try {
-      // 1. Clear any local data from a previous file
-      await clearLocalData();
-      await loadClock();
+      // 1. Download full SQLite from server, replace local DB, reset CRDT clock.
+      //    Mirrors loot-core's download() + importBuffer() flow in cloud-storage.ts.
+      await downloadAndImportBudget(serverUrl, token, file.fileId, file.encryptKeyId);
 
-      // 2. Save the selected file prefs (makes isConfigured = true)
+      // 2. Save the selected file prefs (makes isConfigured = true → nav to auth)
       setPrefs({
         fileId: file.fileId,
         groupId: file.groupId,
@@ -42,7 +42,23 @@ export default function FilesScreen() {
       });
       await saveToStorage();
 
-      // 3. Initial sync — download all server data
+      // 3. Pre-load Zustand stores from the downloaded DB
+      const [
+        { useAccountsStore },
+        { useCategoriesStore },
+        { useBudgetStore },
+      ] = await Promise.all([
+        import('../../src/stores/accountsStore'),
+        import('../../src/stores/categoriesStore'),
+        import('../../src/stores/budgetStore'),
+      ]);
+      await Promise.allSettled([
+        useAccountsStore.getState().load(),
+        useCategoriesStore.getState().load(),
+        useBudgetStore.getState().load(),
+      ]);
+
+      // 4. fullSync() to catch up on any changes since the last DB snapshot
       await fullSync();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));

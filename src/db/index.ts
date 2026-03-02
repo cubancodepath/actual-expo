@@ -1,7 +1,7 @@
 import { openDatabaseAsync, type SQLiteDatabase, type SQLiteBindParams } from 'expo-sqlite';
 import { runSchema } from './schema';
 
-let _db: SQLiteDatabase;
+let _db: SQLiteDatabase | undefined;
 
 export async function openDatabase(): Promise<void> {
   _db = await openDatabaseAsync('actual.db');
@@ -11,9 +11,16 @@ export async function openDatabase(): Promise<void> {
   // loadClock() is called by sync/index after openDatabase
 }
 
+export async function closeDatabase(): Promise<void> {
+  if (_db) {
+    await _db.closeAsync();
+    _db = undefined;
+  }
+}
+
 export function getDb(): SQLiteDatabase {
   if (!_db) throw new Error('Database not initialized — call openDatabase() first');
-  return _db;
+  return _db as SQLiteDatabase;
 }
 
 export async function runQuery<T = unknown>(

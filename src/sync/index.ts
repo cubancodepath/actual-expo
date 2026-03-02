@@ -259,6 +259,8 @@ export async function fullSync(attempt = 0): Promise<void> {
       prefs.encryptKeyId,
     );
 
+    console.log(`[fullSync] received ${serverMessages.length} messages from server (attempt ${attempt})`);
+
     if (serverMessages.length > 0) {
       await applyMessages(serverMessages);
     }
@@ -287,29 +289,32 @@ export async function fullSync(attempt = 0): Promise<void> {
 // ---------------------------------------------------------------------------
 
 async function refreshAllStores(): Promise<void> {
-  try {
-    // Lazy import to avoid circular dependencies
-    const [
-      { useAccountsStore },
-      { useTransactionsStore },
-      { useCategoriesStore },
-      { useBudgetStore },
-    ] = await Promise.all([
-      import('../stores/accountsStore'),
-      import('../stores/transactionsStore'),
-      import('../stores/categoriesStore'),
-      import('../stores/budgetStore'),
-    ]);
+  // Lazy import to avoid circular dependencies
+  const [
+    { useAccountsStore },
+    { useTransactionsStore },
+    { useCategoriesStore },
+    { useBudgetStore },
+  ] = await Promise.all([
+    import('../stores/accountsStore'),
+    import('../stores/transactionsStore'),
+    import('../stores/categoriesStore'),
+    import('../stores/budgetStore'),
+  ]);
 
-    await Promise.all([
-      useAccountsStore.getState().load(),
-      useTransactionsStore
-        .getState()
-        .load(useTransactionsStore.getState().accountId ?? undefined),
-      useCategoriesStore.getState().load(),
-      useBudgetStore.getState().load(),
-    ]);
-  } catch {
-    // Stores may not be initialized yet during bootstrap — ignore
+  // Use allSettled so one failure doesn't block the others
+  const results = await Promise.allSettled([
+    useAccountsStore.getState().load(),
+    useTransactionsStore
+      .getState()
+      .load(useTransactionsStore.getState().accountId ?? undefined),
+    useCategoriesStore.getState().load(),
+    useBudgetStore.getState().load(),
+  ]);
+
+  for (const result of results) {
+    if (result.status === 'rejected') {
+      console.warn('[refreshAllStores] store load failed:', result.reason);
+    }
   }
 }

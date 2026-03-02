@@ -34,16 +34,17 @@ export async function getBudgetMonth(month: string): Promise<BudgetMonth> {
 
   const budgetMap = new Map(budgetRows.map(r => [r.category, r.amount]));
 
-  // Calculate spent per category from transactions
+  // Calculate spent per category — only on-budget accounts (matches loot-core)
   const spentRows = await runQuery<{ category: string; spent: number }>(
-    `SELECT category, SUM(amount) as spent
-     FROM transactions
-     WHERE tombstone = 0
-       AND isParent = 0
-       AND starting_balance_flag = 0
-       AND date >= ? AND date <= ?
-       AND category IS NOT NULL
-     GROUP BY category`,
+    `SELECT t.category, SUM(t.amount) AS spent
+     FROM transactions t
+     JOIN accounts a ON t.acct = a.id AND a.offbudget = 0 AND a.tombstone = 0
+     WHERE t.tombstone = 0
+       AND t.isParent = 0
+       AND t.starting_balance_flag = 0
+       AND t.date >= ? AND t.date <= ?
+       AND t.category IS NOT NULL
+     GROUP BY t.category`,
     [startDate, endDate],
   );
   const spentMap = new Map(spentRows.map(r => [r.category, r.spent]));
@@ -105,12 +106,11 @@ export async function setBudgetAmount(
   amount: number,
 ): Promise<void> {
   const monthInt = monthToInt(month);
-  const id = `${monthInt}_${categoryId}`;
-  const ts = Timestamp.send()!;
+  const id = `${monthInt}-${categoryId}`;
 
   await sendMessages([
-    { timestamp: ts, dataset: 'zero_budgets', row: id, column: 'month', value: monthInt },
-    { timestamp: ts, dataset: 'zero_budgets', row: id, column: 'category', value: categoryId },
-    { timestamp: ts, dataset: 'zero_budgets', row: id, column: 'amount', value: amount },
+    { timestamp: Timestamp.send()!, dataset: 'zero_budgets', row: id, column: 'month', value: monthInt },
+    { timestamp: Timestamp.send()!, dataset: 'zero_budgets', row: id, column: 'category', value: categoryId },
+    { timestamp: Timestamp.send()!, dataset: 'zero_budgets', row: id, column: 'amount', value: amount },
   ]);
 }

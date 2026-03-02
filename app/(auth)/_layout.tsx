@@ -23,6 +23,26 @@ export default function AuthLayout() {
           headerShadowVisible: false,
         }}
       />
+      <Stack.Screen
+        name="account/settings"
+        options={{
+          title: 'Account Settings',
+          presentation: 'modal',
+          headerStyle: { backgroundColor: '#0f172a' },
+          headerTintColor: '#f1f5f9',
+          headerShadowVisible: false,
+        }}
+      />
+      <Stack.Screen
+        name="transaction/new"
+        options={{
+          title: 'New Transaction',
+          presentation: 'modal',
+          headerStyle: { backgroundColor: '#0f172a' },
+          headerTintColor: '#f1f5f9',
+          headerShadowVisible: false,
+        }}
+      />
     </Stack>
   );
 }

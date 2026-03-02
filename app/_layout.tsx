@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react';
 import { AppState } from 'react-native';
 import { Stack } from 'expo-router';
 import { usePrefsStore } from '../src/stores/prefsStore';
+import { useAccountsStore } from '../src/stores/accountsStore';
+import { useCategoriesStore } from '../src/stores/categoriesStore';
+import { useBudgetStore } from '../src/stores/budgetStore';
 import { openDatabase } from '../src/db';
 import { loadClock, fullSync } from '../src/sync';
 
@@ -9,12 +12,18 @@ export default function RootLayout() {
   const isConfigured = usePrefsStore(s => s.isConfigured);
   const [ready, setReady] = useState(false);
 
-  // Bootstrap: load prefs + open DB + restore CRDT clock
+  // Bootstrap: load prefs + open DB + restore CRDT clock + pre-load stores
   useEffect(() => {
     async function bootstrap() {
       await usePrefsStore.getState().loadFromStorage();
       await openDatabase();
       await loadClock();
+      // Pre-load stores from local DB so screens show cached data immediately
+      await Promise.allSettled([
+        useAccountsStore.getState().load(),
+        useCategoriesStore.getState().load(),
+        useBudgetStore.getState().load(),
+      ]);
     }
     bootstrap()
       .catch(console.error)

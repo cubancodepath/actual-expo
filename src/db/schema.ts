@@ -60,7 +60,10 @@ CREATE TABLE IF NOT EXISTS zero_budgets (
   id TEXT PRIMARY KEY,
   month INTEGER,
   category TEXT,
-  amount INTEGER DEFAULT 0
+  amount INTEGER DEFAULT 0,
+  carryover INTEGER DEFAULT 0,
+  goal INTEGER DEFAULT NULL,
+  long_goal INTEGER DEFAULT NULL
 );
 
 CREATE TABLE IF NOT EXISTS messages_crdt (
@@ -77,6 +80,19 @@ CREATE TABLE IF NOT EXISTS messages_clock (
 );
 `;
 
+const MIGRATIONS = [
+  'ALTER TABLE zero_budgets ADD COLUMN carryover INTEGER DEFAULT 0',
+  'ALTER TABLE zero_budgets ADD COLUMN goal INTEGER DEFAULT NULL',
+  'ALTER TABLE zero_budgets ADD COLUMN long_goal INTEGER DEFAULT NULL',
+];
+
 export async function runSchema(db: SQLiteDatabase): Promise<void> {
   await db.execAsync(TABLES);
+  for (const sql of MIGRATIONS) {
+    try {
+      await db.execAsync(sql);
+    } catch {
+      // Column already exists — ignore
+    }
+  }
 }

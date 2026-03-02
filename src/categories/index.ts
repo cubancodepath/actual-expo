@@ -58,7 +58,6 @@ export async function createCategoryGroup(
   fields: Pick<CategoryGroup, 'name'> & Partial<Pick<CategoryGroup, 'is_income' | 'sort_order'>>,
 ): Promise<string> {
   const id = randomUUID();
-  const ts = Timestamp.send()!;
   const dbFields: Record<string, unknown> = {
     name: fields.name,
     is_income: fields.is_income ? 1 : 0,
@@ -66,7 +65,7 @@ export async function createCategoryGroup(
   };
   await sendMessages(
     Object.entries(dbFields).map(([column, value]) => ({
-      timestamp: ts, dataset: 'category_groups', row: id, column,
+      timestamp: Timestamp.send()!, dataset: 'category_groups', row: id, column,
       value: value as string | number | null,
     })),
   );
@@ -77,7 +76,6 @@ export async function createCategory(
   fields: Pick<Category, 'name' | 'cat_group'> & Partial<Pick<Category, 'is_income' | 'sort_order'>>,
 ): Promise<string> {
   const id = randomUUID();
-  const ts = Timestamp.send()!;
   const dbFields: Record<string, unknown> = {
     name: fields.name,
     cat_group: fields.cat_group,
@@ -86,7 +84,7 @@ export async function createCategory(
   };
   await sendMessages(
     Object.entries(dbFields).map(([column, value]) => ({
-      timestamp: ts, dataset: 'categories', row: id, column,
+      timestamp: Timestamp.send()!, dataset: 'categories', row: id, column,
       value: value as string | number | null,
     })),
   );
@@ -97,7 +95,6 @@ export async function updateCategory(
   id: string,
   fields: Partial<Pick<Category, 'name' | 'hidden' | 'sort_order' | 'goal_def'>>,
 ): Promise<void> {
-  const ts = Timestamp.send()!;
   const dbFields: Record<string, unknown> = {};
   if (fields.name !== undefined) dbFields.name = fields.name;
   if (fields.hidden !== undefined) dbFields.hidden = fields.hidden ? 1 : 0;
@@ -106,22 +103,20 @@ export async function updateCategory(
   if (Object.keys(dbFields).length === 0) return;
   await sendMessages(
     Object.entries(dbFields).map(([column, value]) => ({
-      timestamp: ts, dataset: 'categories', row: id, column,
+      timestamp: Timestamp.send()!, dataset: 'categories', row: id, column,
       value: value as string | number | null,
     })),
   );
 }
 
 export async function deleteCategory(id: string): Promise<void> {
-  const ts = Timestamp.send()!;
   await sendMessages([
-    { timestamp: ts, dataset: 'categories', row: id, column: 'tombstone', value: 1 },
+    { timestamp: Timestamp.send()!, dataset: 'categories', row: id, column: 'tombstone', value: 1 },
   ]);
 }
 
 export async function deleteCategoryGroup(id: string): Promise<void> {
-  const ts = Timestamp.send()!;
   await sendMessages([
-    { timestamp: ts, dataset: 'category_groups', row: id, column: 'tombstone', value: 1 },
+    { timestamp: Timestamp.send()!, dataset: 'category_groups', row: id, column: 'tombstone', value: 1 },
   ]);
 }

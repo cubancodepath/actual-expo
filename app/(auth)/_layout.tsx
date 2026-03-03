@@ -26,8 +26,8 @@ export default function AuthLayout() {
         options={{ title: "Account Settings", ...modal }}
       />
       <Stack.Screen
-        name="transaction/new"
-        options={{ title: "New Transaction", ...modal }}
+        name="transaction"
+        options={{ headerShown: false, ...modal }}
       />
       <Stack.Screen
         name="categories"

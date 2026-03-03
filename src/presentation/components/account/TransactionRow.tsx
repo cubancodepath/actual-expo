@@ -2,6 +2,7 @@ import { Pressable, View } from 'react-native';
 import { AntDesign, Ionicons } from '@expo/vector-icons';
 import { useTheme, useThemedStyles } from '../../providers/ThemeProvider';
 import { Text, Amount } from '..';
+import { SwipeableRow } from '../molecules/SwipeableRow';
 import type { TransactionDisplay } from '../../../transactions';
 import type { Theme } from '../../../theme';
 
@@ -21,12 +22,11 @@ export function TransactionRow({
   const { colors, spacing } = useTheme();
   const styles = useThemedStyles(createStyles);
 
-
   return (
+    <SwipeableRow onDelete={() => onDelete(item.id)}>
     <Pressable
       style={styles.row}
       onPress={() => onPress(item.id)}
-      onLongPress={() => onDelete(item.id)}
     >
       <View style={styles.content}>
         {/* Top row: payee + amount */}
@@ -81,6 +81,7 @@ export function TransactionRow({
         )}
       </View>
     </Pressable>
+    </SwipeableRow>
   );
 }
 

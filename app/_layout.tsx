@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { AppState } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Stack } from "expo-router";
 import { ThemeProvider } from "../src/presentation/providers/ThemeProvider";
 import { usePrefsStore } from "../src/stores/prefsStore";
@@ -47,6 +48,7 @@ export default function RootLayout() {
   if (!ready) return null;
 
   return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <ThemeProvider>
       <Stack>
         <Stack.Protected guard={!hasToken}>
@@ -60,5 +62,6 @@ export default function RootLayout() {
         </Stack.Protected>
       </Stack>
     </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }

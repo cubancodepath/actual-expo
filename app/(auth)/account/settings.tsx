@@ -1,65 +1,68 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
-  StyleSheet,
   Switch,
-  Text,
   TextInput,
   View,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useAccountsStore } from '../../../src/stores/accountsStore';
+import { useTheme, useThemedStyles } from '../../../src/presentation/providers/ThemeProvider';
+import { Text } from '../../../src/presentation/components/atoms/Text';
+import { Button } from '../../../src/presentation/components/atoms/Button';
+import { Banner } from '../../../src/presentation/components/molecules/Banner';
+import type { Theme } from '../../../src/theme';
 
 export default function AccountSettingsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const theme = useTheme();
+  const styles = useThemedStyles(createStyles);
   const { accounts, update, close, delete_, load } = useAccountsStore();
   const account = accounts.find(a => a.id === id);
 
-  const [editingName, setEditingName] = useState(false);
-  const [nameValue, setNameValue] = useState(account?.name ?? '');
+  const [name, setName] = useState(account?.name ?? '');
+  const [offbudget, setOffbudget] = useState(account?.offbudget ?? false);
   const [saving, setSaving] = useState(false);
-  const nameInputRef = useRef<TextInput>(null);
-
-  useEffect(() => {
-    if (account && !editingName) setNameValue(account.name);
-  }, [account?.name]);
+  const [error, setError] = useState<string | null>(null);
 
   if (!account) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator color="#3b82f6" />
+        <ActivityIndicator color={theme.colors.primary} />
       </View>
     );
   }
 
-  async function saveName() {
-    const trimmed = nameValue.trim();
-    if (!trimmed || trimmed === account!.name) { setEditingName(false); return; }
+  const hasChanges = name.trim() !== account.name || offbudget !== account.offbudget;
+
+  async function handleSave() {
+    const trimmed = name.trim();
+    if (!trimmed) { setError('Account name is required'); return; }
+
+    setError(null);
     setSaving(true);
     try {
-      await update(id, { name: trimmed });
-      await load();
+      const changes: Record<string, unknown> = {};
+      if (trimmed !== account!.name) changes.name = trimmed;
+      if (offbudget !== account!.offbudget) changes.offbudget = offbudget;
+      if (Object.keys(changes).length > 0) {
+        await update(id, changes);
+        await load();
+      }
+      router.back();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e));
     } finally {
       setSaving(false);
-      setEditingName(false);
     }
   }
 
-  async function toggleOffBudget(value: boolean) {
-    setSaving(true);
-    try {
-      await update(id, { offbudget: value });
-      await load();
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleClose() {
+  function handleClose() {
     Alert.alert(
       account!.closed ? 'Reopen Account' : 'Close Account',
       account!.closed
@@ -83,7 +86,7 @@ export default function AccountSettingsScreen() {
     );
   }
 
-  async function handleDelete() {
+  function handleDelete() {
     Alert.alert(
       'Delete Account',
       'Permanently delete this account and all its transactions? This cannot be undone.',
@@ -108,94 +111,149 @@ export default function AccountSettingsScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 60 }}>
+    <>
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <Pressable onPress={() => router.back()} hitSlop={8}>
+              <Ionicons name="close" size={24} color={theme.colors.textSecondary} />
+            </Pressable>
+          ),
+        }}
+      />
+      <ScrollView
+        style={styles.flex}
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
+      >
+        {/* Account name */}
+        <Text variant="caption" color={theme.colors.textSecondary} style={styles.label}>
+          Account name
+        </Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Account name"
+          placeholderTextColor={theme.colors.textMuted}
+          value={name}
+          onChangeText={t => { setName(t); setError(null); }}
+          returnKeyType="done"
+        />
 
-      <Text style={styles.sectionTitle}>Details</Text>
-      <View style={styles.card}>
-        <Pressable
-          style={styles.row}
-          onPress={() => {
-            setEditingName(true);
-            setTimeout(() => nameInputRef.current?.focus(), 50);
-          }}
-        >
-          <Text style={styles.rowLabel}>Name</Text>
-          {editingName ? (
-            <View style={styles.nameInputRow}>
-              <TextInput
-                ref={nameInputRef}
-                style={styles.nameInput}
-                value={nameValue}
-                onChangeText={setNameValue}
-                onBlur={saveName}
-                onSubmitEditing={saveName}
-                returnKeyType="done"
-                selectTextOnFocus
-              />
-              {saving && <ActivityIndicator size="small" color="#3b82f6" style={{ marginLeft: 8 }} />}
-            </View>
-          ) : (
-            <Text style={styles.rowValue}>{account.name}</Text>
-          )}
-        </Pressable>
-
-        <View style={[styles.row, styles.rowBorderTop]}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.rowLabel}>Off budget</Text>
-            <Text style={styles.rowHint}>Won't affect your budget envelopes</Text>
+        {/* Off budget toggle */}
+        <View style={styles.toggleRow}>
+          <View style={styles.toggleText}>
+            <Text variant="body" color={theme.colors.textPrimary}>
+              Off budget
+            </Text>
+            <Text variant="captionSm" color={theme.colors.textMuted}>
+              Transactions won't affect your budget
+            </Text>
           </View>
           <Switch
-            value={account.offbudget}
-            onValueChange={toggleOffBudget}
-            disabled={saving}
-            trackColor={{ false: '#334155', true: '#1d4ed8' }}
-            thumbColor={account.offbudget ? '#93c5fd' : '#64748b'}
+            value={offbudget}
+            onValueChange={setOffbudget}
+            trackColor={{ false: theme.colors.inputBorder, true: theme.colors.primary }}
+            thumbColor={theme.colors.cardBackground}
+            ios_backgroundColor={theme.colors.inputBorder}
           />
         </View>
-      </View>
 
-      <Text style={styles.sectionTitle}>Actions</Text>
-      <View style={styles.card}>
-        <Pressable style={styles.row} onPress={handleClose} disabled={saving}>
-          <Text style={[styles.rowLabel, styles.actionText]}>
-            {account.closed ? 'Reopen account' : 'Close account'}
-          </Text>
-        </Pressable>
-      </View>
+        {/* Error */}
+        {error && (
+          <Banner message={error} variant="error" onDismiss={() => setError(null)} />
+        )}
 
-      <Pressable
-        style={[styles.deleteButton, saving && { opacity: 0.5 }]}
-        onPress={handleDelete}
-        disabled={saving}
-      >
-        <Text style={styles.deleteText}>Delete Account</Text>
-      </Pressable>
+        {/* Save button */}
+        <Button
+          title="Save"
+          onPress={handleSave}
+          size="lg"
+          loading={saving}
+          disabled={!hasChanges || !name.trim()}
+          style={styles.saveButton}
+        />
 
-    </ScrollView>
+        {/* Actions */}
+        <Text variant="caption" color={theme.colors.textSecondary} style={styles.actionsLabel}>
+          Actions
+        </Text>
+
+        <Button
+          title={account.closed ? 'Reopen Account' : 'Close Account'}
+          onPress={handleClose}
+          variant="secondary"
+          disabled={saving}
+        />
+
+        <Button
+          title="Delete Account"
+          onPress={handleDelete}
+          variant="danger"
+          disabled={saving}
+          style={styles.deleteButton}
+        />
+      </ScrollView>
+    </>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f172a', paddingHorizontal: 16, paddingTop: 12 },
-  center: { flex: 1, backgroundColor: '#0f172a', alignItems: 'center', justifyContent: 'center' },
-
-  sectionTitle: {
-    color: '#64748b', fontSize: 11, fontWeight: '700',
-    textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8, marginTop: 4,
+const createStyles = (theme: Theme) => ({
+  flex: {
+    flex: 1,
+    backgroundColor: theme.colors.pageBackground,
   },
-  card: { backgroundColor: '#1e293b', borderRadius: 12, borderWidth: 1, borderColor: '#334155', marginBottom: 16, overflow: 'hidden' },
-
-  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14 },
-  rowBorderTop: { borderTopWidth: 1, borderTopColor: '#334155' },
-  rowLabel: { color: '#94a3b8', fontSize: 14 },
-  rowHint: { color: '#475569', fontSize: 11, marginTop: 2 },
-  rowValue: { color: '#f1f5f9', fontSize: 15, fontWeight: '500' },
-
-  nameInputRow: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' },
-  nameInput: { flex: 1, color: '#f1f5f9', fontSize: 15, fontWeight: '500', textAlign: 'right', padding: 0 },
-
-  actionText: { color: '#f1f5f9', fontSize: 15 },
-
-  deleteButton: { backgroundColor: '#7f1d1d', borderRadius: 12, paddingVertical: 16, alignItems: 'center', marginTop: 8 },
-  deleteText: { color: '#fca5a5', fontWeight: '700', fontSize: 15 },
+  center: {
+    flex: 1,
+    backgroundColor: theme.colors.pageBackground,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  container: {
+    padding: theme.spacing.xl,
+    gap: theme.spacing.sm,
+  },
+  label: {
+    fontWeight: '600' as const,
+    marginTop: theme.spacing.lg,
+    marginLeft: theme.spacing.xs,
+    marginBottom: theme.spacing.xs,
+  },
+  input: {
+    backgroundColor: theme.colors.inputBackground,
+    color: theme.colors.textPrimary,
+    borderRadius: theme.borderRadius.lg,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    fontSize: 16,
+    borderWidth: theme.borderWidth.default,
+    borderColor: theme.colors.inputBorder,
+  },
+  toggleRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    backgroundColor: theme.colors.cardBackground,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.md,
+    borderWidth: theme.borderWidth.default,
+    borderColor: theme.colors.cardBorder,
+    marginTop: theme.spacing.xl,
+  },
+  toggleText: {
+    flex: 1,
+    marginRight: theme.spacing.md,
+  },
+  saveButton: {
+    marginTop: theme.spacing.xxl,
+  },
+  actionsLabel: {
+    fontWeight: '600' as const,
+    marginTop: theme.spacing.xxl,
+    marginLeft: theme.spacing.xs,
+    marginBottom: theme.spacing.xs,
+  },
+  deleteButton: {
+    marginTop: theme.spacing.xs,
+  },
 });

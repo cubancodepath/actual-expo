@@ -15,6 +15,7 @@ export interface ButtonProps {
   icon?: keyof typeof Ionicons.glyphMap;
   loading?: boolean;
   disabled?: boolean;
+  textColor?: string;
   style?: ViewStyle;
 }
 
@@ -58,11 +59,13 @@ export function Button({
   icon,
   loading = false,
   disabled = false,
+  textColor,
   style,
 }: ButtonProps) {
   const theme = useTheme();
   const variantStyles = getVariantStyles(theme, variant);
   const sizeStyles = sizeMap[size];
+  const color = textColor ?? variantStyles.text;
 
   return (
     <Pressable
@@ -78,13 +81,13 @@ export function Button({
       ]}
     >
       {loading ? (
-        <ActivityIndicator size="small" color={variantStyles.text} />
+        <ActivityIndicator size="small" color={color} />
       ) : (
         <>
-          {icon && <Ionicons name={icon} size={sizeStyles.fontSize + 4} color={variantStyles.text} style={{ marginRight: 6 }} />}
+          {icon && <Ionicons name={icon} size={sizeStyles.fontSize + 4} color={color} style={{ marginRight: 6 }} />}
           <Text
             variant="bodyLg"
-            color={variantStyles.text}
+            color={color}
             style={{ fontSize: sizeStyles.fontSize, fontWeight: "600" }}
           >
             {title}

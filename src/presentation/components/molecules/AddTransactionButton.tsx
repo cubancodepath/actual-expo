@@ -22,9 +22,11 @@ const iconStyle: ViewStyle = {
 
 interface AddTransactionButtonProps {
   iconOnly?: boolean;
+  accountId?: string;
+  bottom?: number;
 }
 
-export function AddTransactionButton({ iconOnly }: AddTransactionButtonProps) {
+export function AddTransactionButton({ iconOnly, accountId, bottom = 100 }: AddTransactionButtonProps) {
   const router = useRouter();
   const { colors } = useTheme();
   const glass = isLiquidGlassAvailable();
@@ -42,10 +44,10 @@ export function AddTransactionButton({ iconOnly }: AddTransactionButtonProps) {
 
   return (
     <Pressable
-      onPress={() => router.push({ pathname: "/(auth)/transaction/new" })}
+      onPress={() => router.push({ pathname: "/(auth)/transaction/new", params: accountId ? { accountId } : undefined })}
       style={{
         position: "absolute",
-        bottom: 100,
+        bottom,
         right: 20,
         borderRadius: 50,
         overflow: "hidden",

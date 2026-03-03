@@ -28,6 +28,7 @@ import { TransactionRow } from '../../../src/presentation/components/account/Tra
 import { DateSectionHeader } from '../../../src/presentation/components/account/DateSectionHeader';
 import { AccountHeaderMenu } from '../../../src/presentation/components/account/AccountHeaderMenu';
 import { UnclearedBanner } from '../../../src/presentation/components/account/UnclearedBanner';
+import { AddTransactionButton } from '../../../src/presentation/components/molecules/AddTransactionButton';
 
 // ---------------------------------------------------------------------------
 // Types for mixed FlashList data
@@ -249,15 +250,7 @@ export default function AccountTransactionsScreen() {
         />
       )}
 
-      {/* FAB */}
-      <Pressable
-        style={styles.fab}
-        onPress={() =>
-          router.push({ pathname: '/(auth)/transaction/new', params: { accountId: id } })
-        }
-      >
-        <Ionicons name="add" size={28} color={colors.primaryText} />
-      </Pressable>
+      <AddTransactionButton iconOnly accountId={id as string} bottom={28} />
 
       {/* Reconcile overlay */}
       <ReconcileOverlay
@@ -278,17 +271,5 @@ const createScreenStyles = (theme: Theme) => ({
   container: {
     flex: 1,
     backgroundColor: theme.colors.pageBackground,
-  },
-  fab: {
-    position: 'absolute' as const,
-    bottom: 28,
-    right: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: theme.colors.primary,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-    ...theme.shadows.elevated,
   },
 });

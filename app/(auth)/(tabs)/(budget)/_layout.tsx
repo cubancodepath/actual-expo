@@ -22,7 +22,7 @@ export default function BudgetStack() {
           headerTitle: () => <MonthSelector />,
           headerLeft: () => (
             <Pressable
-              onPress={() => router.push('/(auth)/categories')}
+              onPress={() => router.push('/(auth)/budget/edit')}
               hitSlop={8}
               style={{ paddingLeft: 4 }}
             >

@@ -56,10 +56,14 @@ export default function CategoryPickerScreen() {
 
       {groups
         .filter((g) => !g.hidden && !g.tombstone)
+        .sort((a, b) => {
+          if (a.is_income !== b.is_income) return a.is_income ? 1 : -1;
+          return (a.sort_order ?? 0) - (b.sort_order ?? 0);
+        })
         .map((g) => {
-          const cats = categories.filter(
-            (c) => c.cat_group === g.id && !c.hidden && !c.tombstone,
-          );
+          const cats = categories
+            .filter((c) => c.cat_group === g.id && !c.hidden && !c.tombstone)
+            .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
           if (cats.length === 0) return null;
           return (
             <View key={g.id}>

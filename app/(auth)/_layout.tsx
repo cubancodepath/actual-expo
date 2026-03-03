@@ -30,6 +30,50 @@ export default function AuthLayout() {
         options={{ headerShown: false, ...modal }}
       />
       <Stack.Screen
+        name="budget/edit"
+        options={{ title: "Edit Budget", ...screen }}
+      />
+      <Stack.Screen
+        name="budget/new-group"
+        options={{
+          ...screen,
+          title: "New Group",
+          presentation: "formSheet",
+          sheetAllowedDetents: "fitToContents",
+          contentStyle: { backgroundColor: theme.colors.headerBackground },
+        }}
+      />
+      <Stack.Screen
+        name="budget/new-category"
+        options={{
+          ...screen,
+          title: "New Category",
+          presentation: "formSheet",
+          sheetAllowedDetents: "fitToContents",
+          contentStyle: { backgroundColor: theme.colors.headerBackground },
+        }}
+      />
+      <Stack.Screen
+        name="budget/edit-group"
+        options={{
+          ...screen,
+          title: "Edit Group",
+          presentation: "formSheet",
+          sheetAllowedDetents: "fitToContents",
+          contentStyle: { backgroundColor: theme.colors.headerBackground },
+        }}
+      />
+      <Stack.Screen
+        name="budget/edit-category"
+        options={{
+          ...screen,
+          title: "Edit Category",
+          presentation: "formSheet",
+          sheetAllowedDetents: "fitToContents",
+          contentStyle: { backgroundColor: theme.colors.headerBackground },
+        }}
+      />
+      <Stack.Screen
         name="categories"
         options={{ title: "Manage Categories", ...modal }}
       />

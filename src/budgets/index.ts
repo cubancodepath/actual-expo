@@ -290,7 +290,13 @@ export async function getBudgetMonth(month: string): Promise<BudgetMonth> {
   let displayBudgeted = 0;
   let displaySpent    = 0;
 
-  const budgetGroups: BudgetGroup[] = groups.map(g => {
+  // Expense groups first (by sort_order), income groups last
+  const sortedGroups = [...groups].sort((a, b) => {
+    if (a.is_income !== b.is_income) return a.is_income ? 1 : -1;
+    return (a.sort_order ?? 0) - (b.sort_order ?? 0);
+  });
+
+  const budgetGroups: BudgetGroup[] = sortedGroups.map(g => {
     const groupCats = categories.filter(c => c.cat_group === g.id);
     const isIncome  = g.is_income === 1;
 

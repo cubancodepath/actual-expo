@@ -4,6 +4,7 @@ import { sendMessages } from '../sync';
 import { Timestamp } from '../crdt';
 import type { CategoryGroupRow, CategoryRow } from '../db/types';
 import type { Category, CategoryGroup } from './types';
+import { shoveSortOrders } from './sort';
 
 function rowToGroup(r: CategoryGroupRow): CategoryGroup {
   return {
@@ -159,6 +160,73 @@ export async function updateCategoryGroup(
       value: value as string | number | null,
     })),
   );
+}
+
+export async function moveCategoryGroup(
+  id: string,
+  targetId: string | null = null,
+): Promise<void> {
+  const groups = await runQuery<{ id: string; sort_order: number }>(
+    'SELECT id, sort_order FROM category_groups WHERE tombstone = 0 ORDER BY sort_order ASC, id ASC',
+  );
+
+  const { updates, sort_order } = shoveSortOrders(groups, targetId);
+
+  const messages = [
+    ...updates.map((u) => ({
+      timestamp: Timestamp.send()!,
+      dataset: 'category_groups',
+      row: u.id,
+      column: 'sort_order',
+      value: u.sort_order as string | number | null,
+    })),
+    {
+      timestamp: Timestamp.send()!,
+      dataset: 'category_groups',
+      row: id,
+      column: 'sort_order',
+      value: sort_order as string | number | null,
+    },
+  ];
+  await sendMessages(messages);
+}
+
+export async function moveCategory(
+  id: string,
+  groupId: string,
+  targetId: string | null = null,
+): Promise<void> {
+  const categories = await runQuery<{ id: string; sort_order: number }>(
+    'SELECT id, sort_order FROM categories WHERE cat_group = ? AND tombstone = 0 ORDER BY sort_order ASC, id ASC',
+    [groupId],
+  );
+
+  const { updates, sort_order } = shoveSortOrders(categories, targetId);
+
+  const messages = [
+    ...updates.map((u) => ({
+      timestamp: Timestamp.send()!,
+      dataset: 'categories',
+      row: u.id,
+      column: 'sort_order',
+      value: u.sort_order as string | number | null,
+    })),
+    {
+      timestamp: Timestamp.send()!,
+      dataset: 'categories',
+      row: id,
+      column: 'sort_order',
+      value: sort_order as string | number | null,
+    },
+    {
+      timestamp: Timestamp.send()!,
+      dataset: 'categories',
+      row: id,
+      column: 'cat_group',
+      value: groupId as string | number | null,
+    },
+  ];
+  await sendMessages(messages);
 }
 
 export async function deleteCategoryGroup(id: string, transferId?: string): Promise<void> {

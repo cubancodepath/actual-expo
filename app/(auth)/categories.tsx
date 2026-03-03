@@ -39,7 +39,13 @@ function TransferPicker({
   // Build grouped list: only include expense groups that have at least one candidate
   const grouped = groups
     .filter(g => !g.is_income)
-    .map(g => ({ group: g, cats: candidates.filter(c => c.cat_group === g.id) }))
+    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+    .map(g => ({
+      group: g,
+      cats: candidates
+        .filter(c => c.cat_group === g.id)
+        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)),
+    }))
     .filter(s => s.cats.length > 0);
 
   const subtitle =
@@ -264,41 +270,19 @@ export default function CategoriesScreen() {
   // ---------------------------------------------------------------------------
 
   function handleAddGroup() {
-    Alert.prompt(
-      'New Group',
-      'Enter group name',
-      async name => {
-        if (!name?.trim()) return;
-        await createGroup(name.trim());
-        load();
-      },
-      'plain-text',
-    );
+    router.push('/(auth)/budget/new-group');
   }
 
   function handleAddCategory(groupId: string) {
-    Alert.prompt(
-      'New Category',
-      'Enter category name',
-      async name => {
-        if (!name?.trim()) return;
-        await createCategory(name.trim(), groupId);
-        load();
-      },
-      'plain-text',
-    );
+    router.push({ pathname: '/(auth)/budget/new-category', params: { groupId } });
   }
 
-  async function handleRenameGroup(id: string, name: string) {
-    // updateCategoryGroup not in store yet — send directly via categories module
-    const { updateCategoryGroup } = await import('../../src/categories');
-    await updateCategoryGroup(id, { name });
-    load();
+  function handleRenameGroup(id: string, name: string) {
+    router.push({ pathname: '/(auth)/budget/edit-group', params: { id, name } });
   }
 
-  async function handleRenameCategory(id: string, name: string) {
-    await updateCategory(id, { name });
-    load();
+  function handleRenameCategory(id: string, name: string) {
+    router.push({ pathname: '/(auth)/budget/edit-category', params: { id, name } });
   }
 
   async function handleToggleHide(id: string, hidden: boolean) {
@@ -372,10 +356,17 @@ export default function CategoriesScreen() {
   // Render
   // ---------------------------------------------------------------------------
 
-  const sections = groups.map(g => ({
-    group: g,
-    cats: categories.filter(c => c.cat_group === g.id),
-  }));
+  const sections = [...groups]
+    .sort((a, b) => {
+      if (a.is_income !== b.is_income) return a.is_income ? 1 : -1;
+      return (a.sort_order ?? 0) - (b.sort_order ?? 0);
+    })
+    .map(g => ({
+      group: g,
+      cats: categories
+        .filter(c => c.cat_group === g.id)
+        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)),
+    }));
 
   // Candidates for transfer: all live expense categories except the ones being deleted
   const excludeIds = new Set(

@@ -6,6 +6,9 @@ import {
   createCategory,
   createCategoryGroup,
   updateCategory,
+  updateCategoryGroup,
+  moveCategory,
+  moveCategoryGroup,
   deleteCategory,
   deleteCategoryGroup,
 } from '../categories';
@@ -19,6 +22,9 @@ type CategoriesState = {
   createGroup(name: string, is_income?: boolean): Promise<string>;
   createCategory(name: string, groupId: string): Promise<string>;
   updateCategory(id: string, fields: Partial<Pick<Category, 'name' | 'hidden' | 'sort_order' | 'goal_def'>>): Promise<void>;
+  updateCategoryGroup(id: string, fields: Partial<Pick<CategoryGroup, 'name' | 'hidden' | 'sort_order'>>): Promise<void>;
+  moveCategory(id: string, groupId: string, targetId?: string | null): Promise<void>;
+  moveCategoryGroup(id: string, targetId?: string | null): Promise<void>;
   deleteCategory(id: string, transferId?: string): Promise<void>;
   deleteCategoryGroup(id: string, transferId?: string): Promise<void>;
 };
@@ -51,6 +57,18 @@ export const useCategoriesStore = create<CategoriesState>((set) => ({
 
   async updateCategory(id, fields) {
     return updateCategory(id, fields);
+  },
+
+  async updateCategoryGroup(id, fields) {
+    return updateCategoryGroup(id, fields);
+  },
+
+  async moveCategory(id, groupId, targetId = null) {
+    await moveCategory(id, groupId, targetId);
+  },
+
+  async moveCategoryGroup(id, targetId = null) {
+    await moveCategoryGroup(id, targetId);
   },
 
   async deleteCategory(id, transferId) {

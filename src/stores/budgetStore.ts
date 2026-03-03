@@ -1,13 +1,7 @@
 import { create } from 'zustand';
 import { getBudgetMonth, setBudgetAmount, holdForNextMonth, resetHold, setCategoryCarryover, transferBetweenCategories } from '../budgets';
+import { currentMonth } from '../lib/date';
 import type { BudgetMonth } from '../budgets/types';
-
-function currentMonth(): string {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, '0');
-  return `${y}-${m}`;
-}
 
 type BudgetState = {
   month: string;

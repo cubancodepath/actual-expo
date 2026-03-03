@@ -22,50 +22,8 @@ import { findOrCreatePayee } from '../../../src/payees';
 import { getTransactionById } from '../../../src/transactions';
 import { getCategoryBalancesForMonth } from '../../../src/budgets';
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function todayStr(): string {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
-
-function todayInt(): number {
-  return parseInt(todayStr().replace(/-/g, ''), 10);
-}
-
-/** Parse "YYYY-MM-DD" → YYYYMMDD integer. Returns null if invalid. */
-function parseDateStr(s: string): number | null {
-  const clean = s.replace(/\D/g, '');
-  if (clean.length !== 8) return null;
-  const num = parseInt(clean, 10);
-  if (isNaN(num)) return null;
-  return num;
-}
-
-function formatDateStr(s: string): string {
-  // Auto-insert dashes as user types: "20250302" → "2025-03-02"
-  const d = s.replace(/\D/g, '');
-  if (d.length <= 4) return d;
-  if (d.length <= 6) return `${d.slice(0, 4)}-${d.slice(4)}`;
-  return `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}`;
-}
-
-function formatCategoryBalance(cents: number): string {
-  const abs = (Math.abs(cents) / 100).toFixed(2);
-  return cents < 0 ? `-$${abs}` : `$${abs}`;
-}
-
-function parseToCents(raw: string): number {
-  const cleaned = raw.replace(/[^0-9.]/g, '');
-  const num = parseFloat(cleaned);
-  if (isNaN(num)) return 0;
-  return Math.round(num * 100);
-}
+import { todayStr, todayInt, strToInt, formatInputDate, intToStr } from '../../../src/lib/date';
+import { formatBalance as formatCategoryBalance, parseCents } from '../../../src/lib/format';
 
 // ---------------------------------------------------------------------------
 // Payee picker modal
@@ -266,11 +224,6 @@ function CategoryPicker({
 // Main screen
 // ---------------------------------------------------------------------------
 
-function intToDateStr(n: number): string {
-  const s = String(n);
-  return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`;
-}
-
 export default function NewTransactionScreen() {
   const { accountId, transactionId } = useLocalSearchParams<{ accountId: string; transactionId?: string }>();
   const isEdit = !!transactionId;
@@ -309,7 +262,7 @@ export default function NewTransactionScreen() {
         setPayeeName(txn.payeeName ?? '');
         setCategoryId(txn.category ?? null);
         setCategoryName(txn.categoryName ?? '');
-        setDateStr(intToDateStr(txn.date));
+        setDateStr(intToStr(txn.date));
         setNotes(txn.notes ?? '');
         setCleared(txn.cleared);
       });
@@ -317,10 +270,10 @@ export default function NewTransactionScreen() {
   }, []);
 
   async function handleSave() {
-    const cents = parseToCents(amountStr);
+    const cents = parseCents(amountStr);
     if (cents === 0) { setError('Enter an amount'); return; }
 
-    const date = parseDateStr(dateStr) ?? todayInt();
+    const date = strToInt(dateStr) ?? todayInt();
     const finalAmount = type === 'expense' ? -Math.abs(cents) : Math.abs(cents);
 
     setError(null);
@@ -426,7 +379,7 @@ export default function NewTransactionScreen() {
           placeholder="YYYY-MM-DD"
           placeholderTextColor="#475569"
           value={dateStr}
-          onChangeText={v => setDateStr(formatDateStr(v))}
+          onChangeText={v => setDateStr(formatInputDate(v))}
           keyboardType="number-pad"
           maxLength={10}
           returnKeyType="next"

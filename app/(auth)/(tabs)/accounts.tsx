@@ -11,11 +11,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useAccountsStore } from '../../../src/stores/accountsStore';
 import { useSyncStore } from '../../../src/stores/syncStore';
-
-function formatBalance(cents: number): string {
-  const sign = cents < 0 ? '-' : '';
-  return `${sign}$${(Math.abs(cents) / 100).toFixed(2)}`;
-}
+import { formatBalance } from '../../../src/lib/format';
 
 export default function AccountsScreen() {
   const router = useRouter();

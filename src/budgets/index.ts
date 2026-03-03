@@ -1,13 +1,9 @@
 import { runQuery, first } from '../db';
 import { sendMessages } from '../sync';
 import { Timestamp } from '../crdt';
+import { monthToInt } from '../lib/date';
 import type { ZeroBudgetRow, CategoryGroupRow, CategoryRow } from '../db/types';
 import type { BudgetMonth, BudgetGroup, BudgetCategory } from './types';
-
-/** Convert 'YYYY-MM' to YYYYMM integer */
-function monthToInt(month: string): number {
-  return parseInt(month.replace('-', ''), 10);
-}
 
 // ---------------------------------------------------------------------------
 // Carryover chain computation

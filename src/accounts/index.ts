@@ -2,6 +2,7 @@ import { randomUUID } from 'expo-crypto';
 import { runQuery, run, first } from '../db';
 import { sendMessages, batchMessages } from '../sync';
 import { Timestamp } from '../crdt';
+import { todayInt } from '../lib/date';
 import type { AccountRow } from '../db/types';
 import type { Account } from './types';
 
@@ -38,15 +39,6 @@ export async function getAccounts(): Promise<Account[]> {
      ORDER BY a.sort_order ASC, a.name ASC`,
   );
   return rows.map(rowToAccount);
-}
-
-/** Returns today as a YYYYMMDD integer, e.g. 20250302 */
-function todayInt(): number {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return parseInt(`${y}${m}${day}`, 10);
 }
 
 /**

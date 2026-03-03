@@ -24,37 +24,8 @@ import {
   type TransactionDisplay,
 } from '../../../src/transactions';
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function formatDate(date: number): string {
-  const s = String(date);
-  const d = new Date(
-    parseInt(s.slice(0, 4)),
-    parseInt(s.slice(4, 6)) - 1,
-    parseInt(s.slice(6, 8)),
-  );
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
-
-function formatAmount(cents: number): string {
-  const abs = (Math.abs(cents) / 100).toFixed(2);
-  return cents < 0 ? `-$${abs}` : `+$${abs}`;
-}
-
-function formatBalance(cents: number): string {
-  const abs = (Math.abs(cents) / 100).toFixed(2);
-  return cents < 0 ? `-$${abs}` : `$${abs}`;
-}
-
-function todayInt(): number {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return parseInt(`${y}${m}${day}`, 10);
-}
+import { formatDate, todayInt } from '../../../src/lib/date';
+import { formatAmount, formatBalance } from '../../../src/lib/format';
 
 // ---------------------------------------------------------------------------
 // ReconcileEntryModal — step 1: user enters their bank balance

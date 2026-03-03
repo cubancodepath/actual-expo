@@ -9,23 +9,10 @@ import {
 import { FlashList } from '@shopify/flash-list';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { getAllTransactions, type TransactionDisplay } from '../../../src/transactions';
+import { formatDate } from '../../../src/lib/date';
+import { formatAmount } from '../../../src/lib/format';
 
 const PAGE_SIZE = 50;
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function formatDate(date: number): string {
-  const s = String(date);
-  const d = new Date(parseInt(s.slice(0, 4)), parseInt(s.slice(4, 6)) - 1, parseInt(s.slice(6, 8)));
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
-
-function formatAmount(cents: number): string {
-  const abs = (Math.abs(cents) / 100).toFixed(2);
-  return cents < 0 ? `-$${abs}` : `+$${abs}`;
-}
 
 // ---------------------------------------------------------------------------
 // Transaction row

@@ -17,6 +17,8 @@ import {
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useBudgetStore } from '../../../src/stores/budgetStore';
 import { useSyncStore } from '../../../src/stores/syncStore';
+import { addMonths, formatMonth } from '../../../src/lib/date';
+import { formatBalance as fmt, parseCents } from '../../../src/lib/format';
 import type { BudgetCategory, BudgetGroup } from '../../../src/budgets/types';
 import { getUncategorizedStats } from '../../../src/transactions';
 
@@ -26,21 +28,6 @@ import { getUncategorizedStats } from '../../../src/transactions';
 const COL_BUDGET = 76;
 const COL_SPENT = 68;
 const COL_BAL = 72;
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function fmt(cents: number): string {
-  if (cents === 0) return '$0.00';
-  const sign = cents < 0 ? '-' : '';
-  return `${sign}$${(Math.abs(cents) / 100).toFixed(2)}`;
-}
-
-function parseCents(s: string): number {
-  const n = parseFloat(s.replace(/[^0-9.]/g, ''));
-  return isNaN(n) ? 0 : Math.round(n * 100);
-}
 
 // ---------------------------------------------------------------------------
 // Month navigation
@@ -55,11 +42,7 @@ function MonthNav({
   onPrev: () => void;
   onNext: () => void;
 }) {
-  const [year, m] = month.split('-');
-  const label = new Date(Number(year), Number(m) - 1).toLocaleString('default', {
-    month: 'long',
-    year: 'numeric',
-  });
+  const label = formatMonth(month);
   return (
     <View style={styles.monthNav}>
       <Pressable onPress={onPrev} hitSlop={12}>
@@ -441,15 +424,11 @@ export default function BudgetScreen() {
   }, []));
 
   function prevMonth() {
-    const [y, m] = month.split('-').map(Number);
-    const d = new Date(y, m - 2);
-    setMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+    setMonth(addMonths(month, -1));
   }
 
   function nextMonth() {
-    const [y, m] = month.split('-').map(Number);
-    const d = new Date(y, m);
-    setMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+    setMonth(addMonths(month, 1));
   }
 
   function startEdit(id: string, currentCents: number) {

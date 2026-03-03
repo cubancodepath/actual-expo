@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
-import { AppState } from "react-native";
+import { AppState, useColorScheme } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import {
+  ThemeProvider as NavigationThemeProvider,
+  DarkTheme,
+  DefaultTheme,
+} from "@react-navigation/native";
 import { Stack } from "expo-router";
 import { ThemeProvider } from "../src/presentation/providers/ThemeProvider";
 import { usePrefsStore } from "../src/stores/prefsStore";
@@ -11,6 +16,7 @@ import { openDatabase } from "../src/db";
 import { loadClock, fullSync } from "../src/sync";
 
 export default function RootLayout() {
+  const colorScheme = useColorScheme();
   const hasToken = usePrefsStore((s) => s.hasToken);
   const isConfigured = usePrefsStore((s) => s.isConfigured);
   const [ready, setReady] = useState(false);
@@ -49,6 +55,7 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
+    <NavigationThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
     <ThemeProvider>
       <Stack>
         <Stack.Protected guard={!hasToken}>
@@ -62,6 +69,7 @@ export default function RootLayout() {
         </Stack.Protected>
       </Stack>
     </ThemeProvider>
+    </NavigationThemeProvider>
     </GestureHandlerRootView>
   );
 }

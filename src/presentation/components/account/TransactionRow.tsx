@@ -11,6 +11,7 @@ interface TransactionRowProps {
   onPress: (id: string) => void;
   onDelete: (id: string) => void;
   onToggleCleared: (id: string) => void;
+  showAccountName?: boolean;
 }
 
 export function TransactionRow({
@@ -18,6 +19,7 @@ export function TransactionRow({
   onPress,
   onDelete,
   onToggleCleared,
+  showAccountName,
 }: TransactionRowProps) {
   const { colors, spacing } = useTheme();
   const styles = useThemedStyles(createStyles);
@@ -59,12 +61,21 @@ export function TransactionRow({
           </View>
         </View>
 
-        {/* Category pill */}
-        {item.categoryName && (
-          <View style={styles.categoryPill}>
-            <Text variant="captionSm" color={colors.textSecondary}>
-              {item.categoryName}
-            </Text>
+        {/* Category + account name row */}
+        {(item.categoryName || (showAccountName && item.accountName)) && (
+          <View style={styles.metaRow}>
+            {item.categoryName ? (
+              <View style={styles.categoryPill}>
+                <Text variant="captionSm" color={colors.textSecondary}>
+                  {item.categoryName}
+                </Text>
+              </View>
+            ) : <View />}
+            {showAccountName && item.accountName && (
+              <Text variant="captionSm" color={colors.textMuted}>
+                {item.accountName}
+              </Text>
+            )}
           </View>
         )}
 
@@ -98,7 +109,7 @@ const createStyles = (theme: Theme) => ({
   topRow: {
     flexDirection: 'row' as const,
     justifyContent: 'space-between' as const,
-    alignItems: 'center' as const,
+    alignItems: 'flex-start' as const,
   },
   payeeRow: {
     flexDirection: 'row' as const,
@@ -110,12 +121,16 @@ const createStyles = (theme: Theme) => ({
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
   },
+  metaRow: {
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
+    marginTop: theme.spacing.xs,
+  },
   categoryPill: {
-    alignSelf: 'flex-start' as const,
     backgroundColor: theme.colors.buttonSecondaryBackground,
     paddingHorizontal: theme.spacing.sm,
     paddingVertical: theme.spacing.xxs,
     borderRadius: theme.borderRadius.full,
-    marginTop: theme.spacing.xs,
   },
 });

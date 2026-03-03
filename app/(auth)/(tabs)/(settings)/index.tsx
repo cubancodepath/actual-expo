@@ -9,8 +9,8 @@ import {
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { usePrefsStore } from '../../../src/stores/prefsStore';
-import { useSyncStore } from '../../../src/stores/syncStore';
+import { usePrefsStore } from '../../../../src/stores/prefsStore';
+import { useSyncStore } from '../../../../src/stores/syncStore';
 
 function Row({ label, value }: { label: string; value: string }) {
   return (

@@ -15,12 +15,13 @@ import {
   View,
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useBudgetStore } from '../../../src/stores/budgetStore';
-import { useSyncStore } from '../../../src/stores/syncStore';
-import { addMonths, formatMonth } from '../../../src/lib/date';
-import { formatBalance as fmt, parseCents } from '../../../src/lib/format';
-import type { BudgetCategory, BudgetGroup } from '../../../src/budgets/types';
-import { getUncategorizedStats } from '../../../src/transactions';
+import { AddTransactionButton } from '../../../../src/presentation/components/molecules/AddTransactionButton';
+import { useBudgetStore } from '../../../../src/stores/budgetStore';
+import { useSyncStore } from '../../../../src/stores/syncStore';
+import { addMonths, formatMonth } from '../../../../src/lib/date';
+import { formatBalance as fmt, parseCents } from '../../../../src/lib/format';
+import type { BudgetCategory, BudgetGroup } from '../../../../src/budgets/types';
+import { getUncategorizedStats } from '../../../../src/transactions';
 
 // ---------------------------------------------------------------------------
 // Column widths (consistent between headers and rows)
@@ -680,7 +681,7 @@ export default function BudgetScreen() {
         <UncategorizedBanner
           count={uncategorized.count}
           total={uncategorized.total}
-          onPress={() => router.push('/(auth)/(tabs)/accounts')}
+          onPress={() => router.push('/(auth)/(tabs)/(accounts)')}
         />
       )}
 
@@ -739,6 +740,7 @@ export default function BudgetScreen() {
           contentContainerStyle={{ paddingBottom: 80 }}
         />
       )}
+      <AddTransactionButton iconOnly />
     </View>
   );
 }

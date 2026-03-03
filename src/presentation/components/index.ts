@@ -17,3 +17,4 @@ export { SearchBar, type SearchBarProps } from "./molecules/SearchBar";
 export { EmptyState, type EmptyStateProps } from "./molecules/EmptyState";
 export { Banner, type BannerProps } from "./molecules/Banner";
 export { SwipeableRow } from "./molecules/SwipeableRow";
+export { SyncBadge } from "./molecules/SyncBadge";

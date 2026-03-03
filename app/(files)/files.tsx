@@ -64,7 +64,7 @@ export default function FilesScreen() {
       ]);
 
       fullSync().catch(console.warn);
-      router.replace('/(auth)/(tabs)/budget');
+      router.replace('/(auth)/(tabs)/(budget)');
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
       setSelecting(null);

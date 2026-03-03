@@ -12,20 +12,20 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useAccountsStore } from '../../../src/stores/accountsStore';
-import { useSyncStore } from '../../../src/stores/syncStore';
-import { groupAccounts, type AccountGroup } from '../../../src/accounts';
-import { useTheme, useThemedStyles } from '../../../src/presentation/providers/ThemeProvider';
-import { Text } from '../../../src/presentation/components/atoms/Text';
-import { Card } from '../../../src/presentation/components/atoms/Card';
-import { Amount } from '../../../src/presentation/components/atoms/Amount';
-import { Divider } from '../../../src/presentation/components/atoms/Divider';
-import { Button } from '../../../src/presentation/components/atoms/Button';
-import { EmptyState } from '../../../src/presentation/components/molecules/EmptyState';
-import type { Theme } from '../../../src/theme';
-import type { Account } from '../../../src/accounts/types';
+import { useAccountsStore } from '../../../../src/stores/accountsStore';
+import { useSyncStore } from '../../../../src/stores/syncStore';
+import { groupAccounts, type AccountGroup } from '../../../../src/accounts';
+import { useTheme, useThemedStyles } from '../../../../src/presentation/providers/ThemeProvider';
+import { Text } from '../../../../src/presentation/components/atoms/Text';
+import { Card } from '../../../../src/presentation/components/atoms/Card';
+import { Amount } from '../../../../src/presentation/components/atoms/Amount';
+import { Divider } from '../../../../src/presentation/components/atoms/Divider';
+import { Button } from '../../../../src/presentation/components/atoms/Button';
+import { EmptyState } from '../../../../src/presentation/components/molecules/EmptyState';
+import type { Theme } from '../../../../src/theme';
+import type { Account } from '../../../../src/accounts/types';
 
 // ---------------------------------------------------------------------------
 // Collapsible section
@@ -152,48 +152,57 @@ export default function AccountsScreen() {
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={sync}
-          tintColor={theme.colors.primary}
-          colors={[theme.colors.primary]}
-        />
-      }
-    >
-      <Text variant="displayLg" color={theme.colors.textPrimary} style={styles.title}>
-        Accounts
-      </Text>
-
-      {groups.length > 0 ? (
-        <>
-          {groups.map(group => (
-            <AccountSection
-              key={group.type}
-              group={group}
-              onPressAccount={handlePressAccount}
-            />
-          ))}
-
-          <Button
-            title="Add Account"
-            variant="ghost"
-            icon="add-circle-outline"
-            onPress={() => router.push('/(auth)/account/new')}
-            style={styles.addButton}
+    <>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        contentInsetAdjustmentBehavior="automatic"
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={sync}
+            tintColor={theme.colors.primary}
+            colors={[theme.colors.primary]}
           />
-        </>
-      ) : (
-        <EmptyState
-          icon="wallet-outline"
-          title="No accounts yet"
-          description="Add your first account to get started."
+        }
+      >
+        <Text variant="displayLg" color={theme.colors.textPrimary} style={styles.title}>
+          Accounts
+        </Text>
+
+        {groups.length > 0 ? (
+          <>
+            {groups.map(group => (
+              <AccountSection
+                key={group.type}
+                group={group}
+                onPressAccount={handlePressAccount}
+              />
+            ))}
+
+            <Button
+              title="Add Account"
+              variant="ghost"
+              icon="add-circle-outline"
+              onPress={() => router.push('/(auth)/account/new')}
+              style={styles.addButton}
+            />
+          </>
+        ) : (
+          <EmptyState
+            icon="wallet-outline"
+            title="No accounts yet"
+            description="Add your first account to get started."
+          />
+        )}
+      </ScrollView>
+      <Stack.Toolbar placement="right">
+        <Stack.Toolbar.Button
+          icon="plus"
+          onPress={() => router.push('/(auth)/account/new')}
         />
-      )}
-    </ScrollView>
+      </Stack.Toolbar>
+    </>
   );
 }
 

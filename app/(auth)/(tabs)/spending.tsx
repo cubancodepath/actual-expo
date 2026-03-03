@@ -147,7 +147,6 @@ export default function SpendingScreen() {
         <FlashList
           data={transactions}
           keyExtractor={t => t.id}
-          estimatedItemSize={62}
           renderItem={({ item }) => (
             <SpendingRow
               item={item}

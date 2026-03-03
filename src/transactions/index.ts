@@ -5,6 +5,7 @@ import { Timestamp } from '../crdt';
 import type { TransactionRow } from '../db/types';
 import type { Transaction, GetTransactionsOptions } from './types';
 import { onInsert, onUpdate, onDelete as onDeleteTransfer } from './transfer';
+import { todayInt } from '../lib/date';
 
 function rowToTransaction(r: TransactionRow): Transaction {
   return {
@@ -196,6 +197,31 @@ export async function lockTransactions(accountId: string): Promise<void> {
       value: 1,
     })),
   );
+}
+
+/**
+ * Reconcile an account: optionally create an adjustment transaction
+ * to match the bank balance, then lock all cleared transactions.
+ */
+export async function reconcileAccount(
+  accountId: string,
+  bankBalance: number,
+): Promise<{ adjusted: boolean; diff: number }> {
+  const cleared = await getClearedBalance(accountId);
+  const diff = bankBalance - cleared;
+
+  if (diff !== 0) {
+    await addTransaction({
+      acct: accountId,
+      date: todayInt(),
+      amount: diff,
+      cleared: true,
+      notes: 'Reconciliation balance adjustment',
+    });
+  }
+
+  await lockTransactions(accountId);
+  return { adjusted: diff !== 0, diff };
 }
 
 export async function deleteTransaction(id: string): Promise<void> {

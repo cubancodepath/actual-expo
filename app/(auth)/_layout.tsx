@@ -12,14 +12,14 @@ export default function AuthLayout() {
 
   return (
     <Stack>
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="(tabs)" options={{ headerShown: false, title: "" }} />
       <Stack.Screen
         name="account/new"
         options={{ title: "New Account", ...modal }}
       />
       <Stack.Screen
         name="account/[id]"
-        options={{ title: "", ...screen }}
+        options={{ title: "", headerBackTitle: " ", ...screen }}
       />
       <Stack.Screen
         name="account/settings"

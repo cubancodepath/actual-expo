@@ -1,22 +1,24 @@
 import { useState } from 'react';
 import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
-  StyleSheet,
   Switch,
-  Text,
   TextInput,
   View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useAccountsStore } from '../../../src/stores/accountsStore';
+import { useTheme, useThemedStyles } from '../../../src/presentation/providers/ThemeProvider';
+import { Text } from '../../../src/presentation/components/atoms/Text';
+import { Button } from '../../../src/presentation/components/atoms/Button';
+import { Banner } from '../../../src/presentation/components/molecules/Banner';
+import type { Theme } from '../../../src/theme';
 
 /** Parse a user-typed balance string like "1,234.56" or "-50" into cents */
 function parseToCents(raw: string): number {
-  const cleaned = raw.replace(/[^0-9.\-]/g, '');
+  const cleaned = raw.replace(/[^0-9.-]/g, '');
   const num = parseFloat(cleaned);
   if (isNaN(num)) return 0;
   return Math.round(num * 100);
@@ -24,6 +26,8 @@ function parseToCents(raw: string): number {
 
 export default function NewAccountScreen() {
   const router = useRouter();
+  const theme = useTheme();
+  const styles = useThemedStyles(createStyles);
   const { create, load } = useAccountsStore();
 
   const [name, setName] = useState('');
@@ -51,102 +55,165 @@ export default function NewAccountScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+    <>
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <Pressable onPress={() => router.back()} hitSlop={8}>
+              <Ionicons name="close" size={24} color={theme.colors.textSecondary} />
+            </Pressable>
+          ),
+        }}
+      />
+      <ScrollView
+        style={styles.flex}
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
+      >
 
-        <Text style={styles.label}>Account name</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="e.g. Checking, Savings, Cash"
-          placeholderTextColor="#475569"
-          value={name}
-          onChangeText={t => { setName(t); setError(null); }}
-          autoFocus
-          returnKeyType="next"
-        />
-
-        <Text style={styles.label}>Starting balance</Text>
-        <View style={styles.balanceRow}>
-          <Text style={styles.currency}>$</Text>
+          {/* Account name */}
+          <Text variant="caption" color={theme.colors.textSecondary} style={styles.label}>
+            Account name
+          </Text>
           <TextInput
-            style={[styles.input, styles.balanceInput]}
-            placeholder="0.00"
-            placeholderTextColor="#475569"
-            value={balanceStr}
-            onChangeText={setBalanceStr}
-            keyboardType="decimal-pad"
-            returnKeyType="done"
-            onSubmitEditing={handleCreate}
+            style={styles.input}
+            placeholder="e.g. Checking, Savings, Cash"
+            placeholderTextColor={theme.colors.textMuted}
+            value={name}
+            onChangeText={t => { setName(t); setError(null); }}
+            autoFocus
+            returnKeyType="next"
           />
-        </View>
-        <Text style={styles.hint}>
-          Leave blank or 0 to start with an empty account.
-          Use a negative value for an account already in debt.
-        </Text>
 
-        <View style={styles.row}>
-          <View style={styles.rowText}>
-            <Text style={styles.rowLabel}>Off budget</Text>
-            <Text style={styles.rowHint}>Transactions won't affect your budget</Text>
+          {/* Starting balance */}
+          <Text variant="caption" color={theme.colors.textSecondary} style={styles.label}>
+            Starting balance
+          </Text>
+          <View style={styles.balanceInputRow}>
+            <Text variant="body" color={theme.colors.textSecondary} style={styles.currencyPrefix}>
+              $
+            </Text>
+            <TextInput
+              style={styles.balanceInput}
+              placeholder="0.00"
+              placeholderTextColor={theme.colors.textMuted}
+              value={balanceStr}
+              onChangeText={setBalanceStr}
+              keyboardType={Platform.OS === 'ios' ? 'numbers-and-punctuation' : 'numeric'}
+              returnKeyType="done"
+              onSubmitEditing={handleCreate}
+            />
           </View>
-          <Switch
-            value={offbudget}
-            onValueChange={setOffbudget}
-            trackColor={{ false: '#334155', true: '#1d4ed8' }}
-            thumbColor={offbudget ? '#93c5fd' : '#64748b'}
+          <Text variant="captionSm" color={theme.colors.textMuted} style={styles.hint}>
+            Leave blank or 0 to start with an empty account.{'\n'}
+            Use a negative value for an account already in debt.
+          </Text>
+
+          {/* Off budget toggle */}
+          <View style={styles.toggleRow}>
+            <View style={styles.toggleText}>
+              <Text variant="body" color={theme.colors.textPrimary}>
+                Off budget
+              </Text>
+              <Text variant="captionSm" color={theme.colors.textMuted}>
+                Transactions won't affect your budget
+              </Text>
+            </View>
+            <Switch
+              value={offbudget}
+              onValueChange={setOffbudget}
+              trackColor={{ false: theme.colors.inputBorder, true: theme.colors.primary }}
+              thumbColor={theme.colors.cardBackground}
+              ios_backgroundColor={theme.colors.inputBorder}
+            />
+          </View>
+
+          {/* Error */}
+          {error && (
+            <Banner message={error} variant="error" onDismiss={() => setError(null)} />
+          )}
+
+          {/* Create button */}
+          <Button
+            title="Create Account"
+            onPress={handleCreate}
+            size="lg"
+            loading={loading}
+            disabled={!name.trim()}
+            style={styles.createButton}
           />
-        </View>
-
-        {error && <Text style={styles.error}>{error}</Text>}
-
-        <Pressable
-          style={[styles.button, (!name.trim() || loading) && styles.buttonDisabled]}
-          onPress={handleCreate}
-          disabled={!name.trim() || loading}
-        >
-          {loading
-            ? <ActivityIndicator color="#fff" />
-            : <Text style={styles.buttonText}>Create Account</Text>
-          }
-        </Pressable>
 
       </ScrollView>
-    </KeyboardAvoidingView>
+    </>
   );
 }
 
-const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: '#0f172a' },
-  container: { padding: 20, gap: 8 },
+const createStyles = (theme: Theme) => ({
+  flex: {
+    flex: 1,
+    backgroundColor: theme.colors.pageBackground,
+  },
+  container: {
+    padding: theme.spacing.xl,
+    gap: theme.spacing.sm,
+  },
   label: {
-    color: '#94a3b8', fontSize: 12, fontWeight: '700',
-    textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4, marginTop: 8,
+    fontWeight: '600' as const,
+    marginTop: theme.spacing.lg,
+    marginLeft: theme.spacing.xs,
+    marginBottom: theme.spacing.xs,
   },
   input: {
-    backgroundColor: '#1e293b', color: '#f1f5f9', borderRadius: 10,
-    paddingHorizontal: 14, paddingVertical: 14, fontSize: 16,
-    borderWidth: 1, borderColor: '#334155',
+    backgroundColor: theme.colors.inputBackground,
+    color: theme.colors.textPrimary,
+    borderRadius: theme.borderRadius.lg,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    fontSize: 16,
+    borderWidth: theme.borderWidth.default,
+    borderColor: theme.colors.inputBorder,
   },
-  balanceRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  currency: { color: '#94a3b8', fontSize: 20, fontWeight: '600' },
-  balanceInput: { flex: 1 },
-  hint: { color: '#475569', fontSize: 12, lineHeight: 18 },
-  row: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: '#1e293b', borderRadius: 10, padding: 14,
-    borderWidth: 1, borderColor: '#334155', marginTop: 8,
+  balanceInputRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    backgroundColor: theme.colors.inputBackground,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: theme.borderWidth.default,
+    borderColor: theme.colors.inputBorder,
+    paddingHorizontal: theme.spacing.md,
   },
-  rowText: { flex: 1, marginRight: 12 },
-  rowLabel: { color: '#f1f5f9', fontSize: 15, fontWeight: '500' },
-  rowHint: { color: '#64748b', fontSize: 12, marginTop: 2 },
-  error: { color: '#f87171', fontSize: 13 },
-  button: {
-    backgroundColor: '#3b82f6', borderRadius: 10,
-    paddingVertical: 16, alignItems: 'center', marginTop: 16,
+  currencyPrefix: {
+    fontWeight: '600' as const,
+    marginRight: theme.spacing.xs,
   },
-  buttonDisabled: { opacity: 0.4 },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  balanceInput: {
+    flex: 1,
+    color: theme.colors.textPrimary,
+    fontSize: 16,
+    paddingVertical: theme.spacing.md,
+  },
+  hint: {
+    lineHeight: 18,
+    marginTop: theme.spacing.xs,
+    marginLeft: theme.spacing.xs,
+  },
+  toggleRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    backgroundColor: theme.colors.cardBackground,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.md,
+    borderWidth: theme.borderWidth.default,
+    borderColor: theme.colors.cardBorder,
+    marginTop: theme.spacing.xl,
+  },
+  toggleText: {
+    flex: 1,
+    marginRight: theme.spacing.md,
+  },
+  createButton: {
+    marginTop: theme.spacing.xxl,
+  },
 });

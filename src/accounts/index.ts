@@ -26,6 +26,44 @@ function rowToAccount(r: AccountWithBalance): Account {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Grouping helpers (pure business logic)
+// ---------------------------------------------------------------------------
+
+export type AccountGroup = {
+  type: 'budget' | 'offbudget';
+  label: string;
+  total: number;
+  accounts: Account[];
+};
+
+export function groupAccounts(accounts: Account[]): AccountGroup[] {
+  const budget = accounts.filter(a => !a.offbudget && !a.closed);
+  const offBudget = accounts.filter(a => a.offbudget && !a.closed);
+  const groups: AccountGroup[] = [];
+  if (budget.length > 0) {
+    groups.push({
+      type: 'budget',
+      label: 'Budget Accounts',
+      total: budget.reduce((sum, a) => sum + (a.balance ?? 0), 0),
+      accounts: budget,
+    });
+  }
+  if (offBudget.length > 0) {
+    groups.push({
+      type: 'offbudget',
+      label: 'Off Budget',
+      total: offBudget.reduce((sum, a) => sum + (a.balance ?? 0), 0),
+      accounts: offBudget,
+    });
+  }
+  return groups;
+}
+
+// ---------------------------------------------------------------------------
+// CRUD
+// ---------------------------------------------------------------------------
+
 export async function getAccounts(): Promise<Account[]> {
   const rows = await runQuery<AccountWithBalance>(
     `SELECT a.*,

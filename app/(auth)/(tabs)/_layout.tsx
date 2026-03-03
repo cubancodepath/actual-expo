@@ -92,7 +92,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="accounts"
         options={{
-          title: "Accounts",
+          title: "",
           headerRight: () => (
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <SyncBadge />

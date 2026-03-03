@@ -6,6 +6,26 @@ import type { ZeroBudgetRow, CategoryGroupRow, CategoryRow } from '../db/types';
 import type { BudgetMonth, BudgetGroup, BudgetCategory } from './types';
 
 // ---------------------------------------------------------------------------
+// Common transaction filter
+//
+// Mirrors loot-core's v_transactions_internal_alive view:
+//   - t.tombstone = 0        (not deleted)
+//   - t.isParent = 0         (exclude parent rows — children have the amounts)
+//   - t.date IS NOT NULL      (must have a date)
+//   - t.acct IS NOT NULL      (must have an account)
+//   - Child txns whose parent is tombstoned are excluded
+// ---------------------------------------------------------------------------
+
+const ALIVE_TX_FILTER = `
+  t.tombstone = 0
+  AND t.isParent = 0
+  AND t.date IS NOT NULL
+  AND t.acct IS NOT NULL
+  AND (t.isChild = 0 OR NOT EXISTS (
+    SELECT 1 FROM transactions t2 WHERE t2.id = t.parent_id AND t2.tombstone = 1
+  ))`;
+
+// ---------------------------------------------------------------------------
 // Carryover chain computation
 //
 // loot-core models category balance as a per-month spreadsheet cell:
@@ -62,18 +82,34 @@ async function computeCarryoverChain(
     currentMonthBudgets.map(r => [r.category, r.carryover === 1]),
   );
 
-  if (histBudgets.length === 0) return { ...empty, currentCoFlags };
-
-  // ── Distinct historical months, ascending ──
-  const histMonths = [...new Set(histBudgets.map(r => r.month))].sort((a, b) => a - b);
-  const firstHistMonth = histMonths[0];
-  const lastHistMonth  = histMonths[histMonths.length - 1];
-
-  // ── Build lookup maps ──
+  // ── Build lookup maps for budget rows ──
   const zbLookup = new Map<string, ZeroBudgetRow>();
   for (const r of histBudgets) zbLookup.set(`${r.month}-${r.category}`, r);
 
-  // Spent amounts for all historical months per category (using same category_mapping join)
+  // ── Determine the full range of months to iterate ──
+  // FIX #1: Include months with spending even if they have no budget rows.
+  // Collect distinct months from both zero_budgets AND transactions.
+  const budgetMonthSet = new Set(histBudgets.map(r => r.month));
+
+  const spentMonthRows = await runQuery<{ month: number }>(
+    `SELECT DISTINCT t.date / 100 AS month
+     FROM transactions t
+     JOIN accounts a ON a.id = t.acct AND a.offbudget = 0 AND a.tombstone = 0
+     WHERE ${ALIVE_TX_FILTER}
+       AND t.category IS NOT NULL
+       AND t.date / 100 < ?`,
+    [monthInt],
+  );
+  for (const r of spentMonthRows) budgetMonthSet.add(r.month);
+
+  const histMonths = [...budgetMonthSet].sort((a, b) => a - b);
+
+  if (histMonths.length === 0) return { ...empty, currentCoFlags };
+
+  const firstHistMonth = histMonths[0];
+  const lastHistMonth  = histMonths[histMonths.length - 1];
+
+  // Spent amounts for all historical months per category
   const histSpent = await runQuery<{ month: number; category: string; amount: number }>(
     `SELECT t.date / 100 AS month,
             COALESCE(cm.transferId, t.category) AS category,
@@ -81,8 +117,7 @@ async function computeCarryoverChain(
      FROM transactions t
      LEFT JOIN category_mapping cm ON cm.id = t.category
      JOIN accounts a ON a.id = t.acct AND a.offbudget = 0 AND a.tombstone = 0
-     WHERE t.tombstone = 0
-       AND t.isParent = 0
+     WHERE ${ALIVE_TX_FILTER}
        AND t.category IS NOT NULL
        AND t.date >= ? AND t.date <= ?
      GROUP BY t.date / 100, COALESCE(cm.transferId, t.category)`,
@@ -169,14 +204,13 @@ export async function getBudgetMonth(month: string): Promise<BudgetMonth> {
   const budgetMap    = new Map(budgetRows.map(r => [r.category, r.amount]));
   const carryoverMap = new Map(budgetRows.map(r => [r.category, r.carryover === 1]));
 
-  // Current-month transaction amounts per category
+  // Current-month transaction amounts per category (FIX #2 & #3: proper filters)
   const currentMonthRows = await runQuery<{ category: string; amount: number }>(
     `SELECT COALESCE(cm.transferId, t.category) AS category, SUM(t.amount) AS amount
      FROM transactions t
      LEFT JOIN category_mapping cm ON cm.id = t.category
      JOIN accounts a ON t.acct = a.id AND a.offbudget = 0 AND a.tombstone = 0
-     WHERE t.tombstone = 0
-       AND t.isParent = 0
+     WHERE ${ALIVE_TX_FILTER}
        AND t.date >= ? AND t.date <= ?
        AND t.category IS NOT NULL
      GROUP BY COALESCE(cm.transferId, t.category)`,
@@ -196,10 +230,7 @@ export async function getBudgetMonth(month: string): Promise<BudgetMonth> {
     await computeCarryoverChain(monthInt, expenseCatIds);
 
   // ── Cumulative To Budget ──
-  // toBudget[M] = SUM(income[0..M]) - SUM(expBudgeted[0..M]) - buffered[M] + overspendingPenalty
-  //
-  // overspendingPenalty (negative) adjusts for months where expense categories
-  // were overspent WITHOUT carryover — those amounts reduce the general pool.
+  // toBudget[M] = SUM(income[0..M]) - SUM(expBudgeted[0..M]) - bufferedSelected[M] + overspendingPenalty
 
   const cumulativeIncomeRow = await first<{ total: number }>(
     `SELECT COALESCE(SUM(t.amount), 0) AS total
@@ -208,8 +239,7 @@ export async function getBudgetMonth(month: string): Promise<BudgetMonth> {
      JOIN categories c  ON c.id = COALESCE(cm.transferId, t.category) AND c.tombstone = 0
      JOIN accounts a    ON a.id = t.acct AND a.offbudget = 0 AND a.tombstone = 0
      JOIN category_groups g ON g.id = c.cat_group AND g.is_income = 1
-     WHERE t.tombstone = 0
-       AND t.isParent = 0
+     WHERE ${ALIVE_TX_FILTER}
        AND t.date <= ?`,
     [endDate],
   );
@@ -223,15 +253,37 @@ export async function getBudgetMonth(month: string): Promise<BudgetMonth> {
     [monthInt],
   );
 
+  // ── Buffered: manual hold or auto (income cats with carryover) ──
+  // FIX #4: Mirrors loot-core's buffered-selected = manual ≠ 0 ? manual : buffered-auto
   const bufferedRow = await first<{ buffered: number }>(
     'SELECT buffered FROM zero_budget_months WHERE id = ?',
     [String(monthInt)],
   );
-  const buffered = bufferedRow?.buffered ?? 0;
+  const manualBuffered = bufferedRow?.buffered ?? 0;
+
+  let bufferedAuto = 0;
+  if (manualBuffered === 0) {
+    // Auto-buffer: sum of income from categories that have carryover flag set
+    const incomeCatIds = categories
+      .filter(c => {
+        const g = groups.find(g => g.id === c.cat_group);
+        return g && g.is_income === 1;
+      })
+      .map(c => c.id);
+
+    for (const catId of incomeCatIds) {
+      const coFlag = carryoverMap.get(catId) ?? false;
+      if (coFlag) {
+        bufferedAuto += currentMap.get(catId) ?? 0;
+      }
+    }
+  }
+
+  const bufferedSelected = manualBuffered !== 0 ? manualBuffered : bufferedAuto;
 
   const cumulativeIncome   = cumulativeIncomeRow?.total   ?? 0;
   const cumulativeBudgeted = cumulativeBudgetedRow?.total ?? 0;
-  const toBudget = cumulativeIncome - cumulativeBudgeted - buffered + overspendingPenalty;
+  const toBudget = cumulativeIncome - cumulativeBudgeted - bufferedSelected + overspendingPenalty;
 
   // ── Build per-group / per-category data ──
   let displayIncome   = 0;
@@ -285,7 +337,7 @@ export async function getBudgetMonth(month: string): Promise<BudgetMonth> {
     budgeted: displayBudgeted,
     spent:    displaySpent,
     toBudget,
-    buffered,
+    buffered: bufferedSelected,
     groups:   budgetGroups,
   };
 }

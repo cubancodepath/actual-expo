@@ -37,10 +37,6 @@ export default function AuthLayout() {
         name="payees"
         options={{ title: "Manage Payees", ...modal }}
       />
-      <Stack.Screen
-        name="files"
-        options={{ title: "Budget Files", ...modal }}
-      />
     </Stack>
   );
 }

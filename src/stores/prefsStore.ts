@@ -34,6 +34,7 @@ type PrefsState = {
   token: string;
 
   // Derived
+  hasToken: boolean;
   isConfigured: boolean;
 
   // Actions
@@ -63,19 +64,20 @@ export const usePrefsStore = create<PrefsState>()(
       groupId: '',
       encryptKeyId: undefined,
       lastSyncedTimestamp: undefined,
+      hasToken: false,
       isConfigured: false,
 
       setPrefs(prefs) {
         set(state => {
           const next = { ...state, ...prefs };
-          return { ...next, isConfigured: computeIsConfigured(next) };
+          return { ...next, hasToken: !!(next.serverUrl && next.token), isConfigured: computeIsConfigured(next) };
         });
       },
 
       async loadToken() {
         const token = (await SecureStore.getItemAsync(SECURE_TOKEN_KEY)) ?? '';
         const s = get();
-        set({ token, isConfigured: computeIsConfigured({ ...s, token }) });
+        set({ token, hasToken: !!(s.serverUrl && token), isConfigured: computeIsConfigured({ ...s, token }) });
       },
 
       async saveToken(token: string) {
@@ -97,6 +99,7 @@ export const usePrefsStore = create<PrefsState>()(
           groupId: '',
           encryptKeyId: undefined,
           lastSyncedTimestamp: undefined,
+          hasToken: false,
           isConfigured: false,
         });
       },

@@ -82,7 +82,7 @@ export default function SettingsScreen() {
 
       <Text style={styles.sectionTitle}>Budget</Text>
       <View style={styles.card}>
-        <Pressable style={[styles.navRow, { borderBottomWidth: 0 }]} onPress={() => router.push('/(auth)/files')}>
+        <Pressable style={[styles.navRow, { borderBottomWidth: 0 }]} onPress={() => { usePrefsStore.getState().setPrefs({ fileId: '', groupId: '' }); router.replace('/(files)/files'); }}>
           <Text style={styles.navLabel}>Change Budget</Text>
           <Text style={styles.navArrow}>›</Text>
         </Pressable>

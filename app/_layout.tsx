@@ -10,6 +10,7 @@ import { openDatabase } from "../src/db";
 import { loadClock, fullSync } from "../src/sync";
 
 export default function RootLayout() {
+  const hasToken = usePrefsStore((s) => s.hasToken);
   const isConfigured = usePrefsStore((s) => s.isConfigured);
   const [ready, setReady] = useState(false);
 
@@ -48,8 +49,11 @@ export default function RootLayout() {
   return (
     <ThemeProvider>
       <Stack>
-        <Stack.Protected guard={!isConfigured}>
+        <Stack.Protected guard={!hasToken}>
           <Stack.Screen name="(public)" options={{ headerShown: false }} />
+        </Stack.Protected>
+        <Stack.Protected guard={hasToken && !isConfigured}>
+          <Stack.Screen name="(files)" options={{ headerShown: false }} />
         </Stack.Protected>
         <Stack.Protected guard={isConfigured}>
           <Stack.Screen name="(auth)" options={{ headerShown: false }} />

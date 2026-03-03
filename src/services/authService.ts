@@ -3,6 +3,8 @@ export type BudgetFile = {
   groupId: string;
   name: string;
   encryptKeyId?: string;
+  deleted?: boolean;
+  ownerName?: string;
 };
 
 export type LoginMethod = 'password' | 'openid' | 'header';
@@ -94,6 +96,10 @@ export async function listFiles(serverUrl: string, token: string): Promise<Budge
     groupId: f.groupId,
     name: f.name,
     encryptKeyId: f.encryptKeyId ?? undefined,
+    deleted: f.deleted === 1 || f.deleted === true,
+    ownerName: Array.isArray(f.usersWithAccess)
+      ? (f.usersWithAccess as any[]).find(u => u.owner)?.displayName
+      : undefined,
   }));
   return files;
 }

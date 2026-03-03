@@ -5,12 +5,11 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  StyleSheet,
-  Text,
   TextInput,
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import {
@@ -20,29 +19,29 @@ import {
   type LoginMethod,
 } from '../../src/services/authService';
 import { usePrefsStore } from '../../src/stores/prefsStore';
+import { useTheme, useThemedStyles } from '../../src/presentation/providers/ThemeProvider';
+import { Text } from '../../src/presentation/components/atoms/Text';
+import { Button } from '../../src/presentation/components/atoms/Button';
+import { Banner } from '../../src/presentation/components/molecules/Banner';
+import type { Theme } from '../../src/theme';
 
-// Required for Android to properly complete the auth session
 WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen() {
   const router = useRouter();
+  const theme = useTheme();
+  const styles = useThemedStyles(createStyles);
   const { setPrefs, saveToken } = usePrefsStore();
 
   const [serverUrl, setServerUrl] = useState('');
   const [password, setPassword] = useState('');
-
-  // 'idle'    → haven't probed the server yet
-  // 'probing' → calling /account/needs-bootstrap
-  // 'password' | 'openid' → server answered, show the correct form
   const [step, setStep] = useState<'idle' | 'probing' | LoginMethod>('idle');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const urlRef = useRef('');
 
-  // -------------------------------------------------------------------------
-  // Step 1 — probe the server
-  // -------------------------------------------------------------------------
+  // ── Step 1: Probe server ──────────────────────────────────────────────────
   async function handleProbe() {
     const url = serverUrl.trim().replace(/\/$/, '');
     if (!url) { setError('Server URL is required'); return; }
@@ -66,9 +65,7 @@ export default function LoginScreen() {
     }
   }
 
-  // -------------------------------------------------------------------------
-  // Step 2a — password login
-  // -------------------------------------------------------------------------
+  // ── Step 2a: Password login ───────────────────────────────────────────────
   async function handlePasswordLogin() {
     setError(null);
     setLoading(true);
@@ -76,7 +73,7 @@ export default function LoginScreen() {
       const token = await login(urlRef.current, password.trim());
       setPrefs({ serverUrl: urlRef.current });
       await saveToken(token);
-      router.push('/(public)/files');
+      router.replace('/(files)/files');
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -84,44 +81,18 @@ export default function LoginScreen() {
     }
   }
 
-  // -------------------------------------------------------------------------
-  // Step 2b — OpenID login
-  //
-  // Flow:
-  //  1. POST /account/login { loginMethod: 'openid', returnUrl } → authUrl
-  //  2. openAuthSessionAsync(authUrl, callbackUrl) opens an in-app browser
-  //  3. Server handles PKCE, redirects to {returnUrl}/openid-cb?token=xxx
-  //  4. The system intercepts our custom scheme and returns the URL directly
-  //  5. We extract the token and navigate to files
-  // -------------------------------------------------------------------------
+  // ── Step 2b: OpenID login ─────────────────────────────────────────────────
   async function handleOpenIdLogin() {
     setError(null);
     setLoading(true);
     try {
       const serverUrl = urlRef.current;
-
-      // The server validates returnUrl with:
-      //   new URL(returnUrl).hostname === serverHostname  ||  hostname === 'localhost'
-      //
-      // Custom schemes like actualbudget://openid-cb fail because their
-      // hostname is 'openid-cb', not the server's.
-      //
-      // Trick: use our custom scheme but mirror the server's hostname:
-      //   actualbudget://actual.cubancodelab.net
-      //   → new URL(...).hostname = 'actual.cubancodelab.net'  ✓ passes!
-      //
-      // The server then redirects to:
-      //   actualbudget://actual.cubancodelab.net/openid-cb?token=xxx
-      //
-      // openAuthSessionAsync extracts scheme 'actualbudget' and iOS/Android
-      // intercept that redirect natively — no Universal Links needed.
       const appScheme = 'actualbudget';
       const serverHostname = new URL(serverUrl).hostname;
       const returnUrl = `${appScheme}://${serverHostname}`;
       const callbackUrl = `${returnUrl}/openid-cb`;
 
       const authUrl = await initiateOpenIdLogin(serverUrl, returnUrl);
-
       const result = await WebBrowser.openAuthSessionAsync(authUrl, callbackUrl);
 
       if (result.type !== 'success') {
@@ -129,7 +100,6 @@ export default function LoginScreen() {
         return;
       }
 
-      // result.url = 'actualbudget://actual.cubancodelab.net/openid-cb?token=xxx'
       const parsed = Linking.parse(result.url);
       const token = parsed.queryParams?.token as string | undefined;
       if (!token) {
@@ -140,7 +110,7 @@ export default function LoginScreen() {
 
       setPrefs({ serverUrl });
       await saveToken(token);
-      router.replace('/(public)/files');
+      router.replace('/(files)/files');
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
       setLoading(false);
@@ -153,114 +123,142 @@ export default function LoginScreen() {
     setError(null);
   }
 
-  // -------------------------------------------------------------------------
-  // Render
-  // -------------------------------------------------------------------------
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <KeyboardAvoidingView
       style={styles.flex}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.logo}>actual</Text>
-          <Text style={styles.tagline}>Open source personal finance</Text>
+          <View style={styles.logoContainer}>
+            <Ionicons name="wallet" size={48} color={theme.colors.primary} />
+          </View>
+          <Text variant="displayLg" color={theme.colors.primary} style={styles.logoText}>
+            actual
+          </Text>
+          <Text variant="bodySm" color={theme.colors.textMuted}>
+            Open-source personal finance
+          </Text>
         </View>
 
+        {/* Form */}
         <View style={styles.form}>
-          {/* ── Server URL ── */}
-          <Text style={styles.label}>Server URL</Text>
+          {/* Server URL */}
+          <Text variant="caption" color={theme.colors.textSecondary} style={styles.label}>
+            SERVER URL
+          </Text>
           <View style={styles.urlRow}>
-            <TextInput
-              style={[styles.input, styles.urlInput, step !== 'idle' && step !== 'probing' && styles.inputLocked]}
-              placeholder="https://budget.example.com"
-              placeholderTextColor="#64748b"
-              value={serverUrl}
-              onChangeText={v => { setServerUrl(v); setStep('idle'); setError(null); }}
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="url"
-              returnKeyType="go"
-              onSubmitEditing={step === 'idle' ? handleProbe : undefined}
-              editable={step === 'idle' || step === 'probing'}
-            />
+            <View style={[styles.inputContainer, step !== 'idle' && step !== 'probing' && styles.inputLocked]}>
+              <Ionicons name="server-outline" size={18} color={theme.colors.textMuted} />
+              <TextInput
+                style={[styles.input, { color: theme.colors.textPrimary }]}
+                placeholder="https://budget.example.com"
+                placeholderTextColor={theme.colors.textMuted}
+                value={serverUrl}
+                onChangeText={v => { setServerUrl(v); setStep('idle'); setError(null); }}
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="url"
+                returnKeyType="go"
+                onSubmitEditing={step === 'idle' ? handleProbe : undefined}
+                editable={step === 'idle' || step === 'probing'}
+              />
+            </View>
             {step !== 'idle' && step !== 'probing' && (
-              <Pressable style={styles.changeBtn} onPress={handleChangeServer} hitSlop={8}>
-                <Text style={styles.changeBtnText}>Change</Text>
+              <Pressable
+                style={styles.changeBtn}
+                onPress={handleChangeServer}
+                hitSlop={8}
+              >
+                <Text variant="bodySm" color={theme.colors.primary} style={{ fontWeight: '600' }}>
+                  Change
+                </Text>
               </Pressable>
             )}
           </View>
 
-          {/* ── Probing ── */}
+          {/* Probing */}
           {step === 'probing' && (
             <View style={styles.probingRow}>
-              <ActivityIndicator size="small" color="#3b82f6" />
-              <Text style={styles.probingText}>Connecting to server…</Text>
-            </View>
-          )}
-
-          {/* ── Password form ── */}
-          {step === 'password' && (
-            <>
-              <Text style={styles.label}>Password</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Server password"
-                placeholderTextColor="#64748b"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                autoCapitalize="none"
-                autoFocus
-                returnKeyType="go"
-                onSubmitEditing={handlePasswordLogin}
-              />
-            </>
-          )}
-
-          {/* ── OpenID info banner ── */}
-          {step === 'openid' && (
-            <View style={styles.openIdBanner}>
-              <Text style={styles.openIdBannerTitle}>OpenID Connect</Text>
-              <Text style={styles.openIdBannerText}>
-                You'll be redirected to your identity provider to sign in securely.
+              <ActivityIndicator size="small" color={theme.colors.primary} />
+              <Text variant="bodySm" color={theme.colors.textSecondary}>
+                Connecting to server...
               </Text>
             </View>
           )}
 
-          {error && <Text style={styles.error}>{error}</Text>}
+          {/* Password form */}
+          {step === 'password' && (
+            <>
+              <Text variant="caption" color={theme.colors.textSecondary} style={styles.label}>
+                PASSWORD
+              </Text>
+              <View style={styles.inputContainer}>
+                <Ionicons name="lock-closed-outline" size={18} color={theme.colors.textMuted} />
+                <TextInput
+                  style={[styles.input, { color: theme.colors.textPrimary }]}
+                  placeholder="Server password"
+                  placeholderTextColor={theme.colors.textMuted}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoFocus
+                  returnKeyType="go"
+                  onSubmitEditing={handlePasswordLogin}
+                />
+              </View>
+            </>
+          )}
 
-          {/* ── Action button ── */}
+          {/* OpenID banner */}
+          {step === 'openid' && (
+            <Banner
+              message="You'll be redirected to your identity provider to sign in securely."
+              variant="info"
+            />
+          )}
+
+          {/* Error */}
+          {error && (
+            <Banner
+              message={error}
+              variant="error"
+              onDismiss={() => setError(null)}
+            />
+          )}
+
+          {/* Action buttons */}
           {step === 'idle' && (
-            <Pressable style={styles.button} onPress={handleProbe}>
-              <Text style={styles.buttonText}>Continue</Text>
-            </Pressable>
+            <Button
+              title="Continue"
+              onPress={handleProbe}
+              size="lg"
+              style={styles.actionButton}
+            />
           )}
 
           {step === 'password' && (
-            <Pressable
-              style={[styles.button, (!password || loading) && styles.buttonDisabled]}
+            <Button
+              title="Sign In"
               onPress={handlePasswordLogin}
-              disabled={!password || loading}
-            >
-              {loading
-                ? <ActivityIndicator color="#fff" />
-                : <Text style={styles.buttonText}>Connect</Text>
-              }
-            </Pressable>
+              size="lg"
+              loading={loading}
+              disabled={!password}
+              style={styles.actionButton}
+            />
           )}
 
           {step === 'openid' && (
-            <Pressable
-              style={[styles.button, styles.buttonOpenId, loading && styles.buttonDisabled]}
+            <Button
+              title="Sign in with OpenID"
               onPress={handleOpenIdLogin}
-              disabled={loading}
-            >
-              {loading
-                ? <ActivityIndicator color="#fff" />
-                : <Text style={styles.buttonText}>Sign in with OpenID</Text>
-              }
-            </Pressable>
+              size="lg"
+              loading={loading}
+              style={styles.actionButton}
+            />
           )}
         </View>
       </ScrollView>
@@ -268,51 +266,93 @@ export default function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: '#0f172a' },
-  container: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 80, paddingBottom: 40 },
+const createStyles = (theme: Theme) => ({
+  flex: {
+    flex: 1,
+    backgroundColor: theme.colors.pageBackground,
+  },
+  container: {
+    flexGrow: 1,
+    paddingHorizontal: theme.spacing.xl,
+    paddingTop: 100,
+    paddingBottom: theme.spacing.xxxl,
+  },
 
-  header: { alignItems: 'center', marginBottom: 48 },
-  logo: { fontSize: 40, fontWeight: '800', color: '#f1f5f9', letterSpacing: -1 },
-  tagline: { fontSize: 14, color: '#64748b', marginTop: 6 },
+  // Header
+  header: {
+    alignItems: 'center' as const,
+    marginBottom: theme.spacing.xxxl,
+  },
+  logoContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 20,
+    backgroundColor: theme.colors.primary + '15',
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    marginBottom: theme.spacing.lg,
+  },
+  logoText: {
+    letterSpacing: -1,
+    marginBottom: theme.spacing.xs,
+  },
 
-  form: { gap: 8 },
+  // Form
+  form: {
+    gap: theme.spacing.sm,
+  },
   label: {
-    color: '#94a3b8', fontSize: 12, fontWeight: '600',
-    textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 8,
+    letterSpacing: 0.8,
+    fontWeight: '600' as const,
+    marginTop: theme.spacing.sm,
+    marginLeft: theme.spacing.xs,
+  },
+  inputContainer: {
+    flex: 1,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    backgroundColor: theme.colors.inputBackground,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: theme.borderWidth.default,
+    borderColor: theme.colors.inputBorder,
+    paddingHorizontal: theme.spacing.md,
+    gap: theme.spacing.sm,
+    minHeight: 50,
+  },
+  inputLocked: {
+    opacity: 0.5,
   },
   input: {
-    backgroundColor: '#1e293b', color: '#f1f5f9', borderRadius: 10,
-    paddingHorizontal: 14, paddingVertical: 14, fontSize: 16,
-    borderWidth: 1, borderColor: '#334155',
+    flex: 1,
+    fontSize: 16,
+    paddingVertical: theme.spacing.md,
   },
-  inputLocked: { opacity: 0.55 },
 
-  urlRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  urlInput: { flex: 1 },
+  urlRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: theme.spacing.sm,
+  },
   changeBtn: {
-    backgroundColor: '#1e293b', borderRadius: 8, borderWidth: 1,
-    borderColor: '#334155', paddingHorizontal: 12, paddingVertical: 14,
+    backgroundColor: theme.colors.buttonSecondaryBackground,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: theme.borderWidth.default,
+    borderColor: theme.colors.inputBorder,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    minHeight: 50,
+    justifyContent: 'center' as const,
   },
-  changeBtnText: { color: '#3b82f6', fontSize: 13, fontWeight: '600' },
 
-  probingRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 8 },
-  probingText: { color: '#64748b', fontSize: 14 },
-
-  openIdBanner: {
-    backgroundColor: '#0f2d5e', borderRadius: 10, borderWidth: 1,
-    borderColor: '#1d4ed8', padding: 14, marginTop: 8, gap: 6,
+  probingRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: theme.spacing.sm,
+    marginTop: theme.spacing.sm,
+    justifyContent: 'center' as const,
   },
-  openIdBannerTitle: { color: '#93c5fd', fontSize: 14, fontWeight: '700' },
-  openIdBannerText: { color: '#60a5fa', fontSize: 13, lineHeight: 18 },
 
-  error: { color: '#f87171', fontSize: 13, marginTop: 4 },
-
-  button: {
-    backgroundColor: '#3b82f6', borderRadius: 10,
-    paddingVertical: 16, alignItems: 'center', marginTop: 16,
+  actionButton: {
+    marginTop: theme.spacing.lg,
   },
-  buttonOpenId: { backgroundColor: '#1d4ed8' },
-  buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 });

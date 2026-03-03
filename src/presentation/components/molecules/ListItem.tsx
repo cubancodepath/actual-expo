@@ -1,0 +1,84 @@
+import { Pressable, View, StyleSheet, type ViewStyle } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from "../../providers/ThemeProvider";
+import { Text } from "../atoms/Text";
+import type { ReactNode } from "react";
+
+export interface ListItemProps {
+  title: string;
+  subtitle?: string;
+  left?: ReactNode;
+  right?: ReactNode;
+  onPress?: () => void;
+  showChevron?: boolean;
+  style?: ViewStyle;
+}
+
+export function ListItem({
+  title,
+  subtitle,
+  left,
+  right,
+  onPress,
+  showChevron = false,
+  style,
+}: ListItemProps) {
+  const { colors, spacing } = useTheme();
+
+  const content = (
+    <View style={[styles.container, { paddingVertical: spacing.md, paddingHorizontal: spacing.lg }, style]}>
+      {left && <View style={[styles.left, { marginRight: spacing.md }]}>{left}</View>}
+
+      <View style={styles.content}>
+        <Text variant="bodyLg">{title}</Text>
+        {subtitle && (
+          <Text variant="bodySm" color={colors.textSecondary}>
+            {subtitle}
+          </Text>
+        )}
+      </View>
+
+      {right && <View style={styles.right}>{right}</View>}
+
+      {showChevron && (
+        <Ionicons
+          name="chevron-forward"
+          size={18}
+          color={colors.textMuted}
+          style={{ marginLeft: spacing.sm }}
+        />
+      )}
+    </View>
+  );
+
+  if (onPress) {
+    return (
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => pressed && { opacity: 0.7 }}
+      >
+        {content}
+      </Pressable>
+    );
+  }
+
+  return content;
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  left: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  content: {
+    flex: 1,
+  },
+  right: {
+    alignItems: "flex-end",
+    justifyContent: "center",
+  },
+});

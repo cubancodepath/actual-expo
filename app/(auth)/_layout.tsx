@@ -1,77 +1,45 @@
-import { Stack } from 'expo-router';
+import { Stack } from "expo-router";
+import { useTheme } from "../../src/presentation/providers/ThemeProvider";
+import {
+  themedScreenOptions,
+  themedModalOptions,
+} from "../../src/presentation/navigation/screenOptions";
 
 export default function AuthLayout() {
+  const theme = useTheme();
+  const screen = themedScreenOptions(theme);
+  const modal = themedModalOptions(theme);
+
   return (
     <Stack>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen
         name="account/new"
-        options={{
-          title: 'New Account',
-          presentation: 'modal',
-          headerStyle: { backgroundColor: '#0f172a' },
-          headerTintColor: '#f1f5f9',
-          headerShadowVisible: false,
-        }}
+        options={{ title: "New Account", ...modal }}
       />
       <Stack.Screen
         name="account/[id]"
-        options={{
-          title: '',
-          headerStyle: { backgroundColor: '#0f172a' },
-          headerTintColor: '#f1f5f9',
-          headerShadowVisible: false,
-        }}
+        options={{ title: "", ...screen }}
       />
       <Stack.Screen
         name="account/settings"
-        options={{
-          title: 'Account Settings',
-          presentation: 'modal',
-          headerStyle: { backgroundColor: '#0f172a' },
-          headerTintColor: '#f1f5f9',
-          headerShadowVisible: false,
-        }}
+        options={{ title: "Account Settings", ...modal }}
       />
       <Stack.Screen
         name="transaction/new"
-        options={{
-          title: 'New Transaction',
-          presentation: 'modal',
-          headerStyle: { backgroundColor: '#0f172a' },
-          headerTintColor: '#f1f5f9',
-          headerShadowVisible: false,
-        }}
+        options={{ title: "New Transaction", ...modal }}
       />
       <Stack.Screen
         name="categories"
-        options={{
-          title: 'Manage Categories',
-          presentation: 'modal',
-          headerStyle: { backgroundColor: '#0f172a' },
-          headerTintColor: '#f1f5f9',
-          headerShadowVisible: false,
-        }}
+        options={{ title: "Manage Categories", ...modal }}
       />
       <Stack.Screen
         name="payees"
-        options={{
-          title: 'Manage Payees',
-          presentation: 'modal',
-          headerStyle: { backgroundColor: '#0f172a' },
-          headerTintColor: '#f1f5f9',
-          headerShadowVisible: false,
-        }}
+        options={{ title: "Manage Payees", ...modal }}
       />
       <Stack.Screen
         name="files"
-        options={{
-          title: 'Budget Files',
-          presentation: 'modal',
-          headerStyle: { backgroundColor: '#0f172a' },
-          headerTintColor: '#f1f5f9',
-          headerShadowVisible: false,
-        }}
+        options={{ title: "Budget Files", ...modal }}
       />
     </Stack>
   );

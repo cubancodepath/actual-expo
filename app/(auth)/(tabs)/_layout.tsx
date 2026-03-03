@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, View } from "react-native";
 import { Tabs, useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
 import { useSyncStore } from "../../../src/stores/syncStore";
 
 // ---------------------------------------------------------------------------
@@ -8,8 +10,8 @@ import { useSyncStore } from "../../../src/stores/syncStore";
 // ---------------------------------------------------------------------------
 
 function SyncBadge() {
-  const { status, error, sync } = useSyncStore();
-  // Auto-hide the success checkmark after 3 s
+  const { status, sync } = useSyncStore();
+  const { colors } = useTheme();
   const [showSuccess, setShowSuccess] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -26,7 +28,7 @@ function SyncBadge() {
   if (status === "syncing") {
     return (
       <View style={{ paddingRight: 14 }}>
-        <ActivityIndicator size="small" color="#60a5fa" />
+        <ActivityIndicator size="small" color={colors.primary} />
       </View>
     );
   }
@@ -34,7 +36,7 @@ function SyncBadge() {
   if (status === "error") {
     return (
       <Pressable onPress={sync} hitSlop={10} style={{ paddingRight: 14 }}>
-        <Text style={{ color: "#f87171", fontSize: 18 }}>⚠</Text>
+        <Ionicons name="alert-circle" size={20} color={colors.negative} />
       </Pressable>
     );
   }
@@ -42,9 +44,7 @@ function SyncBadge() {
   if (showSuccess) {
     return (
       <View style={{ paddingRight: 14 }}>
-        <Text style={{ color: "#4ade80", fontSize: 16, fontWeight: "700" }}>
-          ✓
-        </Text>
+        <Ionicons name="checkmark-circle" size={20} color={colors.positive} />
       </View>
     );
   }
@@ -52,30 +52,16 @@ function SyncBadge() {
   return null;
 }
 
-function TabIcon({ icon, focused }: { icon: string; focused: boolean }) {
-  return (
-    <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.5 }}>{icon}</Text>
-  );
-}
-
 function AddButton() {
   const router = useRouter();
+  const { colors } = useTheme();
   return (
     <Pressable
       onPress={() => router.push("/(auth)/account/new")}
       style={{ paddingHorizontal: 16, paddingVertical: 8 }}
       hitSlop={8}
     >
-      <Text
-        style={{
-          color: "#3b82f6",
-          fontSize: 28,
-          lineHeight: 30,
-          fontWeight: "300",
-        }}
-      >
-        +
-      </Text>
+      <Ionicons name="add" size={28} color={colors.primary} />
     </Pressable>
   );
 }
@@ -85,15 +71,20 @@ function AddButton() {
 // ---------------------------------------------------------------------------
 
 export default function TabsLayout() {
+  const { colors } = useTheme();
+
   return (
     <Tabs
       initialRouteName="budget"
       screenOptions={{
-        tabBarStyle: { backgroundColor: "#0f172a", borderTopColor: "#1e293b" },
-        tabBarActiveTintColor: "#3b82f6",
-        tabBarInactiveTintColor: "#64748b",
-        headerStyle: { backgroundColor: "#0f172a" },
-        headerTintColor: "#f1f5f9",
+        tabBarStyle: {
+          backgroundColor: colors.navBackground,
+          borderTopColor: colors.navBorder,
+        },
+        tabBarActiveTintColor: colors.navItemActive,
+        tabBarInactiveTintColor: colors.navItemInactive,
+        headerStyle: { backgroundColor: colors.headerBackground },
+        headerTintColor: colors.headerText,
         headerShadowVisible: false,
         headerRight: () => <SyncBadge />,
       }}
@@ -108,28 +99,36 @@ export default function TabsLayout() {
               <AddButton />
             </View>
           ),
-          tabBarIcon: ({ focused }) => <TabIcon icon="🏦" focused={focused} />,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="wallet-outline" size={size} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="budget"
         options={{
           title: "Budget",
-          tabBarIcon: ({ focused }) => <TabIcon icon="📊" focused={focused} />,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="pie-chart-outline" size={size} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="spending"
         options={{
           title: "Spending",
-          tabBarIcon: ({ focused }) => <TabIcon icon="💸" focused={focused} />,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="swap-horizontal-outline" size={size} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
           title: "Settings",
-          tabBarIcon: ({ focused }) => <TabIcon icon="⚙️" focused={focused} />,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="settings-outline" size={size} color={color} />
+          ),
         }}
       />
     </Tabs>

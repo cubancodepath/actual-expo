@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { AppState } from "react-native";
 import { Stack } from "expo-router";
+import { ThemeProvider } from "../src/presentation/providers/ThemeProvider";
 import { usePrefsStore } from "../src/stores/prefsStore";
 import { useAccountsStore } from "../src/stores/accountsStore";
 import { useCategoriesStore } from "../src/stores/categoriesStore";
@@ -45,13 +46,15 @@ export default function RootLayout() {
   if (!ready) return null;
 
   return (
-    <Stack>
-      <Stack.Protected guard={!isConfigured}>
-        <Stack.Screen name="(public)" options={{ headerShown: false }} />
-      </Stack.Protected>
-      <Stack.Protected guard={isConfigured}>
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-      </Stack.Protected>
-    </Stack>
+    <ThemeProvider>
+      <Stack>
+        <Stack.Protected guard={!isConfigured}>
+          <Stack.Screen name="(public)" options={{ headerShown: false }} />
+        </Stack.Protected>
+        <Stack.Protected guard={isConfigured}>
+          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        </Stack.Protected>
+      </Stack>
+    </ThemeProvider>
   );
 }

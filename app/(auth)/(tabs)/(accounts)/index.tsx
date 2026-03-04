@@ -24,6 +24,7 @@ import { Amount } from '../../../../src/presentation/components/atoms/Amount';
 import { Divider } from '../../../../src/presentation/components/atoms/Divider';
 import { Button } from '../../../../src/presentation/components/atoms/Button';
 import { EmptyState } from '../../../../src/presentation/components/molecules/EmptyState';
+import { AddTransactionButton } from '../../../../src/presentation/components/molecules/AddTransactionButton';
 import type { Theme } from '../../../../src/theme';
 import type { Account } from '../../../../src/accounts/types';
 
@@ -196,6 +197,7 @@ export default function AccountsScreen() {
           />
         )}
       </ScrollView>
+      <AddTransactionButton iconOnly />
       <Stack.Toolbar placement="right">
         <Stack.Toolbar.Button
           icon="plus"

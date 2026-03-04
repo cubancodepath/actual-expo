@@ -1,4 +1,4 @@
-import { openDatabaseAsync, type SQLiteDatabase, type SQLiteBindParams } from 'expo-sqlite';
+import { openDatabaseAsync, deleteDatabaseAsync, type SQLiteDatabase, type SQLiteBindParams } from 'expo-sqlite';
 import { runSchema } from './schema';
 
 let _db: SQLiteDatabase | undefined;
@@ -48,13 +48,8 @@ export async function transaction(fn: () => Promise<void>): Promise<void> {
   await getDb().withExclusiveTransactionAsync(fn);
 }
 
-/** Wipe all local data when switching to a different budget file. */
+/** Wipe all local data by closing and deleting the database file. */
 export async function clearLocalData(): Promise<void> {
-  const tables = [
-    'accounts', 'transactions', 'categories', 'category_groups',
-    'payees', 'zero_budgets', 'messages_crdt', 'messages_clock',
-  ];
-  for (const t of tables) {
-    await run(`DELETE FROM ${t}`);
-  }
+  await closeDatabase();
+  await deleteDatabaseAsync('actual.db');
 }

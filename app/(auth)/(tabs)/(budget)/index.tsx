@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   ActionSheetIOS,
   ActivityIndicator,
@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import { useTheme } from '../../../../src/presentation/providers/ThemeProvider';
+import { useSharedValue } from 'react-native-reanimated';
 import { AddTransactionButton } from '../../../../src/presentation/components/molecules/AddTransactionButton';
 import { useBudgetStore } from '../../../../src/stores/budgetStore';
 import { useSyncStore } from '../../../../src/stores/syncStore';
@@ -46,6 +47,12 @@ export default function BudgetScreen() {
   const { month, data, loading, load, setAmount, setCarryover, transfer, resetHold } = useBudgetStore();
   const { refreshing, sync } = useSyncStore();
   const { privacyMode, toggle: togglePrivacy } = usePrivacyStore();
+
+  const fabCollapsed = useSharedValue(false);
+  const COLLAPSE_THRESHOLD = 100;
+  const handleScroll = useCallback((e: { nativeEvent: { contentOffset: { y: number } } }) => {
+    fabCollapsed.value = e.nativeEvent.contentOffset.y > COLLAPSE_THRESHOLD;
+  }, []);
 
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [moveMoneyTarget, setMoveMoneyTarget] = useState<{
@@ -183,6 +190,8 @@ export default function BudgetScreen() {
           renderItem={renderItem}
           renderSectionHeader={renderSectionHeader}
           stickySectionHeadersEnabled={false}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
           extraData={collapsedGroups}
           ListHeaderComponent={
             data ? (
@@ -309,7 +318,7 @@ export default function BudgetScreen() {
         />
       )}
 
-      <AddTransactionButton />
+      <AddTransactionButton collapsed={fabCollapsed} />
     </View>
     <Stack.Toolbar placement="right">
       <Stack.Toolbar.Menu icon="ellipsis">

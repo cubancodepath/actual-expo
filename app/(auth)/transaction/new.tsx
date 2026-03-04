@@ -228,7 +228,7 @@ export default function NewTransactionScreen() {
             icon="person-outline"
             label={payeeName}
             placeholder="Payee"
-            onPress={() => router.push({ pathname: './payee-picker', params: { selectedId: payeeId ?? '' } })}
+            onPress={() => router.push({ pathname: './payee-picker', params: { selectedId: payeeId ?? '', accountId: acctId ?? '' } })}
           />
           <View style={styles.cardDivider} />
 

@@ -1,5 +1,5 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';
+import { useSharedValue } from 'react-native-reanimated';
 import {
   ActivityIndicator,
   Alert,
@@ -126,11 +126,10 @@ export default function AccountTransactionsScreen() {
 
   // ---- Scroll-driven FAB collapse ----
   const fabCollapsed = useSharedValue(false);
-  const scrollHandler = useAnimatedScrollHandler({
-    onBeginDrag: () => { fabCollapsed.value = true; },
-    onMomentumEnd: () => { fabCollapsed.value = false; },
-    onEndDrag: () => { fabCollapsed.value = false; },
-  });
+  const COLLAPSE_THRESHOLD = 100;
+  const handleScroll = useCallback((e: { nativeEvent: { contentOffset: { y: number } } }) => {
+    fabCollapsed.value = e.nativeEvent.contentOffset.y > COLLAPSE_THRESHOLD;
+  }, []);
 
   // ---- Data loading ----
 
@@ -424,7 +423,7 @@ export default function AccountTransactionsScreen() {
           data={listData}
           keyExtractor={(item) => item.key}
           getItemType={(item) => item.type}
-          onScroll={scrollHandler}
+          onScroll={handleScroll}
           scrollEventThrottle={16}
           renderItem={({ item }) => {
             if (item.type === 'date') {

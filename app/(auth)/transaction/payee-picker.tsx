@@ -10,7 +10,7 @@ import { SearchBar } from '../../../src/presentation/components/molecules/Search
 import type { Theme } from '../../../src/theme';
 
 export default function PayeePickerScreen() {
-  const { selectedId } = useLocalSearchParams<{ selectedId?: string }>();
+  const { selectedId, accountId } = useLocalSearchParams<{ selectedId?: string; accountId?: string }>();
   const router = useRouter();
   const { colors, borderWidth: bw } = useTheme();
   const styles = useThemedStyles(createStyles);
@@ -22,7 +22,7 @@ export default function PayeePickerScreen() {
     if (payees.length === 0) load();
   }, []);
 
-  const transfers = payees.filter((p) => p.transfer_acct != null);
+  const transfers = payees.filter((p) => p.transfer_acct != null && p.transfer_acct !== accountId);
   const regular = [...payees.filter((p) => p.transfer_acct == null)].sort(
     (a, b) => {
       if (a.favorite !== b.favorite) return a.favorite ? -1 : 1;

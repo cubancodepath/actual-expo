@@ -17,6 +17,7 @@ import { usePreferencesStore } from "../../src/stores/preferencesStore";
 import { resetAllStores } from "../../src/stores/resetStores";
 import { usePrivacyStore } from "../../src/stores/privacyStore";
 import { clearSyncTimeout } from "../../src/sync";
+import { clearLocalData } from "../../src/db";
 import {
   DATE_FORMAT_OPTIONS,
   NUMBER_FORMAT_OPTIONS,
@@ -138,7 +139,7 @@ export default function SettingsScreen() {
   function handleLogout() {
     Alert.alert(
       "Disconnect",
-      "Disconnect from this server? Your local data will remain.",
+      "Disconnect from this server? Local data will be cleared.",
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -149,6 +150,7 @@ export default function SettingsScreen() {
             try {
               clearSyncTimeout();
               resetAllStores();
+              await clearLocalData();
               await clearAll();
             } finally {
               setLoggingOut(false);

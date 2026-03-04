@@ -24,7 +24,7 @@ export default function ChangeBudgetScreen() {
   const router = useRouter();
   const theme = useTheme();
   const styles = useThemedStyles(createStyles);
-  const { serverUrl, token } = usePrefsStore();
+  const { serverUrl, token, fileId: currentFileId } = usePrefsStore();
   const [files, setFiles] = useState<BudgetFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,12 +43,6 @@ export default function ChangeBudgetScreen() {
     try {
       resetAllStores();
       await downloadAndImportBudget(serverUrl, token, file.fileId, file.encryptKeyId);
-      usePrefsStore.getState().setPrefs({
-        fileId: file.fileId,
-        groupId: file.groupId,
-        encryptKeyId: file.encryptKeyId,
-        lastSyncedTimestamp: undefined,
-      });
 
       const [
         { useAccountsStore },
@@ -64,6 +58,14 @@ export default function ChangeBudgetScreen() {
         useCategoriesStore.getState().load(),
         useBudgetStore.getState().load(),
       ]);
+
+      usePrefsStore.getState().setPrefs({
+        fileId: file.fileId,
+        groupId: file.groupId,
+        encryptKeyId: file.encryptKeyId,
+        budgetName: file.name || 'Unnamed budget',
+        lastSyncedTimestamp: undefined,
+      });
 
       fullSync().catch(console.warn);
       router.back();
@@ -146,6 +148,12 @@ export default function ChangeBudgetScreen() {
                 </View>
                 {selecting === item.fileId ? (
                   <ActivityIndicator size="small" color={theme.colors.primary} />
+                ) : item.fileId === currentFileId ? (
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={22}
+                    color={theme.colors.primary}
+                  />
                 ) : (
                   <Ionicons
                     name="chevron-forward"

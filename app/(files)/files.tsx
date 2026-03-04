@@ -43,12 +43,6 @@ export default function FilesScreen() {
     try {
       resetAllStores();
       await downloadAndImportBudget(serverUrl, token, file.fileId, file.encryptKeyId);
-      usePrefsStore.getState().setPrefs({
-        fileId: file.fileId,
-        groupId: file.groupId,
-        encryptKeyId: file.encryptKeyId,
-        lastSyncedTimestamp: undefined,
-      });
 
       const [
         { useAccountsStore },
@@ -64,6 +58,14 @@ export default function FilesScreen() {
         useCategoriesStore.getState().load(),
         useBudgetStore.getState().load(),
       ]);
+
+      usePrefsStore.getState().setPrefs({
+        fileId: file.fileId,
+        groupId: file.groupId,
+        encryptKeyId: file.encryptKeyId,
+        budgetName: file.name || 'Unnamed budget',
+        lastSyncedTimestamp: undefined,
+      });
 
       fullSync().catch(console.warn);
       router.replace('/(auth)/(tabs)/(budget)');

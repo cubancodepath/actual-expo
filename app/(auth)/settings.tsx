@@ -104,7 +104,7 @@ export default function SettingsScreen() {
   const { colors, spacing } = useTheme();
   const styles = useThemedStyles(createStyles);
 
-  const { serverUrl, fileId, groupId, encryptKeyId, lastSyncedTimestamp, clearAll } =
+  const { serverUrl, fileId, groupId, encryptKeyId, budgetName, lastSyncedTimestamp, clearAll } =
     usePrefsStore();
   const { status, error, lastSync, sync } = useSyncStore();
   const { dateFormat, numberFormat, firstDayOfWeekIdx, hideFraction, set } =
@@ -257,7 +257,8 @@ export default function SettingsScreen() {
       <SectionHeader title="Budget" style={{ marginTop: spacing.xl }} />
       <Card>
         <ListItem
-          title="Change Budget"
+          title={budgetName || 'Current Budget'}
+          subtitle="Tap to switch budget"
           showChevron
           onPress={() => router.push("/(auth)/change-budget")}
         />

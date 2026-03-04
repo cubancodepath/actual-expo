@@ -201,6 +201,14 @@ export default function AccountsScreen() {
           icon="plus"
           onPress={() => router.push('/(auth)/account/new')}
         />
+        <Stack.Toolbar.Menu icon="ellipsis">
+          <Stack.Toolbar.MenuAction
+            icon="gearshape"
+            onPress={() => router.push('/(auth)/settings')}
+          >
+            Settings
+          </Stack.Toolbar.MenuAction>
+        </Stack.Toolbar.Menu>
       </Stack.Toolbar>
     </>
   );

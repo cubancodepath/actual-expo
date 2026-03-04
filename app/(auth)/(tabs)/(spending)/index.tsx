@@ -197,6 +197,12 @@ export default function SpendingScreen() {
           >
             {hideReconciled ? 'Show Reconciled' : 'Hide Reconciled'}
           </Stack.Toolbar.MenuAction>
+          <Stack.Toolbar.MenuAction
+            icon="gearshape"
+            onPress={() => router.push('/(auth)/settings')}
+          >
+            Settings
+          </Stack.Toolbar.MenuAction>
         </Stack.Toolbar.Menu>
       </Stack.Toolbar>
     </>

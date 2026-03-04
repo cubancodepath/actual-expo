@@ -18,10 +18,6 @@ export default function TabsLayout() {
         <NativeTabs.Trigger.Icon sf="arrow.left.arrow.right" md="swap_horiz" />
         <NativeTabs.Trigger.Label>Spending</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="(settings)">
-        <NativeTabs.Trigger.Icon sf="gearshape" md="settings" />
-        <NativeTabs.Trigger.Label>Settings</NativeTabs.Trigger.Label>
-      </NativeTabs.Trigger>
     </NativeTabs>
   );
 }

@@ -89,6 +89,10 @@ export default function AuthLayout() {
         name="change-budget"
         options={{ title: "Change Budget", ...modal }}
       />
+      <Stack.Screen
+        name="settings"
+        options={{ title: "Settings", ...modal }}
+      />
     </Stack>
   );
 }

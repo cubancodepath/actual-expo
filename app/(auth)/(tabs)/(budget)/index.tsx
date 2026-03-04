@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { useTheme } from '../../../../src/presentation/providers/ThemeProvider';
 import { AddTransactionButton } from '../../../../src/presentation/components/molecules/AddTransactionButton';
 import { useBudgetStore } from '../../../../src/stores/budgetStore';
@@ -157,6 +157,7 @@ export default function BudgetScreen() {
   };
 
   return (
+    <>
     <View style={{ flex: 1, backgroundColor: colors.pageBackground }}>
       {/* Move Money Modal */}
       <MoveMoneyModal
@@ -336,5 +337,16 @@ export default function BudgetScreen() {
 
       <AddTransactionButton iconOnly />
     </View>
+    <Stack.Toolbar placement="right">
+      <Stack.Toolbar.Menu icon="ellipsis">
+        <Stack.Toolbar.MenuAction
+          icon="gearshape"
+          onPress={() => router.push('/(auth)/settings')}
+        >
+          Settings
+        </Stack.Toolbar.MenuAction>
+      </Stack.Toolbar.Menu>
+    </Stack.Toolbar>
+    </>
   );
 }

@@ -1,4 +1,5 @@
 import { Stack } from "expo-router";
+import { useQuickActionRouting } from "expo-quick-actions/router";
 import { useTheme } from "../../src/presentation/providers/ThemeProvider";
 import {
   themedScreenOptions,
@@ -6,6 +7,7 @@ import {
 } from "../../src/presentation/navigation/screenOptions";
 
 export default function AuthLayout() {
+  useQuickActionRouting();
   const theme = useTheme();
   const screen = themedScreenOptions(theme);
   const modal = themedModalOptions(theme);

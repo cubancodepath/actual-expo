@@ -7,6 +7,7 @@ import {
   DefaultTheme,
 } from "@react-navigation/native";
 import { Stack } from "expo-router";
+import * as QuickActions from "expo-quick-actions";
 import { ThemeProvider } from "../src/presentation/providers/ThemeProvider";
 import { usePrefsStore } from "../src/stores/prefsStore";
 import { useAccountsStore } from "../src/stores/accountsStore";
@@ -42,6 +43,22 @@ export default function RootLayout() {
       .catch(console.error)
       .finally(() => setReady(true));
   }, []);
+
+  // Register home screen quick actions only when fully authenticated with a budget
+  useEffect(() => {
+    if (isConfigured) {
+      QuickActions.setItems([
+        {
+          id: "add_transaction",
+          title: "Add Transaction",
+          icon: "compose",
+          params: { href: "/(auth)/transaction/new" },
+        },
+      ]);
+    } else {
+      QuickActions.setItems([]);
+    }
+  }, [isConfigured]);
 
   // Sync when app comes back to foreground — mirrors loot-core's app-focused handler
   useEffect(() => {

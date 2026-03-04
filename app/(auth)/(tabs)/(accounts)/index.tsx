@@ -199,7 +199,7 @@ export default function AccountsScreen() {
           />
         )}
       </ScrollView>
-      <AddTransactionButton iconOnly />
+      <AddTransactionButton />
       <Stack.Toolbar placement="right">
         <Stack.Toolbar.Button
           icon="plus"

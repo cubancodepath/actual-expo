@@ -1,11 +1,13 @@
 import { NativeTabs } from "expo-router/unstable-native-tabs";
 import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
+import { useTabBarStore } from "../../../src/stores/tabBarStore";
 
 export default function TabsLayout() {
   const { colors } = useTheme();
+  const tabBarHidden = useTabBarStore((s) => s.hidden);
 
   return (
-    <NativeTabs tintColor={colors.primary}>
+    <NativeTabs tintColor={colors.primary} hidden={tabBarHidden}>
       <NativeTabs.Trigger name="(accounts)">
         <NativeTabs.Trigger.Icon sf="creditcard" md="account_balance_wallet" />
         <NativeTabs.Trigger.Label>Accounts</NativeTabs.Trigger.Label>

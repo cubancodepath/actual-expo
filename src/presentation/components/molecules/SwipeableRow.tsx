@@ -9,6 +9,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../providers/ThemeProvider';
 
 const DELETE_BUTTON_WIDTH = 80;
@@ -26,10 +27,20 @@ interface SwipeableRowProps {
   style?: ViewStyle;
 }
 
+function lightHaptic() {
+  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+}
+
+function mediumHaptic() {
+  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+}
+
 export function SwipeableRow({ children, onDelete, isFirst, isLast, style }: SwipeableRowProps) {
   const { colors, borderRadius: br } = useTheme();
   const translateX = useSharedValue(0);
   const contextX = useSharedValue(0);
+  const passedThreshold = useSharedValue(false);
+  const passedOpenThreshold = useSharedValue(false);
 
   function handleDelete() {
     onDelete();
@@ -58,10 +69,29 @@ export function SwipeableRow({ children, onDelete, isFirst, isLast, style }: Swi
     .failOffsetY([-15, 15])
     .onStart(() => {
       contextX.value = translateX.value;
+      passedThreshold.value = false;
+      passedOpenThreshold.value = false;
     })
     .onUpdate((e) => {
       const next = contextX.value + e.translationX;
       translateX.value = Math.min(0, Math.max(-FULL_DELETE_THRESHOLD, next));
+
+      // Haptic when crossing the full-delete threshold
+      const current = -translateX.value;
+      const fullThreshold = FULL_DELETE_THRESHOLD * 0.7;
+      if (current >= fullThreshold && !passedThreshold.value) {
+        passedThreshold.value = true;
+        runOnJS(mediumHaptic)();
+      } else if (current < fullThreshold && passedThreshold.value) {
+        passedThreshold.value = false;
+        runOnJS(lightHaptic)();
+      }
+
+      // Haptic when crossing the open threshold
+      if (current >= SWIPE_THRESHOLD && !passedOpenThreshold.value) {
+        passedOpenThreshold.value = true;
+        runOnJS(lightHaptic)();
+      }
     })
     .onEnd((e) => {
       const current = translateX.value;
@@ -119,6 +149,20 @@ export function SwipeableRow({ children, onDelete, isFirst, isLast, style }: Swi
     };
   });
 
+  // Icon shifts left as pill expands beyond circle size
+  const iconStyle = useAnimatedStyle(() => {
+    const swipeAmount = -translateX.value;
+    const shift = interpolate(
+      swipeAmount,
+      [DELETE_BUTTON_WIDTH, FULL_DELETE_THRESHOLD],
+      [0, -(FULL_DELETE_THRESHOLD - CIRCLE_SIZE) / 2 + 16],
+      'clamp',
+    );
+    return {
+      transform: [{ translateX: shift }],
+    };
+  });
+
   const containerRadius = {
     borderTopLeftRadius: isFirst ? br.lg : 0,
     borderTopRightRadius: isFirst ? br.lg : 0,
@@ -138,7 +182,9 @@ export function SwipeableRow({ children, onDelete, isFirst, isLast, style }: Swi
               handleDelete();
             }}
           >
-            <Ionicons name="trash-outline" size={20} color="#fff" />
+            <Animated.View style={iconStyle}>
+              <Ionicons name="trash-outline" size={20} color="#fff" />
+            </Animated.View>
           </Pressable>
         </Animated.View>
       </Animated.View>

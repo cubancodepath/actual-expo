@@ -1,4 +1,6 @@
 import { Pressable, View } from 'react-native';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import { Easing } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, useThemedStyles } from '../../providers/ThemeProvider';
 import { Text, Amount } from '..';
@@ -11,9 +13,12 @@ interface TransactionRowProps {
   onPress: (id: string) => void;
   onDelete: (id: string) => void;
   onToggleCleared: (id: string) => void;
+  onLongPress?: (id: string) => void;
   showAccountName?: boolean;
   isFirst?: boolean;
   isLast?: boolean;
+  isSelectMode?: boolean;
+  isSelected?: boolean;
 }
 
 export function TransactionRow({
@@ -21,28 +26,48 @@ export function TransactionRow({
   onPress,
   onDelete,
   onToggleCleared,
+  onLongPress,
   showAccountName,
   isFirst = false,
   isLast = false,
+  isSelectMode = false,
+  isSelected = false,
 }: TransactionRowProps) {
-  const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
+  const { colors, spacing, borderWidth: bw } = useTheme();
   const styles = useThemedStyles(createStyles);
 
-  return (
-    <SwipeableRow
-      onDelete={() => onDelete(item.id)}
-      isFirst={isFirst}
-      isLast={isLast}
-      style={{ marginHorizontal: spacing.lg }}
-    >
+  const row = (
     <Pressable
       style={({ pressed }) => [
         styles.row,
         !isLast && { borderBottomWidth: bw.thin, borderBottomColor: colors.divider },
         pressed && styles.pressed,
+        isSelected && { backgroundColor: colors.primary + '12' },
       ]}
-      onPress={() => onPress(item.id)}
+      onPress={() => {
+        if (isSelectMode) {
+          onLongPress?.(item.id);
+        } else {
+          onPress(item.id);
+        }
+      }}
+      onLongPress={() => onLongPress?.(item.id)}
     >
+      {/* Selection checkbox */}
+      {isSelectMode && (
+        <Animated.View
+          entering={FadeIn.duration(180).easing(Easing.out(Easing.quad))}
+          exiting={FadeOut.duration(150).easing(Easing.in(Easing.quad))}
+          style={styles.checkbox}
+        >
+          <Ionicons
+            name={isSelected ? 'checkmark-circle' : 'ellipse-outline'}
+            size={22}
+            color={isSelected ? colors.primary : colors.textMuted}
+          />
+        </Animated.View>
+      )}
+
       <View style={styles.content}>
         {/* Top row: payee + amount */}
         <View style={styles.topRow}>
@@ -56,21 +81,23 @@ export function TransactionRow({
           </View>
           <View style={styles.amountRow}>
             <Amount value={item.amount} variant="body" showSign style={{ fontWeight: '600' as const }} />
-            <Pressable
-              onPress={() => { if (!item.reconciled) onToggleCleared(item.id); }}
-              hitSlop={10}
-              style={{ marginLeft: spacing.sm }}
-            >
-              {item.reconciled ? (
-                <Ionicons name="lock-closed" size={14} color={colors.primary} />
-              ) : (
-                <Ionicons
-                  name={item.cleared ? 'checkmark-circle' : 'ellipse-outline'}
-                  size={14}
-                  color={item.cleared ? colors.positive : colors.textMuted}
-                />
-              )}
-            </Pressable>
+            {!isSelectMode && (
+              <Pressable
+                onPress={() => { if (!item.reconciled) onToggleCleared(item.id); }}
+                hitSlop={10}
+                style={{ marginLeft: spacing.sm }}
+              >
+                {item.reconciled ? (
+                  <Ionicons name="lock-closed" size={14} color={colors.primary} />
+                ) : (
+                  <Ionicons
+                    name={item.cleared ? 'checkmark-circle' : 'ellipse-outline'}
+                    size={14}
+                    color={item.cleared ? colors.positive : colors.textMuted}
+                  />
+                )}
+              </Pressable>
+            )}
           </View>
         </View>
 
@@ -105,14 +132,28 @@ export function TransactionRow({
         )}
       </View>
 
-      {/* Navigation chevron */}
-      <Ionicons
-        name="chevron-forward"
-        size={16}
-        color={colors.textMuted}
-        style={styles.chevron}
-      />
+      {/* Navigation chevron (hidden in select mode) */}
+      {!isSelectMode && (
+        <Ionicons
+          name="chevron-forward"
+          size={16}
+          color={colors.textMuted}
+          style={styles.chevron}
+        />
+      )}
     </Pressable>
+  );
+
+  if (isSelectMode) return row;
+
+  return (
+    <SwipeableRow
+      onDelete={() => onDelete(item.id)}
+      isFirst={isFirst}
+      isLast={isLast}
+      style={{ marginHorizontal: spacing.lg }}
+    >
+      {row}
     </SwipeableRow>
   );
 }
@@ -128,6 +169,9 @@ const createStyles = (theme: Theme) => ({
   },
   pressed: {
     opacity: 0.7,
+  },
+  checkbox: {
+    marginRight: theme.spacing.sm,
   },
   content: {
     flex: 1,

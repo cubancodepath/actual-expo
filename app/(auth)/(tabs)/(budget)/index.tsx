@@ -309,7 +309,7 @@ export default function BudgetScreen() {
         />
       )}
 
-      <AddTransactionButton iconOnly />
+      <AddTransactionButton />
     </View>
     <Stack.Toolbar placement="right">
       <Stack.Toolbar.Menu icon="ellipsis">

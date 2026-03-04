@@ -1,6 +1,6 @@
 import { randomUUID } from 'expo-crypto';
 import { runQuery, first } from '../db';
-import { sendMessages } from '../sync';
+import { sendMessages, batchMessages } from '../sync';
 import { Timestamp } from '../crdt';
 import type { TransactionRow } from '../db/types';
 import type { Transaction, GetTransactionsOptions } from './types';
@@ -161,6 +161,35 @@ export async function toggleCleared(id: string): Promise<void> {
   await sendMessages([
     { timestamp: Timestamp.send()!, dataset: 'transactions', row: id, column: 'cleared', value: row.cleared === 1 ? 0 : 1 },
   ]);
+}
+
+/**
+ * Set the cleared flag on multiple transactions at once.
+ * Skips reconciled transactions and those already in the target state.
+ * Uses batchMessages for sync efficiency.
+ */
+export async function setClearedBulk(ids: string[], cleared: boolean): Promise<number> {
+  if (ids.length === 0) return 0;
+
+  const placeholders = ids.map(() => '?').join(',');
+  const rows = await runQuery<{ id: string; cleared: number; reconciled: number }>(
+    `SELECT id, cleared, reconciled FROM transactions WHERE id IN (${placeholders}) AND tombstone = 0`,
+    ids,
+  );
+
+  const targetVal = cleared ? 1 : 0;
+  const toUpdate = rows.filter(r => r.reconciled !== 1 && r.cleared !== targetVal);
+  if (toUpdate.length === 0) return 0;
+
+  await batchMessages(async () => {
+    for (const row of toUpdate) {
+      await sendMessages([
+        { timestamp: Timestamp.send()!, dataset: 'transactions', row: row.id, column: 'cleared', value: targetVal },
+      ]);
+    }
+  });
+
+  return toUpdate.length;
 }
 
 /**

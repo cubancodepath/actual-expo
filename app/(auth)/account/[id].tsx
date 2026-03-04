@@ -1,30 +1,35 @@
-import { useCallback, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';
 import {
   ActivityIndicator,
   Alert,
+  Pressable,
   RefreshControl,
   View,
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
-import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import { Stack, useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { useAccountsStore } from '../../../src/stores/accountsStore';
 import {
   deleteTransaction,
   getClearedBalance,
   getTransactionsForAccount,
   reconcileAccount,
+  setClearedBulk,
   toggleCleared,
+  updateTransaction,
   type TransactionDisplay,
 } from '../../../src/transactions';
 import { ReconcileOverlay } from '../../../src/presentation/components/account/ReconcileOverlay';
 import { useTheme, useThemedStyles } from '../../../src/presentation/providers/ThemeProvider';
-import { EmptyState } from '../../../src/presentation/components';
+import { EmptyState, Text } from '../../../src/presentation/components';
+import { formatBalance } from '../../../src/lib/format';
 import type { Theme } from '../../../src/theme';
 
 import { BalanceSummary } from '../../../src/presentation/components/account/BalanceSummary';
 import { TransactionRow } from '../../../src/presentation/components/account/TransactionRow';
 import { DateSectionHeader } from '../../../src/presentation/components/account/DateSectionHeader';
-import { AccountHeaderMenu } from '../../../src/presentation/components/account/AccountHeaderMenu';
 import { AddTransactionButton } from '../../../src/presentation/components/molecules/AddTransactionButton';
 
 // ---------------------------------------------------------------------------
@@ -88,6 +93,7 @@ export default function AccountTransactionsScreen() {
   const styles = useThemedStyles(createScreenStyles);
   const { accounts, load: loadAccounts } = useAccountsStore();
   const account = accounts.find(a => a.id === id);
+  const otherAccounts = accounts.filter(a => a.id !== id && !a.closed);
 
   const [transactions, setTransactions] = useState<TransactionDisplay[]>([]);
   const [loading, setLoading] = useState(true);
@@ -98,6 +104,35 @@ export default function AccountTransactionsScreen() {
   const [hideReconciled, setHideReconciled] = useState(false);
   const [showReconcile, setShowReconcile] = useState(false);
   const offsetRef = useRef(0);
+
+  // ---- Selection state ----
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isSelectMode, setIsSelectMode] = useState(false);
+
+  const selectedTransactions = useMemo(
+    () => transactions.filter(t => selectedIds.has(t.id)),
+    [selectedIds, transactions],
+  );
+
+  const allCleared = useMemo(() => {
+    const nonReconciled = selectedTransactions.filter(t => !t.reconciled);
+    return nonReconciled.length > 0 && nonReconciled.every(t => t.cleared);
+  }, [selectedTransactions]);
+
+  const selectedTotal = useMemo(
+    () => selectedTransactions.reduce((sum, t) => sum + t.amount, 0),
+    [selectedTransactions],
+  );
+
+  // ---- Scroll-driven FAB collapse ----
+  const fabCollapsed = useSharedValue(false);
+  const scrollHandler = useAnimatedScrollHandler({
+    onBeginDrag: () => { fabCollapsed.value = true; },
+    onMomentumEnd: () => { fabCollapsed.value = false; },
+    onEndDrag: () => { fabCollapsed.value = false; },
+  });
+
+  // ---- Data loading ----
 
   const loadTransactions = useCallback(async (hide = hideReconciled) => {
     setLoading(true);
@@ -148,7 +183,12 @@ export default function AccountTransactionsScreen() {
     }
   }, [id, loadAccounts, hideReconciled]);
 
-  useFocusEffect(useCallback(() => { loadTransactions(); }, [loadTransactions]));
+  useFocusEffect(useCallback(() => {
+    loadTransactions();
+    return () => { setIsSelectMode(false); setSelectedIds(new Set()); };
+  }, [loadTransactions]));
+
+  // ---- Single-item handlers ----
 
   async function handleReconcile(bankBalance: number) {
     await reconcileAccount(id, bankBalance);
@@ -160,24 +200,6 @@ export default function AccountTransactionsScreen() {
     setHideReconciled(next);
     loadTransactions(next);
   }
-
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      title: account?.name ?? 'Account',
-      headerRight: () => (
-        <AccountHeaderMenu
-          onReconcile={() => setShowReconcile(true)}
-          hideReconciled={hideReconciled}
-          onToggleHideReconciled={handleToggleHideReconciled}
-          onEditAccount={() =>
-            router.push({ pathname: '/(auth)/account/settings', params: { id } })
-          }
-          headerTextColor={colors.headerText}
-          isDark={theme.isDark}
-        />
-      ),
-    });
-  }, [account?.name, id, colors.headerText, hideReconciled]);
 
   function handleDelete(txnId: string) {
     Alert.alert('Delete Transaction', 'Delete this transaction?', [
@@ -208,6 +230,189 @@ export default function AccountTransactionsScreen() {
     router.push({ pathname: '/(auth)/transaction/new', params: { transactionId: txnId } });
   }
 
+  // ---- Selection handlers ----
+
+  function handleLongPress(txnId: string) {
+    if (!isSelectMode) {
+      setIsSelectMode(true);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(txnId)) next.delete(txnId);
+      else next.add(txnId);
+      return next;
+    });
+  }
+
+  function enterSelectMode() {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setIsSelectMode(true);
+  }
+
+  function handleSelectAll() {
+    const allIds = transactions.filter(t => !t.reconciled).map(t => t.id);
+    setSelectedIds(new Set(allIds));
+  }
+
+  function handleDoneSelection() {
+    setIsSelectMode(false);
+    setSelectedIds(new Set());
+  }
+
+  function handleBulkDelete() {
+    const count = selectedIds.size;
+    Alert.alert(
+      'Delete Transactions',
+      `Delete ${count} transaction${count === 1 ? '' : 's'}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            for (const txnId of selectedIds) {
+              await deleteTransaction(txnId);
+            }
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            setIsSelectMode(false);
+            setSelectedIds(new Set());
+            await Promise.all([loadAccounts(), loadTransactions()]);
+          },
+        },
+      ],
+    );
+  }
+
+  async function handleBulkMove(targetAccountId: string) {
+    const count = selectedIds.size;
+    const targetAccount = accounts.find(a => a.id === targetAccountId);
+    Alert.alert(
+      'Move Transactions',
+      `Move ${count} transaction${count === 1 ? '' : 's'} to ${targetAccount?.name ?? 'account'}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Move',
+          onPress: async () => {
+            for (const txnId of selectedIds) {
+              await updateTransaction(txnId, { acct: targetAccountId });
+            }
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            setIsSelectMode(false);
+            setSelectedIds(new Set());
+            await Promise.all([loadAccounts(), loadTransactions()]);
+          },
+        },
+      ],
+    );
+  }
+
+  async function handleBulkToggleCleared() {
+    const selected = transactions.filter(t => selectedIds.has(t.id) && !t.reconciled);
+    if (selected.length === 0) return;
+
+    const anyUncleared = selected.some(t => !t.cleared);
+    const updated = await setClearedBulk(selected.map(t => t.id), anyUncleared);
+
+    if (updated > 0) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+
+    const [txns, cleared] = await Promise.all([
+      getTransactionsForAccount(id, { limit: offsetRef.current || PAGE_SIZE, offset: 0, hideReconciled }),
+      getClearedBalance(id),
+    ]);
+    setTransactions(txns);
+    setClearedBalance(cleared);
+    setIsSelectMode(false);
+    setSelectedIds(new Set());
+    await loadAccounts();
+  }
+
+  // ---- Header ----
+
+  useLayoutEffect(() => {
+    if (isSelectMode) {
+      navigation.setOptions({
+        title: selectedIds.size > 0
+          ? `${selectedIds.size} Selected`
+          : 'Select Items',
+        headerTitle: selectedIds.size > 0
+          ? () => (
+              <View style={{ alignItems: 'center' }}>
+                <Text variant="body" style={{ fontWeight: '600' }}>{selectedIds.size} Selected</Text>
+                <Text variant="captionSm" color={colors.textMuted}>{formatBalance(selectedTotal)}</Text>
+              </View>
+            )
+          : undefined,
+        headerRight: undefined,
+        unstable_headerRightItems: () => [
+          {
+            type: 'button' as const,
+            icon: { type: 'sfSymbol' as const, name: 'xmark' },
+            onPress: handleDoneSelection,
+          },
+        ],
+        headerLeft: () => (
+          <Pressable onPress={handleSelectAll} hitSlop={8} style={{ paddingHorizontal: 8 }}>
+            <Text variant="body" color={colors.headerText} style={{ fontWeight: '600' }}>
+              Select All
+            </Text>
+          </Pressable>
+        ),
+      });
+    } else {
+      navigation.setOptions({
+        title: account?.name ?? 'Account',
+        headerTitle: undefined,
+        headerLeft: undefined,
+        headerRight: undefined,
+        unstable_headerRightItems: () => [
+          {
+            type: 'button' as const,
+            label: 'Select',
+            onPress: enterSelectMode,
+          },
+          {
+            type: 'button' as const,
+            icon: { type: 'sfSymbol' as const, name: 'magnifyingglass' },
+            onPress: () => {},
+            disabled: true,
+          },
+          {
+            type: 'menu' as const,
+            icon: { type: 'sfSymbol' as const, name: 'ellipsis' },
+            menu: {
+              items: [
+                {
+                  type: 'action' as const,
+                  label: 'Reconcile',
+                  icon: { type: 'sfSymbol' as const, name: 'lock' },
+                  onPress: () => setShowReconcile(true),
+                },
+                {
+                  type: 'action' as const,
+                  label: hideReconciled ? 'Show Reconciled' : 'Hide Reconciled',
+                  icon: { type: 'sfSymbol' as const, name: hideReconciled ? 'checkmark.circle' : 'checkmark.circle.badge.xmark' },
+                  onPress: handleToggleHideReconciled,
+                },
+                {
+                  type: 'action' as const,
+                  label: 'Edit Account',
+                  icon: { type: 'sfSymbol' as const, name: 'pencil' },
+                  onPress: () => router.push({ pathname: '/(auth)/account/settings', params: { id } }),
+                },
+              ],
+            },
+          },
+        ],
+      });
+    }
+  }, [account?.name, id, colors.headerText, hideReconciled, isSelectMode, selectedIds.size, selectedTotal]);
+
+  // ---- Render ----
+
   const listData = buildListData(transactions);
 
   return (
@@ -219,6 +424,8 @@ export default function AccountTransactionsScreen() {
           data={listData}
           keyExtractor={(item) => item.key}
           getItemType={(item) => item.type}
+          onScroll={scrollHandler}
+          scrollEventThrottle={16}
           renderItem={({ item }) => {
             if (item.type === 'date') {
               return <DateSectionHeader date={item.date} />;
@@ -229,8 +436,11 @@ export default function AccountTransactionsScreen() {
                 onPress={handleEditTransaction}
                 onDelete={handleDelete}
                 onToggleCleared={handleToggleCleared}
+                onLongPress={handleLongPress}
                 isFirst={item.isFirst}
                 isLast={item.isLast}
+                isSelectMode={isSelectMode}
+                isSelected={selectedIds.has(item.data.id)}
               />
             );
           }}
@@ -265,15 +475,50 @@ export default function AccountTransactionsScreen() {
         />
       )}
 
-      <AddTransactionButton iconOnly accountId={id as string} bottom={28} />
-
-      {/* Reconcile overlay */}
       <ReconcileOverlay
         visible={showReconcile}
         clearedBalance={clearedBalance}
         onReconcile={handleReconcile}
         onClose={() => setShowReconcile(false)}
       />
+
+      {!isSelectMode && (
+        <AddTransactionButton accountId={id as string} bottom={28} collapsed={fabCollapsed} />
+      )}
+
+      {/* Native bottom toolbar for selection actions */}
+      {isSelectMode && (
+        <Stack.Toolbar>
+          <Stack.Toolbar.Button
+            icon={allCleared ? 'circle' : 'checkmark.circle'}
+            onPress={handleBulkToggleCleared}
+          >
+            {allCleared ? 'Unclear' : 'Clear'}
+          </Stack.Toolbar.Button>
+          <Stack.Toolbar.Spacer />
+          <Stack.Toolbar.Menu icon="ellipsis">
+            {otherAccounts.length > 0 && (
+              <Stack.Toolbar.Menu icon="arrow.right.arrow.left" title="Move to...">
+                {otherAccounts.map(acc => (
+                  <Stack.Toolbar.MenuAction
+                    key={acc.id}
+                    onPress={() => handleBulkMove(acc.id)}
+                  >
+                    {acc.name}
+                  </Stack.Toolbar.MenuAction>
+                ))}
+              </Stack.Toolbar.Menu>
+            )}
+            <Stack.Toolbar.MenuAction
+              icon="trash"
+              destructive
+              onPress={handleBulkDelete}
+            >
+              Delete
+            </Stack.Toolbar.MenuAction>
+          </Stack.Toolbar.Menu>
+        </Stack.Toolbar>
+      )}
     </View>
   );
 }

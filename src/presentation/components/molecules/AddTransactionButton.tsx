@@ -1,4 +1,5 @@
-import { Pressable, type ViewStyle } from "react-native";
+import { Pressable, View, type ViewStyle } from "react-native";
+import Animated, { useAnimatedStyle, withTiming, type SharedValue } from "react-native-reanimated";
 import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
 import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
@@ -6,45 +7,48 @@ import { useRouter } from "expo-router";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Text } from "../atoms/Text";
 
-const innerStyle: ViewStyle = {
+const baseStyle: ViewStyle = {
   flexDirection: "row",
   alignItems: "center",
   paddingVertical: 12,
-  paddingHorizontal: 20,
-  gap: 6,
-};
-
-const iconStyle: ViewStyle = {
-  alignItems: "center",
-  justifyContent: "center",
-  padding: 12,
+  paddingHorizontal: 14,
 };
 
 interface AddTransactionButtonProps {
-  iconOnly?: boolean;
   accountId?: string;
   bottom?: number;
+  collapsed?: SharedValue<boolean>;
 }
 
-export function AddTransactionButton({ iconOnly, accountId, bottom = 100 }: AddTransactionButtonProps) {
+const TIMING = { duration: 200 };
+
+export function AddTransactionButton({ accountId, bottom = 100, collapsed }: AddTransactionButtonProps) {
   const router = useRouter();
   const { colors } = useTheme();
   const glass = isLiquidGlassAvailable();
 
-  const content = iconOnly ? (
-    <Ionicons name="add" size={22} color={colors.textPrimary} />
-  ) : (
+  const labelStyle = useAnimatedStyle(() => {
+    const isCollapsed = collapsed ? collapsed.value : false;
+    return {
+      opacity: withTiming(isCollapsed ? 0 : 1, TIMING),
+      width: withTiming(isCollapsed ? 0 : 90, TIMING),
+      marginLeft: withTiming(isCollapsed ? 0 : 4, TIMING),
+    };
+  });
+
+  const content = (
     <>
-      <Ionicons name="add" size={20} color={colors.textPrimary} />
-      <Text variant="body" color={colors.textPrimary} style={{ fontWeight: "600" }}>
-        Transaction
-      </Text>
+      <Ionicons name="add" size={22} color={colors.textPrimary} />
+      <Animated.View style={[{ overflow: "hidden" }, labelStyle]}>
+        <Text variant="body" color={colors.textPrimary} style={{ fontWeight: "600" }} numberOfLines={1}>
+          Transaction
+        </Text>
+      </Animated.View>
     </>
   );
 
   return (
-    <Pressable
-      onPress={() => router.push({ pathname: "/(auth)/transaction/new", params: accountId ? { accountId } : undefined })}
+    <View
       style={{
         position: "absolute",
         bottom,
@@ -53,15 +57,19 @@ export function AddTransactionButton({ iconOnly, accountId, bottom = 100 }: AddT
         overflow: "hidden",
       }}
     >
-      {glass ? (
-        <GlassView isInteractive style={{ borderRadius: 50, ...(iconOnly ? iconStyle : innerStyle) }}>
-          {content}
-        </GlassView>
-      ) : (
-        <BlurView tint="systemChromeMaterial" intensity={100} style={iconOnly ? iconStyle : innerStyle}>
-          {content}
-        </BlurView>
-      )}
-    </Pressable>
+      <Pressable
+        onPress={() => router.push({ pathname: "/(auth)/transaction/new", params: accountId ? { accountId } : undefined })}
+      >
+        {glass ? (
+          <GlassView isInteractive style={{ borderRadius: 50, ...baseStyle }}>
+            {content}
+          </GlassView>
+        ) : (
+          <BlurView tint="systemChromeMaterial" intensity={100} style={baseStyle}>
+            {content}
+          </BlurView>
+        )}
+      </Pressable>
+    </View>
   );
 }

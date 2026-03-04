@@ -89,6 +89,11 @@ CREATE TABLE IF NOT EXISTS category_mapping (
   transferId TEXT
 );
 
+CREATE TABLE IF NOT EXISTS notes (
+  id TEXT PRIMARY KEY,
+  note TEXT
+);
+
 CREATE TABLE IF NOT EXISTS preferences (
   id TEXT PRIMARY KEY,
   value TEXT

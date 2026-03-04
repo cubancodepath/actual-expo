@@ -63,31 +63,66 @@ export function BudgetCategoryRow({
 
   // ── Expense row ──
 
-  // Available badge colors
-  const pillBg =
-    cat.balance > 0
+  const hasGoal = cat.goal !== null && cat.goal > 0;
+
+  // Available badge colors — goal-aware
+  let pillBg: string;
+  let pillText: string;
+
+  if (hasGoal) {
+    const funded = cat.longGoal
+      ? cat.balance >= cat.goal!
+      : cat.budgeted >= cat.goal!;
+    pillBg = cat.balance < 0
+      ? colors.negative + '30'
+      : funded
+        ? colors.positive + '30'
+        : colors.warning + '30';
+    pillText = cat.balance < 0
+      ? colors.negative
+      : funded
+        ? colors.positive
+        : colors.warning;
+  } else {
+    pillBg = cat.balance > 0
       ? colors.positive + '30'
       : cat.balance < 0
         ? colors.negative + '30'
         : colors.cardBackground;
-  const pillText =
-    cat.balance > 0
+    pillText = cat.balance > 0
       ? colors.positive
       : cat.balance < 0
         ? colors.negative
         : colors.textMuted;
+  }
 
   // Progress bar
   const spentAbs = Math.abs(cat.spent);
   const budgetedAbs = Math.abs(cat.budgeted);
-  const pct = budgetedAbs > 0 ? spentAbs / budgetedAbs : 0;
-  const clampedPct = Math.min(pct, 1);
-  const barColor =
-    pct >= 1
+
+  // Goal dual-bar values
+  let goalFundedPct = 0;
+  let goalSpentPct = 0;
+  let goalColor = colors.positive;
+  if (hasGoal) {
+    const fundedValue = cat.longGoal ? cat.balance : cat.budgeted;
+    goalFundedPct = Math.min(Math.max(fundedValue / cat.goal!, 0), 1);
+    goalSpentPct = Math.min(Math.max(spentAbs / cat.goal!, 0), 1);
+    goalColor = cat.balance < 0
       ? colors.negative
-      : pct >= 0.8
-        ? colors.warning
-        : colors.positive;
+      : goalFundedPct >= 1
+        ? colors.positive
+        : colors.warning;
+  }
+
+  // No-goal single bar values
+  const noGoalPct = budgetedAbs > 0 ? spentAbs / budgetedAbs : 0;
+  const noGoalClampedPct = Math.min(noGoalPct, 1);
+  const noGoalBarColor = noGoalPct >= 1
+    ? colors.negative
+    : noGoalPct >= 0.8
+      ? colors.warning
+      : colors.positive;
 
   return (
     <Pressable
@@ -171,7 +206,39 @@ export function BudgetCategoryRow({
       </View>
 
       {/* Line 3: Progress bar */}
-      {budgetedAbs > 0 && (
+      {hasGoal ? (
+        <View
+          style={{
+            height: 3,
+            borderRadius: 1.5,
+            backgroundColor: colors.divider,
+            marginTop: 6,
+            overflow: 'hidden',
+          }}
+        >
+          {/* Segment 1: spent (lighter) */}
+          <View
+            style={{
+              position: 'absolute', left: 0, top: 0, bottom: 0,
+              width: `${Math.round(goalSpentPct * 100)}%`,
+              borderRadius: 1.5,
+              backgroundColor: goalColor + '50',
+            }}
+          />
+          {/* Segment 2: funded but not spent (darker, starts after spent) */}
+          {goalFundedPct > goalSpentPct && (
+            <View
+              style={{
+                position: 'absolute', top: 0, bottom: 0,
+                left: `${Math.round(goalSpentPct * 100)}%`,
+                width: `${Math.round((goalFundedPct - goalSpentPct) * 100)}%`,
+                borderRadius: 1.5,
+                backgroundColor: goalColor + '90',
+              }}
+            />
+          )}
+        </View>
+      ) : budgetedAbs > 0 ? (
         <View
           style={{
             height: 3,
@@ -183,14 +250,14 @@ export function BudgetCategoryRow({
         >
           <View
             style={{
-              width: `${Math.round(clampedPct * 100)}%`,
+              width: `${Math.round(noGoalClampedPct * 100)}%`,
               height: '100%',
               borderRadius: 1.5,
-              backgroundColor: barColor,
+              backgroundColor: noGoalBarColor,
             }}
           />
         </View>
-      )}
+      ) : null}
     </Pressable>
   );
 }

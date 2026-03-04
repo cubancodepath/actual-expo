@@ -143,6 +143,7 @@ const ALLOWED_TABLES = new Set([
   'category_mapping',
   'payees',
   'payee_mapping',
+  'notes',
   'zero_budgets',
   'zero_budget_months',
   'preferences',

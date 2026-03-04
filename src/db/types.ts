@@ -65,6 +65,11 @@ export type ZeroBudgetRow = {
   long_goal: number | null;
 };
 
+export type NoteRow = {
+  id: string;   // entity id (category, account, etc.)
+  note: string | null;
+};
+
 export type PayeeMappingRow = {
   id: string;       // original payee id (or self-ref on creation)
   targetId: string; // canonical payee id (updated when payees are merged)

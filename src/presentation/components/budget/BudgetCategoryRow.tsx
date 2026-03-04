@@ -168,16 +168,6 @@ export function BudgetCategoryRow({
             }}
           >
             <Amount value={cat.balance} variant="captionSm" color={pillText} weight="700" />
-            {cat.carryIn !== 0 && (
-              <Amount
-                value={cat.carryIn}
-                showSign
-                variant="captionSm"
-                color={cat.carryIn < 0 ? colors.negative : colors.positive}
-                weight="600"
-                style={{ fontSize: 9, marginTop: -1 }}
-              />
-            )}
           </View>
         </Pressable>
       </View>

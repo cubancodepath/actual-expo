@@ -27,6 +27,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
 
   setMonth(month) {
     set({ month });
+    get().load();
   },
 
   async load() {

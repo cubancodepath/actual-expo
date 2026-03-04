@@ -78,6 +78,16 @@ export default function AuthLayout() {
         }}
       />
       <Stack.Screen
+        name="budget/goal"
+        options={{
+          ...screen,
+          title: "Goal Target",
+          presentation: "formSheet",
+          sheetAllowedDetents: [1.0],
+          contentStyle: { backgroundColor: theme.colors.headerBackground },
+        }}
+      />
+      <Stack.Screen
         name="categories"
         options={{ title: "Manage Categories", ...modal }}
       />

@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    minHeight: 40,
+    minHeight: 44,
   },
   pressed: { opacity: 0.8 },
   disabled: { opacity: 0.5 },

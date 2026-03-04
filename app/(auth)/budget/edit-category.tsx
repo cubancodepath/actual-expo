@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Alert, TextInput, View } from 'react-native';
+import { Alert, Pressable, TextInput, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
 import { useCategoriesStore } from '../../../src/stores/categoriesStore';
@@ -7,6 +8,8 @@ import { useBudgetStore } from '../../../src/stores/budgetStore';
 import { Text } from '../../../src/presentation/components/atoms/Text';
 import { Button } from '../../../src/presentation/components/atoms/Button';
 import { IconButton } from '../../../src/presentation/components/atoms/IconButton';
+import { parseGoalDef } from '../../../src/goals';
+import { describeTemplate } from '../../../src/goals/describe';
 
 export default function EditCategoryScreen() {
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
@@ -17,6 +20,8 @@ export default function EditCategoryScreen() {
 
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const busy = saving || deleting;
 
   useEffect(() => {
     if (category) setName(category.name);
@@ -24,7 +29,7 @@ export default function EditCategoryScreen() {
 
   async function handleSave() {
     const trimmed = name.trim();
-    if (!trimmed || !categoryId || saving) return;
+    if (!trimmed || !categoryId || busy) return;
     if (trimmed === category?.name) {
       router.back();
       return;
@@ -41,7 +46,7 @@ export default function EditCategoryScreen() {
   }
 
   function handleDelete() {
-    if (!categoryId) return;
+    if (!categoryId || busy) return;
     Alert.alert(
       'Delete Category',
       `Are you sure you want to delete "${category?.name ?? 'this category'}"?`,
@@ -51,15 +56,25 @@ export default function EditCategoryScreen() {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
-            await useCategoriesStore.getState().deleteCategory(categoryId);
-            await useCategoriesStore.getState().load();
-            await useBudgetStore.getState().load();
-            router.back();
+            setDeleting(true);
+            try {
+              await useCategoriesStore.getState().deleteCategory(categoryId);
+              await useCategoriesStore.getState().load();
+              await useBudgetStore.getState().load();
+              router.back();
+            } catch {
+              setDeleting(false);
+              Alert.alert('Error', 'Could not delete the category. Please try again.');
+            }
           },
         },
       ],
     );
   }
+
+  const templates = parseGoalDef(category?.goal_def ?? null);
+  const hasGoal = templates.length > 0;
+  const goalDescription = hasGoal ? describeTemplate(templates[0]) : null;
 
   return (
     <View style={{ backgroundColor: colors.headerBackground, padding: spacing.lg, paddingTop: 72 }}>
@@ -77,8 +92,13 @@ export default function EditCategoryScreen() {
         }}
       />
 
-      <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.xs }}>
-        CATEGORY NAME
+      {/* Category name */}
+      <Text
+        variant="caption"
+        color={colors.textMuted}
+        style={{ marginBottom: spacing.xs, textTransform: 'uppercase', letterSpacing: 0.5 }}
+      >
+        Category Name
       </Text>
       <TextInput
         value={name}
@@ -88,6 +108,7 @@ export default function EditCategoryScreen() {
         autoFocus
         returnKeyType="done"
         onSubmitEditing={handleSave}
+        accessibilityLabel="Category name"
         style={{
           backgroundColor: colors.cardBackground,
           color: colors.textPrimary,
@@ -95,26 +116,90 @@ export default function EditCategoryScreen() {
           padding: spacing.md,
           borderRadius: br.md,
           borderWidth: bw.thin,
-          borderColor: colors.divider,
+          borderColor: colors.inputBorder,
         }}
       />
 
+      {/* Goal target — disclosure row */}
+      <View style={{ marginTop: spacing.lg }}>
+        <Text
+          variant="caption"
+          color={colors.textMuted}
+          style={{ marginBottom: spacing.xs, textTransform: 'uppercase', letterSpacing: 0.5 }}
+        >
+          Target
+        </Text>
+        <Pressable
+          onPress={() => {
+            if (categoryId) {
+              router.push({ pathname: '/(auth)/budget/goal', params: { categoryId } });
+            }
+          }}
+          style={({ pressed }) => ({
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: colors.cardBackground,
+            borderRadius: br.md,
+            borderWidth: bw.thin,
+            borderColor: colors.divider,
+            paddingVertical: spacing.md,
+            paddingHorizontal: spacing.md,
+            minHeight: 44,
+            opacity: pressed ? 0.7 : 1,
+          })}
+          accessibilityRole="button"
+          accessibilityLabel={
+            hasGoal
+              ? `Target: ${goalDescription}`
+              : 'Target: Not set'
+          }
+          accessibilityHint={hasGoal ? 'Opens target editor' : 'Opens target setup'}
+        >
+          <Text variant="body" color={colors.textPrimary} style={{ marginRight: spacing.sm }}>
+            Target
+          </Text>
+          <View style={{ flex: 1, alignItems: 'flex-end' }}>
+            {goalDescription ? (
+              <Text variant="bodySm" color={colors.textSecondary} numberOfLines={1}>
+                {goalDescription}
+              </Text>
+            ) : (
+              <Text variant="bodySm" color={colors.primary} style={{ fontWeight: '600' }}>
+                Add
+              </Text>
+            )}
+          </View>
+          <Ionicons
+            name={hasGoal ? 'chevron-forward' : 'add-circle'}
+            size={hasGoal ? 16 : 18}
+            color={hasGoal ? colors.textMuted : colors.primary}
+            style={{ marginLeft: spacing.xs }}
+          />
+        </Pressable>
+      </View>
+
+      {/* Save */}
       <Button
         title="Save"
         variant="primary"
         onPress={handleSave}
-        disabled={!name.trim()}
+        disabled={!name.trim() || busy}
         loading={saving}
-        style={{ marginTop: spacing.lg, borderRadius: 999 }}
+        style={{ marginTop: spacing.xl, borderRadius: 999 }}
       />
 
-      <Button
-        title="Delete Category"
-        variant="danger"
-        icon="trash-outline"
-        onPress={handleDelete}
-        style={{ marginTop: spacing.sm, borderRadius: 999 }}
-      />
+      {/* Delete — separated from Save, ghost style */}
+      <View style={{ marginTop: spacing.xl }}>
+        <Button
+          title="Delete Category"
+          variant="ghost"
+          icon="trash-outline"
+          textColor={colors.negative}
+          onPress={handleDelete}
+          disabled={busy}
+          loading={deleting}
+        />
+      </View>
     </View>
   );
 }

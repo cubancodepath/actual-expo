@@ -6,6 +6,9 @@ export type BudgetCategory = {
   balance: number;     // cents (includes carryIn)
   carryIn: number;     // cents rolled in from previous month (0 if none)
   carryover: boolean;  // whether this category rolls overspending to next month
+  goal: number | null;    // goal amount in cents (from zero_budgets.goal)
+  longGoal: boolean;      // true = balance-based goal (#goal directive)
+  goalDef: string | null; // raw goal_def JSON from categories table
 };
 
 export type BudgetGroup = {

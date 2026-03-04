@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { getBudgetMonth, setBudgetAmount, holdForNextMonth, resetHold, setCategoryCarryover, transferBetweenCategories } from '../budgets';
 import { currentMonth } from '../lib/date';
+import { applyGoals } from '../goals/apply';
+import type { ApplyGoalsResult } from '../goals/apply';
 import type { BudgetMonth } from '../budgets/types';
 
 type BudgetState = {
@@ -18,6 +20,8 @@ type BudgetState = {
   setCarryover(categoryId: string, flag: boolean): Promise<void>;
   /** Move `amountCents` from one category budget to another for the current month. */
   transfer(fromCategoryId: string, toCategoryId: string, amountCents: number): Promise<void>;
+  /** Apply goal templates to all categories for the current month. */
+  applyGoals(): Promise<ApplyGoalsResult>;
 };
 
 export const useBudgetStore = create<BudgetState>((set, get) => ({
@@ -64,5 +68,11 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
   async transfer(fromCategoryId, toCategoryId, amountCents) {
     await transferBetweenCategories(get().month, fromCategoryId, toCategoryId, amountCents);
     await get().load();
+  },
+
+  async applyGoals() {
+    const result = await applyGoals(get().month);
+    await get().load();
+    return result;
   },
 }));

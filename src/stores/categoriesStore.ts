@@ -13,6 +13,8 @@ import {
   deleteCategoryGroup,
 } from '../categories';
 import type { Category, CategoryGroup } from '../categories/types';
+import { setGoalTemplates } from '../goals';
+import type { Template } from '../goals/types';
 
 type CategoriesState = {
   groups: CategoryGroup[];
@@ -27,6 +29,7 @@ type CategoriesState = {
   moveCategoryGroup(id: string, targetId?: string | null): Promise<void>;
   deleteCategory(id: string, transferId?: string): Promise<void>;
   deleteCategoryGroup(id: string, transferId?: string): Promise<void>;
+  setGoalDef(categoryId: string, templates: Template[]): Promise<void>;
 };
 
 export const useCategoriesStore = create<CategoriesState>((set) => ({
@@ -77,5 +80,10 @@ export const useCategoriesStore = create<CategoriesState>((set) => ({
 
   async deleteCategoryGroup(id, transferId) {
     return deleteCategoryGroup(id, transferId);
+  },
+
+  async setGoalDef(categoryId, templates) {
+    await setGoalTemplates(categoryId, templates);
+    // load() will be called by applyMessages → refreshAllStores
   },
 }));

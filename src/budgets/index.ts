@@ -209,6 +209,8 @@ export async function getBudgetMonth(month: string): Promise<BudgetMonth> {
   );
   const budgetMap    = new Map(budgetRows.map(r => [r.category, r.amount]));
   const carryoverMap = new Map(budgetRows.map(r => [r.category, r.carryover === 1]));
+  const goalMap      = new Map(budgetRows.map(r => [r.category, r.goal]));
+  const longGoalMap  = new Map(budgetRows.map(r => [r.category, r.long_goal === 1]));
 
   // Current-month transaction amounts per category (FIX #2 & #3: proper filters)
   const currentMonthRows = await runQuery<{ category: string; amount: number }>(
@@ -322,7 +324,11 @@ export async function getBudgetMonth(month: string): Promise<BudgetMonth> {
       groupSpent    += spent;
       groupCarryIn  += carryIn;
 
-      return { id: c.id, name: c.name, budgeted, spent, balance, carryIn, carryover };
+      const goal     = goalMap.get(c.id) ?? null;
+      const longGoal = longGoalMap.get(c.id) ?? false;
+      const goalDef  = c.goal_def ?? null;
+
+      return { id: c.id, name: c.name, budgeted, spent, balance, carryIn, carryover, goal, longGoal, goalDef };
     });
 
     if (isIncome) {

@@ -3,14 +3,20 @@
  *
  * Reads each category's goal_def, calculates the goal result using
  * the engine, and saves the computed goal/long_goal to zero_budgets.
+ *
+ * Uses a two-pass architecture:
+ *   Pass 1: Process all non-remainder categories
+ *   Pass 2: Distribute leftover budget to remainder categories by weight
  */
 
 import { runQuery, first } from '../db';
 import { monthToInt, addMonths } from '../lib/date';
+import { setBudgetAmount } from '../budgets';
 import type { CategoryRow, ZeroBudgetRow } from '../db/types';
 import { calculateGoal, type GoalContext } from './engine';
 import { parseGoalDef } from './index';
 import { setGoalResult } from './index';
+import type { RemainderTemplate } from './types';
 
 // ---------------------------------------------------------------------------
 // Alive transaction filter (same as budgets/index.ts)
@@ -88,6 +94,43 @@ async function getFromLastMonth(
 }
 
 // ---------------------------------------------------------------------------
+// Get total available budget for a month (income - already allocated)
+// ---------------------------------------------------------------------------
+
+async function getToBudget(month: string): Promise<number> {
+  const monthInt = monthToInt(month);
+  const startDate = monthInt * 100 + 1;
+  const endDate = monthInt * 100 + 31;
+
+  // Total income this month
+  const incomeRow = await first<{ total: number }>(
+    `SELECT COALESCE(SUM(t.amount), 0) AS total
+     FROM transactions t
+     LEFT JOIN category_mapping cm ON cm.id = t.category
+     JOIN categories c ON c.id = COALESCE(cm.transferId, t.category) AND c.tombstone = 0
+     JOIN category_groups g ON g.id = c.cat_group AND g.is_income = 1
+     JOIN accounts a ON a.id = t.acct AND a.offbudget = 0
+     WHERE ${ALIVE_TX_FILTER}
+       AND t.date >= ? AND t.date <= ?`,
+    [startDate, endDate],
+  );
+  const income = incomeRow?.total ?? 0;
+
+  // Total already budgeted this month
+  const budgetedRow = await first<{ total: number }>(
+    `SELECT COALESCE(SUM(zb.amount), 0) AS total
+     FROM zero_budgets zb
+     JOIN categories c ON c.id = zb.category AND c.tombstone = 0
+     JOIN category_groups g ON g.id = c.cat_group AND g.is_income = 0
+     WHERE zb.month = ?`,
+    [monthInt],
+  );
+  const budgeted = budgetedRow?.total ?? 0;
+
+  return income - budgeted;
+}
+
+// ---------------------------------------------------------------------------
 // Main apply function
 // ---------------------------------------------------------------------------
 
@@ -98,12 +141,21 @@ async function getFromLastMonth(
  * 1. Parse the goal_def JSON into templates
  * 2. Get the previous month's leftover balance
  * 3. Calculate goal result using the engine
- * 4. Save goal and long_goal to zero_budgets
+ * 4. Write the budgeted amount to zero_budgets.amount
+ * 5. Write goal indicator to zero_budgets.goal / long_goal
+ *
+ * Uses two passes: first processes priority-based templates,
+ * then distributes remaining budget to remainder categories.
  *
  * @param month  Target month ("YYYY-MM")
+ * @param force  If true, overwrite categories that already have a budget.
+ *               If false (default), only fill categories with budget = 0.
  * @returns      Result with count of applied categories and any errors
  */
-export async function applyGoals(month: string): Promise<ApplyGoalsResult> {
+export async function applyGoals(
+  month: string,
+  force = false,
+): Promise<ApplyGoalsResult> {
   const monthInt = monthToInt(month);
 
   // Get all categories with goal_def set
@@ -122,29 +174,106 @@ export async function applyGoals(month: string): Promise<ApplyGoalsResult> {
 
   const result: ApplyGoalsResult = { applied: 0, errors: [] };
 
+  // Track available budget — deduct each allocation so we don't over-assign
+  let availBudget = await getToBudget(month);
+
+  // Track remainder categories for pass 2
+  const remainderCategories: Array<{
+    cat: CategoryRow;
+    templates: import('./types').Template[];
+    fromLastMonth: number;
+    previouslyBudgeted: number;
+    weight: number;
+  }> = [];
+
+  // ── Pass 1: Process all non-remainder categories ──────────────────────────
   for (const cat of categories) {
     try {
       const templates = parseGoalDef(cat.goal_def);
       if (templates.length === 0) continue;
 
-      const fromLastMonth = await getFromLastMonth(cat.id, month);
       const previouslyBudgeted = budgetMap.get(cat.id) ?? 0;
 
+      // Skip categories that already have a budget (unless force mode)
+      if (previouslyBudgeted !== 0 && !force) {
+        // Still write goal indicator for display purposes
+        const fromLastMonth = await getFromLastMonth(cat.id, month);
+        const ctx: GoalContext = { fromLastMonth, previouslyBudgeted };
+        const goalResult = await calculateGoal(cat.id, month, templates, ctx);
+        if (!goalResult.hasRemainder) {
+          await setGoalResult(month, cat.id, goalResult.goal, goalResult.longGoal);
+        }
+        continue;
+      }
+
+      const fromLastMonth = await getFromLastMonth(cat.id, month);
       const ctx: GoalContext = { fromLastMonth, previouslyBudgeted };
       const goalResult = await calculateGoal(cat.id, month, templates, ctx);
 
-      await setGoalResult(
-        month,
-        cat.id,
-        goalResult.goal,
-        goalResult.longGoal,
-      );
+      // Check if this is a remainder category
+      if (goalResult.hasRemainder) {
+        remainderCategories.push({
+          cat,
+          templates,
+          fromLastMonth,
+          previouslyBudgeted,
+          weight: goalResult.remainderWeight ?? 1,
+        });
+        continue;
+      }
 
+      // Write the budgeted amount (capped at available budget)
+      const amount = Math.min(goalResult.budgeted, Math.max(0, availBudget));
+      if (amount > 0 || force) {
+        await setBudgetAmount(month, cat.id, amount);
+        availBudget -= amount;
+      }
+
+      await setGoalResult(month, cat.id, goalResult.goal, goalResult.longGoal);
       result.applied++;
     } catch (e) {
       result.errors.push({
         category: cat.name,
         error: e instanceof Error ? e.message : String(e),
+      });
+    }
+  }
+
+  // ── Pass 2: Distribute remaining budget to remainder categories ───────────
+  if (remainderCategories.length > 0) {
+    try {
+      // Re-query available budget since pass 1 wrote new amounts
+      const remainderAvail = await getToBudget(month);
+      const totalWeight = remainderCategories.reduce((sum, r) => sum + r.weight, 0);
+
+      for (const rc of remainderCategories) {
+        try {
+          const ctx: GoalContext = {
+            fromLastMonth: rc.fromLastMonth,
+            previouslyBudgeted: rc.previouslyBudgeted,
+            remainderBudget: remainderAvail,
+            totalWeight,
+          };
+          const goalResult = await calculateGoal(rc.cat.id, month, rc.templates, ctx);
+
+          // Write budgeted amount
+          if (goalResult.budgeted > 0 || force) {
+            await setBudgetAmount(month, rc.cat.id, goalResult.budgeted);
+          }
+
+          await setGoalResult(month, rc.cat.id, goalResult.goal, goalResult.longGoal);
+          result.applied++;
+        } catch (e) {
+          result.errors.push({
+            category: rc.cat.name,
+            error: e instanceof Error ? e.message : String(e),
+          });
+        }
+      }
+    } catch (e) {
+      result.errors.push({
+        category: '(remainder)',
+        error: `Failed to compute available budget: ${e instanceof Error ? e.message : String(e)}`,
       });
     }
   }

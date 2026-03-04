@@ -109,6 +109,7 @@ const MIGRATIONS = [
   'ALTER TABLE zero_budgets ADD COLUMN carryover INTEGER DEFAULT 0',
   'ALTER TABLE zero_budgets ADD COLUMN goal INTEGER DEFAULT NULL',
   'ALTER TABLE zero_budgets ADD COLUMN long_goal INTEGER DEFAULT NULL',
+  "ALTER TABLE categories ADD COLUMN template_settings TEXT DEFAULT '{\"source\": \"notes\"}'",
 ];
 
 export async function runSchema(db: SQLiteDatabase): Promise<void> {

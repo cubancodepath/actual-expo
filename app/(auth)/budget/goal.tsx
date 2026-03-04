@@ -3,51 +3,132 @@ import { Alert, Pressable, ScrollView, Switch, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Host, DatePicker, Picker, Text as SwiftText } from '@expo/ui/swift-ui';
-import { datePickerStyle, pickerStyle, tag } from '@expo/ui/swift-ui/modifiers';
+import { datePickerStyle, frame, pickerStyle, tag, tint } from '@expo/ui/swift-ui/modifiers';
 import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
 import { useCategoriesStore } from '../../../src/stores/categoriesStore';
 import { useBudgetStore } from '../../../src/stores/budgetStore';
 import { Text } from '../../../src/presentation/components/atoms/Text';
 import { Button } from '../../../src/presentation/components/atoms/Button';
 import { IconButton } from '../../../src/presentation/components/atoms/IconButton';
+import { Card } from '../../../src/presentation/components/atoms/Card';
+import { ListItem } from '../../../src/presentation/components/molecules/ListItem';
+import { Divider } from '../../../src/presentation/components/atoms/Divider';
 import { CurrencyInput } from '../../../src/presentation/components/atoms/CurrencyInput';
 import { getGoalTemplates, setGoalTemplates } from '../../../src/goals';
 import { amountToInteger, integerToAmount } from '../../../src/goals/engine';
 import { formatDateLong } from '../../../src/lib/date';
 import type { Template } from '../../../src/goals/types';
 
-type GoalType = 'simple' | 'goal' | 'by' | 'average';
+// ---------------------------------------------------------------------------
+// Type options
+// ---------------------------------------------------------------------------
 
-const TYPE_LABELS = ['Monthly', 'Balance', 'By Date', 'Average'];
-const TYPE_KEYS: GoalType[] = ['simple', 'goal', 'by', 'average'];
+type GoalType =
+  | 'simple' | 'goal' | 'by' | 'average'
+  | 'copy' | 'periodic' | 'spend' | 'percentage'
+  | 'remainder' | 'limit';
+
+const TYPE_OPTIONS: { value: GoalType; label: string }[] = [
+  { value: 'simple', label: 'Monthly' },
+  { value: 'goal', label: 'Balance Target' },
+  { value: 'by', label: 'By Date' },
+  { value: 'average', label: 'Average' },
+  { value: 'copy', label: 'Copy' },
+  { value: 'periodic', label: 'Periodic' },
+  { value: 'spend', label: 'Spend By' },
+  { value: 'percentage', label: 'Percentage' },
+  { value: 'remainder', label: 'Remainder' },
+  { value: 'limit', label: 'Spending Limit' },
+];
 
 const TYPE_DESCRIPTIONS: Record<GoalType, string> = {
-  simple: 'Budget a fixed amount each month.',
-  goal: 'Track progress toward a target balance. Does not auto-budget.',
-  by: 'Save toward a target amount by a specific date, split evenly across remaining months.',
-  average: 'Budget based on your average spending over recent months.',
+  simple: 'Budget a fixed amount each month. E.g. $200/month for groceries.',
+  goal: 'Track progress toward a savings target. Shows a progress bar but does not auto-budget.',
+  by: 'Save a total amount by a specific date, split evenly across the remaining months.',
+  average: 'Budget based on what you actually spent over the last few months.',
+  copy: 'Reuse the same budget you set a few months ago.',
+  periodic: 'Budget for recurring events. E.g. $50 every 2 weeks.',
+  spend: 'Spread a target amount across a date range. E.g. save $1,200 between Jan–Dec.',
+  percentage: 'Budget a percentage of your income. E.g. save 10% of your paycheck.',
+  remainder: 'Gets whatever is left after all other categories are budgeted.',
+  limit: 'Cap spending for this category. Optionally refill it automatically.',
 };
 
 const AVG_OPTIONS = ['3 months', '6 months', '12 months'];
 const AVG_VALUES = [3, 6, 12];
+
+const PERIOD_OPTIONS = [
+  { value: 'day', label: 'Daily' },
+  { value: 'week', label: 'Weekly' },
+  { value: 'month', label: 'Monthly' },
+  { value: 'year', label: 'Yearly' },
+];
+
+const LIMIT_PERIOD_OPTIONS = [
+  { value: 'daily', label: 'Daily' },
+  { value: 'weekly', label: 'Weekly' },
+  { value: 'monthly', label: 'Monthly' },
+];
 
 function getDefaultTargetDate(): Date {
   const now = new Date();
   return new Date(now.getFullYear(), now.getMonth() + 6, 1);
 }
 
-/** Extract YYYY-MM from a Date */
 function dateToMonth(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
-/** Convert a Date to YYYYMMDD int for display */
 function dateToInt(d: Date): number {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return parseInt(`${y}${m}${day}`, 10);
 }
+
+// ---------------------------------------------------------------------------
+// Reusable picker row — renders a ListItem with a SwiftUI menu picker on the right
+// ---------------------------------------------------------------------------
+
+function MenuPickerRow<T extends string | number>({
+  label,
+  selection,
+  options,
+  onSelectionChange,
+  pickerWidth = 180,
+}: {
+  label: string;
+  selection: T;
+  options: { value: T; label: string }[];
+  onSelectionChange: (value: T) => void;
+  pickerWidth?: number;
+}) {
+  const { colors } = useTheme();
+  return (
+    <ListItem
+      title={label}
+      right={
+        <Host matchContents>
+          <Picker
+            selection={selection}
+            onSelectionChange={(val) => onSelectionChange(val as T)}
+            modifiers={[pickerStyle('menu'), tint(colors.primary), frame({ minWidth: pickerWidth, alignment: 'trailing' })]}
+          >
+            {options.map((opt) => (
+              <SwiftText key={String(opt.value)} modifiers={[tag(opt.value)]}>
+                {opt.label}
+              </SwiftText>
+            ))}
+          </Picker>
+        </Host>
+      }
+    />
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main screen
+// ---------------------------------------------------------------------------
 
 export default function GoalEditorScreen() {
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
@@ -57,9 +138,8 @@ export default function GoalEditorScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Form state
-  const [typeIndex, setTypeIndex] = useState(0);
-  const goalType = TYPE_KEYS[typeIndex];
+  // Common state
+  const [goalType, setGoalType] = useState<GoalType>('simple');
   const [amountCents, setAmountCents] = useState(0);
 
   // By-specific
@@ -70,15 +150,73 @@ export default function GoalEditorScreen() {
   // Average-specific
   const [avgIndex, setAvgIndex] = useState(0);
 
+  // Copy-specific
+  const [lookBack, setLookBack] = useState(1);
+
+  // Periodic-specific
+  const [periodicPeriod, setPeriodicPeriod] = useState<'day' | 'week' | 'month' | 'year'>('month');
+  const [periodicInterval, setPeriodicInterval] = useState(1);
+  const [periodicStart, setPeriodicStart] = useState<Date | null>(null);
+  const [showPeriodicStartPicker, setShowPeriodicStartPicker] = useState(false);
+
+  // Spend-specific
+  const [spendFromDate, setSpendFromDate] = useState<Date>(() => new Date());
+  const [spendToDate, setSpendToDate] = useState<Date>(getDefaultTargetDate);
+  const [showSpendFromPicker, setShowSpendFromPicker] = useState(false);
+  const [showSpendToPicker, setShowSpendToPicker] = useState(false);
+  const [spendRepeat, setSpendRepeat] = useState(false);
+
+  // Percentage-specific
+  const [percent, setPercent] = useState(10);
+  const [percentCategory, setPercentCategory] = useState('all-income');
+  const [percentPrevious, setPercentPrevious] = useState(false);
+
+  // Remainder-specific
+  const [weight, setWeight] = useState(1);
+
+  // Limit-specific
+  const [limitPeriod, setLimitPeriod] = useState<'daily' | 'weekly' | 'monthly'>('monthly');
+  const [limitHold, setLimitHold] = useState(false);
+  const [limitRefill, setLimitRefill] = useState(false);
+
+  // Income categories for percentage picker
+  const categories = useCategoriesStore((s) => s.categories);
+  const groups = useCategoriesStore((s) => s.groups);
+  const incomeCategories = categories.filter((c) => {
+    const group = groups.find((g) => g.id === c.cat_group);
+    return group?.is_income && !c.tombstone;
+  });
+
   // Load existing template
   useEffect(() => {
     if (!categoryId) return;
     (async () => {
       const templates = await getGoalTemplates(categoryId);
       if (templates.length === 0) return;
-      const t = templates[0];
       setIsEditing(true);
-      setTypeIndex(TYPE_KEYS.indexOf(t.type));
+
+      // Check if there's a refill + limit combo
+      const hasRefill = templates.some(t => t.type === 'refill');
+      const limitT = templates.find(t => t.type === 'limit');
+
+      // If standalone refill (from desktop), show as limit with refill on
+      if (hasRefill && limitT) {
+        setGoalType('limit');
+        setAmountCents(amountToInteger(limitT.amount));
+        setLimitPeriod(limitT.period);
+        setLimitHold(limitT.hold);
+        setLimitRefill(true);
+        return;
+      }
+      if (hasRefill && !limitT) {
+        setGoalType('limit');
+        setLimitRefill(true);
+        return;
+      }
+
+      const t = templates[0];
+      if (t.type === 'refill') return;
+      setGoalType(t.type);
 
       switch (t.type) {
         case 'simple':
@@ -97,53 +235,112 @@ export default function GoalEditorScreen() {
         case 'average':
           setAvgIndex(AVG_VALUES.indexOf(t.numMonths));
           break;
+        case 'copy':
+          setLookBack(t.lookBack);
+          break;
+        case 'periodic':
+          setAmountCents(amountToInteger(t.amount));
+          setPeriodicPeriod(t.period.period);
+          setPeriodicInterval(t.period.amount);
+          if (t.starting) setPeriodicStart(new Date(t.starting));
+          break;
+        case 'spend': {
+          setAmountCents(amountToInteger(t.amount));
+          const [ty, tm] = t.month.split('-').map(Number);
+          setSpendToDate(new Date(ty, tm - 1, 1));
+          const [fy, fm] = t.from.split('-').map(Number);
+          setSpendFromDate(new Date(fy, fm - 1, 1));
+          if (t.repeat) setSpendRepeat(true);
+          break;
+        }
+        case 'percentage':
+          setPercent(t.percent);
+          setPercentCategory(t.category);
+          setPercentPrevious(t.previous);
+          break;
+        case 'remainder':
+          setWeight(t.weight);
+          break;
+        case 'limit':
+          setAmountCents(amountToInteger(t.amount));
+          setLimitPeriod(t.period);
+          setLimitHold(t.hold);
+          break;
       }
     })();
   }, [categoryId]);
 
-  function buildTemplate(): Template {
+  function buildTemplates(): Template[] {
     const displayAmount = integerToAmount(amountCents);
 
     switch (goalType) {
       case 'simple':
-        return {
-          type: 'simple',
-          monthly: displayAmount,
-          priority: 0,
-          directive: 'template',
-        };
+        return [{ type: 'simple', monthly: displayAmount, priority: 0, directive: 'template' }];
       case 'goal':
-        return {
-          type: 'goal',
-          amount: displayAmount,
-          directive: 'goal',
-        };
+        return [{ type: 'goal', amount: displayAmount, directive: 'goal' }];
       case 'by':
-        return {
-          type: 'by',
-          amount: displayAmount,
-          month: dateToMonth(targetDate),
+        return [{
+          type: 'by', amount: displayAmount, month: dateToMonth(targetDate),
           ...(byRepeat ? { repeat: 12, annual: true } : {}),
-          priority: 0,
-          directive: 'template',
-        };
+          priority: 0, directive: 'template',
+        }];
       case 'average':
-        return {
-          type: 'average',
-          numMonths: AVG_VALUES[avgIndex],
-          priority: 0,
-          directive: 'template',
-        };
+        return [{ type: 'average', numMonths: AVG_VALUES[avgIndex], priority: 0, directive: 'template' }];
+      case 'copy':
+        return [{ type: 'copy', lookBack, priority: 0, directive: 'template' }];
+      case 'periodic':
+        return [{
+          type: 'periodic', amount: displayAmount,
+          period: { period: periodicPeriod, amount: periodicInterval },
+          ...(periodicStart ? { starting: periodicStart.toISOString().slice(0, 10) } : {}),
+          priority: 0, directive: 'template',
+        }];
+      case 'spend':
+        return [{
+          type: 'spend', amount: displayAmount,
+          month: dateToMonth(spendToDate), from: dateToMonth(spendFromDate),
+          ...(spendRepeat ? { repeat: 12, annual: true } : {}),
+          priority: 0, directive: 'template',
+        }];
+      case 'percentage':
+        return [{
+          type: 'percentage', percent, previous: percentPrevious,
+          category: percentCategory, priority: 0, directive: 'template',
+        }];
+      case 'remainder':
+        return [{ type: 'remainder', weight, directive: 'template' }];
+      case 'limit': {
+        const templates: Template[] = [{
+          type: 'limit', amount: displayAmount, hold: limitHold,
+          period: limitPeriod, directive: 'template',
+        }];
+        if (limitRefill) {
+          templates.push({ type: 'refill', priority: 0, directive: 'template' });
+        }
+        return templates;
+      }
     }
   }
+
+  const canSave = (() => {
+    switch (goalType) {
+      case 'simple': case 'goal': case 'by': case 'periodic': case 'spend': case 'limit':
+        return amountCents > 0;
+      case 'percentage':
+        return percent > 0;
+      case 'average': case 'copy': case 'remainder':
+        return true;
+    }
+  })();
 
   async function handleSave() {
     if (!categoryId || saving) return;
     setSaving(true);
     try {
-      await setGoalTemplates(categoryId, [buildTemplate()]);
+      const catNames = new Map(categories.map(c => [c.id, c.name]));
+      await setGoalTemplates(categoryId, buildTemplates(), catNames);
       await useCategoriesStore.getState().load();
-      await useBudgetStore.getState().load();
+      await useBudgetStore.getState().applyGoals();
       router.back();
     } catch {
       Alert.alert('Could Not Save', 'An error occurred while saving. Please try again.');
@@ -154,36 +351,88 @@ export default function GoalEditorScreen() {
 
   function handleDelete() {
     if (!categoryId) return;
-    Alert.alert(
-      'Remove Target',
-      'Are you sure you want to remove this goal target?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await setGoalTemplates(categoryId, []);
-              await useCategoriesStore.getState().load();
-              await useBudgetStore.getState().load();
-              router.back();
-            } catch {
-              Alert.alert('Error', 'Could not remove the target. Please try again.');
-            }
-          },
+    Alert.alert('Remove Target', 'Are you sure you want to remove this goal target?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Remove', style: 'destructive',
+        onPress: async () => {
+          try {
+            await setGoalTemplates(categoryId, []);
+            await useCategoriesStore.getState().load();
+            await useBudgetStore.getState().load();
+            router.back();
+          } catch {
+            Alert.alert('Error', 'Could not remove the target. Please try again.');
+          }
         },
-      ],
+      },
+    ]);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Shared sub-components
+  // ---------------------------------------------------------------------------
+
+  function DateRow({
+    label, date, show, onToggle, onDateChange,
+  }: {
+    label: string; date: Date; show: boolean;
+    onToggle: () => void; onDateChange: (d: Date) => void;
+  }) {
+    return (
+      <>
+        <ListItem
+          title={label}
+          right={
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+              <Text variant="body" color={colors.primary}>
+                {formatDateLong(dateToInt(date))}
+              </Text>
+              <Ionicons
+                name={show ? 'chevron-up' : 'chevron-down'}
+                size={16}
+                color={colors.textMuted}
+              />
+            </View>
+          }
+          onPress={onToggle}
+        />
+        {show && (
+          <View style={{ paddingHorizontal: spacing.md }}>
+            <Host matchContents={{ vertical: true }}>
+              <DatePicker
+                selection={date}
+                displayedComponents={['date']}
+                modifiers={[datePickerStyle('graphical'), tint(colors.primary)]}
+                onDateChange={(d) => { onDateChange(d); onToggle(); }}
+              />
+            </Host>
+          </View>
+        )}
+      </>
     );
   }
 
-  const canSave = goalType === 'average' || amountCents > 0;
+  function ToggleRow({ label, value, onValueChange }: {
+    label: string; value: boolean; onValueChange: (v: boolean) => void;
+  }) {
+    return (
+      <ListItem
+        title={label}
+        right={
+          <Switch
+            value={value}
+            onValueChange={onValueChange}
+            trackColor={{ false: colors.divider, true: colors.primary }}
+          />
+        }
+      />
+    );
+  }
 
-  const labelStyle = {
-    marginBottom: spacing.xs,
-    textTransform: 'uppercase' as const,
-    letterSpacing: 0.5,
-  };
+  // ---------------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------------
 
   return (
     <ScrollView
@@ -194,174 +443,282 @@ export default function GoalEditorScreen() {
       <Stack.Screen
         options={{
           headerLeft: () => (
-            <IconButton
-              icon="close"
-              size={22}
-              color={colors.headerText}
-              onPress={() => router.back()}
-            />
+            <IconButton icon="close" size={22} color={colors.headerText} onPress={() => router.back()} />
           ),
         }}
       />
 
-      {/* Type Picker — native segmented control */}
-      <Text variant="caption" color={colors.textMuted} style={labelStyle}>
-        Goal type
-      </Text>
-      <Host matchContents>
-        <Picker
+      {/* ── Type selector ──────────────────────────────────────── */}
+      <Card style={{ padding: 0, overflow: 'hidden' as const, marginBottom: spacing.sm }}>
+        <MenuPickerRow
+          label="Goal Type"
           selection={goalType}
-          onSelectionChange={(val) => setTypeIndex(TYPE_KEYS.indexOf(val as GoalType))}
-          modifiers={[pickerStyle('segmented')]}
-        >
-          {TYPE_KEYS.map((key, i) => (
-            <SwiftText key={key} modifiers={[tag(key)]}>{TYPE_LABELS[i]}</SwiftText>
-          ))}
-        </Picker>
-      </Host>
+          options={TYPE_OPTIONS}
+          onSelectionChange={setGoalType}
+          pickerWidth={220}
+        />
+      </Card>
       <Text
         variant="captionSm"
         color={colors.textMuted}
-        style={{ marginTop: spacing.xs, marginBottom: spacing.xl }}
+        style={{ marginBottom: spacing.lg, paddingHorizontal: spacing.xs }}
       >
         {TYPE_DESCRIPTIONS[goalType]}
       </Text>
 
-      {/* Type-specific fields */}
-      {goalType === 'simple' && (
-        <View>
-          <Text variant="caption" color={colors.textMuted} style={labelStyle}>
-            Monthly amount
-          </Text>
-          <CurrencyInput
-            value={amountCents}
-            onChangeValue={setAmountCents}
-            type="income"
-            autoFocus
-          />
-        </View>
-      )}
-
-      {goalType === 'goal' && (
-        <View>
-          <Text variant="caption" color={colors.textMuted} style={labelStyle}>
-            Target balance
-          </Text>
-          <CurrencyInput
-            value={amountCents}
-            onChangeValue={setAmountCents}
-            type="income"
-            autoFocus
-          />
-        </View>
-      )}
-
-      {goalType === 'by' && (
-        <View>
-          <Text variant="caption" color={colors.textMuted} style={labelStyle}>
-            Target amount
-          </Text>
-          <CurrencyInput
-            value={amountCents}
-            onChangeValue={setAmountCents}
-            type="income"
-            autoFocus
-          />
-
-          <Text
-            variant="caption"
-            color={colors.textMuted}
-            style={[labelStyle, { marginTop: spacing.lg }]}
-          >
-            Target date
-          </Text>
-          {/* Date row — tap to expand graphical picker */}
-          <Pressable
-            onPress={() => setShowDatePicker(!showDatePicker)}
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              backgroundColor: colors.cardBackground,
-              borderRadius: br.md,
-              borderWidth: bw.thin,
-              borderColor: colors.divider,
-              paddingVertical: spacing.md,
-              paddingHorizontal: spacing.md,
-              minHeight: 44,
-            }}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-              <Ionicons name="calendar-outline" size={18} color={colors.textMuted} />
-              <Text variant="body" color={colors.textPrimary}>
-                {formatDateLong(dateToInt(targetDate))}
-              </Text>
-            </View>
-            <Ionicons
-              name={showDatePicker ? 'chevron-up' : 'chevron-down'}
-              size={18}
-              color={colors.textMuted}
-            />
-          </Pressable>
-          {showDatePicker && (
-            <View style={{ marginTop: spacing.sm }}>
-              <Host matchContents={{ vertical: true }}>
-                <DatePicker
-                  selection={targetDate}
-                  displayedComponents={['date']}
-                  modifiers={[datePickerStyle('graphical')]}
-                  onDateChange={(date) => {
-                    setTargetDate(date);
-                    setShowDatePicker(false);
-                  }}
-                />
-              </Host>
-            </View>
-          )}
-
-          {/* Repeat toggle */}
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginTop: spacing.lg,
-              minHeight: 44,
-            }}
-          >
-            <Text variant="body" color={colors.textPrimary}>
-              Repeat annually
+      {/* ── Type-specific fields ───────────────────────────────── */}
+      <Card style={{ padding: 0, overflow: 'hidden' as const }}>
+        {/* Simple */}
+        {goalType === 'simple' && (
+          <View style={{ padding: spacing.md }}>
+            <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.xs }}>
+              Monthly amount
             </Text>
-            <Switch
-              value={byRepeat}
-              onValueChange={setByRepeat}
-              trackColor={{ false: colors.divider, true: colors.primary }}
-              accessibilityLabel="Repeat annually"
+            <CurrencyInput value={amountCents} onChangeValue={setAmountCents} type="income" autoFocus />
+          </View>
+        )}
+
+        {/* Goal */}
+        {goalType === 'goal' && (
+          <View style={{ padding: spacing.md }}>
+            <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.xs }}>
+              Target balance
+            </Text>
+            <CurrencyInput value={amountCents} onChangeValue={setAmountCents} type="income" autoFocus />
+          </View>
+        )}
+
+        {/* By */}
+        {goalType === 'by' && (
+          <View>
+            <View style={{ padding: spacing.md }}>
+              <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.xs }}>
+                Target amount
+              </Text>
+              <CurrencyInput value={amountCents} onChangeValue={setAmountCents} type="income" autoFocus />
+            </View>
+            <Divider />
+            <DateRow
+              label="Target date"
+              date={targetDate}
+              show={showDatePicker}
+              onToggle={() => setShowDatePicker(!showDatePicker)}
+              onDateChange={setTargetDate}
+            />
+            <Divider />
+            <ToggleRow label="Repeat annually" value={byRepeat} onValueChange={setByRepeat} />
+          </View>
+        )}
+
+        {/* Average */}
+        {goalType === 'average' && (
+          <View style={{ padding: spacing.md }}>
+            <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.sm }}>
+              Look-back period
+            </Text>
+            <Host matchContents>
+              <Picker
+                selection={AVG_VALUES[avgIndex]}
+                onSelectionChange={(val) => setAvgIndex(AVG_VALUES.indexOf(val as number))}
+                modifiers={[pickerStyle('segmented'), tint(colors.primary)]}
+              >
+                {AVG_VALUES.map((v, i) => (
+                  <SwiftText key={v} modifiers={[tag(v)]}>{AVG_OPTIONS[i]}</SwiftText>
+                ))}
+              </Picker>
+            </Host>
+          </View>
+        )}
+
+        {/* Copy */}
+        {goalType === 'copy' && (
+          <MenuPickerRow
+            label="Copy from"
+            selection={lookBack}
+            options={Array.from({ length: 12 }, (_, i) => ({
+              value: i + 1,
+              label: `${i + 1} month${i > 0 ? 's' : ''} ago`,
+            }))}
+            onSelectionChange={setLookBack}
+          />
+        )}
+
+        {/* Periodic */}
+        {goalType === 'periodic' && (
+          <View>
+            <View style={{ padding: spacing.md }}>
+              <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.xs }}>
+                Amount per occurrence
+              </Text>
+              <CurrencyInput value={amountCents} onChangeValue={setAmountCents} type="income" autoFocus />
+            </View>
+            <Divider />
+            <MenuPickerRow
+              label="Frequency"
+              selection={periodicPeriod}
+              options={PERIOD_OPTIONS.map((o) => ({ value: o.value as typeof periodicPeriod, label: o.label }))}
+              onSelectionChange={setPeriodicPeriod}
+            />
+            <Divider />
+            <MenuPickerRow
+              label="Every"
+              selection={periodicInterval}
+              options={Array.from({ length: 12 }, (_, i) => ({ value: i + 1, label: `${i + 1}` }))}
+              onSelectionChange={setPeriodicInterval}
+            />
+            <Divider />
+            <DateRow
+              label="Starting date"
+              date={periodicStart ?? new Date()}
+              show={showPeriodicStartPicker}
+              onToggle={() => setShowPeriodicStartPicker(!showPeriodicStartPicker)}
+              onDateChange={setPeriodicStart}
+            />
+            {periodicStart && (
+              <Pressable
+                onPress={() => setPeriodicStart(null)}
+                style={{ padding: spacing.md, paddingTop: 0 }}
+              >
+                <Text variant="captionSm" color={colors.primary}>Clear start date</Text>
+              </Pressable>
+            )}
+          </View>
+        )}
+
+        {/* Spend */}
+        {goalType === 'spend' && (
+          <View>
+            <View style={{ padding: spacing.md }}>
+              <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.xs }}>
+                Target amount
+              </Text>
+              <CurrencyInput value={amountCents} onChangeValue={setAmountCents} type="income" autoFocus />
+            </View>
+            <Divider />
+            <DateRow
+              label="Starting from"
+              date={spendFromDate}
+              show={showSpendFromPicker}
+              onToggle={() => setShowSpendFromPicker(!showSpendFromPicker)}
+              onDateChange={setSpendFromDate}
+            />
+            <Divider />
+            <DateRow
+              label="Spend by"
+              date={spendToDate}
+              show={showSpendToPicker}
+              onToggle={() => setShowSpendToPicker(!showSpendToPicker)}
+              onDateChange={setSpendToDate}
+            />
+            <Divider />
+            <ToggleRow label="Repeat annually" value={spendRepeat} onValueChange={setSpendRepeat} />
+          </View>
+        )}
+
+        {/* Percentage */}
+        {goalType === 'percentage' && (
+          <View>
+            <MenuPickerRow
+              label="Percentage"
+              selection={percent}
+              options={[5, 10, 15, 20, 25, 30, 40, 50, 75, 100].map((v) => ({
+                value: v, label: `${v}%`,
+              }))}
+              onSelectionChange={setPercent}
+            />
+            <Divider />
+            <MenuPickerRow
+              label="Of income from"
+              selection={percentCategory}
+              options={[
+                { value: 'all-income', label: 'All Income' },
+                ...incomeCategories.map((c) => ({ value: c.id, label: c.name })),
+              ]}
+              onSelectionChange={setPercentCategory}
+            />
+            <Divider />
+            <ToggleRow
+              label="Use last month"
+              value={percentPrevious}
+              onValueChange={setPercentPrevious}
             />
           </View>
-        </View>
-      )}
+        )}
 
-      {goalType === 'average' && (
-        <View>
-          <Text variant="caption" color={colors.textMuted} style={labelStyle}>
-            Look-back period
-          </Text>
-          <Host matchContents>
-            <Picker
-              selection={AVG_VALUES[avgIndex]}
-              onSelectionChange={(val) => setAvgIndex(AVG_VALUES.indexOf(val as number))}
-              modifiers={[pickerStyle('segmented')]}
-            >
-              {AVG_VALUES.map((v, i) => (
-                <SwiftText key={v} modifiers={[tag(v)]}>{AVG_OPTIONS[i]}</SwiftText>
-              ))}
-            </Picker>
-          </Host>
-        </View>
-      )}
+        {/* Remainder */}
+        {goalType === 'remainder' && (
+          <View>
+            <MenuPickerRow
+              label="Weight"
+              selection={weight}
+              options={Array.from({ length: 10 }, (_, i) => ({ value: i + 1, label: `${i + 1}` }))}
+              onSelectionChange={setWeight}
+            />
+            <View style={{ paddingHorizontal: spacing.md, paddingBottom: spacing.md }}>
+              <Text variant="captionSm" color={colors.textMuted}>
+                Higher weight means a larger share of the remaining budget.
+              </Text>
+            </View>
+          </View>
+        )}
 
-      {/* Save */}
+        {/* Limit */}
+        {goalType === 'limit' && (
+          <View>
+            <View style={{ padding: spacing.md }}>
+              <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.xs }}>
+                Maximum spending
+              </Text>
+              <CurrencyInput value={amountCents} onChangeValue={setAmountCents} type="income" autoFocus />
+            </View>
+            <Divider />
+            <View style={{ padding: spacing.md }}>
+              <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.sm }}>
+                Reset period
+              </Text>
+              <Host matchContents>
+                <Picker
+                  selection={limitPeriod}
+                  onSelectionChange={(val) => setLimitPeriod(val as typeof limitPeriod)}
+                  modifiers={[pickerStyle('segmented'), tint(colors.primary)]}
+                >
+                  {LIMIT_PERIOD_OPTIONS.map((opt) => (
+                    <SwiftText key={opt.value} modifiers={[tag(opt.value)]}>{opt.label}</SwiftText>
+                  ))}
+                </Picker>
+              </Host>
+            </View>
+            <Divider />
+            <ToggleRow
+              label="Keep surplus"
+              value={limitHold}
+              onValueChange={setLimitHold}
+            />
+            <View style={{ paddingHorizontal: spacing.md, paddingBottom: spacing.sm }}>
+              <Text variant="captionSm" color={colors.textMuted}>
+                {limitHold
+                  ? `If you spend less than ${amountCents > 0 ? '$' + integerToAmount(amountCents) : 'the limit'}, the leftover rolls into next ${limitPeriod === 'daily' ? 'day' : limitPeriod === 'weekly' ? 'week' : 'month'}.`
+                  : `Unspent budget is removed at the end of each ${limitPeriod === 'daily' ? 'day' : limitPeriod === 'weekly' ? 'week' : 'month'}.`}
+              </Text>
+            </View>
+            <Divider />
+            <ToggleRow
+              label={`Refill each ${limitPeriod === 'daily' ? 'day' : limitPeriod === 'weekly' ? 'week' : 'month'}`}
+              value={limitRefill}
+              onValueChange={setLimitRefill}
+            />
+            <View style={{ paddingHorizontal: spacing.md, paddingBottom: spacing.sm }}>
+              <Text variant="captionSm" color={colors.textMuted}>
+                {limitRefill
+                  ? `Budget is automatically topped up to ${amountCents > 0 ? '$' + integerToAmount(amountCents) : 'the limit'}. E.g. if you have $20 left and the limit is $100, it budgets $80.`
+                  : 'When off, you must manually budget this category.'}
+              </Text>
+            </View>
+          </View>
+        )}
+      </Card>
+
+      {/* ── Save / Delete ──────────────────────────────────────── */}
       <Button
         title={isEditing ? 'Save Target' : 'Add Target'}
         variant="primary"
@@ -371,7 +728,6 @@ export default function GoalEditorScreen() {
         style={{ marginTop: spacing.xl, borderRadius: 999 }}
       />
 
-      {/* Delete — ghost style, separated */}
       {isEditing && (
         <View style={{ marginTop: spacing.xl }}>
           <Button

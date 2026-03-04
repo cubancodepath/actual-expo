@@ -21,7 +21,7 @@ type BudgetState = {
   /** Move `amountCents` from one category budget to another for the current month. */
   transfer(fromCategoryId: string, toCategoryId: string, amountCents: number): Promise<void>;
   /** Apply goal templates to all categories for the current month. */
-  applyGoals(): Promise<ApplyGoalsResult>;
+  applyGoals(force?: boolean): Promise<ApplyGoalsResult>;
 };
 
 export const useBudgetStore = create<BudgetState>((set, get) => ({
@@ -70,8 +70,8 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
     await get().load();
   },
 
-  async applyGoals() {
-    const result = await applyGoals(get().month);
+  async applyGoals(force = false) {
+    const result = await applyGoals(get().month, force);
     await get().load();
     return result;
   },

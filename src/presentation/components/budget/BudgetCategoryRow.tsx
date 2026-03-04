@@ -191,7 +191,7 @@ export function BudgetCategoryRow({
         </Pressable>
       </View>
 
-      {/* Line 2: Budgeted · Spent */}
+      {/* Line 2: Budgeted · Spent · Goal */}
       <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
         <Text variant="bodySm" color={colors.textMuted}>
           {'Budgeted '}
@@ -202,6 +202,14 @@ export function BudgetCategoryRow({
           <Text variant="bodySm" color={cat.spent !== 0 ? colors.textSecondary : colors.textMuted}>
             {cat.spent !== 0 ? formatBalance(cat.spent) : '—'}
           </Text>
+          {hasGoal && (
+            <>
+              {'  ·  Goal '}
+              <Text variant="bodySm" color={goalColor}>
+                {formatBalance(cat.goal!)}
+              </Text>
+            </>
+          )}
         </Text>
       </View>
 

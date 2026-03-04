@@ -97,13 +97,14 @@ export async function createCategory(
 
 export async function updateCategory(
   id: string,
-  fields: Partial<Pick<Category, 'name' | 'hidden' | 'sort_order' | 'goal_def'>>,
+  fields: Partial<Pick<Category, 'name' | 'hidden' | 'sort_order' | 'goal_def'> & { template_settings: string }>,
 ): Promise<void> {
   const dbFields: Record<string, unknown> = {};
   if (fields.name !== undefined) dbFields.name = fields.name;
   if (fields.hidden !== undefined) dbFields.hidden = fields.hidden ? 1 : 0;
   if (fields.sort_order !== undefined) dbFields.sort_order = fields.sort_order;
   if (fields.goal_def !== undefined) dbFields.goal_def = fields.goal_def;
+  if (fields.template_settings !== undefined) dbFields.template_settings = fields.template_settings;
   if (Object.keys(dbFields).length === 0) return;
   await sendMessages(
     Object.entries(dbFields).map(([column, value]) => ({

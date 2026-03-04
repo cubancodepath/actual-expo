@@ -15,6 +15,7 @@ import { usePrefsStore } from "../../src/stores/prefsStore";
 import { useSyncStore } from "../../src/stores/syncStore";
 import { usePreferencesStore } from "../../src/stores/preferencesStore";
 import { resetAllStores } from "../../src/stores/resetStores";
+import { clearSyncTimeout } from "../../src/sync";
 import {
   DATE_FORMAT_OPTIONS,
   NUMBER_FORMAT_OPTIONS,
@@ -28,6 +29,7 @@ let SwiftText: typeof import('@expo/ui/swift-ui').Text | null = null;
 let Host: typeof import('@expo/ui/swift-ui').Host | null = null;
 let tagMod: typeof import('@expo/ui/swift-ui/modifiers').tag | null = null;
 let pickerStyleMod: typeof import('@expo/ui/swift-ui/modifiers').pickerStyle | null = null;
+let tintMod: typeof import('@expo/ui/swift-ui/modifiers').tint | null = null;
 
 if (Platform.OS === 'ios') {
   try {
@@ -38,6 +40,7 @@ if (Platform.OS === 'ios') {
     const mods = require('@expo/ui/swift-ui/modifiers');
     tagMod = mods.tag;
     pickerStyleMod = mods.pickerStyle;
+    tintMod = mods.tint;
   } catch {
     // Fallback — @expo/ui not available
   }
@@ -62,7 +65,7 @@ function PickerRow({
         <SwiftPicker
           selection={selection}
           onSelectionChange={(val) => onSelectionChange(val as string)}
-          modifiers={[pickerStyleMod('menu')]}
+          modifiers={[pickerStyleMod('menu'), ...(tintMod ? [tintMod(colors.primary)] : [])]}
         >
           {options.map((opt) => (
             <SwiftText key={opt.value} modifiers={[tagMod(opt.value)]}>
@@ -142,6 +145,7 @@ export default function SettingsScreen() {
           onPress: async () => {
             setLoggingOut(true);
             try {
+              clearSyncTimeout();
               resetAllStores();
               await clearAll();
             } finally {

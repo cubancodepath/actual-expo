@@ -10,6 +10,7 @@ import type { Theme } from '../../../theme';
 let SwiftDatePicker: typeof import('@expo/ui/swift-ui').DatePicker | null = null;
 let Host: typeof import('@expo/ui/swift-ui').Host | null = null;
 let datePickerStyleMod: typeof import('@expo/ui/swift-ui/modifiers').datePickerStyle | null = null;
+let tintMod: typeof import('@expo/ui/swift-ui/modifiers').tint | null = null;
 if (Platform.OS === 'ios') {
   try {
     const swiftUI = require('@expo/ui/swift-ui');
@@ -17,6 +18,7 @@ if (Platform.OS === 'ios') {
     Host = swiftUI.Host;
     const mods = require('@expo/ui/swift-ui/modifiers');
     datePickerStyleMod = mods.datePickerStyle;
+    tintMod = mods.tint;
   } catch {
     // Fallback — @expo/ui not available
   }
@@ -76,7 +78,7 @@ export function DatePickerField({ dateInt, dateStr, onDateChange }: DatePickerFi
               <SwiftDatePicker
                 selection={intToDate(dateInt)}
                 displayedComponents={['date']}
-                modifiers={[datePickerStyleMod('graphical')]}
+                modifiers={[datePickerStyleMod('graphical'), ...(tintMod ? [tintMod(theme.colors.primary)] : [])]}
                 onDateChange={(d) => {
                   const newInt = dateToInt(d);
                   onDateChange(newInt, intToStr(newInt));

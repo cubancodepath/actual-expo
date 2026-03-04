@@ -11,9 +11,16 @@ import { addMonths, monthToInt } from '../lib/date';
 import type {
   AverageTemplate,
   ByTemplate,
+  CopyTemplate,
   GoalResult,
   LimitDef,
+  LimitTemplate,
+  PercentageTemplate,
+  PeriodicTemplate,
+  RemainderTemplate,
+  RefillTemplate,
   SimpleTemplate,
+  SpendTemplate,
   Template,
 } from './types';
 
@@ -73,6 +80,53 @@ export async function getSpentForMonth(
   return row?.spent ?? 0;
 }
 
+/**
+ * Get the budgeted amount for a category in a given month (integer cents).
+ * Used by Copy and Spend templates.
+ */
+async function getBudgetedForMonth(
+  categoryId: string,
+  month: string,
+): Promise<number> {
+  const monthInt = monthToInt(month);
+  const row = await first<{ amount: number }>(
+    'SELECT COALESCE(amount, 0) AS amount FROM zero_budgets WHERE month = ? AND category = ?',
+    [monthInt, categoryId],
+  );
+  return row?.amount ?? 0;
+}
+
+/**
+ * Get total income for a month, optionally for a specific category.
+ * Used by Percentage template.
+ */
+async function getIncomeForMonth(
+  month: string,
+  categoryId?: string,
+): Promise<number> {
+  const monthInt = monthToInt(month);
+  const startDate = monthInt * 100 + 1;
+  const endDate = monthInt * 100 + 31;
+
+  if (categoryId && categoryId !== 'all-income') {
+    return getSpentForMonth(categoryId, month);
+  }
+
+  // All income categories
+  const row = await first<{ total: number }>(
+    `SELECT COALESCE(SUM(t.amount), 0) AS total
+     FROM transactions t
+     LEFT JOIN category_mapping cm ON cm.id = t.category
+     JOIN categories c ON c.id = COALESCE(cm.transferId, t.category) AND c.tombstone = 0
+     JOIN category_groups g ON g.id = c.cat_group AND g.is_income = 1
+     JOIN accounts a ON a.id = t.acct AND a.offbudget = 0
+     WHERE ${ALIVE_TX_FILTER}
+       AND t.date >= ? AND t.date <= ?`,
+    [startDate, endDate],
+  );
+  return row?.total ?? 0;
+}
+
 // ---------------------------------------------------------------------------
 // Difference in calendar months between two "YYYY-MM" strings
 // ---------------------------------------------------------------------------
@@ -130,6 +184,18 @@ function calculateLimit(limit: LimitDef, month: string): number {
   throw new Error(`Invalid limit period: ${limit.period}`);
 }
 
+/**
+ * Convert a LimitTemplate to a LimitDef for reuse with calculateLimit.
+ */
+function limitTemplateToLimitDef(t: LimitTemplate): LimitDef {
+  return {
+    amount: t.amount,
+    hold: t.hold,
+    period: t.period,
+    start: t.start,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Individual template runners
 // ---------------------------------------------------------------------------
@@ -144,6 +210,120 @@ function runSimple(
   }
   // Refill mode: budget up to limit
   return Math.max(0, limitAmount - fromLastMonth);
+}
+
+function runRefill(fromLastMonth: number, limitAmount: number): number {
+  return Math.max(0, limitAmount - fromLastMonth);
+}
+
+async function runCopy(
+  template: CopyTemplate,
+  categoryId: string,
+  month: string,
+): Promise<number> {
+  const pastMonth = addMonths(month, -template.lookBack);
+  return getBudgetedForMonth(categoryId, pastMonth);
+}
+
+function runPeriodic(template: PeriodicTemplate, month: string): number {
+  const perOccurrence = amountToInteger(template.amount);
+  const { period, amount: interval } = template.period;
+
+  // Starting date defaults to 1st of current month
+  const [monthY, monthM] = month.split('-').map(Number);
+  let current = template.starting
+    ? new Date(template.starting)
+    : new Date(monthY, monthM - 1, 1);
+
+  const monthStart = new Date(monthY, monthM - 1, 1);
+  const monthEnd = new Date(monthY, monthM, 0); // Last day of month
+
+  // Advance starting date forward until it's in or past the current month
+  while (current < monthStart) {
+    current = shiftDate(current, period, interval);
+  }
+
+  // If we've gone past the current month, no occurrences
+  if (current > monthEnd) return 0;
+
+  // Count occurrences within the month
+  let total = 0;
+  while (current <= monthEnd) {
+    total += perOccurrence;
+    current = shiftDate(current, period, interval);
+  }
+
+  return total;
+}
+
+function shiftDate(
+  date: Date,
+  period: 'day' | 'week' | 'month' | 'year',
+  amount: number,
+): Date {
+  const d = new Date(date);
+  switch (period) {
+    case 'day':
+      d.setDate(d.getDate() + amount);
+      break;
+    case 'week':
+      d.setDate(d.getDate() + amount * 7);
+      break;
+    case 'month':
+      d.setMonth(d.getMonth() + amount);
+      break;
+    case 'year':
+      d.setFullYear(d.getFullYear() + amount);
+      break;
+  }
+  return d;
+}
+
+async function runSpend(
+  template: SpendTemplate,
+  categoryId: string,
+  month: string,
+): Promise<number> {
+  let targetMonth = template.month;
+  const period = template.annual
+    ? (template.repeat || 1) * 12
+    : template.repeat ?? null;
+
+  // Advance target if it's in the past
+  let numMonths = diffMonths(targetMonth, month);
+  while (numMonths < 0 && period) {
+    targetMonth = addMonths(targetMonth, period);
+    numMonths = diffMonths(targetMonth, month);
+  }
+
+  if (numMonths < 0) return 0; // Target in the past, no repeat
+
+  const target = amountToInteger(template.amount);
+
+  // Sum already budgeted from start month through month before current
+  let alreadyBudgeted = 0;
+  let m = template.from;
+  while (diffMonths(month, m) > 0) {
+    alreadyBudgeted += await getBudgetedForMonth(categoryId, m);
+    m = addMonths(m, 1);
+  }
+
+  const remaining = target - alreadyBudgeted;
+  if (remaining <= 0) return 0;
+
+  return Math.round(remaining / (numMonths + 1));
+}
+
+async function runPercentage(
+  template: PercentageTemplate,
+  month: string,
+): Promise<number> {
+  const incomeMonth = template.previous ? addMonths(month, -1) : month;
+  const categoryId = template.category === 'all-income' ? undefined : template.category;
+  const income = await getIncomeForMonth(incomeMonth, categoryId);
+
+  // Income is positive for income categories
+  return Math.max(0, Math.round(Math.abs(income) * template.percent / 100));
 }
 
 function runBy(
@@ -237,11 +417,26 @@ export type GoalContext = {
   fromLastMonth: number;
   /** Amount already budgeted this month (integer cents). */
   previouslyBudgeted: number;
+  /** Available budget for remainder distribution (set during pass 2). */
+  remainderBudget?: number;
+  /** Sum of all remainder weights across categories (set during pass 2). */
+  totalWeight?: number;
 };
 
 // ---------------------------------------------------------------------------
 // Main calculation function
 // ---------------------------------------------------------------------------
+
+// Templates that participate in priority-based processing
+type PriorityTemplate =
+  | SimpleTemplate
+  | ByTemplate
+  | AverageTemplate
+  | CopyTemplate
+  | PeriodicTemplate
+  | SpendTemplate
+  | PercentageTemplate
+  | RefillTemplate;
 
 /**
  * Calculate the goal result for a single category.
@@ -258,17 +453,29 @@ export async function calculateGoal(
   templates: Template[],
   ctx: GoalContext,
 ): Promise<GoalResult> {
-  // Separate templates by directive
-  const budgetTemplates = templates.filter(
-    (t): t is SimpleTemplate | ByTemplate | AverageTemplate =>
-      t.directive === 'template',
-  );
+  // Separate templates by type
   const goalTemplates = templates.filter(
     (t): t is import('./types').GoalTemplate => t.directive === 'goal',
   );
+  const remainderTemplates = templates.filter(
+    (t): t is RemainderTemplate => t.type === 'remainder',
+  );
+  const limitTemplates = templates.filter(
+    (t): t is LimitTemplate => t.type === 'limit',
+  );
+  const priorityTemplates = templates.filter(
+    (t): t is PriorityTemplate =>
+      t.directive === 'template' &&
+      t.type !== 'remainder' &&
+      t.type !== 'limit',
+  );
 
   // If only a goal directive (no budget templates), preserve existing budget
-  if (budgetTemplates.length === 0 && goalTemplates.length > 0) {
+  if (
+    priorityTemplates.length === 0 &&
+    remainderTemplates.length === 0 &&
+    goalTemplates.length > 0
+  ) {
     return {
       budgeted: ctx.previouslyBudgeted,
       goal: amountToInteger(goalTemplates[0].amount),
@@ -276,14 +483,66 @@ export async function calculateGoal(
     };
   }
 
-  // Calculate limit if any Simple template has one
+  // Handle remainder templates — signal back to apply.ts
+  if (remainderTemplates.length > 0) {
+    const remainder = remainderTemplates[0];
+
+    // If remainderBudget is set, we're in pass 2 — calculate the allocation
+    if (ctx.remainderBudget !== undefined && ctx.totalWeight !== undefined && ctx.totalWeight > 0) {
+      let toBudget = Math.round(
+        (remainder.weight / ctx.totalWeight) * ctx.remainderBudget,
+      );
+
+      // Apply limit if present
+      const limitDef = remainder.limit ?? (limitTemplates.length > 0 ? limitTemplateToLimitDef(limitTemplates[0]) : null);
+      if (limitDef) {
+        const limitAmt = calculateLimit(limitDef, month);
+        if (toBudget + ctx.fromLastMonth > limitAmt) {
+          toBudget = Math.max(0, limitAmt - ctx.fromLastMonth);
+        }
+      }
+
+      let goal: number | null = null;
+      let longGoal = false;
+      if (goalTemplates.length > 0) {
+        goal = amountToInteger(goalTemplates[0].amount);
+        longGoal = true;
+      } else {
+        goal = toBudget > 0 ? toBudget : null;
+      }
+
+      return { budgeted: toBudget, goal, longGoal };
+    }
+
+    // Pass 1 — return marker for remainder processing
+    return {
+      budgeted: 0,
+      goal: null,
+      longGoal: false,
+      hasRemainder: true,
+      remainderWeight: remainder.weight,
+    };
+  }
+
+  // Determine limit: from LimitTemplate or SimpleTemplate.limit
   let limitAmount = 0;
   let limitCheck = false;
-  for (const t of budgetTemplates) {
-    if (t.type === 'simple' && t.limit) {
-      limitAmount = calculateLimit(t.limit, month);
-      limitCheck = true;
-      break; // Only one limit per category
+  if (limitTemplates.length > 0) {
+    limitAmount = calculateLimit(limitTemplateToLimitDef(limitTemplates[0]), month);
+    limitCheck = true;
+  }
+  if (!limitCheck) {
+    for (const t of priorityTemplates) {
+      if (t.type === 'simple' && t.limit) {
+        limitAmount = calculateLimit(t.limit, month);
+        limitCheck = true;
+        break;
+      }
+      if (t.type === 'periodic' && t.limit) {
+        limitAmount = calculateLimit(t.limit, month);
+        limitCheck = true;
+        break;
+      }
     }
   }
 
@@ -299,7 +558,7 @@ export async function calculateGoal(
   if (!limitMet) {
     // Group by priority, process lowest first
     const priorities = new Set<number>();
-    for (const t of budgetTemplates) {
+    for (const t of priorityTemplates) {
       priorities.add(t.priority);
     }
     const sortedPriorities = [...priorities].sort((a, b) => a - b);
@@ -307,32 +566,49 @@ export async function calculateGoal(
     for (const priority of sortedPriorities) {
       if (limitMet) break;
 
-      const priorityTemplates = budgetTemplates.filter(
+      const atPriority = priorityTemplates.filter(
         t => t.priority === priority,
       );
       let priorityBudget = 0;
 
-      for (const template of priorityTemplates) {
+      // Track which grouped types we've already processed at this priority
+      const processed = new Set<string>();
+
+      for (const template of atPriority) {
+        if (processed.has(template.type)) continue;
+
         switch (template.type) {
           case 'simple':
             priorityBudget += runSimple(template, ctx.fromLastMonth, limitAmount);
             break;
-          case 'by':
-            // Collect all By templates at this priority and run together
-            priorityBudget += runBy(
-              priorityTemplates.filter((t): t is ByTemplate => t.type === 'by'),
-              month,
-              ctx.fromLastMonth,
-            );
-            // Skip remaining By templates at this priority (already processed)
+          case 'refill':
+            priorityBudget += runRefill(ctx.fromLastMonth, limitAmount);
             break;
+          case 'copy':
+            priorityBudget += await runCopy(template, categoryId, month);
+            break;
+          case 'periodic':
+            priorityBudget += runPeriodic(template, month);
+            break;
+          case 'spend':
+            priorityBudget += await runSpend(template, categoryId, month);
+            break;
+          case 'percentage':
+            priorityBudget += await runPercentage(template, month);
+            break;
+          case 'by': {
+            // Collect all By templates at this priority and run together
+            const byTemplates = atPriority.filter(
+              (t): t is ByTemplate => t.type === 'by',
+            );
+            priorityBudget += runBy(byTemplates, month, ctx.fromLastMonth);
+            processed.add('by');
+            break;
+          }
           case 'average':
             priorityBudget += await runAverage(template, categoryId, month);
             break;
         }
-
-        // Only process By once per priority level
-        if (template.type === 'by') break;
       }
 
       // Apply limit cap

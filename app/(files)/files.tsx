@@ -11,7 +11,7 @@ import { usePrefsStore } from '../../src/stores/prefsStore';
 import { listFiles, type BudgetFile } from '../../src/services/authService';
 import { downloadAndImportBudget } from '../../src/services/budgetfiles';
 import { resetAllStores } from '../../src/stores/resetStores';
-import { fullSync } from '../../src/sync';
+import { fullSync, clearSyncTimeout } from '../../src/sync';
 import { useTheme, useThemedStyles } from '../../src/presentation/providers/ThemeProvider';
 import { Text } from '../../src/presentation/components/atoms/Text';
 import { Card } from '../../src/presentation/components/atoms/Card';
@@ -41,6 +41,7 @@ export default function FilesScreen() {
   async function handleSelect(file: BudgetFile) {
     setSelecting(file.fileId);
     try {
+      clearSyncTimeout();
       resetAllStores();
       await downloadAndImportBudget(serverUrl, token, file.fileId, file.encryptKeyId);
 
@@ -76,6 +77,7 @@ export default function FilesScreen() {
   }
 
   async function handleLogout() {
+    clearSyncTimeout();
     resetAllStores();
     await clearAll();
     router.replace('/');

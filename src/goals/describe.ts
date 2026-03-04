@@ -20,6 +20,13 @@ function formatMonth(yyyyMm: string): string {
   return `${MONTH_NAMES[month - 1]} ${year}`;
 }
 
+const PERIOD_LABELS: Record<string, string> = {
+  day: 'day',
+  week: 'week',
+  month: 'month',
+  year: 'year',
+};
+
 export function describeTemplate(t: Template): string {
   switch (t.type) {
     case 'simple': {
@@ -48,6 +55,29 @@ export function describeTemplate(t: Template): string {
         desc += ` (${sign}${t.adjustment}${suffix})`;
       }
       return desc;
+    }
+    case 'copy':
+      return `Copy budget from ${t.lookBack} month${t.lookBack > 1 ? 's' : ''} ago`;
+    case 'periodic': {
+      const p = PERIOD_LABELS[t.period.period] ?? t.period.period;
+      const plural = t.period.amount > 1 ? `${t.period.amount} ${p}s` : p;
+      return `Budget ${formatDisplayAmount(t.amount)} every ${plural}`;
+    }
+    case 'spend':
+      return `Spend ${formatDisplayAmount(t.amount)} by ${formatMonth(t.month)}`;
+    case 'percentage': {
+      const prev = t.previous ? "last month's " : '';
+      return `Budget ${t.percent}% of ${prev}income`;
+    }
+    case 'remainder': {
+      const w = t.weight !== 1 ? ` (weight: ${t.weight})` : '';
+      return `Fill with remaining budget${w}`;
+    }
+    case 'refill':
+      return 'Refill to limit';
+    case 'limit': {
+      const hold = t.hold ? ', hold' : '';
+      return `Limit: ${formatDisplayAmount(t.amount)} ${t.period}${hold}`;
     }
   }
 }

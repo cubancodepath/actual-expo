@@ -109,6 +109,31 @@ export default function AssignBudgetScreen() {
     setEdits((prev) => ({ ...prev, [catId]: cents }));
   }
 
+  async function handleAutoAssign() {
+    setSaving(true);
+    try {
+      const result = await useBudgetStore.getState().applyGoals(false);
+      // Refresh edits from newly computed budget
+      const freshGroups = useBudgetStore.getState().data?.groups ?? [];
+      const refreshed: Record<string, number> = {};
+      for (const g of freshGroups) {
+        if (g.is_income) continue;
+        for (const cat of g.categories) {
+          refreshed[cat.id] = cat.budgeted;
+        }
+      }
+      setEdits(refreshed);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      if (result.applied === 0) {
+        Alert.alert('No Changes', 'No categories with templates needed budgeting. Set goal targets on your categories first.');
+      }
+    } catch {
+      Alert.alert('Error', 'Could not auto-assign budgets. Check that your categories have goals configured.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function handleSave() {
     setSaving(true);
     for (const g of groups) {
@@ -290,8 +315,8 @@ export default function AssignBudgetScreen() {
                     icon="sparkles-outline"
                     variant="secondary"
                     size="sm"
-                    disabled
-                    onPress={() => {}}
+                    loading={saving}
+                    onPress={handleAutoAssign}
                     style={{ borderRadius: br.full }}
                   />
                 </View>

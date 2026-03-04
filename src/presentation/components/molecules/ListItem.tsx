@@ -78,6 +78,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   right: {
+    flexShrink: 0,
     alignItems: "flex-end",
     justifyContent: "center",
   },

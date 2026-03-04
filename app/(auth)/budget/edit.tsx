@@ -4,6 +4,7 @@ import { useNavigation, useRouter } from 'expo-router';
 import { useAnimatedRef } from 'react-native-reanimated';
 import Sortable from 'react-native-sortables';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
 import { useCategoriesStore } from '../../../src/stores/categoriesStore';
 import { Text } from '../../../src/presentation/components/atoms/Text';
@@ -461,6 +462,7 @@ export default function EditBudgetScreen() {
               overDrag="vertical"
               activeItemScale={1.03}
               activeItemOpacity={0.9}
+              onDragStart={() => Haptics.selectionAsync()}
               onDragEnd={({ key, data }) => handleExpenseDragEnd(key, data)}
             />
           )}
@@ -511,6 +513,7 @@ export default function EditBudgetScreen() {
                   overDrag="vertical"
                   activeItemScale={1.03}
                   activeItemOpacity={0.9}
+                  onDragStart={() => Haptics.selectionAsync()}
                   onDragEnd={({ data }) => handleIncomeDragEnd(data)}
                 />
               )}

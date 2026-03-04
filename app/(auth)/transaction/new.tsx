@@ -273,8 +273,7 @@ export default function NewTransactionScreen() {
           <Button
             title="Delete Transaction"
             icon="trash-outline"
-            variant="ghost"
-            textColor={theme.colors.negative}
+            variant="danger"
             size="lg"
             onPress={handleDelete}
             style={styles.deleteButton}

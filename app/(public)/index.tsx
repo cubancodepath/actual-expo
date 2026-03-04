@@ -286,7 +286,7 @@ const createStyles = (theme: Theme) => ({
   logoContainer: {
     width: 80,
     height: 80,
-    borderRadius: 20,
+    borderRadius: 24,
     backgroundColor: theme.colors.primary + '15',
     alignItems: 'center' as const,
     justifyContent: 'center' as const,

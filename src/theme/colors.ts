@@ -186,7 +186,7 @@ export const lightColors: ThemeColors = {
   inputFocusBorder: palette.purple500,
   buttonSecondaryBackground: palette.gray50,
   buttonSecondaryText: palette.gray600,
-  buttonDangerBackground: palette.red100,
+  buttonDangerBackground: palette.gray50,
   buttonDangerText: palette.red700,
 
   // Status
@@ -241,7 +241,7 @@ export const darkColors: ThemeColors = {
   inputFocusBorder: palette.purple400,
   buttonSecondaryBackground: palette.gray700,
   buttonSecondaryText: palette.gray200,
-  buttonDangerBackground: palette.red900,
+  buttonDangerBackground: palette.gray700,
   buttonDangerText: palette.red200,
 
   // Status

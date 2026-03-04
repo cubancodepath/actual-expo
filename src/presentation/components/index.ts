@@ -9,6 +9,7 @@ export { Spacer, type SpacerProps } from "./atoms/Spacer";
 export { Amount, type AmountProps } from "./atoms/Amount";
 export { Icon, type IconProps } from "./atoms/Icon";
 export { CurrencyInput } from "./atoms/CurrencyInput";
+export { CompactCurrencyInput, type CompactCurrencyInputRef } from "./atoms/CompactCurrencyInput";
 
 // Molecules
 export { ListItem, type ListItemProps } from "./molecules/ListItem";

@@ -25,27 +25,34 @@ const sizeMap = {
   lg: { paddingVertical: 14, paddingHorizontal: 24, fontSize: 16 as const },
 } as const;
 
-function getVariantStyles(theme: Theme, variant: ButtonVariant) {
-  const { colors, borderRadius } = theme;
+const radiusMap: Record<ButtonSize, keyof Theme["borderRadius"]> = {
+  sm: "md",
+  md: "lg",
+  lg: "xl",
+};
+
+function getVariantStyles(theme: Theme, variant: ButtonVariant, size: ButtonSize) {
+  const { colors } = theme;
+  const borderRadius = theme.borderRadius[radiusMap[size]];
   switch (variant) {
     case "primary":
       return {
-        container: { backgroundColor: colors.primary, borderRadius: borderRadius.md },
+        container: { backgroundColor: colors.primary, borderRadius },
         text: colors.primaryText,
       };
     case "secondary":
       return {
-        container: { backgroundColor: colors.buttonSecondaryBackground, borderRadius: borderRadius.md },
+        container: { backgroundColor: colors.buttonSecondaryBackground, borderRadius },
         text: colors.buttonSecondaryText,
       };
     case "ghost":
       return {
-        container: { backgroundColor: "transparent", borderRadius: borderRadius.md },
+        container: { backgroundColor: "transparent", borderRadius },
         text: colors.primary,
       };
     case "danger":
       return {
-        container: { backgroundColor: colors.buttonDangerBackground, borderRadius: borderRadius.md },
+        container: { backgroundColor: colors.buttonDangerBackground, borderRadius },
         text: colors.buttonDangerText,
       };
   }
@@ -63,7 +70,7 @@ export function Button({
   style,
 }: ButtonProps) {
   const theme = useTheme();
-  const variantStyles = getVariantStyles(theme, variant);
+  const variantStyles = getVariantStyles(theme, variant, size);
   const sizeStyles = sizeMap[size];
   const color = textColor ?? variantStyles.text;
 

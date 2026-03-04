@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
     color: '#64748b', fontSize: 11, fontWeight: '700', textTransform: 'uppercase',
     letterSpacing: 1, marginTop: 20, marginBottom: 8,
   },
-  card: { backgroundColor: '#1e293b', borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: '#334155' },
+  card: { backgroundColor: '#1e293b', borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: '#334155' },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 14, borderBottomWidth: 1, borderBottomColor: '#334155' },
   rowLabel: { color: '#94a3b8', fontSize: 14 },
   rowValue: { color: '#f1f5f9', fontSize: 13, fontFamily: 'monospace', flex: 1, textAlign: 'right', marginLeft: 8 },
@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
   syncButton: {
     backgroundColor: '#1d4ed8',
     margin: 12,
-    borderRadius: 8,
+    borderRadius: 12,
     paddingVertical: 12,
     alignItems: 'center',
   },
@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
   logoutButton: {
     marginTop: 32,
     backgroundColor: '#7f1d1d',
-    borderRadius: 12,
+    borderRadius: 16,
     paddingVertical: 16,
     alignItems: 'center',
   },

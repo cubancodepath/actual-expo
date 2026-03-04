@@ -432,7 +432,7 @@ const styles = StyleSheet.create({
   groupSection: {
     marginTop: 12,
     marginHorizontal: 16,
-    borderRadius: 12,
+    borderRadius: 16,
     backgroundColor: '#1e293b',
     borderWidth: 1,
     borderColor: '#334155',
@@ -496,7 +496,7 @@ const styles = StyleSheet.create({
   iconBtn: {
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 6,
+    borderRadius: 8,
     backgroundColor: '#0f172a',
   },
   iconBtnText: { fontSize: 11, fontWeight: '700' },
@@ -515,7 +515,7 @@ const styles = StyleSheet.create({
   addGroupBtn: {
     margin: 16,
     paddingVertical: 14,
-    borderRadius: 10,
+    borderRadius: 16,
     backgroundColor: '#1e293b',
     borderWidth: 1,
     borderColor: '#334155',

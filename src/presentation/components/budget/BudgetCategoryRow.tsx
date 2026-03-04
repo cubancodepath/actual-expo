@@ -1,21 +1,12 @@
-import { Pressable, TextInput, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { useTheme } from '../../providers/ThemeProvider';
 import { Text } from '../atoms/Text';
 import { formatBalance } from '../../../lib/format';
 import type { BudgetCategory } from '../../../budgets/types';
 
-const COL_BUDGET = 76;
-const COL_SPENT = 68;
-const COL_BAL = 72;
-
 interface BudgetCategoryRowProps {
   cat: BudgetCategory;
   isIncome: boolean;
-  isEditing: boolean;
-  editValue: string;
-  onEditValueChange: (value: string) => void;
-  onStartEdit: (id: string, currentCents: number) => void;
-  onSaveEdit: () => void;
   onLongPress: (cat: BudgetCategory) => void;
   onBalancePress: (cat: BudgetCategory) => void;
 }
@@ -23,36 +14,32 @@ interface BudgetCategoryRowProps {
 export function BudgetCategoryRow({
   cat,
   isIncome,
-  isEditing,
-  editValue,
-  onEditValueChange,
-  onStartEdit,
-  onSaveEdit,
   onLongPress,
   onBalancePress,
 }: BudgetCategoryRowProps) {
   const { colors, spacing, borderWidth: bw } = useTheme();
 
-  const rowStyle = {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: 13,
-    borderBottomWidth: bw.thin,
-    borderBottomColor: colors.divider,
-    backgroundColor: colors.pageBackground,
-  };
-
+  // ── Income row (simple) ──
   if (isIncome) {
     return (
-      <View style={rowStyle}>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingHorizontal: spacing.lg,
+          paddingVertical: 13,
+          borderBottomWidth: bw.thin,
+          borderBottomColor: colors.divider,
+          backgroundColor: colors.pageBackground,
+        }}
+      >
         <Text variant="body" style={{ flex: 1 }} numberOfLines={1}>
           {cat.name}
         </Text>
         <Text
           variant="body"
           color={colors.positive}
-          style={{ width: COL_BAL, textAlign: 'right', fontVariant: ['tabular-nums'] }}
+          style={{ fontWeight: '500', fontVariant: ['tabular-nums'] }}
         >
           {formatBalance(cat.spent)}
         </Text>
@@ -60,95 +47,137 @@ export function BudgetCategoryRow({
     );
   }
 
+  // ── Expense row ──
+
+  // Available badge colors
+  const pillBg =
+    cat.balance > 0
+      ? colors.positive + '30'
+      : cat.balance < 0
+        ? colors.negative + '30'
+        : colors.cardBackground;
+  const pillText =
+    cat.balance > 0
+      ? colors.positive
+      : cat.balance < 0
+        ? colors.negative
+        : colors.textMuted;
+
+  // Progress bar
+  const spentAbs = Math.abs(cat.spent);
+  const budgetedAbs = Math.abs(cat.budgeted);
+  const pct = budgetedAbs > 0 ? spentAbs / budgetedAbs : 0;
+  const clampedPct = Math.min(pct, 1);
+  const barColor =
+    pct >= 1
+      ? colors.negative
+      : pct >= 0.8
+        ? colors.warning
+        : colors.positive;
+
   return (
     <Pressable
-      style={rowStyle}
+      style={{
+        paddingHorizontal: spacing.lg,
+        paddingTop: 12,
+        paddingBottom: 10,
+        borderBottomWidth: bw.thin,
+        borderBottomColor: colors.divider,
+        backgroundColor: colors.pageBackground,
+      }}
       onLongPress={() => onLongPress(cat)}
       delayLongPress={400}
     >
-      <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4, overflow: 'hidden' }}>
-        <Text variant="body" numberOfLines={1} style={{ flexShrink: 1 }}>
-          {cat.name}
-        </Text>
-        {cat.carryover && (
-          <Text variant="caption" color={colors.primary} style={{ fontWeight: '700' }}>
-            ↻
+      {/* Line 1: Name + Available pill */}
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4, overflow: 'hidden' }}>
+          <Text variant="body" numberOfLines={1} style={{ flexShrink: 1 }}>
+            {cat.name}
           </Text>
-        )}
+          {cat.carryover && (
+            <Text variant="caption" color={colors.primary} style={{ fontWeight: '700' }}>
+              ↻
+            </Text>
+          )}
+        </View>
+        <Pressable
+          onPress={(e) => {
+            e.stopPropagation?.();
+            onBalancePress(cat);
+          }}
+          accessibilityLabel={`${formatBalance(cat.balance)} available. Tap to move money.`}
+          accessibilityRole="button"
+          style={{
+            alignSelf: 'stretch',
+            justifyContent: 'center',
+            paddingLeft: spacing.sm,
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: pillBg,
+              borderRadius: 100,
+              paddingHorizontal: 10,
+              paddingVertical: 3,
+              minWidth: 48,
+              alignItems: 'center',
+            }}
+          >
+            <Text
+              variant="captionSm"
+              color={pillText}
+              style={{ fontWeight: '700', fontVariant: ['tabular-nums'] }}
+            >
+              {formatBalance(cat.balance)}
+            </Text>
+            {cat.carryIn !== 0 && (
+              <Text
+                variant="captionSm"
+                color={cat.carryIn < 0 ? colors.negative : colors.positive}
+                style={{ fontWeight: '600', fontSize: 9, marginTop: -1 }}
+              >
+                {cat.carryIn > 0 ? '+' : ''}{formatBalance(cat.carryIn)}
+              </Text>
+            )}
+          </View>
+        </Pressable>
       </View>
 
-      <Pressable
-        style={{ width: COL_BUDGET, alignItems: 'flex-end' }}
-        onPress={() => onStartEdit(cat.id, cat.budgeted)}
-      >
-        {isEditing ? (
-          <TextInput
-            style={{
-              color: colors.link,
-              fontSize: 14,
-              fontWeight: '600',
-              textAlign: 'right',
-              padding: 0,
-              minWidth: 56,
-              borderBottomWidth: 1,
-              borderBottomColor: colors.link,
-            }}
-            value={editValue}
-            onChangeText={onEditValueChange}
-            onBlur={onSaveEdit}
-            onSubmitEditing={onSaveEdit}
-            keyboardType="decimal-pad"
-            autoFocus
-            selectTextOnFocus
-          />
-        ) : (
-          <Text
-            variant="body"
-            color={cat.budgeted === 0 ? colors.textMuted : undefined}
-            style={{ textAlign: 'right', fontWeight: '500', fontVariant: ['tabular-nums'] }}
-          >
+      {/* Line 2: Budgeted · Spent */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+        <Text variant="bodySm" color={colors.textMuted}>
+          {'Budgeted '}
+          <Text variant="bodySm" color={cat.budgeted !== 0 ? colors.textSecondary : colors.textMuted}>
             {formatBalance(cat.budgeted)}
           </Text>
-        )}
-      </Pressable>
-
-      <Text
-        variant="body"
-        color={cat.spent < 0 ? colors.textSecondary : colors.textMuted}
-        style={{ width: COL_SPENT, textAlign: 'right', fontVariant: ['tabular-nums'] }}
-      >
-        {cat.spent !== 0 ? formatBalance(cat.spent) : '—'}
-      </Text>
-
-      <Pressable
-        style={{ width: COL_BAL, alignItems: 'flex-end' }}
-        onPress={() => onBalancePress(cat)}
-        hitSlop={4}
-      >
-        <Text
-          variant="body"
-          color={
-            cat.balance < 0
-              ? colors.negative
-              : cat.balance > 0
-                ? colors.positive
-                : colors.textMuted
-          }
-          style={{ textAlign: 'right', fontWeight: '500', fontVariant: ['tabular-nums'] }}
-        >
-          {formatBalance(cat.balance)}
-        </Text>
-        {cat.carryIn !== 0 && (
-          <Text
-            variant="captionSm"
-            color={cat.carryIn < 0 ? colors.negative : colors.positive}
-            style={{ textAlign: 'right', marginTop: 1, fontWeight: '600' }}
-          >
-            {cat.carryIn > 0 ? '+' : ''}
-            {formatBalance(cat.carryIn)}
+          {'  ·  Spent '}
+          <Text variant="bodySm" color={cat.spent !== 0 ? colors.textSecondary : colors.textMuted}>
+            {cat.spent !== 0 ? formatBalance(cat.spent) : '—'}
           </Text>
-        )}
-      </Pressable>
+        </Text>
+      </View>
+
+      {/* Line 3: Progress bar */}
+      {budgetedAbs > 0 && (
+        <View
+          style={{
+            height: 3,
+            borderRadius: 1.5,
+            backgroundColor: colors.divider,
+            marginTop: 6,
+            overflow: 'hidden',
+          }}
+        >
+          <View
+            style={{
+              width: `${Math.round(clampedPct * 100)}%`,
+              height: '100%',
+              borderRadius: 1.5,
+              backgroundColor: barColor,
+            }}
+          />
+        </View>
+      )}
     </Pressable>
   );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   ActionSheetIOS,
   ActivityIndicator,
@@ -8,14 +8,15 @@ import {
   SectionList,
   View,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useTheme } from '../../../../src/presentation/providers/ThemeProvider';
 import { AddTransactionButton } from '../../../../src/presentation/components/molecules/AddTransactionButton';
 import { useBudgetStore } from '../../../../src/stores/budgetStore';
 import { useSyncStore } from '../../../../src/stores/syncStore';
-import { parseCents } from '../../../../src/lib/format';
 import type { BudgetCategory, BudgetGroup } from '../../../../src/budgets/types';
 
 import { ReadyToAssignPill } from '../../../../src/presentation/components/budget/ReadyToAssignPill';
+import { BudgetSummaryBar } from '../../../../src/presentation/components/budget/BudgetSummaryBar';
 import { BudgetGroupHeader } from '../../../../src/presentation/components/budget/BudgetGroupHeader';
 import { BudgetCategoryRow } from '../../../../src/presentation/components/budget/BudgetCategoryRow';
 import { MoveMoneyModal, type MoveMoneyMode, type MoveMoneyCategory } from '../../../../src/presentation/components/budget/MoveMoneyModal';
@@ -32,40 +33,20 @@ type BudgetSection = {
   data: BudgetCategory[];
 };
 
-const COL_BUDGET = 76;
-const COL_SPENT = 68;
-const COL_BAL = 72;
-
 // ---------------------------------------------------------------------------
 // Main screen
 // ---------------------------------------------------------------------------
 
 export default function BudgetScreen() {
   const { colors, spacing } = useTheme();
+  const router = useRouter();
   const { month, data, loading, load, setAmount, setCarryover, transfer } = useBudgetStore();
   const { refreshing, sync } = useSyncStore();
 
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editValue, setEditValue] = useState('');
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [moveMoneyTarget, setMoveMoneyTarget] = useState<{
     catId: string; catName: string; balance: number; mode: MoveMoneyMode;
   } | null>(null);
-
-  useEffect(() => { load(); }, [month]);
-
-  // -- Editing --
-  function startEdit(id: string, currentCents: number) {
-    setEditingId(id);
-    setEditValue((Math.abs(currentCents) / 100).toFixed(2));
-  }
-
-  async function saveEdit() {
-    if (!editingId) return;
-    const id = editingId;
-    setEditingId(null);
-    await setAmount(id, parseCents(editValue));
-  }
 
   // -- Collapsible groups --
   function toggleGroup(groupId: string) {
@@ -151,11 +132,6 @@ export default function BudgetScreen() {
       <BudgetCategoryRow
         cat={cat}
         isIncome={section.group.is_income}
-        isEditing={editingId === cat.id}
-        editValue={editValue}
-        onEditValueChange={setEditValue}
-        onStartEdit={startEdit}
-        onSaveEdit={saveEdit}
         onLongPress={handleCategoryLongPress}
         onBalancePress={handleBalancePress}
       />
@@ -164,46 +140,22 @@ export default function BudgetScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.pageBackground }}>
-      {/* Ready to Assign pill */}
-      {data && <ReadyToAssignPill amount={data.toBudget} />}
-
-      {/* Column headers */}
+      {/* Ready to Assign + Summary */}
       {data && (
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingHorizontal: spacing.lg,
-            paddingTop: 10,
-            paddingBottom: 4,
-          }}
-        >
-          <View style={{ flex: 1 }} />
-          <Text
-            variant="captionSm"
-            color={colors.textMuted}
-            style={{ width: COL_BUDGET, textAlign: 'right', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: '700' }}
-          >
-            BUDGETED
-          </Text>
-          <Text
-            variant="captionSm"
-            color={colors.textMuted}
-            style={{ width: COL_SPENT, textAlign: 'right', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: '700' }}
-          >
-            SPENT
-          </Text>
-          <Text
-            variant="captionSm"
-            color={colors.textMuted}
-            style={{ width: COL_BAL, textAlign: 'right', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: '700' }}
-          >
-            BALANCE
-          </Text>
-        </View>
+        <ReadyToAssignPill
+          amount={data.toBudget}
+          onPress={() => router.push('/(auth)/budget/assign')}
+        />
+      )}
+      {data && (
+        <BudgetSummaryBar
+          income={data.income}
+          budgeted={data.budgeted}
+          spent={data.spent}
+        />
       )}
 
-      {/* Modals */}
+      {/* Move Money Modal */}
       <MoveMoneyModal
         visible={!!moveMoneyTarget}
         mode={moveMoneyTarget?.mode ?? 'transfer'}
@@ -224,7 +176,7 @@ export default function BudgetScreen() {
           renderItem={renderItem}
           renderSectionHeader={renderSectionHeader}
           stickySectionHeadersEnabled={false}
-          extraData={{ editingId, editValue, collapsedGroups }}
+          extraData={collapsedGroups}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}

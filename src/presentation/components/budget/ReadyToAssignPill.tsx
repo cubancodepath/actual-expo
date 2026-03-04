@@ -12,17 +12,32 @@ interface ReadyToAssignPillProps {
 export function ReadyToAssignPill({ amount, onPress }: ReadyToAssignPillProps) {
   const { colors, spacing, borderRadius: br } = useTheme();
 
-  const pillBg = amount > 0
-    ? colors.primary + '25'
-    : amount < 0
-      ? colors.negative + '25'
+  const isPositive = amount > 0;
+  const isNegative = amount < 0;
+
+  const bg = isPositive
+    ? colors.primary + '20'
+    : isNegative
+      ? colors.negative + '20'
       : colors.cardBackground;
 
-  const textColor = amount > 0
+  const textColor = isPositive
     ? colors.primary
-    : amount < 0
+    : isNegative
       ? colors.negative
       : colors.textSecondary;
+
+  const icon: keyof typeof Ionicons.glyphMap = isPositive
+    ? 'sparkles'
+    : isNegative
+      ? 'warning'
+      : 'checkmark-circle';
+
+  const label = isPositive
+    ? 'Ready to Assign'
+    : isNegative
+      ? 'Overassigned'
+      : 'Fully Assigned';
 
   const content = (
     <View
@@ -30,34 +45,42 @@ export function ReadyToAssignPill({ amount, onPress }: ReadyToAssignPillProps) {
         marginHorizontal: spacing.lg,
         marginTop: spacing.md,
         marginBottom: spacing.sm,
-        backgroundColor: pillBg,
-        borderRadius: br.full,
+        backgroundColor: bg,
+        borderRadius: br.lg,
         paddingVertical: spacing.md,
-        paddingHorizontal: spacing.xl,
+        paddingHorizontal: spacing.lg,
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
+        gap: spacing.md,
       }}
     >
-      <Text
-        variant="headingLg"
-        color={textColor}
-        style={{ fontWeight: '700', fontVariant: ['tabular-nums'] }}
-      >
-        {formatBalance(amount)}
-      </Text>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-        <Text variant="bodySm" color={textColor} style={{ fontWeight: '500' }}>
-          Ready to Assign
+      <Ionicons name={icon} size={22} color={textColor} />
+      <View style={{ flex: 1 }}>
+        <Text
+          variant="headingLg"
+          color={textColor}
+          style={{ fontWeight: '700', fontVariant: ['tabular-nums'] }}
+        >
+          {formatBalance(amount)}
         </Text>
-        <Ionicons name="chevron-forward" size={16} color={textColor} />
+        <Text variant="captionSm" color={textColor} style={{ opacity: 0.7, marginTop: 1 }}>
+          {label}
+        </Text>
       </View>
+      {onPress && (isPositive || isNegative) && (
+        <Ionicons name="chevron-forward" size={16} color={textColor} style={{ opacity: 0.5 }} />
+      )}
     </View>
   );
 
   if (onPress) {
     return (
-      <Pressable onPress={onPress} style={({ pressed }) => pressed && { opacity: 0.8 }}>
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => pressed && { opacity: 0.8 }}
+        accessibilityLabel={`${formatBalance(amount)} ${label}. Tap to assign budget.`}
+        accessibilityRole="button"
+      >
         {content}
       </Pressable>
     );

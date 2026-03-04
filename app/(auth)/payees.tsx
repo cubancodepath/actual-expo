@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
   searchInput: {
     backgroundColor: '#1e293b',
     color: '#f1f5f9',
-    borderRadius: 10,
+    borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 10,
     fontSize: 15,
@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
   delBtn: {
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 6,
+    borderRadius: 8,
     backgroundColor: '#1e293b',
     marginLeft: 8,
   },
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
   sheetSearch: {
     backgroundColor: '#0f172a',
     color: '#f1f5f9',
-    borderRadius: 8,
+    borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 9,
     fontSize: 14,

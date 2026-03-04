@@ -11,6 +11,7 @@ import {
 import { useRouter } from 'expo-router';
 import { usePrefsStore } from '../../../../src/stores/prefsStore';
 import { useSyncStore } from '../../../../src/stores/syncStore';
+import { resetAllStores } from '../../../../src/stores/resetStores';
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
@@ -39,6 +40,7 @@ export default function SettingsScreen() {
           onPress: async () => {
             setLoggingOut(true);
             try {
+              resetAllStores();
               await clearAll(); // wipes MMKV + SecureStore, isConfigured → false
             } finally {
               setLoggingOut(false);

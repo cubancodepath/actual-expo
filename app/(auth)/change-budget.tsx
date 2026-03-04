@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { usePrefsStore } from '../../src/stores/prefsStore';
 import { listFiles, type BudgetFile } from '../../src/services/authService';
 import { downloadAndImportBudget } from '../../src/services/budgetfiles';
+import { resetAllStores } from '../../src/stores/resetStores';
 import { fullSync } from '../../src/sync';
 import { useTheme, useThemedStyles } from '../../src/presentation/providers/ThemeProvider';
 import { Text } from '../../src/presentation/components/atoms/Text';
@@ -40,6 +41,7 @@ export default function ChangeBudgetScreen() {
   async function handleSelect(file: BudgetFile) {
     setSelecting(file.fileId);
     try {
+      resetAllStores();
       await downloadAndImportBudget(serverUrl, token, file.fileId, file.encryptKeyId);
       usePrefsStore.getState().setPrefs({
         fileId: file.fileId,

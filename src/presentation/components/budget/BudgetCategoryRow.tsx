@@ -3,6 +3,7 @@ import { useTheme } from '../../providers/ThemeProvider';
 import { Text } from '../atoms/Text';
 import { Amount } from '../atoms/Amount';
 import { formatPrivacyAware } from '../../../lib/format';
+import { getGoalProgress } from '../../../goals/progress';
 import type { BudgetCategory } from '../../../budgets/types';
 
 interface BudgetCategoryRowProps {
@@ -181,20 +182,13 @@ export function BudgetCategoryRow({
         </Pressable>
       </View>
 
-      {/* Line 2: Budgeted · Spent · Goal */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-        <Text variant="bodySm" color={colors.textMuted}>
-          {'Budgeted '}
-          <Amount value={cat.budgeted} variant="bodySm" color={cat.budgeted !== 0 ? colors.textSecondary : colors.textMuted} />
-          {'  ·  Spent '}
-          <Amount value={cat.spent} variant="bodySm" color={cat.spent !== 0 ? colors.textSecondary : colors.textMuted} fallback="—" />
-          {hasGoal && (
-            <>
-              {'  ·  Goal '}
-              <Amount value={cat.goal!} variant="bodySm" color={goalColor} />
-            </>
-          )}
-        </Text>
+      {/* Line 2: Progress text */}
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginTop: 4 }}>
+        {getGoalProgress(cat).map((seg, i) =>
+          'text' in seg
+            ? <Text key={i} variant="bodySm" color={colors.textMuted}>{seg.text}</Text>
+            : <Amount key={i} value={seg.amount} variant="bodySm" color={colors.textSecondary} colored={false} />
+        )}
       </View>
 
       {/* Line 3: Progress bar */}

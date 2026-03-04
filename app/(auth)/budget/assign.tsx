@@ -1,12 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, SectionList, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, SectionList, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
 import { useBudgetStore } from '../../../src/stores/budgetStore';
 import { Text } from '../../../src/presentation/components/atoms/Text';
 import { IconButton } from '../../../src/presentation/components/atoms/IconButton';
 import { Button } from '../../../src/presentation/components/atoms/Button';
 import { CompactCurrencyInput, type CompactCurrencyInputRef } from '../../../src/presentation/components/atoms/CompactCurrencyInput';
+import { HoldModal } from '../../../src/presentation/components/budget/HoldModal';
 import { formatBalance } from '../../../src/lib/format';
 
 type CategorySection = {
@@ -18,14 +22,18 @@ type CategorySection = {
 export default function AssignBudgetScreen() {
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const router = useRouter();
-  const { data, setAmount } = useBudgetStore();
+  const insets = useSafeAreaInsets();
+  const { data, setAmount, hold, resetHold } = useBudgetStore();
 
   const toBudget = data?.toBudget ?? 0;
+  const buffered = data?.buffered ?? 0;
   const groups = data?.groups ?? [];
 
   // Local edits: categoryId → cents
   const [edits, setEdits] = useState<Record<string, number>>({});
   const [saving, setSaving] = useState(false);
+  const [holdModalVisible, setHoldModalVisible] = useState(false);
+  const hapticFiredRef = useRef(false);
 
   // Initialize edits from current budget data
   useEffect(() => {
@@ -86,6 +94,17 @@ export default function AssignBudgetScreen() {
     return false;
   }, [edits, groups]);
 
+  // Haptic when fully assigned
+  useEffect(() => {
+    if (remaining === 0 && hasChanges && !hapticFiredRef.current) {
+      hapticFiredRef.current = true;
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+    if (remaining !== 0) {
+      hapticFiredRef.current = false;
+    }
+  }, [remaining, hasChanges]);
+
   function updateEdit(catId: string, cents: number) {
     setEdits((prev) => ({ ...prev, [catId]: cents }));
   }
@@ -104,9 +123,17 @@ export default function AssignBudgetScreen() {
     router.back();
   }
 
+  // Color state based on remaining
+  const remainingColor =
+    remaining > 0 ? colors.primary : remaining < 0 ? colors.negative : colors.positive;
+  const remainingIcon: keyof typeof Ionicons.glyphMap =
+    remaining > 0 ? 'sparkles' : remaining < 0 ? 'warning' : 'checkmark-circle';
+  const remainingLabel =
+    remaining > 0 ? 'Ready to Assign' : remaining < 0 ? 'Overassigned' : 'Fully Assigned';
+
   const labelStyle = {
     textTransform: 'uppercase' as const,
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
     fontWeight: '700' as const,
   };
 
@@ -126,78 +153,184 @@ export default function AssignBudgetScreen() {
         }}
       />
 
-      {/* Available / Remaining banner */}
-      <View
-        style={{
-          flexDirection: 'row',
-          paddingHorizontal: spacing.lg,
-          paddingVertical: spacing.md,
-          backgroundColor: colors.cardBackground,
-          borderBottomWidth: bw.thin,
-          borderBottomColor: colors.divider,
-        }}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={100}
       >
-        <View style={{ flex: 1, alignItems: 'center' }}>
-          <Text variant="captionSm" color={colors.textMuted} style={labelStyle}>
-            Available
-          </Text>
-          <Text
-            variant="headingSm"
-            color={toBudget > 0 ? colors.positive : toBudget < 0 ? colors.negative : colors.textMuted}
-            style={{ fontVariant: ['tabular-nums'], marginTop: 2 }}
-          >
-            {formatBalance(toBudget)}
-          </Text>
-        </View>
-        <View style={{ width: 1, height: 32, backgroundColor: colors.divider }} />
-        <View style={{ flex: 1, alignItems: 'center' }}>
-          <Text variant="captionSm" color={colors.textMuted} style={labelStyle}>
-            Remaining
-          </Text>
-          <Text
-            variant="headingSm"
-            color={remaining > 0 ? colors.positive : remaining < 0 ? colors.negative : colors.textMuted}
-            style={{ fontVariant: ['tabular-nums'], marginTop: 2 }}
-          >
-            {formatBalance(remaining)}
-          </Text>
-        </View>
-      </View>
+        <SectionList
+          sections={sections}
+          keyExtractor={(item) => item.id}
+          keyboardShouldPersistTaps="handled"
+          ListHeaderComponent={
+            <>
+              {/* Summary Card */}
+              <View
+                style={{
+                  marginHorizontal: spacing.lg,
+                  marginTop: spacing.lg,
+                  marginBottom: spacing.md,
+                  backgroundColor: colors.cardBackground,
+                  borderRadius: br.lg,
+                  borderWidth: bw.thin,
+                  borderColor: colors.cardBorder,
+                  paddingHorizontal: spacing.lg,
+                  paddingVertical: spacing.md,
+                }}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+                  <Ionicons name={remainingIcon} size={22} color={remainingColor} />
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      variant="headingLg"
+                      color={remainingColor}
+                      style={{ fontWeight: '700', fontVariant: ['tabular-nums'] }}
+                    >
+                      {formatBalance(toBudget)}
+                    </Text>
+                    <Text
+                      variant="captionSm"
+                      color={remainingColor}
+                      style={{ opacity: 0.75, marginTop: 1 }}
+                    >
+                      {remainingLabel}
+                    </Text>
+                  </View>
+                </View>
 
-      {/* Quick actions */}
-      <View
-        style={{
-          flexDirection: 'row',
-          paddingHorizontal: spacing.lg,
-          paddingVertical: spacing.sm,
-          gap: spacing.sm,
-          borderBottomWidth: bw.thin,
-          borderBottomColor: colors.divider,
-        }}
-      >
-        <View style={{ flex: 1 }}>
-          <Button
-            title="Hold"
-            icon="calendar-outline"
-            variant="secondary"
-            size="sm"
-            disabled
-            onPress={() => {}}
-            style={{ borderRadius: br.full }}
-          />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Button
-            title="Auto-assign"
-            icon="sparkles-outline"
-            variant="secondary"
-            size="sm"
-            disabled
-            onPress={() => {}}
-            style={{ borderRadius: br.full }}
-          />
-        </View>
-      </View>
+                <View
+                  style={{
+                    height: bw.thin,
+                    backgroundColor: colors.divider,
+                    marginVertical: spacing.sm,
+                  }}
+                />
+
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <Text variant="body" color={colors.textSecondary}>
+                    Remaining
+                  </Text>
+                  <Text
+                    variant="headingSm"
+                    color={remainingColor}
+                    style={{ fontWeight: '600', fontVariant: ['tabular-nums'] }}
+                  >
+                    {formatBalance(remaining)}
+                  </Text>
+                </View>
+
+                {/* Held for Next Month */}
+                {buffered > 0 && (
+                  <>
+                    <View
+                      style={{
+                        height: bw.thin,
+                        backgroundColor: colors.divider,
+                        marginVertical: spacing.sm,
+                      }}
+                    />
+                    <Pressable
+                      onPress={() => {
+                        Alert.alert(
+                          'Reset Hold',
+                          'Release held funds back to "Ready to Assign"?',
+                          [
+                            { text: 'Cancel', style: 'cancel' },
+                            { text: 'Reset', style: 'destructive', onPress: () => resetHold() },
+                          ],
+                        );
+                      }}
+                      style={{ flexDirection: 'row', alignItems: 'center' }}
+                    >
+                      <Ionicons name="arrow-forward" size={14} color={colors.primary} style={{ marginRight: spacing.sm }} />
+                      <Text variant="bodySm" color={colors.textSecondary} style={{ flex: 1 }}>
+                        Held for Next Month
+                      </Text>
+                      <Text
+                        variant="body"
+                        color={colors.primary}
+                        style={{ fontWeight: '600', fontVariant: ['tabular-nums'], marginRight: spacing.sm }}
+                      >
+                        {formatBalance(buffered)}
+                      </Text>
+                      <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+                    </Pressable>
+                  </>
+                )}
+              </View>
+
+              {/* Quick Actions */}
+              <View
+                style={{
+                  flexDirection: 'row',
+                  paddingHorizontal: spacing.lg,
+                  paddingBottom: spacing.md,
+                  gap: spacing.sm,
+                }}
+              >
+                <View style={{ flex: 1 }}>
+                  <Button
+                    title="Hold"
+                    icon="calendar-outline"
+                    variant="secondary"
+                    size="sm"
+                    onPress={() => setHoldModalVisible(true)}
+                    style={{ borderRadius: br.full }}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Button
+                    title="Auto-assign"
+                    icon="sparkles-outline"
+                    variant="secondary"
+                    size="sm"
+                    disabled
+                    onPress={() => {}}
+                    style={{ borderRadius: br.full }}
+                  />
+                </View>
+              </View>
+            </>
+          }
+          renderSectionHeader={({ section }) => (
+            <View
+              style={{
+                paddingHorizontal: spacing.lg * 2,
+                paddingTop: spacing.lg,
+                paddingBottom: spacing.xs,
+                backgroundColor: colors.pageBackground,
+              }}
+            >
+              <Text variant="captionSm" color={colors.textMuted} style={labelStyle}>
+                {section.title}
+              </Text>
+            </View>
+          )}
+          renderItem={({ item, index, section }) => {
+            const isFirst = index === 0;
+            const isLast = index === section.data.length - 1;
+            const isEdited = (edits[item.id] ?? 0) !== item.budgeted;
+            return (
+              <CategoryAmountRow
+                catId={item.id}
+                name={item.name}
+                value={edits[item.id] ?? 0}
+                onChange={updateEdit}
+                isFirst={isFirst}
+                isLast={isLast}
+                isEdited={isEdited}
+              />
+            );
+          }}
+          contentContainerStyle={{ paddingBottom: hasChanges ? 120 : 40 }}
+        />
+      </KeyboardAvoidingView>
 
       {/* Save button — fixed, overlays above the list */}
       {hasChanges && (
@@ -210,14 +343,14 @@ export default function AssignBudgetScreen() {
             zIndex: 10,
             paddingHorizontal: spacing.lg,
             paddingTop: spacing.md,
-            paddingBottom: spacing.xxl,
+            paddingBottom: Math.max(insets.bottom, spacing.md),
             backgroundColor: colors.pageBackground,
             borderTopWidth: bw.thin,
             borderTopColor: colors.divider,
           }}
         >
           <Button
-            title="Save Changes"
+            title={saving ? 'Saving...' : 'Save Changes'}
             icon="checkmark"
             variant="primary"
             size="lg"
@@ -228,53 +361,38 @@ export default function AssignBudgetScreen() {
         </View>
       )}
 
-      {/* Category list */}
-      <SectionList
-        sections={sections}
-        keyExtractor={(item) => item.id}
-        keyboardShouldPersistTaps="handled"
-        renderSectionHeader={({ section }) => (
-          <View
-            style={{
-              paddingHorizontal: spacing.lg,
-              paddingTop: spacing.lg,
-              paddingBottom: spacing.xs,
-              backgroundColor: colors.pageBackground,
-            }}
-          >
-            <Text variant="captionSm" color={colors.textMuted} style={labelStyle}>
-              {section.title}
-            </Text>
-          </View>
-        )}
-        renderItem={({ item }) => (
-          <CategoryAmountRow
-            catId={item.id}
-            name={item.name}
-            value={edits[item.id] ?? 0}
-            onChange={updateEdit}
-          />
-        )}
-        contentContainerStyle={{ paddingBottom: hasChanges ? 120 : 40 }}
+      {/* Hold Modal */}
+      <HoldModal
+        visible={holdModalVisible}
+        current={buffered}
+        maxAmount={remaining + buffered}
+        onSave={(cents) => hold(cents)}
+        onClose={() => setHoldModalVisible(false)}
       />
     </View>
   );
 }
 
-// ── Category row with compact currency input ─────────────────────────────────
+// ── Category row with inset grouped styling ──────────────────────────────────
 
 function CategoryAmountRow({
   catId,
   name,
   value,
   onChange,
+  isFirst,
+  isLast,
+  isEdited,
 }: {
   catId: string;
   name: string;
   value: number;
   onChange: (catId: string, cents: number) => void;
+  isFirst: boolean;
+  isLast: boolean;
+  isEdited: boolean;
 }) {
-  const { colors, spacing, borderWidth: bw } = useTheme();
+  const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const inputRef = useRef<CompactCurrencyInputRef>(null);
 
   return (
@@ -284,12 +402,31 @@ function CategoryAmountRow({
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: spacing.lg,
-        paddingVertical: 10,
+        paddingVertical: spacing.md,
+        minHeight: 44,
+        marginHorizontal: spacing.lg,
         backgroundColor: colors.cardBackground,
-        borderBottomWidth: bw.thin,
+        borderTopLeftRadius: isFirst ? br.lg : 0,
+        borderTopRightRadius: isFirst ? br.lg : 0,
+        borderBottomLeftRadius: isLast ? br.lg : 0,
+        borderBottomRightRadius: isLast ? br.lg : 0,
+        borderBottomWidth: isLast ? 0 : bw.thin,
         borderBottomColor: colors.divider,
       }}
     >
+      {isEdited && (
+        <View
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: 8,
+            bottom: 8,
+            width: 3,
+            borderRadius: br.full,
+            backgroundColor: colors.primary,
+          }}
+        />
+      )}
       <Text variant="body" style={{ flex: 1 }} numberOfLines={1}>
         {name}
       </Text>

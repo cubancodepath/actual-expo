@@ -13,7 +13,7 @@ interface BudgetGroupHeaderProps {
 }
 
 export function BudgetGroupHeader({ group, isCollapsed, onToggle }: BudgetGroupHeaderProps) {
-  const { colors, spacing, borderWidth: bw } = useTheme();
+  const { colors, spacing, borderRadius: br } = useTheme();
 
   const chevronStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: withTiming(isCollapsed ? '-90deg' : '0deg', { duration: 200 }) }],
@@ -34,13 +34,11 @@ export function BudgetGroupHeader({ group, isCollapsed, onToggle }: BudgetGroupH
       style={{
         flexDirection: 'row',
         alignItems: 'center',
+        marginHorizontal: spacing.lg,
         paddingHorizontal: spacing.lg,
-        paddingVertical: 10,
-        backgroundColor: colors.cardBackground,
-        borderTopWidth: bw.thin,
-        borderBottomWidth: bw.thin,
-        borderColor: colors.divider,
-        marginTop: 6,
+        paddingVertical: spacing.md,
+        marginTop: spacing.lg,
+        marginBottom: spacing.xs,
         gap: 6,
       }}
       onPress={onToggle}
@@ -51,7 +49,7 @@ export function BudgetGroupHeader({ group, isCollapsed, onToggle }: BudgetGroupH
       <Text
         variant="captionSm"
         color={colors.textSecondary}
-        style={{ flex: 1, textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: '700' }}
+        style={{ flex: 1, textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: '700' }}
       >
         {group.name}
       </Text>

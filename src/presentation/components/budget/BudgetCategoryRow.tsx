@@ -7,6 +7,8 @@ import type { BudgetCategory } from '../../../budgets/types';
 interface BudgetCategoryRowProps {
   cat: BudgetCategory;
   isIncome: boolean;
+  isFirst?: boolean;
+  isLast?: boolean;
   onLongPress: (cat: BudgetCategory) => void;
   onBalancePress: (cat: BudgetCategory) => void;
 }
@@ -14,10 +16,23 @@ interface BudgetCategoryRowProps {
 export function BudgetCategoryRow({
   cat,
   isIncome,
+  isFirst = false,
+  isLast = false,
   onLongPress,
   onBalancePress,
 }: BudgetCategoryRowProps) {
-  const { colors, spacing, borderWidth: bw } = useTheme();
+  const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
+
+  const insetStyle = {
+    marginHorizontal: spacing.lg,
+    backgroundColor: colors.cardBackground,
+    borderTopLeftRadius: isFirst ? br.lg : 0,
+    borderTopRightRadius: isFirst ? br.lg : 0,
+    borderBottomLeftRadius: isLast ? br.lg : 0,
+    borderBottomRightRadius: isLast ? br.lg : 0,
+    borderBottomWidth: isLast ? 0 : bw.thin,
+    borderBottomColor: colors.divider,
+  };
 
   // ── Income row (simple) ──
   if (isIncome) {
@@ -28,9 +43,8 @@ export function BudgetCategoryRow({
           alignItems: 'center',
           paddingHorizontal: spacing.lg,
           paddingVertical: 13,
-          borderBottomWidth: bw.thin,
-          borderBottomColor: colors.divider,
-          backgroundColor: colors.pageBackground,
+          minHeight: 44,
+          ...insetStyle,
         }}
       >
         <Text variant="body" style={{ flex: 1 }} numberOfLines={1}>
@@ -81,9 +95,8 @@ export function BudgetCategoryRow({
         paddingHorizontal: spacing.lg,
         paddingTop: 12,
         paddingBottom: 10,
-        borderBottomWidth: bw.thin,
-        borderBottomColor: colors.divider,
-        backgroundColor: colors.pageBackground,
+        minHeight: 44,
+        ...insetStyle,
       }}
       onLongPress={() => onLongPress(cat)}
       delayLongPress={400}

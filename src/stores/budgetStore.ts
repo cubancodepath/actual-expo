@@ -48,11 +48,12 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
     const { month, data } = get();
     const currentToBudget = data?.toBudget ?? 0;
     await holdForNextMonth(month, amount, currentToBudget);
-    // refreshAllStores will reload via applyMessages
+    await get().load();
   },
 
   async resetHold() {
     await resetHold(get().month);
+    await get().load();
   },
 
   async setCarryover(categoryId, flag) {

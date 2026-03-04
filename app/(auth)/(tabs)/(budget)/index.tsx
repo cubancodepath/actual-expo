@@ -4,10 +4,12 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
+  Pressable,
   RefreshControl,
   SectionList,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../../../src/presentation/providers/ThemeProvider';
 import { AddTransactionButton } from '../../../../src/presentation/components/molecules/AddTransactionButton';
@@ -15,12 +17,11 @@ import { useBudgetStore } from '../../../../src/stores/budgetStore';
 import { useSyncStore } from '../../../../src/stores/syncStore';
 import type { BudgetCategory, BudgetGroup } from '../../../../src/budgets/types';
 
-import { ReadyToAssignPill } from '../../../../src/presentation/components/budget/ReadyToAssignPill';
-import { BudgetSummaryBar } from '../../../../src/presentation/components/budget/BudgetSummaryBar';
 import { BudgetGroupHeader } from '../../../../src/presentation/components/budget/BudgetGroupHeader';
 import { BudgetCategoryRow } from '../../../../src/presentation/components/budget/BudgetCategoryRow';
 import { MoveMoneyModal, type MoveMoneyMode, type MoveMoneyCategory } from '../../../../src/presentation/components/budget/MoveMoneyModal';
 import { Text } from '../../../../src/presentation/components/atoms/Text';
+import { formatBalance } from '../../../../src/lib/format';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -38,9 +39,9 @@ type BudgetSection = {
 // ---------------------------------------------------------------------------
 
 export default function BudgetScreen() {
-  const { colors, spacing } = useTheme();
+  const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const router = useRouter();
-  const { month, data, loading, load, setAmount, setCarryover, transfer } = useBudgetStore();
+  const { month, data, loading, load, setAmount, setCarryover, transfer, resetHold } = useBudgetStore();
   const { refreshing, sync } = useSyncStore();
 
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
@@ -116,6 +117,15 @@ export default function BudgetScreen() {
     }
   }
 
+  // -- Summary card colors --
+  const toBudget = data?.toBudget ?? 0;
+  const pillColor =
+    toBudget > 0 ? colors.primary : toBudget < 0 ? colors.negative : colors.positive;
+  const pillIcon: keyof typeof Ionicons.glyphMap =
+    toBudget > 0 ? 'sparkles' : toBudget < 0 ? 'warning' : 'checkmark-circle';
+  const pillLabel =
+    toBudget > 0 ? 'Ready to Assign' : toBudget < 0 ? 'Overassigned' : 'Fully Assigned';
+
   // -- Render helpers --
   function renderSectionHeader({ section }: { section: BudgetSection }) {
     return (
@@ -127,34 +137,27 @@ export default function BudgetScreen() {
     );
   }
 
-  function renderItem({ item: cat, section }: { item: BudgetCategory; section: BudgetSection }) {
+  function renderItem({ item: cat, index, section }: { item: BudgetCategory; index: number; section: BudgetSection }) {
     return (
       <BudgetCategoryRow
         cat={cat}
         isIncome={section.group.is_income}
+        isFirst={index === 0}
+        isLast={index === section.data.length - 1}
         onLongPress={handleCategoryLongPress}
         onBalancePress={handleBalancePress}
       />
     );
   }
 
+  const labelStyle = {
+    textTransform: 'uppercase' as const,
+    letterSpacing: 0.8,
+    fontWeight: '700' as const,
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.pageBackground }}>
-      {/* Ready to Assign + Summary */}
-      {data && (
-        <ReadyToAssignPill
-          amount={data.toBudget}
-          onPress={() => router.push('/(auth)/budget/assign')}
-        />
-      )}
-      {data && (
-        <BudgetSummaryBar
-          income={data.income}
-          budgeted={data.budgeted}
-          spent={data.spent}
-        />
-      )}
-
       {/* Move Money Modal */}
       <MoveMoneyModal
         visible={!!moveMoneyTarget}
@@ -177,6 +180,142 @@ export default function BudgetScreen() {
           renderSectionHeader={renderSectionHeader}
           stickySectionHeadersEnabled={false}
           extraData={collapsedGroups}
+          ListHeaderComponent={
+            data ? (
+              <>
+                {/* Summary Card */}
+                <Pressable
+                  onPress={() => router.push('/(auth)/budget/assign')}
+                  style={({ pressed }) => pressed && { opacity: 0.8 }}
+                  accessibilityLabel={`${formatBalance(toBudget)} ${pillLabel}. Tap to assign budget.`}
+                  accessibilityRole="button"
+                >
+                  <View
+                    style={{
+                      marginHorizontal: spacing.lg,
+                      marginTop: spacing.lg,
+                      backgroundColor: colors.cardBackground,
+                      borderRadius: br.lg,
+                      borderWidth: bw.thin,
+                      borderColor: colors.cardBorder,
+                      paddingHorizontal: spacing.lg,
+                      paddingVertical: spacing.md,
+                    }}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+                      <Ionicons name={pillIcon} size={22} color={pillColor} />
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          variant="headingLg"
+                          color={pillColor}
+                          style={{ fontWeight: '700', fontVariant: ['tabular-nums'] }}
+                        >
+                          {formatBalance(toBudget)}
+                        </Text>
+                        <Text
+                          variant="captionSm"
+                          color={pillColor}
+                          style={{ opacity: 0.75, marginTop: 1 }}
+                        >
+                          {pillLabel}
+                        </Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={16} color={pillColor} style={{ opacity: 0.5 }} />
+                    </View>
+
+                    <View
+                      style={{
+                        height: bw.thin,
+                        backgroundColor: colors.divider,
+                        marginVertical: spacing.sm,
+                      }}
+                    />
+
+                    {/* Income / Budgeted / Spent */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <View style={{ flex: 1, alignItems: 'center' }}>
+                        <Text variant="captionSm" color={colors.textMuted} style={labelStyle}>
+                          Income
+                        </Text>
+                        <Text
+                          variant="body"
+                          color={colors.positive}
+                          style={{ fontWeight: '600', fontVariant: ['tabular-nums'], marginTop: 2 }}
+                        >
+                          {formatBalance(data.income)}
+                        </Text>
+                      </View>
+                      <View style={{ width: 1, height: 24, backgroundColor: colors.divider }} />
+                      <View style={{ flex: 1, alignItems: 'center' }}>
+                        <Text variant="captionSm" color={colors.textMuted} style={labelStyle}>
+                          Budgeted
+                        </Text>
+                        <Text
+                          variant="body"
+                          style={{ fontWeight: '600', fontVariant: ['tabular-nums'], marginTop: 2 }}
+                        >
+                          {formatBalance(data.budgeted)}
+                        </Text>
+                      </View>
+                      <View style={{ width: 1, height: 24, backgroundColor: colors.divider }} />
+                      <View style={{ flex: 1, alignItems: 'center' }}>
+                        <Text variant="captionSm" color={colors.textMuted} style={labelStyle}>
+                          Spent
+                        </Text>
+                        <Text
+                          variant="body"
+                          color={colors.textSecondary}
+                          style={{ fontWeight: '600', fontVariant: ['tabular-nums'], marginTop: 2 }}
+                        >
+                          {formatBalance(data.spent)}
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Held for Next Month */}
+                    {data.buffered > 0 && (
+                      <>
+                        <View
+                          style={{
+                            height: bw.thin,
+                            backgroundColor: colors.divider,
+                            marginVertical: spacing.sm,
+                          }}
+                        />
+                        <Pressable
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            Alert.alert(
+                              'Reset Hold',
+                              'Release held funds back to "Ready to Assign"?',
+                              [
+                                { text: 'Cancel', style: 'cancel' },
+                                { text: 'Reset', style: 'destructive', onPress: () => resetHold() },
+                              ],
+                            );
+                          }}
+                          style={{ flexDirection: 'row', alignItems: 'center' }}
+                        >
+                          <Ionicons name="arrow-forward" size={14} color={colors.primary} style={{ marginRight: spacing.sm }} />
+                          <Text variant="bodySm" color={colors.textSecondary} style={{ flex: 1 }}>
+                            Held for Next Month
+                          </Text>
+                          <Text
+                            variant="body"
+                            color={colors.primary}
+                            style={{ fontWeight: '600', fontVariant: ['tabular-nums'], marginRight: spacing.sm }}
+                          >
+                            {formatBalance(data.buffered)}
+                          </Text>
+                          <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+                        </Pressable>
+                      </>
+                    )}
+                  </View>
+                </Pressable>
+              </>
+            ) : null
+          }
           refreshControl={
             <RefreshControl
               refreshing={refreshing}

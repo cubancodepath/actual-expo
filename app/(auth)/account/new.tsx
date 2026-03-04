@@ -10,6 +10,7 @@ import {
 import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAccountsStore } from '../../../src/stores/accountsStore';
+import { usePayeesStore } from '../../../src/stores/payeesStore';
 import { useTheme, useThemedStyles } from '../../../src/presentation/providers/ThemeProvider';
 import { Text } from '../../../src/presentation/components/atoms/Text';
 import { Button } from '../../../src/presentation/components/atoms/Button';
@@ -29,6 +30,7 @@ export default function NewAccountScreen() {
   const theme = useTheme();
   const styles = useThemedStyles(createStyles);
   const { create, load } = useAccountsStore();
+  const loadPayees = usePayeesStore((s) => s.load);
 
   const [name, setName] = useState('');
   const [balanceStr, setBalanceStr] = useState('');
@@ -45,7 +47,7 @@ export default function NewAccountScreen() {
     try {
       const startingBalance = parseToCents(balanceStr);
       await create({ name: trimmed, offbudget, closed: false }, startingBalance);
-      await load();
+      await Promise.all([load(), loadPayees()]);
       router.back();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));

@@ -67,9 +67,17 @@ async function computeCarryoverChain(
   };
   if (categoryIds.length === 0) return empty;
 
-  // ── Load ALL historical zero_budgets rows (strictly before current month) ──
+  // ── Load historical zero_budgets rows for non-tombstoned expense categories ──
+  // Only include expense categories (is_income = 0) that haven't been deleted.
+  // Including tombstoned/merged or income categories would corrupt the
+  // overspending penalty because their budget rows still exist but their
+  // transactions have been remapped to other categories via category_mapping.
   const histBudgets = await runQuery<ZeroBudgetRow>(
-    'SELECT * FROM zero_budgets WHERE month < ? ORDER BY month ASC',
+    `SELECT zb.* FROM zero_budgets zb
+     JOIN categories c ON c.id = zb.category AND c.tombstone = 0
+     JOIN category_groups g ON g.id = c.cat_group AND g.is_income = 0
+     WHERE zb.month < ?
+     ORDER BY zb.month ASC`,
     [monthInt],
   );
 
@@ -94,7 +102,7 @@ async function computeCarryoverChain(
   const spentMonthRows = await runQuery<{ month: number }>(
     `SELECT DISTINCT t.date / 100 AS month
      FROM transactions t
-     JOIN accounts a ON a.id = t.acct AND a.offbudget = 0 AND a.tombstone = 0
+     JOIN accounts a ON a.id = t.acct AND a.offbudget = 0
      WHERE ${ALIVE_TX_FILTER}
        AND t.category IS NOT NULL
        AND t.date / 100 < ?`,
@@ -116,7 +124,7 @@ async function computeCarryoverChain(
             SUM(t.amount) AS amount
      FROM transactions t
      LEFT JOIN category_mapping cm ON cm.id = t.category
-     JOIN accounts a ON a.id = t.acct AND a.offbudget = 0 AND a.tombstone = 0
+     JOIN accounts a ON a.id = t.acct AND a.offbudget = 0
      WHERE ${ALIVE_TX_FILTER}
        AND t.category IS NOT NULL
        AND t.date >= ? AND t.date <= ?
@@ -126,11 +134,9 @@ async function computeCarryoverChain(
   const spentLookup = new Map<string, number>();
   for (const r of histSpent) spentLookup.set(`${r.month}-${r.category}`, r.amount);
 
-  // Union of all categories that ever appeared
-  const allCatIds = new Set<string>([
-    ...categoryIds,
-    ...histBudgets.map(r => r.category),
-  ]);
+  // Use only the current expense categories — histBudgets is already filtered
+  // to the same set, so the union just ensures coverage.
+  const allCatIds = new Set<string>(categoryIds);
 
   // ── Iterate month by month ──
   let leftoverMap  = new Map<string, number>();  // catId → leftover
@@ -209,7 +215,7 @@ export async function getBudgetMonth(month: string): Promise<BudgetMonth> {
     `SELECT COALESCE(cm.transferId, t.category) AS category, SUM(t.amount) AS amount
      FROM transactions t
      LEFT JOIN category_mapping cm ON cm.id = t.category
-     JOIN accounts a ON t.acct = a.id AND a.offbudget = 0 AND a.tombstone = 0
+     JOIN accounts a ON t.acct = a.id AND a.offbudget = 0
      WHERE ${ALIVE_TX_FILTER}
        AND t.date >= ? AND t.date <= ?
        AND t.category IS NOT NULL
@@ -237,7 +243,7 @@ export async function getBudgetMonth(month: string): Promise<BudgetMonth> {
      FROM transactions t
      LEFT JOIN category_mapping cm ON cm.id = t.category
      JOIN categories c  ON c.id = COALESCE(cm.transferId, t.category) AND c.tombstone = 0
-     JOIN accounts a    ON a.id = t.acct AND a.offbudget = 0 AND a.tombstone = 0
+     JOIN accounts a    ON a.id = t.acct AND a.offbudget = 0
      JOIN category_groups g ON g.id = c.cat_group AND g.is_income = 1
      WHERE ${ALIVE_TX_FILTER}
        AND t.date <= ?`,

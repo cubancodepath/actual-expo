@@ -63,7 +63,7 @@ export function AccountHeaderMenu({
               />
               <SwiftButton
                 label={hideReconciled ? 'Show Reconciled' : 'Hide Reconciled'}
-                systemImage={hideReconciled ? 'eye' : 'eye.slash'}
+                systemImage={hideReconciled ? 'checkmark.circle' : 'checkmark.circle.badge.xmark'}
                 onPress={onToggleHideReconciled}
               />
             </SwiftSection>

@@ -3,7 +3,7 @@ import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated'
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../providers/ThemeProvider';
 import { Text } from '../atoms/Text';
-import { formatBalance } from '../../../lib/format';
+import { Amount } from '../atoms/Amount';
 import type { BudgetGroup } from '../../../budgets/types';
 
 interface BudgetGroupHeaderProps {
@@ -13,7 +13,7 @@ interface BudgetGroupHeaderProps {
 }
 
 export function BudgetGroupHeader({ group, isCollapsed, onToggle }: BudgetGroupHeaderProps) {
-  const { colors, spacing, borderRadius: br } = useTheme();
+  const { colors, spacing } = useTheme();
 
   const chevronStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: withTiming(isCollapsed ? '-90deg' : '0deg', { duration: 200 }) }],
@@ -53,13 +53,7 @@ export function BudgetGroupHeader({ group, isCollapsed, onToggle }: BudgetGroupH
       >
         {group.name}
       </Text>
-      <Text
-        variant="caption"
-        color={balanceColor}
-        style={{ fontWeight: '600', fontVariant: ['tabular-nums'] }}
-      >
-        {formatBalance(balanceValue)}
-      </Text>
+      <Amount value={balanceValue} variant="caption" color={balanceColor} weight="600" />
     </Pressable>
   );
 }

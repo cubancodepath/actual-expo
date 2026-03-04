@@ -24,6 +24,9 @@ const currencyFmtShort = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0,
 });
 
+/** Replacement text shown when privacy mode is active. */
+export const PRIVACY_MASK = '•••••';
+
 // ── Formatting ────────────────────────────────────────────────────────────────
 
 /**
@@ -55,6 +58,20 @@ export function formatAmountShort(cents: number): string {
   const formatted = currencyFmtShort.format(Math.abs(cents) / 100);
   if (cents < 0) return `-${formatted}`;
   return formatted;
+}
+
+// ── Privacy-aware formatting (for strings / accessibility labels) ─────────────
+
+/**
+ * Format cents respecting privacy mode. Reads store directly (no hook needed).
+ * Use this for accessibility labels and string interpolation where
+ * the Amount component can't be used.
+ */
+export function formatPrivacyAware(cents: number, showSign = false): string {
+  // Lazy require to avoid circular dependency at module load
+  const { usePrivacyStore } = require('../stores/privacyStore');
+  if (usePrivacyStore.getState().privacyMode) return PRIVACY_MASK;
+  return showSign ? formatAmount(cents) : formatBalance(cents);
 }
 
 // ── Parsing ───────────────────────────────────────────────────────────────────

@@ -7,7 +7,7 @@ import { usePickerStore } from '../../../src/stores/pickerStore';
 import { getCategoryBalancesForMonth } from '../../../src/budgets';
 import { useTheme, useThemedStyles } from '../../../src/presentation/providers/ThemeProvider';
 import { Text } from '../../../src/presentation/components/atoms/Text';
-import { formatBalance } from '../../../src/lib/format';
+import { Amount } from '../../../src/presentation/components/atoms/Amount';
 import { currentMonth } from '../../../src/lib/date';
 import type { Theme } from '../../../src/theme';
 
@@ -109,9 +109,7 @@ export default function CategoryPickerScreen() {
                         {c.name}
                       </Text>
                       {balance !== undefined && (
-                        <Text variant="caption" color={balanceColor} style={styles.balance}>
-                          {formatBalance(balance)}
-                        </Text>
+                        <Amount value={balance} variant="caption" color={balanceColor} style={styles.balance} />
                       )}
                       {isSelected && (
                         <Ionicons name="checkmark" size={20} color={colors.primary} />

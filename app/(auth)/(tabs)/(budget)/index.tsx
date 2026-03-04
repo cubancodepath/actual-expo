@@ -21,7 +21,9 @@ import { BudgetGroupHeader } from '../../../../src/presentation/components/budge
 import { BudgetCategoryRow } from '../../../../src/presentation/components/budget/BudgetCategoryRow';
 import { MoveMoneyModal, type MoveMoneyMode, type MoveMoneyCategory } from '../../../../src/presentation/components/budget/MoveMoneyModal';
 import { Text } from '../../../../src/presentation/components/atoms/Text';
-import { formatBalance } from '../../../../src/lib/format';
+import { Amount } from '../../../../src/presentation/components/atoms/Amount';
+import { formatPrivacyAware } from '../../../../src/lib/format';
+import { usePrivacyStore } from '../../../../src/stores/privacyStore';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -43,6 +45,7 @@ export default function BudgetScreen() {
   const router = useRouter();
   const { month, data, loading, load, setAmount, setCarryover, transfer, resetHold } = useBudgetStore();
   const { refreshing, sync } = useSyncStore();
+  const { privacyMode, toggle: togglePrivacy } = usePrivacyStore();
 
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [moveMoneyTarget, setMoveMoneyTarget] = useState<{
@@ -188,7 +191,7 @@ export default function BudgetScreen() {
                 <Pressable
                   onPress={() => router.push('/(auth)/budget/assign')}
                   style={({ pressed }) => pressed && { opacity: 0.8 }}
-                  accessibilityLabel={`${formatBalance(toBudget)} ${pillLabel}. Tap to assign budget.`}
+                  accessibilityLabel={`${formatPrivacyAware(toBudget)} ${pillLabel}. Tap to assign budget.`}
                   accessibilityRole="button"
                 >
                   <View
@@ -206,13 +209,7 @@ export default function BudgetScreen() {
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
                       <Ionicons name={pillIcon} size={22} color={pillColor} />
                       <View style={{ flex: 1 }}>
-                        <Text
-                          variant="headingLg"
-                          color={pillColor}
-                          style={{ fontWeight: '700', fontVariant: ['tabular-nums'] }}
-                        >
-                          {formatBalance(toBudget)}
-                        </Text>
+                        <Amount value={toBudget} variant="headingLg" color={pillColor} weight="700" />
                         <Text
                           variant="captionSm"
                           color={pillColor}
@@ -238,38 +235,21 @@ export default function BudgetScreen() {
                         <Text variant="captionSm" color={colors.textMuted} style={labelStyle}>
                           Income
                         </Text>
-                        <Text
-                          variant="body"
-                          color={colors.positive}
-                          style={{ fontWeight: '600', fontVariant: ['tabular-nums'], marginTop: 2 }}
-                        >
-                          {formatBalance(data.income)}
-                        </Text>
+                        <Amount value={data.income} variant="body" color={colors.positive} weight="600" style={{ marginTop: 2 }} />
                       </View>
                       <View style={{ width: 1, height: 24, backgroundColor: colors.divider }} />
                       <View style={{ flex: 1, alignItems: 'center' }}>
                         <Text variant="captionSm" color={colors.textMuted} style={labelStyle}>
                           Budgeted
                         </Text>
-                        <Text
-                          variant="body"
-                          style={{ fontWeight: '600', fontVariant: ['tabular-nums'], marginTop: 2 }}
-                        >
-                          {formatBalance(data.budgeted)}
-                        </Text>
+                        <Amount value={data.budgeted} variant="body" weight="600" style={{ marginTop: 2 }} />
                       </View>
                       <View style={{ width: 1, height: 24, backgroundColor: colors.divider }} />
                       <View style={{ flex: 1, alignItems: 'center' }}>
                         <Text variant="captionSm" color={colors.textMuted} style={labelStyle}>
                           Spent
                         </Text>
-                        <Text
-                          variant="body"
-                          color={colors.textSecondary}
-                          style={{ fontWeight: '600', fontVariant: ['tabular-nums'], marginTop: 2 }}
-                        >
-                          {formatBalance(data.spent)}
-                        </Text>
+                        <Amount value={data.spent} variant="body" color={colors.textSecondary} weight="600" style={{ marginTop: 2 }} />
                       </View>
                     </View>
 
@@ -301,13 +281,7 @@ export default function BudgetScreen() {
                           <Text variant="bodySm" color={colors.textSecondary} style={{ flex: 1 }}>
                             Held for Next Month
                           </Text>
-                          <Text
-                            variant="body"
-                            color={colors.primary}
-                            style={{ fontWeight: '600', fontVariant: ['tabular-nums'], marginRight: spacing.sm }}
-                          >
-                            {formatBalance(data.buffered)}
-                          </Text>
+                          <Amount value={data.buffered} variant="body" color={colors.primary} weight="600" style={{ marginRight: spacing.sm }} />
                           <Ionicons name="close-circle" size={18} color={colors.textMuted} />
                         </Pressable>
                       </>
@@ -339,6 +313,12 @@ export default function BudgetScreen() {
     </View>
     <Stack.Toolbar placement="right">
       <Stack.Toolbar.Menu icon="ellipsis">
+        <Stack.Toolbar.MenuAction
+          icon={privacyMode ? 'eye' : 'eye.slash'}
+          onPress={togglePrivacy}
+        >
+          {privacyMode ? 'Show Amounts' : 'Hide Amounts'}
+        </Stack.Toolbar.MenuAction>
         <Stack.Toolbar.MenuAction
           icon="gearshape"
           onPress={() => router.push('/(auth)/settings')}

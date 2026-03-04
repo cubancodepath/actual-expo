@@ -2,7 +2,8 @@ import { Pressable, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../providers/ThemeProvider';
 import { Text } from '../atoms/Text';
-import { formatBalance } from '../../../lib/format';
+import { Amount } from '../atoms/Amount';
+import { formatPrivacyAware } from '../../../lib/format';
 
 interface ReadyToAssignPillProps {
   amount: number; // cents
@@ -56,13 +57,7 @@ export function ReadyToAssignPill({ amount, onPress }: ReadyToAssignPillProps) {
     >
       <Ionicons name={icon} size={22} color={textColor} />
       <View style={{ flex: 1 }}>
-        <Text
-          variant="headingLg"
-          color={textColor}
-          style={{ fontWeight: '700', fontVariant: ['tabular-nums'] }}
-        >
-          {formatBalance(amount)}
-        </Text>
+        <Amount value={amount} variant="headingLg" color={textColor} weight="700" />
         <Text variant="captionSm" color={textColor} style={{ opacity: 0.7, marginTop: 1 }}>
           {label}
         </Text>
@@ -78,7 +73,7 @@ export function ReadyToAssignPill({ amount, onPress }: ReadyToAssignPillProps) {
       <Pressable
         onPress={onPress}
         style={({ pressed }) => pressed && { opacity: 0.8 }}
-        accessibilityLabel={`${formatBalance(amount)} ${label}. Tap to assign budget.`}
+        accessibilityLabel={`${formatPrivacyAware(amount)} ${label}. Tap to assign budget.`}
         accessibilityRole="button"
       >
         {content}

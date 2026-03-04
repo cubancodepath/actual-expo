@@ -1,7 +1,8 @@
 import { Pressable, View } from 'react-native';
 import { useTheme } from '../../providers/ThemeProvider';
 import { Text } from '../atoms/Text';
-import { formatBalance } from '../../../lib/format';
+import { Amount } from '../atoms/Amount';
+import { formatPrivacyAware } from '../../../lib/format';
 import type { BudgetCategory } from '../../../budgets/types';
 
 interface BudgetCategoryRowProps {
@@ -50,13 +51,7 @@ export function BudgetCategoryRow({
         <Text variant="body" style={{ flex: 1 }} numberOfLines={1}>
           {cat.name}
         </Text>
-        <Text
-          variant="body"
-          color={colors.positive}
-          style={{ fontWeight: '500', fontVariant: ['tabular-nums'] }}
-        >
-          {formatBalance(cat.spent)}
-        </Text>
+        <Amount value={cat.spent} variant="body" color={colors.positive} weight="500" />
       </View>
     );
   }
@@ -153,7 +148,7 @@ export function BudgetCategoryRow({
             e.stopPropagation?.();
             onBalancePress(cat);
           }}
-          accessibilityLabel={`${formatBalance(cat.balance)} available. Tap to move money.`}
+          accessibilityLabel={`${formatPrivacyAware(cat.balance)} available. Tap to move money.`}
           accessibilityRole="button"
           style={{
             alignSelf: 'stretch',
@@ -171,21 +166,16 @@ export function BudgetCategoryRow({
               alignItems: 'center',
             }}
           >
-            <Text
-              variant="captionSm"
-              color={pillText}
-              style={{ fontWeight: '700', fontVariant: ['tabular-nums'] }}
-            >
-              {formatBalance(cat.balance)}
-            </Text>
+            <Amount value={cat.balance} variant="captionSm" color={pillText} weight="700" />
             {cat.carryIn !== 0 && (
-              <Text
+              <Amount
+                value={cat.carryIn}
+                showSign
                 variant="captionSm"
                 color={cat.carryIn < 0 ? colors.negative : colors.positive}
-                style={{ fontWeight: '600', fontSize: 9, marginTop: -1 }}
-              >
-                {cat.carryIn > 0 ? '+' : ''}{formatBalance(cat.carryIn)}
-              </Text>
+                weight="600"
+                style={{ fontSize: 9, marginTop: -1 }}
+              />
             )}
           </View>
         </Pressable>
@@ -195,19 +185,13 @@ export function BudgetCategoryRow({
       <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
         <Text variant="bodySm" color={colors.textMuted}>
           {'Budgeted '}
-          <Text variant="bodySm" color={cat.budgeted !== 0 ? colors.textSecondary : colors.textMuted}>
-            {formatBalance(cat.budgeted)}
-          </Text>
+          <Amount value={cat.budgeted} variant="bodySm" color={cat.budgeted !== 0 ? colors.textSecondary : colors.textMuted} />
           {'  ·  Spent '}
-          <Text variant="bodySm" color={cat.spent !== 0 ? colors.textSecondary : colors.textMuted}>
-            {cat.spent !== 0 ? formatBalance(cat.spent) : '—'}
-          </Text>
+          <Amount value={cat.spent} variant="bodySm" color={cat.spent !== 0 ? colors.textSecondary : colors.textMuted} fallback="—" />
           {hasGoal && (
             <>
               {'  ·  Goal '}
-              <Text variant="bodySm" color={goalColor}>
-                {formatBalance(cat.goal!)}
-              </Text>
+              <Amount value={cat.goal!} variant="bodySm" color={goalColor} />
             </>
           )}
         </Text>

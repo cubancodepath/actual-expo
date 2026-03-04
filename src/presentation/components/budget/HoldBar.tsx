@@ -2,7 +2,7 @@ import { Pressable, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../providers/ThemeProvider';
 import { Text } from '../atoms/Text';
-import { formatBalance } from '../../../lib/format';
+import { Amount } from '../atoms/Amount';
 
 interface HoldBarProps {
   buffered: number;
@@ -36,9 +36,7 @@ export function HoldBar({ buffered, toBudget, onHold, onReset }: HoldBarProps) {
             Held for Next Month
           </Text>
           {buffered > 0 && (
-            <Text variant="body" color={colors.primary} style={{ fontWeight: '700', marginTop: 1 }}>
-              {formatBalance(buffered)}
-            </Text>
+            <Amount value={buffered} variant="body" color={colors.primary} weight="700" style={{ marginTop: 1 }} />
           )}
         </View>
       </View>

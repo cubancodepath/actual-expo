@@ -1,7 +1,7 @@
 import { View } from 'react-native';
 import { useTheme } from '../../providers/ThemeProvider';
 import { Text } from '../atoms/Text';
-import { formatBalance } from '../../../lib/format';
+import { Amount } from '../atoms/Amount';
 
 interface BudgetSummaryBarProps {
   income: number;
@@ -32,9 +32,7 @@ export function BudgetSummaryBar({ income, budgeted, spent }: BudgetSummaryBarPr
         >
           Income
         </Text>
-        <Text variant="bodyLg" color={colors.positive} style={{ fontWeight: '700', fontVariant: ['tabular-nums'] }}>
-          {formatBalance(income)}
-        </Text>
+        <Amount value={income} variant="bodyLg" color={colors.positive} weight="700" />
       </View>
       <View style={{ width: 1, height: 28, backgroundColor: colors.divider }} />
       <View style={{ flex: 1, alignItems: 'center' }}>
@@ -45,9 +43,7 @@ export function BudgetSummaryBar({ income, budgeted, spent }: BudgetSummaryBarPr
         >
           Budgeted
         </Text>
-        <Text variant="bodyLg" style={{ fontWeight: '700', fontVariant: ['tabular-nums'] }}>
-          {formatBalance(budgeted)}
-        </Text>
+        <Amount value={budgeted} variant="bodyLg" colored={false} weight="700" />
       </View>
       <View style={{ width: 1, height: 28, backgroundColor: colors.divider }} />
       <View style={{ flex: 1, alignItems: 'center' }}>
@@ -58,9 +54,7 @@ export function BudgetSummaryBar({ income, budgeted, spent }: BudgetSummaryBarPr
         >
           Spent
         </Text>
-        <Text variant="bodyLg" color={colors.textSecondary} style={{ fontWeight: '700', fontVariant: ['tabular-nums'] }}>
-          {formatBalance(spent)}
-        </Text>
+        <Amount value={spent} variant="bodyLg" color={colors.textSecondary} weight="700" />
       </View>
     </View>
   );

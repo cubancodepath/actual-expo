@@ -3,7 +3,7 @@ import { Modal, Pressable, ScrollView, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../providers/ThemeProvider';
 import { Text } from '../atoms/Text';
-import { formatBalance } from '../../../lib/format';
+import { Amount } from '../atoms/Amount';
 
 export type MoveMoneyMode = 'transfer' | 'cover';
 
@@ -149,13 +149,7 @@ export function MoveMoneyModal({
                   <Text variant="bodyLg" style={{ marginTop: 1 }}>{cat.name}</Text>
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <Text
-                    variant="body"
-                    color={cat.balance < 0 ? colors.negative : colors.positive}
-                    style={{ fontWeight: '600' }}
-                  >
-                    {formatBalance(cat.balance)}
-                  </Text>
+                  <Amount value={cat.balance} variant="body" weight="600" />
                   {selected && <Ionicons name="checkmark" size={18} color={colors.positive} />}
                 </View>
               </Pressable>

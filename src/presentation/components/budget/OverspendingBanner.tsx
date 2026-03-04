@@ -1,4 +1,4 @@
-import { formatBalance } from '../../../lib/format';
+import { formatPrivacyAware } from '../../../lib/format';
 import { Banner } from '../molecules/Banner';
 
 interface OverspendingBannerProps {
@@ -11,7 +11,7 @@ export function OverspendingBanner({ count, total }: OverspendingBannerProps) {
   return (
     <Banner
       variant="error"
-      message={`${count} overspent ${label} — ${formatBalance(total)} over budget`}
+      message={`${count} overspent ${label} — ${formatPrivacyAware(total)} over budget`}
     />
   );
 }

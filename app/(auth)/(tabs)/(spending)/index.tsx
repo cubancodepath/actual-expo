@@ -17,6 +17,7 @@ import {
 } from '../../../../src/transactions';
 import { useAccountsStore } from '../../../../src/stores/accountsStore';
 import { useSpendingStore } from '../../../../src/stores/spendingStore';
+import { usePrivacyStore } from '../../../../src/stores/privacyStore';
 import { useTheme, useThemedStyles } from '../../../../src/presentation/providers/ThemeProvider';
 import { Divider, EmptyState, Text } from '../../../../src/presentation/components';
 import { TransactionRow } from '../../../../src/presentation/components/account/TransactionRow';
@@ -92,6 +93,7 @@ export default function SpendingScreen() {
   const styles = useThemedStyles(createStyles);
   const { load: loadAccounts } = useAccountsStore();
   const { hideReconciled, toggleHideReconciled } = useSpendingStore();
+  const { privacyMode, toggle: togglePrivacy } = usePrivacyStore();
 
   const [transactions, setTransactions] = useState<TransactionDisplay[]>([]);
   const [summary, setSummary] = useState<SpendingSummary | null>(null);
@@ -276,7 +278,13 @@ export default function SpendingScreen() {
       <Stack.Toolbar placement="right">
         <Stack.Toolbar.Menu icon="ellipsis">
           <Stack.Toolbar.MenuAction
-            icon={hideReconciled ? 'eye' : 'eye.slash'}
+            icon={privacyMode ? 'eye' : 'eye.slash'}
+            onPress={togglePrivacy}
+          >
+            {privacyMode ? 'Show Amounts' : 'Hide Amounts'}
+          </Stack.Toolbar.MenuAction>
+          <Stack.Toolbar.MenuAction
+            icon={hideReconciled ? 'checkmark.circle' : 'checkmark.circle.badge.xmark'}
             onPress={toggleHideReconciled}
           >
             {hideReconciled ? 'Show Reconciled' : 'Hide Reconciled'}

@@ -15,6 +15,7 @@ import { usePrefsStore } from "../../src/stores/prefsStore";
 import { useSyncStore } from "../../src/stores/syncStore";
 import { usePreferencesStore } from "../../src/stores/preferencesStore";
 import { resetAllStores } from "../../src/stores/resetStores";
+import { usePrivacyStore } from "../../src/stores/privacyStore";
 import { clearSyncTimeout } from "../../src/sync";
 import {
   DATE_FORMAT_OPTIONS,
@@ -112,6 +113,7 @@ export default function SettingsScreen() {
   const { status, error, lastSync, sync } = useSyncStore();
   const { dateFormat, numberFormat, firstDayOfWeekIdx, hideFraction, set } =
     usePreferencesStore();
+  const { privacyMode, toggle: togglePrivacy } = usePrivacyStore();
   const [loggingOut, setLoggingOut] = useState(false);
 
   const lastSyncText = lastSync
@@ -254,6 +256,22 @@ export default function SettingsScreen() {
           selection={firstDayOfWeekIdx}
           options={DAY_OF_WEEK_OPTIONS}
           onSelectionChange={(v) => set('firstDayOfWeekIdx', v)}
+        />
+      </Card>
+
+      {/* Privacy */}
+      <SectionHeader title="Privacy" style={{ marginTop: spacing.xl }} />
+      <Card>
+        <ListItem
+          title="Hide Amounts"
+          subtitle="Mask all monetary values for privacy"
+          right={
+            <Switch
+              value={privacyMode}
+              onValueChange={togglePrivacy}
+              trackColor={{ true: colors.primary }}
+            />
+          }
         />
       </Card>
 

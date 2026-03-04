@@ -2,7 +2,7 @@ import { View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, useThemedStyles } from '../../providers/ThemeProvider';
 import { Text } from '../atoms/Text';
-import { formatBalance } from '../../../lib/format';
+import { Amount } from '../atoms/Amount';
 import type { Theme } from '../../../theme';
 
 interface CategoryBreakdownRowProps {
@@ -43,13 +43,7 @@ export function CategoryBreakdownRow({
         </View>
       </View>
 
-      <Text
-        variant="bodySm"
-        color={colors.negative}
-        style={styles.amount}
-      >
-        {formatBalance(total)}
-      </Text>
+      <Amount value={total} variant="bodySm" color={colors.negative} weight="600" />
     </View>
   );
 }
@@ -86,9 +80,5 @@ const createStyles = (theme: Theme) => ({
   barFill: {
     height: 3,
     borderRadius: theme.borderRadius.full,
-  },
-  amount: {
-    fontWeight: '600' as const,
-    fontVariant: ['tabular-nums'] as ('tabular-nums')[],
   },
 });

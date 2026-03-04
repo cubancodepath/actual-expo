@@ -4,7 +4,6 @@ import { Card } from '../atoms/Card';
 import { Text } from '../atoms/Text';
 import { Amount } from '../atoms/Amount';
 import { Divider } from '../atoms/Divider';
-import { formatBalance } from '../../../lib/format';
 import type { Theme } from '../../../theme';
 
 interface BalanceSummaryProps {
@@ -38,13 +37,7 @@ export function BalanceSummary({ balance, clearedBalance }: BalanceSummaryProps)
               <Text variant="captionSm" color={colors.textMuted} style={styles.label}>
                 Cleared
               </Text>
-              <Text
-                variant="bodyLg"
-                color={colors.positive}
-                style={styles.summaryValue}
-              >
-                {formatBalance(clearedBalance)}
-              </Text>
+              <Amount value={clearedBalance} variant="bodyLg" color={colors.positive} weight="700" />
             </View>
 
             <View style={[styles.vertDivider, { backgroundColor: colors.divider, width: bw.thin }]} />
@@ -53,13 +46,7 @@ export function BalanceSummary({ balance, clearedBalance }: BalanceSummaryProps)
               <Text variant="captionSm" color={colors.textMuted} style={styles.label}>
                 Uncleared
               </Text>
-              <Text
-                variant="bodyLg"
-                color={colors.textSecondary}
-                style={styles.summaryValue}
-              >
-                {formatBalance(unclearedBalance)}
-              </Text>
+              <Amount value={unclearedBalance} variant="bodyLg" color={colors.textSecondary} weight="700" />
             </View>
           </View>
         </>

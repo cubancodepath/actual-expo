@@ -26,6 +26,7 @@ import { Button } from '../../../../src/presentation/components/atoms/Button';
 import { EmptyState } from '../../../../src/presentation/components/molecules/EmptyState';
 import { AddTransactionButton } from '../../../../src/presentation/components/molecules/AddTransactionButton';
 import type { Theme } from '../../../../src/theme';
+import { usePrivacyStore } from '../../../../src/stores/privacyStore';
 import type { Account } from '../../../../src/accounts/types';
 
 // ---------------------------------------------------------------------------
@@ -135,6 +136,7 @@ export default function AccountsScreen() {
   const styles = useThemedStyles(createStyles);
   const { accounts, loading, load } = useAccountsStore();
   const { refreshing, sync } = useSyncStore();
+  const { privacyMode, toggle: togglePrivacy } = usePrivacyStore();
 
   useEffect(() => { load(); }, []);
 
@@ -204,6 +206,12 @@ export default function AccountsScreen() {
           onPress={() => router.push('/(auth)/account/new')}
         />
         <Stack.Toolbar.Menu icon="ellipsis">
+          <Stack.Toolbar.MenuAction
+            icon={privacyMode ? 'eye' : 'eye.slash'}
+            onPress={togglePrivacy}
+          >
+            {privacyMode ? 'Show Amounts' : 'Hide Amounts'}
+          </Stack.Toolbar.MenuAction>
           <Stack.Toolbar.MenuAction
             icon="gearshape"
             onPress={() => router.push('/(auth)/settings')}

@@ -2,8 +2,9 @@ import { View } from 'react-native';
 import { useTheme, useThemedStyles } from '../../providers/ThemeProvider';
 import { Card } from '../atoms/Card';
 import { Text } from '../atoms/Text';
+import { Amount } from '../atoms/Amount';
 import { Divider } from '../atoms/Divider';
-import { formatBalance } from '../../../lib/format';
+import { formatPrivacyAware } from '../../../lib/format';
 import type { Theme } from '../../../theme';
 
 interface SpendingOverviewCardProps {
@@ -33,13 +34,13 @@ export function SpendingOverviewCard({
         <Text variant="captionSm" color={colors.textMuted} style={styles.label}>
           Spent This Month
         </Text>
-        <Text
+        <Amount
+          value={totalSpent}
           variant="displaySm"
           color={colors.negative}
-          style={[styles.heroAmount, { marginTop: spacing.xs }]}
-        >
-          {formatBalance(totalSpent)}
-        </Text>
+          weight="700"
+          style={{ marginTop: spacing.xs }}
+        />
 
         {/* Progress bar */}
         <View style={styles.progressTrack}>
@@ -62,8 +63,8 @@ export function SpendingOverviewCard({
             style={{ marginTop: spacing.xs }}
           >
             {isOverspent
-              ? `${formatBalance(spentAbs - totalIncome)} over income`
-              : `${formatBalance(totalIncome - spentAbs)} remaining`}
+              ? `${formatPrivacyAware(spentAbs - totalIncome)} over income`
+              : `${formatPrivacyAware(totalIncome - spentAbs)} remaining`}
           </Text>
         )}
       </View>
@@ -76,13 +77,7 @@ export function SpendingOverviewCard({
           <Text variant="captionSm" color={colors.textMuted} style={styles.label}>
             Income
           </Text>
-          <Text
-            variant="bodyLg"
-            color={colors.positive}
-            style={styles.summaryValue}
-          >
-            {formatBalance(totalIncome)}
-          </Text>
+          <Amount value={totalIncome} variant="bodyLg" color={colors.positive} weight="700" style={{ marginTop: 2 }} />
         </View>
 
         <View style={[styles.vertDivider, { backgroundColor: colors.divider, width: bw.thin }]} />
@@ -91,13 +86,7 @@ export function SpendingOverviewCard({
           <Text variant="captionSm" color={colors.textMuted} style={styles.label}>
             Spent
           </Text>
-          <Text
-            variant="bodyLg"
-            color={colors.negative}
-            style={styles.summaryValue}
-          >
-            {formatBalance(Math.abs(totalSpent))}
-          </Text>
+          <Amount value={Math.abs(totalSpent)} variant="bodyLg" color={colors.negative} weight="700" style={{ marginTop: 2 }} />
         </View>
 
         <View style={[styles.vertDivider, { backgroundColor: colors.divider, width: bw.thin }]} />
@@ -134,10 +123,6 @@ const createStyles = (theme: Theme) => ({
   label: {
     textTransform: 'uppercase' as const,
     letterSpacing: 0.8,
-    fontWeight: '700' as const,
-  },
-  heroAmount: {
-    fontVariant: ['tabular-nums'] as ('tabular-nums')[],
     fontWeight: '700' as const,
   },
   progressTrack: {

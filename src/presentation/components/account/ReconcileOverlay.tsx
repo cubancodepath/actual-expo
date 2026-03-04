@@ -13,7 +13,7 @@ import {
 } from 'expo-glass-effect';
 import { useTheme, useThemedStyles } from '../../providers/ThemeProvider';
 import { Text, Button, Amount } from '..';
-import { formatAmount, parseCents } from '../../../lib/format';
+import { parseCents, formatPrivacyAware } from '../../../lib/format';
 import type { Theme } from '../../../theme';
 
 interface ReconcileOverlayProps {
@@ -110,7 +110,7 @@ export function ReconcileOverlay({
 
           {hasDiff && (
             <Text variant="captionSm" color={colors.textMuted} style={{ marginTop: spacing.xs, textAlign: 'right' }}>
-              Diff: {formatAmount(diff)}
+              Diff: {formatPrivacyAware(diff, true)}
             </Text>
           )}
 

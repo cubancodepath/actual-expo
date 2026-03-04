@@ -11,7 +11,7 @@ import { IconButton } from '../../../src/presentation/components/atoms/IconButto
 import { Button } from '../../../src/presentation/components/atoms/Button';
 import { CompactCurrencyInput, type CompactCurrencyInputRef } from '../../../src/presentation/components/atoms/CompactCurrencyInput';
 import { HoldModal } from '../../../src/presentation/components/budget/HoldModal';
-import { formatBalance } from '../../../src/lib/format';
+import { Amount } from '../../../src/presentation/components/atoms/Amount';
 
 type CategorySection = {
   key: string;
@@ -206,13 +206,7 @@ export default function AssignBudgetScreen() {
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
                   <Ionicons name={remainingIcon} size={22} color={remainingColor} />
                   <View style={{ flex: 1 }}>
-                    <Text
-                      variant="headingLg"
-                      color={remainingColor}
-                      style={{ fontWeight: '700', fontVariant: ['tabular-nums'] }}
-                    >
-                      {formatBalance(toBudget)}
-                    </Text>
+                    <Amount value={toBudget} variant="headingLg" color={remainingColor} weight="700" />
                     <Text
                       variant="captionSm"
                       color={remainingColor}
@@ -241,13 +235,7 @@ export default function AssignBudgetScreen() {
                   <Text variant="body" color={colors.textSecondary}>
                     Remaining
                   </Text>
-                  <Text
-                    variant="headingSm"
-                    color={remainingColor}
-                    style={{ fontWeight: '600', fontVariant: ['tabular-nums'] }}
-                  >
-                    {formatBalance(remaining)}
-                  </Text>
+                  <Amount value={remaining} variant="headingSm" color={remainingColor} weight="600" />
                 </View>
 
                 {/* Held for Next Month */}
@@ -277,13 +265,7 @@ export default function AssignBudgetScreen() {
                       <Text variant="bodySm" color={colors.textSecondary} style={{ flex: 1 }}>
                         Held for Next Month
                       </Text>
-                      <Text
-                        variant="body"
-                        color={colors.primary}
-                        style={{ fontWeight: '600', fontVariant: ['tabular-nums'], marginRight: spacing.sm }}
-                      >
-                        {formatBalance(buffered)}
-                      </Text>
+                      <Amount value={buffered} variant="body" color={colors.primary} weight="600" style={{ marginRight: spacing.sm }} />
                       <Ionicons name="close-circle" size={18} color={colors.textMuted} />
                     </Pressable>
                   </>

@@ -10,6 +10,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useCategoriesStore } from '../../src/stores/categoriesStore';
 import type { Category, CategoryGroup } from '../../src/categories/types';
 
@@ -259,6 +260,7 @@ type PendingDelete =
   | { kind: 'group'; id: string; name: string };
 
 export default function CategoriesScreen() {
+  const router = useRouter();
   const { groups, categories, load, createGroup, createCategory, updateCategory, deleteCategory, deleteCategoryGroup } =
     useCategoriesStore();
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);

@@ -29,6 +29,7 @@ type PrefsState = {
   groupId: string;
   encryptKeyId?: string;
   lastSyncedTimestamp?: string;
+  budgetName?: string;
 
   // Token — in-memory only; persisted in iOS Keychain / Android Keystore
   token: string;
@@ -114,6 +115,7 @@ export const usePrefsStore = create<PrefsState>()(
         groupId: state.groupId,
         encryptKeyId: state.encryptKeyId,
         lastSyncedTimestamp: state.lastSyncedTimestamp,
+        budgetName: state.budgetName,
       }),
     },
   ),

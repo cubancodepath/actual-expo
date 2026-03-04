@@ -145,6 +145,7 @@ const ALLOWED_TABLES = new Set([
   'payee_mapping',
   'zero_budgets',
   'zero_budget_months',
+  'preferences',
 ]);
 
 export async function applyMessages(messages: SyncMessage[]): Promise<void> {
@@ -155,11 +156,28 @@ export async function applyMessages(messages: SyncMessage[]): Promise<void> {
     a.timestamp.toString() < b.timestamp.toString() ? -1 : 1,
   );
 
+  const prefsToSet: Record<string, string | number | null> = {};
+
   await transaction(async () => {
     for (const msg of sorted) {
       const { dataset, row, column } = msg;
       const serialized = serializeValue(msg.value as string | number | null);
       const value = deserializeValue(serialized);
+
+      // 'prefs' dataset = budget metadata (e.g. budgetName).
+      // Not stored in DB — collected and applied to prefsStore after the loop.
+      if (dataset === 'prefs') {
+        prefsToSet[row] = value;
+        // Still record in CRDT log for merkle consistency
+        await run(
+          'INSERT OR IGNORE INTO messages_crdt (timestamp, dataset, row, column, value) VALUES (?, ?, ?, ?, ?)',
+          [msg.timestamp.toString(), dataset, row, column, serialized],
+        );
+        const clock = getClock();
+        const newMerkle = merkle.insert(clock.merkle, msg.timestamp);
+        getClock().merkle = merkle.prune(newMerkle);
+        continue;
+      }
 
       if (!ALLOWED_TABLES.has(dataset)) {
         console.warn(`applyMessages: ignoring unknown dataset "${dataset}"`);
@@ -195,6 +213,14 @@ export async function applyMessages(messages: SyncMessage[]): Promise<void> {
   });
 
   await saveClock();
+
+  // Apply synced metadata prefs (e.g. budgetName) to the prefs store
+  if (Object.keys(prefsToSet).length > 0) {
+    const { usePrefsStore } = await import('../stores/prefsStore');
+    if (typeof prefsToSet.budgetName === 'string') {
+      usePrefsStore.getState().setPrefs({ budgetName: prefsToSet.budgetName });
+    }
+  }
 
   // Notify all Zustand stores
   await refreshAllStores();
@@ -296,11 +322,13 @@ async function refreshAllStores(): Promise<void> {
     { useTransactionsStore },
     { useCategoriesStore },
     { useBudgetStore },
+    { usePreferencesStore },
   ] = await Promise.all([
     import('../stores/accountsStore'),
     import('../stores/transactionsStore'),
     import('../stores/categoriesStore'),
     import('../stores/budgetStore'),
+    import('../stores/preferencesStore'),
   ]);
 
   // Use allSettled so one failure doesn't block the others
@@ -311,6 +339,7 @@ async function refreshAllStores(): Promise<void> {
       .load(useTransactionsStore.getState().accountId ?? undefined),
     useCategoriesStore.getState().load(),
     useBudgetStore.getState().load(),
+    usePreferencesStore.getState().load(),
   ]);
 
   for (const result of results) {

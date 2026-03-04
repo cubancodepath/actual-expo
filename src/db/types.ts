@@ -71,7 +71,7 @@ export type PayeeMappingRow = {
 };
 
 export type ZeroBudgetMonthRow = {
-  id: string;      // YYYYMM as string
+  id: string;      // YYYY-MM format (e.g. '2026-03')
   buffered: number; // cents held for next month
 };
 

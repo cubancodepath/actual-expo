@@ -105,10 +105,6 @@ Referencia para cuando algo no cuadre entre las dos apps. Documenta QUÉ hacemos
 
 ---
 
-## 8. Formato de IDs en zero_budget_months
+## 8. ~~Formato de IDs en zero_budget_months~~ (FIXED)
 
-| | Original | Expo |
-|---|---|---|
-| **Formato** | `'YYYY-MM'` (e.g., `'2026-03'`) | Convierte a int: `String(monthInt)` = `'202603'` |
-
-**Gotcha**: La tabla `zero_budget_months` usa formato `'YYYY-MM'` como ID. Si alguna query usa `monthInt` como string, no encontrará match. Actualmente el buffered para el mes actual es 0 en los datos de prueba, así que no causa error visible, pero podría fallar si el usuario configura "Hold for Next Month".
+Ahora ambos usan `'YYYY-MM'` (e.g., `'2026-03'`). Se corrigió pasando `month` directamente en vez de `String(monthToInt(month))`.

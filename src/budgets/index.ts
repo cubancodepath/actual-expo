@@ -263,7 +263,7 @@ export async function getBudgetMonth(month: string): Promise<BudgetMonth> {
   // FIX #4: Mirrors loot-core's buffered-selected = manual ≠ 0 ? manual : buffered-auto
   const bufferedRow = await first<{ buffered: number }>(
     'SELECT buffered FROM zero_budget_months WHERE id = ?',
-    [String(monthInt)],
+    [month],
   );
   const manualBuffered = bufferedRow?.buffered ?? 0;
 
@@ -413,10 +413,7 @@ export async function holdForNextMonth(
   amount: number,
   currentToBudget: number,
 ): Promise<number> {
-  const monthInt = monthToInt(month);
-  const monthId  = String(monthInt);
-
-  const row      = await first<{ buffered: number }>('SELECT buffered FROM zero_budget_months WHERE id = ?', [monthId]);
+  const row      = await first<{ buffered: number }>('SELECT buffered FROM zero_budget_months WHERE id = ?', [month]);
   const existing = row?.buffered ?? 0;
 
   if (currentToBudget <= 0 && existing === 0) return 0;
@@ -427,7 +424,7 @@ export async function holdForNextMonth(
   await sendMessages([{
     timestamp: Timestamp.send()!,
     dataset:   'zero_budget_months',
-    row:       monthId,
+    row:       month,
     column:    'buffered',
     value:     newBuffered,
   }]);
@@ -436,11 +433,10 @@ export async function holdForNextMonth(
 }
 
 export async function resetHold(month: string): Promise<void> {
-  const monthInt = monthToInt(month);
   await sendMessages([{
     timestamp: Timestamp.send()!,
     dataset:   'zero_budget_months',
-    row:       String(monthInt),
+    row:       month,
     column:    'buffered',
     value:     0,
   }]);

@@ -1,12 +1,10 @@
-import { Pressable, View } from 'react-native';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
+import { View } from 'react-native';
 import { useTheme, useThemedStyles } from '../../providers/ThemeProvider';
-import { Text, Amount } from '..';
+import { Card } from '../atoms/Card';
+import { Text } from '../atoms/Text';
+import { Amount } from '../atoms/Amount';
+import { Divider } from '../atoms/Divider';
+import { formatBalance } from '../../../lib/format';
 import type { Theme } from '../../../theme';
 
 interface BalanceSummaryProps {
@@ -15,106 +13,98 @@ interface BalanceSummaryProps {
 }
 
 export function BalanceSummary({ balance, clearedBalance }: BalanceSummaryProps) {
-  const { colors, spacing } = useTheme();
+  const { colors, borderWidth: bw } = useTheme();
   const styles = useThemedStyles(createStyles);
+
   const unclearedBalance = balance - clearedBalance;
   const hasBreakdown = balance !== clearedBalance;
 
-  // Single progress value: 0 = centered, 1 = expanded
-  const progress = useSharedValue(0);
-  // Measure container width to know how far to shift
-  const containerWidth = useSharedValue(0);
-
-  function toggle() {
-    if (!hasBreakdown) return;
-    progress.value = withTiming(progress.value === 0 ? 1 : 0, { duration: 250 });
-  }
-
-  // Balance slides left: at progress=0 translateX=0 (centered), at progress=1 shifts left
-  const balanceBlockStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: progress.value * -(containerWidth.value * 0.22) }],
-  }));
-
-  // Breakdown fades in on the right
-  const breakdownStyle = useAnimatedStyle(() => ({
-    opacity: progress.value,
-  }));
-
-  const chevronStyle = useAnimatedStyle(() => ({
-    opacity: 1 - progress.value,
-  }));
-
   return (
-    <View
-      style={styles.container}
-      onLayout={(e) => { containerWidth.value = e.nativeEvent.layout.width; }}
-    >
-      <Pressable onPress={toggle} style={styles.pressable}>
-        {/* Balance — slides from center to left */}
-        <Animated.View style={balanceBlockStyle}>
-          <View style={styles.balanceInner}>
-            <Amount value={balance} variant="headingLg" colored />
-            {hasBreakdown && (
-              <Animated.View style={chevronStyle}>
-                <Ionicons
-                  name="chevron-expand-outline"
-                  size={14}
-                  color={colors.textMuted}
-                  style={{ marginLeft: spacing.xs }}
-                />
-              </Animated.View>
-            )}
-          </View>
-          <Text variant="caption" color={colors.textMuted} align="center">
-            Current Balance
-          </Text>
-        </Animated.View>
+    <Card style={styles.card}>
+      {/* Hero balance */}
+      <View style={styles.heroZone}>
+        <Amount value={balance} variant="headingLg" colored />
+        <Text variant="caption" color={colors.textMuted} style={styles.heroLabel}>
+          Current Balance
+        </Text>
+      </View>
 
-        {/* Breakdown — positioned right, fades in */}
-        {hasBreakdown && (
-          <Animated.View style={[styles.breakdown, breakdownStyle]}>
-            <View style={styles.breakdownLine}>
-              <Text variant="caption" color={colors.textSecondary} style={styles.breakdownLabel}>Cleared</Text>
-              <Amount value={clearedBalance} variant="bodySm" />
+      {/* Cleared / Uncleared breakdown */}
+      {hasBreakdown && (
+        <>
+          <Divider />
+          <View style={styles.summaryRow}>
+            <View style={styles.summaryCol}>
+              <Text variant="captionSm" color={colors.textMuted} style={styles.label}>
+                Cleared
+              </Text>
+              <Text
+                variant="bodyLg"
+                color={colors.positive}
+                style={styles.summaryValue}
+              >
+                {formatBalance(clearedBalance)}
+              </Text>
             </View>
-            <View style={styles.breakdownLine}>
-              <Text variant="caption" color={colors.textSecondary} style={styles.breakdownLabel}>Uncleared</Text>
-              <Amount value={unclearedBalance} variant="bodySm" />
+
+            <View style={[styles.vertDivider, { backgroundColor: colors.divider, width: bw.thin }]} />
+
+            <View style={styles.summaryCol}>
+              <Text variant="captionSm" color={colors.textMuted} style={styles.label}>
+                Uncleared
+              </Text>
+              <Text
+                variant="bodyLg"
+                color={colors.textSecondary}
+                style={styles.summaryValue}
+              >
+                {formatBalance(unclearedBalance)}
+              </Text>
             </View>
-          </Animated.View>
-        )}
-      </Pressable>
-    </View>
+          </View>
+        </>
+      )}
+    </Card>
   );
 }
 
 const createStyles = (theme: Theme) => ({
-  container: {
-    paddingVertical: theme.spacing.lg,
+  card: {
+    marginHorizontal: theme.spacing.lg,
+    marginTop: theme.spacing.lg,
+    marginBottom: theme.spacing.sm,
+    padding: 0,
+    overflow: 'hidden' as const,
   },
-  pressable: {
-    flexDirection: 'row' as const,
+  heroZone: {
     alignItems: 'center' as const,
-    justifyContent: 'center' as const,
+    paddingVertical: theme.spacing.lg,
     paddingHorizontal: theme.spacing.lg,
   },
-  balanceInner: {
+  heroLabel: {
+    marginTop: theme.spacing.xxs,
+  },
+  label: {
+    textTransform: 'uppercase' as const,
+    letterSpacing: 0.8,
+    fontWeight: '700' as const,
+  },
+  summaryRow: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    justifyContent: 'center' as const,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
   },
-  breakdown: {
-    position: 'absolute' as const,
-    right: theme.spacing.lg,
-    alignItems: 'flex-end' as const,
-    gap: theme.spacing.xxs,
-  },
-  breakdownLabel: {
-    width: 65,
-    marginRight: theme.spacing.xs,
-  },
-  breakdownLine: {
-    flexDirection: 'row' as const,
+  summaryCol: {
+    flex: 1,
     alignItems: 'center' as const,
+  },
+  summaryValue: {
+    fontWeight: '700' as const,
+    fontVariant: ['tabular-nums'] as ('tabular-nums')[],
+    marginTop: 2,
+  },
+  vertDivider: {
+    height: 28,
   },
 });

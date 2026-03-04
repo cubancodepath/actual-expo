@@ -14,17 +14,20 @@ import { useTheme } from '../../providers/ThemeProvider';
 const DELETE_BUTTON_WIDTH = 80;
 const SWIPE_THRESHOLD = DELETE_BUTTON_WIDTH * 0.4;
 const FULL_DELETE_THRESHOLD = 200;
+const CIRCLE_SIZE = 44;
 
 const SPRING_CONFIG = { damping: 20, stiffness: 200 };
 
 interface SwipeableRowProps {
   children: React.ReactNode;
   onDelete: () => void;
+  isFirst?: boolean;
+  isLast?: boolean;
   style?: ViewStyle;
 }
 
-export function SwipeableRow({ children, onDelete, style }: SwipeableRowProps) {
-  const { colors } = useTheme();
+export function SwipeableRow({ children, onDelete, isFirst, isLast, style }: SwipeableRowProps) {
+  const { colors, borderRadius: br } = useTheme();
   const translateX = useSharedValue(0);
   const contextX = useSharedValue(0);
 
@@ -58,19 +61,16 @@ export function SwipeableRow({ children, onDelete, style }: SwipeableRowProps) {
     })
     .onUpdate((e) => {
       const next = contextX.value + e.translationX;
-      // Clamp: allow slight overswipe with rubber-band, no right overswipe
       translateX.value = Math.min(0, Math.max(-FULL_DELETE_THRESHOLD, next));
     })
     .onEnd((e) => {
       const current = translateX.value;
 
-      // Full swipe → delete
       if (current < -FULL_DELETE_THRESHOLD * 0.7 || e.velocityX < -800) {
         triggerDelete();
         return;
       }
 
-      // Past threshold → snap open
       if (current < -SWIPE_THRESHOLD) {
         snapToOpen();
       } else {
@@ -82,43 +82,65 @@ export function SwipeableRow({ children, onDelete, style }: SwipeableRowProps) {
     transform: [{ translateX: translateX.value }],
   }));
 
-  const deleteButtonStyle = useAnimatedStyle(() => {
+  const deleteAreaStyle = useAnimatedStyle(() => {
     const width = interpolate(
       -translateX.value,
       [0, DELETE_BUTTON_WIDTH, FULL_DELETE_THRESHOLD],
       [0, DELETE_BUTTON_WIDTH, FULL_DELETE_THRESHOLD],
     );
+    return { width };
+  });
+
+  // Circle stretches into a pill on full swipe
+  const pillStyle = useAnimatedStyle(() => {
+    const swipeAmount = -translateX.value;
+    const pillWidth = interpolate(
+      swipeAmount,
+      [0, DELETE_BUTTON_WIDTH, FULL_DELETE_THRESHOLD],
+      [CIRCLE_SIZE, CIRCLE_SIZE, FULL_DELETE_THRESHOLD - 16],
+      'clamp',
+    );
     const scale = interpolate(
-      -translateX.value,
+      swipeAmount,
       [0, DELETE_BUTTON_WIDTH * 0.5, DELETE_BUTTON_WIDTH],
-      [0.5, 0.8, 1],
+      [0.3, 0.7, 1],
+      'clamp',
+    );
+    const opacity = interpolate(
+      swipeAmount,
+      [0, DELETE_BUTTON_WIDTH * 0.3],
+      [0, 1],
       'clamp',
     );
     return {
-      width,
+      width: pillWidth,
       transform: [{ scale }],
+      opacity,
     };
   });
 
+  const containerRadius = {
+    borderTopLeftRadius: isFirst ? br.lg : 0,
+    borderTopRightRadius: isFirst ? br.lg : 0,
+    borderBottomLeftRadius: isLast ? br.lg : 0,
+    borderBottomRightRadius: isLast ? br.lg : 0,
+  };
+
   return (
-    <View style={[styles.container, style]}>
+    <View style={[styles.container, containerRadius, style]}>
       {/* Delete action behind the row */}
-      <Animated.View
-        style={[
-          styles.deleteContainer,
-          { backgroundColor: colors.negative },
-          deleteButtonStyle,
-        ]}
-      >
-        <Pressable
-          style={styles.deleteButton}
-          onPress={() => {
-            translateX.value = withTiming(0, { duration: 200 });
-            handleDelete();
-          }}
-        >
-          <Ionicons name="trash-outline" size={22} color="#fff" />
-        </Pressable>
+      <Animated.View style={[styles.deleteArea, deleteAreaStyle]}>
+        <Animated.View style={pillStyle}>
+          <Pressable
+            style={[styles.deletePill, { backgroundColor: colors.negative }]}
+            onPress={() => {
+              translateX.value = withTiming(0, { duration: 200 });
+              handleDelete();
+            }}
+          >
+            <Ionicons name="trash-outline" size={20} color="#fff" />
+          </Pressable>
+        </Animated.View>
       </Animated.View>
 
       {/* Swipeable content */}
@@ -135,7 +157,7 @@ const styles = StyleSheet.create({
   container: {
     overflow: 'hidden',
   },
-  deleteContainer: {
+  deleteArea: {
     position: 'absolute',
     right: 0,
     top: 0,
@@ -143,10 +165,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  deleteButton: {
-    flex: 1,
+  deletePill: {
+    height: CIRCLE_SIZE,
+    borderRadius: CIRCLE_SIZE / 2,
     justifyContent: 'center',
     alignItems: 'center',
-    width: '100%',
   },
 });

@@ -116,3 +116,19 @@ export function formatMonth(month: string): string {
 export function monthToInt(month: string): number {
   return parseInt(month.replace("-", ""), 10);
 }
+
+/** YYYYMMDD integer for the 1st of the current month (e.g. 20260301). */
+export function startOfMonthInt(): number {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  return parseInt(`${y}${m}01`, 10);
+}
+
+/** YYYYMMDD integer for the last day of the current month (e.g. 20260331). */
+export function endOfMonthInt(): number {
+  const d = new Date();
+  const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  return parseInt(`${d.getFullYear()}${m}${String(lastDay).padStart(2, "0")}`, 10);
+}

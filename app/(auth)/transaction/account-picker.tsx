@@ -12,7 +12,7 @@ import type { Theme } from '../../../src/theme';
 export default function AccountPickerScreen() {
   const { selectedId } = useLocalSearchParams<{ selectedId?: string }>();
   const router = useRouter();
-  const theme = useTheme();
+  const { colors, borderWidth: bw } = useTheme();
   const styles = useThemedStyles(createStyles);
   const { accounts } = useAccountsStore();
   const setAccount = usePickerStore((s) => s.setAccount);
@@ -34,36 +34,43 @@ export default function AccountPickerScreen() {
           <View style={styles.sectionHeader}>
             <Text
               variant="captionSm"
-              color={theme.colors.textMuted}
+              color={colors.textMuted}
               style={styles.sectionText}
             >
               {group.label.toUpperCase()}
             </Text>
           </View>
-          {group.accounts.map((a) => {
-            const isSelected = a.id === selectedId;
-            return (
-              <Pressable
-                key={a.id}
-                style={styles.item}
-                onPress={() => select(a.id, a.name)}
-              >
-                <View style={styles.checkSlot}>
-                  {isSelected && (
-                    <Ionicons name="checkmark" size={20} color={theme.colors.primary} />
-                  )}
-                </View>
-                <Text
-                  variant="body"
-                  color={theme.colors.textPrimary}
-                  style={styles.itemLabel}
+          <View style={styles.groupCard}>
+            {group.accounts.map((a, i) => {
+              const isSelected = a.id === selectedId;
+              const isLast = i === group.accounts.length - 1;
+              return (
+                <Pressable
+                  key={a.id}
+                  style={({ pressed }) => [
+                    styles.item,
+                    !isLast && { borderBottomWidth: bw.thin, borderBottomColor: colors.divider },
+                    pressed && styles.pressed,
+                  ]}
+                  onPress={() => select(a.id, a.name)}
                 >
-                  {a.name}
-                </Text>
-                <Amount value={a.balance ?? 0} variant="bodySm" />
-              </Pressable>
-            );
-          })}
+                  <View style={styles.checkSlot}>
+                    {isSelected && (
+                      <Ionicons name="checkmark" size={20} color={colors.primary} />
+                    )}
+                  </View>
+                  <Text
+                    variant="body"
+                    color={colors.textPrimary}
+                    style={styles.itemLabel}
+                  >
+                    {a.name}
+                  </Text>
+                  <Amount value={a.balance ?? 0} variant="bodySm" />
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
       ))}
     </ScrollView>
@@ -79,25 +86,31 @@ const createStyles = (theme: Theme) => ({
     paddingBottom: 40,
   },
   sectionHeader: {
-    backgroundColor: theme.colors.pageBackground,
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.sm,
-    borderBottomWidth: theme.borderWidth.default,
-    borderBottomColor: theme.colors.divider,
+    paddingHorizontal: theme.spacing.lg + theme.spacing.lg,
+    paddingTop: theme.spacing.lg,
+    paddingBottom: theme.spacing.sm,
   },
   sectionText: {
     fontWeight: '700' as const,
-    letterSpacing: 1,
+    letterSpacing: 0.8,
+  },
+  groupCard: {
+    marginHorizontal: theme.spacing.lg,
+    backgroundColor: theme.colors.cardBackground,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: theme.borderWidth.thin,
+    borderColor: theme.colors.cardBorder,
+    overflow: 'hidden' as const,
   },
   item: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    justifyContent: 'space-between' as const,
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.md,
-    borderBottomWidth: theme.borderWidth.default,
-    borderBottomColor: theme.colors.divider,
-    backgroundColor: theme.colors.cardBackground,
+    minHeight: 44,
+  },
+  pressed: {
+    opacity: 0.7,
   },
   checkSlot: {
     width: 24,

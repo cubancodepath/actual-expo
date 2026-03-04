@@ -2,12 +2,10 @@ import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Pressable,
   RefreshControl,
   View,
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
-import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useAccountsStore } from '../../../src/stores/accountsStore';
 import {
@@ -27,7 +25,6 @@ import { BalanceSummary } from '../../../src/presentation/components/account/Bal
 import { TransactionRow } from '../../../src/presentation/components/account/TransactionRow';
 import { DateSectionHeader } from '../../../src/presentation/components/account/DateSectionHeader';
 import { AccountHeaderMenu } from '../../../src/presentation/components/account/AccountHeaderMenu';
-import { UnclearedBanner } from '../../../src/presentation/components/account/UnclearedBanner';
 import { AddTransactionButton } from '../../../src/presentation/components/molecules/AddTransactionButton';
 
 // ---------------------------------------------------------------------------
@@ -35,19 +32,42 @@ import { AddTransactionButton } from '../../../src/presentation/components/molec
 // ---------------------------------------------------------------------------
 
 type DateHeader = { type: 'date'; date: number; key: string };
-type TransactionItem = { type: 'transaction'; data: TransactionDisplay; key: string };
+type TransactionItem = {
+  type: 'transaction';
+  data: TransactionDisplay;
+  key: string;
+  isFirst: boolean;
+  isLast: boolean;
+};
 type ListItem = DateHeader | TransactionItem;
 
 function buildListData(transactions: TransactionDisplay[]): ListItem[] {
   const items: ListItem[] = [];
   let lastDate: number | null = null;
 
-  for (const txn of transactions) {
-    if (txn.date !== lastDate) {
+  for (let i = 0; i < transactions.length; i++) {
+    const txn = transactions[i];
+    const isNewDate = txn.date !== lastDate;
+    if (isNewDate) {
+      if (items.length > 0) {
+        const prev = items[items.length - 1];
+        if (prev.type === 'transaction') prev.isLast = true;
+      }
       items.push({ type: 'date', date: txn.date, key: `date-${txn.date}` });
       lastDate = txn.date;
     }
-    items.push({ type: 'transaction', data: txn, key: txn.id });
+    items.push({
+      type: 'transaction',
+      data: txn,
+      key: txn.id,
+      isFirst: isNewDate,
+      isLast: false,
+    });
+  }
+
+  if (items.length > 0) {
+    const last = items[items.length - 1];
+    if (last.type === 'transaction') last.isLast = true;
   }
 
   return items;
@@ -189,7 +209,6 @@ export default function AccountTransactionsScreen() {
   }
 
   const listData = buildListData(transactions);
-  const unclearedCount = transactions.filter(t => !t.cleared && !t.reconciled).length;
 
   return (
     <View style={styles.container}>
@@ -210,20 +229,16 @@ export default function AccountTransactionsScreen() {
                 onPress={handleEditTransaction}
                 onDelete={handleDelete}
                 onToggleCleared={handleToggleCleared}
+                isFirst={item.isFirst}
+                isLast={item.isLast}
               />
             );
           }}
-          ItemSeparatorComponent={() => (
-            <View style={{ height: 1, backgroundColor: colors.divider }} />
-          )}
           ListHeaderComponent={
-            <>
-              <BalanceSummary
-                balance={account?.balance ?? 0}
-                clearedBalance={clearedBalance}
-              />
-              <UnclearedBanner count={unclearedCount} />
-            </>
+            <BalanceSummary
+              balance={account?.balance ?? 0}
+              clearedBalance={clearedBalance}
+            />
           }
           ListFooterComponent={
             loadingMore

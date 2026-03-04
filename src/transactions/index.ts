@@ -5,7 +5,7 @@ import { Timestamp } from '../crdt';
 import type { TransactionRow } from '../db/types';
 import type { Transaction, GetTransactionsOptions } from './types';
 import { onInsert, onUpdate, onDelete as onDeleteTransfer } from './transfer';
-import { todayInt } from '../lib/date';
+import { todayInt, startOfMonthInt, endOfMonthInt } from '../lib/date';
 
 function rowToTransaction(r: TransactionRow): Transaction {
   return {
@@ -383,6 +383,66 @@ export async function getAllTransactions(opts?: {
     categoryName: r.category_name,
     accountName: r.account_name,
   }));
+}
+
+// ---------------------------------------------------------------------------
+// Spending summary — aggregates for the current month
+// ---------------------------------------------------------------------------
+
+export interface SpendingSummary {
+  totalSpent: number;       // cents, negative or zero
+  totalIncome: number;      // cents, positive or zero
+  transactionCount: number;
+  topCategories: Array<{ categoryName: string; total: number; count: number }>;
+}
+
+export async function getSpendingSummary(
+  start?: number,
+  end?: number,
+): Promise<SpendingSummary> {
+  const startDate = start ?? startOfMonthInt();
+  const endDate = end ?? endOfMonthInt();
+
+  const totalsRow = await first<{
+    totalSpent: number;
+    totalIncome: number;
+    transactionCount: number;
+  }>(
+    `SELECT
+       COALESCE(SUM(CASE WHEN t.amount < 0 THEN t.amount ELSE 0 END), 0) AS totalSpent,
+       COALESCE(SUM(CASE WHEN t.amount > 0 THEN t.amount ELSE 0 END), 0) AS totalIncome,
+       COUNT(*) AS transactionCount
+     FROM transactions t
+     JOIN accounts a ON a.id = t.acct AND a.offbudget = 0 AND a.tombstone = 0
+     WHERE t.tombstone = 0 AND t.isParent = 0
+       AND t.date >= ? AND t.date <= ?`,
+    [startDate, endDate],
+  );
+
+  const catRows = await runQuery<{ categoryName: string; total: number; count: number }>(
+    `SELECT
+       c.name AS categoryName,
+       COALESCE(SUM(t.amount), 0) AS total,
+       COUNT(*) AS count
+     FROM transactions t
+     JOIN accounts a ON a.id = t.acct AND a.offbudget = 0 AND a.tombstone = 0
+     LEFT JOIN category_mapping cm ON cm.id = t.category
+     LEFT JOIN categories c ON COALESCE(cm.transferId, t.category) = c.id AND c.tombstone = 0
+     WHERE t.tombstone = 0 AND t.isParent = 0 AND t.amount < 0
+       AND t.date >= ? AND t.date <= ?
+       AND c.id IS NOT NULL
+     GROUP BY c.id, c.name
+     ORDER BY total ASC
+     LIMIT 5`,
+    [startDate, endDate],
+  );
+
+  return {
+    totalSpent: totalsRow?.totalSpent ?? 0,
+    totalIncome: totalsRow?.totalIncome ?? 0,
+    transactionCount: totalsRow?.transactionCount ?? 0,
+    topCategories: catRows,
+  };
 }
 
 /**

@@ -14,14 +14,15 @@ export function DateSectionHeader({ date }: DateSectionHeaderProps) {
     <View
       style={{
         paddingHorizontal: spacing.lg,
-        paddingVertical: spacing.sm,
+        paddingTop: spacing.lg,
+        paddingBottom: spacing.sm,
         backgroundColor: colors.pageBackground,
       }}
     >
       <Text
-        variant="caption"
+        variant="captionSm"
         color={colors.textMuted}
-        style={{ textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: '600' }}
+        style={{ textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: '700' }}
       >
         {formatDateLong(date)}
       </Text>

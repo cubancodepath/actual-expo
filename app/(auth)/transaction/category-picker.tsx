@@ -14,7 +14,7 @@ import type { Theme } from '../../../src/theme';
 export default function CategoryPickerScreen() {
   const { month, selectedId } = useLocalSearchParams<{ month?: string; selectedId?: string }>();
   const router = useRouter();
-  const theme = useTheme();
+  const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const styles = useThemedStyles(createStyles);
   const { groups, categories, load } = useCategoriesStore();
   const setCategory = usePickerStore((s) => s.setCategory);
@@ -41,18 +41,20 @@ export default function CategoryPickerScreen() {
       style={styles.container}
       contentContainerStyle={styles.list}
     >
-      {/* No category */}
-      <Pressable
-        style={styles.item}
-        onPress={() => select(null, '')}
-      >
-        <Text variant="body" color={theme.colors.textMuted} style={styles.catName}>
-          No category
-        </Text>
-        {noneSelected && (
-          <Ionicons name="checkmark" size={20} color={theme.colors.primary} />
-        )}
-      </Pressable>
+      {/* No category — standalone card */}
+      <View style={styles.standaloneCard}>
+        <Pressable
+          style={({ pressed }) => [styles.item, pressed && styles.pressed]}
+          onPress={() => select(null, '')}
+        >
+          <Text variant="body" color={colors.textMuted} style={styles.catName}>
+            No category
+          </Text>
+          {noneSelected && (
+            <Ionicons name="checkmark" size={20} color={colors.primary} />
+          )}
+        </Pressable>
+      </View>
 
       {groups
         .filter((g) => !g.hidden && !g.tombstone)
@@ -67,50 +69,57 @@ export default function CategoryPickerScreen() {
           if (cats.length === 0) return null;
           return (
             <View key={g.id}>
-              <View style={styles.groupHeader}>
+              <View style={styles.sectionHeader}>
                 <Text
                   variant="captionSm"
-                  color={theme.colors.textMuted}
-                  style={styles.groupText}
+                  color={colors.textMuted}
+                  style={styles.sectionText}
                 >
                   {g.name.toUpperCase()}
                 </Text>
               </View>
-              {cats.map((c) => {
-                const balance = balanceMap.get(c.id);
-                const balanceColor =
-                  balance === undefined
-                    ? theme.colors.textMuted
-                    : balance > 0
-                      ? theme.colors.positive
-                      : balance < 0
-                        ? theme.colors.negative
-                        : theme.colors.textMuted;
-                const isSelected = c.id === selectedId;
-                return (
-                  <Pressable
-                    key={c.id}
-                    style={styles.item}
-                    onPress={() => select(c.id, c.name)}
-                  >
-                    <Text
-                      variant="body"
-                      color={theme.colors.textPrimary}
-                      style={styles.catName}
+              <View style={styles.groupCard}>
+                {cats.map((c, i) => {
+                  const balance = balanceMap.get(c.id);
+                  const balanceColor =
+                    balance === undefined
+                      ? colors.textMuted
+                      : balance > 0
+                        ? colors.positive
+                        : balance < 0
+                          ? colors.negative
+                          : colors.textMuted;
+                  const isSelected = c.id === selectedId;
+                  const isLast = i === cats.length - 1;
+                  return (
+                    <Pressable
+                      key={c.id}
+                      style={({ pressed }) => [
+                        styles.item,
+                        !isLast && { borderBottomWidth: bw.thin, borderBottomColor: colors.divider },
+                        pressed && styles.pressed,
+                      ]}
+                      onPress={() => select(c.id, c.name)}
                     >
-                      {c.name}
-                    </Text>
-                    {balance !== undefined && (
-                      <Text variant="caption" color={balanceColor} style={styles.balance}>
-                        {formatBalance(balance)}
+                      <Text
+                        variant="body"
+                        color={colors.textPrimary}
+                        style={styles.catName}
+                      >
+                        {c.name}
                       </Text>
-                    )}
-                    {isSelected && (
-                      <Ionicons name="checkmark" size={20} color={theme.colors.primary} />
-                    )}
-                  </Pressable>
-                );
-              })}
+                      {balance !== undefined && (
+                        <Text variant="caption" color={balanceColor} style={styles.balance}>
+                          {formatBalance(balance)}
+                        </Text>
+                      )}
+                      {isSelected && (
+                        <Ionicons name="checkmark" size={20} color={colors.primary} />
+                      )}
+                    </Pressable>
+                  );
+                })}
+              </View>
             </View>
           );
         })}
@@ -126,25 +135,41 @@ const createStyles = (theme: Theme) => ({
   list: {
     paddingBottom: 40,
   },
-  groupHeader: {
-    backgroundColor: theme.colors.pageBackground,
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.sm,
-    borderBottomWidth: theme.borderWidth.default,
-    borderBottomColor: theme.colors.divider,
+  sectionHeader: {
+    paddingHorizontal: theme.spacing.lg + theme.spacing.lg,
+    paddingTop: theme.spacing.lg,
+    paddingBottom: theme.spacing.sm,
   },
-  groupText: {
+  sectionText: {
     fontWeight: '700' as const,
-    letterSpacing: 1,
+    letterSpacing: 0.8,
+  },
+  standaloneCard: {
+    marginHorizontal: theme.spacing.lg,
+    marginTop: theme.spacing.lg,
+    backgroundColor: theme.colors.cardBackground,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: theme.borderWidth.thin,
+    borderColor: theme.colors.cardBorder,
+    overflow: 'hidden' as const,
+  },
+  groupCard: {
+    marginHorizontal: theme.spacing.lg,
+    backgroundColor: theme.colors.cardBackground,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: theme.borderWidth.thin,
+    borderColor: theme.colors.cardBorder,
+    overflow: 'hidden' as const,
   },
   item: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.md,
-    borderBottomWidth: theme.borderWidth.default,
-    borderBottomColor: theme.colors.divider,
-    backgroundColor: theme.colors.cardBackground,
+    minHeight: 44,
+  },
+  pressed: {
+    opacity: 0.7,
   },
   catName: {
     flex: 1,

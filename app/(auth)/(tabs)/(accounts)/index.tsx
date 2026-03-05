@@ -15,7 +15,7 @@ import Animated, {
 import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAccountsStore } from '../../../../src/stores/accountsStore';
-import { useSyncStore } from '../../../../src/stores/syncStore';
+import { useRefreshControl } from '../../../../src/presentation/hooks/useRefreshControl';
 import { groupAccounts, type AccountGroup } from '../../../../src/accounts';
 import { useTheme, useThemedStyles } from '../../../../src/presentation/providers/ThemeProvider';
 import { Text } from '../../../../src/presentation/components/atoms/Text';
@@ -135,7 +135,7 @@ export default function AccountsScreen() {
   const theme = useTheme();
   const styles = useThemedStyles(createStyles);
   const { accounts, loading, load } = useAccountsStore();
-  const { refreshing, sync } = useSyncStore();
+  const { refreshControlProps } = useRefreshControl();
   const { privacyMode, toggle: togglePrivacy } = usePrivacyStore();
 
   useEffect(() => { load(); }, []);
@@ -160,12 +160,7 @@ export default function AccountsScreen() {
         contentContainerStyle={styles.content}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={sync}
-            tintColor={theme.colors.primary}
-            colors={[theme.colors.primary]}
-          />
+          <RefreshControl {...refreshControlProps} />
         }
       >
         <Stack.Screen.Title large>Accounts</Stack.Screen.Title>

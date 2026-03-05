@@ -5,7 +5,6 @@ type SyncStatus = 'idle' | 'syncing' | 'error' | 'success';
 
 type SyncState = {
   status: SyncStatus;
-  refreshing: boolean;  // true only during explicit sync() calls (pull-to-refresh / manual)
   error: string | null;
   lastSync: Date | null;
   sync(): Promise<void>;
@@ -15,18 +14,17 @@ type SyncState = {
 
 export const useSyncStore = create<SyncState>((set) => ({
   status: 'idle',
-  refreshing: false,
   error: null,
   lastSync: null,
 
   async sync() {
-    set({ status: 'syncing', refreshing: true, error: null });
+    set({ status: 'syncing', error: null });
     try {
       await fullSync();
-      set({ status: 'success', refreshing: false, lastSync: new Date() });
+      set({ status: 'success', lastSync: new Date() });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
-      set({ status: 'error', refreshing: false, error: msg });
+      set({ status: 'error', error: msg });
     }
   },
 

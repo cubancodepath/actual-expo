@@ -15,7 +15,7 @@ import { useTheme } from '../../../../src/presentation/providers/ThemeProvider';
 import { useSharedValue } from 'react-native-reanimated';
 import { AddTransactionButton } from '../../../../src/presentation/components/molecules/AddTransactionButton';
 import { useBudgetStore } from '../../../../src/stores/budgetStore';
-import { useSyncStore } from '../../../../src/stores/syncStore';
+import { useRefreshControl } from '../../../../src/presentation/hooks/useRefreshControl';
 import type { BudgetCategory, BudgetGroup } from '../../../../src/budgets/types';
 
 import { BudgetGroupHeader } from '../../../../src/presentation/components/budget/BudgetGroupHeader';
@@ -73,7 +73,7 @@ export default function BudgetScreen() {
   const { colors, spacing, borderRadius: br } = useTheme();
   const router = useRouter();
   const { month, data, loading, load, setAmount, setCarryover, transfer, resetHold } = useBudgetStore();
-  const { refreshing, sync } = useSyncStore();
+  const { refreshControlProps } = useRefreshControl();
   const { privacyMode, toggle: togglePrivacy } = usePrivacyStore();
 
   const fabCollapsed = useSharedValue(false);
@@ -263,12 +263,7 @@ export default function BudgetScreen() {
             ) : null
           }
           refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={sync}
-              tintColor={colors.link}
-              colors={[colors.link]}
-            />
+            <RefreshControl {...refreshControlProps} />
           }
           ListEmptyComponent={
             filter !== 'all' ? (

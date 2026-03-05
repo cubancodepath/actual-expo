@@ -18,6 +18,6 @@ export function resetAllStores(): void {
   useCategoriesStore.setState({ groups: [], categories: [], loading: false });
   usePayeesStore.setState({ payees: [], loading: false });
   usePickerStore.getState().clear();
-  useSyncStore.setState({ status: 'idle', refreshing: false, error: null, lastSync: null });
+  useSyncStore.setState({ status: 'idle', error: null, lastSync: null });
   useTransactionsStore.setState({ transactions: [], accountId: null, loading: false });
 }

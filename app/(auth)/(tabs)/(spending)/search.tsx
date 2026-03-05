@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useRefreshControl } from '../../../../src/presentation/hooks/useRefreshControl';
 import {
   ActivityIndicator,
   Keyboard,
@@ -111,7 +112,6 @@ export default function SearchScreen() {
   const [results, setResults] = useState<TransactionDisplay[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const offsetRef = useRef(0);
 
@@ -214,11 +214,11 @@ export default function SearchScreen() {
     }
   }, [loadingMore, hasMore, hasSearched, searchText, tokens, hideReconciled]);
 
-  const onRefresh = useCallback(async () => {
-    if (!hasSearched) return;
-    setRefreshing(true);
-    offsetRef.current = 0;
-    try {
+  const { refreshControlProps } = useRefreshControl({
+    syncFirst: false,
+    onRefresh: async () => {
+      if (!hasSearched) return;
+      offsetRef.current = 0;
       const txns = await searchTransactions({
         text: searchText || undefined,
         ...buildSearchParams(tokens),
@@ -229,10 +229,8 @@ export default function SearchScreen() {
       setResults(txns);
       setHasMore(txns.length === PAGE_SIZE);
       offsetRef.current = txns.length;
-    } finally {
-      setRefreshing(false);
-    }
-  }, [hasSearched, searchText, tokens, hideReconciled]);
+    },
+  });
 
   // ---- Transaction handlers ----
 
@@ -330,11 +328,7 @@ export default function SearchScreen() {
         onEndReached={loadMore}
         onEndReachedThreshold={0.3}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={colors.primary}
-          />
+          <RefreshControl {...refreshControlProps} />
         }
         contentContainerStyle={{ paddingBottom: 80, backgroundColor: colors.pageBackground }}
       />

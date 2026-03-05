@@ -1,4 +1,5 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useRefreshControl } from '../../../../src/presentation/hooks/useRefreshControl';
 import { useSharedValue } from 'react-native-reanimated';
 import {
   ActivityIndicator,
@@ -95,7 +96,6 @@ export default function SpendingScreen() {
   const [transactions, setTransactions] = useState<TransactionDisplay[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const offsetRef = useRef(0);
 
@@ -153,18 +153,15 @@ export default function SpendingScreen() {
     }
   }, [loadingMore, hasMore, hideReconciled]);
 
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    offsetRef.current = 0;
-    try {
+  const { refreshControlProps } = useRefreshControl({
+    onRefresh: async () => {
+      offsetRef.current = 0;
       const txns = await getAllTransactions({ limit: PAGE_SIZE, offset: 0, hideReconciled });
       setTransactions(txns);
       setHasMore(txns.length === PAGE_SIZE);
       offsetRef.current = txns.length;
-    } finally {
-      setRefreshing(false);
-    }
-  }, [hideReconciled]);
+    },
+  });
 
   useFocusEffect(useCallback(() => {
     loadAll();
@@ -435,11 +432,7 @@ export default function SpendingScreen() {
         onEndReached={loadMore}
         onEndReachedThreshold={0.3}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={colors.primary}
-          />
+          <RefreshControl {...refreshControlProps} />
         }
         contentContainerStyle={{ paddingBottom: 80, backgroundColor: colors.pageBackground }}
       />

@@ -1,4 +1,5 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useRefreshControl } from '../../../src/presentation/hooks/useRefreshControl';
 import { useSharedValue } from 'react-native-reanimated';
 import {
   ActivityIndicator,
@@ -98,7 +99,6 @@ export default function AccountTransactionsScreen() {
   const [transactions, setTransactions] = useState<TransactionDisplay[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [clearedBalance, setClearedBalance] = useState(0);
   const [hideReconciled, setHideReconciled] = useState(false);
@@ -164,10 +164,9 @@ export default function AccountTransactionsScreen() {
     }
   }, [id, loadingMore, hasMore, hideReconciled]);
 
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    offsetRef.current = 0;
-    try {
+  const { refreshControlProps } = useRefreshControl({
+    onRefresh: async () => {
+      offsetRef.current = 0;
       const [txns, cleared] = await Promise.all([
         getTransactionsForAccount(id, { limit: PAGE_SIZE, offset: 0, hideReconciled }),
         getClearedBalance(id),
@@ -176,11 +175,8 @@ export default function AccountTransactionsScreen() {
       setClearedBalance(cleared);
       setHasMore(txns.length === PAGE_SIZE);
       offsetRef.current = txns.length;
-      await loadAccounts();
-    } finally {
-      setRefreshing(false);
-    }
-  }, [id, loadAccounts, hideReconciled]);
+    },
+  });
 
   useFocusEffect(useCallback(() => {
     loadTransactions();
@@ -467,11 +463,7 @@ export default function AccountTransactionsScreen() {
           onEndReachedThreshold={0.3}
           contentContainerStyle={{ paddingBottom: 80 }}
           refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor={colors.primary}
-            />
+            <RefreshControl {...refreshControlProps} />
           }
         />
       )}

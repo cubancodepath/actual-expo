@@ -138,8 +138,10 @@ export default function AccountTransactionsScreen() {
   // ---- Data loading ----
 
   const hasLoaded = useRef(false);
+  const refreshIdRef = useRef(0);
 
   const loadTransactions = useCallback(async (hide = hideReconciled) => {
+    const rid = ++refreshIdRef.current;
     setLoading(true);
     offsetRef.current = 0;
     try {
@@ -147,6 +149,7 @@ export default function AccountTransactionsScreen() {
         getTransactionsForAccount(id, { limit: PAGE_SIZE, offset: 0, hideReconciled: hide }),
         getClearedBalance(id),
       ]);
+      if (refreshIdRef.current !== rid) return;
       setTransactions(txns);
       setClearedBalance(cleared);
       setHasMore(txns.length === PAGE_SIZE);
@@ -157,14 +160,16 @@ export default function AccountTransactionsScreen() {
   }, [id, hideReconciled]);
 
   const silentRefreshTransactions = useCallback(async () => {
-    offsetRef.current = 0;
+    const rid = ++refreshIdRef.current;
+    const count = Math.max(offsetRef.current, PAGE_SIZE);
     const [txns, cleared] = await Promise.all([
-      getTransactionsForAccount(id, { limit: PAGE_SIZE, offset: 0, hideReconciled }),
+      getTransactionsForAccount(id, { limit: count, offset: 0, hideReconciled }),
       getClearedBalance(id),
     ]);
+    if (refreshIdRef.current !== rid) return;
     setTransactions(txns);
     setClearedBalance(cleared);
-    setHasMore(txns.length === PAGE_SIZE);
+    setHasMore(txns.length === count);
     offsetRef.current = txns.length;
   }, [id, hideReconciled]);
 
@@ -184,14 +189,16 @@ export default function AccountTransactionsScreen() {
 
   const { refreshControlProps } = useRefreshControl({
     onRefresh: async () => {
-      offsetRef.current = 0;
+      const rid = ++refreshIdRef.current;
+      const count = Math.max(offsetRef.current, PAGE_SIZE);
       const [txns, cleared] = await Promise.all([
-        getTransactionsForAccount(id, { limit: PAGE_SIZE, offset: 0, hideReconciled }),
+        getTransactionsForAccount(id, { limit: count, offset: 0, hideReconciled }),
         getClearedBalance(id),
       ]);
+      if (refreshIdRef.current !== rid) return;
       setTransactions(txns);
       setClearedBalance(cleared);
-      setHasMore(txns.length === PAGE_SIZE);
+      setHasMore(txns.length === count);
       offsetRef.current = txns.length;
     },
   });
@@ -226,6 +233,7 @@ export default function AccountTransactionsScreen() {
         text: 'Delete',
         style: 'destructive',
         onPress: async () => {
+          refreshIdRef.current++;
           setTransactions(prev => prev.filter(t => t.id !== txnId));
           await deleteTransaction(txnId);
           loadAccounts();
@@ -235,6 +243,7 @@ export default function AccountTransactionsScreen() {
   }
 
   async function handleToggleCleared(txnId: string) {
+    refreshIdRef.current++;
     const txn = transactions.find(t => t.id === txnId);
     if (txn && !txn.reconciled) {
       const delta = txn.cleared ? -txn.amount : txn.amount;
@@ -251,6 +260,7 @@ export default function AccountTransactionsScreen() {
   }
 
   async function handleDuplicate(txnId: string) {
+    refreshIdRef.current++;
     const original = transactions.find(t => t.id === txnId);
     if (!original) return;
     const newId = await duplicateTransaction(txnId);
@@ -268,6 +278,7 @@ export default function AccountTransactionsScreen() {
   }
 
   async function handleMove(txnId: string, targetAccountId: string) {
+    refreshIdRef.current++;
     setTransactions(prev => prev.filter(t => t.id !== txnId));
     await updateTransaction(txnId, { acct: targetAccountId });
     loadAccounts();
@@ -318,6 +329,7 @@ export default function AccountTransactionsScreen() {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
+            refreshIdRef.current++;
             const ids = new Set(selectedIds);
             setTransactions(prev => prev.filter(t => !ids.has(t.id)));
             setIsSelectMode(false);
@@ -344,6 +356,7 @@ export default function AccountTransactionsScreen() {
         {
           text: 'Move',
           onPress: async () => {
+            refreshIdRef.current++;
             const ids = new Set(selectedIds);
             setTransactions(prev => prev.filter(t => !ids.has(t.id)));
             setIsSelectMode(false);
@@ -363,6 +376,7 @@ export default function AccountTransactionsScreen() {
     const selected = transactions.filter(t => selectedIds.has(t.id) && !t.reconciled);
     if (selected.length === 0) return;
 
+    refreshIdRef.current++;
     const anyUncleared = selected.some(t => !t.cleared);
     const targetVal = anyUncleared;
     const ids = new Set(selected.map(t => t.id));

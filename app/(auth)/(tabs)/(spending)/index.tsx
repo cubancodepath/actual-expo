@@ -128,12 +128,15 @@ export default function SpendingScreen() {
   // ---- Data loading ----
 
   const hasLoaded = useRef(false);
+  const refreshIdRef = useRef(0);
 
   const loadAll = useCallback(async () => {
+    const id = ++refreshIdRef.current;
     setLoading(true);
     offsetRef.current = 0;
     try {
       const txns = await getAllTransactions({ limit: PAGE_SIZE, offset: 0 });
+      if (refreshIdRef.current !== id) return;
       setTransactions(txns);
       setHasMore(txns.length === PAGE_SIZE);
       offsetRef.current = txns.length;
@@ -143,10 +146,12 @@ export default function SpendingScreen() {
   }, []);
 
   const silentRefresh = useCallback(async () => {
-    offsetRef.current = 0;
-    const txns = await getAllTransactions({ limit: PAGE_SIZE, offset: 0 });
+    const id = ++refreshIdRef.current;
+    const count = Math.max(offsetRef.current, PAGE_SIZE);
+    const txns = await getAllTransactions({ limit: count, offset: 0 });
+    if (refreshIdRef.current !== id) return;
     setTransactions(txns);
-    setHasMore(txns.length === PAGE_SIZE);
+    setHasMore(txns.length === count);
     offsetRef.current = txns.length;
   }, []);
 
@@ -166,10 +171,12 @@ export default function SpendingScreen() {
 
   const { refreshControlProps } = useRefreshControl({
     onRefresh: async () => {
-      offsetRef.current = 0;
-      const txns = await getAllTransactions({ limit: PAGE_SIZE, offset: 0 });
+      const id = ++refreshIdRef.current;
+      const count = Math.max(offsetRef.current, PAGE_SIZE);
+      const txns = await getAllTransactions({ limit: count, offset: 0 });
+      if (refreshIdRef.current !== id) return;
       setTransactions(txns);
-      setHasMore(txns.length === PAGE_SIZE);
+      setHasMore(txns.length === count);
       offsetRef.current = txns.length;
     },
   });
@@ -193,6 +200,7 @@ export default function SpendingScreen() {
         text: 'Delete',
         style: 'destructive',
         onPress: async () => {
+          refreshIdRef.current++;
           setTransactions(prev => prev.filter(t => t.id !== txnId));
           await deleteTransaction(txnId);
           loadAccounts();
@@ -202,6 +210,7 @@ export default function SpendingScreen() {
   }
 
   async function handleToggleCleared(txnId: string) {
+    refreshIdRef.current++;
     setTransactions(prev => prev.map(t =>
       t.id === txnId ? { ...t, cleared: !t.cleared } : t
     ));
@@ -213,6 +222,7 @@ export default function SpendingScreen() {
   }
 
   async function handleDuplicate(txnId: string) {
+    refreshIdRef.current++;
     const original = transactions.find(t => t.id === txnId);
     if (!original) return;
     const newId = await duplicateTransaction(txnId);
@@ -230,6 +240,7 @@ export default function SpendingScreen() {
   }
 
   async function handleMove(txnId: string, targetAccountId: string) {
+    refreshIdRef.current++;
     const targetName = accounts.find(a => a.id === targetAccountId)?.name;
     setTransactions(prev => prev.map(t =>
       t.id === txnId ? { ...t, acct: targetAccountId, accountName: targetName } : t
@@ -286,6 +297,7 @@ export default function SpendingScreen() {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
+            refreshIdRef.current++;
             const ids = new Set(selectedIds);
             setTransactions(prev => prev.filter(t => !ids.has(t.id)));
             setIsSelectMode(false);
@@ -313,6 +325,7 @@ export default function SpendingScreen() {
         {
           text: 'Move',
           onPress: async () => {
+            refreshIdRef.current++;
             const ids = new Set(selectedIds);
             const targetName = targetAccount?.name;
             setTransactions(prev => prev.map(t =>
@@ -336,6 +349,7 @@ export default function SpendingScreen() {
     const selected = transactions.filter(t => selectedIds.has(t.id) && !t.reconciled);
     if (selected.length === 0) return;
 
+    refreshIdRef.current++;
     const anyUncleared = selected.some(t => !t.cleared);
     const targetVal = anyUncleared;
     const ids = new Set(selected.map(t => t.id));

@@ -1,29 +1,39 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, SectionList, View } from 'react-native';
+import { Alert, Keyboard, Pressable, SectionList, View, useColorScheme } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import Animated, { useAnimatedStyle } from 'react-native-reanimated';
+import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
+import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
 import { useBudgetStore } from '../../../src/stores/budgetStore';
+import { useKeyboardHeight } from '../../../src/presentation/hooks/useKeyboardHeight';
 import { Text } from '../../../src/presentation/components/atoms/Text';
 import { IconButton } from '../../../src/presentation/components/atoms/IconButton';
 import { Button } from '../../../src/presentation/components/atoms/Button';
 import { CompactCurrencyInput, type CompactCurrencyInputRef } from '../../../src/presentation/components/atoms/CompactCurrencyInput';
 import { HoldModal } from '../../../src/presentation/components/budget/HoldModal';
 import { Amount } from '../../../src/presentation/components/atoms/Amount';
+import { withOpacity } from '../../../src/lib/colors';
+import { getGoalProgress } from '../../../src/goals/progress';
+import type { BudgetCategory } from '../../../src/budgets/types';
 
 type CategorySection = {
   key: string;
   title: string;
-  data: { id: string; name: string; budgeted: number }[];
+  data: BudgetCategory[];
 };
 
 export default function AssignBudgetScreen() {
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { data, setAmount, hold, resetHold } = useBudgetStore();
+  const { height: keyboardHeight, visible: keyboardVisible } = useKeyboardHeight();
 
   const toBudget = data?.toBudget ?? 0;
   const buffered = data?.buffered ?? 0;
@@ -47,7 +57,7 @@ export default function AssignBudgetScreen() {
     setEdits(initial);
   }, []);
 
-  // Sections for expense groups only
+  // Sections for expense groups only — pass full BudgetCategory
   const sections = useMemo<CategorySection[]>(
     () =>
       groups
@@ -55,7 +65,7 @@ export default function AssignBudgetScreen() {
         .map((g) => ({
           key: g.id,
           title: g.name,
-          data: g.categories.map((c) => ({ id: c.id, name: c.name, budgeted: c.budgeted })),
+          data: g.categories,
         })),
     [groups],
   );
@@ -82,6 +92,22 @@ export default function AssignBudgetScreen() {
   }, [groups]);
 
   const remaining = toBudget - (totalAssigned - originalBudgeted);
+
+  // Underfunded: sum of (goal - funded) for all categories with goals where not fully funded
+  const underfunded = useMemo(() => {
+    let sum = 0;
+    for (const g of groups) {
+      if (g.is_income) continue;
+      for (const cat of g.categories) {
+        if (cat.goal == null || cat.goal <= 0) continue;
+        const editedBudgeted = edits[cat.id] ?? cat.budgeted;
+        const funded = cat.longGoal ? cat.balance + (editedBudgeted - cat.budgeted) : editedBudgeted;
+        const needed = cat.goal - funded;
+        if (needed > 0) sum += needed;
+      }
+    }
+    return sum;
+  }, [groups, edits]);
 
   // Check if any category has been changed
   const hasChanges = useMemo(() => {
@@ -148,19 +174,38 @@ export default function AssignBudgetScreen() {
     router.back();
   }
 
-  // Color state based on remaining
-  const remainingColor =
-    remaining > 0 ? colors.primary : remaining < 0 ? colors.negative : colors.positive;
-  const remainingIcon: keyof typeof Ionicons.glyphMap =
-    remaining > 0 ? 'sparkles' : remaining < 0 ? 'warning' : 'checkmark-circle';
-  const remainingLabel =
-    remaining > 0 ? 'Ready to Assign' : remaining < 0 ? 'Overassigned' : 'Fully Assigned';
+  // ── Color state — matches ReadyToAssignPill ──
+  const isPositive = remaining > 0;
+  const isNegative = remaining < 0;
+
+  const statusColor = isPositive
+    ? isDark ? colors.warning : '#79400a'
+    : isNegative
+      ? isDark ? colors.negative : '#ab091e'
+      : isDark ? colors.positive : colors.positive;
+
+  const fillOpacity = isPositive
+    ? isDark ? 0.18 : 0.12
+    : isNegative
+      ? isDark ? 0.17 : 0.11
+      : isDark ? 0.15 : 0.10;
+
+  const cardBg = withOpacity(statusColor, fillOpacity);
+
+  const statusLabel = isPositive
+    ? 'Ready to Assign'
+    : isNegative
+      ? 'Overassigned'
+      : 'Fully Assigned';
 
   const labelStyle = {
     textTransform: 'uppercase' as const,
     letterSpacing: 0.8,
     fontWeight: '700' as const,
   };
+
+  // Keyboard Done button animation
+  const doneButtonStyle = useAnimatedStyle(() => ({ bottom: keyboardHeight.value }));
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.pageBackground }}>
@@ -178,168 +223,151 @@ export default function AssignBudgetScreen() {
         }}
       />
 
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={100}
+      {/* Summary Card — fixed above the list */}
+      <View
+        style={{
+          marginHorizontal: spacing.lg,
+          marginTop: spacing.lg,
+          marginBottom: spacing.sm,
+          backgroundColor: cardBg,
+          borderRadius: br.lg,
+          paddingHorizontal: spacing.lg,
+          paddingVertical: spacing.md,
+          alignItems: 'center',
+        }}
       >
-        <SectionList
-          sections={sections}
-          keyExtractor={(item) => item.id}
-          keyboardShouldPersistTaps="handled"
-          ListHeaderComponent={
-            <>
-              {/* Summary Card */}
-              <View
+        <Amount value={remaining} variant="headingLg" color={statusColor} weight="700" />
+        <Text
+          variant="captionSm"
+          color={statusColor}
+          style={{ fontWeight: '500', marginTop: 2 }}
+        >
+          {statusLabel}
+        </Text>
+        {underfunded > 0 && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+            <Amount value={underfunded} variant="captionSm" color={statusColor} weight="600" />
+            <Text variant="captionSm" color={statusColor} style={{ opacity: 0.7 }}>
+              {' '}to fully fund all goals
+            </Text>
+          </View>
+        )}
+      </View>
+
+      {/* Quick Actions — fixed */}
+      <View
+        style={{
+          flexDirection: 'row',
+          paddingHorizontal: spacing.lg,
+          paddingBottom: spacing.sm,
+          gap: spacing.sm,
+        }}
+      >
+        <View style={{ flex: 1 }}>
+          <Button
+            title="Hold"
+            icon="calendar-outline"
+            variant="secondary"
+            size="sm"
+            onPress={() => setHoldModalVisible(true)}
+            style={{ borderRadius: br.full }}
+          />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Button
+            title="Auto-assign"
+            icon="sparkles-outline"
+            variant="secondary"
+            size="sm"
+            loading={saving}
+            onPress={handleAutoAssign}
+            style={{ borderRadius: br.full }}
+          />
+        </View>
+      </View>
+
+      <SectionList
+        sections={sections}
+        keyExtractor={(item) => item.id}
+        keyboardShouldPersistTaps="handled"
+        stickySectionHeadersEnabled
+        renderSectionHeader={({ section }) => (
+          <View
+            style={{
+              paddingHorizontal: spacing.lg * 2,
+              paddingTop: spacing.lg,
+              paddingBottom: spacing.xs,
+              backgroundColor: colors.pageBackground,
+            }}
+          >
+            <Text variant="captionSm" color={colors.textMuted} style={labelStyle}>
+              {section.title}
+            </Text>
+          </View>
+        )}
+        renderItem={({ item: cat, index, section }) => {
+          const isFirst = index === 0;
+          const isLast = index === section.data.length - 1;
+          const editedValue = edits[cat.id] ?? cat.budgeted;
+          const isEdited = editedValue !== cat.budgeted;
+          return (
+            <CategoryAmountRow
+              cat={cat}
+              value={editedValue}
+              onChange={updateEdit}
+              isFirst={isFirst}
+              isLast={isLast}
+              isEdited={isEdited}
+            />
+          );
+        }}
+        contentContainerStyle={{ paddingBottom: hasChanges ? 120 : 40 }}
+      />
+
+      {/* Keyboard Done button — glass effect */}
+      {keyboardVisible && (
+        <Animated.View
+          style={[
+            {
+              position: 'absolute',
+              right: spacing.lg,
+              zIndex: 10,
+              marginBottom: spacing.sm,
+            },
+            doneButtonStyle,
+          ]}
+        >
+          <Pressable onPress={() => Keyboard.dismiss()}>
+            {isLiquidGlassAvailable() ? (
+              <GlassView
+                isInteractive
                 style={{
-                  marginHorizontal: spacing.lg,
-                  marginTop: spacing.lg,
-                  marginBottom: spacing.md,
-                  backgroundColor: colors.cardBackground,
-                  borderRadius: br.lg,
-                  borderWidth: bw.thin,
-                  borderColor: colors.cardBorder,
+                  borderRadius: br.full,
                   paddingHorizontal: spacing.lg,
-                  paddingVertical: spacing.md,
+                  paddingVertical: spacing.sm,
                 }}
               >
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
-                  <Ionicons name={remainingIcon} size={22} color={remainingColor} />
-                  <View style={{ flex: 1 }}>
-                    <Amount value={toBudget} variant="headingLg" color={remainingColor} weight="700" />
-                    <Text
-                      variant="captionSm"
-                      color={remainingColor}
-                      style={{ opacity: 0.75, marginTop: 1 }}
-                    >
-                      {remainingLabel}
-                    </Text>
-                  </View>
-                </View>
-
-                <View
-                  style={{
-                    height: bw.thin,
-                    backgroundColor: colors.divider,
-                    marginVertical: spacing.sm,
-                  }}
-                />
-
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  <Text variant="body" color={colors.textSecondary}>
-                    Remaining
-                  </Text>
-                  <Amount value={remaining} variant="headingSm" color={remainingColor} weight="600" />
-                </View>
-
-                {/* Held for Next Month */}
-                {buffered > 0 && (
-                  <>
-                    <View
-                      style={{
-                        height: bw.thin,
-                        backgroundColor: colors.divider,
-                        marginVertical: spacing.sm,
-                      }}
-                    />
-                    <Pressable
-                      onPress={() => {
-                        Alert.alert(
-                          'Reset Hold',
-                          'Release held funds back to "Ready to Assign"?',
-                          [
-                            { text: 'Cancel', style: 'cancel' },
-                            { text: 'Reset', style: 'destructive', onPress: () => resetHold() },
-                          ],
-                        );
-                      }}
-                      style={{ flexDirection: 'row', alignItems: 'center' }}
-                    >
-                      <Ionicons name="arrow-forward" size={14} color={colors.primary} style={{ marginRight: spacing.sm }} />
-                      <Text variant="bodySm" color={colors.textSecondary} style={{ flex: 1 }}>
-                        Held for Next Month
-                      </Text>
-                      <Amount value={buffered} variant="body" color={colors.primary} weight="600" style={{ marginRight: spacing.sm }} />
-                      <Ionicons name="close-circle" size={18} color={colors.textMuted} />
-                    </Pressable>
-                  </>
-                )}
-              </View>
-
-              {/* Quick Actions */}
-              <View
+                <Ionicons name="checkmark" size={18} color={colors.textPrimary} />
+              </GlassView>
+            ) : (
+              <BlurView
+                tint="systemChromeMaterial"
+                intensity={100}
                 style={{
-                  flexDirection: 'row',
+                  borderRadius: br.full,
                   paddingHorizontal: spacing.lg,
-                  paddingBottom: spacing.md,
-                  gap: spacing.sm,
+                  paddingVertical: spacing.sm,
+                  overflow: 'hidden',
                 }}
               >
-                <View style={{ flex: 1 }}>
-                  <Button
-                    title="Hold"
-                    icon="calendar-outline"
-                    variant="secondary"
-                    size="sm"
-                    onPress={() => setHoldModalVisible(true)}
-                    style={{ borderRadius: br.full }}
-                  />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Button
-                    title="Auto-assign"
-                    icon="sparkles-outline"
-                    variant="secondary"
-                    size="sm"
-                    loading={saving}
-                    onPress={handleAutoAssign}
-                    style={{ borderRadius: br.full }}
-                  />
-                </View>
-              </View>
-            </>
-          }
-          renderSectionHeader={({ section }) => (
-            <View
-              style={{
-                paddingHorizontal: spacing.lg * 2,
-                paddingTop: spacing.lg,
-                paddingBottom: spacing.xs,
-                backgroundColor: colors.pageBackground,
-              }}
-            >
-              <Text variant="captionSm" color={colors.textMuted} style={labelStyle}>
-                {section.title}
-              </Text>
-            </View>
-          )}
-          renderItem={({ item, index, section }) => {
-            const isFirst = index === 0;
-            const isLast = index === section.data.length - 1;
-            const isEdited = (edits[item.id] ?? 0) !== item.budgeted;
-            return (
-              <CategoryAmountRow
-                catId={item.id}
-                name={item.name}
-                value={edits[item.id] ?? 0}
-                onChange={updateEdit}
-                isFirst={isFirst}
-                isLast={isLast}
-                isEdited={isEdited}
-              />
-            );
-          }}
-          contentContainerStyle={{ paddingBottom: hasChanges ? 120 : 40 }}
-        />
-      </KeyboardAvoidingView>
+                <Ionicons name="checkmark" size={18} color={colors.textPrimary} />
+              </BlurView>
+            )}
+          </Pressable>
+        </Animated.View>
+      )}
 
-      {/* Save button — fixed, overlays above the list */}
+      {/* Save button — fixed at bottom */}
       {hasChanges && (
         <View
           style={{
@@ -357,7 +385,7 @@ export default function AssignBudgetScreen() {
           }}
         >
           <Button
-            title={saving ? 'Saving...' : 'Save Changes'}
+            title={saving ? 'Saving...' : 'Save Assignment'}
             icon="checkmark"
             variant="primary"
             size="lg"
@@ -380,19 +408,17 @@ export default function AssignBudgetScreen() {
   );
 }
 
-// ── Category row with inset grouped styling ──────────────────────────────────
+// ── Category row with goal progress bar ─────────────────────────────────────
 
 function CategoryAmountRow({
-  catId,
-  name,
+  cat,
   value,
   onChange,
   isFirst,
   isLast,
   isEdited,
 }: {
-  catId: string;
-  name: string;
+  cat: BudgetCategory;
   value: number;
   onChange: (catId: string, cents: number) => void;
   isFirst: boolean;
@@ -402,14 +428,34 @@ function CategoryAmountRow({
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const inputRef = useRef<CompactCurrencyInputRef>(null);
 
+  const hasGoal = cat.goal != null && cat.goal > 0;
+
+  // Progress bar: funded ratio based on edited value
+  let progressPct = 0;
+  if (hasGoal) {
+    const funded = cat.longGoal ? cat.balance + (value - cat.budgeted) : value;
+    progressPct = Math.min(Math.max(funded / cat.goal!, 0), 1);
+  }
+
+  const barColor = isEdited ? colors.primary : colors.textMuted;
+
+  // Build a virtual BudgetCategory reflecting the edited budgeted value for goal text
+  const editedCat: BudgetCategory = useMemo(
+    () => ({
+      ...cat,
+      budgeted: value,
+      balance: cat.balance + (value - cat.budgeted),
+    }),
+    [cat, value],
+  );
+
   return (
     <Pressable
       onPress={() => inputRef.current?.focus()}
       style={{
-        flexDirection: 'row',
-        alignItems: 'center',
         paddingHorizontal: spacing.lg,
-        paddingVertical: spacing.md,
+        paddingTop: 12,
+        paddingBottom: 10,
         minHeight: 44,
         marginHorizontal: spacing.lg,
         backgroundColor: colors.cardBackground,
@@ -417,10 +463,9 @@ function CategoryAmountRow({
         borderTopRightRadius: isFirst ? br.lg : 0,
         borderBottomLeftRadius: isLast ? br.lg : 0,
         borderBottomRightRadius: isLast ? br.lg : 0,
-        borderBottomWidth: isLast ? 0 : bw.thin,
-        borderBottomColor: colors.divider,
       }}
     >
+      {/* Edit indicator */}
       {isEdited && (
         <View
           style={{
@@ -434,14 +479,63 @@ function CategoryAmountRow({
           }}
         />
       )}
-      <Text variant="body" style={{ flex: 1 }} numberOfLines={1}>
-        {name}
-      </Text>
-      <CompactCurrencyInput
-        ref={inputRef}
-        value={value}
-        onChangeValue={(cents) => onChange(catId, cents)}
-      />
+
+      {/* Line 1: Name + Input */}
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <Text variant="body" style={{ flex: 1 }} numberOfLines={1}>
+          {cat.name}
+        </Text>
+        <CompactCurrencyInput
+          ref={inputRef}
+          value={value}
+          onChangeValue={(cents) => onChange(cat.id, cents)}
+        />
+      </View>
+
+      {/* Line 2: Progress bar (only for goal categories) */}
+      {hasGoal && (
+        <View
+          style={{
+            height: 5,
+            borderRadius: 2.5,
+            backgroundColor: colors.divider,
+            marginTop: 6,
+            overflow: 'hidden',
+          }}
+        >
+          <View
+            style={{
+              width: `${Math.round(progressPct * 100)}%`,
+              height: '100%',
+              borderRadius: 2.5,
+              backgroundColor: barColor,
+            }}
+          />
+        </View>
+      )}
+
+      {/* Line 3: Goal progress text */}
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginTop: 3 }}>
+        {getGoalProgress(editedCat).map((seg, i) =>
+          'text' in seg
+            ? <Text key={i} variant="captionSm" color={colors.textMuted}>{seg.text}</Text>
+            : <Amount key={i} value={seg.amount} variant="captionSm" color={colors.textMuted} colored={false} />
+        )}
+      </View>
+
+      {/* Inset divider */}
+      {!isLast && (
+        <View
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: spacing.lg,
+            right: spacing.lg,
+            height: bw.thin,
+            backgroundColor: colors.divider,
+          }}
+        />
+      )}
     </Pressable>
   );
 }

@@ -1,7 +1,9 @@
+import { useRef } from 'react';
 import { Pressable, View } from 'react-native';
 import { useTheme } from '../../providers/ThemeProvider';
 import { Text } from '../atoms/Text';
 import { Amount } from '../atoms/Amount';
+import { CompactCurrencyInput, type CompactCurrencyInputRef } from '../atoms/CompactCurrencyInput';
 import { formatPrivacyAware } from '../../../lib/format';
 import { getGoalProgress } from '../../../goals/progress';
 import type { BudgetCategory } from '../../../budgets/types';
@@ -11,8 +13,16 @@ interface BudgetCategoryRowProps {
   isIncome: boolean;
   isFirst?: boolean;
   isLast?: boolean;
+  /** Whether this row is in inline-edit mode (global edit mode). */
+  editing?: boolean;
+  /** Current edit value in cents (only used when editing). */
+  editValue?: number;
+  onPress?: (cat: BudgetCategory) => void;
   onLongPress: (cat: BudgetCategory) => void;
-  onBalancePress: (cat: BudgetCategory) => void;
+  /** Called on every keystroke while editing. */
+  onEditChange?: (catId: string, cents: number) => void;
+  /** Whether to show progress bars and goal text (default true). */
+  showProgressBar?: boolean;
 }
 
 export function BudgetCategoryRow({
@@ -20,10 +30,15 @@ export function BudgetCategoryRow({
   isIncome,
   isFirst = false,
   isLast = false,
+  editing = false,
+  editValue,
+  onPress,
   onLongPress,
-  onBalancePress,
+  onEditChange,
+  showProgressBar = true,
 }: BudgetCategoryRowProps) {
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
+  const inputRef = useRef<CompactCurrencyInputRef>(null);
 
   const insetStyle = {
     marginHorizontal: spacing.lg,
@@ -130,10 +145,17 @@ export function BudgetCategoryRow({
         minHeight: 44,
         ...insetStyle,
       }}
+      onPress={() => {
+        if (editing) {
+          inputRef.current?.focus();
+        } else {
+          onPress?.(cat);
+        }
+      }}
       onLongPress={() => onLongPress(cat)}
       delayLongPress={400}
     >
-      {/* Line 1: Name + Available pill */}
+      {/* Line 1: Name + Budget input (when editing) + Available pill */}
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4, overflow: 'hidden' }}>
           <Text variant="body" numberOfLines={1} style={{ flexShrink: 1 }}>
@@ -145,15 +167,16 @@ export function BudgetCategoryRow({
             </Text>
           )}
         </View>
-        <Pressable
-          onPress={(e) => {
-            e.stopPropagation?.();
-            onBalancePress(cat);
-          }}
-          accessibilityLabel={`${formatPrivacyAware(cat.balance)} available. Tap to move money.`}
-          accessibilityRole="button"
+        {editing && (
+          <CompactCurrencyInput
+            ref={inputRef}
+            value={editValue ?? cat.budgeted}
+            onChangeValue={(cents) => onEditChange?.(cat.id, cents)}
+          />
+        )}
+        <View
+          accessibilityLabel={`${formatPrivacyAware(cat.balance)} available`}
           style={{
-            alignSelf: 'stretch',
             justifyContent: 'center',
             paddingLeft: spacing.sm,
           }}
@@ -170,46 +193,35 @@ export function BudgetCategoryRow({
           >
             <Amount value={cat.balance} variant="captionSm" color={pillText} weight="700" />
           </View>
-        </Pressable>
+        </View>
       </View>
 
-      {/* Line 2: Progress text */}
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginTop: 4 }}>
-        {getGoalProgress(cat).map((seg, i) =>
-          'text' in seg
-            ? <Text key={i} variant="bodySm" color={colors.textMuted}>{seg.text}</Text>
-            : <Amount key={i} value={seg.amount} variant="bodySm" color={colors.textSecondary} colored={false} />
-        )}
-      </View>
-
-      {/* Line 3: Progress bar */}
-      {hasGoal ? (
+      {/* Line 2: Progress bar */}
+      {showProgressBar && (hasGoal ? (
         <View
           style={{
-            height: 3,
-            borderRadius: 1.5,
+            height: 5,
+            borderRadius: 2.5,
             backgroundColor: colors.divider,
             marginTop: 6,
             overflow: 'hidden',
           }}
         >
-          {/* Segment 1: spent (lighter) */}
           <View
             style={{
               position: 'absolute', left: 0, top: 0, bottom: 0,
               width: `${Math.round(goalSpentPct * 100)}%`,
-              borderRadius: 1.5,
+              borderRadius: 2.5,
               backgroundColor: goalColor + '50',
             }}
           />
-          {/* Segment 2: funded but not spent (darker, starts after spent) */}
           {goalFundedPct > goalSpentPct && (
             <View
               style={{
                 position: 'absolute', top: 0, bottom: 0,
                 left: `${Math.round(goalSpentPct * 100)}%`,
                 width: `${Math.round((goalFundedPct - goalSpentPct) * 100)}%`,
-                borderRadius: 1.5,
+                borderRadius: 2.5,
                 backgroundColor: goalColor + '90',
               }}
             />
@@ -218,8 +230,8 @@ export function BudgetCategoryRow({
       ) : budgetedAbs > 0 ? (
         <View
           style={{
-            height: 3,
-            borderRadius: 1.5,
+            height: 5,
+            borderRadius: 2.5,
             backgroundColor: colors.divider,
             marginTop: 6,
             overflow: 'hidden',
@@ -229,12 +241,23 @@ export function BudgetCategoryRow({
             style={{
               width: `${Math.round(noGoalClampedPct * 100)}%`,
               height: '100%',
-              borderRadius: 1.5,
+              borderRadius: 2.5,
               backgroundColor: noGoalBarColor,
             }}
           />
         </View>
-      ) : null}
+      ) : null)}
+
+      {/* Line 3: Progress text (informational) */}
+      {showProgressBar && (
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginTop: 3 }}>
+          {getGoalProgress(cat).map((seg, i) =>
+            'text' in seg
+              ? <Text key={i} variant="captionSm" color={colors.textMuted}>{seg.text}</Text>
+              : <Amount key={i} value={seg.amount} variant="captionSm" color={colors.textMuted} colored={false} />
+          )}
+        </View>
+      )}
       {!isLast && (
         <View style={{ position: 'absolute', bottom: 0, left: spacing.lg, right: spacing.lg, height: bw.thin, backgroundColor: colors.divider }} />
       )}

@@ -20,7 +20,7 @@ import {
 import type { SearchToken } from '../../../../src/transactions/types';
 import { useAccountsStore } from '../../../../src/stores/accountsStore';
 import { useCategoriesStore } from '../../../../src/stores/categoriesStore';
-import { useSpendingStore } from '../../../../src/stores/spendingStore';
+import { usePrefsStore } from '../../../../src/stores/prefsStore';
 import { useTheme } from '../../../../src/presentation/providers/ThemeProvider';
 import { EmptyState } from '../../../../src/presentation/components';
 import { TransactionRow } from '../../../../src/presentation/components/account/TransactionRow';
@@ -100,7 +100,7 @@ export default function SearchScreen() {
   const { colors } = useTheme();
   const { accounts } = useAccountsStore();
   const { categories } = useCategoriesStore();
-  const { hideReconciled } = useSpendingStore();
+  const { hideReconciled } = usePrefsStore();
 
   // Search state
   const searchInputRef = useRef<TextInput>(null);

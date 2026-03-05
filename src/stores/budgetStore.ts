@@ -5,10 +5,14 @@ import { applyGoals } from '../goals/apply';
 import type { ApplyGoalsResult } from '../goals/apply';
 import type { BudgetMonth } from '../budgets/types';
 
+type CoverTarget = { catId: string; catName: string; balance: number };
+
 type BudgetState = {
   month: string;
   data: BudgetMonth | null;
   loading: boolean;
+  /** Transient state: category selected in the cover-overspent form sheet. */
+  coverTarget: CoverTarget | null;
   setMonth(month: string): void;
   load(): Promise<void>;
   setAmount(categoryId: string, amount: number): Promise<void>;
@@ -22,12 +26,14 @@ type BudgetState = {
   transfer(fromCategoryId: string, toCategoryId: string, amountCents: number): Promise<void>;
   /** Apply goal templates to all categories for the current month. */
   applyGoals(force?: boolean): Promise<ApplyGoalsResult>;
+  setCoverTarget(target: CoverTarget | null): void;
 };
 
 export const useBudgetStore = create<BudgetState>((set, get) => ({
   month: currentMonth(),
   data: null,
   loading: false,
+  coverTarget: null,
 
   setMonth(month) {
     set({ month });
@@ -74,5 +80,9 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
     const result = await applyGoals(get().month, force);
     await get().load();
     return result;
+  },
+
+  setCoverTarget(target) {
+    set({ coverTarget: target });
   },
 }));

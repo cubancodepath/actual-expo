@@ -4,6 +4,7 @@ import { Timestamp } from '../crdt';
 import { monthToInt } from '../lib/date';
 import type { ZeroBudgetRow, CategoryGroupRow, CategoryRow } from '../db/types';
 import type { BudgetMonth, BudgetGroup, BudgetCategory } from './types';
+import { inferGoalFromDef } from '../goals';
 
 // ---------------------------------------------------------------------------
 // Common transaction filter
@@ -324,9 +325,19 @@ export async function getBudgetMonth(month: string): Promise<BudgetMonth> {
       groupSpent    += spent;
       groupCarryIn  += carryIn;
 
-      const goal     = goalMap.get(c.id) ?? null;
-      const longGoal = longGoalMap.get(c.id) ?? false;
+      let goal       = goalMap.get(c.id) ?? null;
+      let longGoal   = longGoalMap.get(c.id) ?? false;
       const goalDef  = c.goal_def ?? null;
+
+      // If no goal stored in zero_budgets but category has goal_def,
+      // infer the goal in-memory (fast, no DB writes needed).
+      if (goal == null && goalDef) {
+        const inferred = inferGoalFromDef(goalDef, month);
+        if (inferred) {
+          goal = inferred.goal;
+          longGoal = inferred.longGoal;
+        }
+      }
 
       return { id: c.id, name: c.name, budgeted, spent, balance, carryIn, carryover, goal, longGoal, goalDef };
     });

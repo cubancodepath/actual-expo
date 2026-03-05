@@ -32,6 +32,7 @@ import { BalanceSummary } from '../../../src/presentation/components/account/Bal
 import { TransactionRow } from '../../../src/presentation/components/account/TransactionRow';
 import { DateSectionHeader } from '../../../src/presentation/components/account/DateSectionHeader';
 import { AddTransactionButton } from '../../../src/presentation/components/molecules/AddTransactionButton';
+import { usePrefsStore } from '../../../src/stores/prefsStore';
 
 // ---------------------------------------------------------------------------
 // Types for mixed FlashList data
@@ -101,7 +102,7 @@ export default function AccountTransactionsScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [clearedBalance, setClearedBalance] = useState(0);
-  const [hideReconciled, setHideReconciled] = useState(false);
+  const { hideReconciled, toggleHideReconciled } = usePrefsStore();
   const [showReconcile, setShowReconcile] = useState(false);
   const offsetRef = useRef(0);
 
@@ -192,7 +193,7 @@ export default function AccountTransactionsScreen() {
 
   function handleToggleHideReconciled() {
     const next = !hideReconciled;
-    setHideReconciled(next);
+    toggleHideReconciled();
     loadTransactions(next);
   }
 
@@ -453,11 +454,19 @@ export default function AccountTransactionsScreen() {
               : null
           }
           ListEmptyComponent={
-            <EmptyState
-              icon="receipt-outline"
-              title="No transactions yet"
-              description="Add your first transaction to get started"
-            />
+            hideReconciled
+              ? <EmptyState
+                  icon="lock-closed-outline"
+                  title="All transactions reconciled"
+                  description="Reconciled transactions are hidden"
+                  actionLabel="Show All"
+                  onAction={handleToggleHideReconciled}
+                />
+              : <EmptyState
+                  icon="receipt-outline"
+                  title="No transactions yet"
+                  description="Add your first transaction to get started"
+                />
           }
           onEndReached={loadMore}
           onEndReachedThreshold={0.3}

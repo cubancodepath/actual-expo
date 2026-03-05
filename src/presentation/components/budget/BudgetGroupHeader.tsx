@@ -34,11 +34,11 @@ export function BudgetGroupHeader({ group, isCollapsed, onToggle }: BudgetGroupH
       style={{
         flexDirection: 'row',
         alignItems: 'center',
-        marginHorizontal: spacing.lg,
-        paddingHorizontal: spacing.lg,
+        backgroundColor: colors.pageBackground,
+        paddingHorizontal: spacing.lg + spacing.lg,
         paddingVertical: spacing.md,
-        marginTop: spacing.lg,
-        marginBottom: spacing.xs,
+        paddingTop: spacing.lg + spacing.md,
+        paddingBottom: spacing.md,
         gap: 6,
       }}
       onPress={onToggle}

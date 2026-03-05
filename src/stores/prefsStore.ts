@@ -30,6 +30,8 @@ type PrefsState = {
   encryptKeyId?: string;
   lastSyncedTimestamp?: string;
   budgetName?: string;
+  showProgressBars: boolean;
+  hideReconciled: boolean;
 
   // Token — in-memory only; persisted in iOS Keychain / Android Keystore
   token: string;
@@ -44,6 +46,8 @@ type PrefsState = {
   loadToken(): Promise<void>;
   /** Save token to SecureStore and update state. */
   saveToken(token: string): Promise<void>;
+  toggleProgressBars(): void;
+  toggleHideReconciled(): void;
   /** Full logout: wipe MMKV + SecureStore and reset state. */
   clearAll(): Promise<void>;
 };
@@ -65,6 +69,8 @@ export const usePrefsStore = create<PrefsState>()(
       groupId: '',
       encryptKeyId: undefined,
       lastSyncedTimestamp: undefined,
+      showProgressBars: true,
+      hideReconciled: false,
       hasToken: false,
       isConfigured: false,
 
@@ -73,6 +79,14 @@ export const usePrefsStore = create<PrefsState>()(
           const next = { ...state, ...prefs };
           return { ...next, hasToken: !!(next.serverUrl && next.token), isConfigured: computeIsConfigured(next) };
         });
+      },
+
+      toggleProgressBars() {
+        set((state) => ({ showProgressBars: !state.showProgressBars }));
+      },
+
+      toggleHideReconciled() {
+        set((state) => ({ hideReconciled: !state.hideReconciled }));
       },
 
       async loadToken() {
@@ -116,6 +130,8 @@ export const usePrefsStore = create<PrefsState>()(
         encryptKeyId: state.encryptKeyId,
         lastSyncedTimestamp: state.lastSyncedTimestamp,
         budgetName: state.budgetName,
+        showProgressBars: state.showProgressBars,
+        hideReconciled: state.hideReconciled,
       }),
     },
   ),

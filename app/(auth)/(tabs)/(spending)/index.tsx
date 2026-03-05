@@ -20,7 +20,7 @@ import {
   type TransactionDisplay,
 } from '../../../../src/transactions';
 import { useAccountsStore } from '../../../../src/stores/accountsStore';
-import { useSpendingStore } from '../../../../src/stores/spendingStore';
+import { usePrefsStore } from '../../../../src/stores/prefsStore';
 import { usePrivacyStore } from '../../../../src/stores/privacyStore';
 import { useTabBarStore } from '../../../../src/stores/tabBarStore';
 import { useTheme, useThemedStyles } from '../../../../src/presentation/providers/ThemeProvider';
@@ -89,7 +89,7 @@ export default function SpendingScreen() {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const { accounts, load: loadAccounts } = useAccountsStore();
-  const { hideReconciled, toggleHideReconciled } = useSpendingStore();
+  const { hideReconciled } = usePrefsStore();
   const { privacyMode, toggle: togglePrivacy } = usePrivacyStore();
   const setTabBarHidden = useTabBarStore((s) => s.setHidden);
 
@@ -359,12 +359,6 @@ export default function SpendingScreen() {
                 },
                 {
                   type: 'action' as const,
-                  label: hideReconciled ? 'Show Reconciled' : 'Hide Reconciled',
-                  icon: { type: 'sfSymbol' as const, name: hideReconciled ? 'checkmark.circle' : 'checkmark.circle.badge.xmark' },
-                  onPress: toggleHideReconciled,
-                },
-                {
-                  type: 'action' as const,
                   label: 'Settings',
                   icon: { type: 'sfSymbol' as const, name: 'gearshape' },
                   onPress: () => router.push('/(auth)/settings'),
@@ -375,7 +369,7 @@ export default function SpendingScreen() {
         ],
       });
     }
-  }, [colors.headerText, colors.textMuted, hideReconciled, privacyMode, isSelectMode, selectedIds.size, selectedTotal]);
+  }, [colors.headerText, colors.textMuted, privacyMode, isSelectMode, selectedIds.size, selectedTotal]);
 
   // ---- Render ----
 
@@ -423,11 +417,19 @@ export default function SpendingScreen() {
         ListEmptyComponent={
           loading
             ? <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
-            : <EmptyState
-                icon="receipt-outline"
-                title="No transactions yet"
-                description="Add your first transaction to get started"
-              />
+            : hideReconciled
+              ? <EmptyState
+                  icon="lock-closed-outline"
+                  title="All transactions reconciled"
+                  description="Reconciled transactions are hidden"
+                  actionLabel="Show All"
+                  onAction={() => usePrefsStore.getState().toggleHideReconciled()}
+                />
+              : <EmptyState
+                  icon="receipt-outline"
+                  title="No transactions yet"
+                  description="Add your first transaction to get started"
+                />
         }
         onEndReached={loadMore}
         onEndReachedThreshold={0.3}

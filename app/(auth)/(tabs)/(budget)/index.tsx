@@ -3,6 +3,7 @@ import {
   ActionSheetIOS,
   ActivityIndicator,
   Alert,
+  Keyboard,
   Platform,
   Pressable,
   RefreshControl,
@@ -12,20 +13,24 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import { useTheme } from '../../../../src/presentation/providers/ThemeProvider';
-import { useSharedValue } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { AddTransactionButton } from '../../../../src/presentation/components/molecules/AddTransactionButton';
 import { useBudgetStore } from '../../../../src/stores/budgetStore';
 import { useRefreshControl } from '../../../../src/presentation/hooks/useRefreshControl';
+import { useKeyboardHeight } from '../../../../src/presentation/hooks/useKeyboardHeight';
 import type { BudgetCategory, BudgetGroup } from '../../../../src/budgets/types';
 
 import { BudgetGroupHeader } from '../../../../src/presentation/components/budget/BudgetGroupHeader';
 import { BudgetCategoryRow } from '../../../../src/presentation/components/budget/BudgetCategoryRow';
 import { MoveMoneyModal, type MoveMoneyMode, type MoveMoneyCategory } from '../../../../src/presentation/components/budget/MoveMoneyModal';
 import { ReadyToAssignPill } from '../../../../src/presentation/components/budget/ReadyToAssignPill';
+import { OverspentPill } from '../../../../src/presentation/components/budget/OverspentPill';
 import { Text } from '../../../../src/presentation/components/atoms/Text';
 import { Amount } from '../../../../src/presentation/components/atoms/Amount';
+import { Button } from '../../../../src/presentation/components/atoms/Button';
 import { formatPrivacyAware } from '../../../../src/lib/format';
 import { usePrivacyStore } from '../../../../src/stores/privacyStore';
+import { usePrefsStore } from '../../../../src/stores/prefsStore';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -70,11 +75,12 @@ function filterBudgetGroups(groups: BudgetGroup[], filter: BudgetFilter): Budget
 // ---------------------------------------------------------------------------
 
 export default function BudgetScreen() {
-  const { colors, spacing, borderRadius: br } = useTheme();
+  const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const router = useRouter();
-  const { month, data, loading, load, setAmount, setCarryover, transfer, resetHold } = useBudgetStore();
+  const { month, data, loading, load, setAmount, setCarryover, transfer, resetHold, coverTarget, setCoverTarget } = useBudgetStore();
   const { refreshControlProps } = useRefreshControl();
   const { privacyMode, toggle: togglePrivacy } = usePrivacyStore();
+  const { showProgressBars, toggleProgressBars } = usePrefsStore();
 
   const fabCollapsed = useSharedValue(false);
   const COLLAPSE_THRESHOLD = 100;
@@ -88,6 +94,11 @@ export default function BudgetScreen() {
     catId: string; catName: string; balance: number; mode: MoveMoneyMode;
   } | null>(null);
 
+  // -- Inline budget editing (global edit mode) --
+  const [editMode, setEditMode] = useState(false);
+  const [edits, setEdits] = useState<Record<string, number>>({});
+  const [saving, setSaving] = useState(false);
+
   // -- Collapsible groups --
   function toggleGroup(groupId: string) {
     setCollapsedGroups((prev) => {
@@ -97,6 +108,12 @@ export default function BudgetScreen() {
       return next;
     });
   }
+
+  // -- Keyboard tracking --
+  const { height: keyboardHeight, visible: keyboardVisible } = useKeyboardHeight();
+  const editToolbarStyle = useAnimatedStyle(() => ({
+    bottom: keyboardHeight.value,
+  }));
 
   // -- Reset filter on month change --
   useEffect(() => { setFilter('all'); }, [month]);
@@ -138,16 +155,6 @@ export default function BudgetScreen() {
     await transfer(fromId, toId, amountCents);
   }
 
-  function handleBalancePress(cat: BudgetCategory) {
-    if (cat.balance === 0) return;
-    setMoveMoneyTarget({
-      catId: cat.id,
-      catName: cat.name,
-      balance: cat.balance,
-      mode: cat.balance > 0 ? 'transfer' : 'cover',
-    });
-  }
-
   function handleCategoryLongPress(cat: BudgetCategory) {
     const toggleLabel = cat.carryover ? 'Remove overspending rollover' : 'Rollover overspending';
     if (Platform.OS === 'ios') {
@@ -163,8 +170,103 @@ export default function BudgetScreen() {
     }
   }
 
+  // -- Global edit mode --
+  function enterEditMode() {
+    if (editMode) return;
+    const initial: Record<string, number> = {};
+    for (const g of data?.groups ?? []) {
+      if (g.is_income) continue;
+      for (const cat of g.categories) {
+        initial[cat.id] = cat.budgeted;
+      }
+    }
+    setEdits(initial);
+    setEditMode(true);
+  }
+
+  function handleCategoryPress(_cat: BudgetCategory) {
+    if (!editMode) enterEditMode();
+  }
+
+  function handleEditChange(catId: string, cents: number) {
+    setEdits((prev) => ({ ...prev, [catId]: cents }));
+  }
+
+  async function handleSaveEdits() {
+    setSaving(true);
+    try {
+      const groups = data?.groups ?? [];
+      for (const g of groups) {
+        if (g.is_income) continue;
+        for (const cat of g.categories) {
+          const newCents = edits[cat.id] ?? 0;
+          if (newCents !== cat.budgeted) {
+            await setAmount(cat.id, newCents);
+          }
+        }
+      }
+      setEditMode(false);
+      setEdits({});
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function handleCancelEdits() {
+    setEditMode(false);
+    setEdits({});
+  }
+
+  const hasEdits = useMemo(() => {
+    if (!editMode) return false;
+    for (const g of data?.groups ?? []) {
+      if (g.is_income) continue;
+      for (const cat of g.categories) {
+        if ((edits[cat.id] ?? cat.budgeted) !== cat.budgeted) return true;
+      }
+    }
+    return false;
+  }, [editMode, edits, data]);
+
   // -- Budget assignment balance --
   const toBudget = data?.toBudget ?? 0;
+
+  // -- Overspent categories --
+  const overspentCategories = useMemo(() => {
+    if (!data) return [];
+    return data.groups
+      .filter((g) => !g.is_income)
+      .flatMap((g) =>
+        g.categories
+          .filter((c) => c.balance < 0 && !c.carryover)
+          .map((c) => ({ id: c.id, name: c.name, balance: c.balance, groupName: g.name })),
+      );
+  }, [data]);
+  const overspentCount = overspentCategories.length;
+  const overspentTotal = overspentCategories.reduce((sum, c) => sum + c.balance, 0);
+
+
+  function handleOverspentPress() {
+    if (overspentCount === 1) {
+      const cat = overspentCategories[0];
+      setMoveMoneyTarget({ catId: cat.id, catName: cat.name, balance: cat.balance, mode: 'cover' });
+    } else {
+      router.push('/(auth)/budget/cover-overspent');
+    }
+  }
+
+  // -- Cover target from form sheet --
+  useEffect(() => {
+    if (coverTarget) {
+      setMoveMoneyTarget({
+        catId: coverTarget.catId,
+        catName: coverTarget.catName,
+        balance: coverTarget.balance,
+        mode: 'cover',
+      });
+      setCoverTarget(null);
+    }
+  }, [coverTarget]);
 
   // -- Render helpers --
   function renderSectionHeader({ section }: { section: BudgetSection }) {
@@ -178,14 +280,19 @@ export default function BudgetScreen() {
   }
 
   function renderItem({ item: cat, index, section }: { item: BudgetCategory; index: number; section: BudgetSection }) {
+    const isExpenseEdit = editMode && !section.group.is_income;
     return (
       <BudgetCategoryRow
         cat={cat}
         isIncome={section.group.is_income}
         isFirst={index === 0}
         isLast={index === section.data.length - 1}
+        editing={isExpenseEdit}
+        editValue={isExpenseEdit ? (edits[cat.id] ?? cat.budgeted) : undefined}
+        onPress={handleCategoryPress}
         onLongPress={handleCategoryLongPress}
-        onBalancePress={handleBalancePress}
+        onEditChange={handleEditChange}
+        showProgressBar={showProgressBars}
       />
     );
   }
@@ -204,6 +311,48 @@ export default function BudgetScreen() {
         onConfirm={handleMoveMoneyConfirm}
       />
 
+      {/* Sticky status area — stays fixed above the list */}
+      {data && (toBudget !== 0 || data.buffered > 0) && (
+        <View style={{ paddingTop: spacing.sm, paddingBottom: spacing.xs }}>
+          {toBudget !== 0 && (
+            <ReadyToAssignPill
+              amount={toBudget}
+              onPress={() => router.push('/(auth)/budget/assign')}
+            />
+          )}
+          {data.buffered > 0 && (
+            <Pressable
+              onPress={() =>
+                Alert.alert(
+                  'Reset Hold',
+                  'Release held funds back to "Ready to Assign"?',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Reset', style: 'destructive', onPress: () => resetHold() },
+                  ],
+                )
+              }
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginTop: spacing.xs,
+                gap: spacing.xxs,
+              }}
+            >
+              <Ionicons name="arrow-forward" size={11} color={colors.textMuted} />
+              <Text variant="captionSm" color={colors.textMuted}>
+                Holding{' '}
+              </Text>
+              <Amount value={data.buffered} variant="captionSm" color={colors.textMuted} weight="600" />
+              <Text variant="captionSm" color={colors.textMuted}>
+                {' '}for next month
+              </Text>
+            </Pressable>
+          )}
+        </View>
+      )}
+
       {/* Budget list */}
       {loading && !data ? (
         <ActivityIndicator color={colors.link} style={{ marginTop: 40 }} />
@@ -211,54 +360,20 @@ export default function BudgetScreen() {
         <SectionList
           sections={sections}
           keyExtractor={(c) => c.id}
+          keyboardShouldPersistTaps="handled"
           renderItem={renderItem}
           renderSectionHeader={renderSectionHeader}
-          stickySectionHeadersEnabled={false}
+          stickySectionHeadersEnabled
           onScroll={handleScroll}
           scrollEventThrottle={16}
-          extraData={collapsedGroups}
+          extraData={`${[...collapsedGroups].join()}-${editMode}-${JSON.stringify(edits)}`}
           ListHeaderComponent={
-            data ? (
-              <View style={{ paddingTop: spacing.sm, paddingBottom: spacing.xs }}>
-                {/* Budget assignment status pill — always visible, tappable when actionable */}
-                {toBudget !== 0 && (
-                  <ReadyToAssignPill
-                    amount={toBudget}
-                    onPress={() => router.push('/(auth)/budget/assign')}
-                  />
-                )}
-
-                {/* Held for next month — discrete caption */}
-                {data.buffered > 0 && (
-                  <Pressable
-                    onPress={() =>
-                      Alert.alert(
-                        'Reset Hold',
-                        'Release held funds back to "Ready to Assign"?',
-                        [
-                          { text: 'Cancel', style: 'cancel' },
-                          { text: 'Reset', style: 'destructive', onPress: () => resetHold() },
-                        ],
-                      )
-                    }
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginTop: spacing.xs,
-                      gap: spacing.xxs,
-                    }}
-                  >
-                    <Ionicons name="arrow-forward" size={11} color={colors.textMuted} />
-                    <Text variant="captionSm" color={colors.textMuted}>
-                      Holding{' '}
-                    </Text>
-                    <Amount value={data.buffered} variant="captionSm" color={colors.textMuted} weight="600" />
-                    <Text variant="captionSm" color={colors.textMuted}>
-                      {' '}for next month
-                    </Text>
-                  </Pressable>
-                )}
+            data && overspentCount > 0 ? (
+              <View style={{ paddingTop: spacing.xs, paddingBottom: spacing.xs }}>
+                <OverspentPill
+                  count={overspentCount}
+                  onPress={handleOverspentPress}
+                />
               </View>
             ) : null
           }
@@ -283,8 +398,47 @@ export default function BudgetScreen() {
         />
       )}
 
-      <AddTransactionButton collapsed={fabCollapsed} />
+      {!editMode && <AddTransactionButton collapsed={fabCollapsed} />}
     </View>
+
+    {/* Edit mode toolbar — only visible when keyboard is open */}
+    {editMode && keyboardVisible && (
+      <Animated.View
+        style={[
+          {
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            zIndex: 10,
+            flexDirection: 'row',
+            gap: spacing.sm,
+            paddingHorizontal: spacing.lg,
+            paddingVertical: spacing.sm,
+          },
+          editToolbarStyle,
+        ]}
+      >
+        <View style={{ flex: 1 }}>
+          <Button
+            title="Cancel"
+            variant="secondary"
+            onPress={() => { Keyboard.dismiss(); handleCancelEdits(); }}
+            style={{ borderRadius: br.full }}
+          />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Button
+            title={saving ? 'Saving...' : 'Save'}
+            icon="checkmark"
+            variant="primary"
+            loading={saving}
+            disabled={!hasEdits}
+            onPress={() => { Keyboard.dismiss(); handleSaveEdits(); }}
+            style={{ borderRadius: br.full }}
+          />
+        </View>
+      </Animated.View>
+    )}
     <Stack.Toolbar placement="right">
       <Stack.Toolbar.Menu
         icon={filter === 'all' ? 'line.3.horizontal.decrease' : 'line.3.horizontal.decrease.circle.fill'}
@@ -310,6 +464,12 @@ export default function BudgetScreen() {
           onPress={togglePrivacy}
         >
           {privacyMode ? 'Show Amounts' : 'Hide Amounts'}
+        </Stack.Toolbar.MenuAction>
+        <Stack.Toolbar.MenuAction
+          icon={showProgressBars ? 'line.3.horizontal' : 'line.3.horizontal'}
+          onPress={toggleProgressBars}
+        >
+          {showProgressBars ? 'Hide Progress' : 'Show Progress'}
         </Stack.Toolbar.MenuAction>
         <Stack.Toolbar.MenuAction
           icon="gearshape"

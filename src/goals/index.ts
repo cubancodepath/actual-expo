@@ -10,7 +10,7 @@
 import { first } from '../db';
 import { sendMessages } from '../sync';
 import { Timestamp } from '../crdt';
-import { monthToInt } from '../lib/date';
+import { monthToInt, addMonths } from '../lib/date';
 import { updateCategory } from '../categories';
 import type { Template, LimitDef } from './types';
 
@@ -31,6 +31,93 @@ export function parseGoalDef(goalDef: string | null): Template[] {
   } catch {
     return [];
   }
+}
+
+/**
+ * Fast, synchronous goal inference from goal_def — no DB queries.
+ *
+ * Extracts the goal amount and longGoal flag from the primary template.
+ * Works for the common types (simple, goal, by, periodic, limit).
+ * Returns null for types that need DB queries (average, copy, percentage, spend)
+ * or if no goal_def is set.
+ *
+ * For `by` templates (sinking funds), computes the monthly installment
+ * when `month` is provided: totalTarget / monthsRemaining.
+ *
+ * Used by getBudgetMonth() to fill in goal/longGoal in-memory when
+ * zero_budgets doesn't have a row yet (new month, no applyGoals run).
+ */
+export function inferGoalFromDef(
+  goalDef: string | null,
+  month?: string,
+): { goal: number; longGoal: boolean } | null {
+  const templates = parseGoalDef(goalDef);
+  if (templates.length === 0) return null;
+
+  const primary = templates[0];
+
+  switch (primary.type) {
+    case 'goal':
+      // #goal N — balance-based target
+      return { goal: Math.round(primary.amount * 100), longGoal: true };
+
+    case 'simple':
+      // #template N — fixed monthly amount
+      if (primary.monthly != null) {
+        return { goal: Math.round(primary.monthly * 100), longGoal: false };
+      }
+      // Limit-only template — use limit amount as goal
+      if (primary.limit) {
+        return { goal: Math.round(primary.limit.amount * 100), longGoal: false };
+      }
+      return null;
+
+    case 'by': {
+      // #template N by YYYY-MM — sinking fund: compute monthly installment
+      if (!month) return null;
+      const totalCents = Math.round(primary.amount * 100);
+      let targetMonth = primary.month;
+      const period = primary.annual
+        ? (primary.repeat || 1) * 12
+        : primary.repeat ?? null;
+
+      // Advance target month if it's in the past
+      let numMonths = diffMonthsSync(targetMonth, month);
+      while (numMonths < 0 && period) {
+        targetMonth = addMonths(targetMonth, period);
+        numMonths = diffMonthsSync(targetMonth, month);
+      }
+      if (numMonths < 0) return null; // target in the past, no repeat
+
+      // Monthly installment (same formula as engine's runBy, without fromLastMonth)
+      const monthlyGoal = Math.round(totalCents / (numMonths + 1));
+      if (monthlyGoal <= 0) return null;
+      return { goal: monthlyGoal, longGoal: false };
+    }
+
+    case 'spend':
+      // Spend templates need DB queries for previously budgeted amounts
+      return null;
+
+    case 'periodic':
+      // #template N repeat every ... — use per-occurrence amount as goal
+      return { goal: Math.round(primary.amount * 100), longGoal: false };
+
+    case 'limit':
+      // Standalone limit
+      return { goal: Math.round(primary.amount * 100), longGoal: false };
+
+    // average, copy, percentage, remainder, refill — need DB or context
+    default:
+      return null;
+  }
+}
+
+/** Difference in calendar months between two "YYYY-MM" strings. */
+function diffMonthsSync(to: string, from: string): number {
+  const [toY, toM] = to.split('-').map(Number);
+  const [fromY, fromM] = from.split('-').map(Number);
+  return (toY - fromY) * 12 + (toM - fromM);
 }
 
 /**

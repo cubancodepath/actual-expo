@@ -463,8 +463,12 @@ export default function EditBudgetScreen() {
             overDrag="vertical"
             activeItemScale={1.02}
             activeItemOpacity={0.9}
-            onDragStart={() => Haptics.selectionAsync()}
-            onDragEnd={({ key, data }) => handleCategoryDragEnd(gwc.group.id, key, data)}
+            onDragStart={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)}
+            onOrderChange={() => Haptics.selectionAsync()}
+            onDragEnd={({ key, data }) => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              handleCategoryDragEnd(gwc.group.id, key, data);
+            }}
           />
         ) : gwc.cats.length === 1 ? (
           <ReorderCategoryRow cat={gwc.cats[0]} sortable={false} />
@@ -719,8 +723,12 @@ export default function EditBudgetScreen() {
                 overDrag="vertical"
                 activeItemScale={1.02}
                 activeItemOpacity={0.9}
-                onDragStart={() => Haptics.selectionAsync()}
-                onDragEnd={({ key, data }) => handleGroupDragEnd(key, data)}
+                onDragStart={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)}
+                onOrderChange={() => Haptics.selectionAsync()}
+                onDragEnd={({ key, data }) => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  handleGroupDragEnd(key, data);
+                }}
               />
             </>
           )}

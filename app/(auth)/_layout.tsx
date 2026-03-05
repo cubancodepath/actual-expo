@@ -100,6 +100,16 @@ export default function AuthLayout() {
         }}
       />
       <Stack.Screen
+        name="budget/cover-overspent"
+        options={{
+          ...screen,
+          title: "Cover Overspending",
+          presentation: "formSheet",
+          sheetAllowedDetents: "fitToContents",
+          contentStyle: { backgroundColor: theme.colors.headerBackground },
+        }}
+      />
+      <Stack.Screen
         name="categories"
         options={{ title: "Manage Categories", ...modal }}
       />

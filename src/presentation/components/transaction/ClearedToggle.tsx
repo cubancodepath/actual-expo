@@ -1,4 +1,4 @@
-import { Switch, View } from 'react-native';
+import { Pressable, Switch, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, useThemedStyles } from '../../providers/ThemeProvider';
 import { Text } from '../atoms/Text';
@@ -14,7 +14,7 @@ export function ClearedToggle({ value, onValueChange }: ClearedToggleProps) {
   const styles = useThemedStyles(createStyles);
 
   return (
-    <View style={styles.row}>
+    <Pressable style={styles.row} onPress={() => onValueChange(!value)}>
       <View style={styles.left}>
         <Ionicons name="checkmark-circle-outline" size={18} color={theme.colors.textMuted} />
         <Text variant="body" color={theme.colors.textPrimary} style={styles.label}>
@@ -28,7 +28,7 @@ export function ClearedToggle({ value, onValueChange }: ClearedToggleProps) {
         thumbColor={theme.colors.cardBackground}
         ios_backgroundColor={theme.colors.inputBorder}
       />
-    </View>
+    </Pressable>
   );
 }
 
@@ -39,6 +39,7 @@ const createStyles = (theme: Theme) => ({
     justifyContent: 'space-between' as const,
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.md,
+    minHeight: 44,
   },
   left: {
     flexDirection: 'row' as const,

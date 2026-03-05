@@ -25,7 +25,7 @@ export function TypeToggle({ type, onChangeType }: TypeToggleProps) {
       >
         <Text
           variant="caption"
-          color={type === 'expense' ? theme.colors.primaryText : theme.colors.textMuted}
+          color={type === 'expense' ? theme.colors.primaryText : theme.colors.textSecondary}
           style={styles.btnText}
         >
           Expense
@@ -40,7 +40,7 @@ export function TypeToggle({ type, onChangeType }: TypeToggleProps) {
       >
         <Text
           variant="caption"
-          color={type === 'income' ? theme.colors.primaryText : theme.colors.textMuted}
+          color={type === 'income' ? theme.colors.primaryText : theme.colors.textSecondary}
           style={styles.btnText}
         >
           Income
@@ -61,7 +61,8 @@ const createStyles = (theme: Theme) => ({
   },
   btn: {
     flex: 1,
-    paddingVertical: theme.spacing.sm,
+    minHeight: 44,
+    justifyContent: 'center' as const,
     alignItems: 'center' as const,
     borderRadius: theme.borderRadius.md,
   },

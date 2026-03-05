@@ -12,7 +12,7 @@ import type { Theme } from '../../../src/theme';
 export default function PayeePickerScreen() {
   const { selectedId, accountId } = useLocalSearchParams<{ selectedId?: string; accountId?: string }>();
   const router = useRouter();
-  const { colors, borderWidth: bw } = useTheme();
+  const { colors, spacing, borderWidth: bw } = useTheme();
   const styles = useThemedStyles(createStyles);
   const { payees, load } = usePayeesStore();
   const setPayee = usePickerStore((s) => s.setPayee);
@@ -96,8 +96,8 @@ export default function PayeePickerScreen() {
         {/* Top card: No payee + Create */}
         <View style={styles.topCard}>
           {topItems.map((item, i) => (
-            <View key={item.key}>
-              {i > 0 && <View style={[styles.divider, { backgroundColor: colors.divider }]} />}
+            <View key={item.key} style={{ position: 'relative' }}>
+              {i > 0 && <View style={{ position: 'absolute', top: 0, left: spacing.lg, right: spacing.lg, height: bw.thin, backgroundColor: colors.divider }} />}
               {item.node}
             </View>
           ))}
@@ -124,7 +124,6 @@ export default function PayeePickerScreen() {
                     key={p.id}
                     style={({ pressed }) => [
                       styles.item,
-                      !isLast && { borderBottomWidth: bw.thin, borderBottomColor: colors.divider },
                       pressed && styles.pressed,
                     ]}
                     onPress={() => select(p.id, p.name)}
@@ -140,6 +139,9 @@ export default function PayeePickerScreen() {
                     </Text>
                     {isSelected && (
                       <Ionicons name="checkmark" size={20} color={colors.primary} />
+                    )}
+                    {!isLast && (
+                      <View style={{ position: 'absolute', bottom: 0, left: spacing.lg, right: spacing.lg, height: bw.thin, backgroundColor: colors.divider }} />
                     )}
                   </Pressable>
                 );
@@ -169,7 +171,6 @@ export default function PayeePickerScreen() {
                     key={p.id}
                     style={({ pressed }) => [
                       styles.item,
-                      !isLast && { borderBottomWidth: bw.thin, borderBottomColor: colors.divider },
                       pressed && styles.pressed,
                     ]}
                     onPress={() => select(p.id, p.name)}
@@ -187,6 +188,9 @@ export default function PayeePickerScreen() {
                     </Text>
                     {isSelected && (
                       <Ionicons name="checkmark" size={20} color={colors.primary} />
+                    )}
+                    {!isLast && (
+                      <View style={{ position: 'absolute', bottom: 0, left: spacing.lg, right: spacing.lg, height: bw.thin, backgroundColor: colors.divider }} />
                     )}
                   </Pressable>
                 );

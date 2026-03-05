@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActionSheetIOS,
   ActivityIndicator,
@@ -21,6 +21,7 @@ import type { BudgetCategory, BudgetGroup } from '../../../../src/budgets/types'
 import { BudgetGroupHeader } from '../../../../src/presentation/components/budget/BudgetGroupHeader';
 import { BudgetCategoryRow } from '../../../../src/presentation/components/budget/BudgetCategoryRow';
 import { MoveMoneyModal, type MoveMoneyMode, type MoveMoneyCategory } from '../../../../src/presentation/components/budget/MoveMoneyModal';
+import { ReadyToAssignPill } from '../../../../src/presentation/components/budget/ReadyToAssignPill';
 import { Text } from '../../../../src/presentation/components/atoms/Text';
 import { Amount } from '../../../../src/presentation/components/atoms/Amount';
 import { formatPrivacyAware } from '../../../../src/lib/format';
@@ -30,6 +31,8 @@ import { usePrivacyStore } from '../../../../src/stores/privacyStore';
 // Types
 // ---------------------------------------------------------------------------
 
+type BudgetFilter = 'all' | 'underfunded' | 'overfunded' | 'has-money';
+
 type BudgetSection = {
   key: string;
   title: string;
@@ -38,11 +41,36 @@ type BudgetSection = {
 };
 
 // ---------------------------------------------------------------------------
+// Filter logic
+// ---------------------------------------------------------------------------
+
+function matchesFilter(cat: BudgetCategory, filter: BudgetFilter): boolean {
+  switch (filter) {
+    case 'all':
+      return true;
+    case 'underfunded':
+      return cat.goal !== null && cat.balance < cat.goal;
+    case 'overfunded':
+      if (cat.goal !== null) return cat.balance > cat.goal;
+      return cat.balance > 0 && cat.budgeted > 0;
+    case 'has-money':
+      return cat.balance > 0;
+  }
+}
+
+function filterBudgetGroups(groups: BudgetGroup[], filter: BudgetFilter): BudgetGroup[] {
+  if (filter === 'all') return groups;
+  return groups
+    .map((g) => ({ ...g, categories: g.categories.filter((c) => matchesFilter(c, filter)) }))
+    .filter((g) => g.categories.length > 0);
+}
+
+// ---------------------------------------------------------------------------
 // Main screen
 // ---------------------------------------------------------------------------
 
 export default function BudgetScreen() {
-  const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
+  const { colors, spacing, borderRadius: br } = useTheme();
   const router = useRouter();
   const { month, data, loading, load, setAmount, setCarryover, transfer, resetHold } = useBudgetStore();
   const { refreshing, sync } = useSyncStore();
@@ -54,6 +82,7 @@ export default function BudgetScreen() {
     fabCollapsed.value = e.nativeEvent.contentOffset.y > COLLAPSE_THRESHOLD;
   }, []);
 
+  const [filter, setFilter] = useState<BudgetFilter>('all');
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [moveMoneyTarget, setMoveMoneyTarget] = useState<{
     catId: string; catName: string; balance: number; mode: MoveMoneyMode;
@@ -69,8 +98,15 @@ export default function BudgetScreen() {
     });
   }
 
-  // -- Sections --
-  const sections: BudgetSection[] = (data?.groups ?? []).map((g) => ({
+  // -- Reset filter on month change --
+  useEffect(() => { setFilter('all'); }, [month]);
+
+  // -- Sections (filtered) --
+  const filteredGroups = useMemo(
+    () => filterBudgetGroups(data?.groups ?? [], filter),
+    [data?.groups, filter],
+  );
+  const sections: BudgetSection[] = filteredGroups.map((g) => ({
     key: g.id,
     title: g.name,
     group: g,
@@ -127,14 +163,8 @@ export default function BudgetScreen() {
     }
   }
 
-  // -- Summary card colors --
+  // -- Budget assignment balance --
   const toBudget = data?.toBudget ?? 0;
-  const pillColor =
-    toBudget > 0 ? colors.primary : toBudget < 0 ? colors.negative : colors.positive;
-  const pillIcon: keyof typeof Ionicons.glyphMap =
-    toBudget > 0 ? 'sparkles' : toBudget < 0 ? 'warning' : 'checkmark-circle';
-  const pillLabel =
-    toBudget > 0 ? 'Ready to Assign' : toBudget < 0 ? 'Overassigned' : 'Fully Assigned';
 
   // -- Render helpers --
   function renderSectionHeader({ section }: { section: BudgetSection }) {
@@ -159,12 +189,6 @@ export default function BudgetScreen() {
       />
     );
   }
-
-  const labelStyle = {
-    textTransform: 'uppercase' as const,
-    letterSpacing: 0.8,
-    fontWeight: '700' as const,
-  };
 
   return (
     <>
@@ -195,109 +219,47 @@ export default function BudgetScreen() {
           extraData={collapsedGroups}
           ListHeaderComponent={
             data ? (
-              <>
-                {/* Summary Card */}
-                <Pressable
-                  onPress={() => router.push('/(auth)/budget/assign')}
-                  style={({ pressed }) => pressed && { opacity: 0.8 }}
-                  accessibilityLabel={`${formatPrivacyAware(toBudget)} ${pillLabel}. Tap to assign budget.`}
-                  accessibilityRole="button"
-                >
-                  <View
+              <View style={{ paddingTop: spacing.sm, paddingBottom: spacing.xs }}>
+                {/* Budget assignment status pill — always visible, tappable when actionable */}
+                {toBudget !== 0 && (
+                  <ReadyToAssignPill
+                    amount={toBudget}
+                    onPress={() => router.push('/(auth)/budget/assign')}
+                  />
+                )}
+
+                {/* Held for next month — discrete caption */}
+                {data.buffered > 0 && (
+                  <Pressable
+                    onPress={() =>
+                      Alert.alert(
+                        'Reset Hold',
+                        'Release held funds back to "Ready to Assign"?',
+                        [
+                          { text: 'Cancel', style: 'cancel' },
+                          { text: 'Reset', style: 'destructive', onPress: () => resetHold() },
+                        ],
+                      )
+                    }
                     style={{
-                      marginHorizontal: spacing.lg,
-                      marginTop: spacing.lg,
-                      backgroundColor: colors.cardBackground,
-                      borderRadius: br.lg,
-                      borderWidth: bw.thin,
-                      borderColor: colors.cardBorder,
-                      paddingHorizontal: spacing.lg,
-                      paddingVertical: spacing.md,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginTop: spacing.xs,
+                      gap: spacing.xxs,
                     }}
                   >
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
-                      <Ionicons name={pillIcon} size={22} color={pillColor} />
-                      <View style={{ flex: 1 }}>
-                        <Amount value={toBudget} variant="headingLg" color={pillColor} weight="700" />
-                        <Text
-                          variant="captionSm"
-                          color={pillColor}
-                          style={{ opacity: 0.75, marginTop: 1 }}
-                        >
-                          {pillLabel}
-                        </Text>
-                      </View>
-                      <Ionicons name="chevron-forward" size={16} color={pillColor} style={{ opacity: 0.5 }} />
-                    </View>
-
-                    <View
-                      style={{
-                        height: bw.thin,
-                        backgroundColor: colors.divider,
-                        marginVertical: spacing.sm,
-                      }}
-                    />
-
-                    {/* Income / Budgeted / Spent */}
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <View style={{ flex: 1, alignItems: 'center' }}>
-                        <Text variant="captionSm" color={colors.textMuted} style={labelStyle}>
-                          Income
-                        </Text>
-                        <Amount value={data.income} variant="body" color={colors.positive} weight="600" style={{ marginTop: 2 }} />
-                      </View>
-                      <View style={{ width: 1, height: 24, backgroundColor: colors.divider }} />
-                      <View style={{ flex: 1, alignItems: 'center' }}>
-                        <Text variant="captionSm" color={colors.textMuted} style={labelStyle}>
-                          Budgeted
-                        </Text>
-                        <Amount value={data.budgeted} variant="body" weight="600" style={{ marginTop: 2 }} />
-                      </View>
-                      <View style={{ width: 1, height: 24, backgroundColor: colors.divider }} />
-                      <View style={{ flex: 1, alignItems: 'center' }}>
-                        <Text variant="captionSm" color={colors.textMuted} style={labelStyle}>
-                          Spent
-                        </Text>
-                        <Amount value={data.spent} variant="body" color={colors.textSecondary} weight="600" style={{ marginTop: 2 }} />
-                      </View>
-                    </View>
-
-                    {/* Held for Next Month */}
-                    {data.buffered > 0 && (
-                      <>
-                        <View
-                          style={{
-                            height: bw.thin,
-                            backgroundColor: colors.divider,
-                            marginVertical: spacing.sm,
-                          }}
-                        />
-                        <Pressable
-                          onPress={(e) => {
-                            e.stopPropagation();
-                            Alert.alert(
-                              'Reset Hold',
-                              'Release held funds back to "Ready to Assign"?',
-                              [
-                                { text: 'Cancel', style: 'cancel' },
-                                { text: 'Reset', style: 'destructive', onPress: () => resetHold() },
-                              ],
-                            );
-                          }}
-                          style={{ flexDirection: 'row', alignItems: 'center' }}
-                        >
-                          <Ionicons name="arrow-forward" size={14} color={colors.primary} style={{ marginRight: spacing.sm }} />
-                          <Text variant="bodySm" color={colors.textSecondary} style={{ flex: 1 }}>
-                            Held for Next Month
-                          </Text>
-                          <Amount value={data.buffered} variant="body" color={colors.primary} weight="600" style={{ marginRight: spacing.sm }} />
-                          <Ionicons name="close-circle" size={18} color={colors.textMuted} />
-                        </Pressable>
-                      </>
-                    )}
-                  </View>
-                </Pressable>
-              </>
+                    <Ionicons name="arrow-forward" size={11} color={colors.textMuted} />
+                    <Text variant="captionSm" color={colors.textMuted}>
+                      Holding{' '}
+                    </Text>
+                    <Amount value={data.buffered} variant="captionSm" color={colors.textMuted} weight="600" />
+                    <Text variant="captionSm" color={colors.textMuted}>
+                      {' '}for next month
+                    </Text>
+                  </Pressable>
+                )}
+              </View>
             ) : null
           }
           refreshControl={
@@ -309,10 +271,18 @@ export default function BudgetScreen() {
             />
           }
           ListEmptyComponent={
-            <View style={{ alignItems: 'center', marginTop: 80, gap: 8 }}>
-              <Text variant="bodyLg" color={colors.textSecondary}>No categories yet</Text>
-              <Text variant="bodySm" color={colors.textMuted}>Sync to load budget data</Text>
-            </View>
+            filter !== 'all' ? (
+              <View style={{ alignItems: 'center', marginTop: 80, gap: 8 }}>
+                <Ionicons name="funnel-outline" size={32} color={colors.textMuted} />
+                <Text variant="bodyLg" color={colors.textSecondary}>No matching categories</Text>
+                <Text variant="bodySm" color={colors.textMuted}>Try a different filter or switch to All</Text>
+              </View>
+            ) : (
+              <View style={{ alignItems: 'center', marginTop: 80, gap: 8 }}>
+                <Text variant="bodyLg" color={colors.textSecondary}>No categories yet</Text>
+                <Text variant="bodySm" color={colors.textMuted}>Sync to load budget data</Text>
+              </View>
+            )
           }
           contentContainerStyle={{ paddingBottom: 80 }}
         />
@@ -321,6 +291,24 @@ export default function BudgetScreen() {
       <AddTransactionButton collapsed={fabCollapsed} />
     </View>
     <Stack.Toolbar placement="right">
+      <Stack.Toolbar.Menu
+        icon={filter === 'all' ? 'line.3.horizontal.decrease' : 'line.3.horizontal.decrease.circle.fill'}
+        tintColor={filter !== 'all' ? colors.primary : undefined}
+        title="Filter"
+      >
+        <Stack.Toolbar.MenuAction isOn={filter === 'all'} icon="list.bullet" onPress={() => setFilter('all')}>
+          All
+        </Stack.Toolbar.MenuAction>
+        <Stack.Toolbar.MenuAction isOn={filter === 'underfunded'} icon="arrow.down.circle" onPress={() => setFilter('underfunded')}>
+          Underfunded
+        </Stack.Toolbar.MenuAction>
+        <Stack.Toolbar.MenuAction isOn={filter === 'overfunded'} icon="arrow.up.circle" onPress={() => setFilter('overfunded')}>
+          Overfunded
+        </Stack.Toolbar.MenuAction>
+        <Stack.Toolbar.MenuAction isOn={filter === 'has-money'} icon="banknote" onPress={() => setFilter('has-money')}>
+          Money Available
+        </Stack.Toolbar.MenuAction>
+      </Stack.Toolbar.Menu>
       <Stack.Toolbar.Menu icon="ellipsis">
         <Stack.Toolbar.MenuAction
           icon={privacyMode ? 'eye' : 'eye.slash'}

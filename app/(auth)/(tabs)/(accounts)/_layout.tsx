@@ -7,12 +7,12 @@ export default function AccountsStack() {
   return (
     <Stack
       screenOptions={{
-        headerStyle: { backgroundColor: colors.headerBackground },
         headerTintColor: colors.headerText,
         headerShadowVisible: false,
+        contentStyle: { backgroundColor: colors.pageBackground },
       }}
     >
-      <Stack.Screen name="index" options={{ title: "" }} />
+      <Stack.Screen name="index" options={{ title: "Accounts" }} />
     </Stack>
   );
 }

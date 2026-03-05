@@ -303,12 +303,12 @@ const createStyles = (theme: Theme) => ({
   cardDivider: {
     height: theme.borderWidth.default,
     backgroundColor: theme.colors.divider,
-    marginLeft: theme.spacing.md,
+    marginHorizontal: theme.spacing.lg,
   },
   submitButton: {
     marginTop: theme.spacing.lg,
   },
   deleteButton: {
-    marginTop: theme.spacing.sm,
+    marginTop: theme.spacing.xl,
   },
 });

@@ -40,7 +40,6 @@ export function TransactionRow({
     <Pressable
       style={({ pressed }) => [
         styles.row,
-        !isLast && { borderBottomWidth: bw.thin, borderBottomColor: colors.divider },
         pressed && styles.pressed,
         isSelected && { backgroundColor: colors.primary + '12' },
       ]}
@@ -132,13 +131,18 @@ export function TransactionRow({
         )}
       </View>
 
-      {/* Navigation chevron (hidden in select mode) */}
-      {!isSelectMode && (
-        <Ionicons
-          name="chevron-forward"
-          size={16}
-          color={colors.textMuted}
-          style={styles.chevron}
+
+      {/* Inset separator (HIG) — doesn't touch container edges */}
+      {!isLast && (
+        <View
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: spacing.lg,
+            right: spacing.md,
+            height: bw.thin,
+            backgroundColor: colors.divider,
+          }}
         />
       )}
     </Pressable>
@@ -202,8 +206,5 @@ const createStyles = (theme: Theme) => ({
     paddingHorizontal: theme.spacing.sm,
     paddingVertical: theme.spacing.xxs,
     borderRadius: theme.borderRadius.full,
-  },
-  chevron: {
-    marginLeft: theme.spacing.sm,
   },
 });

@@ -66,7 +66,7 @@ export function DatePickerField({ dateInt, dateStr, onDateChange }: DatePickerFi
           </Text>
         </View>
         <Ionicons
-          name={showPicker ? 'chevron-up' : 'chevron-down'}
+          name="chevron-forward"
           size={18}
           color={theme.colors.textMuted}
         />
@@ -117,6 +117,7 @@ const createStyles = (theme: Theme) => ({
     justifyContent: 'space-between' as const,
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.md,
+    minHeight: 44,
   },
   left: {
     flexDirection: 'row' as const,

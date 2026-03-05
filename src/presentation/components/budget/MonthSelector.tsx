@@ -65,7 +65,7 @@ export function MonthSelector() {
       style={{
         flexDirection: 'row',
         alignItems: 'center',
-        gap: spacing.md,
+        gap: spacing.xs,
       }}
     >
       <Pressable onPress={() => goToMonth(-1)} hitSlop={12}>

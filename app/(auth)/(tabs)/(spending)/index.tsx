@@ -13,11 +13,9 @@ import * as Haptics from 'expo-haptics';
 import {
   deleteTransaction,
   getAllTransactions,
-  getSpendingSummary,
   setClearedBulk,
   toggleCleared,
   updateTransaction,
-  type SpendingSummary,
   type TransactionDisplay,
 } from '../../../../src/transactions';
 import { useAccountsStore } from '../../../../src/stores/accountsStore';
@@ -25,13 +23,11 @@ import { useSpendingStore } from '../../../../src/stores/spendingStore';
 import { usePrivacyStore } from '../../../../src/stores/privacyStore';
 import { useTabBarStore } from '../../../../src/stores/tabBarStore';
 import { useTheme, useThemedStyles } from '../../../../src/presentation/providers/ThemeProvider';
-import { Divider, EmptyState, Text } from '../../../../src/presentation/components';
+import { EmptyState, Text } from '../../../../src/presentation/components';
 import { formatBalance } from '../../../../src/lib/format';
 import { TransactionRow } from '../../../../src/presentation/components/account/TransactionRow';
 import { DateSectionHeader } from '../../../../src/presentation/components/account/DateSectionHeader';
 import { AddTransactionButton } from '../../../../src/presentation/components/molecules/AddTransactionButton';
-import { SpendingOverviewCard } from '../../../../src/presentation/components/spending/SpendingOverviewCard';
-import { CategoryBreakdownRow } from '../../../../src/presentation/components/spending/CategoryBreakdownRow';
 import type { Theme } from '../../../../src/theme';
 
 // ---------------------------------------------------------------------------
@@ -88,12 +84,6 @@ function buildListData(transactions: TransactionDisplay[]): ListItem[] {
 
 const PAGE_SIZE = 50;
 
-const SECTION_LABEL_STYLE = {
-  textTransform: 'uppercase' as const,
-  letterSpacing: 0.8,
-  fontWeight: '700' as const,
-};
-
 export default function SpendingScreen() {
   const navigation = useNavigation();
   const router = useRouter();
@@ -105,7 +95,6 @@ export default function SpendingScreen() {
   const setTabBarHidden = useTabBarStore((s) => s.setHidden);
 
   const [transactions, setTransactions] = useState<TransactionDisplay[]>([]);
-  const [summary, setSummary] = useState<SpendingSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -114,9 +103,8 @@ export default function SpendingScreen() {
 
   // ---- Scroll-driven FAB collapse ----
   const fabCollapsed = useSharedValue(false);
-  const COLLAPSE_THRESHOLD = 100;
   const handleScroll = useCallback((e: { nativeEvent: { contentOffset: { y: number } } }) => {
-    fabCollapsed.value = e.nativeEvent.contentOffset.y > COLLAPSE_THRESHOLD;
+    fabCollapsed.value = e.nativeEvent.contentOffset.y > 100;
   }, []);
 
   // ---- Selection state ----
@@ -144,12 +132,8 @@ export default function SpendingScreen() {
     setLoading(true);
     offsetRef.current = 0;
     try {
-      const [txns, sum] = await Promise.all([
-        getAllTransactions({ limit: PAGE_SIZE, offset: 0, hideReconciled }),
-        getSpendingSummary(),
-      ]);
+      const txns = await getAllTransactions({ limit: PAGE_SIZE, offset: 0, hideReconciled });
       setTransactions(txns);
-      setSummary(sum);
       setHasMore(txns.length === PAGE_SIZE);
       offsetRef.current = txns.length;
     } finally {
@@ -175,12 +159,8 @@ export default function SpendingScreen() {
     setRefreshing(true);
     offsetRef.current = 0;
     try {
-      const [txns, sum] = await Promise.all([
-        getAllTransactions({ limit: PAGE_SIZE, offset: 0, hideReconciled }),
-        getSpendingSummary(),
-      ]);
+      const txns = await getAllTransactions({ limit: PAGE_SIZE, offset: 0, hideReconciled });
       setTransactions(txns);
-      setSummary(sum);
       setHasMore(txns.length === PAGE_SIZE);
       offsetRef.current = txns.length;
     } finally {
@@ -312,12 +292,8 @@ export default function SpendingScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
 
-    const [txns, sum] = await Promise.all([
-      getAllTransactions({ limit: offsetRef.current || PAGE_SIZE, offset: 0, hideReconciled }),
-      getSpendingSummary(),
-    ]);
+    const txns = await getAllTransactions({ limit: offsetRef.current || PAGE_SIZE, offset: 0, hideReconciled });
     setTransactions(txns);
-    setSummary(sum);
     setIsSelectMode(false);
     setSelectedIds(new Set());
     setTabBarHidden(false);
@@ -360,7 +336,7 @@ export default function SpendingScreen() {
       });
     } else {
       navigation.setOptions({
-        title: '',
+        title: 'Spending',
         headerTitle: undefined,
         headerLeft: undefined,
         headerRight: undefined,
@@ -404,108 +380,66 @@ export default function SpendingScreen() {
   // ---- Render ----
 
   const listData = buildListData(transactions);
-  const topCats = summary?.topCategories ?? [];
-  const maxCatTotal = topCats.length > 0
-    ? Math.max(...topCats.map(c => Math.abs(c.total)))
-    : 0;
-
-  const listHeader = (
-    <>
-      <Text variant="displayLg" color={colors.textPrimary} style={styles.title}>
-        Spending
-      </Text>
-
-      {summary && (
-        <SpendingOverviewCard
-          totalSpent={summary.totalSpent}
-          totalIncome={summary.totalIncome}
-          transactionCount={summary.transactionCount}
-        />
-      )}
-
-      {topCats.length > 0 && (
-        <>
-          <Text
-            variant="captionSm"
-            color={colors.textMuted}
-            style={[SECTION_LABEL_STYLE, styles.sectionLabel]}
-          >
-            Top Categories
-          </Text>
-          <View style={styles.categoryCard}>
-            {topCats.map((cat, i) => (
-              <View key={cat.categoryName}>
-                {i > 0 && <Divider />}
-                <CategoryBreakdownRow
-                  categoryName={cat.categoryName}
-                  total={cat.total}
-                  maxTotal={maxCatTotal}
-                />
-              </View>
-            ))}
-          </View>
-        </>
-      )}
-    </>
-  );
 
   return (
     <>
-      <View style={styles.container}>
-        {loading ? (
-          <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
-        ) : (
-          <FlashList<ListItem>
-            data={listData}
-            keyExtractor={(item) => item.key}
-            getItemType={(item) => item.type}
-            onScroll={handleScroll}
-            scrollEventThrottle={16}
-            ListHeaderComponent={listHeader}
-            renderItem={({ item }) => {
-              if (item.type === 'date') {
-                return <DateSectionHeader date={item.date} />;
-              }
-              return (
-                <TransactionRow
-                  item={item.data}
-                  onPress={handleEditTransaction}
-                  onDelete={handleDelete}
-                  onToggleCleared={handleToggleCleared}
-                  onLongPress={handleLongPress}
-                  showAccountName
-                  isFirst={item.isFirst}
-                  isLast={item.isLast}
-                  isSelectMode={isSelectMode}
-                  isSelected={selectedIds.has(item.data.id)}
-                />
-              );
-            }}
-            ListFooterComponent={
-              loadingMore
-                ? <ActivityIndicator color={colors.primary} style={{ paddingVertical: 20 }} />
-                : null
-            }
-            ListEmptyComponent={
-              <EmptyState
+      <FlashList<ListItem>
+        data={loading ? [] : listData}
+        keyExtractor={(item) => item.key}
+        getItemType={(item) => item.type}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        showsVerticalScrollIndicator={false}
+        contentInsetAdjustmentBehavior="automatic"
+        ListHeaderComponent={
+          !isSelectMode ? (
+            <Stack.Screen.Title large>Spending</Stack.Screen.Title>
+          ) : null
+        }
+        renderItem={({ item }) => {
+          if (item.type === 'date') {
+            return <DateSectionHeader date={item.date} />;
+          }
+          return (
+            <TransactionRow
+              item={item.data}
+              onPress={handleEditTransaction}
+              onDelete={handleDelete}
+              onToggleCleared={handleToggleCleared}
+              onLongPress={handleLongPress}
+              showAccountName
+              isFirst={item.isFirst}
+              isLast={item.isLast}
+              isSelectMode={isSelectMode}
+              isSelected={selectedIds.has(item.data.id)}
+            />
+          );
+        }}
+        ListFooterComponent={
+          loadingMore
+            ? <ActivityIndicator color={colors.primary} style={{ paddingVertical: 20 }} />
+            : null
+        }
+        ListEmptyComponent={
+          loading
+            ? <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
+            : <EmptyState
                 icon="receipt-outline"
                 title="No transactions yet"
                 description="Add your first transaction to get started"
               />
-            }
-            onEndReached={loadMore}
-            onEndReachedThreshold={0.3}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                tintColor={colors.primary}
-              />
-            }
-            contentContainerStyle={{ paddingBottom: 80 }}
+        }
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.3}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
           />
-        )}
-      </View>
+        }
+        contentContainerStyle={{ paddingBottom: 80, backgroundColor: colors.pageBackground }}
+      />
 
       {!isSelectMode && (
         <AddTransactionButton collapsed={fabCollapsed} />
@@ -552,28 +486,5 @@ export default function SpendingScreen() {
 // Styles
 // ---------------------------------------------------------------------------
 
-const createStyles = (theme: Theme) => ({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.pageBackground,
-  },
-  title: {
-    fontWeight: '700' as const,
-    marginTop: theme.spacing.md,
-    marginBottom: theme.spacing.md,
-    paddingHorizontal: theme.spacing.lg,
-  },
-  sectionLabel: {
-    paddingHorizontal: theme.spacing.lg,
-    marginTop: theme.spacing.lg,
-    marginBottom: theme.spacing.sm,
-  },
-  categoryCard: {
-    marginHorizontal: theme.spacing.lg,
-    backgroundColor: theme.colors.cardBackground,
-    borderRadius: theme.borderRadius.lg,
-    borderWidth: theme.borderWidth.thin,
-    borderColor: theme.colors.cardBorder,
-    overflow: 'hidden' as const,
-  },
+const createStyles = (_theme: Theme) => ({
 });

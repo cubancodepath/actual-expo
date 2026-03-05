@@ -32,8 +32,6 @@ export function BudgetCategoryRow({
     borderTopRightRadius: isFirst ? br.lg : 0,
     borderBottomLeftRadius: isLast ? br.lg : 0,
     borderBottomRightRadius: isLast ? br.lg : 0,
-    borderBottomWidth: isLast ? 0 : bw.thin,
-    borderBottomColor: colors.divider,
   };
 
   // ── Income row (simple) ──
@@ -53,6 +51,9 @@ export function BudgetCategoryRow({
           {cat.name}
         </Text>
         <Amount value={cat.spent} variant="body" color={colors.positive} weight="500" />
+        {!isLast && (
+          <View style={{ position: 'absolute', bottom: 0, left: spacing.lg, right: spacing.lg, height: bw.thin, backgroundColor: colors.divider }} />
+        )}
       </View>
     );
   }
@@ -234,6 +235,9 @@ export function BudgetCategoryRow({
           />
         </View>
       ) : null}
+      {!isLast && (
+        <View style={{ position: 'absolute', bottom: 0, left: spacing.lg, right: spacing.lg, height: bw.thin, backgroundColor: colors.divider }} />
+      )}
     </Pressable>
   );
 }

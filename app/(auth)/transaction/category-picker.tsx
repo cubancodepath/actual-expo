@@ -96,7 +96,6 @@ export default function CategoryPickerScreen() {
                       key={c.id}
                       style={({ pressed }) => [
                         styles.item,
-                        !isLast && { borderBottomWidth: bw.thin, borderBottomColor: colors.divider },
                         pressed && styles.pressed,
                       ]}
                       onPress={() => select(c.id, c.name)}
@@ -113,6 +112,9 @@ export default function CategoryPickerScreen() {
                       )}
                       {isSelected && (
                         <Ionicons name="checkmark" size={20} color={colors.primary} />
+                      )}
+                      {!isLast && (
+                        <View style={{ position: 'absolute', bottom: 0, left: spacing.lg, right: spacing.lg, height: bw.thin, backgroundColor: colors.divider }} />
                       )}
                     </Pressable>
                   );

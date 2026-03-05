@@ -157,7 +157,6 @@ export default function AccountsScreen() {
   return (
     <>
       <ScrollView
-        style={styles.container}
         contentContainerStyle={styles.content}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={
@@ -169,9 +168,7 @@ export default function AccountsScreen() {
           />
         }
       >
-        <Text variant="displayLg" color={theme.colors.textPrimary} style={styles.title}>
-          Accounts
-        </Text>
+        <Stack.Screen.Title large>Accounts</Stack.Screen.Title>
 
         {groups.length > 0 ? (
           <>
@@ -229,24 +226,14 @@ export default function AccountsScreen() {
 // ---------------------------------------------------------------------------
 
 const createStyles = (theme: Theme) => ({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.pageBackground,
-  },
   content: {
     paddingHorizontal: theme.spacing.lg,
     paddingBottom: theme.spacing.xxxl,
   },
   center: {
     flex: 1,
-    backgroundColor: theme.colors.pageBackground,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
-  },
-  title: {
-    fontWeight: '700' as const,
-    marginBottom: theme.spacing.xl,
-    marginTop: theme.spacing.md,
   },
 
   // Section

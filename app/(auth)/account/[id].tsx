@@ -412,10 +412,16 @@ export default function AccountTransactionsScreen() {
 
   // ---- Render ----
 
-  const listData = buildListData(transactions);
+  const listData = useMemo(() => buildListData(transactions), [transactions]);
 
   return (
     <View style={styles.container}>
+      {/* Sticky balance header — always visible above the list */}
+      <BalanceSummary
+        balance={account?.balance ?? 0}
+        clearedBalance={clearedBalance}
+      />
+
       {loading ? (
         <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
       ) : (
@@ -443,12 +449,6 @@ export default function AccountTransactionsScreen() {
               />
             );
           }}
-          ListHeaderComponent={
-            <BalanceSummary
-              balance={account?.balance ?? 0}
-              clearedBalance={clearedBalance}
-            />
-          }
           ListFooterComponent={
             loadingMore
               ? <ActivityIndicator color={colors.primary} style={{ paddingVertical: 20 }} />

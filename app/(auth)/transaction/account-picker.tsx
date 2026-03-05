@@ -12,7 +12,7 @@ import type { Theme } from '../../../src/theme';
 export default function AccountPickerScreen() {
   const { selectedId } = useLocalSearchParams<{ selectedId?: string }>();
   const router = useRouter();
-  const { colors, borderWidth: bw } = useTheme();
+  const { colors, spacing, borderWidth: bw } = useTheme();
   const styles = useThemedStyles(createStyles);
   const { accounts } = useAccountsStore();
   const setAccount = usePickerStore((s) => s.setAccount);
@@ -49,7 +49,6 @@ export default function AccountPickerScreen() {
                   key={a.id}
                   style={({ pressed }) => [
                     styles.item,
-                    !isLast && { borderBottomWidth: bw.thin, borderBottomColor: colors.divider },
                     pressed && styles.pressed,
                   ]}
                   onPress={() => select(a.id, a.name)}
@@ -67,6 +66,9 @@ export default function AccountPickerScreen() {
                     {a.name}
                   </Text>
                   <Amount value={a.balance ?? 0} variant="bodySm" />
+                  {!isLast && (
+                    <View style={{ position: 'absolute', bottom: 0, left: spacing.lg, right: spacing.lg, height: bw.thin, backgroundColor: colors.divider }} />
+                  )}
                 </Pressable>
               );
             })}

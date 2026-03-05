@@ -1,6 +1,5 @@
 import { Pressable } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { SymbolView } from 'expo-symbols';
 import { useTheme } from '../../../../src/presentation/providers/ThemeProvider';
 import { MonthSelector } from '../../../../src/presentation/components/budget/MonthSelector';

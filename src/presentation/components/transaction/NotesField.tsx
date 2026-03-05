@@ -45,6 +45,7 @@ const createStyles = (theme: Theme) => ({
     justifyContent: 'space-between' as const,
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.md,
+    minHeight: 44,
   },
   container: {
     flexDirection: 'row' as const,

@@ -52,7 +52,6 @@ function buildListData(transactions: TransactionDisplay[]): ListItem[] {
     const txn = transactions[i];
     const isNewDate = txn.date !== lastDate;
     if (isNewDate) {
-      // Mark previous transaction as last in its group
       if (items.length > 0) {
         const prev = items[items.length - 1];
         if (prev.type === 'transaction') prev.isLast = true;
@@ -69,7 +68,6 @@ function buildListData(transactions: TransactionDisplay[]): ListItem[] {
     });
   }
 
-  // Mark the very last transaction
   if (items.length > 0) {
     const last = items[items.length - 1];
     if (last.type === 'transaction') last.isLast = true;
@@ -87,7 +85,7 @@ const PAGE_SIZE = 50;
 export default function SpendingScreen() {
   const navigation = useNavigation();
   const router = useRouter();
-  const { colors, spacing } = useTheme();
+  const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const { accounts, load: loadAccounts } = useAccountsStore();
   const { hideReconciled, toggleHideReconciled } = useSpendingStore();
@@ -343,6 +341,11 @@ export default function SpendingScreen() {
         unstable_headerRightItems: () => [
           {
             type: 'button' as const,
+            icon: { type: 'sfSymbol' as const, name: 'magnifyingglass' },
+            onPress: () => router.push('/(auth)/(tabs)/(spending)/search'),
+          },
+          {
+            type: 'button' as const,
             label: 'Select',
             onPress: enterSelectMode,
           },
@@ -445,7 +448,6 @@ export default function SpendingScreen() {
         <AddTransactionButton collapsed={fabCollapsed} />
       )}
 
-      {/* Native bottom toolbar for selection actions */}
       {isSelectMode && (
         <Stack.Toolbar>
           <Stack.Toolbar.Button

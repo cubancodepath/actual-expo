@@ -24,6 +24,16 @@ export default function AuthLayout() {
         options={{ title: "", headerBackTitle: " ", ...screen }}
       />
       <Stack.Screen
+        name="account/search"
+        options={{
+          ...screen,
+          animation: "fade",
+          animationDuration: 150,
+          headerBackVisible: false,
+          headerLeft: () => null,
+        }}
+      />
+      <Stack.Screen
         name="account/settings"
         options={{ title: "Account Settings", ...modal }}
       />

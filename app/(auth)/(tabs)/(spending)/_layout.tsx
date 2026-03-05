@@ -13,6 +13,16 @@ export default function SpendingStack() {
       }}
     >
       <Stack.Screen name="index" options={{ title: "Spending" }} />
+      <Stack.Screen
+        name="search"
+        options={{
+          title: "Spending",
+          animation: "fade",
+          animationDuration: 150,
+          headerBackVisible: false,
+          headerLeft: () => null,
+        }}
+      />
     </Stack>
   );
 }

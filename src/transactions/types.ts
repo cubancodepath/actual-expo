@@ -16,6 +16,13 @@ export type Transaction = {
   tombstone: boolean;
 };
 
+export type StatusFilter = 'cleared' | 'uncleared' | 'reconciled' | 'unreconciled';
+
+export type SearchToken =
+  | { type: 'status'; value: StatusFilter }
+  | { type: 'account'; accountId: string; accountName: string }
+  | { type: 'category'; categoryId: string; categoryName: string };
+
 export type GetTransactionsOptions = {
   accountId?: string;
   startDate?: number; // YYYYMMDD

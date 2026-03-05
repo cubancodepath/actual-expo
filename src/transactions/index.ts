@@ -414,6 +414,100 @@ export async function getAllTransactions(opts?: {
   }));
 }
 
+/** Search transactions with text + status filters across all accounts. */
+export async function searchTransactions(opts: {
+  text?: string;
+  accountId?: string;
+  categoryId?: string;
+  cleared?: boolean;
+  uncleared?: boolean;
+  reconciled?: boolean;
+  unreconciled?: boolean;
+  hideReconciled?: boolean;
+  limit?: number;
+  offset?: number;
+}): Promise<TransactionDisplay[]> {
+  const limit = opts.limit ?? PAGE_SIZE;
+  const offset = opts.offset ?? 0;
+  const conditions: string[] = ['t.tombstone = 0'];
+  const params: (string | number)[] = [];
+
+  if (opts.hideReconciled) {
+    conditions.push('t.reconciled = 0');
+  }
+
+  if (opts.accountId) {
+    conditions.push('t.acct = ?');
+    params.push(opts.accountId);
+  }
+  if (opts.categoryId) {
+    conditions.push('t.category = ?');
+    params.push(opts.categoryId);
+  }
+
+  // Text search across payee name, category name, notes, and account name
+  if (opts.text) {
+    const pattern = `%${opts.text}%`;
+    conditions.push(
+      '(COALESCE(tr_acc.name, p.name) LIKE ? OR c.name LIKE ? OR t.notes LIKE ? OR acc.name LIKE ?)',
+    );
+    params.push(pattern, pattern, pattern, pattern);
+  }
+
+  // Status filters — combine with OR
+  const statusClauses: string[] = [];
+  if (opts.cleared) statusClauses.push('(t.cleared = 1 AND t.reconciled = 0)');
+  if (opts.uncleared) statusClauses.push('(t.cleared = 0)');
+  if (opts.reconciled) statusClauses.push('(t.reconciled = 1)');
+  if (opts.unreconciled) statusClauses.push('(t.reconciled = 0)');
+  if (statusClauses.length > 0) {
+    conditions.push(`(${statusClauses.join(' OR ')})`);
+  }
+
+  const where = conditions.join(' AND ');
+
+  const rows = await runQuery<
+    TransactionRow & { payee_name: string | null; category_name: string | null; account_name: string | null }
+  >(
+    `SELECT t.*,
+            COALESCE(tr_acc.name, p.name) AS payee_name,
+            c.name                        AS category_name,
+            acc.name                      AS account_name
+     FROM   transactions t
+     JOIN   accounts          acc    ON acc.id = t.acct AND acc.tombstone = 0
+     LEFT JOIN payee_mapping    pm   ON pm.id = t.description
+     LEFT JOIN payees            p   ON COALESCE(pm.targetId, t.description) = p.id AND p.tombstone = 0
+     LEFT JOIN accounts          tr_acc ON p.transfer_acct = tr_acc.id AND tr_acc.tombstone = 0
+     LEFT JOIN category_mapping  cm  ON cm.id = t.category
+     LEFT JOIN categories        c   ON COALESCE(cm.transferId, t.category) = c.id AND c.tombstone = 0
+     WHERE  ${where}
+     ORDER  BY t.date DESC, t.sort_order DESC
+     LIMIT ${limit} OFFSET ${offset}`,
+    params,
+  );
+
+  return rows.map(r => ({
+    id: r.id,
+    isParent: r.isParent === 1,
+    isChild: r.isChild === 1,
+    acct: r.acct,
+    date: r.date,
+    amount: r.amount,
+    category: r.category,
+    description: r.description,
+    notes: r.notes,
+    transferred_id: r.transferred_id,
+    cleared: r.cleared === 1,
+    reconciled: r.reconciled === 1,
+    sort_order: r.sort_order,
+    starting_balance_flag: r.starting_balance_flag === 1,
+    tombstone: r.tombstone === 1,
+    payeeName: r.payee_name,
+    categoryName: r.category_name,
+    accountName: r.account_name,
+  }));
+}
+
 // ---------------------------------------------------------------------------
 // Spending summary — aggregates for the current month
 // ---------------------------------------------------------------------------

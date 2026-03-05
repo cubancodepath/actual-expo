@@ -370,14 +370,16 @@ export default function AccountTransactionsScreen() {
         unstable_headerRightItems: () => [
           {
             type: 'button' as const,
-            label: 'Select',
-            onPress: enterSelectMode,
+            icon: { type: 'sfSymbol' as const, name: 'magnifyingglass' },
+            onPress: () => router.push({
+              pathname: '/(auth)/account/search',
+              params: { accountId: id, accountName: account?.name ?? 'Account' },
+            }),
           },
           {
             type: 'button' as const,
-            icon: { type: 'sfSymbol' as const, name: 'magnifyingglass' },
-            onPress: () => {},
-            disabled: true,
+            label: 'Select',
+            onPress: enterSelectMode,
           },
           {
             type: 'menu' as const,

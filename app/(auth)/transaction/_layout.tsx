@@ -12,6 +12,14 @@ export default function TransactionLayout() {
       <Stack.Screen name="payee-picker" options={{ title: 'Payee' }} />
       <Stack.Screen name="category-picker" options={{ title: 'Category' }} />
       <Stack.Screen name="account-picker" options={{ title: 'Account' }} />
+      <Stack.Screen
+        name="tags"
+        options={{
+          title: 'Tags',
+          presentation: 'formSheet',
+          sheetAllowedDetents: [0.5, 1.0],
+        }}
+      />
     </Stack>
   );
 }

@@ -147,6 +147,7 @@ const ALLOWED_TABLES = new Set([
   'zero_budgets',
   'zero_budget_months',
   'preferences',
+  'tags',
 ]);
 
 export async function applyMessages(messages: SyncMessage[]): Promise<void> {
@@ -324,12 +325,14 @@ async function refreshAllStores(): Promise<void> {
     { useCategoriesStore },
     { useBudgetStore },
     { usePreferencesStore },
+    { useTagsStore },
   ] = await Promise.all([
     import('../stores/accountsStore'),
     import('../stores/transactionsStore'),
     import('../stores/categoriesStore'),
     import('../stores/budgetStore'),
     import('../stores/preferencesStore'),
+    import('../stores/tagsStore'),
   ]);
 
   // Use allSettled so one failure doesn't block the others
@@ -341,6 +344,7 @@ async function refreshAllStores(): Promise<void> {
     useCategoriesStore.getState().load(),
     useBudgetStore.getState().load(),
     usePreferencesStore.getState().load(),
+    useTagsStore.getState().load(),
   ]);
 
   for (const result of results) {

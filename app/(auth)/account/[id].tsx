@@ -14,6 +14,7 @@ import * as Haptics from 'expo-haptics';
 import { useAccountsStore } from '../../../src/stores/accountsStore';
 import {
   deleteTransaction,
+  duplicateTransaction,
   getClearedBalance,
   getTransactionsForAccount,
   reconcileAccount,
@@ -33,6 +34,7 @@ import { TransactionRow } from '../../../src/presentation/components/account/Tra
 import { DateSectionHeader } from '../../../src/presentation/components/account/DateSectionHeader';
 import { AddTransactionButton } from '../../../src/presentation/components/molecules/AddTransactionButton';
 import { usePrefsStore } from '../../../src/stores/prefsStore';
+import { useTagsStore } from '../../../src/stores/tagsStore';
 
 // ---------------------------------------------------------------------------
 // Types for mixed FlashList data
@@ -84,7 +86,7 @@ function buildListData(transactions: TransactionDisplay[]): ListItem[] {
 // Main screen
 // ---------------------------------------------------------------------------
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 25;
 
 export default function AccountTransactionsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -103,6 +105,7 @@ export default function AccountTransactionsScreen() {
   const [hasMore, setHasMore] = useState(true);
   const [clearedBalance, setClearedBalance] = useState(0);
   const { hideReconciled, toggleHideReconciled } = usePrefsStore();
+  const tags = useTagsStore((s) => s.tags);
   const [showReconcile, setShowReconcile] = useState(false);
   const offsetRef = useRef(0);
 
@@ -134,6 +137,8 @@ export default function AccountTransactionsScreen() {
 
   // ---- Data loading ----
 
+  const hasLoaded = useRef(false);
+
   const loadTransactions = useCallback(async (hide = hideReconciled) => {
     setLoading(true);
     offsetRef.current = 0;
@@ -149,6 +154,18 @@ export default function AccountTransactionsScreen() {
     } finally {
       setLoading(false);
     }
+  }, [id, hideReconciled]);
+
+  const silentRefreshTransactions = useCallback(async () => {
+    offsetRef.current = 0;
+    const [txns, cleared] = await Promise.all([
+      getTransactionsForAccount(id, { limit: PAGE_SIZE, offset: 0, hideReconciled }),
+      getClearedBalance(id),
+    ]);
+    setTransactions(txns);
+    setClearedBalance(cleared);
+    setHasMore(txns.length === PAGE_SIZE);
+    offsetRef.current = txns.length;
   }, [id, hideReconciled]);
 
   const loadMore = useCallback(async () => {
@@ -180,9 +197,14 @@ export default function AccountTransactionsScreen() {
   });
 
   useFocusEffect(useCallback(() => {
-    loadTransactions();
+    if (!hasLoaded.current) {
+      loadTransactions();
+      hasLoaded.current = true;
+    } else {
+      silentRefreshTransactions();
+    }
     return () => { setIsSelectMode(false); setSelectedIds(new Set()); };
-  }, [loadTransactions]));
+  }, [loadTransactions, silentRefreshTransactions]));
 
   // ---- Single-item handlers ----
 
@@ -204,26 +226,55 @@ export default function AccountTransactionsScreen() {
         text: 'Delete',
         style: 'destructive',
         onPress: async () => {
+          setTransactions(prev => prev.filter(t => t.id !== txnId));
           await deleteTransaction(txnId);
-          await Promise.all([loadAccounts(), loadTransactions()]);
+          loadAccounts();
         },
       },
     ]);
   }
 
   async function handleToggleCleared(txnId: string) {
+    const txn = transactions.find(t => t.id === txnId);
+    if (txn && !txn.reconciled) {
+      const delta = txn.cleared ? -txn.amount : txn.amount;
+      setTransactions(prev => prev.map(t =>
+        t.id === txnId ? { ...t, cleared: !t.cleared } : t
+      ));
+      setClearedBalance(prev => prev + delta);
+    }
     await toggleCleared(txnId);
-    const [txns, cleared] = await Promise.all([
-      getTransactionsForAccount(id, { limit: offsetRef.current || PAGE_SIZE, offset: 0, hideReconciled }),
-      getClearedBalance(id),
-    ]);
-    setTransactions(txns);
-    setClearedBalance(cleared);
-    await loadAccounts();
   }
 
   function handleEditTransaction(txnId: string) {
     router.push({ pathname: '/(auth)/transaction/new', params: { transactionId: txnId } });
+  }
+
+  async function handleDuplicate(txnId: string) {
+    const original = transactions.find(t => t.id === txnId);
+    if (!original) return;
+    const newId = await duplicateTransaction(txnId);
+    if (newId) {
+      const clone: TransactionDisplay = { ...original, id: newId, cleared: false, reconciled: false };
+      setTransactions(prev => {
+        const idx = prev.findIndex(t => t.id === txnId);
+        const next = [...prev];
+        next.splice(idx + 1, 0, clone);
+        return next;
+      });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+    loadAccounts();
+  }
+
+  async function handleMove(txnId: string, targetAccountId: string) {
+    setTransactions(prev => prev.filter(t => t.id !== txnId));
+    await updateTransaction(txnId, { acct: targetAccountId });
+    loadAccounts();
+  }
+
+  function handleAddTag(txnId: string) {
+    router.push({ pathname: '/(auth)/transaction/tags', params: { transactionId: txnId } });
   }
 
   // ---- Selection handlers ----
@@ -267,13 +318,15 @@ export default function AccountTransactionsScreen() {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
-            for (const txnId of selectedIds) {
-              await deleteTransaction(txnId);
-            }
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            const ids = new Set(selectedIds);
+            setTransactions(prev => prev.filter(t => !ids.has(t.id)));
             setIsSelectMode(false);
             setSelectedIds(new Set());
-            await Promise.all([loadAccounts(), loadTransactions()]);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            for (const txnId of ids) {
+              await deleteTransaction(txnId);
+            }
+            loadAccounts();
           },
         },
       ],
@@ -291,13 +344,15 @@ export default function AccountTransactionsScreen() {
         {
           text: 'Move',
           onPress: async () => {
-            for (const txnId of selectedIds) {
-              await updateTransaction(txnId, { acct: targetAccountId });
-            }
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            const ids = new Set(selectedIds);
+            setTransactions(prev => prev.filter(t => !ids.has(t.id)));
             setIsSelectMode(false);
             setSelectedIds(new Set());
-            await Promise.all([loadAccounts(), loadTransactions()]);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            for (const txnId of ids) {
+              await updateTransaction(txnId, { acct: targetAccountId });
+            }
+            loadAccounts();
           },
         },
       ],
@@ -309,21 +364,24 @@ export default function AccountTransactionsScreen() {
     if (selected.length === 0) return;
 
     const anyUncleared = selected.some(t => !t.cleared);
-    const updated = await setClearedBulk(selected.map(t => t.id), anyUncleared);
+    const targetVal = anyUncleared;
+    const ids = new Set(selected.map(t => t.id));
 
-    if (updated > 0) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    }
-
-    const [txns, cleared] = await Promise.all([
-      getTransactionsForAccount(id, { limit: offsetRef.current || PAGE_SIZE, offset: 0, hideReconciled }),
-      getClearedBalance(id),
-    ]);
-    setTransactions(txns);
-    setClearedBalance(cleared);
+    // Optimistic: update cleared + clearedBalance locally
+    let balanceDelta = 0;
+    setTransactions(prev => prev.map(t => {
+      if (ids.has(t.id)) {
+        balanceDelta += t.cleared ? -t.amount : t.amount;
+        return { ...t, cleared: targetVal };
+      }
+      return t;
+    }));
+    setClearedBalance(prev => prev + balanceDelta);
     setIsSelectMode(false);
     setSelectedIds(new Set());
-    await loadAccounts();
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+    await setClearedBulk(selected.map(t => t.id), anyUncleared);
   }
 
   // ---- Header ----
@@ -441,6 +499,11 @@ export default function AccountTransactionsScreen() {
                 onDelete={handleDelete}
                 onToggleCleared={handleToggleCleared}
                 onLongPress={handleLongPress}
+                onDuplicate={handleDuplicate}
+                onMove={handleMove}
+                onAddTag={handleAddTag}
+                tags={tags}
+                moveAccounts={otherAccounts}
                 isFirst={item.isFirst}
                 isLast={item.isLast}
                 isSelectMode={isSelectMode}

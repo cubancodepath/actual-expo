@@ -24,7 +24,8 @@ const STATUS_LABELS: Record<StatusFilter, string> = {
 type Suggestion =
   | { kind: 'status'; value: StatusFilter; label: string }
   | { kind: 'account'; id: string; name: string; label: string }
-  | { kind: 'category'; id: string; name: string; label: string };
+  | { kind: 'category'; id: string; name: string; label: string }
+  | { kind: 'tag'; name: string; label: string };
 
 // ---------------------------------------------------------------------------
 // Props
@@ -35,6 +36,7 @@ interface SearchSuggestionsProps {
   tokens: SearchToken[];
   accounts: Array<{ id: string; name: string }>;
   categories: Array<{ id: string; name: string }>;
+  tags?: Array<{ tag: string }>;
   onSelect: (token: SearchToken) => void;
 }
 
@@ -47,6 +49,7 @@ export function SearchSuggestions({
   tokens,
   accounts,
   categories,
+  tags = [],
   onSelect,
 }: SearchSuggestionsProps) {
   const { colors, spacing } = useTheme();
@@ -69,8 +72,10 @@ export function SearchSuggestions({
       activeKeys.add(`status:${STATUS_EXCLUSIONS[t.value]}`);
     } else if (t.type === 'account') {
       activeKeys.add(`account:${t.accountId}`);
-    } else {
+    } else if (t.type === 'category') {
       activeKeys.add(`category:${t.categoryId}`);
+    } else if (t.type === 'tag') {
+      activeKeys.add(`tag:${t.tagName}`);
     }
   }
 
@@ -119,6 +124,22 @@ export function SearchSuggestions({
     }
   }
 
+  // Tag suggestions
+  if (query) {
+    for (const t of tags) {
+      if (activeKeys.has(`tag:${t.tag}`)) continue;
+      if (!t.tag.toLowerCase().includes(query)) continue;
+      suggestions.push({ kind: 'tag', name: t.tag, label: `Tag: #${t.tag}` });
+    }
+  } else {
+    const hasTagToken = tokens.some((t) => t.type === 'tag');
+    if (!hasTagToken) {
+      for (const t of tags) {
+        suggestions.push({ kind: 'tag', name: t.tag, label: `Tag: #${t.tag}` });
+      }
+    }
+  }
+
   if (suggestions.length === 0) return null;
 
   function handleSelect(s: Suggestion) {
@@ -132,6 +153,9 @@ export function SearchSuggestions({
       case 'category':
         onSelect({ type: 'category', categoryId: s.id, categoryName: s.name });
         break;
+      case 'tag':
+        onSelect({ type: 'tag', tagName: s.name });
+        break;
     }
   }
 
@@ -140,6 +164,7 @@ export function SearchSuggestions({
       case 'status': return 'checkmark-circle-outline';
       case 'account': return 'wallet-outline';
       case 'category': return 'pricetag-outline';
+      case 'tag': return 'pricetags-outline';
     }
   }
 

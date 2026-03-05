@@ -25,6 +25,7 @@ import { TransactionRow } from '../../../src/presentation/components/account/Tra
 import { DateSectionHeader } from '../../../src/presentation/components/account/DateSectionHeader';
 import { TokenSearchBar } from '../../../src/presentation/components/transaction/TokenSearchBar';
 import { SearchSuggestions } from '../../../src/presentation/components/transaction/SearchSuggestions';
+import { useTagsStore } from '../../../src/stores/tagsStore';
 
 // ---------------------------------------------------------------------------
 // Types for mixed FlashList data
@@ -81,6 +82,7 @@ function buildSearchParams(tkns: SearchToken[]) {
   for (const t of tkns) {
     if (t.type === 'status') params[t.value] = true;
     if (t.type === 'category') params.categoryId = t.categoryId;
+    if (t.type === 'tag') params.tagName = t.tagName;
   }
   return params;
 }
@@ -92,7 +94,7 @@ const STATUS_EXCLUSIONS: Record<string, string> = {
   unreconciled: 'reconciled',
 };
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 25;
 
 // ---------------------------------------------------------------------------
 // Screen
@@ -104,6 +106,7 @@ export default function AccountSearchScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { categories } = useCategoriesStore();
+  const tags = useTagsStore((s) => s.tags);
 
   // Search state
   const searchInputRef = useRef<TextInput>(null);
@@ -147,6 +150,7 @@ export default function AccountSearchScreen() {
     setTokens(prev => {
       const filtered = prev.filter(t => {
         if (t.type === token.type && token.type === 'category') return false;
+        if (t.type === token.type && token.type === 'tag') return false;
         if (t.type === 'status' && token.type === 'status' && t.value === token.value) return false;
         if (t.type === 'status' && token.type === 'status' && STATUS_EXCLUSIONS[token.value] === t.value) return false;
         return true;
@@ -157,7 +161,27 @@ export default function AccountSearchScreen() {
   }
 
   function handleRemoveToken(index: number) {
-    setTokens(prev => prev.filter((_, i) => i !== index));
+    const next = tokens.filter((_, i) => i !== index);
+    setTokens(next);
+    if (!hasSearched) return;
+    if (next.length === 0 && !searchText) {
+      setResults([]);
+      setHasSearched(false);
+    } else {
+      // Re-execute search with remaining filters
+      offsetRef.current = 0;
+      searchTransactions({
+        text: searchText || undefined,
+        accountId,
+        ...buildSearchParams(next),
+        limit: PAGE_SIZE,
+        offset: 0,
+      }).then(txns => {
+        setResults(txns);
+        setHasMore(txns.length === PAGE_SIZE);
+        offsetRef.current = txns.length;
+      });
+    }
   }
 
   function handleClear() {
@@ -275,6 +299,7 @@ export default function AccountSearchScreen() {
             tokens={tokens}
             accounts={[]}
             categories={categories.filter(c => !c.hidden && !c.is_income).map(c => ({ id: c.id, name: c.name }))}
+            tags={tags}
             onSelect={handleAddToken}
           />
         )}
@@ -296,6 +321,7 @@ export default function AccountSearchScreen() {
               onPress={handleEditTransaction}
               onDelete={handleEditTransaction}
               onToggleCleared={handleEditTransaction}
+              tags={tags}
               isFirst={item.isFirst}
               isLast={item.isLast}
             />

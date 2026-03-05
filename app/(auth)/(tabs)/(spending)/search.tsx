@@ -20,13 +20,13 @@ import {
 import type { SearchToken } from '../../../../src/transactions/types';
 import { useAccountsStore } from '../../../../src/stores/accountsStore';
 import { useCategoriesStore } from '../../../../src/stores/categoriesStore';
-import { usePrefsStore } from '../../../../src/stores/prefsStore';
 import { useTheme } from '../../../../src/presentation/providers/ThemeProvider';
 import { EmptyState } from '../../../../src/presentation/components';
 import { TransactionRow } from '../../../../src/presentation/components/account/TransactionRow';
 import { DateSectionHeader } from '../../../../src/presentation/components/account/DateSectionHeader';
 import { TokenSearchBar } from '../../../../src/presentation/components/transaction/TokenSearchBar';
 import { SearchSuggestions } from '../../../../src/presentation/components/transaction/SearchSuggestions';
+import { useTagsStore } from '../../../../src/stores/tagsStore';
 
 // ---------------------------------------------------------------------------
 // Types for mixed FlashList data
@@ -84,11 +84,12 @@ function buildSearchParams(tkns: SearchToken[]) {
     if (t.type === 'status') params[t.value] = true;
     if (t.type === 'account') params.accountId = t.accountId;
     if (t.type === 'category') params.categoryId = t.categoryId;
+    if (t.type === 'tag') params.tagName = t.tagName;
   }
   return params;
 }
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 25;
 
 // ---------------------------------------------------------------------------
 // Screen
@@ -100,8 +101,7 @@ export default function SearchScreen() {
   const { colors } = useTheme();
   const { accounts } = useAccountsStore();
   const { categories } = useCategoriesStore();
-  const { hideReconciled } = usePrefsStore();
-
+  const tags = useTagsStore((s) => s.tags);
   // Search state
   const searchInputRef = useRef<TextInput>(null);
   const [searchText, setSearchText] = useState('');
@@ -151,9 +151,10 @@ export default function SearchScreen() {
   function handleAddToken(token: SearchToken) {
     setTokens(prev => {
       const filtered = prev.filter(t => {
-        // Replace same-type account/category
+        // Replace same-type account/category/tag
         if (t.type === token.type && token.type === 'account') return false;
         if (t.type === token.type && token.type === 'category') return false;
+        if (t.type === token.type && token.type === 'tag') return false;
         // Remove duplicate status
         if (t.type === 'status' && token.type === 'status' && t.value === token.value) return false;
         // Remove mutually exclusive status (cleared/uncleared, reconciled/unreconciled)
@@ -166,7 +167,26 @@ export default function SearchScreen() {
   }
 
   function handleRemoveToken(index: number) {
-    setTokens(prev => prev.filter((_, i) => i !== index));
+    const next = tokens.filter((_, i) => i !== index);
+    setTokens(next);
+    if (!hasSearched) return;
+    if (next.length === 0 && !searchText) {
+      setResults([]);
+      setHasSearched(false);
+    } else {
+      // Re-execute search with remaining filters
+      offsetRef.current = 0;
+      searchTransactions({
+        text: searchText || undefined,
+        ...buildSearchParams(next),
+        limit: PAGE_SIZE,
+        offset: 0,
+      }).then(txns => {
+        setResults(txns);
+        setHasMore(txns.length === PAGE_SIZE);
+        offsetRef.current = txns.length;
+      });
+    }
   }
 
   function handleClear() {
@@ -184,7 +204,6 @@ export default function SearchScreen() {
     const txns = await searchTransactions({
       text: searchText || undefined,
       ...buildSearchParams(tokens),
-      hideReconciled,
       limit: PAGE_SIZE,
       offset: 0,
     });
@@ -192,7 +211,7 @@ export default function SearchScreen() {
     setHasSearched(true);
     setHasMore(txns.length === PAGE_SIZE);
     offsetRef.current = txns.length;
-  }, [searchText, tokens, hideReconciled]);
+  }, [searchText, tokens]);
 
   const loadMore = useCallback(async () => {
     if (loadingMore || !hasMore || !hasSearched) return;
@@ -201,7 +220,6 @@ export default function SearchScreen() {
       const txns = await searchTransactions({
         text: searchText || undefined,
         ...buildSearchParams(tokens),
-        hideReconciled,
         limit: PAGE_SIZE,
         offset: offsetRef.current,
       });
@@ -212,7 +230,7 @@ export default function SearchScreen() {
     } finally {
       setLoadingMore(false);
     }
-  }, [loadingMore, hasMore, hasSearched, searchText, tokens, hideReconciled]);
+  }, [loadingMore, hasMore, hasSearched, searchText, tokens]);
 
   const { refreshControlProps } = useRefreshControl({
     syncFirst: false,
@@ -222,7 +240,6 @@ export default function SearchScreen() {
       const txns = await searchTransactions({
         text: searchText || undefined,
         ...buildSearchParams(tokens),
-        hideReconciled,
         limit: PAGE_SIZE,
         offset: 0,
       });
@@ -284,6 +301,7 @@ export default function SearchScreen() {
             tokens={tokens}
             accounts={accounts.filter(a => !a.closed).map(a => ({ id: a.id, name: a.name }))}
             categories={categories.filter(c => !c.hidden && !c.is_income).map(c => ({ id: c.id, name: c.name }))}
+            tags={tags}
             onSelect={handleAddToken}
           />
         )}
@@ -306,6 +324,7 @@ export default function SearchScreen() {
               onDelete={handleEditTransaction}
               onToggleCleared={handleEditTransaction}
               showAccountName
+              tags={tags}
               isFirst={item.isFirst}
               isLast={item.isLast}
             />

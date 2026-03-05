@@ -13,6 +13,7 @@ import { Stack, useFocusEffect, useNavigation, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import {
   deleteTransaction,
+  duplicateTransaction,
   getAllTransactions,
   setClearedBulk,
   toggleCleared,
@@ -20,7 +21,6 @@ import {
   type TransactionDisplay,
 } from '../../../../src/transactions';
 import { useAccountsStore } from '../../../../src/stores/accountsStore';
-import { usePrefsStore } from '../../../../src/stores/prefsStore';
 import { usePrivacyStore } from '../../../../src/stores/privacyStore';
 import { useTabBarStore } from '../../../../src/stores/tabBarStore';
 import { useTheme, useThemedStyles } from '../../../../src/presentation/providers/ThemeProvider';
@@ -29,6 +29,7 @@ import { formatBalance } from '../../../../src/lib/format';
 import { TransactionRow } from '../../../../src/presentation/components/account/TransactionRow';
 import { DateSectionHeader } from '../../../../src/presentation/components/account/DateSectionHeader';
 import { AddTransactionButton } from '../../../../src/presentation/components/molecules/AddTransactionButton';
+import { useTagsStore } from '../../../../src/stores/tagsStore';
 import type { Theme } from '../../../../src/theme';
 
 // ---------------------------------------------------------------------------
@@ -81,7 +82,7 @@ function buildListData(transactions: TransactionDisplay[]): ListItem[] {
 // Main screen
 // ---------------------------------------------------------------------------
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 25;
 
 export default function SpendingScreen() {
   const navigation = useNavigation();
@@ -89,9 +90,9 @@ export default function SpendingScreen() {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const { accounts, load: loadAccounts } = useAccountsStore();
-  const { hideReconciled } = usePrefsStore();
   const { privacyMode, toggle: togglePrivacy } = usePrivacyStore();
   const setTabBarHidden = useTabBarStore((s) => s.setHidden);
+  const tags = useTagsStore((s) => s.tags);
 
   const [transactions, setTransactions] = useState<TransactionDisplay[]>([]);
   const [loading, setLoading] = useState(true);
@@ -126,24 +127,34 @@ export default function SpendingScreen() {
 
   // ---- Data loading ----
 
+  const hasLoaded = useRef(false);
+
   const loadAll = useCallback(async () => {
     setLoading(true);
     offsetRef.current = 0;
     try {
-      const txns = await getAllTransactions({ limit: PAGE_SIZE, offset: 0, hideReconciled });
+      const txns = await getAllTransactions({ limit: PAGE_SIZE, offset: 0 });
       setTransactions(txns);
       setHasMore(txns.length === PAGE_SIZE);
       offsetRef.current = txns.length;
     } finally {
       setLoading(false);
     }
-  }, [hideReconciled]);
+  }, []);
+
+  const silentRefresh = useCallback(async () => {
+    offsetRef.current = 0;
+    const txns = await getAllTransactions({ limit: PAGE_SIZE, offset: 0 });
+    setTransactions(txns);
+    setHasMore(txns.length === PAGE_SIZE);
+    offsetRef.current = txns.length;
+  }, []);
 
   const loadMore = useCallback(async () => {
     if (loading || loadingMore || !hasMore) return;
     setLoadingMore(true);
     try {
-      const txns = await getAllTransactions({ limit: PAGE_SIZE, offset: offsetRef.current, hideReconciled });
+      const txns = await getAllTransactions({ limit: PAGE_SIZE, offset: offsetRef.current });
       if (txns.length === 0) { setHasMore(false); return; }
       setTransactions(prev => [...prev, ...txns]);
       setHasMore(txns.length === PAGE_SIZE);
@@ -151,12 +162,12 @@ export default function SpendingScreen() {
     } finally {
       setLoadingMore(false);
     }
-  }, [loadingMore, hasMore, hideReconciled]);
+  }, [loading, loadingMore, hasMore]);
 
   const { refreshControlProps } = useRefreshControl({
     onRefresh: async () => {
       offsetRef.current = 0;
-      const txns = await getAllTransactions({ limit: PAGE_SIZE, offset: 0, hideReconciled });
+      const txns = await getAllTransactions({ limit: PAGE_SIZE, offset: 0 });
       setTransactions(txns);
       setHasMore(txns.length === PAGE_SIZE);
       offsetRef.current = txns.length;
@@ -164,9 +175,14 @@ export default function SpendingScreen() {
   });
 
   useFocusEffect(useCallback(() => {
-    loadAll();
+    if (!hasLoaded.current) {
+      loadAll();
+      hasLoaded.current = true;
+    } else {
+      silentRefresh();
+    }
     return () => { setIsSelectMode(false); setSelectedIds(new Set()); setTabBarHidden(false); };
-  }, [loadAll]));
+  }, [loadAll, silentRefresh]));
 
   // ---- Single-item handlers ----
 
@@ -177,20 +193,53 @@ export default function SpendingScreen() {
         text: 'Delete',
         style: 'destructive',
         onPress: async () => {
+          setTransactions(prev => prev.filter(t => t.id !== txnId));
           await deleteTransaction(txnId);
-          await Promise.all([loadAccounts(), loadAll()]);
+          loadAccounts();
         },
       },
     ]);
   }
 
   async function handleToggleCleared(txnId: string) {
+    setTransactions(prev => prev.map(t =>
+      t.id === txnId ? { ...t, cleared: !t.cleared } : t
+    ));
     await toggleCleared(txnId);
-    await loadAll();
   }
 
   function handleEditTransaction(txnId: string) {
     router.push({ pathname: '/(auth)/transaction/new', params: { transactionId: txnId } });
+  }
+
+  async function handleDuplicate(txnId: string) {
+    const original = transactions.find(t => t.id === txnId);
+    if (!original) return;
+    const newId = await duplicateTransaction(txnId);
+    if (newId) {
+      const clone: TransactionDisplay = { ...original, id: newId, cleared: false, reconciled: false };
+      setTransactions(prev => {
+        const idx = prev.findIndex(t => t.id === txnId);
+        const next = [...prev];
+        next.splice(idx + 1, 0, clone);
+        return next;
+      });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+    loadAccounts();
+  }
+
+  async function handleMove(txnId: string, targetAccountId: string) {
+    const targetName = accounts.find(a => a.id === targetAccountId)?.name;
+    setTransactions(prev => prev.map(t =>
+      t.id === txnId ? { ...t, acct: targetAccountId, accountName: targetName } : t
+    ));
+    await updateTransaction(txnId, { acct: targetAccountId });
+    loadAccounts();
+  }
+
+  function handleAddTag(txnId: string) {
+    router.push({ pathname: '/(auth)/transaction/tags', params: { transactionId: txnId } });
   }
 
   // ---- Selection handlers ----
@@ -237,14 +286,16 @@ export default function SpendingScreen() {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
-            for (const txnId of selectedIds) {
-              await deleteTransaction(txnId);
-            }
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            const ids = new Set(selectedIds);
+            setTransactions(prev => prev.filter(t => !ids.has(t.id)));
             setIsSelectMode(false);
             setSelectedIds(new Set());
             setTabBarHidden(false);
-            await Promise.all([loadAccounts(), loadAll()]);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            for (const txnId of ids) {
+              await deleteTransaction(txnId);
+            }
+            loadAccounts();
           },
         },
       ],
@@ -262,14 +313,19 @@ export default function SpendingScreen() {
         {
           text: 'Move',
           onPress: async () => {
-            for (const txnId of selectedIds) {
-              await updateTransaction(txnId, { acct: targetAccountId });
-            }
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            const ids = new Set(selectedIds);
+            const targetName = targetAccount?.name;
+            setTransactions(prev => prev.map(t =>
+              ids.has(t.id) ? { ...t, acct: targetAccountId, accountName: targetName } : t
+            ));
             setIsSelectMode(false);
             setSelectedIds(new Set());
             setTabBarHidden(false);
-            await Promise.all([loadAccounts(), loadAll()]);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            for (const txnId of ids) {
+              await updateTransaction(txnId, { acct: targetAccountId });
+            }
+            loadAccounts();
           },
         },
       ],
@@ -281,18 +337,17 @@ export default function SpendingScreen() {
     if (selected.length === 0) return;
 
     const anyUncleared = selected.some(t => !t.cleared);
-    const updated = await setClearedBulk(selected.map(t => t.id), anyUncleared);
-
-    if (updated > 0) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    }
-
-    const txns = await getAllTransactions({ limit: offsetRef.current || PAGE_SIZE, offset: 0, hideReconciled });
-    setTransactions(txns);
+    const targetVal = anyUncleared;
+    const ids = new Set(selected.map(t => t.id));
+    setTransactions(prev => prev.map(t =>
+      ids.has(t.id) ? { ...t, cleared: targetVal } : t
+    ));
     setIsSelectMode(false);
     setSelectedIds(new Set());
     setTabBarHidden(false);
-    await loadAccounts();
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+    await setClearedBulk(selected.map(t => t.id), anyUncleared);
   }
 
   // ---- Header ----
@@ -373,7 +428,7 @@ export default function SpendingScreen() {
 
   // ---- Render ----
 
-  const listData = buildListData(transactions);
+  const listData = useMemo(() => buildListData(transactions), [transactions]);
 
   return (
     <>
@@ -401,7 +456,12 @@ export default function SpendingScreen() {
               onDelete={handleDelete}
               onToggleCleared={handleToggleCleared}
               onLongPress={handleLongPress}
+              onDuplicate={handleDuplicate}
+              onMove={handleMove}
+              onAddTag={handleAddTag}
               showAccountName
+              tags={tags}
+              moveAccounts={otherAccounts}
               isFirst={item.isFirst}
               isLast={item.isLast}
               isSelectMode={isSelectMode}
@@ -417,19 +477,11 @@ export default function SpendingScreen() {
         ListEmptyComponent={
           loading
             ? <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
-            : hideReconciled
-              ? <EmptyState
-                  icon="lock-closed-outline"
-                  title="All transactions reconciled"
-                  description="Reconciled transactions are hidden"
-                  actionLabel="Show All"
-                  onAction={() => usePrefsStore.getState().toggleHideReconciled()}
-                />
-              : <EmptyState
-                  icon="receipt-outline"
-                  title="No transactions yet"
-                  description="Add your first transaction to get started"
-                />
+            : <EmptyState
+                icon="receipt-outline"
+                title="No transactions yet"
+                description="Add your first transaction to get started"
+              />
         }
         onEndReached={loadMore}
         onEndReachedThreshold={0.3}

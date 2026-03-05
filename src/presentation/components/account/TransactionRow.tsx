@@ -1,11 +1,13 @@
-import { Pressable, View } from 'react-native';
+import { Platform, Pressable, View } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { Easing } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
+import * as ContextMenu from 'zeego/context-menu';
 import { useTheme, useThemedStyles } from '../../providers/ThemeProvider';
-import { Text, Amount } from '..';
+import { Text, Amount, NotesWithTags } from '..';
 import { SwipeableRow } from '../molecules/SwipeableRow';
 import type { TransactionDisplay } from '../../../transactions';
+import type { Tag } from '../../../tags/types';
 import type { Theme } from '../../../theme';
 
 interface TransactionRowProps {
@@ -14,7 +16,12 @@ interface TransactionRowProps {
   onDelete: (id: string) => void;
   onToggleCleared: (id: string) => void;
   onLongPress?: (id: string) => void;
+  onDuplicate?: (id: string) => void;
+  onMove?: (id: string, targetAccountId: string) => void;
+  onAddTag?: (id: string) => void;
   showAccountName?: boolean;
+  tags?: Tag[];
+  moveAccounts?: Array<{ id: string; name: string }>;
   isFirst?: boolean;
   isLast?: boolean;
   isSelectMode?: boolean;
@@ -27,7 +34,12 @@ export function TransactionRow({
   onDelete,
   onToggleCleared,
   onLongPress,
+  onDuplicate,
+  onMove,
+  onAddTag,
   showAccountName,
+  tags,
+  moveAccounts,
   isFirst = false,
   isLast = false,
   isSelectMode = false,
@@ -36,7 +48,7 @@ export function TransactionRow({
   const { colors, spacing, borderWidth: bw } = useTheme();
   const styles = useThemedStyles(createStyles);
 
-  const row = (
+  const rowContent = (
     <Pressable
       style={({ pressed }) => [
         styles.row,
@@ -50,7 +62,13 @@ export function TransactionRow({
           onPress(item.id);
         }
       }}
-      onLongPress={() => onLongPress?.(item.id)}
+      onLongPress={
+        // On iOS, ContextMenu handles long-press natively (when not in select mode)
+        // On Android, keep long-press for select mode
+        Platform.OS === 'android' || isSelectMode
+          ? () => onLongPress?.(item.id)
+          : undefined
+      }
     >
       {/* Selection checkbox */}
       {isSelectMode && (
@@ -118,19 +136,11 @@ export function TransactionRow({
           </View>
         )}
 
-        {/* Notes */}
+        {/* Notes with inline tag pills */}
         {item.notes && (
-          <Text
-            variant="caption"
-            color={colors.textMuted}
-            numberOfLines={1}
-            style={{ fontStyle: 'italic', marginTop: spacing.xxs }}
-          >
-            {item.notes}
-          </Text>
+          <NotesWithTags notes={item.notes} tags={tags} />
         )}
       </View>
-
 
       {/* Inset separator (HIG) — doesn't touch container edges */}
       {!isLast && (
@@ -148,18 +158,86 @@ export function TransactionRow({
     </Pressable>
   );
 
-  if (isSelectMode) return row;
+  // In select mode, no SwipeableRow and no ContextMenu
+  if (isSelectMode) return rowContent;
 
-  return (
+  const swipeableContent = (
     <SwipeableRow
       onDelete={() => onDelete(item.id)}
       isFirst={isFirst}
       isLast={isLast}
       style={{ marginHorizontal: spacing.lg }}
     >
-      {row}
+      {rowContent}
     </SwipeableRow>
   );
+
+  // Wrap in zeego ContextMenu on iOS
+  if (Platform.OS === 'ios') {
+    return (
+      <ContextMenu.Root>
+        <ContextMenu.Trigger>{swipeableContent}</ContextMenu.Trigger>
+        <ContextMenu.Content>
+          {!item.reconciled && (
+            <ContextMenu.Item
+              key="toggle-cleared"
+              onSelect={() => onToggleCleared(item.id)}
+            >
+              <ContextMenu.ItemTitle>
+                {item.cleared ? 'Unclear' : 'Clear'}
+              </ContextMenu.ItemTitle>
+              <ContextMenu.ItemIcon
+                ios={{ name: item.cleared ? 'circle' : 'checkmark.circle' }}
+              />
+            </ContextMenu.Item>
+          )}
+          <ContextMenu.Item
+            key="duplicate"
+            onSelect={() => onDuplicate?.(item.id)}
+          >
+            <ContextMenu.ItemTitle>Duplicate</ContextMenu.ItemTitle>
+            <ContextMenu.ItemIcon ios={{ name: 'doc.on.doc' }} />
+          </ContextMenu.Item>
+          {moveAccounts && moveAccounts.length > 0 && (
+            <ContextMenu.Sub>
+              <ContextMenu.SubTrigger key="move">
+                <ContextMenu.ItemTitle>Move to...</ContextMenu.ItemTitle>
+                <ContextMenu.ItemIcon ios={{ name: 'arrow.right.arrow.left' }} />
+              </ContextMenu.SubTrigger>
+              <ContextMenu.SubContent>
+                {moveAccounts.map(acc => (
+                  <ContextMenu.Item
+                    key={acc.id}
+                    onSelect={() => onMove?.(item.id, acc.id)}
+                  >
+                    <ContextMenu.ItemTitle>{acc.name}</ContextMenu.ItemTitle>
+                  </ContextMenu.Item>
+                ))}
+              </ContextMenu.SubContent>
+            </ContextMenu.Sub>
+          )}
+          <ContextMenu.Item
+            key="add-tag"
+            onSelect={() => onAddTag?.(item.id)}
+          >
+            <ContextMenu.ItemTitle>Add Tag</ContextMenu.ItemTitle>
+            <ContextMenu.ItemIcon ios={{ name: 'tag' }} />
+          </ContextMenu.Item>
+          <ContextMenu.Separator />
+          <ContextMenu.Item
+            key="delete"
+            destructive
+            onSelect={() => onDelete(item.id)}
+          >
+            <ContextMenu.ItemTitle>Delete</ContextMenu.ItemTitle>
+            <ContextMenu.ItemIcon ios={{ name: 'trash' }} />
+          </ContextMenu.Item>
+        </ContextMenu.Content>
+      </ContextMenu.Root>
+    );
+  }
+
+  return swipeableContent;
 }
 
 const createStyles = (theme: Theme) => ({

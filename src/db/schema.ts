@@ -99,6 +99,14 @@ CREATE TABLE IF NOT EXISTS preferences (
   value TEXT
 );
 
+CREATE TABLE IF NOT EXISTS tags (
+  id TEXT PRIMARY KEY,
+  tag TEXT UNIQUE,
+  color TEXT,
+  description TEXT,
+  tombstone INTEGER DEFAULT 0
+);
+
 CREATE TABLE IF NOT EXISTS messages_clock (
   id INTEGER PRIMARY KEY,
   clock TEXT

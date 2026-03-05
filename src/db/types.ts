@@ -80,6 +80,14 @@ export type ZeroBudgetMonthRow = {
   buffered: number; // cents held for next month
 };
 
+export type TagRow = {
+  id: string;
+  tag: string;
+  color: string | null;
+  description: string | null;
+  tombstone: 0 | 1;
+};
+
 export type MessagesCrdtRow = {
   timestamp: string;
   dataset: string;

@@ -101,6 +101,23 @@ export async function addTransaction(
   return id;
 }
 
+/** Duplicate a transaction — copies all fields except cleared/reconciled (reset to false). */
+export async function duplicateTransaction(id: string): Promise<string | null> {
+  const original = await getTransactionById(id);
+  if (!original) return null;
+
+  return addTransaction({
+    acct: original.acct,
+    date: original.date,
+    amount: original.amount,
+    category: original.category,
+    description: original.description,
+    notes: original.notes,
+    cleared: false,
+    reconciled: false,
+  });
+}
+
 export async function updateTransaction(
   id: string,
   fields: Omit<Partial<Transaction>, 'id' | 'tombstone'>,
@@ -317,7 +334,7 @@ export type TransactionDisplay = Transaction & {
   accountName?: string | null; // populated by getAllTransactions
 };
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 25;
 
 export async function getTransactionsForAccount(
   accountId: string,
@@ -423,6 +440,7 @@ export async function searchTransactions(opts: {
   uncleared?: boolean;
   reconciled?: boolean;
   unreconciled?: boolean;
+  tagName?: string;
   hideReconciled?: boolean;
   limit?: number;
   offset?: number;
@@ -443,6 +461,12 @@ export async function searchTransactions(opts: {
   if (opts.categoryId) {
     conditions.push('t.category = ?');
     params.push(opts.categoryId);
+  }
+
+  // Tag filter — match #tagName in notes (followed by space, #, or end of string)
+  if (opts.tagName) {
+    conditions.push("t.notes LIKE ?");
+    params.push(`%#${opts.tagName}%`);
   }
 
   // Text search across payee name, category name, notes, and account name

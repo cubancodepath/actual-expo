@@ -214,7 +214,7 @@ export default function AccountTransactionsScreen() {
   async function handleToggleCleared(txnId: string) {
     await toggleCleared(txnId);
     const [txns, cleared] = await Promise.all([
-      getTransactionsForAccount(id),
+      getTransactionsForAccount(id, { limit: offsetRef.current || PAGE_SIZE, offset: 0, hideReconciled }),
       getClearedBalance(id),
     ]);
     setTransactions(txns);

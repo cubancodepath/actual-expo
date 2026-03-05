@@ -101,8 +101,14 @@ export function getGoalProgress(cat: BudgetCategory): ProgressSegment[] {
         { text: ' left to budget' },
       ];
 
-    // #template N — fixed monthly amount
-    case 'simple':
+    // #template N — fixed monthly amount (or limit-only simple)
+    case 'simple': {
+      // Detect simple-as-limit (has limit but no monthly)
+      if (!primary.monthly && primary.limit) {
+        if (absSpent === 0) return [{ text: 'Nothing spent of ' }, { amount: cat.goal! }, { text: ' limit' }];
+        if (absSpent >= cat.goal!) return [{ text: 'Limit reached. Spent ' }, { amount: absSpent }];
+        return [{ text: 'Spent ' }, { amount: absSpent }, { text: ' of ' }, { amount: cat.goal! }, { text: ' limit' }];
+      }
       if (funded) {
         return fundedSegments(cat);
       }
@@ -110,6 +116,7 @@ export function getGoalProgress(cat: BudgetCategory): ProgressSegment[] {
         { amount: remaining },
         { text: ' more needed this month' },
       ];
+    }
 
     // #template N by YYYY-MM — sinking fund
     case 'by':
@@ -131,7 +138,15 @@ export function getGoalProgress(cat: BudgetCategory): ProgressSegment[] {
         { text: ` more needed by ${formatMonth(primary.month)}` },
       ];
 
-    // average, copy, periodic, percentage, remainder, refill, limit
+    // Spending limit types
+    case 'limit':
+    case 'refill': {
+      if (absSpent === 0) return [{ text: 'Nothing spent of ' }, { amount: cat.goal! }, { text: ' limit' }];
+      if (absSpent >= cat.goal!) return [{ text: 'Limit reached. Spent ' }, { amount: absSpent }];
+      return [{ text: 'Spent ' }, { amount: absSpent }, { text: ' of ' }, { amount: cat.goal! }, { text: ' limit' }];
+    }
+
+    // average, copy, periodic, percentage, remainder
     default:
       if (funded) {
         return fundedSegments(cat);

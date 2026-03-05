@@ -6,6 +6,7 @@ import { Amount } from '../atoms/Amount';
 import { CompactCurrencyInput, type CompactCurrencyInputRef } from '../atoms/CompactCurrencyInput';
 import { formatPrivacyAware } from '../../../lib/format';
 import { getGoalProgress } from '../../../goals/progress';
+import { parseGoalDef } from '../../../goals';
 import type { BudgetCategory } from '../../../budgets/types';
 
 interface BudgetCategoryRowProps {
@@ -77,11 +78,36 @@ export function BudgetCategoryRow({
 
   const hasGoal = cat.goal !== null && cat.goal > 0;
 
+  // Detect limit-type goals (spending cap semantics)
+  const isLimitGoal = hasGoal && (() => {
+    const templates = parseGoalDef(cat.goalDef);
+    if (templates.length === 0) return false;
+    const p = templates[0];
+    return p.type === 'limit' || p.type === 'refill' || (p.type === 'simple' && !p.monthly && !!p.limit);
+  })();
+
+  // Progress bar values (computed early for pill coloring)
+  const spentAbs = Math.abs(cat.spent);
+  const budgetedAbs = Math.abs(cat.budgeted);
+
   // Available badge colors — goal-aware
   let pillBg: string;
   let pillText: string;
 
-  if (hasGoal) {
+  if (isLimitGoal) {
+    // Limit goals: green = under limit, yellow = approaching, red = over
+    const ratio = spentAbs / cat.goal!;
+    pillBg = ratio >= 1
+      ? colors.negative + '30'
+      : ratio >= 0.8
+        ? colors.warning + '30'
+        : colors.positive + '30';
+    pillText = ratio >= 1
+      ? colors.negative
+      : ratio >= 0.8
+        ? colors.warning
+        : colors.positive;
+  } else if (hasGoal) {
     const funded = cat.longGoal
       ? cat.balance >= cat.goal!
       : cat.budgeted >= cat.goal!;
@@ -108,15 +134,11 @@ export function BudgetCategoryRow({
         : colors.textMuted;
   }
 
-  // Progress bar
-  const spentAbs = Math.abs(cat.spent);
-  const budgetedAbs = Math.abs(cat.budgeted);
-
   // Goal dual-bar values
   let goalFundedPct = 0;
   let goalSpentPct = 0;
   let goalColor = colors.positive;
-  if (hasGoal) {
+  if (hasGoal && !isLimitGoal) {
     const fundedValue = cat.longGoal ? cat.balance : cat.budgeted;
     goalFundedPct = Math.min(Math.max(fundedValue / cat.goal!, 0), 1);
     goalSpentPct = Math.min(Math.max(spentAbs / cat.goal!, 0), 1);
@@ -125,6 +147,19 @@ export function BudgetCategoryRow({
       : goalFundedPct >= 1
         ? colors.positive
         : colors.warning;
+  }
+
+  // Limit-type single bar: spent vs limit
+  let limitSpentPct = 0;
+  let limitBarColor = colors.positive;
+  if (isLimitGoal) {
+    const ratio = spentAbs / cat.goal!;
+    limitSpentPct = Math.min(ratio, 1);
+    limitBarColor = ratio >= 1
+      ? colors.negative
+      : ratio >= 0.8
+        ? colors.warning
+        : colors.positive;
   }
 
   // No-goal single bar values
@@ -197,7 +232,26 @@ export function BudgetCategoryRow({
       </View>
 
       {/* Line 2: Progress bar */}
-      {showProgressBar && (hasGoal ? (
+      {showProgressBar && (isLimitGoal ? (
+        <View
+          style={{
+            height: 5,
+            borderRadius: 2.5,
+            backgroundColor: colors.divider,
+            marginTop: 6,
+            overflow: 'hidden',
+          }}
+        >
+          <View
+            style={{
+              width: `${Math.round(limitSpentPct * 100)}%`,
+              height: '100%',
+              borderRadius: 2.5,
+              backgroundColor: limitBarColor,
+            }}
+          />
+        </View>
+      ) : hasGoal ? (
         <View
           style={{
             height: 5,

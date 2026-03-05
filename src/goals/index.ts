@@ -107,7 +107,18 @@ export function inferGoalFromDef(
       // Standalone limit
       return { goal: Math.round(primary.amount * 100), longGoal: false };
 
-    // average, copy, percentage, remainder, refill — need DB or context
+    case 'refill': {
+      // Refill always pairs with a limit — find the companion
+      const limitT = templates.find(t => t.type === 'limit');
+      if (limitT) return { goal: Math.round(limitT.amount * 100), longGoal: false };
+      const simpleLimit = templates.find(
+        (t): t is import('./types').SimpleTemplate => t.type === 'simple' && !!t.limit,
+      );
+      if (simpleLimit?.limit) return { goal: Math.round(simpleLimit.limit.amount * 100), longGoal: false };
+      return null;
+    }
+
+    // average, copy, percentage, remainder — need DB or context
     default:
       return null;
   }

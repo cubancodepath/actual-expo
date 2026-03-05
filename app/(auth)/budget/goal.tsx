@@ -15,7 +15,9 @@ import { ListItem } from '../../../src/presentation/components/molecules/ListIte
 import { Divider } from '../../../src/presentation/components/atoms/Divider';
 import { CurrencyInput } from '../../../src/presentation/components/atoms/CurrencyInput';
 import { getGoalTemplates, setGoalTemplates } from '../../../src/goals';
+import { applySingleGoal } from '../../../src/goals/apply';
 import { amountToInteger, integerToAmount } from '../../../src/goals/engine';
+import { batchMessages } from '../../../src/sync';
 import { formatDateLong } from '../../../src/lib/date';
 import type { Template } from '../../../src/goals/types';
 
@@ -195,16 +197,36 @@ export default function GoalEditorScreen() {
       if (templates.length === 0) return;
       setIsEditing(true);
 
-      // Check if there's a refill + limit combo
+      // Detect limit-type templates:
+      // - standalone `limit` type (our app's format)
+      // - `simple` with `limit` but no `monthly` (desktop's "#template up to X" format)
       const hasRefill = templates.some(t => t.type === 'refill');
       const limitT = templates.find(t => t.type === 'limit');
+      const simpleWithLimit = templates.find(
+        (t): t is import('../../../src/goals/types').SimpleTemplate =>
+          t.type === 'simple' && !!t.limit && t.monthly == null,
+      );
 
-      // If standalone refill (from desktop), show as limit with refill on
-      if (hasRefill && limitT) {
+      if (hasRefill && (limitT || simpleWithLimit)) {
         setGoalType('limit');
-        setAmountCents(amountToInteger(limitT.amount));
-        setLimitPeriod(limitT.period);
-        setLimitHold(limitT.hold);
+        if (limitT) {
+          setAmountCents(amountToInteger(limitT.amount));
+          setLimitPeriod(limitT.period);
+          setLimitHold(limitT.hold);
+        } else if (simpleWithLimit?.limit) {
+          setAmountCents(amountToInteger(simpleWithLimit.limit.amount));
+          setLimitPeriod(simpleWithLimit.limit.period);
+          setLimitHold(simpleWithLimit.limit.hold);
+        }
+        setLimitRefill(true);
+        return;
+      }
+      if (simpleWithLimit?.limit) {
+        // simple with limit and no monthly = refill behavior (#template up to X)
+        setGoalType('limit');
+        setAmountCents(amountToInteger(simpleWithLimit.limit.amount));
+        setLimitPeriod(simpleWithLimit.limit.period);
+        setLimitHold(simpleWithLimit.limit.hold);
         setLimitRefill(true);
         return;
       }
@@ -338,9 +360,11 @@ export default function GoalEditorScreen() {
     setSaving(true);
     try {
       const catNames = new Map(categories.map(c => [c.id, c.name]));
-      await setGoalTemplates(categoryId, buildTemplates(), catNames);
-      await useCategoriesStore.getState().load();
-      await useBudgetStore.getState().applyGoals();
+      await batchMessages(async () => {
+        await setGoalTemplates(categoryId, buildTemplates(), catNames);
+        await applySingleGoal(useBudgetStore.getState().month, categoryId);
+      });
+      await useBudgetStore.getState().load();
       router.back();
     } catch {
       Alert.alert('Could Not Save', 'An error occurred while saving. Please try again.');

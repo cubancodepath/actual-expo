@@ -281,3 +281,52 @@ export async function applyGoals(
   return result;
 }
 
+// ---------------------------------------------------------------------------
+// Apply goal for a single category (used when saving from the goal editor)
+// ---------------------------------------------------------------------------
+
+/**
+ * Apply goal template for a single category.
+ * Much faster than applyGoals() since it only processes one category
+ * instead of all categories with goal_def.
+ */
+export async function applySingleGoal(
+  month: string,
+  categoryId: string,
+): Promise<void> {
+  const monthInt = monthToInt(month);
+
+  const cat = await first<CategoryRow>(
+    'SELECT * FROM categories WHERE id = ? AND tombstone = 0',
+    [categoryId],
+  );
+  if (!cat || !cat.goal_def) return;
+
+  const templates = parseGoalDef(cat.goal_def);
+  if (templates.length === 0) return;
+
+  const budgetRow = await first<ZeroBudgetRow>(
+    'SELECT * FROM zero_budgets WHERE month = ? AND category = ?',
+    [monthInt, categoryId],
+  );
+  const previouslyBudgeted = budgetRow?.amount ?? 0;
+
+  const fromLastMonth = await getFromLastMonth(categoryId, month);
+  const ctx: GoalContext = { fromLastMonth, previouslyBudgeted };
+  const goalResult = await calculateGoal(categoryId, month, templates, ctx);
+
+  // Remainder categories need pass 2 context — just write the goal indicator
+  if (goalResult.hasRemainder) {
+    await setGoalResult(month, categoryId, null, false);
+    return;
+  }
+
+  // Write budgeted amount
+  if (goalResult.budgeted > 0) {
+    await setBudgetAmount(month, categoryId, goalResult.budgeted);
+  }
+
+  // Write goal indicator
+  await setGoalResult(month, categoryId, goalResult.goal, goalResult.longGoal);
+}
+

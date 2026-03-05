@@ -140,7 +140,7 @@ export default function SpendingScreen() {
   }, [hideReconciled]);
 
   const loadMore = useCallback(async () => {
-    if (loadingMore || !hasMore) return;
+    if (loading || loadingMore || !hasMore) return;
     setLoadingMore(true);
     try {
       const txns = await getAllTransactions({ limit: PAGE_SIZE, offset: offsetRef.current, hideReconciled });
@@ -416,7 +416,7 @@ export default function SpendingScreen() {
           );
         }}
         ListFooterComponent={
-          loadingMore
+          loadingMore && !loading
             ? <ActivityIndicator color={colors.primary} style={{ paddingVertical: 20 }} />
             : null
         }

@@ -12,6 +12,7 @@ import { usePickerStore } from '../../../src/stores/pickerStore';
 import { findOrCreatePayee } from '../../../src/payees';
 import { addTransaction, getTransactionById, getChildTransactions, deleteTransaction as deleteTransactionById } from '../../../src/transactions';
 import { batchMessages } from '../../../src/sync';
+import { extractTagsFromNotes } from '../../../src/tags';
 import { todayStr, todayInt, strToInt, intToStr } from '../../../src/lib/date';
 import { useTheme, useThemedStyles } from '../../../src/presentation/providers/ThemeProvider';
 import { useKeyboardHeight } from '../../../src/presentation/hooks/useKeyboardHeight';
@@ -44,6 +45,7 @@ export default function NewTransactionScreen() {
   const selectedPayee = usePickerStore((s) => s.selectedPayee);
   const selectedCategory = usePickerStore((s) => s.selectedCategory);
   const selectedAccount = usePickerStore((s) => s.selectedAccount);
+  const selectedTags = usePickerStore((s) => s.selectedTags);
   const splitCategories = usePickerStore((s) => s.splitCategories);
   const setSplitCategories = usePickerStore((s) => s.setSplitCategories);
   const clearPicker = usePickerStore((s) => s.clear);
@@ -149,6 +151,14 @@ export default function NewTransactionScreen() {
       setAcctName(selectedAccount.name);
     }
   }, [selectedAccount]);
+
+  useEffect(() => {
+    if (selectedTags) {
+      const plainNotes = notes.replace(/\s?(?<!#)#([^#\s]+)/g, '').trim();
+      const tagSuffix = selectedTags.map((t) => `#${t}`).join(' ');
+      setNotes(plainNotes ? `${plainNotes} ${tagSuffix}` : tagSuffix);
+    }
+  }, [selectedTags]);
 
   async function performSave() {
     const date = strToInt(dateStr) ?? dateInt;
@@ -381,6 +391,23 @@ export default function NewTransactionScreen() {
           <View style={styles.cardDivider} />
 
           <NotesField value={notes} onChangeText={setNotes} />
+          <View style={styles.cardDivider} />
+
+          <DetailRow
+            icon="pricetags-outline"
+            label={
+              extractTagsFromNotes(notes).length > 0
+                ? extractTagsFromNotes(notes).map((t) => `#${t}`).join(', ')
+                : ''
+            }
+            placeholder="Tags"
+            onPress={() => {
+              router.push({
+                pathname: './tags',
+                params: { mode: 'picker', currentNotes: notes },
+              });
+            }}
+          />
           <View style={styles.cardDivider} />
 
           <ClearedToggle value={cleared} onValueChange={setCleared} />

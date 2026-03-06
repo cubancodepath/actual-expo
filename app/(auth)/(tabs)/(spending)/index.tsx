@@ -250,7 +250,7 @@ export default function SpendingScreen() {
   }
 
   function handleAddTag(txnId: string) {
-    router.push({ pathname: '/(auth)/transaction/tags', params: { transactionId: txnId } });
+    router.push({ pathname: '/(auth)/transaction/tags', params: { transactionId: txnId, mode: 'direct' } });
   }
 
   // ---- Selection handlers ----

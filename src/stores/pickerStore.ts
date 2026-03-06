@@ -21,11 +21,13 @@ interface PickerState {
   selectedPayee: PayeeSelection | null;
   selectedCategory: CategorySelection | null;
   selectedAccount: AccountSelection | null;
+  selectedTags: string[] | null;
   splitCategories: SplitLine[] | null;
   splitCategorySelection: SplitCategorySelection | null;
   setPayee: (p: PayeeSelection) => void;
   setCategory: (c: CategorySelection) => void;
   setAccount: (a: AccountSelection) => void;
+  setTags: (tags: string[]) => void;
   setSplitCategories: (lines: SplitLine[] | null) => void;
   setSplitCategorySelection: (s: SplitCategorySelection | null) => void;
   clear: () => void;
@@ -35,17 +37,20 @@ export const usePickerStore = create<PickerState>((set) => ({
   selectedPayee: null,
   selectedCategory: null,
   selectedAccount: null,
+  selectedTags: null,
   splitCategories: null,
   splitCategorySelection: null,
   setPayee: (p) => set({ selectedPayee: p }),
   setCategory: (c) => set({ selectedCategory: c }),
   setAccount: (a) => set({ selectedAccount: a }),
+  setTags: (tags) => set({ selectedTags: tags }),
   setSplitCategories: (lines) => set({ splitCategories: lines }),
   setSplitCategorySelection: (s) => set({ splitCategorySelection: s }),
   clear: () => set({
     selectedPayee: null,
     selectedCategory: null,
     selectedAccount: null,
+    selectedTags: null,
     splitCategories: null,
     splitCategorySelection: null,
   }),

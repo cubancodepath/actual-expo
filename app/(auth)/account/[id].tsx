@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useState } from 'react';
 import { useSharedValue } from 'react-native-reanimated';
 import {
   ActivityIndicator,
@@ -34,15 +34,16 @@ import { AddTransactionButton } from '../../../src/presentation/components/molec
 import { UnclearedPill } from '../../../src/presentation/components/transaction/UnclearedPill';
 import { usePrefsStore } from '../../../src/stores/prefsStore';
 import { useTagsStore } from '../../../src/stores/tagsStore';
-import { usePickerStore } from '../../../src/stores/pickerStore';
 import {
   buildListData,
   useTransactionPagination,
   useTransactionSelection,
   useTransactionBulkActions,
   useSelectModeHeader,
+  useBulkCategoryPicker,
   type ListItem,
 } from '../../../src/presentation/hooks/transactionList';
+import { SelectModeToolbar } from '../../../src/presentation/components/transaction/SelectModeToolbar';
 
 export default function AccountTransactionsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -108,21 +109,12 @@ export default function AccountTransactionsScreen() {
         balanceDelta += t.cleared ? -t.amount : t.amount;
       }
       setClearedBalance(prev => prev + balanceDelta);
+      const unclearedDelta = affectedTxns.filter(t => !t.cleared).length;
+      setUnclearedCount(c => Math.max(0, targetVal ? c - unclearedDelta : c + unclearedDelta));
     },
   });
 
-  // ---- Bulk category via picker store ----
-  const bulkCategoryPending = useRef(false);
-  const selectedCategory = usePickerStore((s) => s.selectedCategory);
-  const clearPicker = usePickerStore((s) => s.clear);
-
-  useEffect(() => {
-    if (selectedCategory && bulkCategoryPending.current) {
-      bulkCategoryPending.current = false;
-      handleBulkChangeCategory(selectedCategory.id);
-      clearPicker();
-    }
-  }, [selectedCategory]);
+  const { triggerCategoryPicker } = useBulkCategoryPicker(handleBulkChangeCategory);
 
   // ---- Select mode header ----
   useSelectModeHeader({
@@ -179,6 +171,10 @@ export default function AccountTransactionsScreen() {
         style: 'destructive',
         onPress: async () => {
           refreshIdRef.current++;
+          const txn = transactions.find(t => t.id === txnId);
+          if (txn && !txn.cleared && !txn.reconciled) {
+            setUnclearedCount(c => Math.max(0, c - 1));
+          }
           setTransactions(prev => prev.filter(t => t.id !== txnId));
           await deleteTransaction(txnId);
           loadAccounts();
@@ -196,6 +192,7 @@ export default function AccountTransactionsScreen() {
         t.id === txnId ? { ...t, cleared: !t.cleared } : t
       ));
       setClearedBalance(prev => prev + delta);
+      setUnclearedCount(c => Math.max(0, c + (txn.cleared ? 1 : -1)));
     }
     await toggleCleared(txnId);
   }
@@ -217,6 +214,7 @@ export default function AccountTransactionsScreen() {
         next.splice(idx + 1, 0, clone);
         return next;
       });
+      setUnclearedCount(c => c + 1);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
     loadAccounts();
@@ -380,45 +378,15 @@ export default function AccountTransactionsScreen() {
       )}
 
       {isSelectMode && (
-        <Stack.Toolbar>
-          <Stack.Toolbar.Button
-            icon={allCleared ? 'circle' : 'checkmark.circle'}
-            onPress={handleBulkToggleCleared}
-          >
-            {allCleared ? 'Unclear' : 'Clear'}
-          </Stack.Toolbar.Button>
-          <Stack.Toolbar.Spacer />
-          <Stack.Toolbar.Menu icon="ellipsis">
-            {otherAccounts.length > 0 && (
-              <Stack.Toolbar.Menu icon="arrow.right.arrow.left" title="Move to...">
-                {otherAccounts.map(acc => (
-                  <Stack.Toolbar.MenuAction
-                    key={acc.id}
-                    onPress={() => handleBulkMove(acc.id, acc.name)}
-                  >
-                    {acc.name}
-                  </Stack.Toolbar.MenuAction>
-                ))}
-              </Stack.Toolbar.Menu>
-            )}
-            <Stack.Toolbar.MenuAction
-              icon="tag"
-              onPress={() => {
-                bulkCategoryPending.current = true;
-                router.push('/(auth)/transaction/category-picker');
-              }}
-            >
-              Set Category
-            </Stack.Toolbar.MenuAction>
-            <Stack.Toolbar.MenuAction
-              icon="trash"
-              destructive
-              onPress={handleBulkDelete}
-            >
-              Delete
-            </Stack.Toolbar.MenuAction>
-          </Stack.Toolbar.Menu>
-        </Stack.Toolbar>
+        <SelectModeToolbar
+          allCleared={allCleared}
+          selectedCount={selectedIds.size}
+          onToggleCleared={handleBulkToggleCleared}
+          onDelete={handleBulkDelete}
+          onMove={handleBulkMove}
+          onSetCategory={triggerCategoryPicker}
+          moveAccounts={otherAccounts}
+        />
       )}
     </View>
   );

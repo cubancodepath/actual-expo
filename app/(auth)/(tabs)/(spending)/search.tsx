@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { FlashList } from '@shopify/flash-list';
-import { Stack, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 
 import {
   deleteTransaction,
@@ -37,9 +37,10 @@ import {
   useTransactionSelection,
   useTransactionBulkActions,
   useSelectModeHeader,
+  useBulkCategoryPicker,
 } from '../../../../src/presentation/hooks/transactionList';
 import { useTabBarStore } from '../../../../src/stores/tabBarStore';
-import { usePickerStore } from '../../../../src/stores/pickerStore';
+import { SelectModeToolbar } from '../../../../src/presentation/components/transaction/SelectModeToolbar';
 
 // ---------------------------------------------------------------------------
 // Types for mixed FlashList data
@@ -167,18 +168,7 @@ export default function SearchScreen() {
       prev.map(t => ids.has(t.id) ? { ...t, acct: targetAccountId, accountName: targetAccountName } : t),
   });
 
-  // ---- Bulk category via picker store ----
-  const bulkCategoryPending = useRef(false);
-  const selectedCategory = usePickerStore((s) => s.selectedCategory);
-  const clearPicker = usePickerStore((s) => s.clear);
-
-  useEffect(() => {
-    if (selectedCategory && bulkCategoryPending.current) {
-      bulkCategoryPending.current = false;
-      handleBulkChangeCategory(selectedCategory.id);
-      clearPicker();
-    }
-  }, [selectedCategory]);
+  const { triggerCategoryPicker } = useBulkCategoryPicker(handleBulkChangeCategory);
 
   useSelectModeHeader({
     isSelectMode,
@@ -482,45 +472,15 @@ export default function SearchScreen() {
       />
 
       {isSelectMode && (
-        <Stack.Toolbar>
-          <Stack.Toolbar.Button
-            icon={allCleared ? 'circle' : 'checkmark.circle'}
-            onPress={handleBulkToggleCleared}
-          >
-            {allCleared ? 'Unclear' : 'Clear'}
-          </Stack.Toolbar.Button>
-          <Stack.Toolbar.Spacer />
-          <Stack.Toolbar.Menu icon="ellipsis">
-            {otherAccounts.length > 0 && (
-              <Stack.Toolbar.Menu icon="arrow.right.arrow.left" title="Move to...">
-                {otherAccounts.map(acc => (
-                  <Stack.Toolbar.MenuAction
-                    key={acc.id}
-                    onPress={() => handleBulkMove(acc.id, acc.name)}
-                  >
-                    {acc.name}
-                  </Stack.Toolbar.MenuAction>
-                ))}
-              </Stack.Toolbar.Menu>
-            )}
-            <Stack.Toolbar.MenuAction
-              icon="tag"
-              onPress={() => {
-                bulkCategoryPending.current = true;
-                router.push('/(auth)/transaction/category-picker');
-              }}
-            >
-              Set Category
-            </Stack.Toolbar.MenuAction>
-            <Stack.Toolbar.MenuAction
-              icon="trash"
-              destructive
-              onPress={handleBulkDelete}
-            >
-              Delete
-            </Stack.Toolbar.MenuAction>
-          </Stack.Toolbar.Menu>
-        </Stack.Toolbar>
+        <SelectModeToolbar
+          allCleared={allCleared}
+          selectedCount={selectedIds.size}
+          onToggleCleared={handleBulkToggleCleared}
+          onDelete={handleBulkDelete}
+          onMove={handleBulkMove}
+          onSetCategory={triggerCategoryPicker}
+          moveAccounts={otherAccounts}
+        />
       )}
     </>
   );

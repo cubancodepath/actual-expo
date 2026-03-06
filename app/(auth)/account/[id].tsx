@@ -15,6 +15,7 @@ import {
   duplicateTransaction,
   getClearedBalance,
   getTransactionsForAccount,
+  lockTransactions,
   reconcileAccount,
   toggleCleared,
   updateTransaction,
@@ -131,6 +132,12 @@ export default function AccountTransactionsScreen() {
   }, [loadWithClearedBalance, silentRefreshWithBalance, resetSelection]));
 
   // ---- Account-specific handlers ----
+
+  async function handleConfirmMatch() {
+    await lockTransactions(id);
+    await Promise.all([loadAccounts(), loadAll()]);
+    setClearedBalance(await getClearedBalance(id));
+  }
 
   async function handleReconcile(bankBalance: number) {
     await reconcileAccount(id, bankBalance);
@@ -334,6 +341,7 @@ export default function AccountTransactionsScreen() {
       <ReconcileOverlay
         visible={showReconcile}
         clearedBalance={clearedBalance}
+        onConfirmMatch={handleConfirmMatch}
         onReconcile={handleReconcile}
         onClose={() => setShowReconcile(false)}
       />

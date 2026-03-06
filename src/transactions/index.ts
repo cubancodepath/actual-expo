@@ -175,8 +175,10 @@ export async function updateTransaction(
 
 /** Toggle the cleared flag on a transaction (skips reconciled transactions). */
 export async function toggleCleared(id: string): Promise<void> {
-  const row = await first<{ cleared: number }>('SELECT cleared FROM transactions WHERE id = ? AND tombstone = 0', [id]);
-  if (!row) return;
+  const row = await first<{ cleared: number; reconciled: number }>(
+    'SELECT cleared, reconciled FROM transactions WHERE id = ? AND tombstone = 0', [id],
+  );
+  if (!row || row.reconciled === 1) return;
   await sendMessages([
     { timestamp: Timestamp.send()!, dataset: 'transactions', row: id, column: 'cleared', value: row.cleared === 1 ? 0 : 1 },
   ]);
@@ -258,17 +260,20 @@ export async function reconcileAccount(
   const cleared = await getClearedBalance(accountId);
   const diff = bankBalance - cleared;
 
-  if (diff !== 0) {
-    await addTransaction({
-      acct: accountId,
-      date: todayInt(),
-      amount: diff,
-      cleared: true,
-      notes: 'Reconciliation balance adjustment',
-    });
-  }
+  await batchMessages(async () => {
+    if (diff !== 0) {
+      await addTransaction({
+        acct: accountId,
+        date: todayInt(),
+        amount: diff,
+        cleared: true,
+        notes: 'Reconciliation balance adjustment',
+      });
+    }
 
-  await lockTransactions(accountId);
+    await lockTransactions(accountId);
+  });
+
   return { adjusted: diff !== 0, diff };
 }
 

@@ -26,6 +26,8 @@ interface CompactCurrencyInputProps {
   onBlur?: () => void;
   /** Auto-focus on mount */
   autoFocus?: boolean;
+  /** Override the value text color */
+  color?: string;
   /** Additional container style */
   style?: ViewStyle;
 }
@@ -45,7 +47,7 @@ function formatCents(c: number): string {
  * No border/background — designed to look inline. Shows blinking cursor when focused.
  */
 export const CompactCurrencyInput = forwardRef<CompactCurrencyInputRef, CompactCurrencyInputProps>(
-  function CompactCurrencyInput({ value, onChangeValue, onFocus: onFocusProp, onBlur, autoFocus = false, style }, ref) {
+  function CompactCurrencyInput({ value, onChangeValue, onFocus: onFocusProp, onBlur, autoFocus = false, color: colorProp, style }, ref) {
     const { colors, spacing } = useTheme();
     const inputRef = useRef<TextInput>(null);
     const [focused, setFocused] = useState(autoFocus);
@@ -97,7 +99,7 @@ export const CompactCurrencyInput = forwardRef<CompactCurrencyInputRef, CompactC
           style={{
             fontWeight: '600',
             fontVariant: ['tabular-nums'],
-            color: value > 0 ? colors.textPrimary : colors.textMuted,
+            color: colorProp ?? (value > 0 ? colors.textPrimary : colors.textMuted),
           }}
         >
           {formatCents(value)}

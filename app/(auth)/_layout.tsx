@@ -131,8 +131,7 @@ export default function AuthLayout() {
       <Stack.Screen
         name="budget/cover-category-picker"
         options={{
-          ...screen,
-          title: "Select Category",
+          headerShown: false,
           presentation: "formSheet",
           sheetAllowedDetents: [0.5, 1.0],
           contentStyle: { backgroundColor: theme.colors.pageBackground },
@@ -150,8 +149,7 @@ export default function AuthLayout() {
       <Stack.Screen
         name="budget/move-category-picker"
         options={{
-          ...screen,
-          title: "Select Category",
+          headerShown: false,
           presentation: "formSheet",
           sheetAllowedDetents: [0.5, 1.0],
           contentStyle: { backgroundColor: theme.colors.pageBackground },

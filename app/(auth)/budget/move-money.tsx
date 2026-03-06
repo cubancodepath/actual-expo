@@ -244,7 +244,7 @@ export default function MoveMoneyScreen() {
     const excludeIds = sources.map((s) => s.id).join(',');
     router.push({
       pathname: '/(auth)/budget/move-category-picker',
-      params: { excludeIds, moveCatId: catId },
+      params: { excludeIds, moveCatId: catId, direction },
     });
   }
 

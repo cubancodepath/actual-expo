@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, SectionList, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useCategoriesStore } from '../../../src/stores/categoriesStore';
@@ -11,6 +11,21 @@ import { Amount } from '../../../src/presentation/components/atoms/Amount';
 import { SearchBar } from '../../../src/presentation/components';
 import { currentMonth } from '../../../src/lib/date';
 import type { Theme } from '../../../src/theme';
+
+type CategoryItem = {
+  id: string;
+  name: string;
+  cat_group: string;
+  hidden?: boolean | number;
+  tombstone?: boolean | number;
+  sort_order?: number | null;
+};
+
+type CategorySection = {
+  key: string;
+  title: string;
+  data: CategoryItem[];
+};
 
 export default function CategoryPickerScreen() {
   const { month, selectedId, amount, payeeId, payeeName, transactionId } = useLocalSearchParams<{
@@ -46,7 +61,7 @@ export default function CategoryPickerScreen() {
 
   const noneSelected = !selectedId;
 
-  const filteredGroups = useMemo(() => {
+  const sections = useMemo<CategorySection[]>(() => {
     const query = search.toLowerCase().trim();
     return groups
       .filter((g) => !g.hidden && !g.tombstone)
@@ -59,9 +74,9 @@ export default function CategoryPickerScreen() {
           .filter((c) => c.cat_group === g.id && !c.hidden && !c.tombstone)
           .filter((c) => !query || c.name.toLowerCase().includes(query) || g.name.toLowerCase().includes(query))
           .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
-        return { ...g, cats };
+        return { key: g.id, title: g.name, data: cats };
       })
-      .filter((g) => g.cats.length > 0);
+      .filter((s) => s.data.length > 0);
   }, [groups, categories, search]);
 
   function handleSplit() {
@@ -78,10 +93,7 @@ export default function CategoryPickerScreen() {
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.list}
-    >
+    <View style={styles.container}>
       <Stack.Screen
         options={{
           headerRight: () => (
@@ -105,84 +117,100 @@ export default function CategoryPickerScreen() {
         placeholder="Search categories…"
         autoFocus
       />
-
-      {/* No category — standalone card */}
-      {!search && (
-        <View style={styles.standaloneCard}>
-          <Pressable
-            style={({ pressed }) => [styles.item, pressed && styles.pressed]}
-            onPress={() => select(null, '')}
-          >
-            <Text variant="body" color={colors.textMuted} style={styles.catName}>
-              No category
-            </Text>
-            <View style={{ width: 20, alignItems: 'center' }}>
-              {noneSelected && (
-                <Ionicons name="checkmark" size={20} color={colors.primary} />
-              )}
+      <SectionList
+        style={{ flex: 1 }}
+        contentContainerStyle={styles.list}
+        sections={sections}
+        keyExtractor={(c) => c.id}
+        keyboardShouldPersistTaps="handled"
+        stickySectionHeadersEnabled
+        ListHeaderComponent={
+          !search ? (
+            <View style={styles.standaloneCard}>
+              <Pressable
+                style={({ pressed }) => [styles.item, pressed && styles.pressed]}
+                onPress={() => select(null, '')}
+              >
+                <Text variant="body" color={colors.textMuted} style={styles.catName}>
+                  No category
+                </Text>
+                <View style={{ width: 20, alignItems: 'center' }}>
+                  {noneSelected && (
+                    <Ionicons name="checkmark" size={20} color={colors.primary} />
+                  )}
+                </View>
+              </Pressable>
             </View>
-          </Pressable>
-        </View>
-      )}
-
-      {filteredGroups.map((g) => (
-        <View key={g.id}>
+          ) : null
+        }
+        renderSectionHeader={({ section }) => (
           <View style={styles.sectionHeader}>
             <Text
               variant="captionSm"
               color={colors.textMuted}
               style={styles.sectionText}
             >
-              {g.name.toUpperCase()}
+              {section.title.toUpperCase()}
             </Text>
           </View>
-          <View style={styles.groupCard}>
-            {g.cats.map((c, i) => {
-              const balance = balanceMap.get(c.id);
-              const balanceColor =
-                balance === undefined
-                  ? colors.textMuted
-                  : balance > 0
-                    ? colors.positive
-                    : balance < 0
-                      ? colors.negative
-                      : colors.textMuted;
-              const isSelected = c.id === selectedId;
-              const isLast = i === g.cats.length - 1;
-              return (
-                <Pressable
-                  key={c.id}
-                  style={({ pressed }) => [
-                    styles.item,
-                    pressed && styles.pressed,
-                  ]}
-                  onPress={() => select(c.id, c.name)}
+        )}
+        renderItem={({ item: c, index, section }) => {
+          const balance = balanceMap.get(c.id);
+          const balanceColor =
+            balance === undefined
+              ? colors.textMuted
+              : balance > 0
+                ? colors.positive
+                : balance < 0
+                  ? colors.negative
+                  : colors.textMuted;
+          const isSelected = c.id === selectedId;
+          const isLast = index === section.data.length - 1;
+          const isFirst = index === 0;
+          return (
+            <View
+              style={[
+                styles.groupCard,
+                {
+                  borderTopLeftRadius: isFirst ? br.lg : 0,
+                  borderTopRightRadius: isFirst ? br.lg : 0,
+                  borderBottomLeftRadius: isLast ? br.lg : 0,
+                  borderBottomRightRadius: isLast ? br.lg : 0,
+                  borderBottomWidth: isLast ? bw.thin : 0,
+                },
+              ]}
+            >
+              <Pressable
+                style={({ pressed }) => [
+                  styles.item,
+                  pressed && styles.pressed,
+                ]}
+                onPress={() => select(c.id, c.name)}
+              >
+                <Text
+                  variant="body"
+                  color={colors.textPrimary}
+                  style={styles.catName}
                 >
-                  <Text
-                    variant="body"
-                    color={colors.textPrimary}
-                    style={styles.catName}
-                  >
-                    {c.name}
-                  </Text>
-                  {balance !== undefined && (
-                    <Amount value={balance} variant="caption" color={balanceColor} style={styles.balance} />
+                  {c.name}
+                </Text>
+                {balance !== undefined && (
+                  <Amount value={balance} variant="caption" color={balanceColor} style={styles.balance} />
+                )}
+                <View style={{ width: 20, alignItems: 'center' }}>
+                  {isSelected && (
+                    <Ionicons name="checkmark" size={20} color={colors.primary} />
                   )}
-                  <View style={{ width: 20, alignItems: 'center' }}>
-                    {isSelected && (
-                      <Ionicons name="checkmark" size={20} color={colors.primary} />
-                    )}
-                  </View>
-                  {!isLast && (
-                    <View style={{ position: 'absolute', bottom: 0, left: spacing.lg, right: spacing.lg, height: bw.thin, backgroundColor: colors.divider }} />
-                  )}
-                </Pressable>
-              );
-            })}
-          </View>
-        </View>
-      ))}
-    </ScrollView>
+                </View>
+                {!isLast && (
+                  <View style={{ position: 'absolute', bottom: 0, left: spacing.lg, right: spacing.lg, height: bw.thin, backgroundColor: colors.divider }} />
+                )}
+              </Pressable>
+            </View>
+          );
+        }}
+      />
+    </View>
   );
 }
 
@@ -195,6 +223,7 @@ const createStyles = (theme: Theme) => ({
     paddingBottom: 40,
   },
   sectionHeader: {
+    backgroundColor: theme.colors.pageBackground,
     paddingHorizontal: theme.spacing.lg + theme.spacing.lg,
     paddingTop: theme.spacing.lg,
     paddingBottom: theme.spacing.sm,
@@ -215,7 +244,6 @@ const createStyles = (theme: Theme) => ({
   groupCard: {
     marginHorizontal: theme.spacing.lg,
     backgroundColor: theme.colors.cardBackground,
-    borderRadius: theme.borderRadius.lg,
     borderWidth: theme.borderWidth.thin,
     borderColor: theme.colors.cardBorder,
     overflow: 'hidden' as const,

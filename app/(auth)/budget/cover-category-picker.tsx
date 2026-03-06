@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Pressable, SectionList, View } from 'react-native';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { FlatList, Pressable, View } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
 import { useBudgetStore } from '../../../src/stores/budgetStore';
 import { Text } from '../../../src/presentation/components/atoms/Text';
@@ -8,11 +8,9 @@ import { Amount } from '../../../src/presentation/components/atoms/Amount';
 import { SearchBar } from '../../../src/presentation/components/molecules/SearchBar';
 import type { BudgetCategory } from '../../../src/budgets/types';
 
-type PickerSection = {
-  key: string;
-  title: string;
-  data: BudgetCategory[];
-};
+type SectionHeaderItem = { type: 'section-header'; title: string; key: string };
+type CategoryItem = { type: 'category'; cat: BudgetCategory; isFirst: boolean; isLast: boolean; key: string };
+type ListItem = SectionHeaderItem | CategoryItem;
 
 export default function CoverCategoryPickerScreen() {
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
@@ -30,21 +28,24 @@ export default function CoverCategoryPickerScreen() {
     [excludeIds, overspentCatId],
   );
 
-  const sections = useMemo<PickerSection[]>(() => {
+  const items = useMemo<ListItem[]>(() => {
     if (!data) return [];
     const query = search.toLowerCase().trim();
-    return data.groups
-      .filter((g) => !g.is_income)
-      .map((g) => ({
-        key: g.id,
-        title: g.name,
-        data: g.categories.filter((c) => {
-          if (excludeSet.has(c.id) || c.balance <= 0) return false;
-          if (query && !c.name.toLowerCase().includes(query) && !g.name.toLowerCase().includes(query)) return false;
-          return true;
-        }),
-      }))
-      .filter((s) => s.data.length > 0);
+    const result: ListItem[] = [];
+    for (const g of data.groups) {
+      if (g.is_income) continue;
+      const cats = g.categories.filter((c) => {
+        if (excludeSet.has(c.id) || c.balance <= 0) return false;
+        if (query && !c.name.toLowerCase().includes(query) && !g.name.toLowerCase().includes(query)) return false;
+        return true;
+      });
+      if (cats.length === 0) continue;
+      result.push({ type: 'section-header', title: g.name, key: `header-${g.id}` });
+      cats.forEach((cat, i) => {
+        result.push({ type: 'category', cat, isFirst: i === 0, isLast: i === cats.length - 1, key: cat.id });
+      });
+    }
+    return result;
   }, [data, excludeSet, search]);
 
   function handleSelect(cat: BudgetCategory) {
@@ -53,67 +54,80 @@ export default function CoverCategoryPickerScreen() {
   }
 
   return (
-    <SectionList
-      style={{ backgroundColor: colors.pageBackground }}
-      contentInsetAdjustmentBehavior="automatic"
-      sections={sections}
-      keyExtractor={(c) => c.id}
+    <FlatList
+      style={{ flex: 1, backgroundColor: colors.pageBackground }}
+      data={items}
+      keyExtractor={(item) => item.key}
       keyboardShouldPersistTaps="handled"
-      stickySectionHeadersEnabled
+      stickyHeaderIndices={[0]}
       ListHeaderComponent={
-        <SearchBar
-          value={search}
-          onChangeText={setSearch}
-          placeholder="Search categories..."
-        />
-      }
-      renderSectionHeader={({ section }) => (
-        <View
-          style={{
-            backgroundColor: colors.pageBackground,
-            paddingHorizontal: spacing.lg,
-            paddingVertical: spacing.sm,
-            paddingTop: spacing.md,
-          }}
-        >
+        <View style={{ backgroundColor: colors.pageBackground, paddingTop: spacing.md }}>
           <Text
-            variant="captionSm"
-            color={colors.textMuted}
-            style={{ textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: '700' }}
+            variant="headingSm"
+            color={colors.textPrimary}
+            style={{ paddingBottom: spacing.sm, paddingHorizontal: spacing.lg }}
           >
-            {section.title}
+            Cover overspending from
           </Text>
+          <SearchBar
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Search categories..."
+          />
         </View>
-      )}
-      renderItem={({ item: cat, index, section }) => (
-        <Pressable
-          style={({ pressed }) => [
-            {
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginHorizontal: spacing.lg,
-              paddingHorizontal: spacing.md,
-              paddingVertical: 12,
-              backgroundColor: colors.cardBackground,
-              borderColor: colors.cardBorder,
-              borderWidth: bw.thin,
-              borderBottomWidth: index < section.data.length - 1 ? 0 : bw.thin,
-              borderTopLeftRadius: index === 0 ? br.md : 0,
-              borderTopRightRadius: index === 0 ? br.md : 0,
-              borderBottomLeftRadius: index === section.data.length - 1 ? br.md : 0,
-              borderBottomRightRadius: index === section.data.length - 1 ? br.md : 0,
-            },
-            pressed && { backgroundColor: colors.inputBackground },
-          ]}
-          onPress={() => handleSelect(cat)}
-        >
-          <Text variant="body" color={colors.textPrimary} style={{ flex: 1, marginRight: 12 }} numberOfLines={1}>
-            {cat.name}
-          </Text>
-          <Amount value={cat.balance} variant="bodySm" weight="600" />
-        </Pressable>
-      )}
+      }
+      renderItem={({ item }) => {
+        if (item.type === 'section-header') {
+          return (
+            <View
+              style={{
+                backgroundColor: colors.pageBackground,
+                paddingHorizontal: spacing.lg,
+                paddingVertical: spacing.sm,
+                paddingTop: spacing.md,
+              }}
+            >
+              <Text
+                variant="captionSm"
+                color={colors.textMuted}
+                style={{ textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: '700' }}
+              >
+                {item.title}
+              </Text>
+            </View>
+          );
+        }
+        const { cat, isFirst, isLast } = item;
+        return (
+          <Pressable
+            style={({ pressed }) => [
+              {
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginHorizontal: spacing.lg,
+                paddingHorizontal: spacing.md,
+                paddingVertical: 12,
+                backgroundColor: colors.cardBackground,
+                borderColor: colors.cardBorder,
+                borderWidth: bw.thin,
+                borderBottomWidth: isLast ? bw.thin : 0,
+                borderTopLeftRadius: isFirst ? br.md : 0,
+                borderTopRightRadius: isFirst ? br.md : 0,
+                borderBottomLeftRadius: isLast ? br.md : 0,
+                borderBottomRightRadius: isLast ? br.md : 0,
+              },
+              pressed && { backgroundColor: colors.inputBackground },
+            ]}
+            onPress={() => handleSelect(cat)}
+          >
+            <Text variant="body" color={colors.textPrimary} style={{ flex: 1, marginRight: 12 }} numberOfLines={1}>
+              {cat.name}
+            </Text>
+            <Amount value={cat.balance} variant="bodySm" weight="600" />
+          </Pressable>
+        );
+      }}
       ListEmptyComponent={
         <View style={{ alignItems: 'center', marginTop: 60, gap: 8 }}>
           <Text variant="bodyLg" color={colors.textSecondary}>No categories available</Text>
@@ -123,13 +137,6 @@ export default function CoverCategoryPickerScreen() {
         </View>
       }
       contentContainerStyle={{ paddingBottom: spacing.xl }}
-    >
-      <Stack.Screen
-        options={{
-          headerLeft: () => null,
-          headerRight: () => null,
-        }}
-      />
-    </SectionList>
+    />
   );
 }

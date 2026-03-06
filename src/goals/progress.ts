@@ -19,7 +19,6 @@ function formatMonth(yyyymm: string): string {
 
 function formatDay(yyyymm: string): string {
   const [, m] = yyyymm.split('-').map(Number);
-  // "by the 1st" of next month
   const date = new Date(2000, m - 1, 1);
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
@@ -28,17 +27,21 @@ function formatDay(yyyymm: string): string {
 // Funded helpers
 // ---------------------------------------------------------------------------
 
-/** Common "Funded" messages when goal is met. */
+/** Spending-aware funded messages — shows spending progress or available balance. */
 function fundedSegments(cat: BudgetCategory): ProgressSegment[] {
   const absSpent = Math.abs(cat.spent);
   if (absSpent === 0) {
-    return [{ text: 'Funded. Nothing spent yet' }];
+    return [
+      { text: 'Budgeted. ' },
+      { amount: cat.balance },
+      { text: ' available' },
+    ];
   }
   return [
-    { text: 'Funded. Spent ' },
+    { text: 'Spent ' },
     { amount: absSpent },
     { text: ' of ' },
-    { amount: cat.goal! },
+    { amount: cat.budgeted },
   ];
 }
 
@@ -51,17 +54,27 @@ function fundedSegments(cat: BudgetCategory): ProgressSegment[] {
  * Returns an array of text and amount segments that the UI renders
  * using `<Text>` for labels and `<Amount>` for monetary values.
  *
- * Messages follow Actual Budget conventions:
+ * Messages complement the spending progress bar:
  *
- * Funded:
- *   "Funded. Nothing spent yet"
- *   "Funded. Spent [x] of [y]"
+ * No goal:
+ *   "No spending"
+ *   "Spent [x]"
+ *
+ * Savings goals (#goal):
  *   "Fully funded"
+ *   "[balance] of [goal] saved"
  *
- * Needed:
- *   "[x] more needed by [date]"
+ * Monthly goals (funded):
+ *   "Budgeted. [available] available"
+ *   "Spent [x] of [budgeted]"
+ *
+ * Monthly goals (underfunded):
  *   "[x] more needed this month"
- *   "[x] left to budget"
+ *   "[x] more needed by [date]"
+ *
+ * Limit goals:
+ *   "Spent [x] of [y] limit"
+ *   "Limit reached. Spent [x]"
  */
 export function getGoalProgress(cat: BudgetCategory): ProgressSegment[] {
   const templates = parseGoalDef(cat.goalDef);
@@ -97,8 +110,10 @@ export function getGoalProgress(cat: BudgetCategory): ProgressSegment[] {
         return [{ text: 'Fully funded' }];
       }
       return [
-        { amount: remaining },
-        { text: ' left to budget' },
+        { amount: Math.max(cat.balance, 0) },
+        { text: ' of ' },
+        { amount: cat.goal },
+        { text: ' saved' },
       ];
 
     // #template N — fixed monthly amount, refill, or pure cap
@@ -109,7 +124,7 @@ export function getGoalProgress(cat: BudgetCategory): ProgressSegment[] {
         if (absSpent >= cat.goal!) return [{ text: 'Limit reached. Spent ' }, { amount: absSpent }];
         return [{ text: 'Spent ' }, { amount: absSpent }, { text: ' of ' }, { amount: cat.goal! }, { text: ' limit' }];
       }
-      // Refill: no monthly + limit → balance-based (funded/needed)
+      // Refill or fixed monthly: funded/needed
       if (funded) {
         return fundedSegments(cat);
       }
@@ -122,21 +137,21 @@ export function getGoalProgress(cat: BudgetCategory): ProgressSegment[] {
     // #template N by YYYY-MM — sinking fund
     case 'by':
       if (funded) {
-        return fundedSegments(cat);
+        return [{ text: 'On track' }];
       }
       return [
         { amount: remaining },
-        { text: ` more needed by ${formatDay(primary.month)}` },
+        { text: ' more needed this month' },
       ];
 
     // #template N by YYYY-MM spend from YYYY-MM
     case 'spend':
       if (funded) {
-        return fundedSegments(cat);
+        return [{ text: 'On track' }];
       }
       return [
         { amount: remaining },
-        { text: ` more needed by ${formatMonth(primary.month)}` },
+        { text: ' more needed this month' },
       ];
 
     // Spending limit types

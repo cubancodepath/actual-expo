@@ -22,6 +22,7 @@
     "expo-file-system": "~55.0.10",
     "expo-glass-effect": "~55.0.7",
     "expo-haptics": "~55.0.8",
+    "expo-linear-gradient": "~55.0.8",
     "expo-linking": "^55.0.7",
     "expo-quick-actions": "^6.0.1",
     "expo-router": "~55.0.3",

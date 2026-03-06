@@ -8,6 +8,7 @@ import { CompactCurrencyInput, type CompactCurrencyInputRef } from '../atoms/Com
 import { formatPrivacyAware } from '../../../lib/format';
 import { getGoalProgress } from '../../../goals/progress';
 import { parseGoalDef } from '../../../goals';
+import { ProgressBar } from '../atoms/ProgressBar';
 import type { BudgetCategory } from '../../../budgets/types';
 
 interface BudgetCategoryRowProps {
@@ -85,16 +86,20 @@ export function BudgetCategoryRow({
   // ── Expense row ──
 
   const hasGoal = cat.goal !== null && cat.goal > 0;
+  const templates = hasGoal ? parseGoalDef(cat.goalDef) : [];
+  const primaryTemplate = templates[0];
 
   // Detect limit-type goals (spending cap semantics)
-  const isLimitGoal = hasGoal && (() => {
-    const templates = parseGoalDef(cat.goalDef);
-    if (templates.length === 0) return false;
-    const p = templates[0];
-    // Pure spending cap: limit/refill types, or simple with monthly:0 + limit
-    // Refill (simple with no monthly + limit) is balance-based, NOT a limit goal
-    return p.type === 'limit' || p.type === 'refill' || (p.type === 'simple' && p.monthly === 0 && !!p.limit);
-  })();
+  const isLimitGoal = hasGoal && !!primaryTemplate && (
+    primaryTemplate.type === 'limit' || primaryTemplate.type === 'refill' ||
+    (primaryTemplate.type === 'simple' && primaryTemplate.monthly === 0 && !!primaryTemplate.limit)
+  );
+
+  // Detect sinking funds (by/spend) — need total target for cumulative bar
+  const sinkingFundTotal = hasGoal && !isLimitGoal && !cat.longGoal && primaryTemplate &&
+    (primaryTemplate.type === 'by' || primaryTemplate.type === 'spend')
+    ? Math.round(primaryTemplate.amount * 100)
+    : 0;
 
   // Progress bar values (computed early for pill coloring)
   const spentAbs = Math.abs(cat.spent);
@@ -144,42 +149,81 @@ export function BudgetCategoryRow({
         : colors.textMuted;
   }
 
-  // Goal dual-bar values
-  let goalFundedPct = 0;
-  let goalSpentPct = 0;
-  let goalColor = colors.positive;
-  if (hasGoal && !isLimitGoal) {
-    const fundedValue = cat.longGoal ? cat.balance : cat.budgeted;
-    goalFundedPct = Math.min(Math.max(fundedValue / cat.goal!, 0), 1);
-    goalSpentPct = Math.min(Math.max(spentAbs / cat.goal!, 0), 1);
-    goalColor = cat.balance < 0
-      ? colors.negative
-      : goalFundedPct >= 1
-        ? colors.positive
-        : colors.warning;
-  }
+  // ── Progress bar values (YNAB-style) ──
+  //
+  // Two bar modes:
+  //   1. Savings goals (longGoal) — bar = balance / goal (how much saved toward target)
+  //   2. Spending (everything else) — bar = spent (dark) + available (light) vs budget
+  //
+  // ProgressBar props:
+  //   spent    = darker portion (amount consumed or saved)
+  //   available = total filled portion (spent + remaining)
+  //   overspent = full bar red with pulse
 
-  // Limit-type single bar: spent vs limit
-  let limitSpentPct = 0;
-  let limitBarColor = colors.positive;
+  let barSpent = 0;     // darker layer width 0–1
+  let barAvailable = 0; // total filled width 0–1 (includes barSpent)
+  let barColor = colors.positive;
+  let barOverspent = false;
+
   if (isLimitGoal) {
-    const ratio = spentAbs / cat.goal!;
-    limitSpentPct = Math.min(ratio, 1);
-    limitBarColor = ratio >= 1
+    // Spending cap: spent vs limit
+    const base = cat.goal!;
+    const ratio = spentAbs / base;
+    barSpent = Math.min(ratio, 1);
+    barAvailable = 1; // full bar = the limit budget
+    barOverspent = ratio >= 1;
+    barColor = ratio >= 1
       ? colors.negative
       : ratio >= 0.8
         ? colors.warning
         : colors.positive;
-  }
-
-  // No-goal single bar values
-  const noGoalPct = budgetedAbs > 0 ? spentAbs / budgetedAbs : 0;
-  const noGoalClampedPct = Math.min(noGoalPct, 1);
-  const noGoalBarColor = noGoalPct >= 1
-    ? colors.negative
-    : noGoalPct >= 0.8
-      ? colors.warning
+  } else if (hasGoal && cat.longGoal) {
+    // Long-term savings goal (#goal, refill): balance / goal
+    // Single solid bar showing savings progress — no spent/available split
+    const base = cat.goal!;
+    const savedPct = Math.min(Math.max(cat.balance / base, 0), 1);
+    barSpent = savedPct; // "spent" layer = saved amount (solid bar)
+    barAvailable = savedPct; // same width — no lighter portion behind it
+    barOverspent = cat.balance < 0;
+    barColor = barOverspent
+      ? colors.negative
       : colors.positive;
+  } else if (hasGoal && sinkingFundTotal > 0) {
+    // Sinking fund (by/spend): bar = cumulative balance / total target, color = on track status
+    const savedPct = Math.min(Math.max(cat.balance / sinkingFundTotal, 0), 1);
+    barSpent = savedPct;
+    barAvailable = savedPct;
+    barOverspent = cat.balance < 0;
+    const funded = cat.budgeted >= cat.goal!;
+    barColor = barOverspent
+      ? colors.negative
+      : funded
+        ? colors.positive
+        : colors.warning;
+  } else if (hasGoal) {
+    // Monthly goal (simple, periodic): spending progress vs goal
+    const base = cat.goal!;
+    barSpent = Math.min(spentAbs / base, 1);
+    barAvailable = Math.min(Math.max((spentAbs + cat.balance) / base, 0), 1);
+    barOverspent = cat.balance < 0;
+    const funded = cat.budgeted >= base;
+    barColor = barOverspent
+      ? colors.negative
+      : funded
+        ? colors.positive
+        : colors.warning;
+  } else if (budgetedAbs > 0 || cat.balance !== 0) {
+    // No goal: spending progress vs budgeted (or balance from carryover)
+    const base = budgetedAbs > 0 ? budgetedAbs : Math.abs(cat.balance);
+    barSpent = base > 0 ? Math.min(spentAbs / base, 1) : 0;
+    barAvailable = base > 0 ? Math.min(Math.max((spentAbs + cat.balance) / base, 0), 1) : 0;
+    barOverspent = cat.balance < 0;
+    barColor = barOverspent
+      ? colors.negative
+      : cat.balance > 0
+        ? colors.positive
+        : colors.textMuted;
+  }
 
   const pressableContent = (
     <Pressable
@@ -242,76 +286,16 @@ export function BudgetCategoryRow({
         </View>
       </View>
 
-      {/* Line 2: Progress bar */}
-      {showProgressBar && (isLimitGoal ? (
-        <View
-          style={{
-            height: 5,
-            borderRadius: 2.5,
-            backgroundColor: colors.divider,
-            marginTop: 6,
-            overflow: 'hidden',
-          }}
-        >
-          <View
-            style={{
-              width: `${Math.round(limitSpentPct * 100)}%`,
-              height: '100%',
-              borderRadius: 2.5,
-              backgroundColor: limitBarColor,
-            }}
-          />
-        </View>
-      ) : hasGoal ? (
-        <View
-          style={{
-            height: 5,
-            borderRadius: 2.5,
-            backgroundColor: colors.divider,
-            marginTop: 6,
-            overflow: 'hidden',
-          }}
-        >
-          <View
-            style={{
-              position: 'absolute', left: 0, top: 0, bottom: 0,
-              width: `${Math.round(goalSpentPct * 100)}%`,
-              borderRadius: 2.5,
-              backgroundColor: goalColor + '50',
-            }}
-          />
-          {goalFundedPct > goalSpentPct && (
-            <View
-              style={{
-                position: 'absolute', top: 0, bottom: 0,
-                left: `${Math.round(goalSpentPct * 100)}%`,
-                width: `${Math.round((goalFundedPct - goalSpentPct) * 100)}%`,
-                borderRadius: 2.5,
-                backgroundColor: goalColor + '90',
-              }}
-            />
-          )}
-        </View>
-      ) : budgetedAbs > 0 ? (
-        <View
-          style={{
-            height: 5,
-            borderRadius: 2.5,
-            backgroundColor: colors.divider,
-            marginTop: 6,
-            overflow: 'hidden',
-          }}
-        >
-          <View
-            style={{
-              width: `${Math.round(noGoalClampedPct * 100)}%`,
-              height: '100%',
-              borderRadius: 2.5,
-              backgroundColor: noGoalBarColor,
-            }}
-          />
-        </View>
-      ) : null)}
+      {/* Line 2: Progress bar (YNAB-style spending progress) */}
+      {showProgressBar && (
+        <ProgressBar
+          spent={barSpent}
+          available={barAvailable}
+          color={barColor}
+          overspent={barOverspent}
+          style={{ marginTop: 6 }}
+        />
+      )}
 
       {/* Line 3: Progress text (informational) */}
       {showProgressBar && (

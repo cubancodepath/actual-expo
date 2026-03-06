@@ -8,18 +8,13 @@ import {
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { Stack, useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
-import * as Haptics from 'expo-haptics';
 import { useAccountsStore } from '../../../src/stores/accountsStore';
 import {
-  deleteTransaction,
-  duplicateTransaction,
   getClearedBalance,
   getTransactionsForAccount,
   getUnclearedCount,
   lockTransactions,
   reconcileAccount,
-  toggleCleared,
-  updateTransaction,
   type TransactionDisplay,
 } from '../../../src/transactions';
 import { ReconcileOverlay } from '../../../src/presentation/components/account/ReconcileOverlay';
@@ -41,6 +36,7 @@ import {
   useTransactionBulkActions,
   useSelectModeHeader,
   useBulkCategoryPicker,
+  useTransactionActions,
   type ListItem,
 } from '../../../src/presentation/hooks/transactionList';
 import { SelectModeToolbar } from '../../../src/presentation/components/transaction/SelectModeToolbar';
@@ -162,74 +158,15 @@ export default function AccountTransactionsScreen() {
   }
 
   // ---- Single-item handlers ----
-
-  function handleDelete(txnId: string) {
-    Alert.alert('Delete Transaction', 'Delete this transaction?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          refreshIdRef.current++;
-          const txn = transactions.find(t => t.id === txnId);
-          if (txn && !txn.cleared && !txn.reconciled) {
-            setUnclearedCount(c => Math.max(0, c - 1));
-          }
-          setTransactions(prev => prev.filter(t => t.id !== txnId));
-          await deleteTransaction(txnId);
-          loadAccounts();
-        },
+  const { handleDelete, handleToggleCleared, handleEditTransaction, handleDuplicate, handleMove, handleAddTag } =
+    useTransactionActions({
+      transactions, setTransactions, refreshIdRef, loadAccounts, setUnclearedCount,
+      moveMode: 'remove', accounts: otherAccounts,
+      onToggleCleared: (txn) => {
+        const delta = txn.cleared ? -txn.amount : txn.amount;
+        setClearedBalance(prev => prev + delta);
       },
-    ]);
-  }
-
-  async function handleToggleCleared(txnId: string) {
-    refreshIdRef.current++;
-    const txn = transactions.find(t => t.id === txnId);
-    if (txn && !txn.reconciled) {
-      const delta = txn.cleared ? -txn.amount : txn.amount;
-      setTransactions(prev => prev.map(t =>
-        t.id === txnId ? { ...t, cleared: !t.cleared } : t
-      ));
-      setClearedBalance(prev => prev + delta);
-      setUnclearedCount(c => Math.max(0, c + (txn.cleared ? 1 : -1)));
-    }
-    await toggleCleared(txnId);
-  }
-
-  function handleEditTransaction(txnId: string) {
-    router.push({ pathname: '/(auth)/transaction/new', params: { transactionId: txnId } });
-  }
-
-  async function handleDuplicate(txnId: string) {
-    refreshIdRef.current++;
-    const original = transactions.find(t => t.id === txnId);
-    if (!original) return;
-    const newId = await duplicateTransaction(txnId);
-    if (newId) {
-      const clone: TransactionDisplay = { ...original, id: newId, cleared: false, reconciled: false };
-      setTransactions(prev => {
-        const idx = prev.findIndex(t => t.id === txnId);
-        const next = [...prev];
-        next.splice(idx + 1, 0, clone);
-        return next;
-      });
-      setUnclearedCount(c => c + 1);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    }
-    loadAccounts();
-  }
-
-  async function handleMove(txnId: string, targetAccountId: string) {
-    refreshIdRef.current++;
-    setTransactions(prev => prev.filter(t => t.id !== txnId));
-    await updateTransaction(txnId, { acct: targetAccountId });
-    loadAccounts();
-  }
-
-  function handleAddTag(txnId: string) {
-    router.push({ pathname: '/(auth)/transaction/tags', params: { transactionId: txnId, mode: 'direct' } });
-  }
+    });
 
   // ---- Normal-mode header ----
   useLayoutEffect(() => {

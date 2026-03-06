@@ -12,9 +12,9 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../providers/ThemeProvider';
 
-const DELETE_BUTTON_WIDTH = 80;
-const SWIPE_THRESHOLD = DELETE_BUTTON_WIDTH * 0.4;
-const FULL_DELETE_THRESHOLD = 200;
+const ACTION_WIDTH = 80;
+const SWIPE_THRESHOLD = ACTION_WIDTH * 0.4;
+const FULL_THRESHOLD = 200;
 const CIRCLE_SIZE = 44;
 
 const SPRING_CONFIG = { damping: 20, stiffness: 200 };
@@ -22,6 +22,10 @@ const SPRING_CONFIG = { damping: 20, stiffness: 200 };
 interface SwipeableRowProps {
   children: React.ReactNode;
   onDelete: () => void;
+  /** Optional right-swipe action (e.g., clear/unclear) */
+  onSwipeRight?: () => void;
+  swipeRightIcon?: keyof typeof Ionicons.glyphMap;
+  swipeRightColor?: string;
   isFirst?: boolean;
   isLast?: boolean;
   style?: ViewStyle;
@@ -35,15 +39,37 @@ function mediumHaptic() {
   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 }
 
-export function SwipeableRow({ children, onDelete, isFirst, isLast, style }: SwipeableRowProps) {
+export function SwipeableRow({
+  children,
+  onDelete,
+  onSwipeRight,
+  swipeRightIcon = 'checkmark-circle',
+  swipeRightColor,
+  isFirst,
+  isLast,
+  style,
+}: SwipeableRowProps) {
   const { colors, borderRadius: br } = useTheme();
   const translateX = useSharedValue(0);
   const contextX = useSharedValue(0);
-  const passedThreshold = useSharedValue(false);
-  const passedOpenThreshold = useSharedValue(false);
+
+  // Left-swipe (delete) thresholds
+  const passedDeleteThreshold = useSharedValue(false);
+  const passedDeleteOpenThreshold = useSharedValue(false);
+
+  // Right-swipe thresholds
+  const passedRightThreshold = useSharedValue(false);
+  const passedRightOpenThreshold = useSharedValue(false);
+
+  const hasRightAction = onSwipeRight != null;
+  const rightColor = swipeRightColor ?? colors.positive;
 
   function handleDelete() {
     onDelete();
+  }
+
+  function handleSwipeRight() {
+    onSwipeRight?.();
   }
 
   function snapToClose() {
@@ -51,16 +77,31 @@ export function SwipeableRow({ children, onDelete, isFirst, isLast, style }: Swi
     translateX.value = withSpring(0, SPRING_CONFIG);
   }
 
-  function snapToOpen() {
+  // Left-swipe helpers
+  function snapToOpenLeft() {
     'worklet';
-    translateX.value = withSpring(-DELETE_BUTTON_WIDTH, SPRING_CONFIG);
+    translateX.value = withSpring(-ACTION_WIDTH, SPRING_CONFIG);
   }
 
   function triggerDelete() {
     'worklet';
-    translateX.value = withTiming(-FULL_DELETE_THRESHOLD, { duration: 200 }, () => {
+    translateX.value = withTiming(-FULL_THRESHOLD, { duration: 200 }, () => {
       translateX.value = withTiming(0, { duration: 150 });
       runOnJS(handleDelete)();
+    });
+  }
+
+  // Right-swipe helpers
+  function snapToOpenRight() {
+    'worklet';
+    translateX.value = withSpring(ACTION_WIDTH, SPRING_CONFIG);
+  }
+
+  function triggerRight() {
+    'worklet';
+    translateX.value = withTiming(FULL_THRESHOLD, { duration: 200 }, () => {
+      translateX.value = withTiming(0, { duration: 150 });
+      runOnJS(handleSwipeRight)();
     });
   }
 
@@ -69,98 +110,180 @@ export function SwipeableRow({ children, onDelete, isFirst, isLast, style }: Swi
     .failOffsetY([-15, 15])
     .onStart(() => {
       contextX.value = translateX.value;
-      passedThreshold.value = false;
-      passedOpenThreshold.value = false;
+      passedDeleteThreshold.value = false;
+      passedDeleteOpenThreshold.value = false;
+      passedRightThreshold.value = false;
+      passedRightOpenThreshold.value = false;
     })
     .onUpdate((e) => {
       const next = contextX.value + e.translationX;
-      translateX.value = Math.min(0, Math.max(-FULL_DELETE_THRESHOLD, next));
+      const maxRight = hasRightAction ? FULL_THRESHOLD : 0;
+      translateX.value = Math.max(-FULL_THRESHOLD, Math.min(maxRight, next));
 
-      // Haptic when crossing the full-delete threshold
-      const current = -translateX.value;
-      const fullThreshold = FULL_DELETE_THRESHOLD * 0.7;
-      if (current >= fullThreshold && !passedThreshold.value) {
-        passedThreshold.value = true;
-        runOnJS(mediumHaptic)();
-      } else if (current < fullThreshold && passedThreshold.value) {
-        passedThreshold.value = false;
-        runOnJS(lightHaptic)();
+      const tx = translateX.value;
+
+      // --- Left-swipe (delete) haptics ---
+      if (tx < 0) {
+        const leftAmount = -tx;
+        const fullThreshold = FULL_THRESHOLD * 0.7;
+        if (leftAmount >= fullThreshold && !passedDeleteThreshold.value) {
+          passedDeleteThreshold.value = true;
+          runOnJS(mediumHaptic)();
+        } else if (leftAmount < fullThreshold && passedDeleteThreshold.value) {
+          passedDeleteThreshold.value = false;
+          runOnJS(lightHaptic)();
+        }
+        if (leftAmount >= SWIPE_THRESHOLD && !passedDeleteOpenThreshold.value) {
+          passedDeleteOpenThreshold.value = true;
+          runOnJS(lightHaptic)();
+        }
       }
 
-      // Haptic when crossing the open threshold
-      if (current >= SWIPE_THRESHOLD && !passedOpenThreshold.value) {
-        passedOpenThreshold.value = true;
-        runOnJS(lightHaptic)();
+      // --- Right-swipe haptics ---
+      if (tx > 0 && hasRightAction) {
+        const rightAmount = tx;
+        const fullThreshold = FULL_THRESHOLD * 0.7;
+        if (rightAmount >= fullThreshold && !passedRightThreshold.value) {
+          passedRightThreshold.value = true;
+          runOnJS(mediumHaptic)();
+        } else if (rightAmount < fullThreshold && passedRightThreshold.value) {
+          passedRightThreshold.value = false;
+          runOnJS(lightHaptic)();
+        }
+        if (rightAmount >= SWIPE_THRESHOLD && !passedRightOpenThreshold.value) {
+          passedRightOpenThreshold.value = true;
+          runOnJS(lightHaptic)();
+        }
       }
     })
     .onEnd((e) => {
-      const current = translateX.value;
+      const tx = translateX.value;
 
-      if (current < -FULL_DELETE_THRESHOLD * 0.7 || e.velocityX < -800) {
-        triggerDelete();
+      // Left-swipe end
+      if (tx < 0) {
+        if (tx < -FULL_THRESHOLD * 0.7 || e.velocityX < -800) {
+          triggerDelete();
+          return;
+        }
+        if (tx < -SWIPE_THRESHOLD) {
+          snapToOpenLeft();
+        } else {
+          snapToClose();
+        }
         return;
       }
 
-      if (current < -SWIPE_THRESHOLD) {
-        snapToOpen();
-      } else {
-        snapToClose();
+      // Right-swipe end
+      if (tx > 0 && hasRightAction) {
+        if (tx > FULL_THRESHOLD * 0.7 || e.velocityX > 800) {
+          triggerRight();
+          return;
+        }
+        if (tx > SWIPE_THRESHOLD) {
+          snapToOpenRight();
+        } else {
+          snapToClose();
+        }
+        return;
       }
+
+      snapToClose();
     });
+
+  // ---- Animated styles ----
 
   const rowStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],
   }));
 
+  // --- Delete (right side) ---
+
   const deleteAreaStyle = useAnimatedStyle(() => {
     const width = interpolate(
       -translateX.value,
-      [0, DELETE_BUTTON_WIDTH, FULL_DELETE_THRESHOLD],
-      [0, DELETE_BUTTON_WIDTH, FULL_DELETE_THRESHOLD],
+      [0, ACTION_WIDTH, FULL_THRESHOLD],
+      [0, ACTION_WIDTH, FULL_THRESHOLD],
     );
     return { width };
   });
 
-  // Circle stretches into a pill on full swipe
-  const pillStyle = useAnimatedStyle(() => {
+  const deletePillStyle = useAnimatedStyle(() => {
     const swipeAmount = -translateX.value;
     const pillWidth = interpolate(
       swipeAmount,
-      [0, DELETE_BUTTON_WIDTH, FULL_DELETE_THRESHOLD],
-      [CIRCLE_SIZE, CIRCLE_SIZE, FULL_DELETE_THRESHOLD - 16],
+      [0, ACTION_WIDTH, FULL_THRESHOLD],
+      [CIRCLE_SIZE, CIRCLE_SIZE, FULL_THRESHOLD - 16],
       'clamp',
     );
     const scale = interpolate(
       swipeAmount,
-      [0, DELETE_BUTTON_WIDTH * 0.5, DELETE_BUTTON_WIDTH],
+      [0, ACTION_WIDTH * 0.5, ACTION_WIDTH],
       [0.3, 0.7, 1],
       'clamp',
     );
     const opacity = interpolate(
       swipeAmount,
-      [0, DELETE_BUTTON_WIDTH * 0.3],
+      [0, ACTION_WIDTH * 0.3],
       [0, 1],
       'clamp',
     );
-    return {
-      width: pillWidth,
-      transform: [{ scale }],
-      opacity,
-    };
+    return { width: pillWidth, transform: [{ scale }], opacity };
   });
 
-  // Icon shifts left as pill expands beyond circle size
-  const iconStyle = useAnimatedStyle(() => {
+  const deleteIconStyle = useAnimatedStyle(() => {
     const swipeAmount = -translateX.value;
     const shift = interpolate(
       swipeAmount,
-      [DELETE_BUTTON_WIDTH, FULL_DELETE_THRESHOLD],
-      [0, -(FULL_DELETE_THRESHOLD - CIRCLE_SIZE) / 2 + 16],
+      [ACTION_WIDTH, FULL_THRESHOLD],
+      [0, -(FULL_THRESHOLD - CIRCLE_SIZE) / 2 + 16],
       'clamp',
     );
-    return {
-      transform: [{ translateX: shift }],
-    };
+    return { transform: [{ translateX: shift }] };
+  });
+
+  // --- Right action (left side) ---
+
+  const rightAreaStyle = useAnimatedStyle(() => {
+    const width = interpolate(
+      translateX.value,
+      [0, ACTION_WIDTH, FULL_THRESHOLD],
+      [0, ACTION_WIDTH, FULL_THRESHOLD],
+    );
+    return { width };
+  });
+
+  const rightPillStyle = useAnimatedStyle(() => {
+    const swipeAmount = translateX.value;
+    const pillWidth = interpolate(
+      swipeAmount,
+      [0, ACTION_WIDTH, FULL_THRESHOLD],
+      [CIRCLE_SIZE, CIRCLE_SIZE, FULL_THRESHOLD - 16],
+      'clamp',
+    );
+    const scale = interpolate(
+      swipeAmount,
+      [0, ACTION_WIDTH * 0.5, ACTION_WIDTH],
+      [0.3, 0.7, 1],
+      'clamp',
+    );
+    const opacity = interpolate(
+      swipeAmount,
+      [0, ACTION_WIDTH * 0.3],
+      [0, 1],
+      'clamp',
+    );
+    return { width: pillWidth, transform: [{ scale }], opacity };
+  });
+
+  const rightIconStyle = useAnimatedStyle(() => {
+    const swipeAmount = translateX.value;
+    const shift = interpolate(
+      swipeAmount,
+      [ACTION_WIDTH, FULL_THRESHOLD],
+      [0, (FULL_THRESHOLD - CIRCLE_SIZE) / 2 - 16],
+      'clamp',
+    );
+    return { transform: [{ translateX: shift }] };
   });
 
   const containerRadius = {
@@ -172,17 +295,36 @@ export function SwipeableRow({ children, onDelete, isFirst, isLast, style }: Swi
 
   return (
     <View style={[styles.container, containerRadius, style]}>
-      {/* Delete action behind the row */}
+      {/* Right-swipe action behind the row (left side) */}
+      {hasRightAction && (
+        <Animated.View style={[styles.rightArea, rightAreaStyle]}>
+          <Animated.View style={rightPillStyle}>
+            <Pressable
+              style={[styles.pill, { backgroundColor: rightColor }]}
+              onPress={() => {
+                translateX.value = withTiming(0, { duration: 200 });
+                handleSwipeRight();
+              }}
+            >
+              <Animated.View style={rightIconStyle}>
+                <Ionicons name={swipeRightIcon} size={20} color="#fff" />
+              </Animated.View>
+            </Pressable>
+          </Animated.View>
+        </Animated.View>
+      )}
+
+      {/* Delete action behind the row (right side) */}
       <Animated.View style={[styles.deleteArea, deleteAreaStyle]}>
-        <Animated.View style={pillStyle}>
+        <Animated.View style={deletePillStyle}>
           <Pressable
-            style={[styles.deletePill, { backgroundColor: colors.negative }]}
+            style={[styles.pill, { backgroundColor: colors.negative }]}
             onPress={() => {
               translateX.value = withTiming(0, { duration: 200 });
               handleDelete();
             }}
           >
-            <Animated.View style={iconStyle}>
+            <Animated.View style={deleteIconStyle}>
               <Ionicons name="trash-outline" size={20} color="#fff" />
             </Animated.View>
           </Pressable>
@@ -211,7 +353,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  deletePill: {
+  rightArea: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pill: {
     height: CIRCLE_SIZE,
     borderRadius: CIRCLE_SIZE / 2,
     justifyContent: 'center',

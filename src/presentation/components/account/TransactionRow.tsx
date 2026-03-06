@@ -1,6 +1,14 @@
+import { useEffect } from 'react';
 import { Platform, Pressable, View } from 'react-native';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
-import { Easing } from 'react-native-reanimated';
+import Animated, {
+  Easing,
+  FadeIn,
+  FadeOut,
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import * as ContextMenu from 'zeego/context-menu';
 import { useTheme, useThemedStyles } from '../../providers/ThemeProvider';
@@ -48,6 +56,21 @@ export function TransactionRow({
 }: TransactionRowProps) {
   const { colors, spacing, borderWidth: bw } = useTheme();
   const styles = useThemedStyles(createStyles);
+
+  // Select mode micro-animation: gentle shift when entering
+  const selectAnim = useSharedValue(0);
+  useEffect(() => {
+    selectAnim.value = withTiming(isSelectMode ? 1 : 0, {
+      duration: 300,
+      easing: Easing.inOut(Easing.ease),
+    });
+  }, [isSelectMode]);
+
+  const selectModeStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: interpolate(selectAnim.value, [0, 1], [0, 2]) },
+    ],
+  }));
 
   const rowContent = (
     <Pressable
@@ -187,11 +210,20 @@ export function TransactionRow({
   );
 
   // In select mode, no SwipeableRow and no ContextMenu
-  if (isSelectMode) return rowContent;
+  if (isSelectMode) {
+    return (
+      <Animated.View style={selectModeStyle}>
+        {rowContent}
+      </Animated.View>
+    );
+  }
 
   const swipeableContent = (
     <SwipeableRow
       onDelete={() => onDelete(item.id)}
+      onSwipeRight={item.reconciled ? undefined : () => onToggleCleared(item.id)}
+      swipeRightIcon={item.cleared ? 'ellipse-outline' : 'checkmark-circle'}
+      swipeRightColor={item.cleared ? colors.textMuted : colors.positive}
       isFirst={isFirst}
       isLast={isLast}
       style={{ marginHorizontal: spacing.lg }}

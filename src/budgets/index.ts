@@ -56,7 +56,7 @@ type CarryoverResult = {
   overspendingPenalty: number;
 };
 
-async function computeCarryoverChain(
+export async function computeCarryoverChain(
   monthInt: number,
   categoryIds: string[],
 ): Promise<CarryoverResult> {
@@ -187,6 +187,106 @@ async function computeCarryoverChain(
   }
 
   return { carryIns, prevCoFlags, currentCoFlags, overspendingPenalty: totalPenalty };
+}
+
+// ---------------------------------------------------------------------------
+// Compute "To Budget" (available budget for a month)
+//
+// toBudget = cumulativeIncome - cumulativeBudgeted - bufferedSelected + overspendingPenalty
+// ---------------------------------------------------------------------------
+
+export async function computeToBudget(month: string): Promise<number> {
+  const monthInt  = monthToInt(month);
+  const endDate   = monthInt * 100 + 31;
+
+  // Cumulative income through end of month
+  const cumulativeIncomeRow = await first<{ total: number }>(
+    `SELECT COALESCE(SUM(t.amount), 0) AS total
+     FROM transactions t
+     LEFT JOIN category_mapping cm ON cm.id = t.category
+     JOIN categories c  ON c.id = COALESCE(cm.transferId, t.category) AND c.tombstone = 0
+     JOIN accounts a    ON a.id = t.acct AND a.offbudget = 0
+     JOIN category_groups g ON g.id = c.cat_group AND g.is_income = 1
+     WHERE ${ALIVE_TX_FILTER}
+       AND t.date <= ?`,
+    [endDate],
+  );
+
+  // Cumulative budgeted through current month
+  const cumulativeBudgetedRow = await first<{ total: number }>(
+    `SELECT COALESCE(SUM(zb.amount), 0) AS total
+     FROM zero_budgets zb
+     JOIN categories c ON c.id = zb.category AND c.tombstone = 0
+     JOIN category_groups g ON g.id = c.cat_group AND g.is_income = 0
+     WHERE zb.month <= ?`,
+    [monthInt],
+  );
+
+  // Overspending penalty from carryover chain
+  const groups = await runQuery<CategoryGroupRow>(
+    'SELECT * FROM category_groups WHERE tombstone = 0',
+  );
+  const categories = await runQuery<CategoryRow>(
+    'SELECT * FROM categories WHERE tombstone = 0',
+  );
+  const expenseCatIds = categories
+    .filter(c => {
+      const g = groups.find(g => g.id === c.cat_group);
+      return g && g.is_income === 0;
+    })
+    .map(c => c.id);
+
+  const { overspendingPenalty } = await computeCarryoverChain(monthInt, expenseCatIds);
+
+  // Buffered: manual hold or auto (income cats with carryover)
+  const bufferedRow = await first<{ buffered: number }>(
+    'SELECT buffered FROM zero_budget_months WHERE id = ?',
+    [month],
+  );
+  const manualBuffered = bufferedRow?.buffered ?? 0;
+
+  let bufferedAuto = 0;
+  if (manualBuffered === 0) {
+    const startDate = monthInt * 100 + 1;
+    const budgetRows = await runQuery<ZeroBudgetRow>(
+      'SELECT * FROM zero_budgets WHERE month = ?',
+      [monthInt],
+    );
+    const carryoverMap = new Map(budgetRows.map(r => [r.category, r.carryover === 1]));
+
+    const currentMonthRows = await runQuery<{ category: string; amount: number }>(
+      `SELECT COALESCE(cm.transferId, t.category) AS category, SUM(t.amount) AS amount
+       FROM transactions t
+       LEFT JOIN category_mapping cm ON cm.id = t.category
+       JOIN accounts a ON t.acct = a.id AND a.offbudget = 0
+       WHERE ${ALIVE_TX_FILTER}
+         AND t.date >= ? AND t.date <= ?
+         AND t.category IS NOT NULL
+       GROUP BY COALESCE(cm.transferId, t.category)`,
+      [startDate, endDate],
+    );
+    const currentMap = new Map(currentMonthRows.map(r => [r.category, r.amount]));
+
+    const incomeCatIds = categories
+      .filter(c => {
+        const g = groups.find(g => g.id === c.cat_group);
+        return g && g.is_income === 1;
+      })
+      .map(c => c.id);
+
+    for (const catId of incomeCatIds) {
+      const coFlag = carryoverMap.get(catId) ?? false;
+      if (coFlag) {
+        bufferedAuto += currentMap.get(catId) ?? 0;
+      }
+    }
+  }
+
+  const bufferedSelected = manualBuffered !== 0 ? manualBuffered : bufferedAuto;
+  const cumulativeIncome   = cumulativeIncomeRow?.total   ?? 0;
+  const cumulativeBudgeted = cumulativeBudgetedRow?.total ?? 0;
+
+  return cumulativeIncome - cumulativeBudgeted - bufferedSelected + overspendingPenalty;
 }
 
 // ---------------------------------------------------------------------------
@@ -325,18 +425,20 @@ export async function getBudgetMonth(month: string): Promise<BudgetMonth> {
       groupSpent    += spent;
       groupCarryIn  += carryIn;
 
-      let goal       = goalMap.get(c.id) ?? null;
-      let longGoal   = longGoalMap.get(c.id) ?? false;
       const goalDef  = c.goal_def ?? null;
 
-      // If no goal stored in zero_budgets but category has goal_def,
-      // infer the goal in-memory (fast, no DB writes needed).
-      if (goal == null && goalDef) {
-        const inferred = inferGoalFromDef(goalDef, month);
-        if (inferred) {
-          goal = inferred.goal;
-          longGoal = inferred.longGoal;
-        }
+      // Always infer from goal_def (source of truth) when available.
+      // Falls back to zero_budgets only for types inferGoalFromDef can't handle
+      // (average, copy, percentage, spend — these need DB queries).
+      let goal: number | null = null;
+      let longGoal = false;
+      const inferred = goalDef ? inferGoalFromDef(goalDef, month) : null;
+      if (inferred) {
+        goal = inferred.goal;
+        longGoal = inferred.longGoal;
+      } else {
+        goal = goalMap.get(c.id) ?? null;
+        longGoal = longGoalMap.get(c.id) ?? false;
       }
 
       return { id: c.id, name: c.name, budgeted, spent, balance, carryIn, carryover, goal, longGoal, goalDef, hidden: c.hidden === 1 };

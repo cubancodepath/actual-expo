@@ -423,6 +423,16 @@ export type GoalContext = {
   totalWeight?: number;
 };
 
+/**
+ * Check if all priority templates are refill-style (simple with no monthly).
+ * This means the category uses balance-based goal tracking (longGoal: true).
+ */
+function isRefillOnly(templates: PriorityTemplate[]): boolean {
+  return templates.length > 0 && templates.every(
+    t => (t.type === 'simple' && t.monthly == null) || t.type === 'refill',
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Main calculation function
 // ---------------------------------------------------------------------------
@@ -630,6 +640,10 @@ export async function calculateGoal(
   if (goalTemplates.length > 0) {
     // Explicit #goal directive overrides
     goal = amountToInteger(goalTemplates[0].amount);
+    longGoal = true;
+  } else if (limitCheck && isRefillOnly(priorityTemplates)) {
+    // Refill-style: simple with no monthly, just limit → balance-based target
+    goal = limitAmount;
     longGoal = true;
   } else {
     // Goal = the full amount templates requested (for progress indicator)

@@ -64,11 +64,15 @@ export function inferGoalFromDef(
     case 'simple':
       // #template N — fixed monthly amount
       if (primary.monthly != null) {
+        // monthly: 0 with limit = pure spending cap (not balance-based)
+        if (primary.monthly === 0 && primary.limit) {
+          return { goal: Math.round(primary.limit.amount * 100), longGoal: false };
+        }
         return { goal: Math.round(primary.monthly * 100), longGoal: false };
       }
-      // Limit-only template — use limit amount as goal
+      // No monthly + limit = refill (#template up to X) — balance-based
       if (primary.limit) {
-        return { goal: Math.round(primary.limit.amount * 100), longGoal: false };
+        return { goal: Math.round(primary.limit.amount * 100), longGoal: true };
       }
       return null;
 

@@ -115,8 +115,16 @@ export default function BudgetScreen() {
   // -- Keyboard tracking --
   const { visible: keyboardVisible } = useKeyboardHeight();
 
-  // -- Reset filter on month change --
-  useEffect(() => { setFilter('all'); }, [month]);
+  // -- Reset filter and exit edit mode on month change --
+  useEffect(() => {
+    setFilter('all');
+    if (editMode) {
+      Keyboard.dismiss();
+      setEditMode(false);
+      setEdits({});
+      useTabBarStore.getState().setHidden(false);
+    }
+  }, [month]);
 
   // -- Sections (filtered) --
   const filteredGroups = useMemo(

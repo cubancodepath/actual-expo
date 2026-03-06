@@ -47,7 +47,17 @@ export default function AuthLayout() {
       />
       <Stack.Screen
         name="budget/edit"
-        options={{ title: "Edit Budget", ...screen }}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="budget/reorder"
+        options={{
+          ...screen,
+          title: "Reorder",
+          presentation: "formSheet",
+          sheetAllowedDetents: [1.0],
+          contentStyle: { backgroundColor: theme.colors.pageBackground },
+        }}
       />
       <Stack.Screen
         name="budget/new-group"

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Pressable, SectionList, View, useColorScheme } from 'react-native';
+import { Alert, Keyboard, Pressable, SectionList, View, useColorScheme } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -40,8 +40,9 @@ export default function AssignBudgetScreen() {
   const [holdModalVisible, setHoldModalVisible] = useState(false);
   const hapticFiredRef = useRef(false);
 
-  // Initialize edits from current budget data
+  // Initialize edits from current budget data (re-run when groups change, e.g. month switch)
   useEffect(() => {
+    Keyboard.dismiss(); // Clear focus so no input holds stale values
     const initial: Record<string, number> = {};
     for (const g of groups) {
       if (g.is_income) continue;
@@ -50,7 +51,7 @@ export default function AssignBudgetScreen() {
       }
     }
     setEdits(initial);
-  }, []);
+  }, [groups]);
 
   // Sections for expense groups only — pass full BudgetCategory
   const sections = useMemo<CategorySection[]>(
@@ -133,17 +134,16 @@ export default function AssignBudgetScreen() {
   async function handleAutoAssign() {
     setSaving(true);
     try {
-      const result = await useBudgetStore.getState().applyGoals(false);
-      // Refresh edits from newly computed budget
-      const freshGroups = useBudgetStore.getState().data?.groups ?? [];
-      const refreshed: Record<string, number> = {};
-      for (const g of freshGroups) {
-        if (g.is_income) continue;
-        for (const cat of g.categories) {
-          refreshed[cat.id] = cat.budgeted;
+      // Dry run: compute allocations without writing to DB
+      const result = await useBudgetStore.getState().computeGoals(false);
+      // Merge computed allocations into local edits
+      setEdits((prev) => {
+        const next = { ...prev };
+        for (const [catId, alloc] of result.allocations) {
+          next[catId] = alloc.amount;
         }
-      }
-      setEdits(refreshed);
+        return next;
+      });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       if (result.applied === 0) {
         Alert.alert('No Changes', 'No categories with templates needed budgeting. Set goal targets on your categories first.');
@@ -416,21 +416,6 @@ function CategoryAmountRow({
         borderBottomRightRadius: isLast ? br.lg : 0,
       }}
     >
-      {/* Edit indicator */}
-      {isEdited && (
-        <View
-          style={{
-            position: 'absolute',
-            left: 0,
-            top: 8,
-            bottom: 8,
-            width: 3,
-            borderRadius: br.full,
-            backgroundColor: colors.primary,
-          }}
-        />
-      )}
-
       {/* Line 1: Name + Input */}
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         <Text variant="body" style={{ flex: 1 }} numberOfLines={1}>

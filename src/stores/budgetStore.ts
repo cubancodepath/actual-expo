@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { getBudgetMonth, setBudgetAmount, holdForNextMonth, resetHold, setCategoryCarryover, transferBetweenCategories } from '../budgets';
 import { currentMonth } from '../lib/date';
-import { applyGoals } from '../goals/apply';
-import type { ApplyGoalsResult } from '../goals/apply';
+import { computeGoalAllocations } from '../goals/apply';
+import type { ComputeGoalsResult } from '../goals/apply';
 import type { BudgetMonth } from '../budgets/types';
 
 type CoverTarget = { catId: string; catName: string; balance: number };
@@ -24,8 +24,8 @@ type BudgetState = {
   setCarryover(categoryId: string, flag: boolean): Promise<void>;
   /** Move `amountCents` from one category budget to another for the current month. */
   transfer(fromCategoryId: string, toCategoryId: string, amountCents: number): Promise<void>;
-  /** Apply goal templates to all categories for the current month. */
-  applyGoals(force?: boolean): Promise<ApplyGoalsResult>;
+  /** Compute goal allocations for all categories (dry run, no DB writes). */
+  computeGoals(force?: boolean): Promise<ComputeGoalsResult>;
   setCoverTarget(target: CoverTarget | null): void;
 };
 
@@ -76,10 +76,8 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
     await get().load();
   },
 
-  async applyGoals(force = false) {
-    const result = await applyGoals(get().month, force);
-    await get().load();
-    return result;
+  async computeGoals(force = false) {
+    return computeGoalAllocations(get().month, force);
   },
 
   setCoverTarget(target) {

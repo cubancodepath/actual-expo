@@ -15,7 +15,7 @@ import { ListItem } from '../../../src/presentation/components/molecules/ListIte
 import { Divider } from '../../../src/presentation/components/atoms/Divider';
 import { CurrencyInput } from '../../../src/presentation/components/atoms/CurrencyInput';
 import { getGoalTemplates, setGoalTemplates } from '../../../src/goals';
-import { applySingleGoal } from '../../../src/goals/apply';
+import { updateGoalIndicator } from '../../../src/goals/apply';
 import { amountToInteger, integerToAmount } from '../../../src/goals/engine';
 import { batchMessages } from '../../../src/sync';
 import { formatDateLong } from '../../../src/lib/date';
@@ -44,7 +44,7 @@ const TYPE_OPTIONS: { value: GoalType; label: string }[] = [
 ];
 
 const TYPE_DESCRIPTIONS: Record<GoalType, string> = {
-  simple: 'Budget a fixed amount each month. E.g. $200/month for groceries.',
+  simple: 'Budget a fixed amount each month, or refill to a target. E.g. $200/month for groceries.',
   goal: 'Track progress toward a savings target. Shows a progress bar but does not auto-budget.',
   by: 'Save a total amount by a specific date, split evenly across the remaining months.',
   average: 'Budget based on what you actually spent over the last few months.',
@@ -144,6 +144,9 @@ export default function GoalEditorScreen() {
   const [goalType, setGoalType] = useState<GoalType>('simple');
   const [amountCents, setAmountCents] = useState(0);
 
+  // Simple-specific: "set aside" (false) vs "refill to" (true)
+  const [simpleRefill, setSimpleRefill] = useState(false);
+
   // By-specific
   const [targetDate, setTargetDate] = useState<Date>(getDefaultTargetDate);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -197,47 +200,32 @@ export default function GoalEditorScreen() {
       if (templates.length === 0) return;
       setIsEditing(true);
 
-      // Detect limit-type templates:
-      // - standalone `limit` type (our app's format)
-      // - `simple` with `limit` but no `monthly` (desktop's "#template up to X" format)
-      const hasRefill = templates.some(t => t.type === 'refill');
-      const limitT = templates.find(t => t.type === 'limit');
-      const simpleWithLimit = templates.find(
+      // Detect refill templates — these map to Monthly with refill toggle:
+      // - `simple` with `limit` but no `monthly` (#template up to X)
+      // - legacy `[limit, refill]` pair from older Expo saves
+      const simpleWithLimitOnly = templates.find(
         (t): t is import('../../../src/goals/types').SimpleTemplate =>
           t.type === 'simple' && !!t.limit && t.monthly == null,
       );
+      if (simpleWithLimitOnly?.limit) {
+        setGoalType('simple');
+        setAmountCents(amountToInteger(simpleWithLimitOnly.limit.amount));
+        setSimpleRefill(true);
+        return;
+      }
 
-      if (hasRefill && (limitT || simpleWithLimit)) {
-        setGoalType('limit');
-        if (limitT) {
-          setAmountCents(amountToInteger(limitT.amount));
-          setLimitPeriod(limitT.period);
-          setLimitHold(limitT.hold);
-        } else if (simpleWithLimit?.limit) {
-          setAmountCents(amountToInteger(simpleWithLimit.limit.amount));
-          setLimitPeriod(simpleWithLimit.limit.period);
-          setLimitHold(simpleWithLimit.limit.hold);
-        }
-        setLimitRefill(true);
-        return;
-      }
-      if (simpleWithLimit?.limit) {
-        // simple with limit and no monthly = refill behavior (#template up to X)
-        setGoalType('limit');
-        setAmountCents(amountToInteger(simpleWithLimit.limit.amount));
-        setLimitPeriod(simpleWithLimit.limit.period);
-        setLimitHold(simpleWithLimit.limit.hold);
-        setLimitRefill(true);
-        return;
-      }
-      if (hasRefill && !limitT) {
-        setGoalType('limit');
-        setLimitRefill(true);
+      // Legacy: [limit, refill] pair → convert to Monthly+refill
+      const hasRefill = templates.some(t => t.type === 'refill');
+      const limitT = templates.find(t => t.type === 'limit');
+      if (hasRefill && limitT) {
+        setGoalType('simple');
+        setAmountCents(amountToInteger(limitT.amount));
+        setSimpleRefill(true);
         return;
       }
 
       const t = templates[0];
-      if (t.type === 'refill') return;
+      if (t.type === 'refill' || t.type === 'limit') return;
       setGoalType(t.type);
 
       switch (t.type) {
@@ -283,11 +271,6 @@ export default function GoalEditorScreen() {
         case 'remainder':
           setWeight(t.weight);
           break;
-        case 'limit':
-          setAmountCents(amountToInteger(t.amount));
-          setLimitPeriod(t.period);
-          setLimitHold(t.hold);
-          break;
       }
     })();
   }, [categoryId]);
@@ -297,6 +280,14 @@ export default function GoalEditorScreen() {
 
     switch (goalType) {
       case 'simple':
+        if (simpleRefill) {
+          // "#template up to X" — refill to amount
+          return [{
+            type: 'simple', limit: { amount: displayAmount, hold: false, period: 'monthly' as const },
+            priority: 0, directive: 'template' as const,
+          }];
+        }
+        // "#template X" — fixed monthly amount
         return [{ type: 'simple', monthly: displayAmount, priority: 0, directive: 'template' }];
       case 'goal':
         return [{ type: 'goal', amount: displayAmount, directive: 'goal' }];
@@ -332,14 +323,14 @@ export default function GoalEditorScreen() {
       case 'remainder':
         return [{ type: 'remainder', weight, directive: 'template' }];
       case 'limit': {
-        const templates: Template[] = [{
-          type: 'limit', amount: displayAmount, hold: limitHold,
-          period: limitPeriod, directive: 'template',
+        // Pure spending cap: "#template 0 up to X" — no auto-budgeting
+        return [{
+          type: 'simple' as const,
+          monthly: 0,
+          limit: { amount: displayAmount, hold: limitHold, period: limitPeriod },
+          priority: 0,
+          directive: 'template' as const,
         }];
-        if (limitRefill) {
-          templates.push({ type: 'refill', priority: 0, directive: 'template' });
-        }
-        return templates;
       }
     }
   }
@@ -362,8 +353,9 @@ export default function GoalEditorScreen() {
       const catNames = new Map(categories.map(c => [c.id, c.name]));
       await batchMessages(async () => {
         await setGoalTemplates(categoryId, buildTemplates(), catNames);
-        await applySingleGoal(useBudgetStore.getState().month, categoryId);
       });
+      // Update goal indicator AFTER batchMessages so it reads the fresh goal_def
+      await updateGoalIndicator(useBudgetStore.getState().month, categoryId);
       await useBudgetStore.getState().load();
       router.back();
     } catch {
@@ -494,11 +486,26 @@ export default function GoalEditorScreen() {
       <Card style={{ padding: 0, overflow: 'hidden' as const }}>
         {/* Simple */}
         {goalType === 'simple' && (
-          <View style={{ padding: spacing.md }}>
-            <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.xs }}>
-              Monthly amount
-            </Text>
-            <CurrencyInput value={amountCents} onChangeValue={setAmountCents} type="income" autoFocus />
+          <View>
+            <View style={{ padding: spacing.md }}>
+              <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.xs }}>
+                {simpleRefill ? 'Refill to' : 'Monthly amount'}
+              </Text>
+              <CurrencyInput value={amountCents} onChangeValue={setAmountCents} type="income" autoFocus />
+            </View>
+            <Divider />
+            <ToggleRow
+              label="Refill mode"
+              value={simpleRefill}
+              onValueChange={setSimpleRefill}
+            />
+            <View style={{ paddingHorizontal: spacing.md, paddingBottom: spacing.md }}>
+              <Text variant="captionSm" color={colors.textMuted}>
+                {simpleRefill
+                  ? 'Budget only what\'s needed to bring the balance back up to the target. If you have leftover from last month, less will be budgeted.'
+                  : 'Budget the full amount every month, regardless of the current balance.'}
+              </Text>
+            </View>
           </View>
         )}
 
@@ -725,17 +732,9 @@ export default function GoalEditorScreen() {
                   : `Unspent budget is removed at the end of each ${limitPeriod === 'daily' ? 'day' : limitPeriod === 'weekly' ? 'week' : 'month'}.`}
               </Text>
             </View>
-            <Divider />
-            <ToggleRow
-              label={`Refill each ${limitPeriod === 'daily' ? 'day' : limitPeriod === 'weekly' ? 'week' : 'month'}`}
-              value={limitRefill}
-              onValueChange={setLimitRefill}
-            />
-            <View style={{ paddingHorizontal: spacing.md, paddingBottom: spacing.sm }}>
+            <View style={{ paddingHorizontal: spacing.md, paddingBottom: spacing.md }}>
               <Text variant="captionSm" color={colors.textMuted}>
-                {limitRefill
-                  ? `Budget is automatically topped up to ${amountCents > 0 ? '$' + integerToAmount(amountCents) : 'the limit'}. E.g. if you have $20 left and the limit is $100, it budgets $80.`
-                  : 'When off, you must manually budget this category.'}
+                This sets a spending cap. Use "Monthly" with refill mode instead if you want to auto-budget up to a target.
               </Text>
             </View>
           </View>

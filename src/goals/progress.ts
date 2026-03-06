@@ -101,14 +101,15 @@ export function getGoalProgress(cat: BudgetCategory): ProgressSegment[] {
         { text: ' left to budget' },
       ];
 
-    // #template N — fixed monthly amount (or limit-only simple)
+    // #template N — fixed monthly amount, refill, or pure cap
     case 'simple': {
-      // Detect simple-as-limit (has limit but no monthly)
-      if (!primary.monthly && primary.limit) {
+      // Pure spending cap: monthly: 0 + limit → show limit-style text
+      if (primary.monthly === 0 && primary.limit) {
         if (absSpent === 0) return [{ text: 'Nothing spent of ' }, { amount: cat.goal! }, { text: ' limit' }];
         if (absSpent >= cat.goal!) return [{ text: 'Limit reached. Spent ' }, { amount: absSpent }];
         return [{ text: 'Spent ' }, { amount: absSpent }, { text: ' of ' }, { amount: cat.goal! }, { text: ' limit' }];
       }
+      // Refill: no monthly + limit → balance-based (funded/needed)
       if (funded) {
         return fundedSegments(cat);
       }

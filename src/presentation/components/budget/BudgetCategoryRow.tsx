@@ -88,7 +88,9 @@ export function BudgetCategoryRow({
     const templates = parseGoalDef(cat.goalDef);
     if (templates.length === 0) return false;
     const p = templates[0];
-    return p.type === 'limit' || p.type === 'refill' || (p.type === 'simple' && !p.monthly && !!p.limit);
+    // Pure spending cap: limit/refill types, or simple with monthly:0 + limit
+    // Refill (simple with no monthly + limit) is balance-based, NOT a limit goal
+    return p.type === 'limit' || p.type === 'refill' || (p.type === 'simple' && p.monthly === 0 && !!p.limit);
   })();
 
   // Progress bar values (computed early for pill coloring)

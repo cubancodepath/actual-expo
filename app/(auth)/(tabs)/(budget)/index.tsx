@@ -101,6 +101,15 @@ export default function BudgetScreen() {
   const [editMode, setEditMode] = useState(false);
   const [edits, setEdits] = useState<Record<string, number>>({});
   const [saving, setSaving] = useState(false);
+  const [focusCatId, setFocusCatId] = useState<string | null>(null);
+
+  // Clear focusCatId after it triggers autoFocus on the next render
+  useEffect(() => {
+    if (focusCatId) {
+      const timer = setTimeout(() => setFocusCatId(null), 100);
+      return () => clearTimeout(timer);
+    }
+  }, [focusCatId]);
 
   // -- Collapsible groups --
   function toggleGroup(groupId: string) {
@@ -161,7 +170,7 @@ export default function BudgetScreen() {
   }
 
   // -- Global edit mode --
-  function enterEditMode() {
+  function enterEditMode(catId?: string) {
     if (editMode) return;
     const initial: Record<string, number> = {};
     for (const g of data?.groups ?? []) {
@@ -172,11 +181,12 @@ export default function BudgetScreen() {
     }
     setEdits(initial);
     setEditMode(true);
+    setFocusCatId(catId ?? null);
     useTabBarStore.getState().setHidden(true);
   }
 
-  function handleCategoryPress(_cat: BudgetCategory) {
-    if (!editMode) enterEditMode();
+  function handleCategoryPress(cat: BudgetCategory) {
+    if (!editMode) enterEditMode(cat.id);
   }
 
   function handleEditChange(catId: string, cents: number) {
@@ -190,7 +200,7 @@ export default function BudgetScreen() {
       for (const g of groups) {
         if (g.is_income) continue;
         for (const cat of g.categories) {
-          const newCents = edits[cat.id] ?? 0;
+          const newCents = edits[cat.id] ?? cat.budgeted;
           if (newCents !== cat.budgeted) {
             await setAmount(cat.id, newCents);
           }
@@ -266,6 +276,7 @@ export default function BudgetScreen() {
         isFirst={index === 0}
         isLast={index === section.data.length - 1}
         editing={isExpenseEdit}
+        autoFocusInput={isExpenseEdit && cat.id === focusCatId}
         editValue={isExpenseEdit ? (edits[cat.id] ?? cat.budgeted) : undefined}
         onPress={handleCategoryPress}
         onLongPress={handleCategoryLongPress}

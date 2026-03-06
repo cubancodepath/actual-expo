@@ -17,6 +17,8 @@ interface BudgetCategoryRowProps {
   isLast?: boolean;
   /** Whether this row is in inline-edit mode (global edit mode). */
   editing?: boolean;
+  /** Auto-focus the currency input when entering edit mode on this row. */
+  autoFocusInput?: boolean;
   /** Current edit value in cents (only used when editing). */
   editValue?: number;
   onPress?: (cat: BudgetCategory) => void;
@@ -35,6 +37,7 @@ export function BudgetCategoryRow({
   isFirst = false,
   isLast = false,
   editing = false,
+  autoFocusInput = false,
   editValue,
   onPress,
   onLongPress,
@@ -214,6 +217,7 @@ export function BudgetCategoryRow({
             ref={inputRef}
             value={editValue ?? cat.budgeted}
             onChangeValue={(cents) => onEditChange?.(cat.id, cents)}
+            autoFocus={autoFocusInput}
           />
         )}
         <View

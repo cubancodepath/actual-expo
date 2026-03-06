@@ -36,9 +36,11 @@ interface CompactCurrencyInputProps {
 const MAX_CENTS = 99999999;
 
 function formatCents(c: number): string {
-  const dollars = Math.floor(c / 100);
-  const remainder = c % 100;
-  return `${dollars.toLocaleString('en-US')}.${String(remainder).padStart(2, '0')}`;
+  const abs = Math.abs(c);
+  const dollars = Math.floor(abs / 100);
+  const remainder = abs % 100;
+  const formatted = `${dollars.toLocaleString('en-US')}.${String(remainder).padStart(2, '0')}`;
+  return c < 0 ? `-${formatted}` : formatted;
 }
 
 /**
@@ -48,7 +50,7 @@ function formatCents(c: number): string {
  */
 export const CompactCurrencyInput = forwardRef<CompactCurrencyInputRef, CompactCurrencyInputProps>(
   function CompactCurrencyInput({ value, onChangeValue, onFocus: onFocusProp, onBlur, autoFocus = false, color: colorProp, style }, ref) {
-    const { colors, spacing } = useTheme();
+    const { colors } = useTheme();
     const inputRef = useRef<TextInput>(null);
     const [focused, setFocused] = useState(autoFocus);
 
@@ -82,27 +84,31 @@ export const CompactCurrencyInput = forwardRef<CompactCurrencyInputRef, CompactC
     function handleChangeText(text: string) {
       const digits = text.replace(/\D/g, '');
       const newCents = Math.min(parseInt(digits || '0', 10), MAX_CENTS);
+      // Editing always produces a positive value — user is setting a new budget amount
       onChangeValue(newCents);
     }
+
+    const isNeg = value < 0;
+    const displayColor = colorProp ?? (value !== 0 ? colors.textPrimary : colors.textMuted);
 
     return (
       <View style={[{ flexDirection: 'row', alignItems: 'center' }, style]}>
         <Text
           variant="body"
-          color={colors.textMuted}
+          color={isNeg ? displayColor : colors.textMuted}
           style={{ marginRight: 1 }}
         >
-          $
+          {isNeg ? '-$' : '$'}
         </Text>
         <Text
           variant="body"
           style={{
             fontWeight: '600',
             fontVariant: ['tabular-nums'],
-            color: colorProp ?? (value > 0 ? colors.textPrimary : colors.textMuted),
+            color: displayColor,
           }}
         >
-          {formatCents(value)}
+          {formatCents(Math.abs(value))}
         </Text>
         <Animated.View
           style={[
@@ -123,7 +129,7 @@ export const CompactCurrencyInput = forwardRef<CompactCurrencyInputRef, CompactC
           autoFocus={autoFocus}
           caretHidden
           contextMenuHidden
-          value={String(value)}
+          value={String(Math.abs(value))}
           onChangeText={handleChangeText}
           onFocus={() => { setFocused(true); onFocusProp?.(); }}
           onBlur={() => {

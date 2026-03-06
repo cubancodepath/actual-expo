@@ -484,10 +484,10 @@ export default function NewTransactionScreen() {
             <Button
               title="Delete Transaction"
               icon="trash-outline"
-              variant="danger"
-              size="lg"
+              variant="ghost"
+              textColor={colors.negative}
               onPress={handleDelete}
-              style={{ marginTop: spacing.xl }}
+              style={{ marginTop: spacing.sm }}
             />
           )}
         </View>

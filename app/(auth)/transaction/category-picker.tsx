@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useCategoriesStore } from '../../../src/stores/categoriesStore';
 import { usePickerStore } from '../../../src/stores/pickerStore';
@@ -8,6 +8,7 @@ import { getCategoryBalancesForMonth } from '../../../src/budgets';
 import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
 import { Text } from '../../../src/presentation/components/atoms/Text';
 import { Amount } from '../../../src/presentation/components/atoms/Amount';
+import { GlassButton } from '../../../src/presentation/components/atoms/GlassButton';
 import { CategoryPickerList, type GroupedCategory } from '../../../src/presentation/components';
 import { currentMonth } from '../../../src/lib/date';
 
@@ -73,24 +74,25 @@ export default function CategoryPickerScreen() {
   }
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          headerRight: () => (
-            <Pressable
-              onPress={handleSplit}
-              hitSlop={8}
-              style={{
-                paddingHorizontal: spacing.md,
-                paddingVertical: spacing.xxs,
-                borderRadius: br.full,
-              }}
-            >
-              <Text variant="body" color={colors.textPrimary}>Split</Text>
-            </Pressable>
-          ),
+    <View style={{ flex: 1, backgroundColor: colors.pageBackground }}>
+      {/* Custom header */}
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingHorizontal: spacing.lg,
+          paddingTop: spacing.lg,
+          paddingBottom: spacing.sm,
+          backgroundColor: colors.headerBackground,
         }}
-      />
+      >
+        <GlassButton icon="chevron-back" onPress={() => router.back()} />
+        <Text variant="headingSm" color={colors.headerText}>
+          Category
+        </Text>
+        <GlassButton label="Split" onPress={handleSplit} />
+      </View>
       <CategoryPickerList
         groups={groupedCategories}
         onSelect={(cat) => select(cat.id, cat.name)}
@@ -157,6 +159,6 @@ export default function CategoryPickerScreen() {
           );
         }}
       />
-    </>
+    </View>
   );
 }

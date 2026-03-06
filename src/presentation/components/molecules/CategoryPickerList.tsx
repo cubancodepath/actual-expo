@@ -103,7 +103,7 @@ export function CategoryPickerList({
       keyboardShouldPersistTaps="handled"
       stickyHeaderIndices={[0]}
       ListHeaderComponent={
-        <View style={{ backgroundColor: colors.pageBackground, paddingTop: title ? spacing.xl : spacing.xs }}>
+        <View style={{ backgroundColor: colors.pageBackground, paddingTop: title ? spacing.xl : 0 }}>
           {title ? (
             <Text
               variant="bodyLg"

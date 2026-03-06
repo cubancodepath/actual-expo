@@ -18,7 +18,8 @@ import { useTagsStore } from "../src/stores/tagsStore";
 import { usePayeesStore } from "../src/stores/payeesStore";
 import { openDatabase } from "../src/db";
 import { loadClock, fullSync } from "../src/sync";
-import { updateAppBadge } from "../src/lib/badge";
+// TODO: re-enable when Apple Developer account is active (requires push notification entitlement)
+// import { updateAppBadge } from "../src/lib/badge";
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -45,22 +46,22 @@ export default function RootLayout() {
       ]);
     }
     bootstrap()
-      .then(() => updateAppBadge())
+      // .then(() => updateAppBadge())
       .catch(console.error)
       .finally(() => setReady(true));
   }, []);
 
-  // Update app badge when budget data changes (local edits, sync, month change)
-  useEffect(() => {
-    let prevData = useBudgetStore.getState().data;
-    const unsub = useBudgetStore.subscribe((state) => {
-      if (state.data !== prevData) {
-        prevData = state.data;
-        updateAppBadge();
-      }
-    });
-    return unsub;
-  }, []);
+  // TODO: re-enable when Apple Developer account is active
+  // useEffect(() => {
+  //   let prevData = useBudgetStore.getState().data;
+  //   const unsub = useBudgetStore.subscribe((state) => {
+  //     if (state.data !== prevData) {
+  //       prevData = state.data;
+  //       updateAppBadge();
+  //     }
+  //   });
+  //   return unsub;
+  // }, []);
 
   // Register home screen quick actions only when fully authenticated with a budget
   useEffect(() => {
@@ -82,7 +83,7 @@ export default function RootLayout() {
   useEffect(() => {
     const sub = AppState.addEventListener("change", (nextState) => {
       if (nextState === "active" && usePrefsStore.getState().isConfigured) {
-        fullSync().then(() => updateAppBadge()).catch(console.warn);
+        fullSync().catch(console.warn);
       }
     });
     return () => sub.remove();

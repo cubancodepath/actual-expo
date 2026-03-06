@@ -10,7 +10,8 @@ import { useTransactionsStore } from '../../../src/stores/transactionsStore';
 import { useCategoriesStore } from '../../../src/stores/categoriesStore';
 import { usePickerStore } from '../../../src/stores/pickerStore';
 import { findOrCreatePayee } from '../../../src/payees';
-import { getTransactionById } from '../../../src/transactions';
+import { addTransaction, getTransactionById, getChildTransactions, deleteTransaction as deleteTransactionById } from '../../../src/transactions';
+import { batchMessages } from '../../../src/sync';
 import { todayStr, todayInt, strToInt, intToStr } from '../../../src/lib/date';
 import { useTheme, useThemedStyles } from '../../../src/presentation/providers/ThemeProvider';
 import { useKeyboardHeight } from '../../../src/presentation/hooks/useKeyboardHeight';
@@ -43,7 +44,11 @@ export default function NewTransactionScreen() {
   const selectedPayee = usePickerStore((s) => s.selectedPayee);
   const selectedCategory = usePickerStore((s) => s.selectedCategory);
   const selectedAccount = usePickerStore((s) => s.selectedAccount);
+  const splitCategories = usePickerStore((s) => s.splitCategories);
+  const setSplitCategories = usePickerStore((s) => s.setSplitCategories);
   const clearPicker = usePickerStore((s) => s.clear);
+
+  const isSplit = splitCategories !== null && splitCategories.length > 1;
 
   // Resolve initial account from param
   const initialAccount = accounts.find((a) => a.id === accountId);
@@ -69,7 +74,7 @@ export default function NewTransactionScreen() {
     clearPicker();
     if (groups.length === 0) loadCategories();
     if (isEdit) {
-      getTransactionById(transactionId).then((txn) => {
+      getTransactionById(transactionId).then(async (txn) => {
         if (!txn) return;
         setType(txn.amount < 0 ? 'expense' : 'income');
         setCents(Math.abs(txn.amount));
@@ -85,6 +90,21 @@ export default function NewTransactionScreen() {
         setNotes(txn.notes ?? '');
         setCleared(txn.cleared);
         setReconciled(txn.reconciled);
+
+        // Load split children for parent transactions
+        if (txn.isParent) {
+          const children = await getChildTransactions(transactionId);
+          if (children.length > 0) {
+            setSplitCategories(
+              children.map((c) => ({
+                id: c.id,
+                categoryId: c.category,
+                categoryName: c.categoryName ?? '',
+                amount: Math.abs(c.amount),
+              })),
+            );
+          }
+        }
       });
     }
   }, []);
@@ -101,8 +121,27 @@ export default function NewTransactionScreen() {
     if (selectedCategory) {
       setCategoryId(selectedCategory.id);
       setCategoryName(selectedCategory.name);
+      // If user picks a single category, clear any split
+      usePickerStore.getState().setSplitCategories(null);
     }
   }, [selectedCategory]);
+
+  useEffect(() => {
+    if (!splitCategories || splitCategories.length === 0) return;
+
+    const splitTotal = splitCategories.reduce((sum, l) => sum + l.amount, 0);
+
+    if (splitCategories.length === 1) {
+      // Single line — treat as normal single-category transaction
+      setCategoryId(splitCategories[0].categoryId);
+      setCategoryName(splitCategories[0].categoryName);
+      if (cents === 0 && splitTotal > 0) setCents(splitTotal);
+      usePickerStore.getState().setSplitCategories(null);
+    } else {
+      // Multiple lines — update amount from split total if not set
+      if (cents === 0 && splitTotal > 0) setCents(splitTotal);
+    }
+  }, [splitCategories]);
 
   useEffect(() => {
     if (selectedAccount) {
@@ -114,13 +153,76 @@ export default function NewTransactionScreen() {
   async function performSave() {
     const date = strToInt(dateStr) ?? dateInt;
     const finalAmount = type === 'expense' ? -cents : cents;
+    const sign = type === 'expense' ? -1 : 1;
 
     setError(null);
     setLoading(true);
     try {
       const resolvedPayeeId = payeeId ?? (await findOrCreatePayee(payeeName));
 
-      if (isEdit) {
+      if (isSplit && isEdit) {
+        // Editing a split transaction — update parent, delete old children, create new children
+        await batchMessages(async () => {
+          await update(transactionId, {
+            date,
+            amount: finalAmount,
+            description: resolvedPayeeId,
+            category: null,
+            notes: notes.trim() || null,
+            cleared,
+            isParent: true,
+          });
+
+          // Delete old children
+          const oldChildren = await getChildTransactions(transactionId);
+          for (const child of oldChildren) {
+            await deleteTransactionById(child.id);
+          }
+
+          // Create new children
+          for (const line of splitCategories!) {
+            await addTransaction({
+              acct: acctId!,
+              date,
+              amount: sign * line.amount,
+              description: resolvedPayeeId,
+              category: line.categoryId,
+              notes: null,
+              cleared,
+              isChild: true,
+              parent_id: transactionId,
+            });
+          }
+        });
+      } else if (isSplit) {
+        // New split transaction — create parent + children in a single batch
+        await batchMessages(async () => {
+          const parentId = await addTransaction({
+            acct: acctId!,
+            date,
+            amount: finalAmount,
+            description: resolvedPayeeId,
+            category: null,
+            notes: notes.trim() || null,
+            cleared,
+            isParent: true,
+          });
+
+          for (const line of splitCategories!) {
+            await addTransaction({
+              acct: acctId!,
+              date,
+              amount: sign * line.amount,
+              description: resolvedPayeeId,
+              category: line.categoryId,
+              notes: null,
+              cleared,
+              isChild: true,
+              parent_id: parentId,
+            });
+          }
+        });
+      } else if (isEdit) {
         await update(transactionId, {
           date,
           amount: finalAmount,
@@ -239,12 +341,34 @@ export default function NewTransactionScreen() {
           <View style={styles.cardDivider} />
 
           <DetailRow
-            icon="pricetag-outline"
-            label={categoryId ? categoryName : ''}
+            icon={isSplit ? 'git-branch-outline' : 'pricetag-outline'}
+            label={isSplit ? `Split (${splitCategories!.length} categories)` : (categoryId ? categoryName : '')}
             placeholder="Category"
             onPress={() => {
-              const month = dateStr.slice(0, 7);
-              router.push({ pathname: './category-picker', params: { month, selectedId: categoryId ?? '' } });
+              if (isSplit) {
+                router.push({
+                  pathname: './split',
+                  params: {
+                    amount: String(cents),
+                    payeeId: payeeId ?? '',
+                    payeeName,
+                    transactionId: transactionId ?? '',
+                  },
+                });
+              } else {
+                const month = dateStr.slice(0, 7);
+                router.push({
+                  pathname: './category-picker',
+                  params: {
+                    month,
+                    selectedId: categoryId ?? '',
+                    amount: String(cents),
+                    payeeId: payeeId ?? '',
+                    payeeName,
+                    transactionId: transactionId ?? '',
+                  },
+                });
+              }
             }}
           />
           <View style={styles.cardDivider} />

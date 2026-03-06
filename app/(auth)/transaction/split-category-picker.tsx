@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useCategoriesStore } from '../../../src/stores/categoriesStore';
 import { usePickerStore } from '../../../src/stores/pickerStore';
@@ -11,67 +11,39 @@ import { Amount } from '../../../src/presentation/components/atoms/Amount';
 import { currentMonth } from '../../../src/lib/date';
 import type { Theme } from '../../../src/theme';
 
-export default function CategoryPickerScreen() {
-  const { month, selectedId, amount, payeeId, payeeName, transactionId } = useLocalSearchParams<{
-    month?: string;
+export default function SplitCategoryPickerScreen() {
+  const { splitLineId, selectedId } = useLocalSearchParams<{
+    splitLineId: string;
     selectedId?: string;
-    amount?: string;
-    payeeId?: string;
-    payeeName?: string;
-    transactionId?: string;
   }>();
   const router = useRouter();
-  const theme = useTheme();
-  const { colors, spacing, borderRadius: br, borderWidth: bw } = theme;
+  const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const styles = useThemedStyles(createStyles);
   const { groups, categories, load } = useCategoriesStore();
-  const setCategory = usePickerStore((s) => s.setCategory);
+  const setSplitCategorySelection = usePickerStore((s) => s.setSplitCategorySelection);
   const [balanceMap, setBalanceMap] = useState<Map<string, number>>(new Map());
-
-  const displayMonth = month || currentMonth();
 
   useEffect(() => {
     if (groups.length === 0) load();
-    getCategoryBalancesForMonth(displayMonth)
+    getCategoryBalancesForMonth(currentMonth())
       .then(setBalanceMap)
       .catch(() => {});
-  }, [displayMonth]);
+  }, []);
 
   function select(id: string | null, name: string) {
-    setCategory({ id, name });
+    setSplitCategorySelection({
+      lineId: splitLineId,
+      categoryId: id,
+      categoryName: name,
+    });
     router.back();
   }
 
   const noneSelected = !selectedId;
 
-  function handleSplit() {
-    router.push({
-      pathname: './split',
-      params: {
-        amount: amount ?? '0',
-        payeeId: payeeId ?? '',
-        payeeName: payeeName ?? '',
-        transactionId: transactionId ?? '',
-        fromCategoryPicker: '1',
-      },
-    });
-  }
-
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.list}
-    >
-      <Stack.Screen
-        options={{
-          headerRight: () => (
-            <Pressable onPress={handleSplit} hitSlop={8}>
-              <Text variant="body" color={theme.colors.textPrimary}>Split</Text>
-            </Pressable>
-          ),
-        }}
-      />
-      {/* No category — standalone card */}
+    <ScrollView style={styles.container} contentContainerStyle={styles.list}>
+      {/* No category */}
       <View style={styles.standaloneCard}>
         <Pressable
           style={({ pressed }) => [styles.item, pressed && styles.pressed]}

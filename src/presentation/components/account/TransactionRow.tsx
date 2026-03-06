@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ContextMenu from 'zeego/context-menu';
 import { useTheme, useThemedStyles } from '../../providers/ThemeProvider';
 import { Text, Amount, NotesWithTags } from '..';
+import { formatAmount } from '../../../lib/format';
 import { SwipeableRow } from '../molecules/SwipeableRow';
 import type { TransactionDisplay } from '../../../transactions';
 import type { Tag } from '../../../tags/types';
@@ -119,7 +120,34 @@ export function TransactionRow({
         </View>
 
         {/* Category + account name row */}
-        {(item.categoryName || (showAccountName && item.accountName)) && (
+        {item.isParent && item.splitCategoryNames ? (
+          <>
+            {(() => {
+              const names = item.splitCategoryNames.split('||');
+              const amounts = item.splitCategoryAmounts?.split('||') ?? [];
+              return names.map((name, i) => (
+                <View key={i} style={styles.splitLineRow}>
+                  <View style={styles.categoryPill}>
+                    <Text variant="captionSm" color={colors.textSecondary} numberOfLines={1}>
+                      {name || 'No category'}
+                    </Text>
+                  </View>
+                  <Text variant="captionSm" color={colors.textMuted} style={{ fontVariant: ['tabular-nums'] }}>
+                    {formatAmount(Math.abs(Number(amounts[i]) || 0))}
+                  </Text>
+                  {i === 0 && showAccountName && item.accountName && (
+                    <>
+                      <View style={{ flex: 1 }} />
+                      <Text variant="captionSm" color={colors.textMuted} numberOfLines={1} style={{ flexShrink: 0 }}>
+                        {item.accountName}
+                      </Text>
+                    </>
+                  )}
+                </View>
+              ));
+            })()}
+          </>
+        ) : (item.categoryName || (showAccountName && item.accountName)) && (
           <View style={styles.metaRow}>
             {item.categoryName ? (
               <View style={styles.categoryPill}>
@@ -279,6 +307,12 @@ const createStyles = (theme: Theme) => ({
     alignItems: 'center' as const,
     marginTop: theme.spacing.xs,
     gap: theme.spacing.sm,
+  },
+  splitLineRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    marginTop: theme.spacing.xs,
+    gap: theme.spacing.xs,
   },
   categoryPill: {
     backgroundColor: theme.colors.buttonSecondaryBackground,

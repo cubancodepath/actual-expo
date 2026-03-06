@@ -20,6 +20,8 @@ interface CompactCurrencyInputProps {
   value: number;
   /** Called with new amount in cents on every keystroke */
   onChangeValue: (cents: number) => void;
+  /** Called when input gains focus */
+  onFocus?: () => void;
   /** Called when input loses focus */
   onBlur?: () => void;
   /** Auto-focus on mount */
@@ -43,7 +45,7 @@ function formatCents(c: number): string {
  * No border/background — designed to look inline. Shows blinking cursor when focused.
  */
 export const CompactCurrencyInput = forwardRef<CompactCurrencyInputRef, CompactCurrencyInputProps>(
-  function CompactCurrencyInput({ value, onChangeValue, onBlur, autoFocus = false, style }, ref) {
+  function CompactCurrencyInput({ value, onChangeValue, onFocus: onFocusProp, onBlur, autoFocus = false, style }, ref) {
     const { colors, spacing } = useTheme();
     const inputRef = useRef<TextInput>(null);
     const [focused, setFocused] = useState(autoFocus);
@@ -121,7 +123,7 @@ export const CompactCurrencyInput = forwardRef<CompactCurrencyInputRef, CompactC
           contextMenuHidden
           value={String(value)}
           onChangeText={handleChangeText}
-          onFocus={() => setFocused(true)}
+          onFocus={() => { setFocused(true); onFocusProp?.(); }}
           onBlur={() => {
             setFocused(false);
             onBlur?.();

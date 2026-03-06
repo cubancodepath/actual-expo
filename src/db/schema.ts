@@ -118,6 +118,7 @@ const MIGRATIONS = [
   'ALTER TABLE zero_budgets ADD COLUMN goal INTEGER DEFAULT NULL',
   'ALTER TABLE zero_budgets ADD COLUMN long_goal INTEGER DEFAULT NULL',
   "ALTER TABLE categories ADD COLUMN template_settings TEXT DEFAULT '{\"source\": \"notes\"}'",
+  'ALTER TABLE transactions ADD COLUMN parent_id TEXT',
 ];
 
 export async function runSchema(db: SQLiteDatabase): Promise<void> {

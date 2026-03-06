@@ -12,6 +12,8 @@ export default function TransactionLayout() {
       <Stack.Screen name="payee-picker" options={{ title: 'Payee' }} />
       <Stack.Screen name="category-picker" options={{ title: 'Category' }} />
       <Stack.Screen name="account-picker" options={{ title: 'Account' }} />
+      <Stack.Screen name="split" options={{ title: 'Split Transaction' }} />
+      <Stack.Screen name="split-category-picker" options={{ title: 'Category' }} />
       <Stack.Screen
         name="tags"
         options={{

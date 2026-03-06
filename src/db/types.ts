@@ -19,6 +19,7 @@ export type TransactionRow = {
   category: string | null;
   description: string | null; // payee id
   notes: string | null;
+  parent_id: string | null;
   transferred_id: string | null;
   cleared: 0 | 1;
   reconciled: 0 | 1;

@@ -8,12 +8,24 @@ export type Transaction = {
   category: string | null;
   description: string | null; // payee id
   notes: string | null;
+  parent_id: string | null;
   transferred_id: string | null;
   cleared: boolean;
   reconciled: boolean;
   sort_order: number | null;
   starting_balance_flag: boolean;
   tombstone: boolean;
+};
+
+export type SplitTransactionError = {
+  type: 'SplitTransactionError';
+  version: 1;
+  difference: number;
+};
+
+export type TransactionWithSubtransactions = Transaction & {
+  subtransactions: Transaction[];
+  error: SplitTransactionError | null;
 };
 
 export type StatusFilter = 'cleared' | 'uncleared' | 'reconciled' | 'unreconciled';

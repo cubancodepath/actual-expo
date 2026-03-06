@@ -4,13 +4,30 @@ type PayeeSelection = { id: string | null; name: string };
 type CategorySelection = { id: string | null; name: string };
 type AccountSelection = { id: string; name: string };
 
+export type SplitLine = {
+  id: string;
+  categoryId: string | null;
+  categoryName: string;
+  amount: number; // cents, always positive
+};
+
+type SplitCategorySelection = {
+  lineId: string;
+  categoryId: string | null;
+  categoryName: string;
+};
+
 interface PickerState {
   selectedPayee: PayeeSelection | null;
   selectedCategory: CategorySelection | null;
   selectedAccount: AccountSelection | null;
+  splitCategories: SplitLine[] | null;
+  splitCategorySelection: SplitCategorySelection | null;
   setPayee: (p: PayeeSelection) => void;
   setCategory: (c: CategorySelection) => void;
   setAccount: (a: AccountSelection) => void;
+  setSplitCategories: (lines: SplitLine[] | null) => void;
+  setSplitCategorySelection: (s: SplitCategorySelection | null) => void;
   clear: () => void;
 }
 
@@ -18,8 +35,18 @@ export const usePickerStore = create<PickerState>((set) => ({
   selectedPayee: null,
   selectedCategory: null,
   selectedAccount: null,
+  splitCategories: null,
+  splitCategorySelection: null,
   setPayee: (p) => set({ selectedPayee: p }),
   setCategory: (c) => set({ selectedCategory: c }),
   setAccount: (a) => set({ selectedAccount: a }),
-  clear: () => set({ selectedPayee: null, selectedCategory: null, selectedAccount: null }),
+  setSplitCategories: (lines) => set({ splitCategories: lines }),
+  setSplitCategorySelection: (s) => set({ splitCategorySelection: s }),
+  clear: () => set({
+    selectedPayee: null,
+    selectedCategory: null,
+    selectedAccount: null,
+    splitCategories: null,
+    splitCategorySelection: null,
+  }),
 }));

@@ -116,9 +116,11 @@ export default function CategoryPickerScreen() {
             <Text variant="body" color={colors.textMuted} style={styles.catName}>
               No category
             </Text>
-            {noneSelected && (
-              <Ionicons name="checkmark" size={20} color={colors.primary} />
-            )}
+            <View style={{ width: 20, alignItems: 'center' }}>
+              {noneSelected && (
+                <Ionicons name="checkmark" size={20} color={colors.primary} />
+              )}
+            </View>
           </Pressable>
         </View>
       )}
@@ -166,9 +168,11 @@ export default function CategoryPickerScreen() {
                   {balance !== undefined && (
                     <Amount value={balance} variant="caption" color={balanceColor} style={styles.balance} />
                   )}
-                  {isSelected && (
-                    <Ionicons name="checkmark" size={20} color={colors.primary} />
-                  )}
+                  <View style={{ width: 20, alignItems: 'center' }}>
+                    {isSelected && (
+                      <Ionicons name="checkmark" size={20} color={colors.primary} />
+                    )}
+                  </View>
                   {!isLast && (
                     <View style={{ position: 'absolute', bottom: 0, left: spacing.lg, right: spacing.lg, height: bw.thin, backgroundColor: colors.divider }} />
                   )}

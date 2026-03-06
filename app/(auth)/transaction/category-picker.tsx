@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +8,7 @@ import { getCategoryBalancesForMonth } from '../../../src/budgets';
 import { useTheme, useThemedStyles } from '../../../src/presentation/providers/ThemeProvider';
 import { Text } from '../../../src/presentation/components/atoms/Text';
 import { Amount } from '../../../src/presentation/components/atoms/Amount';
+import { SearchBar } from '../../../src/presentation/components';
 import { currentMonth } from '../../../src/lib/date';
 import type { Theme } from '../../../src/theme';
 
@@ -27,6 +28,7 @@ export default function CategoryPickerScreen() {
   const { groups, categories, load } = useCategoriesStore();
   const setCategory = usePickerStore((s) => s.setCategory);
   const [balanceMap, setBalanceMap] = useState<Map<string, number>>(new Map());
+  const [search, setSearch] = useState('');
 
   const displayMonth = month || currentMonth();
 
@@ -43,6 +45,24 @@ export default function CategoryPickerScreen() {
   }
 
   const noneSelected = !selectedId;
+
+  const filteredGroups = useMemo(() => {
+    const query = search.toLowerCase().trim();
+    return groups
+      .filter((g) => !g.hidden && !g.tombstone)
+      .sort((a, b) => {
+        if (a.is_income !== b.is_income) return a.is_income ? 1 : -1;
+        return (a.sort_order ?? 0) - (b.sort_order ?? 0);
+      })
+      .map((g) => {
+        const cats = categories
+          .filter((c) => c.cat_group === g.id && !c.hidden && !c.tombstone)
+          .filter((c) => !query || c.name.toLowerCase().includes(query) || g.name.toLowerCase().includes(query))
+          .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+        return { ...g, cats };
+      })
+      .filter((g) => g.cats.length > 0);
+  }, [groups, categories, search]);
 
   function handleSplit() {
     router.push({
@@ -79,88 +99,85 @@ export default function CategoryPickerScreen() {
           ),
         }}
       />
-      {/* No category — standalone card */}
-      <View style={styles.standaloneCard}>
-        <Pressable
-          style={({ pressed }) => [styles.item, pressed && styles.pressed]}
-          onPress={() => select(null, '')}
-        >
-          <Text variant="body" color={colors.textMuted} style={styles.catName}>
-            No category
-          </Text>
-          {noneSelected && (
-            <Ionicons name="checkmark" size={20} color={colors.primary} />
-          )}
-        </Pressable>
-      </View>
+      <SearchBar
+        value={search}
+        onChangeText={setSearch}
+        placeholder="Search categories…"
+        autoFocus
+      />
 
-      {groups
-        .filter((g) => !g.hidden && !g.tombstone)
-        .sort((a, b) => {
-          if (a.is_income !== b.is_income) return a.is_income ? 1 : -1;
-          return (a.sort_order ?? 0) - (b.sort_order ?? 0);
-        })
-        .map((g) => {
-          const cats = categories
-            .filter((c) => c.cat_group === g.id && !c.hidden && !c.tombstone)
-            .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
-          if (cats.length === 0) return null;
-          return (
-            <View key={g.id}>
-              <View style={styles.sectionHeader}>
-                <Text
-                  variant="captionSm"
-                  color={colors.textMuted}
-                  style={styles.sectionText}
+      {/* No category — standalone card */}
+      {!search && (
+        <View style={styles.standaloneCard}>
+          <Pressable
+            style={({ pressed }) => [styles.item, pressed && styles.pressed]}
+            onPress={() => select(null, '')}
+          >
+            <Text variant="body" color={colors.textMuted} style={styles.catName}>
+              No category
+            </Text>
+            {noneSelected && (
+              <Ionicons name="checkmark" size={20} color={colors.primary} />
+            )}
+          </Pressable>
+        </View>
+      )}
+
+      {filteredGroups.map((g) => (
+        <View key={g.id}>
+          <View style={styles.sectionHeader}>
+            <Text
+              variant="captionSm"
+              color={colors.textMuted}
+              style={styles.sectionText}
+            >
+              {g.name.toUpperCase()}
+            </Text>
+          </View>
+          <View style={styles.groupCard}>
+            {g.cats.map((c, i) => {
+              const balance = balanceMap.get(c.id);
+              const balanceColor =
+                balance === undefined
+                  ? colors.textMuted
+                  : balance > 0
+                    ? colors.positive
+                    : balance < 0
+                      ? colors.negative
+                      : colors.textMuted;
+              const isSelected = c.id === selectedId;
+              const isLast = i === g.cats.length - 1;
+              return (
+                <Pressable
+                  key={c.id}
+                  style={({ pressed }) => [
+                    styles.item,
+                    pressed && styles.pressed,
+                  ]}
+                  onPress={() => select(c.id, c.name)}
                 >
-                  {g.name.toUpperCase()}
-                </Text>
-              </View>
-              <View style={styles.groupCard}>
-                {cats.map((c, i) => {
-                  const balance = balanceMap.get(c.id);
-                  const balanceColor =
-                    balance === undefined
-                      ? colors.textMuted
-                      : balance > 0
-                        ? colors.positive
-                        : balance < 0
-                          ? colors.negative
-                          : colors.textMuted;
-                  const isSelected = c.id === selectedId;
-                  const isLast = i === cats.length - 1;
-                  return (
-                    <Pressable
-                      key={c.id}
-                      style={({ pressed }) => [
-                        styles.item,
-                        pressed && styles.pressed,
-                      ]}
-                      onPress={() => select(c.id, c.name)}
-                    >
-                      <Text
-                        variant="body"
-                        color={colors.textPrimary}
-                        style={styles.catName}
-                      >
-                        {c.name}
-                      </Text>
-                      {balance !== undefined && (
-                        <Amount value={balance} variant="caption" color={balanceColor} style={styles.balance} />
-                      )}
-                      {isSelected && (
-                        <Ionicons name="checkmark" size={20} color={colors.primary} />
-                      )}
-                      {!isLast && (
-                        <View style={{ position: 'absolute', bottom: 0, left: spacing.lg, right: spacing.lg, height: bw.thin, backgroundColor: colors.divider }} />
-                      )}
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </View>
-          );
-        })}
+                  <Text
+                    variant="body"
+                    color={colors.textPrimary}
+                    style={styles.catName}
+                  >
+                    {c.name}
+                  </Text>
+                  {balance !== undefined && (
+                    <Amount value={balance} variant="caption" color={balanceColor} style={styles.balance} />
+                  )}
+                  {isSelected && (
+                    <Ionicons name="checkmark" size={20} color={colors.primary} />
+                  )}
+                  {!isLast && (
+                    <View style={{ position: 'absolute', bottom: 0, left: spacing.lg, right: spacing.lg, height: bw.thin, backgroundColor: colors.divider }} />
+                  )}
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+      ))}
     </ScrollView>
   );
 }

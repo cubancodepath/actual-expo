@@ -90,6 +90,7 @@ export default function PayeePickerScreen() {
         value={search}
         onChangeText={setSearch}
         placeholder="Search payees or accounts..."
+        autoFocus
       />
 
       <ScrollView contentContainerStyle={styles.list}>

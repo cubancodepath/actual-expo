@@ -1,4 +1,10 @@
-import { TextInput, View, Pressable, StyleSheet } from "react-native";
+import {
+  TextInput,
+  View,
+  Pressable,
+  StyleSheet,
+  type TextInputProps,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../providers/ThemeProvider";
 
@@ -6,12 +12,18 @@ export interface SearchBarProps {
   value: string;
   onChangeText: (text: string) => void;
   placeholder?: string;
+  autoFocus?: boolean;
+  noMargin?: boolean;
+  returnKeyType?: TextInputProps["returnKeyType"];
 }
 
 export function SearchBar({
   value,
   onChangeText,
   placeholder = "Search...",
+  autoFocus,
+  noMargin,
+  returnKeyType,
 }: SearchBarProps) {
   const { colors, spacing, borderRadius: br } = useTheme();
 
@@ -24,8 +36,12 @@ export function SearchBar({
           borderColor: colors.inputBorder,
           borderRadius: br.full,
           paddingHorizontal: spacing.md,
-          marginHorizontal: spacing.lg,
-          marginVertical: spacing.sm,
+          ...(noMargin
+            ? {}
+            : {
+                marginHorizontal: spacing.lg,
+                marginVertical: spacing.sm,
+              }),
         },
       ]}
     >
@@ -41,6 +57,8 @@ export function SearchBar({
         ]}
         autoCapitalize="none"
         autoCorrect={false}
+        autoFocus={autoFocus}
+        returnKeyType={returnKeyType}
       />
       {value.length > 0 && (
         <Pressable onPress={() => onChangeText("")} hitSlop={8}>

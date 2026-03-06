@@ -7,7 +7,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
@@ -15,6 +14,7 @@ import { usePayeesStore } from '../../src/stores/payeesStore';
 import { runQuery, run } from '../../src/db';
 import { updateTransaction } from '../../src/transactions';
 import type { Payee } from '../../src/payees/types';
+import { SearchBar } from '../../src/presentation/components';
 
 // ---------------------------------------------------------------------------
 // Merge picker — shown when deleting a payee that has transactions
@@ -48,13 +48,11 @@ function MergePicker({
           <Text style={styles.sheetSubtitle}>
             This payee has transactions. Reassign them to:
           </Text>
-          <TextInput
-            style={styles.sheetSearch}
-            placeholder="Search payees…"
-            placeholderTextColor="#475569"
+          <SearchBar
             value={search}
             onChangeText={setSearch}
-            autoFocus={false}
+            placeholder="Search payees…"
+            noMargin
           />
           <ScrollView style={styles.sheetList} bounces={false}>
             {filtered.map(p => (
@@ -227,18 +225,12 @@ export default function PayeesScreen() {
         onCancel={() => setPendingDelete(null)}
       />
 
-      {/* Search */}
-      <View style={styles.searchBar}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search payees…"
-          placeholderTextColor="#475569"
-          value={search}
-          onChangeText={setSearch}
-          clearButtonMode="while-editing"
-          returnKeyType="search"
-        />
-      </View>
+      <SearchBar
+        value={search}
+        onChangeText={setSearch}
+        placeholder="Search payees…"
+        returnKeyType="search"
+      />
 
       <FlatList
         data={filtered}
@@ -273,23 +265,6 @@ export default function PayeesScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f172a' },
-
-  searchBar: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1e293b',
-  },
-  searchInput: {
-    backgroundColor: '#1e293b',
-    color: '#f1f5f9',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    fontSize: 15,
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
 
   row: {
     flexDirection: 'row',
@@ -336,17 +311,6 @@ const styles = StyleSheet.create({
   },
   sheetTitle: { color: '#f1f5f9', fontSize: 16, fontWeight: '700', marginBottom: 4 },
   sheetSubtitle: { color: '#94a3b8', fontSize: 13, marginBottom: 10 },
-  sheetSearch: {
-    backgroundColor: '#0f172a',
-    color: '#f1f5f9',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    fontSize: 14,
-    borderWidth: 1,
-    borderColor: '#334155',
-    marginBottom: 6,
-  },
   sheetList: { maxHeight: 280 },
   sheetItem: {
     flexDirection: 'row',

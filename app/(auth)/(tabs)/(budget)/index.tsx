@@ -11,8 +11,9 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import { useTheme } from '../../../../src/presentation/providers/ThemeProvider';
-import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import { useSharedValue } from 'react-native-reanimated';
 import { AddTransactionButton } from '../../../../src/presentation/components/molecules/AddTransactionButton';
+import { KeyboardToolbar } from '../../../../src/presentation/components/molecules/KeyboardToolbar';
 import { useBudgetStore } from '../../../../src/stores/budgetStore';
 import { useRefreshControl } from '../../../../src/presentation/hooks/useRefreshControl';
 import { useKeyboardHeight } from '../../../../src/presentation/hooks/useKeyboardHeight';
@@ -104,10 +105,7 @@ export default function BudgetScreen() {
   }
 
   // -- Keyboard tracking --
-  const { height: keyboardHeight, visible: keyboardVisible } = useKeyboardHeight();
-  const editToolbarStyle = useAnimatedStyle(() => ({
-    bottom: keyboardHeight.value,
-  }));
+  const { visible: keyboardVisible } = useKeyboardHeight();
 
   // -- Reset filter on month change --
   useEffect(() => { setFilter('all'); }, [month]);
@@ -351,43 +349,27 @@ export default function BudgetScreen() {
     </View>
 
     {/* Edit mode toolbar — only visible when keyboard is open */}
-    {editMode && keyboardVisible && (
-      <Animated.View
-        style={[
-          {
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            zIndex: 10,
-            flexDirection: 'row',
-            gap: spacing.sm,
-            paddingHorizontal: spacing.lg,
-            paddingVertical: spacing.sm,
-          },
-          editToolbarStyle,
-        ]}
-      >
-        <View style={{ flex: 1 }}>
-          <Button
-            title="Cancel"
-            variant="secondary"
-            onPress={() => { Keyboard.dismiss(); handleCancelEdits(); }}
-            style={{ borderRadius: br.full }}
-          />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Button
-            title={saving ? 'Saving...' : 'Save'}
-            icon="checkmark"
-            variant="primary"
-            loading={saving}
-            disabled={!hasEdits}
-            onPress={() => { Keyboard.dismiss(); handleSaveEdits(); }}
-            style={{ borderRadius: br.full }}
-          />
-        </View>
-      </Animated.View>
-    )}
+    <KeyboardToolbar visible={editMode && keyboardVisible}>
+      <View style={{ flex: 1 }}>
+        <Button
+          title="Cancel"
+          variant="secondary"
+          onPress={() => { Keyboard.dismiss(); handleCancelEdits(); }}
+          style={{ borderRadius: br.full }}
+        />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Button
+          title={saving ? 'Saving...' : 'Save'}
+          icon="checkmark"
+          variant="primary"
+          loading={saving}
+          disabled={!hasEdits}
+          onPress={() => { Keyboard.dismiss(); handleSaveEdits(); }}
+          style={{ borderRadius: br.full }}
+        />
+      </View>
+    </KeyboardToolbar>
     <Stack.Toolbar placement="right">
       <Stack.Toolbar.Menu
         icon={filter === 'all' ? 'line.3.horizontal.decrease' : 'line.3.horizontal.decrease.circle.fill'}

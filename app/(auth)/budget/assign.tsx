@@ -1,18 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Keyboard, Pressable, SectionList, View, useColorScheme } from 'react-native';
+import { Alert, Pressable, SectionList, View, useColorScheme } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import Animated, { useAnimatedStyle } from 'react-native-reanimated';
-import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
-import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
 import { useBudgetStore } from '../../../src/stores/budgetStore';
-import { useKeyboardHeight } from '../../../src/presentation/hooks/useKeyboardHeight';
 import { Text } from '../../../src/presentation/components/atoms/Text';
 import { IconButton } from '../../../src/presentation/components/atoms/IconButton';
 import { Button } from '../../../src/presentation/components/atoms/Button';
+import { KeyboardDoneButton } from '../../../src/presentation/components/atoms/KeyboardDoneButton';
 import { CompactCurrencyInput, type CompactCurrencyInputRef } from '../../../src/presentation/components/atoms/CompactCurrencyInput';
 import { HoldModal } from '../../../src/presentation/components/budget/HoldModal';
 import { Amount } from '../../../src/presentation/components/atoms/Amount';
@@ -33,7 +29,6 @@ export default function AssignBudgetScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { data, setAmount, hold, resetHold } = useBudgetStore();
-  const { height: keyboardHeight, visible: keyboardVisible } = useKeyboardHeight();
 
   const toBudget = data?.toBudget ?? 0;
   const buffered = data?.buffered ?? 0;
@@ -204,9 +199,6 @@ export default function AssignBudgetScreen() {
     fontWeight: '700' as const,
   };
 
-  // Keyboard Done button animation
-  const doneButtonStyle = useAnimatedStyle(() => ({ bottom: keyboardHeight.value }));
-
   return (
     <View style={{ flex: 1, backgroundColor: colors.pageBackground }}>
       <Stack.Screen
@@ -324,48 +316,7 @@ export default function AssignBudgetScreen() {
         contentContainerStyle={{ paddingBottom: hasChanges ? 120 : 40 }}
       />
 
-      {/* Keyboard Done button — glass effect */}
-      {keyboardVisible && (
-        <Animated.View
-          style={[
-            {
-              position: 'absolute',
-              right: spacing.lg,
-              zIndex: 10,
-              marginBottom: spacing.sm,
-            },
-            doneButtonStyle,
-          ]}
-        >
-          <Pressable onPress={() => Keyboard.dismiss()}>
-            {isLiquidGlassAvailable() ? (
-              <GlassView
-                isInteractive
-                style={{
-                  borderRadius: br.full,
-                  paddingHorizontal: spacing.lg,
-                  paddingVertical: spacing.sm,
-                }}
-              >
-                <Ionicons name="checkmark" size={18} color={colors.textPrimary} />
-              </GlassView>
-            ) : (
-              <BlurView
-                tint="systemChromeMaterial"
-                intensity={100}
-                style={{
-                  borderRadius: br.full,
-                  paddingHorizontal: spacing.lg,
-                  paddingVertical: spacing.sm,
-                  overflow: 'hidden',
-                }}
-              >
-                <Ionicons name="checkmark" size={18} color={colors.textPrimary} />
-              </BlurView>
-            )}
-          </Pressable>
-        </Animated.View>
-      )}
+      <KeyboardDoneButton />
 
       {/* Save button — fixed at bottom */}
       {hasChanges && (

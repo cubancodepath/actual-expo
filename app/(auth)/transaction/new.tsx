@@ -1,10 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Alert, Keyboard, Pressable, ScrollView, View } from 'react-native';
+import { Alert, Pressable, ScrollView, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { useAnimatedStyle } from 'react-native-reanimated';
-import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
-import { BlurView } from 'expo-blur';
 import { useAccountsStore } from '../../../src/stores/accountsStore';
 import { useTransactionsStore } from '../../../src/stores/transactionsStore';
 import { useCategoriesStore } from '../../../src/stores/categoriesStore';
@@ -15,8 +12,8 @@ import { batchMessages } from '../../../src/sync';
 import { extractTagsFromNotes } from '../../../src/tags';
 import { todayStr, todayInt, strToInt, intToStr } from '../../../src/lib/date';
 import { useTheme, useThemedStyles } from '../../../src/presentation/providers/ThemeProvider';
-import { useKeyboardHeight } from '../../../src/presentation/hooks/useKeyboardHeight';
 import { Button } from '../../../src/presentation/components/atoms/Button';
+import { KeyboardDoneButton } from '../../../src/presentation/components/atoms/KeyboardDoneButton';
 import { Banner } from '../../../src/presentation/components/molecules/Banner';
 import { CurrencyInput } from '../../../src/presentation/components/atoms/CurrencyInput';
 import { TypeToggle, type TransactionType } from '../../../src/presentation/components/transaction/TypeToggle';
@@ -35,8 +32,6 @@ export default function NewTransactionScreen() {
   const router = useRouter();
   const theme = useTheme();
   const styles = useThemedStyles(createStyles);
-  const { height: keyboardHeight, visible: keyboardVisible } = useKeyboardHeight();
-  const doneButtonStyle = useAnimatedStyle(() => ({ bottom: keyboardHeight.value }));
   const { accounts, load: loadAccounts } = useAccountsStore();
   const { add, update, delete_ } = useTransactionsStore();
   const { groups, load: loadCategories } = useCategoriesStore();
@@ -438,47 +433,7 @@ export default function NewTransactionScreen() {
         )}
       </ScrollView>
 
-      {keyboardVisible && (
-        <Animated.View
-          style={[
-            {
-              position: 'absolute',
-              right: theme.spacing.lg,
-              zIndex: 10,
-              marginBottom: theme.spacing.sm,
-            },
-            doneButtonStyle,
-          ]}
-        >
-          <Pressable onPress={() => Keyboard.dismiss()}>
-            {isLiquidGlassAvailable() ? (
-              <GlassView
-                isInteractive
-                style={{
-                  borderRadius: theme.borderRadius.full,
-                  paddingHorizontal: theme.spacing.lg,
-                  paddingVertical: theme.spacing.sm,
-                }}
-              >
-                <Ionicons name="checkmark" size={18} color={theme.colors.textPrimary} />
-              </GlassView>
-            ) : (
-              <BlurView
-                tint="systemChromeMaterial"
-                intensity={100}
-                style={{
-                  borderRadius: theme.borderRadius.full,
-                  paddingHorizontal: theme.spacing.lg,
-                  paddingVertical: theme.spacing.sm,
-                  overflow: 'hidden',
-                }}
-              >
-                <Ionicons name="checkmark" size={18} color={theme.colors.textPrimary} />
-              </BlurView>
-            )}
-          </Pressable>
-        </Animated.View>
-      )}
+      <KeyboardDoneButton />
     </>
   );
 }

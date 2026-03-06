@@ -12,6 +12,7 @@ export { CurrencyInput } from "./atoms/CurrencyInput";
 export { CompactCurrencyInput, type CompactCurrencyInputRef } from "./atoms/CompactCurrencyInput";
 export { TagPill, type TagPillProps } from "./atoms/TagPill";
 export { NotesWithTags, type NotesWithTagsProps } from "./atoms/NotesWithTags";
+export { KeyboardDoneButton } from "./atoms/KeyboardDoneButton";
 
 // Molecules
 export { ListItem, type ListItemProps } from "./molecules/ListItem";
@@ -20,6 +21,7 @@ export { SearchBar, type SearchBarProps } from "./molecules/SearchBar";
 export { EmptyState, type EmptyStateProps } from "./molecules/EmptyState";
 export { Banner, type BannerProps } from "./molecules/Banner";
 export { SwipeableRow } from "./molecules/SwipeableRow";
+export { KeyboardToolbar } from "./molecules/KeyboardToolbar";
 export { SyncBadge } from "./molecules/SyncBadge";
 
 // Budget

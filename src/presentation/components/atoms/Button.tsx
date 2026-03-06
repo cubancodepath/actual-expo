@@ -73,6 +73,7 @@ export function Button({
   const variantStyles = getVariantStyles(theme, variant, size);
   const sizeStyles = sizeMap[size];
   const color = textColor ?? variantStyles.text;
+  const contentOpacity = disabled ? 0.4 : 1;
 
   return (
     <Pressable
@@ -83,19 +84,18 @@ export function Button({
         variantStyles.container,
         { paddingVertical: sizeStyles.paddingVertical, paddingHorizontal: sizeStyles.paddingHorizontal },
         pressed && styles.pressed,
-        disabled && styles.disabled,
         style,
       ]}
     >
       {loading ? (
-        <ActivityIndicator size="small" color={color} />
+        <ActivityIndicator size="small" color={color} style={{ opacity: contentOpacity }} />
       ) : (
         <>
-          {icon && <Ionicons name={icon} size={sizeStyles.fontSize + 4} color={color} style={{ marginRight: 6 }} />}
+          {icon && <Ionicons name={icon} size={sizeStyles.fontSize + 4} color={color} style={{ marginRight: 6, opacity: contentOpacity }} />}
           <Text
             variant="bodyLg"
             color={color}
-            style={{ fontSize: sizeStyles.fontSize, fontWeight: "600" }}
+            style={{ fontSize: sizeStyles.fontSize, fontWeight: "600", opacity: contentOpacity }}
           >
             {title}
           </Text>
@@ -113,5 +113,4 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   pressed: { opacity: 0.8 },
-  disabled: { opacity: 0.5 },
 });

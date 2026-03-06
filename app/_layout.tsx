@@ -15,6 +15,7 @@ import { useCategoriesStore } from "../src/stores/categoriesStore";
 import { useBudgetStore } from "../src/stores/budgetStore";
 import { usePreferencesStore } from "../src/stores/preferencesStore";
 import { useTagsStore } from "../src/stores/tagsStore";
+import { usePayeesStore } from "../src/stores/payeesStore";
 import { openDatabase } from "../src/db";
 import { loadClock, fullSync } from "../src/sync";
 
@@ -39,6 +40,7 @@ export default function RootLayout() {
         useBudgetStore.getState().load(),
         usePreferencesStore.getState().load(),
         useTagsStore.getState().load(),
+        usePayeesStore.getState().load(),
       ]);
     }
     bootstrap()

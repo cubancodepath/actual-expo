@@ -65,8 +65,16 @@ export default function CategoryPickerScreen() {
       <Stack.Screen
         options={{
           headerRight: () => (
-            <Pressable onPress={handleSplit} hitSlop={8}>
-              <Text variant="body" color={theme.colors.textPrimary}>Split</Text>
+            <Pressable
+              onPress={handleSplit}
+              hitSlop={8}
+              style={{
+                paddingHorizontal: spacing.md,
+                paddingVertical: spacing.xxs,
+                borderRadius: br.full,
+              }}
+            >
+              <Text variant="body" color={colors.textPrimary}>Split</Text>
             </Pressable>
           ),
         }}

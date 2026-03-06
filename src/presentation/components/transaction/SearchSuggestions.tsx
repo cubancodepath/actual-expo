@@ -181,9 +181,16 @@ export function SearchSuggestions({
     }
   }
 
-  function iconForKind(kind: Suggestion['kind']): keyof typeof Ionicons.glyphMap {
-    switch (kind) {
-      case 'status': return 'checkmark-circle-outline';
+  function iconForSuggestion(s: Suggestion): keyof typeof Ionicons.glyphMap {
+    switch (s.kind) {
+      case 'status':
+        switch (s.value) {
+          case 'cleared': return 'checkmark-circle';
+          case 'uncleared': return 'checkmark-circle-outline';
+          case 'reconciled': return 'lock-closed';
+          case 'unreconciled': return 'lock-open';
+        }
+        break;
       case 'account': return 'wallet-outline';
       case 'category': return 'pricetag-outline';
       case 'payee': return 'person-outline';
@@ -210,7 +217,7 @@ export function SearchSuggestions({
             opacity: pressed ? 0.6 : 1,
           })}
         >
-          <Ionicons name={iconForKind(s.kind)} size={18} color={colors.textMuted} />
+          <Ionicons name={iconForSuggestion(s)} size={18} color={colors.textMuted} />
           <Text variant="body" color={colors.textPrimary}>
             {s.label}
           </Text>

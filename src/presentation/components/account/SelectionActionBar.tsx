@@ -1,10 +1,11 @@
-import { Platform, Pressable, View, type ViewStyle } from 'react-native';
+import { Platform, View, type ViewStyle } from 'react-native';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../providers/ThemeProvider';
 import { Text } from '../atoms/Text';
+import { GlassButton } from '../atoms/GlassButton';
 import type { Account } from '../../../accounts/types';
 
 // SwiftUI imports (iOS only)
@@ -30,38 +31,11 @@ interface SelectionActionBarProps {
   isDark: boolean;
 }
 
-const pillStyle: ViewStyle = {
-  flexDirection: 'row',
-  alignItems: 'center',
-  paddingVertical: 12,
-  paddingHorizontal: 18,
-  gap: 6,
-};
-
 const iconPillStyle: ViewStyle = {
   alignItems: 'center',
   justifyContent: 'center',
   padding: 12,
 };
-
-function GlassPill({ onPress, icon, children }: { onPress?: () => void; icon?: boolean; children: React.ReactNode }) {
-  const glass = isLiquidGlassAvailable();
-  const style = icon ? iconPillStyle : pillStyle;
-
-  return (
-    <Pressable onPress={onPress} style={{ borderRadius: 50, overflow: 'hidden' }}>
-      {glass ? (
-        <GlassView isInteractive style={{ borderRadius: 50, ...style }}>
-          {children}
-        </GlassView>
-      ) : (
-        <BlurView tint="systemChromeMaterial" intensity={100} style={style}>
-          {children}
-        </BlurView>
-      )}
-    </Pressable>
-  );
-}
 
 export function SelectionActionBar({
   count,
@@ -87,16 +61,13 @@ export function SelectionActionBar({
       <View style={pillsRow}>
         {/* Left group */}
         <View style={leftGroup}>
-          <GlassPill onPress={onMarkCleared}>
-            <Ionicons
-              name={allCleared ? 'ellipse-outline' : 'checkmark-circle'}
-              size={18}
-              color={allCleared ? colors.textMuted : colors.positive}
-            />
-            <Text variant="body" style={{ fontWeight: '600' }}>
-              {allCleared ? 'Unclear' : 'Clear'}
-            </Text>
-          </GlassPill>
+          <GlassButton
+            onPress={onMarkCleared}
+            icon={allCleared ? 'ellipse-outline' : 'checkmark-circle'}
+            iconSize={18}
+            label={allCleared ? 'Unclear' : 'Clear'}
+            color={allCleared ? colors.textMuted : colors.positive}
+          />
         </View>
 
         {/* Right: context menu pill */}
@@ -181,9 +152,7 @@ export function SelectionActionBar({
             )}
           </View>
         ) : (
-          <GlassPill onPress={onDelete} icon>
-            <Ionicons name="ellipsis-horizontal" size={20} color={colors.textPrimary} />
-          </GlassPill>
+          <GlassButton icon="ellipsis-horizontal" onPress={onDelete} />
         )}
       </View>
     </View>

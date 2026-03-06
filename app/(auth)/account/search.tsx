@@ -10,9 +10,7 @@ import {
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
-import { BlurView } from 'expo-blur';
+
 import {
   searchTransactions,
   type TransactionDisplay,
@@ -26,6 +24,7 @@ import { DateSectionHeader } from '../../../src/presentation/components/account/
 import { TokenSearchBar } from '../../../src/presentation/components/transaction/TokenSearchBar';
 import { SearchSuggestions } from '../../../src/presentation/components/transaction/SearchSuggestions';
 import { useTagsStore } from '../../../src/stores/tagsStore';
+import { GlassButton } from '../../../src/presentation/components/atoms/GlassButton';
 
 // ---------------------------------------------------------------------------
 // Types for mixed FlashList data
@@ -256,11 +255,6 @@ export default function AccountSearchScreen() {
   // ---- Render ----
 
   const listData = hasSearched ? buildListData(results) : [];
-  const glass = isLiquidGlassAvailable();
-
-  const dismissIcon = (
-    <Ionicons name="close" size={18} color={colors.textPrimary} />
-  );
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.pageBackground }}>
@@ -279,19 +273,7 @@ export default function AccountSearchScreen() {
               noHorizontalMargin
             />
           </View>
-          <View style={{ borderRadius: 50, overflow: 'hidden' }}>
-            <Pressable onPress={() => router.back()} hitSlop={4}>
-              {glass ? (
-                <GlassView isInteractive style={{ borderRadius: 50, padding: 13 }}>
-                  {dismissIcon}
-                </GlassView>
-              ) : (
-                <BlurView tint="systemChromeMaterial" intensity={100} style={{ borderRadius: 50, padding: 13 }}>
-                  {dismissIcon}
-                </BlurView>
-              )}
-            </Pressable>
-          </View>
+          <GlassButton icon="close" iconSize={18} onPress={() => router.back()} hitSlop={4} />
         </View>
         {searchFocused && (
           <SearchSuggestions

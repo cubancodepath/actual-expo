@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
-import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, {
@@ -22,6 +20,7 @@ import { Amount } from '../../../src/presentation/components/atoms/Amount';
 import { Button } from '../../../src/presentation/components/atoms/Button';
 import { IconButton } from '../../../src/presentation/components/atoms/IconButton';
 import { CompactCurrencyInput, type CompactCurrencyInputRef } from '../../../src/presentation/components/atoms/CompactCurrencyInput';
+import { GlassButton } from '../../../src/presentation/components/atoms/GlassButton';
 
 type SourceEntry = {
   id: string;
@@ -32,27 +31,6 @@ type SourceEntry = {
 };
 
 type MoveDirection = 'to' | 'from';
-
-const glass = isLiquidGlassAvailable();
-
-function GlassCloseButton({ onPress, color }: { onPress: () => void; color: string }) {
-  const icon = <Ionicons name="close" size={20} color={color} />;
-  return (
-    <View style={{ borderRadius: 50, overflow: 'hidden' }}>
-      <Pressable onPress={onPress} hitSlop={8}>
-        {glass ? (
-          <GlassView isInteractive style={{ borderRadius: 50, width: 30, height: 30, alignItems: 'center', justifyContent: 'center' }}>
-            {icon}
-          </GlassView>
-        ) : (
-          <BlurView tint="systemChromeMaterial" intensity={100} style={{ width: 30, height: 30, alignItems: 'center', justifyContent: 'center' }}>
-            {icon}
-          </BlurView>
-        )}
-      </Pressable>
-    </View>
-  );
-}
 
 function SourceRow({
   source,
@@ -229,6 +207,16 @@ export default function MoveMoneyScreen() {
     : balanceCents - totalAmount;
 
 
+  // Open picker after mount transition completes
+  const [didAutoOpen, setDidAutoOpen] = useState(false);
+  useEffect(() => {
+    if (!didAutoOpen && sources.length === 0) {
+      setDidAutoOpen(true);
+      const timer = setTimeout(() => handleAddCategory(), 500);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
   // Pick up category selected from picker form sheet
   useEffect(() => {
     if (coverTarget) {
@@ -307,7 +295,7 @@ export default function MoveMoneyScreen() {
       >
         {/* Close button — top right */}
         <View style={{ position: 'absolute', top: 16, right: spacing.md }}>
-          <GlassCloseButton onPress={() => router.back()} color={headerText} />
+          <GlassButton icon="close" onPress={() => router.back()} color={headerText} />
         </View>
 
         <Text variant="headingSm" color={headerText} align="center">

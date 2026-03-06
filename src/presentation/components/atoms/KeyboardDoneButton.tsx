@@ -1,17 +1,15 @@
-import { Keyboard, Pressable } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Keyboard } from 'react-native';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
-import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
-import { BlurView } from 'expo-blur';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useKeyboardHeight } from '../../hooks/useKeyboardHeight';
+import { GlassButton } from './GlassButton';
 
 /**
  * Floating glass/blur checkmark button that appears above the keyboard
  * and dismisses it on press. Drop-in — no props needed.
  */
 export function KeyboardDoneButton() {
-  const { colors, spacing, borderRadius: br } = useTheme();
+  const { spacing } = useTheme();
   const { height: keyboardHeight, visible } = useKeyboardHeight();
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -19,12 +17,6 @@ export function KeyboardDoneButton() {
   }));
 
   if (!visible) return null;
-
-  const pillStyle = {
-    borderRadius: br.full,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-  };
 
   return (
     <Animated.View
@@ -38,21 +30,7 @@ export function KeyboardDoneButton() {
         animatedStyle,
       ]}
     >
-      <Pressable onPress={() => Keyboard.dismiss()}>
-        {isLiquidGlassAvailable() ? (
-          <GlassView isInteractive style={pillStyle}>
-            <Ionicons name="checkmark" size={18} color={colors.textPrimary} />
-          </GlassView>
-        ) : (
-          <BlurView
-            tint="systemChromeMaterial"
-            intensity={100}
-            style={{ ...pillStyle, overflow: 'hidden' }}
-          >
-            <Ionicons name="checkmark" size={18} color={colors.textPrimary} />
-          </BlurView>
-        )}
-      </Pressable>
+      <GlassButton icon="checkmark" iconSize={18} onPress={() => Keyboard.dismiss()} />
     </Animated.View>
   );
 }

@@ -32,6 +32,8 @@ interface CurrencyInputProps {
   autoFocus?: boolean;
   /** Additional style for the container */
   style?: ViewStyle;
+  /** Override the amount text color (defaults to expense/income semantic color) */
+  color?: string;
 }
 
 /** Max value: $999,999.99 = 99999999 cents */
@@ -58,6 +60,7 @@ export function CurrencyInput({
   type = 'expense',
   autoFocus = false,
   style,
+  color: colorOverride,
 }: CurrencyInputProps) {
   const theme = useTheme();
   const styles = useThemedStyles(createStyles);
@@ -88,7 +91,7 @@ export function CurrencyInput({
     opacity: cursorOpacity.value,
   }));
 
-  const amountColor = type === 'expense' ? theme.colors.negative : theme.colors.positive;
+  const amountColor = colorOverride ?? (type === 'expense' ? theme.colors.negative : theme.colors.positive);
   const prefix = type === 'expense' ? '-$' : '$';
 
   function handleChangeText(text: string) {

@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, View } from 'react-native';
+import { Alert, Pressable, ScrollView, useColorScheme, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { useAccountsStore } from '../../../src/stores/accountsStore';
 import { useTransactionsStore } from '../../../src/stores/transactionsStore';
 import { useCategoriesStore } from '../../../src/stores/categoriesStore';
@@ -11,7 +10,8 @@ import { addTransaction, getTransactionById, getChildTransactions, deleteTransac
 import { batchMessages } from '../../../src/sync';
 import { extractTagsFromNotes } from '../../../src/tags';
 import { todayStr, todayInt, strToInt, intToStr } from '../../../src/lib/date';
-import { useTheme, useThemedStyles } from '../../../src/presentation/providers/ThemeProvider';
+import { withOpacity } from '../../../src/lib/colors';
+import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
 import { Button } from '../../../src/presentation/components/atoms/Button';
 import { KeyboardDoneButton } from '../../../src/presentation/components/atoms/KeyboardDoneButton';
 import { Banner } from '../../../src/presentation/components/molecules/Banner';
@@ -20,8 +20,9 @@ import { TypeToggle, type TransactionType } from '../../../src/presentation/comp
 import { DetailRow } from '../../../src/presentation/components/transaction/DetailRow';
 import { DatePickerField } from '../../../src/presentation/components/transaction/DatePickerField';
 import { NotesField } from '../../../src/presentation/components/transaction/NotesField';
+import { Text } from '../../../src/presentation/components/atoms/Text';
+import { GlassButton } from '../../../src/presentation/components/atoms/GlassButton';
 import { ClearedToggle } from '../../../src/presentation/components/transaction/ClearedToggle';
-import type { Theme } from '../../../src/theme';
 
 export default function NewTransactionScreen() {
   const { accountId, transactionId } = useLocalSearchParams<{
@@ -30,8 +31,9 @@ export default function NewTransactionScreen() {
   }>();
   const isEdit = !!transactionId;
   const router = useRouter();
-  const theme = useTheme();
-  const styles = useThemedStyles(createStyles);
+  const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const { accounts, load: loadAccounts } = useAccountsStore();
   const { add, update, delete_ } = useTransactionsStore();
   const { groups, load: loadCategories } = useCategoriesStore();
@@ -300,169 +302,198 @@ export default function NewTransactionScreen() {
     ]);
   }
 
+  // ── Header colors based on transaction type ──
+  const isExpense = type === 'expense';
+  const headerBg = isExpense
+    ? (isDark ? withOpacity(colors.negative, 0.18) : colors.errorBackground)
+    : (isDark ? withOpacity(colors.positive, 0.18) : colors.successBackground);
+  const headerText = isExpense
+    ? (isDark ? colors.negative : colors.errorText)
+    : (isDark ? colors.positive : colors.successText);
+
+  const cardStyle = {
+    backgroundColor: colors.cardBackground,
+    borderRadius: br.lg,
+    borderWidth: bw.thin,
+    borderColor: colors.cardBorder,
+    overflow: 'hidden' as const,
+  };
+
+  const dividerStyle = {
+    height: bw.thin,
+    backgroundColor: colors.divider,
+    marginHorizontal: spacing.lg,
+  };
+
   return (
     <>
-      <Stack.Screen
-        options={{
-          title: isEdit ? 'Edit Transaction' : 'New Transaction',
-          headerRight: () => (
-            <Pressable onPress={() => router.dismiss()} hitSlop={8}>
-              <Ionicons name="close" size={24} color={theme.colors.textSecondary} />
-            </Pressable>
-          ),
-        }}
-      />
+      <Stack.Screen options={{ headerShown: false }} />
       <ScrollView
-        style={styles.flex}
-        contentContainerStyle={styles.container}
+        style={{ flex: 1, backgroundColor: colors.pageBackground }}
+        contentContainerStyle={{ paddingBottom: spacing.xxxl }}
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets
       >
-        <TypeToggle type={type} onChangeType={setType} />
+        {/* ── Colored header ── */}
+        <View
+          style={{
+            backgroundColor: headerBg,
+            paddingTop: 56,
+            paddingBottom: spacing.xxxl,
+            paddingHorizontal: spacing.lg,
+            borderBottomLeftRadius: br.lg,
+            borderBottomRightRadius: br.lg,
+            alignItems: 'center',
+            gap: spacing.md,
+          }}
+        >
+          {/* Close button — top left */}
+          <View style={{ position: 'absolute', top: 16, left: spacing.md }}>
+            <GlassButton icon="close" onPress={() => router.dismiss()} />
+          </View>
 
-        <CurrencyInput
-          value={cents}
-          onChangeValue={(v) => { setCents(v); setError(null); }}
-          type={type}
-          autoFocus={!isEdit}
-        />
+          {/* Title — centered */}
+          <View style={{ position: 'absolute', top: 24, left: 0, right: 0, alignItems: 'center', pointerEvents: 'none' }}>
+            <Text variant="body" color={headerText} style={{ fontWeight: '600' }}>
+              {isEdit ? 'Edit Transaction' : 'Add Transaction'}
+            </Text>
+          </View>
 
-        {/* Details card */}
-        <View style={styles.card}>
-          <DetailRow
-            icon="wallet-outline"
-            label={acctName}
-            placeholder="Account"
-            onPress={() => router.push({ pathname: './account-picker', params: { selectedId: acctId ?? '' } })}
+          <View style={{ width: 180 }}>
+            <TypeToggle type={type} onChangeType={setType} />
+          </View>
+
+          <CurrencyInput
+            value={cents}
+            onChangeValue={(v) => { setCents(v); setError(null); }}
+            type={type}
+            autoFocus={!isEdit}
+            color={headerText}
+            style={{ paddingVertical: spacing.sm }}
           />
-          <View style={styles.cardDivider} />
-
-          <DetailRow
-            icon="person-outline"
-            label={payeeName}
-            placeholder="Payee"
-            onPress={() => router.push({ pathname: './payee-picker', params: { selectedId: payeeId ?? '', accountId: acctId ?? '' } })}
-          />
-          <View style={styles.cardDivider} />
-
-          <DetailRow
-            icon={isSplit ? 'git-branch-outline' : 'pricetag-outline'}
-            label={isSplit ? `Split (${splitCategories!.length} categories)` : (categoryId ? categoryName : '')}
-            placeholder="Category"
-            onPress={() => {
-              if (isSplit) {
-                router.push({
-                  pathname: './split',
-                  params: {
-                    amount: String(cents),
-                    payeeId: payeeId ?? '',
-                    payeeName,
-                    transactionId: transactionId ?? '',
-                  },
-                });
-              } else {
-                const month = dateStr.slice(0, 7);
-                router.push({
-                  pathname: './category-picker',
-                  params: {
-                    month,
-                    selectedId: categoryId ?? '',
-                    amount: String(cents),
-                    payeeId: payeeId ?? '',
-                    payeeName,
-                    transactionId: transactionId ?? '',
-                  },
-                });
-              }
-            }}
-          />
-          <View style={styles.cardDivider} />
-
-          <DatePickerField
-            dateInt={dateInt}
-            dateStr={dateStr}
-            onDateChange={(newInt, newStr) => { setDateInt(newInt); setDateStr(newStr); }}
-          />
-          <View style={styles.cardDivider} />
-
-          <NotesField value={notes} onChangeText={setNotes} />
-          <View style={styles.cardDivider} />
-
-          <DetailRow
-            icon="pricetags-outline"
-            label={
-              extractTagsFromNotes(notes).length > 0
-                ? extractTagsFromNotes(notes).map((t) => `#${t}`).join(', ')
-                : ''
-            }
-            placeholder="Tags"
-            onPress={() => {
-              router.push({
-                pathname: './tags',
-                params: { mode: 'picker', currentNotes: notes },
-              });
-            }}
-          />
-          <View style={styles.cardDivider} />
-
-          <ClearedToggle value={cleared} onValueChange={setCleared} />
         </View>
 
+        {/* ── Main details card (overlaps header) ── */}
+        <View style={{ marginTop: -20, zIndex: 1, paddingHorizontal: spacing.lg }}>
+          <View style={cardStyle}>
+            <DetailRow
+              icon="wallet-outline"
+              label={acctName}
+              placeholder="Account"
+              onPress={() => router.push({ pathname: './account-picker', params: { selectedId: acctId ?? '' } })}
+            />
+            <View style={dividerStyle} />
+
+            <DetailRow
+              icon="person-outline"
+              label={payeeName}
+              placeholder="Payee"
+              onPress={() => router.push({ pathname: './payee-picker', params: { selectedId: payeeId ?? '', accountId: acctId ?? '' } })}
+            />
+            <View style={dividerStyle} />
+
+            <DetailRow
+              icon={isSplit ? 'git-branch-outline' : 'pricetag-outline'}
+              label={isSplit ? `Split (${splitCategories!.length} categories)` : (categoryId ? categoryName : '')}
+              placeholder="Category"
+              onPress={() => {
+                if (isSplit) {
+                  router.push({
+                    pathname: './split',
+                    params: {
+                      amount: String(cents),
+                      payeeId: payeeId ?? '',
+                      payeeName,
+                      transactionId: transactionId ?? '',
+                    },
+                  });
+                } else {
+                  const month = dateStr.slice(0, 7);
+                  router.push({
+                    pathname: './category-picker',
+                    params: {
+                      month,
+                      selectedId: categoryId ?? '',
+                      amount: String(cents),
+                      payeeId: payeeId ?? '',
+                      payeeName,
+                      transactionId: transactionId ?? '',
+                    },
+                  });
+                }
+              }}
+            />
+            <View style={dividerStyle} />
+
+            <DatePickerField
+              dateInt={dateInt}
+              dateStr={dateStr}
+              onDateChange={(newInt, newStr) => { setDateInt(newInt); setDateStr(newStr); }}
+            />
+          </View>
+        </View>
+
+        {/* ── Notes card ── */}
+        <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.md }}>
+          <View style={cardStyle}>
+            <NotesField value={notes} onChangeText={setNotes} />
+          </View>
+        </View>
+
+        {/* ── Status card (cleared + tags) ── */}
+        <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.md }}>
+          <View style={cardStyle}>
+            <ClearedToggle value={cleared} onValueChange={setCleared} />
+            <View style={dividerStyle} />
+            <DetailRow
+              icon="pricetags-outline"
+              label={
+                extractTagsFromNotes(notes).length > 0
+                  ? extractTagsFromNotes(notes).map((t) => `#${t}`).join(', ')
+                  : ''
+              }
+              placeholder="Tags"
+              onPress={() => {
+                router.push({
+                  pathname: './tags',
+                  params: { mode: 'picker', currentNotes: notes },
+                });
+              }}
+            />
+          </View>
+        </View>
+
+        {/* ── Error banner ── */}
         {error && (
-          <Banner message={error} variant="error" onDismiss={() => setError(null)} />
+          <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.md }}>
+            <Banner message={error} variant="error" onDismiss={() => setError(null)} />
+          </View>
         )}
 
-        <Button
-          title={isEdit ? 'Save Changes' : 'Add Transaction'}
-          onPress={handleSave}
-          size="lg"
-          loading={loading}
-          disabled={cents === 0 || (!isEdit && !acctId)}
-          style={styles.submitButton}
-        />
-
-        {isEdit && (
+        {/* ── Action buttons ── */}
+        <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.xl }}>
           <Button
-            title="Delete Transaction"
-            icon="trash-outline"
-            variant="danger"
+            title={isEdit ? 'Save Changes' : 'Add Transaction'}
+            onPress={handleSave}
             size="lg"
-            onPress={handleDelete}
-            style={styles.deleteButton}
+            loading={loading}
+            disabled={cents === 0 || (!isEdit && !acctId)}
           />
-        )}
+
+          {isEdit && (
+            <Button
+              title="Delete Transaction"
+              icon="trash-outline"
+              variant="danger"
+              size="lg"
+              onPress={handleDelete}
+              style={{ marginTop: spacing.xl }}
+            />
+          )}
+        </View>
       </ScrollView>
 
       <KeyboardDoneButton />
     </>
   );
 }
-
-const createStyles = (theme: Theme) => ({
-  flex: {
-    flex: 1,
-    backgroundColor: theme.colors.pageBackground,
-  },
-  container: {
-    padding: theme.spacing.xl,
-    gap: theme.spacing.md,
-  },
-  card: {
-    backgroundColor: theme.colors.cardBackground,
-    borderRadius: theme.borderRadius.lg,
-    borderWidth: theme.borderWidth.default,
-    borderColor: theme.colors.cardBorder,
-    overflow: 'hidden' as const,
-  },
-  cardDivider: {
-    height: theme.borderWidth.default,
-    backgroundColor: theme.colors.divider,
-    marginHorizontal: theme.spacing.lg,
-  },
-  submitButton: {
-    marginTop: theme.spacing.lg,
-  },
-  deleteButton: {
-    marginTop: theme.spacing.xl,
-  },
-});

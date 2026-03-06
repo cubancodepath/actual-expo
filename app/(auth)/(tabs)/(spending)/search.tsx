@@ -10,9 +10,7 @@ import {
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { Stack, useNavigation, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
-import { BlurView } from 'expo-blur';
+
 import {
   searchTransactions,
   type TransactionDisplay,
@@ -28,6 +26,7 @@ import { TokenSearchBar } from '../../../../src/presentation/components/transact
 import { SearchSuggestions } from '../../../../src/presentation/components/transaction/SearchSuggestions';
 import { useTagsStore } from '../../../../src/stores/tagsStore';
 import { usePayeesStore } from '../../../../src/stores/payeesStore';
+import { GlassButton } from '../../../../src/presentation/components/atoms/GlassButton';
 
 // ---------------------------------------------------------------------------
 // Types for mixed FlashList data
@@ -265,11 +264,6 @@ export default function SearchScreen() {
   // ---- Render ----
 
   const listData = hasSearched ? buildListData(results) : [];
-  const glass = isLiquidGlassAvailable();
-
-  const dismissIcon = (
-    <Ionicons name="close" size={18} color={colors.textPrimary} />
-  );
 
   return (
     <>
@@ -288,19 +282,7 @@ export default function SearchScreen() {
               noHorizontalMargin
             />
           </View>
-          <View style={{ borderRadius: 50, overflow: 'hidden' }}>
-            <Pressable onPress={() => router.back()} hitSlop={4}>
-              {glass ? (
-                <GlassView isInteractive style={{ borderRadius: 50, padding: 13 }}>
-                  {dismissIcon}
-                </GlassView>
-              ) : (
-                <BlurView tint="systemChromeMaterial" intensity={100} style={{ borderRadius: 50, padding: 13 }}>
-                  {dismissIcon}
-                </BlurView>
-              )}
-            </Pressable>
-          </View>
+          <GlassButton icon="close" iconSize={18} onPress={() => router.back()} hitSlop={4} />
         </View>
         {searchFocused && (
           <SearchSuggestions

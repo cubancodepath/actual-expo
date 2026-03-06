@@ -18,8 +18,6 @@ import Animated, {
 } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { SymbolView } from "expo-symbols";
-import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
-import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
 import { useCategoriesStore } from "../../../src/stores/categoriesStore";
@@ -28,6 +26,7 @@ import { Text } from "../../../src/presentation/components/atoms/Text";
 import { Amount } from "../../../src/presentation/components/atoms/Amount";
 import { Button } from "../../../src/presentation/components/atoms/Button";
 import { SwipeableRow } from "../../../src/presentation/components/molecules/SwipeableRow";
+import { GlassButton } from "../../../src/presentation/components/atoms/GlassButton";
 import { parseGoalDef } from "../../../src/goals";
 import { describeTemplate } from "../../../src/goals/describe";
 import type { Category, CategoryGroup } from "../../../src/categories/types";
@@ -42,52 +41,6 @@ type GroupSection = {
   data: Category[];
 };
 
-// ---------- Glass close button ----------
-
-const glass = isLiquidGlassAvailable();
-
-function GlassBackButton({
-  onPress,
-  color,
-}: {
-  onPress: () => void;
-  color: string;
-}) {
-  const icon = <Ionicons name="chevron-back" size={24} color={color} />;
-  return (
-    <View style={{ borderRadius: 50, overflow: "hidden" }}>
-      <Pressable onPress={onPress} hitSlop={8}>
-        {glass ? (
-          <GlassView
-            isInteractive
-            style={{
-              borderRadius: 50,
-              width: 36,
-              height: 36,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            {icon}
-          </GlassView>
-        ) : (
-          <BlurView
-            tint="systemChromeMaterial"
-            intensity={100}
-            style={{
-              width: 36,
-              height: 36,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            {icon}
-          </BlurView>
-        )}
-      </Pressable>
-    </View>
-  );
-}
 
 // ---------- Comparative bars: Income vs Goals (parallel) ----------
 
@@ -865,7 +818,7 @@ export default function EditBudgetScreen() {
           zIndex: 20,
         }}
       >
-        <GlassBackButton onPress={() => router.back()} color={headerText} />
+        <GlassButton icon="chevron-back" iconSize={24} onPress={() => router.back()} color={headerText} />
       </View>
     </View>
   );

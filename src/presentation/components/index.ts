@@ -13,6 +13,7 @@ export { CompactCurrencyInput, type CompactCurrencyInputRef } from "./atoms/Comp
 export { TagPill, type TagPillProps } from "./atoms/TagPill";
 export { NotesWithTags, type NotesWithTagsProps } from "./atoms/NotesWithTags";
 export { KeyboardDoneButton } from "./atoms/KeyboardDoneButton";
+export { GlassButton } from "./atoms/GlassButton";
 
 // Molecules
 export { ListItem, type ListItemProps } from "./molecules/ListItem";

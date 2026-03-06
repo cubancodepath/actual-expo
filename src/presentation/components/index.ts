@@ -24,6 +24,7 @@ export { Banner, type BannerProps } from "./molecules/Banner";
 export { SwipeableRow } from "./molecules/SwipeableRow";
 export { KeyboardToolbar } from "./molecules/KeyboardToolbar";
 export { SyncBadge } from "./molecules/SyncBadge";
+export { CategoryPickerList, type CategoryPickerListProps, type GroupedCategory, type PickerCategory } from "./molecules/CategoryPickerList";
 
 // Budget
 export { MonthSelector } from "./budget/MonthSelector";

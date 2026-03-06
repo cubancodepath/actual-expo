@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Pressable, View, type ViewStyle } from 'react-native';
+import Animated, { type AnimatedStyle } from 'react-native-reanimated';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,6 +8,9 @@ import { useTheme } from '../../providers/ThemeProvider';
 import { Text } from './Text';
 
 const glass = isLiquidGlassAvailable();
+
+const AnimatedGlassView = Animated.createAnimatedComponent(GlassView);
+const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
 
 type GlassButtonProps = {
   onPress?: () => void;
@@ -27,6 +31,10 @@ type GlassButtonProps = {
   /** Arbitrary children (overrides icon/label) */
   children?: ReactNode;
   hitSlop?: number;
+  /** Animated style for the outer container (borderRadius, etc.) */
+  animatedContainerStyle?: AnimatedStyle<ViewStyle>;
+  /** Animated style for the inner content (paddingHorizontal, etc.) */
+  animatedInnerStyle?: AnimatedStyle<ViewStyle>;
 };
 
 const SIZE = 48;
@@ -42,6 +50,8 @@ export function GlassButton({
   style,
   children,
   hitSlop = 8,
+  animatedContainerStyle,
+  animatedInnerStyle,
 }: GlassButtonProps) {
   const { colors, spacing, borderRadius: br } = useTheme();
   const iconColor = colorProp ?? colors.textPrimary;
@@ -85,6 +95,8 @@ export function GlassButton({
         justifyContent: 'center',
       };
 
+  const hasAnimatedStyles = animatedContainerStyle || animatedInnerStyle;
+
   if (variant === 'tinted') {
     return (
       <View style={[{ borderRadius: isPill ? br.full : SIZE / 2, overflow: 'hidden' }, style]}>
@@ -105,6 +117,24 @@ export function GlassButton({
 
   // Glass variant
   const radius = isPill ? br.full : SIZE / 2;
+
+  if (hasAnimatedStyles) {
+    return (
+      <Animated.View style={[{ borderRadius: radius, overflow: 'hidden' }, style, animatedContainerStyle]}>
+        <Pressable onPress={onPress} hitSlop={hitSlop}>
+          {glass ? (
+            <AnimatedGlassView isInteractive style={[{ borderRadius: radius, ...innerStyle }, animatedInnerStyle]}>
+              {content}
+            </AnimatedGlassView>
+          ) : (
+            <AnimatedBlurView tint="systemChromeMaterial" intensity={100} style={[innerStyle, animatedInnerStyle]}>
+              {content}
+            </AnimatedBlurView>
+          )}
+        </Pressable>
+      </Animated.View>
+    );
+  }
 
   return (
     <View style={[{ borderRadius: radius, overflow: 'hidden' }, style]}>

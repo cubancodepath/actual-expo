@@ -12,11 +12,31 @@ interface AddTransactionButtonProps {
   collapsed?: SharedValue<boolean>;
 }
 
+const SIZE = 48;
+const ICON_SIZE = 22;
 const TIMING = { duration: 200 };
 
 export function AddTransactionButton({ accountId, bottom = 100, collapsed }: AddTransactionButtonProps) {
   const router = useRouter();
-  const { colors } = useTheme();
+  const { colors, spacing, borderRadius: br } = useTheme();
+
+  // Pill padding when expanded, circular padding when collapsed
+  const circularPadding = (SIZE - ICON_SIZE) / 2;
+
+  const containerStyle = useAnimatedStyle(() => {
+    const isCollapsed = collapsed ? collapsed.value : false;
+    return {
+      borderRadius: withTiming(isCollapsed ? SIZE / 2 : br.full, TIMING),
+    };
+  });
+
+  const innerStyle = useAnimatedStyle(() => {
+    const isCollapsed = collapsed ? collapsed.value : false;
+    return {
+      paddingHorizontal: withTiming(isCollapsed ? circularPadding : spacing.lg, TIMING),
+      gap: withTiming(isCollapsed ? 0 : spacing.xs, TIMING),
+    };
+  });
 
   const labelStyle = useAnimatedStyle(() => {
     const isCollapsed = collapsed ? collapsed.value : false;
@@ -31,8 +51,10 @@ export function AddTransactionButton({ accountId, bottom = 100, collapsed }: Add
     <View style={{ position: "absolute", bottom, right: 20 }}>
       <GlassButton
         onPress={() => router.push({ pathname: "/(auth)/transaction/new", params: accountId ? { accountId } : undefined })}
+        animatedContainerStyle={containerStyle}
+        animatedInnerStyle={innerStyle}
       >
-        <Ionicons name="add" size={22} color={colors.textPrimary} />
+        <Ionicons name="add" size={ICON_SIZE} color={colors.textPrimary} />
         <Animated.View style={[{ overflow: "hidden" }, labelStyle]}>
           <Text variant="body" color={colors.textPrimary} style={{ fontWeight: "600" }} numberOfLines={1}>
             Transaction

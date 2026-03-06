@@ -123,13 +123,13 @@ export function TransactionRow({
           <View style={styles.metaRow}>
             {item.categoryName ? (
               <View style={styles.categoryPill}>
-                <Text variant="captionSm" color={colors.textSecondary}>
+                <Text variant="captionSm" color={colors.textSecondary} numberOfLines={1}>
                   {item.categoryName}
                 </Text>
               </View>
             ) : <View />}
             {showAccountName && item.accountName && (
-              <Text variant="captionSm" color={colors.textMuted}>
+              <Text variant="captionSm" color={colors.textMuted} numberOfLines={1} style={{ flexShrink: 0 }}>
                 {item.accountName}
               </Text>
             )}
@@ -278,11 +278,14 @@ const createStyles = (theme: Theme) => ({
     justifyContent: 'space-between' as const,
     alignItems: 'center' as const,
     marginTop: theme.spacing.xs,
+    gap: theme.spacing.sm,
   },
   categoryPill: {
     backgroundColor: theme.colors.buttonSecondaryBackground,
     paddingHorizontal: theme.spacing.sm,
     paddingVertical: theme.spacing.xxs,
     borderRadius: theme.borderRadius.full,
+    flexShrink: 1,
+    maxWidth: '70%' as unknown as number,
   },
 });

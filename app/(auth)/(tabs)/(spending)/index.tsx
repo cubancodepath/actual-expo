@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useMemo } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useState } from 'react';
 import { useSharedValue } from 'react-native-reanimated';
 import {
   ActivityIndicator,
@@ -13,6 +13,7 @@ import {
   deleteTransaction,
   duplicateTransaction,
   getAllTransactions,
+  getUnclearedCount,
   toggleCleared,
   updateTransaction,
   type TransactionDisplay,
@@ -21,7 +22,8 @@ import { useAccountsStore } from '../../../../src/stores/accountsStore';
 import { usePrivacyStore } from '../../../../src/stores/privacyStore';
 import { useTabBarStore } from '../../../../src/stores/tabBarStore';
 import { useTheme } from '../../../../src/presentation/providers/ThemeProvider';
-import { EmptyState } from '../../../../src/presentation/components';
+import { EmptyState, Text } from '../../../../src/presentation/components';
+import { UnclearedPill } from '../../../../src/presentation/components/transaction/UnclearedPill';
 import { TransactionRow } from '../../../../src/presentation/components/account/TransactionRow';
 import { DateSectionHeader } from '../../../../src/presentation/components/account/DateSectionHeader';
 import { AddTransactionButton } from '../../../../src/presentation/components/molecules/AddTransactionButton';
@@ -43,6 +45,7 @@ export default function SpendingScreen() {
   const { privacyMode, toggle: togglePrivacy } = usePrivacyStore();
   const setTabBarHidden = useTabBarStore((s) => s.setHidden);
   const tags = useTagsStore((s) => s.tags);
+  const [unclearedCount, setUnclearedCount] = useState(0);
 
   // ---- Pagination ----
   const fetchTransactions = useCallback(
@@ -102,6 +105,7 @@ export default function SpendingScreen() {
     } else {
       silentRefresh();
     }
+    getUnclearedCount().then(setUnclearedCount);
     return () => { resetSelection(); };
   }, [loadAll, silentRefresh, resetSelection]));
 
@@ -226,7 +230,18 @@ export default function SpendingScreen() {
         contentInsetAdjustmentBehavior="automatic"
         ListHeaderComponent={
           !isSelectMode ? (
-            <Stack.Screen.Title large>Spending</Stack.Screen.Title>
+            <>
+              <Stack.Screen.Title large>Spending</Stack.Screen.Title>
+              {unclearedCount > 0 && (
+                <UnclearedPill
+                  count={unclearedCount}
+                  onPress={() => router.push({
+                    pathname: '/(auth)/(tabs)/(spending)/search',
+                    params: { initialFilter: 'uncleared' },
+                  })}
+                />
+              )}
+            </>
           ) : null
         }
         renderItem={({ item }) => {

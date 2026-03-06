@@ -689,6 +689,24 @@ export async function getUncategorizedStats(): Promise<{ count: number; total: n
   return { count: row?.count ?? 0, total: row?.total ?? 0 };
 }
 
+/** Count of uncleared (and non-reconciled) transactions across all accounts, or for a specific account. */
+export async function getUnclearedCount(accountId?: string): Promise<number> {
+  const conditions = ['t.tombstone = 0', 't.isChild = 0', 't.cleared = 0', 't.reconciled = 0'];
+  const params: string[] = [];
+  if (accountId) {
+    conditions.push('t.acct = ?');
+    params.push(accountId);
+  }
+  const row = await first<{ count: number }>(
+    `SELECT COUNT(*) AS count
+     FROM transactions t
+     JOIN accounts a ON a.id = t.acct AND a.tombstone = 0
+     WHERE ${conditions.join(' AND ')}`,
+    params,
+  );
+  return row?.count ?? 0;
+}
+
 // ---------------------------------------------------------------------------
 // Split transaction queries
 // ---------------------------------------------------------------------------

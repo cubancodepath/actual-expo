@@ -100,7 +100,7 @@ const PAGE_SIZE = 25;
 // ---------------------------------------------------------------------------
 
 export default function AccountSearchScreen() {
-  const { accountId, accountName } = useLocalSearchParams<{ accountId: string; accountName: string }>();
+  const { accountId, accountName, initialFilter } = useLocalSearchParams<{ accountId: string; accountName: string; initialFilter?: string }>();
   const navigation = useNavigation();
   const router = useRouter();
   const { colors } = useTheme();
@@ -110,8 +110,13 @@ export default function AccountSearchScreen() {
   // Search state
   const searchInputRef = useRef<TextInput>(null);
   const [searchText, setSearchText] = useState('');
-  const [searchFocused, setSearchFocused] = useState(true);
-  const [tokens, setTokens] = useState<SearchToken[]>([]);
+  const [searchFocused, setSearchFocused] = useState(!initialFilter);
+  const [tokens, setTokens] = useState<SearchToken[]>(() => {
+    if (initialFilter === 'uncleared' || initialFilter === 'cleared' || initialFilter === 'reconciled' || initialFilter === 'unreconciled') {
+      return [{ type: 'status', value: initialFilter }];
+    }
+    return [];
+  });
 
   // Results
   const [results, setResults] = useState<TransactionDisplay[]>([]);
@@ -120,9 +125,21 @@ export default function AccountSearchScreen() {
   const [hasMore, setHasMore] = useState(true);
   const offsetRef = useRef(0);
 
-  // Auto-focus on mount
+  // Auto-focus on mount (skip if initial filter — auto-search instead)
   useEffect(() => {
-    setTimeout(() => searchInputRef.current?.focus(), 100);
+    if (initialFilter) {
+      const params = buildSearchParams(
+        tokens.length > 0 ? tokens : [{ type: 'status', value: initialFilter as any }],
+      );
+      searchTransactions({ accountId, ...params, limit: PAGE_SIZE, offset: 0 }).then(txns => {
+        setResults(txns);
+        setHasSearched(true);
+        setHasMore(txns.length === PAGE_SIZE);
+        offsetRef.current = txns.length;
+      });
+    } else {
+      setTimeout(() => searchInputRef.current?.focus(), 100);
+    }
   }, []);
 
   const hasResults = hasSearched && results.length > 0;

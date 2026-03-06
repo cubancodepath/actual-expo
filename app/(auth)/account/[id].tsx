@@ -15,6 +15,7 @@ import {
   duplicateTransaction,
   getClearedBalance,
   getTransactionsForAccount,
+  getUnclearedCount,
   lockTransactions,
   reconcileAccount,
   toggleCleared,
@@ -30,6 +31,7 @@ import { BalanceSummary } from '../../../src/presentation/components/account/Bal
 import { TransactionRow } from '../../../src/presentation/components/account/TransactionRow';
 import { DateSectionHeader } from '../../../src/presentation/components/account/DateSectionHeader';
 import { AddTransactionButton } from '../../../src/presentation/components/molecules/AddTransactionButton';
+import { UnclearedPill } from '../../../src/presentation/components/transaction/UnclearedPill';
 import { usePrefsStore } from '../../../src/stores/prefsStore';
 import { useTagsStore } from '../../../src/stores/tagsStore';
 import {
@@ -52,6 +54,7 @@ export default function AccountTransactionsScreen() {
   const otherAccounts = accounts.filter(a => a.id !== id && !a.closed);
 
   const [clearedBalance, setClearedBalance] = useState(0);
+  const [unclearedCount, setUnclearedCount] = useState(0);
   const { hideReconciled, toggleHideReconciled } = usePrefsStore();
   const tags = useTagsStore((s) => s.tags);
   const [showReconcile, setShowReconcile] = useState(false);
@@ -71,15 +74,17 @@ export default function AccountTransactionsScreen() {
     loadAll, silentRefresh, loadMore, refreshIdRef, hasLoaded, refreshControlProps,
   } = useTransactionPagination({ fetchTransactions });
 
-  // Load cleared balance alongside transactions
+  // Load cleared balance + uncleared count alongside transactions
   const loadWithClearedBalance = useCallback(async () => {
-    const [, cleared] = await Promise.all([loadAll(), getClearedBalance(id)]);
+    const [, cleared, uncleared] = await Promise.all([loadAll(), getClearedBalance(id), getUnclearedCount(id)]);
     setClearedBalance(cleared);
+    setUnclearedCount(uncleared);
   }, [loadAll, id]);
 
   const silentRefreshWithBalance = useCallback(async () => {
-    const [, cleared] = await Promise.all([silentRefresh(), getClearedBalance(id)]);
+    const [, cleared, uncleared] = await Promise.all([silentRefresh(), getClearedBalance(id), getUnclearedCount(id)]);
     setClearedBalance(cleared);
+    setUnclearedCount(uncleared);
   }, [silentRefresh, id]);
 
   // ---- Selection ----
@@ -276,6 +281,16 @@ export default function AccountTransactionsScreen() {
         balance={account?.balance ?? 0}
         clearedBalance={clearedBalance}
       />
+
+      {unclearedCount > 0 && (
+        <UnclearedPill
+          count={unclearedCount}
+          onPress={() => router.push({
+            pathname: '/(auth)/account/search',
+            params: { accountId: id, accountName: account?.name ?? 'Account', initialFilter: 'uncleared' },
+          })}
+        />
+      )}
 
       {loading ? (
         <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />

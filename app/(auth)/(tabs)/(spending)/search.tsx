@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
-import { Stack, useNavigation, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 
 import {
   searchTransactions,
@@ -101,6 +101,7 @@ const PAGE_SIZE = 25;
 export default function SearchScreen() {
   const navigation = useNavigation();
   const router = useRouter();
+  const { initialFilter } = useLocalSearchParams<{ initialFilter?: string }>();
   const { colors } = useTheme();
   const { accounts } = useAccountsStore();
   const { categories } = useCategoriesStore();
@@ -109,8 +110,13 @@ export default function SearchScreen() {
   // Search state
   const searchInputRef = useRef<TextInput>(null);
   const [searchText, setSearchText] = useState('');
-  const [searchFocused, setSearchFocused] = useState(true);
-  const [tokens, setTokens] = useState<SearchToken[]>([]);
+  const [searchFocused, setSearchFocused] = useState(!initialFilter);
+  const [tokens, setTokens] = useState<SearchToken[]>(() => {
+    if (initialFilter === 'uncleared' || initialFilter === 'cleared' || initialFilter === 'reconciled' || initialFilter === 'unreconciled') {
+      return [{ type: 'status', value: initialFilter }];
+    }
+    return [];
+  });
 
   // Results
   const [results, setResults] = useState<TransactionDisplay[]>([]);
@@ -119,9 +125,22 @@ export default function SearchScreen() {
   const [hasMore, setHasMore] = useState(true);
   const offsetRef = useRef(0);
 
-  // Auto-focus on mount
+  // Auto-focus on mount (skip if we have an initial filter — we'll auto-search instead)
   useEffect(() => {
-    setTimeout(() => searchInputRef.current?.focus(), 100);
+    if (initialFilter) {
+      // Auto-execute search with the initial filter
+      const params = buildSearchParams(
+        tokens.length > 0 ? tokens : [{ type: 'status', value: initialFilter as any }],
+      );
+      searchTransactions({ ...params, limit: PAGE_SIZE, offset: 0 }).then(txns => {
+        setResults(txns);
+        setHasSearched(true);
+        setHasMore(txns.length === PAGE_SIZE);
+        offsetRef.current = txns.length;
+      });
+    } else {
+      setTimeout(() => searchInputRef.current?.focus(), 100);
+    }
   }, []);
 
   const hasResults = hasSearched && results.length > 0;

@@ -103,10 +103,29 @@ export default function AuthLayout() {
         name="budget/cover-overspent"
         options={{
           ...screen,
-          title: "Cover Overspending",
+          title: "Overspent Categories",
           presentation: "formSheet",
           sheetAllowedDetents: "fitToContents",
           contentStyle: { backgroundColor: theme.colors.headerBackground },
+        }}
+      />
+      <Stack.Screen
+        name="budget/cover-source"
+        options={{
+          headerShown: false,
+          presentation: "formSheet",
+          sheetAllowedDetents: [1.0],
+          contentStyle: { backgroundColor: theme.colors.pageBackground },
+        }}
+      />
+      <Stack.Screen
+        name="budget/cover-category-picker"
+        options={{
+          ...screen,
+          title: "Select Category",
+          presentation: "formSheet",
+          sheetAllowedDetents: [0.5, 1.0],
+          contentStyle: { backgroundColor: theme.colors.pageBackground },
         }}
       />
       <Stack.Screen

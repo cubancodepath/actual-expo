@@ -77,7 +77,7 @@ function filterBudgetGroups(groups: BudgetGroup[], filter: BudgetFilter): Budget
 export default function BudgetScreen() {
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const router = useRouter();
-  const { month, data, loading, load, setAmount, setCarryover, transfer, resetHold, coverTarget, setCoverTarget } = useBudgetStore();
+  const { month, data, loading, load, setAmount, setCarryover, transfer, resetHold } = useBudgetStore();
   const { refreshControlProps } = useRefreshControl();
   const { privacyMode, toggle: togglePrivacy } = usePrivacyStore();
   const { showProgressBars, toggleProgressBars } = usePrefsStore();
@@ -247,26 +247,8 @@ export default function BudgetScreen() {
 
 
   function handleOverspentPress() {
-    if (overspentCount === 1) {
-      const cat = overspentCategories[0];
-      setMoveMoneyTarget({ catId: cat.id, catName: cat.name, balance: cat.balance, mode: 'cover' });
-    } else {
-      router.push('/(auth)/budget/cover-overspent');
-    }
+    router.push('/(auth)/budget/cover-overspent');
   }
-
-  // -- Cover target from form sheet --
-  useEffect(() => {
-    if (coverTarget) {
-      setMoveMoneyTarget({
-        catId: coverTarget.catId,
-        catName: coverTarget.catName,
-        balance: coverTarget.balance,
-        mode: 'cover',
-      });
-      setCoverTarget(null);
-    }
-  }, [coverTarget]);
 
   // -- Render helpers --
   function renderSectionHeader({ section }: { section: BudgetSection }) {

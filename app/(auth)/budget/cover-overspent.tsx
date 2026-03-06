@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Pressable, ScrollView, useColorScheme, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
 import { useBudgetStore } from '../../../src/stores/budgetStore';
@@ -16,10 +15,11 @@ type OverspentCategory = {
 };
 
 export default function CoverOverspentScreen() {
-  const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
+  const { colors, spacing, borderRadius: br } = useTheme();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const router = useRouter();
   const data = useBudgetStore((s) => s.data);
-  const setCoverTarget = useBudgetStore((s) => s.setCoverTarget);
 
   const overspentCategories = useMemo<OverspentCategory[]>(() => {
     if (!data) return [];
@@ -32,13 +32,23 @@ export default function CoverOverspentScreen() {
       );
   }, [data]);
 
+  const pillBg = isDark ? colors.buttonSecondaryBackground : colors.cardBackground;
+  const pillBorder = isDark ? colors.divider : colors.cardBorder;
+  const amountBadgeBg = isDark ? '#8a041a' : '#fce8e8';
+  const amountBadgeColor = isDark ? '#ffffff' : '#ab091e';
+
   function handleSelect(cat: OverspentCategory) {
-    setCoverTarget({ catId: cat.id, catName: cat.name, balance: cat.balance });
-    router.back();
+    router.push({
+      pathname: '/(auth)/budget/cover-source',
+      params: { catId: cat.id, catName: cat.name, balance: String(cat.balance) },
+    });
   }
 
   return (
-    <View style={{ backgroundColor: colors.headerBackground, paddingTop: 72 }}>
+    <ScrollView
+      style={{ backgroundColor: colors.headerBackground }}
+      contentContainerStyle={{ paddingTop: 72, paddingBottom: spacing.xl }}
+    >
       <Stack.Screen
         options={{
           headerLeft: () => (
@@ -56,62 +66,63 @@ export default function CoverOverspentScreen() {
       <Text
         variant="bodySm"
         color={colors.textSecondary}
-        style={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.md }}
+        style={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.lg }}
       >
-        Choose a category to cover its overspending.
+        Select category to cover overspending
       </Text>
 
-      <ScrollView>
-        <View
-          style={{
-            marginHorizontal: spacing.lg,
-            borderRadius: br.md,
-            backgroundColor: colors.cardBackground,
-            borderWidth: bw.thin,
-            borderColor: colors.cardBorder,
-            overflow: 'hidden',
-          }}
-        >
-          {overspentCategories.map((cat, index) => (
-            <Pressable
-              key={cat.id}
-              onPress={() => handleSelect(cat)}
-              style={({ pressed }) => [
-                {
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  minHeight: 52,
-                  paddingHorizontal: spacing.lg,
-                  paddingVertical: spacing.md,
-                },
-                index < overspentCategories.length - 1 && {
-                  borderBottomWidth: bw.thin,
-                  borderBottomColor: colors.divider,
-                },
-                pressed && { backgroundColor: colors.inputBackground },
-              ]}
-              accessibilityRole="button"
+      <View
+        style={{
+          paddingHorizontal: spacing.lg,
+          gap: spacing.sm,
+        }}
+      >
+        {overspentCategories.map((cat) => (
+          <Pressable
+            key={cat.id}
+            onPress={() => handleSelect(cat)}
+            style={({ pressed }) => [
+              {
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                minHeight: 44,
+                paddingHorizontal: spacing.md,
+                paddingVertical: spacing.sm,
+                borderRadius: br.full,
+                backgroundColor: pillBg,
+                borderWidth: 1,
+                borderColor: pillBorder,
+              },
+              pressed && { opacity: 0.72 },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel={`Cover overspending for ${cat.name}`}
+          >
+            <View style={{ flex: 1, marginRight: spacing.sm }}>
+              <Text variant="body" color={colors.textPrimary} numberOfLines={1}>
+                {cat.name}
+              </Text>
+            </View>
+
+            <View
+              style={{
+                backgroundColor: amountBadgeBg,
+                borderRadius: br.full,
+                paddingHorizontal: 10,
+                paddingVertical: 3,
+              }}
             >
-              <View style={{ flex: 1 }}>
-                <Text variant="bodyLg" color={colors.textPrimary}>
-                  {cat.name}
-                </Text>
-                <Text variant="captionSm" color={colors.textMuted}>
-                  {cat.groupName}
-                </Text>
-              </View>
-              <Amount value={cat.balance} variant="body" weight="600" />
-              <Ionicons
-                name="chevron-forward"
-                size={16}
-                color={colors.textMuted}
-                style={{ marginLeft: spacing.sm }}
+              <Amount
+                value={cat.balance}
+                variant="captionSm"
+                color={amountBadgeColor}
+                weight="600"
               />
-            </Pressable>
-          ))}
-        </View>
-        <View style={{ height: spacing.xl }} />
-      </ScrollView>
-    </View>
+            </View>
+          </Pressable>
+        ))}
+      </View>
+    </ScrollView>
   );
 }

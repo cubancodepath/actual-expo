@@ -22,7 +22,7 @@ export function SearchBar({
         {
           backgroundColor: colors.inputBackground,
           borderColor: colors.inputBorder,
-          borderRadius: br.md,
+          borderRadius: br.full,
           paddingHorizontal: spacing.md,
           marginHorizontal: spacing.lg,
           marginVertical: spacing.sm,
@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     height: 40,
-    borderWidth: 1,
+    borderWidth: 0,
   },
   input: {
     flex: 1,

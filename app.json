@@ -34,7 +34,8 @@
       "expo-router",
       "expo-secure-store",
       "expo-web-browser",
-      "expo-quick-actions"
+      "expo-quick-actions",
+      "expo-notifications"
     ]
   }
 }

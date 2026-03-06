@@ -124,9 +124,26 @@ export function useTransactionBulkActions({
     await setClearedBulk(selected.map(t => t.id), anyUncleared);
   }, [setTransactions, refreshIdRef]);
 
+  const handleBulkChangeCategory = useCallback(async (categoryId: string | null) => {
+    const ids = new Set(selectedIdsRef.current);
+    if (ids.size === 0) return;
+
+    refreshIdRef.current++;
+    setTransactions(prev => prev.map(t =>
+      ids.has(t.id) ? { ...t, category: categoryId } : t
+    ));
+    resetSelectionRef.current();
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+    for (const txnId of ids) {
+      await updateTransaction(txnId, { category: categoryId });
+    }
+  }, [setTransactions, refreshIdRef]);
+
   return {
     handleBulkDelete,
     handleBulkMove,
     handleBulkToggleCleared,
+    handleBulkChangeCategory,
   };
 }

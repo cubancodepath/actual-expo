@@ -293,7 +293,7 @@ export default function MoveMoneyScreen() {
       >
         {/* Close button — top right */}
         <View style={{ position: 'absolute', top: 16, right: spacing.md }}>
-          <GlassButton icon="close" onPress={() => router.back()} color={headerText} />
+          <GlassButton icon="xmark" onPress={() => router.back()} color={headerText} />
         </View>
 
         <Text variant="headingSm" color={headerText} align="center">

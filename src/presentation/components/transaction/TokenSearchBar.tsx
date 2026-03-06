@@ -28,6 +28,8 @@ function tokenLabel(t: SearchToken): string {
       return `Payee: ${t.payeeName}`;
     case 'tag':
       return `Tag: #${t.tagName}`;
+    case 'uncategorized':
+      return 'Uncategorized';
   }
 }
 

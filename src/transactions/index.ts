@@ -493,6 +493,7 @@ export async function searchTransactions(opts: {
   uncleared?: boolean;
   reconciled?: boolean;
   unreconciled?: boolean;
+  uncategorized?: boolean;
   tagName?: string;
   tagNames?: string[];
   hideReconciled?: boolean;
@@ -519,6 +520,11 @@ export async function searchTransactions(opts: {
   if (opts.payeeId) {
     conditions.push('COALESCE(pm.targetId, t.description) = ?');
     params.push(opts.payeeId);
+  }
+  if (opts.uncategorized) {
+    conditions.push('t.category IS NULL');
+    // Exclude transfers between on-budget accounts (they don't need a category)
+    conditions.push('(p.transfer_acct IS NULL OR tr_acc.offbudget = 1)');
   }
 
   // Tag filter — match #tagName in notes

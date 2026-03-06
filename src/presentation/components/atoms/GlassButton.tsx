@@ -3,7 +3,8 @@ import { Pressable, View, type ViewStyle } from 'react-native';
 import Animated, { type AnimatedStyle } from 'react-native-reanimated';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { BlurView } from 'expo-blur';
-import { Ionicons } from '@expo/vector-icons';
+import { SymbolView } from 'expo-symbols';
+import type { SFSymbol } from 'sf-symbols-typescript';
 import { useTheme } from '../../providers/ThemeProvider';
 import { Text } from './Text';
 
@@ -14,9 +15,9 @@ const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
 
 type GlassButtonProps = {
   onPress?: () => void;
-  /** Icon name from Ionicons */
-  icon?: keyof typeof Ionicons.glyphMap;
-  /** Icon size — defaults to 20 */
+  /** SF Symbol name (e.g. "xmark", "chevron.left") */
+  icon?: SFSymbol;
+  /** Icon size — defaults to 22 */
   iconSize?: number;
   /** Text label (renders pill shape) */
   label?: string;
@@ -42,7 +43,7 @@ const SIZE = 48;
 export function GlassButton({
   onPress,
   icon,
-  iconSize = 20,
+  iconSize = 22,
   label,
   color: colorProp,
   variant = 'glass',
@@ -63,7 +64,7 @@ export function GlassButton({
   // Build inner content
   const content = hasChildren ? children : (
     <>
-      {icon && <Ionicons name={icon} size={iconSize} color={variant === 'tinted' ? colors.primaryText : iconColor} />}
+      {icon && <SymbolView name={icon} size={iconSize} tintColor={variant === 'tinted' ? colors.primaryText : iconColor} />}
       {hasLabel && (
         <Text
           variant="body"

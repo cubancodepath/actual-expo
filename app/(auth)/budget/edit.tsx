@@ -819,7 +819,7 @@ export default function EditBudgetScreen() {
           zIndex: 20,
         }}
       >
-        <GlassButton icon="chevron-back" iconSize={24} onPress={() => router.back()} color={headerText} />
+        <GlassButton icon="chevron.left" iconSize={24} onPress={() => router.back()} color={headerText} />
       </View>
     </View>
   );

@@ -2,19 +2,26 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRefreshControl } from '../../../src/presentation/hooks/useRefreshControl';
 import {
   ActivityIndicator,
+  Alert,
   Keyboard,
   Pressable,
   RefreshControl,
   TextInput,
   View,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { FlashList } from '@shopify/flash-list';
-import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 
 import {
+  deleteTransaction,
+  duplicateTransaction,
   searchTransactions,
+  toggleCleared,
+  updateTransaction,
   type TransactionDisplay,
 } from '../../../src/transactions';
+import { useAccountsStore } from '../../../src/stores/accountsStore';
 import type { SearchToken } from '../../../src/transactions/types';
 import { useCategoriesStore } from '../../../src/stores/categoriesStore';
 import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
@@ -24,7 +31,13 @@ import { DateSectionHeader } from '../../../src/presentation/components/account/
 import { TokenSearchBar } from '../../../src/presentation/components/transaction/TokenSearchBar';
 import { SearchSuggestions } from '../../../src/presentation/components/transaction/SearchSuggestions';
 import { useTagsStore } from '../../../src/stores/tagsStore';
+import { usePickerStore } from '../../../src/stores/pickerStore';
 import { GlassButton } from '../../../src/presentation/components/atoms/GlassButton';
+import {
+  useTransactionSelection,
+  useTransactionBulkActions,
+  useSelectModeHeader,
+} from '../../../src/presentation/hooks/transactionList';
 
 // ---------------------------------------------------------------------------
 // Types for mixed FlashList data
@@ -82,6 +95,7 @@ function buildSearchParams(tkns: SearchToken[]) {
     if (t.type === 'status') params[t.value] = true;
     if (t.type === 'category') params.categoryId = t.categoryId;
     if (t.type === 'tag') params.tagName = t.tagName;
+    if (t.type === 'uncategorized') params.uncategorized = true;
   }
   return params;
 }
@@ -104,6 +118,7 @@ export default function AccountSearchScreen() {
   const navigation = useNavigation();
   const router = useRouter();
   const { colors } = useTheme();
+  const { accounts } = useAccountsStore();
   const { categories } = useCategoriesStore();
   const tags = useTagsStore((s) => s.tags);
 
@@ -124,6 +139,45 @@ export default function AccountSearchScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const offsetRef = useRef(0);
+  const refreshIdRef = useRef(0);
+
+  // ---- Selection ----
+  const {
+    selectedIds, isSelectMode, allCleared, selectedTotal,
+    handleLongPress, enterSelectMode, handleSelectAll, handleDoneSelection, resetSelection,
+  } = useTransactionSelection({ transactions: results });
+
+  const otherAccounts = accounts.filter(a => a.id !== accountId && !a.closed);
+
+  const { handleBulkDelete, handleBulkMove, handleBulkToggleCleared, handleBulkChangeCategory } = useTransactionBulkActions({
+    selectedIds,
+    transactions: results,
+    setTransactions: setResults,
+    refreshIdRef,
+    resetSelection,
+    loadAccounts: () => useAccountsStore.getState().load(),
+  });
+
+  // ---- Bulk category via picker store ----
+  const bulkCategoryPending = useRef(false);
+  const selectedCategory = usePickerStore((s) => s.selectedCategory);
+  const clearPicker = usePickerStore((s) => s.clear);
+
+  useEffect(() => {
+    if (selectedCategory && bulkCategoryPending.current) {
+      bulkCategoryPending.current = false;
+      handleBulkChangeCategory(selectedCategory.id);
+      clearPicker();
+    }
+  }, [selectedCategory]);
+
+  useSelectModeHeader({
+    isSelectMode,
+    selectedCount: selectedIds.size,
+    selectedTotal,
+    onSelectAll: handleSelectAll,
+    onDoneSelection: handleDoneSelection,
+  });
 
   // Auto-focus on mount (skip if initial filter — auto-search instead)
   useEffect(() => {
@@ -146,6 +200,7 @@ export default function AccountSearchScreen() {
 
   // ---- Header ----
   useEffect(() => {
+    if (isSelectMode) return;
     navigation.setOptions({
       title: accountName || 'Account',
       headerRight: undefined,
@@ -154,11 +209,11 @@ export default function AccountSearchScreen() {
           type: 'button' as const,
           label: 'Select',
           disabled: !hasResults,
-          onPress: () => {},
+          onPress: enterSelectMode,
         },
       ],
     });
-  }, [hasResults, accountName]);
+  }, [hasResults, accountName, isSelectMode]);
 
   // ---- Token management ----
 
@@ -269,11 +324,58 @@ export default function AccountSearchScreen() {
     router.push({ pathname: '/(auth)/transaction/new', params: { transactionId: txnId } });
   }
 
+  function handleDelete(txnId: string) {
+    Alert.alert('Delete Transaction', 'Delete this transaction?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          setResults(prev => prev.filter(t => t.id !== txnId));
+          await deleteTransaction(txnId);
+        },
+      },
+    ]);
+  }
+
+  async function handleToggleCleared(txnId: string) {
+    setResults(prev => prev.map(t =>
+      t.id === txnId ? { ...t, cleared: !t.cleared } : t
+    ));
+    await toggleCleared(txnId);
+  }
+
+  async function handleDuplicate(txnId: string) {
+    const original = results.find(t => t.id === txnId);
+    if (!original) return;
+    const newId = await duplicateTransaction(txnId);
+    if (newId) {
+      const clone: TransactionDisplay = { ...original, id: newId, cleared: false, reconciled: false };
+      setResults(prev => {
+        const idx = prev.findIndex(t => t.id === txnId);
+        const next = [...prev];
+        next.splice(idx + 1, 0, clone);
+        return next;
+      });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+  }
+
+  async function handleMove(txnId: string, targetAccountId: string) {
+    setResults(prev => prev.filter(t => t.id !== txnId));
+    await updateTransaction(txnId, { acct: targetAccountId });
+  }
+
+  function handleAddTag(txnId: string) {
+    router.push({ pathname: '/(auth)/transaction/tags', params: { transactionId: txnId, mode: 'direct' } });
+  }
+
   // ---- Render ----
 
   const listData = hasSearched ? buildListData(results) : [];
 
   return (
+    <>
     <View style={{ flex: 1, backgroundColor: colors.pageBackground }}>
       <View style={{ backgroundColor: colors.pageBackground }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, gap: 8 }}>
@@ -290,7 +392,7 @@ export default function AccountSearchScreen() {
               noHorizontalMargin
             />
           </View>
-          <GlassButton icon="close" iconSize={18} onPress={() => router.back()} hitSlop={4} />
+          <GlassButton icon="xmark" onPress={() => router.back()} hitSlop={4} />
         </View>
         {searchFocused && (
           <SearchSuggestions
@@ -318,11 +420,18 @@ export default function AccountSearchScreen() {
             <TransactionRow
               item={item.data}
               onPress={handleEditTransaction}
-              onDelete={handleEditTransaction}
-              onToggleCleared={handleEditTransaction}
+              onDelete={handleDelete}
+              onToggleCleared={handleToggleCleared}
+              onLongPress={handleLongPress}
+              onDuplicate={handleDuplicate}
+              onMove={handleMove}
+              onAddTag={handleAddTag}
               tags={tags}
+              moveAccounts={otherAccounts}
               isFirst={item.isFirst}
               isLast={item.isLast}
+              isSelectMode={isSelectMode}
+              isSelected={selectedIds.has(item.data.id)}
             />
           );
         }}
@@ -348,5 +457,48 @@ export default function AccountSearchScreen() {
         contentContainerStyle={{ paddingBottom: 80, backgroundColor: colors.pageBackground }}
       />
     </View>
+
+    {isSelectMode && (
+      <Stack.Toolbar>
+        <Stack.Toolbar.Button
+          icon={allCleared ? 'circle' : 'checkmark.circle'}
+          onPress={handleBulkToggleCleared}
+        >
+          {allCleared ? 'Unclear' : 'Clear'}
+        </Stack.Toolbar.Button>
+        <Stack.Toolbar.Spacer />
+        <Stack.Toolbar.Menu icon="ellipsis">
+          {otherAccounts.length > 0 && (
+            <Stack.Toolbar.Menu icon="arrow.right.arrow.left" title="Move to...">
+              {otherAccounts.map(acc => (
+                <Stack.Toolbar.MenuAction
+                  key={acc.id}
+                  onPress={() => handleBulkMove(acc.id, acc.name)}
+                >
+                  {acc.name}
+                </Stack.Toolbar.MenuAction>
+              ))}
+            </Stack.Toolbar.Menu>
+          )}
+          <Stack.Toolbar.MenuAction
+            icon="tag"
+            onPress={() => {
+              bulkCategoryPending.current = true;
+              router.push('/(auth)/transaction/category-picker');
+            }}
+          >
+            Set Category
+          </Stack.Toolbar.MenuAction>
+          <Stack.Toolbar.MenuAction
+            icon="trash"
+            destructive
+            onPress={handleBulkDelete}
+          >
+            Delete
+          </Stack.Toolbar.MenuAction>
+        </Stack.Toolbar.Menu>
+      </Stack.Toolbar>
+    )}
+    </>
   );
 }

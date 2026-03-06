@@ -35,7 +35,8 @@ export type SearchToken =
   | { type: 'account'; accountId: string; accountName: string }
   | { type: 'category'; categoryId: string; categoryName: string }
   | { type: 'payee'; payeeId: string; payeeName: string }
-  | { type: 'tag'; tagName: string };
+  | { type: 'tag'; tagName: string }
+  | { type: 'uncategorized' };
 
 export type GetTransactionsOptions = {
   accountId?: string;

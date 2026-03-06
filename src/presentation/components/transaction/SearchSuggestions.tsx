@@ -26,7 +26,8 @@ type Suggestion =
   | { kind: 'account'; id: string; name: string; label: string }
   | { kind: 'category'; id: string; name: string; label: string }
   | { kind: 'payee'; id: string; name: string; label: string }
-  | { kind: 'tag'; name: string; label: string };
+  | { kind: 'tag'; name: string; label: string }
+  | { kind: 'uncategorized'; label: string };
 
 // ---------------------------------------------------------------------------
 // Props
@@ -81,6 +82,8 @@ export function SearchSuggestions({
       activeKeys.add(`payee:${t.payeeId}`);
     } else if (t.type === 'tag') {
       activeKeys.add(`tag:${t.tagName}`);
+    } else if (t.type === 'uncategorized') {
+      activeKeys.add('uncategorized');
     }
   }
 
@@ -93,6 +96,13 @@ export function SearchSuggestions({
     const label = STATUS_LABELS[s];
     if (query && !label.toLowerCase().includes(query)) continue;
     suggestions.push({ kind: 'status', value: s, label });
+  }
+
+  // Uncategorized suggestion
+  if (!activeKeys.has('uncategorized')) {
+    if (!query || 'uncategorized'.includes(query)) {
+      suggestions.push({ kind: 'uncategorized', label: 'Uncategorized' });
+    }
   }
 
   // Account suggestions
@@ -178,6 +188,9 @@ export function SearchSuggestions({
       case 'tag':
         onSelect({ type: 'tag', tagName: s.name });
         break;
+      case 'uncategorized':
+        onSelect({ type: 'uncategorized' });
+        break;
     }
   }
 
@@ -195,6 +208,7 @@ export function SearchSuggestions({
       case 'category': return 'pricetag-outline';
       case 'payee': return 'person-outline';
       case 'tag': return 'pricetags-outline';
+      case 'uncategorized': return 'help-circle-outline';
     }
   }
 

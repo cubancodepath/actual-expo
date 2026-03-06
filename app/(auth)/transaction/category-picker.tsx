@@ -87,7 +87,7 @@ export default function CategoryPickerScreen() {
           backgroundColor: colors.headerBackground,
         }}
       >
-        <GlassButton icon="chevron-back" onPress={() => router.back()} />
+        <GlassButton icon="chevron.left" onPress={() => router.back()} />
         <Text variant="headingSm" color={colors.headerText}>
           Category
         </Text>

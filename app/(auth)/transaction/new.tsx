@@ -349,7 +349,7 @@ export default function NewTransactionScreen() {
         >
           {/* Close button — top left */}
           <View style={{ position: 'absolute', top: 16, left: spacing.md }}>
-            <GlassButton icon="close" onPress={() => router.dismiss()} />
+            <GlassButton icon="xmark" onPress={() => router.dismiss()} />
           </View>
 
           {/* Title — centered */}

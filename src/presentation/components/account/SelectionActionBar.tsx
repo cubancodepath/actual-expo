@@ -63,7 +63,7 @@ export function SelectionActionBar({
         <View style={leftGroup}>
           <GlassButton
             onPress={onMarkCleared}
-            icon={allCleared ? 'ellipse-outline' : 'checkmark-circle'}
+            icon={allCleared ? 'circle' : 'checkmark.circle'}
             iconSize={18}
             label={allCleared ? 'Unclear' : 'Clear'}
             color={allCleared ? colors.textMuted : colors.positive}
@@ -152,7 +152,7 @@ export function SelectionActionBar({
             )}
           </View>
         ) : (
-          <GlassButton icon="ellipsis-horizontal" onPress={onDelete} />
+          <GlassButton icon="ellipsis" onPress={onDelete} />
         )}
       </View>
     </View>

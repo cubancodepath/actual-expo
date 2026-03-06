@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useSharedValue } from 'react-native-reanimated';
 import {
   ActivityIndicator,
@@ -28,6 +28,7 @@ import { TransactionRow } from '../../../../src/presentation/components/account/
 import { DateSectionHeader } from '../../../../src/presentation/components/account/DateSectionHeader';
 import { AddTransactionButton } from '../../../../src/presentation/components/molecules/AddTransactionButton';
 import { useTagsStore } from '../../../../src/stores/tagsStore';
+import { usePickerStore } from '../../../../src/stores/pickerStore';
 import {
   buildListData,
   useTransactionPagination,
@@ -71,7 +72,7 @@ export default function SpendingScreen() {
   // ---- Bulk actions ----
   const otherAccounts = accounts.filter(a => !a.closed);
 
-  const { handleBulkDelete, handleBulkMove, handleBulkToggleCleared } = useTransactionBulkActions({
+  const { handleBulkDelete, handleBulkMove, handleBulkToggleCleared, handleBulkChangeCategory } = useTransactionBulkActions({
     selectedIds,
     transactions,
     setTransactions,
@@ -81,6 +82,19 @@ export default function SpendingScreen() {
     optimisticBulkMove: (prev, ids, targetAccountId, targetAccountName) =>
       prev.map(t => ids.has(t.id) ? { ...t, acct: targetAccountId, accountName: targetAccountName } : t),
   });
+
+  // ---- Bulk category via picker store ----
+  const bulkCategoryPending = useRef(false);
+  const selectedCategory = usePickerStore((s) => s.selectedCategory);
+  const clearPicker = usePickerStore((s) => s.clear);
+
+  useEffect(() => {
+    if (selectedCategory && bulkCategoryPending.current) {
+      bulkCategoryPending.current = false;
+      handleBulkChangeCategory(selectedCategory.id);
+      clearPicker();
+    }
+  }, [selectedCategory]);
 
   // ---- Select mode header ----
   useSelectModeHeader({
@@ -316,6 +330,15 @@ export default function SpendingScreen() {
                 ))}
               </Stack.Toolbar.Menu>
             )}
+            <Stack.Toolbar.MenuAction
+              icon="tag"
+              onPress={() => {
+                bulkCategoryPending.current = true;
+                router.push('/(auth)/transaction/category-picker');
+              }}
+            >
+              Set Category
+            </Stack.Toolbar.MenuAction>
             <Stack.Toolbar.MenuAction
               icon="trash"
               destructive

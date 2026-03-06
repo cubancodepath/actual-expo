@@ -23,6 +23,8 @@ import { BudgetGroupHeader } from '../../../../src/presentation/components/budge
 import { BudgetCategoryRow } from '../../../../src/presentation/components/budget/BudgetCategoryRow';
 import { ReadyToAssignPill } from '../../../../src/presentation/components/budget/ReadyToAssignPill';
 import { OverspentPill } from '../../../../src/presentation/components/budget/OverspentPill';
+import { UnclearedPill } from '../../../../src/presentation/components/transaction/UnclearedPill';
+import { getUncategorizedStats } from '../../../../src/transactions';
 import { Text } from '../../../../src/presentation/components/atoms/Text';
 import { Amount } from '../../../../src/presentation/components/atoms/Amount';
 import { Button } from '../../../../src/presentation/components/atoms/Button';
@@ -87,6 +89,12 @@ export default function BudgetScreen() {
   const { refreshControlProps } = useRefreshControl();
   const { privacyMode, toggle: togglePrivacy } = usePrivacyStore();
   const { showProgressBars, toggleProgressBars, showHiddenCategories, toggleShowHiddenCategories } = usePrefsStore();
+  const [uncategorizedCount, setUncategorizedCount] = useState(0);
+
+  // Load uncategorized stats when data changes
+  useEffect(() => {
+    getUncategorizedStats().then(({ count }) => setUncategorizedCount(count));
+  }, [data]);
 
   const fabCollapsed = useSharedValue(false);
   const COLLAPSE_THRESHOLD = 100;
@@ -373,12 +381,25 @@ export default function BudgetScreen() {
           scrollEventThrottle={16}
           extraData={`${[...collapsedGroups].join()}-${editMode}-${JSON.stringify(edits)}`}
           ListHeaderComponent={
-            data && overspentCount > 0 ? (
-              <View style={{ paddingTop: spacing.xs, paddingBottom: spacing.xs }}>
-                <OverspentPill
-                  count={overspentCount}
-                  onPress={handleOverspentPress}
-                />
+            data && (overspentCount > 0 || uncategorizedCount > 0) ? (
+              <View style={{ paddingTop: spacing.xs, paddingBottom: spacing.xs, gap: spacing.xs }}>
+                {overspentCount > 0 && (
+                  <OverspentPill
+                    count={overspentCount}
+                    onPress={handleOverspentPress}
+                  />
+                )}
+                {uncategorizedCount > 0 && (
+                  <UnclearedPill
+                    count={uncategorizedCount}
+                    label="uncategorized"
+                    variant="danger"
+                    onPress={() => router.push({
+                      pathname: '/(auth)/(tabs)/(spending)/search',
+                      params: { initialFilter: 'uncategorized' },
+                    })}
+                  />
+                )}
               </View>
             ) : null
           }

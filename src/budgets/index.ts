@@ -607,6 +607,68 @@ export async function transferBetweenCategories(
 }
 
 // ---------------------------------------------------------------------------
+// Transfer money from multiple sources to/from a single target category
+//
+// Unlike calling transferBetweenCategories() in a loop, this reads DB values
+// once and accumulates the target amount correctly before sending all messages
+// in a single bulk call — avoiding stale-read bugs with batched CRDT messages.
+// ---------------------------------------------------------------------------
+
+export async function transferMultipleCategories(
+  month: string,
+  targetCategoryId: string,
+  sources: Array<{ categoryId: string; amountCents: number }>,
+  direction: 'to' | 'from', // 'to' = sources give to target, 'from' = target gives to sources
+): Promise<void> {
+  const validSources = sources.filter(s => s.amountCents > 0);
+  if (validSources.length === 0) return;
+
+  const monthInt = monthToInt(month);
+
+  const targetRow = await first<{ amount: number }>(
+    'SELECT amount FROM zero_budgets WHERE month = ? AND category = ?',
+    [monthInt, targetCategoryId],
+  );
+  let targetBudgeted = targetRow?.amount ?? 0;
+
+  const messages: Array<{ timestamp: Timestamp; dataset: string; row: string; column: string; value: string | number | null }> = [];
+  const targetId = `${monthInt}-${targetCategoryId}`;
+
+  for (const source of validSources) {
+    const sourceRow = await first<{ amount: number }>(
+      'SELECT amount FROM zero_budgets WHERE month = ? AND category = ?',
+      [monthInt, source.categoryId],
+    );
+    const sourceBudgeted = sourceRow?.amount ?? 0;
+    const sourceId = `${monthInt}-${source.categoryId}`;
+
+    if (direction === 'to') {
+      messages.push(
+        { timestamp: Timestamp.send()!, dataset: 'zero_budgets', row: sourceId, column: 'month', value: monthInt },
+        { timestamp: Timestamp.send()!, dataset: 'zero_budgets', row: sourceId, column: 'category', value: source.categoryId },
+        { timestamp: Timestamp.send()!, dataset: 'zero_budgets', row: sourceId, column: 'amount', value: sourceBudgeted - source.amountCents },
+      );
+      targetBudgeted += source.amountCents;
+    } else {
+      messages.push(
+        { timestamp: Timestamp.send()!, dataset: 'zero_budgets', row: sourceId, column: 'month', value: monthInt },
+        { timestamp: Timestamp.send()!, dataset: 'zero_budgets', row: sourceId, column: 'category', value: source.categoryId },
+        { timestamp: Timestamp.send()!, dataset: 'zero_budgets', row: sourceId, column: 'amount', value: sourceBudgeted + source.amountCents },
+      );
+      targetBudgeted -= source.amountCents;
+    }
+  }
+
+  messages.push(
+    { timestamp: Timestamp.send()!, dataset: 'zero_budgets', row: targetId, column: 'month', value: monthInt },
+    { timestamp: Timestamp.send()!, dataset: 'zero_budgets', row: targetId, column: 'category', value: targetCategoryId },
+    { timestamp: Timestamp.send()!, dataset: 'zero_budgets', row: targetId, column: 'amount', value: targetBudgeted },
+  );
+
+  await sendMessages(messages);
+}
+
+// ---------------------------------------------------------------------------
 // Category balances for a month (used by transaction category picker)
 // ---------------------------------------------------------------------------
 

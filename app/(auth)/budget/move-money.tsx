@@ -13,8 +13,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
 import { useBudgetStore } from '../../../src/stores/budgetStore';
-import { transferBetweenCategories } from '../../../src/budgets';
-import { batchMessages } from '../../../src/sync';
+import { transferMultipleCategories } from '../../../src/budgets';
 import { Text } from '../../../src/presentation/components/atoms/Text';
 import { Amount } from '../../../src/presentation/components/atoms/Amount';
 import { Button } from '../../../src/presentation/components/atoms/Button';
@@ -254,13 +253,12 @@ export default function MoveMoneyScreen() {
     try {
       const entries = sources.filter((s) => s.amount > 0);
       if (entries.length === 0) return;
-      await batchMessages(async () => {
-        for (const source of entries) {
-          const fromId = direction === 'from' ? catId : source.id;
-          const toId = direction === 'from' ? source.id : catId;
-          await transferBetweenCategories(month, fromId, toId, source.amount);
-        }
-      });
+      await transferMultipleCategories(
+        month,
+        catId,
+        entries.map((s) => ({ categoryId: s.id, amountCents: s.amount })),
+        direction === 'to' ? 'to' : 'from',
+      );
       await loadBudget();
       router.back();
     } finally {

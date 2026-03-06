@@ -4,8 +4,7 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
 import { useBudgetStore } from '../../../src/stores/budgetStore';
-import { transferBetweenCategories } from '../../../src/budgets';
-import { batchMessages } from '../../../src/sync';
+import { transferMultipleCategories } from '../../../src/budgets';
 import { Text } from '../../../src/presentation/components/atoms/Text';
 import { Amount } from '../../../src/presentation/components/atoms/Amount';
 import { Button } from '../../../src/presentation/components/atoms/Button';
@@ -158,13 +157,12 @@ export default function CoverSourceScreen() {
     if (!catId || saving) return;
     setSaving(true);
     try {
-      await batchMessages(async () => {
-        for (const source of sources) {
-          if (source.amount > 0) {
-            await transferBetweenCategories(month, source.id, catId, source.amount);
-          }
-        }
-      });
+      await transferMultipleCategories(
+        month,
+        catId,
+        sources.filter((s) => s.amount > 0).map((s) => ({ categoryId: s.id, amountCents: s.amount })),
+        'to',
+      );
       await loadBudget();
       router.dismiss(2);
     } finally {

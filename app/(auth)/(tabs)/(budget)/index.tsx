@@ -29,6 +29,8 @@ import { Button } from '../../../../src/presentation/components/atoms/Button';
 import { formatPrivacyAware } from '../../../../src/lib/format';
 import { usePrivacyStore } from '../../../../src/stores/privacyStore';
 import { usePrefsStore } from '../../../../src/stores/prefsStore';
+import { useTabBarStore } from '../../../../src/stores/tabBarStore';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -61,11 +63,16 @@ function matchesFilter(cat: BudgetCategory, filter: BudgetFilter): boolean {
   }
 }
 
-function filterBudgetGroups(groups: BudgetGroup[], filter: BudgetFilter): BudgetGroup[] {
-  if (filter === 'all') return groups;
+function filterBudgetGroups(groups: BudgetGroup[], filter: BudgetFilter, showHidden: boolean): BudgetGroup[] {
   return groups
-    .map((g) => ({ ...g, categories: g.categories.filter((c) => matchesFilter(c, filter)) }))
-    .filter((g) => g.categories.length > 0);
+    .filter((g) => showHidden || !g.hidden)
+    .map((g) => ({
+      ...g,
+      categories: g.categories.filter((c) =>
+        (showHidden || !c.hidden) && matchesFilter(c, filter),
+      ),
+    }))
+    .filter((g) => filter === 'all' || g.categories.length > 0);
 }
 
 // ---------------------------------------------------------------------------
@@ -75,10 +82,11 @@ function filterBudgetGroups(groups: BudgetGroup[], filter: BudgetFilter): Budget
 export default function BudgetScreen() {
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const router = useRouter();
+  const { bottom: safeBottom } = useSafeAreaInsets();
   const { month, data, loading, load, setAmount, setCarryover, resetHold } = useBudgetStore();
   const { refreshControlProps } = useRefreshControl();
   const { privacyMode, toggle: togglePrivacy } = usePrivacyStore();
-  const { showProgressBars, toggleProgressBars } = usePrefsStore();
+  const { showProgressBars, toggleProgressBars, showHiddenCategories, toggleShowHiddenCategories } = usePrefsStore();
 
   const fabCollapsed = useSharedValue(false);
   const COLLAPSE_THRESHOLD = 100;
@@ -112,8 +120,8 @@ export default function BudgetScreen() {
 
   // -- Sections (filtered) --
   const filteredGroups = useMemo(
-    () => filterBudgetGroups(data?.groups ?? [], filter),
-    [data?.groups, filter],
+    () => filterBudgetGroups(data?.groups ?? [], filter, showHiddenCategories),
+    [data?.groups, filter, showHiddenCategories],
   );
   const sections: BudgetSection[] = filteredGroups.map((g) => ({
     key: g.id,
@@ -156,6 +164,7 @@ export default function BudgetScreen() {
     }
     setEdits(initial);
     setEditMode(true);
+    useTabBarStore.getState().setHidden(true);
   }
 
   function handleCategoryPress(_cat: BudgetCategory) {
@@ -181,6 +190,7 @@ export default function BudgetScreen() {
       }
       setEditMode(false);
       setEdits({});
+      useTabBarStore.getState().setHidden(false);
     } finally {
       setSaving(false);
     }
@@ -189,6 +199,7 @@ export default function BudgetScreen() {
   function handleCancelEdits() {
     setEditMode(false);
     setEdits({});
+    useTabBarStore.getState().setHidden(false);
   }
 
   const hasEdits = useMemo(() => {
@@ -227,17 +238,20 @@ export default function BudgetScreen() {
   // -- Render helpers --
   function renderSectionHeader({ section }: { section: BudgetSection }) {
     return (
-      <BudgetGroupHeader
-        group={section.group}
-        isCollapsed={collapsedGroups.has(section.group.id)}
-        onToggle={() => toggleGroup(section.group.id)}
-      />
+      <View style={section.group.hidden ? { opacity: 0.5 } : undefined}>
+        <BudgetGroupHeader
+          group={section.group}
+          isCollapsed={collapsedGroups.has(section.group.id)}
+          onToggle={() => toggleGroup(section.group.id)}
+        />
+      </View>
     );
   }
 
   function renderItem({ item: cat, index, section }: { item: BudgetCategory; index: number; section: BudgetSection }) {
     const isExpenseEdit = editMode && !section.group.is_income;
     return (
+      <View style={cat.hidden ? { opacity: 0.5 } : undefined}>
       <BudgetCategoryRow
         cat={cat}
         isIncome={section.group.is_income}
@@ -252,8 +266,33 @@ export default function BudgetScreen() {
         onEditChange={handleEditChange}
         showProgressBar={showProgressBars}
       />
+      </View>
     );
   }
+
+  const editToolbarButtons = (
+    <>
+      <View style={{ flex: 1 }}>
+        <Button
+          title="Cancel"
+          variant="secondary"
+          onPress={() => { Keyboard.dismiss(); handleCancelEdits(); }}
+          style={{ borderRadius: br.full }}
+        />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Button
+          title={saving ? 'Saving...' : 'Save'}
+          icon="checkmark"
+          variant="primary"
+          loading={saving}
+          disabled={!hasEdits}
+          onPress={() => { Keyboard.dismiss(); handleSaveEdits(); }}
+          style={{ borderRadius: br.full }}
+        />
+      </View>
+    </>
+  );
 
   return (
     <>
@@ -341,35 +380,36 @@ export default function BudgetScreen() {
               </View>
             )
           }
-          contentContainerStyle={{ paddingBottom: 80 }}
+          contentContainerStyle={{ paddingBottom: editMode ? 100 : 80 }}
         />
       )}
 
       {!editMode && <AddTransactionButton collapsed={fabCollapsed} />}
     </View>
 
-    {/* Edit mode toolbar — only visible when keyboard is open */}
+    {/* Edit mode toolbar — always mounted to track keyboard height */}
     <KeyboardToolbar visible={editMode && keyboardVisible}>
-      <View style={{ flex: 1 }}>
-        <Button
-          title="Cancel"
-          variant="secondary"
-          onPress={() => { Keyboard.dismiss(); handleCancelEdits(); }}
-          style={{ borderRadius: br.full }}
-        />
-      </View>
-      <View style={{ flex: 1 }}>
-        <Button
-          title={saving ? 'Saving...' : 'Save'}
-          icon="checkmark"
-          variant="primary"
-          loading={saving}
-          disabled={!hasEdits}
-          onPress={() => { Keyboard.dismiss(); handleSaveEdits(); }}
-          style={{ borderRadius: br.full }}
-        />
-      </View>
+      {editToolbarButtons}
     </KeyboardToolbar>
+
+    {/* Fixed bottom toolbar when keyboard is closed */}
+    {editMode && !keyboardVisible && (
+      <View
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          flexDirection: 'row',
+          gap: spacing.sm,
+          paddingHorizontal: spacing.md,
+          paddingTop: spacing.sm,
+          paddingBottom: safeBottom + spacing.sm,
+        }}
+      >
+        {editToolbarButtons}
+      </View>
+    )}
     <Stack.Toolbar placement="right">
       <Stack.Toolbar.Menu
         icon={filter === 'all' ? 'line.3.horizontal.decrease' : 'line.3.horizontal.decrease.circle.fill'}
@@ -401,6 +441,12 @@ export default function BudgetScreen() {
           onPress={toggleProgressBars}
         >
           {showProgressBars ? 'Hide Progress' : 'Show Progress'}
+        </Stack.Toolbar.MenuAction>
+        <Stack.Toolbar.MenuAction
+          icon={showHiddenCategories ? 'square.stack.3d.up.slash' : 'square.stack.3d.up'}
+          onPress={toggleShowHiddenCategories}
+        >
+          {showHiddenCategories ? 'Hide Hidden Categories' : 'Show Hidden Categories'}
         </Stack.Toolbar.MenuAction>
         <Stack.Toolbar.MenuAction
           icon="gearshape"

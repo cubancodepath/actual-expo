@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, TextInput, View } from 'react-native';
+import { Alert, Pressable, Switch, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
@@ -16,7 +16,9 @@ export default function EditCategoryScreen() {
   const router = useRouter();
   const { categoryId } = useLocalSearchParams<{ categoryId: string }>();
   const categories = useCategoriesStore((s) => s.categories);
+  const groups = useCategoriesStore((s) => s.groups);
   const category = categories.find((c) => c.id === categoryId);
+  const parentGroup = groups.find((g) => g.id === category?.cat_group);
 
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
@@ -177,6 +179,36 @@ export default function EditCategoryScreen() {
           />
         </Pressable>
       </View>
+
+      {/* Hidden toggle — only if parent group is not hidden */}
+      {parentGroup && !parentGroup.hidden && (
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            backgroundColor: colors.cardBackground,
+            borderRadius: br.md,
+            borderWidth: bw.thin,
+            borderColor: colors.divider,
+            paddingVertical: spacing.sm,
+            paddingHorizontal: spacing.md,
+            marginTop: spacing.lg,
+          }}
+        >
+          <Text variant="body" color={colors.textPrimary}>Hidden</Text>
+          <Switch
+            value={category?.hidden ?? false}
+            onValueChange={async (val) => {
+              if (!categoryId) return;
+              await useCategoriesStore.getState().updateCategory(categoryId, { hidden: val });
+              await useCategoriesStore.getState().load();
+              await useBudgetStore.getState().load();
+            }}
+            trackColor={{ true: colors.primary }}
+          />
+        </View>
+      )}
 
       {/* Save */}
       <Button

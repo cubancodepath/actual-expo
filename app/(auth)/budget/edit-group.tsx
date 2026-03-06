@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, TextInput, View } from 'react-native';
+import { Alert, Switch, TextInput, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
 import { useCategoriesStore } from '../../../src/stores/categoriesStore';
@@ -98,6 +98,36 @@ export default function EditGroupScreen() {
           borderColor: colors.divider,
         }}
       />
+
+      {/* Hidden toggle — not shown for income groups */}
+      {group && !group.is_income && (
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            backgroundColor: colors.cardBackground,
+            borderRadius: br.md,
+            borderWidth: bw.thin,
+            borderColor: colors.divider,
+            paddingVertical: spacing.sm,
+            paddingHorizontal: spacing.md,
+            marginTop: spacing.lg,
+          }}
+        >
+          <Text variant="body" color={colors.textPrimary}>Hidden</Text>
+          <Switch
+            value={group.hidden}
+            onValueChange={async (val) => {
+              if (!groupId) return;
+              await useCategoriesStore.getState().updateCategoryGroup(groupId, { hidden: val });
+              await useCategoriesStore.getState().load();
+              await useBudgetStore.getState().load();
+            }}
+            trackColor={{ true: colors.primary }}
+          />
+        </View>
+      )}
 
       <Button
         title="Save"

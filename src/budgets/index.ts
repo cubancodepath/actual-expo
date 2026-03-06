@@ -339,7 +339,7 @@ export async function getBudgetMonth(month: string): Promise<BudgetMonth> {
         }
       }
 
-      return { id: c.id, name: c.name, budgeted, spent, balance, carryIn, carryover, goal, longGoal, goalDef };
+      return { id: c.id, name: c.name, budgeted, spent, balance, carryIn, carryover, goal, longGoal, goalDef, hidden: c.hidden === 1 };
     });
 
     if (isIncome) {
@@ -353,6 +353,7 @@ export async function getBudgetMonth(month: string): Promise<BudgetMonth> {
       id:         g.id,
       name:       g.name,
       is_income:  isIncome,
+      hidden:     g.hidden === 1,
       budgeted:   groupBudgeted,
       spent:      groupSpent,
       balance:    isIncome ? groupSpent : groupBudgeted + groupSpent + groupCarryIn,

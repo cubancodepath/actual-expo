@@ -483,11 +483,13 @@ export async function searchTransactions(opts: {
   text?: string;
   accountId?: string;
   categoryId?: string;
+  payeeId?: string;
   cleared?: boolean;
   uncleared?: boolean;
   reconciled?: boolean;
   unreconciled?: boolean;
   tagName?: string;
+  tagNames?: string[];
   hideReconciled?: boolean;
   limit?: number;
   offset?: number;
@@ -509,9 +511,18 @@ export async function searchTransactions(opts: {
     conditions.push('t.category = ?');
     params.push(opts.categoryId);
   }
+  if (opts.payeeId) {
+    conditions.push('COALESCE(pm.targetId, t.description) = ?');
+    params.push(opts.payeeId);
+  }
 
-  // Tag filter — match #tagName in notes (followed by space, #, or end of string)
-  if (opts.tagName) {
+  // Tag filter — match #tagName in notes
+  if (opts.tagNames && opts.tagNames.length > 0) {
+    for (const tag of opts.tagNames) {
+      conditions.push("t.notes LIKE ?");
+      params.push(`%#${tag}%`);
+    }
+  } else if (opts.tagName) {
     conditions.push("t.notes LIKE ?");
     params.push(`%#${opts.tagName}%`);
   }

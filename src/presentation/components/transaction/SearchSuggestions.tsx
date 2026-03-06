@@ -25,6 +25,7 @@ type Suggestion =
   | { kind: 'status'; value: StatusFilter; label: string }
   | { kind: 'account'; id: string; name: string; label: string }
   | { kind: 'category'; id: string; name: string; label: string }
+  | { kind: 'payee'; id: string; name: string; label: string }
   | { kind: 'tag'; name: string; label: string };
 
 // ---------------------------------------------------------------------------
@@ -36,6 +37,7 @@ interface SearchSuggestionsProps {
   tokens: SearchToken[];
   accounts: Array<{ id: string; name: string }>;
   categories: Array<{ id: string; name: string }>;
+  payees?: Array<{ id: string; name: string }>;
   tags?: Array<{ tag: string }>;
   onSelect: (token: SearchToken) => void;
 }
@@ -49,6 +51,7 @@ export function SearchSuggestions({
   tokens,
   accounts,
   categories,
+  payees = [],
   tags = [],
   onSelect,
 }: SearchSuggestionsProps) {
@@ -74,6 +77,8 @@ export function SearchSuggestions({
       activeKeys.add(`account:${t.accountId}`);
     } else if (t.type === 'category') {
       activeKeys.add(`category:${t.categoryId}`);
+    } else if (t.type === 'payee') {
+      activeKeys.add(`payee:${t.payeeId}`);
     } else if (t.type === 'tag') {
       activeKeys.add(`tag:${t.tagName}`);
     }
@@ -124,7 +129,23 @@ export function SearchSuggestions({
     }
   }
 
-  // Tag suggestions
+  // Payee suggestions — only when typing (too many to show all)
+  if (query) {
+    for (const p of payees) {
+      if (activeKeys.has(`payee:${p.id}`)) continue;
+      if (!p.name.toLowerCase().includes(query)) continue;
+      suggestions.push({ kind: 'payee', id: p.id, name: p.name, label: `Payee Is: ${p.name}` });
+    }
+  } else {
+    const hasPayeeToken = tokens.some((t) => t.type === 'payee');
+    if (!hasPayeeToken) {
+      for (const p of payees) {
+        suggestions.push({ kind: 'payee', id: p.id, name: p.name, label: `Payee Is: ${p.name}` });
+      }
+    }
+  }
+
+  // Tag suggestions — allow multiple (don't hide all when one is selected)
   if (query) {
     for (const t of tags) {
       if (activeKeys.has(`tag:${t.tag}`)) continue;
@@ -132,11 +153,9 @@ export function SearchSuggestions({
       suggestions.push({ kind: 'tag', name: t.tag, label: `Tag: #${t.tag}` });
     }
   } else {
-    const hasTagToken = tokens.some((t) => t.type === 'tag');
-    if (!hasTagToken) {
-      for (const t of tags) {
-        suggestions.push({ kind: 'tag', name: t.tag, label: `Tag: #${t.tag}` });
-      }
+    for (const t of tags) {
+      if (activeKeys.has(`tag:${t.tag}`)) continue;
+      suggestions.push({ kind: 'tag', name: t.tag, label: `Tag: #${t.tag}` });
     }
   }
 
@@ -153,6 +172,9 @@ export function SearchSuggestions({
       case 'category':
         onSelect({ type: 'category', categoryId: s.id, categoryName: s.name });
         break;
+      case 'payee':
+        onSelect({ type: 'payee', payeeId: s.id, payeeName: s.name });
+        break;
       case 'tag':
         onSelect({ type: 'tag', tagName: s.name });
         break;
@@ -164,6 +186,7 @@ export function SearchSuggestions({
       case 'status': return 'checkmark-circle-outline';
       case 'account': return 'wallet-outline';
       case 'category': return 'pricetag-outline';
+      case 'payee': return 'person-outline';
       case 'tag': return 'pricetags-outline';
     }
   }

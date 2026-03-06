@@ -24,6 +24,8 @@ function tokenLabel(t: SearchToken): string {
       return `Account: ${t.accountName}`;
     case 'category':
       return `Category: ${t.categoryName}`;
+    case 'payee':
+      return `Payee: ${t.payeeName}`;
     case 'tag':
       return `Tag: #${t.tagName}`;
   }

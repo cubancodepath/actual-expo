@@ -27,6 +27,7 @@ import { DateSectionHeader } from '../../../../src/presentation/components/accou
 import { TokenSearchBar } from '../../../../src/presentation/components/transaction/TokenSearchBar';
 import { SearchSuggestions } from '../../../../src/presentation/components/transaction/SearchSuggestions';
 import { useTagsStore } from '../../../../src/stores/tagsStore';
+import { usePayeesStore } from '../../../../src/stores/payeesStore';
 
 // ---------------------------------------------------------------------------
 // Types for mixed FlashList data
@@ -80,12 +81,15 @@ function buildListData(transactions: TransactionDisplay[]): ListItem[] {
 
 function buildSearchParams(tkns: SearchToken[]) {
   const params: Record<string, unknown> = {};
+  const tagNames: string[] = [];
   for (const t of tkns) {
     if (t.type === 'status') params[t.value] = true;
     if (t.type === 'account') params.accountId = t.accountId;
     if (t.type === 'category') params.categoryId = t.categoryId;
-    if (t.type === 'tag') params.tagName = t.tagName;
+    if (t.type === 'payee') params.payeeId = t.payeeId;
+    if (t.type === 'tag') tagNames.push(t.tagName);
   }
+  if (tagNames.length > 0) params.tagNames = tagNames;
   return params;
 }
 
@@ -102,6 +106,7 @@ export default function SearchScreen() {
   const { accounts } = useAccountsStore();
   const { categories } = useCategoriesStore();
   const tags = useTagsStore((s) => s.tags);
+  const payees = usePayeesStore((s) => s.payees);
   // Search state
   const searchInputRef = useRef<TextInput>(null);
   const [searchText, setSearchText] = useState('');
@@ -151,10 +156,12 @@ export default function SearchScreen() {
   function handleAddToken(token: SearchToken) {
     setTokens(prev => {
       const filtered = prev.filter(t => {
-        // Replace same-type account/category/tag
+        // Replace same-type account/category/payee (single-value filters)
         if (t.type === token.type && token.type === 'account') return false;
         if (t.type === token.type && token.type === 'category') return false;
-        if (t.type === token.type && token.type === 'tag') return false;
+        if (t.type === token.type && token.type === 'payee') return false;
+        // Tags: remove duplicate tag, but allow multiple different tags
+        if (t.type === 'tag' && token.type === 'tag' && t.tagName === token.tagName) return false;
         // Remove duplicate status
         if (t.type === 'status' && token.type === 'status' && t.value === token.value) return false;
         // Remove mutually exclusive status (cleared/uncleared, reconciled/unreconciled)
@@ -301,6 +308,7 @@ export default function SearchScreen() {
             tokens={tokens}
             accounts={accounts.filter(a => !a.closed).map(a => ({ id: a.id, name: a.name }))}
             categories={categories.filter(c => !c.hidden && !c.is_income).map(c => ({ id: c.id, name: c.name }))}
+            payees={payees.filter(p => !p.transfer_acct).map(p => ({ id: p.id, name: p.name }))}
             tags={tags}
             onSelect={handleAddToken}
           />

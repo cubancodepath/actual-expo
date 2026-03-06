@@ -1,10 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActionSheetIOS,
   ActivityIndicator,
   Alert,
   Keyboard,
-  Platform,
   Pressable,
   RefreshControl,
   SectionList,
@@ -22,7 +20,6 @@ import type { BudgetCategory, BudgetGroup } from '../../../../src/budgets/types'
 
 import { BudgetGroupHeader } from '../../../../src/presentation/components/budget/BudgetGroupHeader';
 import { BudgetCategoryRow } from '../../../../src/presentation/components/budget/BudgetCategoryRow';
-import { MoveMoneyModal, type MoveMoneyMode, type MoveMoneyCategory } from '../../../../src/presentation/components/budget/MoveMoneyModal';
 import { ReadyToAssignPill } from '../../../../src/presentation/components/budget/ReadyToAssignPill';
 import { OverspentPill } from '../../../../src/presentation/components/budget/OverspentPill';
 import { Text } from '../../../../src/presentation/components/atoms/Text';
@@ -77,7 +74,7 @@ function filterBudgetGroups(groups: BudgetGroup[], filter: BudgetFilter): Budget
 export default function BudgetScreen() {
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const router = useRouter();
-  const { month, data, loading, load, setAmount, setCarryover, transfer, resetHold } = useBudgetStore();
+  const { month, data, loading, load, setAmount, setCarryover, resetHold } = useBudgetStore();
   const { refreshControlProps } = useRefreshControl();
   const { privacyMode, toggle: togglePrivacy } = usePrivacyStore();
   const { showProgressBars, toggleProgressBars } = usePrefsStore();
@@ -90,9 +87,6 @@ export default function BudgetScreen() {
 
   const [filter, setFilter] = useState<BudgetFilter>('all');
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
-  const [moveMoneyTarget, setMoveMoneyTarget] = useState<{
-    catId: string; catName: string; balance: number; mode: MoveMoneyMode;
-  } | null>(null);
 
   // -- Inline budget editing (global edit mode) --
   const [editMode, setEditMode] = useState(false);
@@ -131,43 +125,25 @@ export default function BudgetScreen() {
   }));
 
   // -- Move money --
-  const moveMoneyCandidates = useMemo<MoveMoneyCategory[]>(() => {
-    if (!data || !moveMoneyTarget) return [];
-    return data.groups
-      .filter((g) => !g.is_income)
-      .flatMap((g) =>
-        g.categories
-          .filter((c) => {
-            if (c.id === moveMoneyTarget.catId) return false;
-            if (moveMoneyTarget.mode === 'cover') return c.balance > 0;
-            return true;
-          })
-          .map((c) => ({ id: c.id, name: c.name, balance: c.balance, groupName: g.name })),
-      );
-  }, [data, moveMoneyTarget]);
+  function handleMoveMoney(cat: BudgetCategory) {
+    router.push({
+      pathname: '/(auth)/budget/move-money',
+      params: { catId: cat.id, catName: cat.name, balance: String(cat.balance) },
+    });
+  }
 
-  async function handleMoveMoneyConfirm(otherCategoryId: string, amountCents: number) {
-    if (!moveMoneyTarget) return;
-    const { catId, mode } = moveMoneyTarget;
-    const fromId = mode === 'transfer' ? catId : otherCategoryId;
-    const toId = mode === 'transfer' ? otherCategoryId : catId;
-    setMoveMoneyTarget(null);
-    await transfer(fromId, toId, amountCents);
+  function handleToggleCarryover(cat: BudgetCategory) {
+    setCarryover(cat.id, !cat.carryover);
   }
 
   function handleCategoryLongPress(cat: BudgetCategory) {
+    // Android fallback — iOS uses zeego context menu in BudgetCategoryRow
     const toggleLabel = cat.carryover ? 'Remove overspending rollover' : 'Rollover overspending';
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        { options: [toggleLabel, 'Cancel'], cancelButtonIndex: 1 },
-        (idx) => { if (idx === 0) setCarryover(cat.id, !cat.carryover); },
-      );
-    } else {
-      Alert.alert(cat.name, undefined, [
-        { text: toggleLabel, onPress: () => setCarryover(cat.id, !cat.carryover) },
-        { text: 'Cancel', style: 'cancel' },
-      ]);
-    }
+    Alert.alert(cat.name, undefined, [
+      { text: 'Move Money', onPress: () => handleMoveMoney(cat) },
+      { text: toggleLabel, onPress: () => handleToggleCarryover(cat) },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
   }
 
   // -- Global edit mode --
@@ -273,6 +249,8 @@ export default function BudgetScreen() {
         editValue={isExpenseEdit ? (edits[cat.id] ?? cat.budgeted) : undefined}
         onPress={handleCategoryPress}
         onLongPress={handleCategoryLongPress}
+        onMoveMoney={handleMoveMoney}
+        onToggleCarryover={handleToggleCarryover}
         onEditChange={handleEditChange}
         showProgressBar={showProgressBars}
       />
@@ -282,17 +260,6 @@ export default function BudgetScreen() {
   return (
     <>
     <View style={{ flex: 1, backgroundColor: colors.pageBackground }}>
-      {/* Move Money Modal */}
-      <MoveMoneyModal
-        visible={!!moveMoneyTarget}
-        mode={moveMoneyTarget?.mode ?? 'transfer'}
-        sourceName={moveMoneyTarget?.catName ?? ''}
-        prefilledAmount={Math.abs(moveMoneyTarget?.balance ?? 0)}
-        candidates={moveMoneyCandidates}
-        onClose={() => setMoveMoneyTarget(null)}
-        onConfirm={handleMoveMoneyConfirm}
-      />
-
       {/* Sticky status area — stays fixed above the list */}
       {data && (toBudget !== 0 || data.buffered > 0) && (
         <View style={{ paddingTop: spacing.sm, paddingBottom: spacing.xs }}>

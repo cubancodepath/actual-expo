@@ -129,6 +129,25 @@ export default function AuthLayout() {
         }}
       />
       <Stack.Screen
+        name="budget/move-money"
+        options={{
+          headerShown: false,
+          presentation: "formSheet",
+          sheetAllowedDetents: [1.0],
+          contentStyle: { backgroundColor: theme.colors.pageBackground },
+        }}
+      />
+      <Stack.Screen
+        name="budget/move-category-picker"
+        options={{
+          ...screen,
+          title: "Select Category",
+          presentation: "formSheet",
+          sheetAllowedDetents: [0.5, 1.0],
+          contentStyle: { backgroundColor: theme.colors.pageBackground },
+        }}
+      />
+      <Stack.Screen
         name="categories"
         options={{ title: "Manage Categories", ...modal }}
       />

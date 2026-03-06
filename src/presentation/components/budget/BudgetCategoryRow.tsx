@@ -1,5 +1,6 @@
 import { useRef } from 'react';
-import { Pressable, View } from 'react-native';
+import { Platform, Pressable, View } from 'react-native';
+import * as ContextMenu from 'zeego/context-menu';
 import { useTheme } from '../../providers/ThemeProvider';
 import { Text } from '../atoms/Text';
 import { Amount } from '../atoms/Amount';
@@ -20,6 +21,8 @@ interface BudgetCategoryRowProps {
   editValue?: number;
   onPress?: (cat: BudgetCategory) => void;
   onLongPress: (cat: BudgetCategory) => void;
+  onMoveMoney?: (cat: BudgetCategory) => void;
+  onToggleCarryover?: (cat: BudgetCategory) => void;
   /** Called on every keystroke while editing. */
   onEditChange?: (catId: string, cents: number) => void;
   /** Whether to show progress bars and goal text (default true). */
@@ -35,6 +38,8 @@ export function BudgetCategoryRow({
   editValue,
   onPress,
   onLongPress,
+  onMoveMoney,
+  onToggleCarryover,
   onEditChange,
   showProgressBar = true,
 }: BudgetCategoryRowProps) {
@@ -171,7 +176,7 @@ export function BudgetCategoryRow({
       ? colors.warning
       : colors.positive;
 
-  return (
+  const pressableContent = (
     <Pressable
       style={{
         paddingHorizontal: spacing.lg,
@@ -187,7 +192,7 @@ export function BudgetCategoryRow({
           onPress?.(cat);
         }
       }}
-      onLongPress={() => onLongPress(cat)}
+      onLongPress={Platform.OS === 'android' ? () => onLongPress(cat) : undefined}
       delayLongPress={400}
     >
       {/* Line 1: Name + Budget input (when editing) + Available pill */}
@@ -317,4 +322,33 @@ export function BudgetCategoryRow({
       )}
     </Pressable>
   );
+
+  if (Platform.OS === 'ios') {
+    const carryoverLabel = cat.carryover ? 'Remove Overspending Rollover' : 'Rollover Overspending';
+    return (
+      <ContextMenu.Root>
+        <ContextMenu.Trigger>{pressableContent}</ContextMenu.Trigger>
+        <ContextMenu.Content>
+          <ContextMenu.Item
+            key="move-money"
+            onSelect={() => onMoveMoney?.(cat)}
+          >
+            <ContextMenu.ItemTitle>Move Money</ContextMenu.ItemTitle>
+            <ContextMenu.ItemIcon ios={{ name: 'arrow.left.arrow.right' }} />
+          </ContextMenu.Item>
+          <ContextMenu.Item
+            key="toggle-carryover"
+            onSelect={() => onToggleCarryover?.(cat)}
+          >
+            <ContextMenu.ItemTitle>{carryoverLabel}</ContextMenu.ItemTitle>
+            <ContextMenu.ItemIcon
+              ios={{ name: cat.carryover ? 'arrow.uturn.backward' : 'arrow.clockwise' }}
+            />
+          </ContextMenu.Item>
+        </ContextMenu.Content>
+      </ContextMenu.Root>
+    );
+  }
+
+  return pressableContent;
 }

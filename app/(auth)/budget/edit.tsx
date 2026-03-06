@@ -738,6 +738,7 @@ export default function EditBudgetScreen() {
           renderItem={renderNormalItem}
           renderSectionHeader={renderSectionHeader}
           stickySectionHeadersEnabled={false}
+          showsVerticalScrollIndicator={false}
           onScroll={(e) => { scrollY.value = e.nativeEvent.contentOffset.y; }}
           scrollEventThrottle={16}
           contentContainerStyle={{ paddingBottom: 80 }}

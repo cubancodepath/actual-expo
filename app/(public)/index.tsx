@@ -42,6 +42,17 @@ export default function LoginScreen() {
   const urlRef = useRef('');
 
   // ── Step 1: Probe server ──────────────────────────────────────────────────
+  async function probeWithRetry(url: string) {
+    try {
+      return await getBootstrapInfo(url);
+    } catch {
+      // iOS may have just shown the Local Network permission dialog.
+      // Wait briefly and retry once after the user grants access.
+      await new Promise(r => setTimeout(r, 1000));
+      return await getBootstrapInfo(url);
+    }
+  }
+
   async function handleProbe() {
     const url = serverUrl.trim().replace(/\/$/, '');
     if (!url) { setError('Server URL is required'); return; }
@@ -49,7 +60,7 @@ export default function LoginScreen() {
     setError(null);
     setStep('probing');
     try {
-      const info = await getBootstrapInfo(url);
+      const info = await probeWithRetry(url);
       urlRef.current = url;
 
       if (!info.bootstrapped) {

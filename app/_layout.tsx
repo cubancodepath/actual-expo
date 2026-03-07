@@ -46,12 +46,15 @@ export default function RootLayout() {
       ]);
     }
     bootstrap()
-      .then(() => updateAppBadge())
       .catch(console.error)
       .finally(() => setReady(true));
   }, []);
 
   useEffect(() => {
+    if (!isConfigured) return;
+
+    updateAppBadge();
+
     let prevBudget = useBudgetStore.getState().data;
     const unsubBudget = useBudgetStore.subscribe((state) => {
       if (state.data !== prevBudget) {
@@ -67,7 +70,7 @@ export default function RootLayout() {
       }
     });
     return () => { unsubBudget(); unsubTxns(); };
-  }, []);
+  }, [isConfigured]);
 
   // Register home screen quick actions only when fully authenticated with a budget
   useEffect(() => {

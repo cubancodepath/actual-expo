@@ -16,7 +16,10 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.anonymous.actual-expo",
-      "deploymentTarget": "26.0"
+      "deploymentTarget": "26.0",
+      "infoPlist": {
+        "NSLocalNetworkUsageDescription": "Actual Budget needs access to your local network to connect to your self-hosted budget server."
+      }
     },
     "plugins": [
       "expo-sqlite",

@@ -6,6 +6,7 @@ import {
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
 import { usePrefsStore } from '../../src/stores/prefsStore';
 import { listFiles, type BudgetFile } from '../../src/services/authService';
@@ -85,8 +86,22 @@ export default function FilesScreen() {
           Open Budget
         </Text>
 
-        <Pressable style={styles.headerBtn} hitSlop={8} disabled>
-          <Text variant="body" color={theme.colors.textMuted} style={styles.headerBtnText}>
+        <Pressable
+          style={styles.headerBtn}
+          hitSlop={8}
+          onPress={async () => {
+            await WebBrowser.openAuthSessionAsync(serverUrl, undefined, {
+              preferEphemeralSession: true,
+            });
+            setLoading(true);
+            listFiles(serverUrl, token)
+              .then(setFiles)
+              .catch(e => setError(e instanceof Error ? e.message : String(e)))
+              .finally(() => setLoading(false));
+          }}
+          disabled={loading}
+        >
+          <Text variant="body" color={theme.colors.primary} style={styles.headerBtnText}>
             New
           </Text>
         </Pressable>

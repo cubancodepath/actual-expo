@@ -6,6 +6,7 @@ import {
   View,
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
 import { usePrefsStore } from '../../src/stores/prefsStore';
 import { listFiles, type BudgetFile } from '../../src/services/authService';
@@ -65,9 +66,29 @@ export default function ChangeBudgetScreen() {
     <View style={styles.container}>
       <Stack.Screen
         options={{
-          headerRight: () => (
+          headerLeft: () => (
             <Pressable onPress={() => router.back()} hitSlop={8}>
               <Ionicons name="close" size={24} color={theme.colors.textSecondary} />
+            </Pressable>
+          ),
+          headerRight: () => (
+            <Pressable
+              style={styles.headerBtn}
+              onPress={async () => {
+                await WebBrowser.openAuthSessionAsync(serverUrl, undefined, {
+                  preferEphemeralSession: true,
+                });
+                setLoading(true);
+                listFiles(serverUrl, token)
+                  .then(setFiles)
+                  .catch(e => setError(e instanceof Error ? e.message : String(e)))
+                  .finally(() => setLoading(false));
+              }}
+              hitSlop={8}
+            >
+              <Text variant="body" color={theme.colors.textPrimary} style={styles.headerBtnText}>
+                New
+              </Text>
             </Pressable>
           ),
         }}
@@ -194,5 +215,12 @@ const createStyles = (theme: Theme) => ({
   },
   errorBanner: {
     marginBottom: theme.spacing.md,
+  },
+  headerBtn: {
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+  },
+  headerBtnText: {
+    fontWeight: '600' as const,
   },
 });

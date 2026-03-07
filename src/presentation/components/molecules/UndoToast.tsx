@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { Pressable, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -46,6 +46,10 @@ export function UndoToast() {
     });
   }, [clearNotification, translateY, opacity, reducedMotion]);
 
+  // Keep a ref so the timer always calls the latest dismiss
+  const dismissRef = useRef(dismiss);
+  dismissRef.current = dismiss;
+
   useEffect(() => {
     if (!notification) return;
 
@@ -57,7 +61,7 @@ export function UndoToast() {
       opacity.value = withTiming(1, { duration: 180 });
     }
 
-    const timer = setTimeout(dismiss, AUTO_DISMISS_MS);
+    const timer = setTimeout(() => dismissRef.current(), AUTO_DISMISS_MS);
     return () => clearTimeout(timer);
   }, [notification?.key]); // eslint-disable-line react-hooks/exhaustive-deps
 

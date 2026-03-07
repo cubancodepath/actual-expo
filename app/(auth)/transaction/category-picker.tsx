@@ -13,13 +13,14 @@ import { CategoryPickerList, type GroupedCategory } from '../../../src/presentat
 import { currentMonth } from '../../../src/lib/date';
 
 export default function CategoryPickerScreen() {
-  const { month, selectedId, amount, payeeId, payeeName, transactionId } = useLocalSearchParams<{
+  const { month, selectedId, amount, payeeId, payeeName, transactionId, hideSplit } = useLocalSearchParams<{
     month?: string;
     selectedId?: string;
     amount?: string;
     payeeId?: string;
     payeeName?: string;
     transactionId?: string;
+    hideSplit?: string;
   }>();
   const router = useRouter();
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
@@ -91,7 +92,7 @@ export default function CategoryPickerScreen() {
         <Text variant="headingSm" color={colors.headerText}>
           Category
         </Text>
-        <GlassButton label="Split" onPress={handleSplit} />
+        {hideSplit === '1' ? <View style={{ width: 48 }} /> : <GlassButton label="Split" onPress={handleSplit} />}
       </View>
       <CategoryPickerList
         groups={groupedCategories}

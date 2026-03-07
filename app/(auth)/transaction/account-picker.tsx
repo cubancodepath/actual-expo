@@ -6,6 +6,7 @@ import { usePickerStore } from '../../../src/stores/pickerStore';
 import { groupAccounts } from '../../../src/accounts';
 import { useTheme, useThemedStyles } from '../../../src/presentation/providers/ThemeProvider';
 import { Text } from '../../../src/presentation/components/atoms/Text';
+import { GlassButton } from '../../../src/presentation/components/atoms/GlassButton';
 import { Amount } from '../../../src/presentation/components/atoms/Amount';
 import type { Theme } from '../../../src/theme';
 
@@ -25,10 +26,27 @@ export default function AccountPickerScreen() {
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.list}
-    >
+    <View style={styles.container}>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingHorizontal: spacing.lg,
+          paddingTop: spacing.lg,
+          paddingBottom: spacing.sm,
+          backgroundColor: colors.headerBackground,
+        }}
+      >
+        <GlassButton icon="chevron.left" onPress={() => router.back()} />
+        <Text variant="headingSm" color={colors.headerText}>
+          Account
+        </Text>
+        <View style={{ width: 48 }} />
+      </View>
+      <ScrollView
+        contentContainerStyle={styles.list}
+      >
       {groups.map((group) => (
         <View key={group.type}>
           <View style={styles.sectionHeader}>
@@ -76,6 +94,7 @@ export default function AccountPickerScreen() {
         </View>
       ))}
     </ScrollView>
+    </View>
   );
 }
 

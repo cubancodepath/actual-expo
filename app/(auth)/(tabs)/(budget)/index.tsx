@@ -108,6 +108,7 @@ export default function BudgetScreen() {
   // -- Inline budget editing (global edit mode) --
   const [editMode, setEditMode] = useState(false);
   const [edits, setEdits] = useState<Record<string, number>>({});
+  const [editsVersion, setEditsVersion] = useState(0);
   const [saving, setSaving] = useState(false);
   const [focusCatId, setFocusCatId] = useState<string | null>(null);
 
@@ -199,6 +200,7 @@ export default function BudgetScreen() {
 
   function handleEditChange(catId: string, cents: number) {
     setEdits((prev) => ({ ...prev, [catId]: cents }));
+    setEditsVersion((v) => v + 1);
   }
 
   async function handleSaveEdits() {
@@ -379,7 +381,7 @@ export default function BudgetScreen() {
           stickySectionHeadersEnabled
           onScroll={handleScroll}
           scrollEventThrottle={16}
-          extraData={`${[...collapsedGroups].join()}-${editMode}-${JSON.stringify(edits)}`}
+          extraData={`${collapsedGroups.size}-${editMode}-${editsVersion}`}
           ListHeaderComponent={
             data && (overspentCount > 0 || uncategorizedCount > 0) ? (
               <View style={{ paddingTop: spacing.xs, paddingBottom: spacing.xs, gap: spacing.xs }}>

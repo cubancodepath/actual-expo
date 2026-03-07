@@ -9,9 +9,9 @@ export default function TransactionLayout() {
   return (
     <Stack screenOptions={{ ...screen, headerBackButtonDisplayMode: 'minimal' }}>
       <Stack.Screen name="new" options={{ title: 'New Transaction' }} />
-      <Stack.Screen name="payee-picker" options={{ title: 'Payee' }} />
+      <Stack.Screen name="payee-picker" options={{ headerShown: false }} />
       <Stack.Screen name="category-picker" options={{ headerShown: false }} />
-      <Stack.Screen name="account-picker" options={{ title: 'Account' }} />
+      <Stack.Screen name="account-picker" options={{ headerShown: false }} />
       <Stack.Screen name="split" options={{ title: 'Split Transaction' }} />
       <Stack.Screen name="split-category-picker" options={{ title: 'Category' }} />
       <Stack.Screen

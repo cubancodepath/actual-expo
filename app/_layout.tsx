@@ -58,21 +58,32 @@ export default function RootLayout() {
 
     updateAppBadge();
 
+    // Debounce badge updates to coalesce rapid store changes (e.g. during sync)
+    let badgeTimer: ReturnType<typeof setTimeout> | null = null;
+    const debouncedBadge = () => {
+      if (badgeTimer) clearTimeout(badgeTimer);
+      badgeTimer = setTimeout(updateAppBadge, 500);
+    };
+
     let prevBudget = useBudgetStore.getState().data;
     const unsubBudget = useBudgetStore.subscribe((state) => {
       if (state.data !== prevBudget) {
         prevBudget = state.data;
-        updateAppBadge();
+        debouncedBadge();
       }
     });
     let prevTxns = useTransactionsStore.getState().transactions;
     const unsubTxns = useTransactionsStore.subscribe((state) => {
       if (state.transactions !== prevTxns) {
         prevTxns = state.transactions;
-        updateAppBadge();
+        debouncedBadge();
       }
     });
-    return () => { unsubBudget(); unsubTxns(); };
+    return () => {
+      if (badgeTimer) clearTimeout(badgeTimer);
+      unsubBudget();
+      unsubTxns();
+    };
   }, [isConfigured]);
 
   // Register home screen quick actions only when fully authenticated with a budget
@@ -91,16 +102,6 @@ export default function RootLayout() {
     }
   }, [isConfigured]);
 
-  // Sync when app comes back to foreground — mirrors loot-core's app-focused handler
-  useEffect(() => {
-    const sub = AppState.addEventListener("change", (nextState) => {
-      if (nextState === "active" && usePrefsStore.getState().isConfigured && !isSwitchingBudget()) {
-        fullSync().catch(console.warn);
-      }
-    });
-    return () => sub.remove();
-  }, []);
-
   // Handle pending shortcut action (written to UserDefaults by AddTransactionIntent)
   useEffect(() => {
     if (!ready || !isConfigured) return;
@@ -118,17 +119,22 @@ export default function RootLayout() {
     }
 
     // Check once after bootstrap (cold launch from shortcut)
-    const timer = setTimeout(checkShortcutAction, 300);
+    let pendingTimer: ReturnType<typeof setTimeout> | null = setTimeout(checkShortcutAction, 300);
 
-    // Check when app returns to foreground (warm launch from shortcut)
+    // Single AppState listener for both sync and shortcut check
     const sub = AppState.addEventListener("change", (nextState) => {
-      if (nextState === "active") {
-        setTimeout(checkShortcutAction, 300);
+      if (nextState !== "active") return;
+      // Sync on foreground
+      if (usePrefsStore.getState().isConfigured && !isSwitchingBudget()) {
+        fullSync().catch(console.warn);
       }
+      // Check shortcut action with debounced timer
+      if (pendingTimer) clearTimeout(pendingTimer);
+      pendingTimer = setTimeout(checkShortcutAction, 300);
     });
 
     return () => {
-      clearTimeout(timer);
+      if (pendingTimer) clearTimeout(pendingTimer);
       sub.remove();
     };
   }, [ready, isConfigured, router]);

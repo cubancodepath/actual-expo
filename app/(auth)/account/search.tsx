@@ -38,7 +38,9 @@ import {
   useTransactionBulkActions,
   useSelectModeHeader,
   useBulkCategoryPicker,
+  useBulkAccountPicker,
 } from '../../../src/presentation/hooks/transactionList';
+import { usePickerStore } from '../../../src/stores/pickerStore';
 import { SelectModeToolbar } from '../../../src/presentation/components/transaction/SelectModeToolbar';
 
 // ---------------------------------------------------------------------------
@@ -149,8 +151,6 @@ export default function AccountSearchScreen() {
     handleLongPress, enterSelectMode, handleSelectAll, handleDoneSelection, resetSelection,
   } = useTransactionSelection({ transactions: results });
 
-  const otherAccounts = accounts.filter(a => a.id !== accountId && !a.closed);
-
   const { handleBulkDelete, handleBulkMove, handleBulkToggleCleared, handleBulkChangeCategory } = useTransactionBulkActions({
     selectedIds,
     transactions: results,
@@ -161,6 +161,7 @@ export default function AccountSearchScreen() {
   });
 
   const { triggerCategoryPicker } = useBulkCategoryPicker(handleBulkChangeCategory);
+  const { triggerAccountPicker } = useBulkAccountPicker(handleBulkMove);
 
   useSelectModeHeader({
     isSelectMode,
@@ -353,9 +354,46 @@ export default function AccountSearchScreen() {
     }
   }
 
-  async function handleMove(txnId: string, targetAccountId: string) {
-    setResults(prev => prev.filter(t => t.id !== txnId));
-    await updateTransaction(txnId, { acct: targetAccountId });
+  // Single-item move via account picker
+  const pendingMoveRef = useRef<string | null>(null);
+  const selectedAccount = usePickerStore((s) => s.selectedAccount);
+  const clearPicker = usePickerStore((s) => s.clear);
+
+  useEffect(() => {
+    if (selectedAccount && pendingMoveRef.current) {
+      const txnId = pendingMoveRef.current;
+      pendingMoveRef.current = null;
+      clearPicker();
+      setResults(prev => prev.filter(t => t.id !== txnId));
+      updateTransaction(txnId, { acct: selectedAccount.id });
+    }
+  }, [selectedAccount, clearPicker]);
+
+  function handleMove(txnId: string) {
+    pendingMoveRef.current = txnId;
+    router.push({ pathname: '/(auth)/transaction/account-picker', params: { selectedId: '' } });
+  }
+
+  // Single-item categorize via category picker
+  const pendingCategoryRef = useRef<string | null>(null);
+  const selectedCategory = usePickerStore((s) => s.selectedCategory);
+
+  useEffect(() => {
+    if (selectedCategory && pendingCategoryRef.current) {
+      const txnId = pendingCategoryRef.current;
+      pendingCategoryRef.current = null;
+      const categoryId = selectedCategory.id;
+      clearPicker();
+      setResults(prev => prev.map(t =>
+        t.id === txnId ? { ...t, category: categoryId } : t
+      ));
+      updateTransaction(txnId, { category: categoryId });
+    }
+  }, [selectedCategory, clearPicker]);
+
+  function handleSetCategory(txnId: string) {
+    pendingCategoryRef.current = txnId;
+    router.push({ pathname: '/(auth)/transaction/category-picker', params: { hideSplit: '1' } });
   }
 
   function handleAddTag(txnId: string) {
@@ -417,9 +455,9 @@ export default function AccountSearchScreen() {
               onLongPress={handleLongPress}
               onDuplicate={handleDuplicate}
               onMove={handleMove}
+              onSetCategory={handleSetCategory}
               onAddTag={handleAddTag}
               tags={tags}
-              moveAccounts={otherAccounts}
               isFirst={item.isFirst}
               isLast={item.isLast}
               isSelectMode={isSelectMode}
@@ -456,9 +494,8 @@ export default function AccountSearchScreen() {
         selectedCount={selectedIds.size}
         onToggleCleared={handleBulkToggleCleared}
         onDelete={handleBulkDelete}
-        onMove={handleBulkMove}
+        onMove={triggerAccountPicker}
         onSetCategory={triggerCategoryPicker}
-        moveAccounts={otherAccounts}
       />
     )}
     </>

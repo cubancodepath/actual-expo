@@ -31,6 +31,7 @@ import {
   useTransactionBulkActions,
   useSelectModeHeader,
   useBulkCategoryPicker,
+  useBulkAccountPicker,
   useTransactionActions,
   type ListItem,
 } from '../../../../src/presentation/hooks/transactionList';
@@ -72,7 +73,7 @@ export default function SpendingScreen() {
   // ---- Bulk actions ----
   const otherAccounts = accounts.filter(a => !a.closed);
 
-  const { handleBulkDelete, handleBulkMove, handleBulkToggleCleared, handleBulkChangeCategory } = useTransactionBulkActions({
+  const { handleBulkDelete, handleBulkMove, handleBulkToggleCleared, handleBulkChangeCategory, restoreBulkDeleted } = useTransactionBulkActions({
     selectedIds,
     transactions,
     setTransactions,
@@ -88,6 +89,7 @@ export default function SpendingScreen() {
   });
 
   const { triggerCategoryPicker } = useBulkCategoryPicker(handleBulkChangeCategory);
+  const { triggerAccountPicker } = useBulkAccountPicker(handleBulkMove);
 
   // ---- Select mode header ----
   useSelectModeHeader({
@@ -119,13 +121,20 @@ export default function SpendingScreen() {
   // Refresh local list after undo restores data in DB
   useEffect(() => {
     if (undoVersion > 0) {
-      silentRefresh();
-      getUnclearedCount().then(setUnclearedCount);
+      // Defer to avoid "Should not already be working" — undoVersion is set
+      // from a queueMicrotask inside the undo store which can overlap with
+      // React's commit phase.
+      setTimeout(() => {
+        restoreDeleted();
+        restoreBulkDeleted();
+        silentRefresh();
+        getUnclearedCount().then(setUnclearedCount);
+      }, 0);
     }
   }, [undoVersion]);
 
   // ---- Single-item handlers ----
-  const { handleDelete, handleToggleCleared, handleEditTransaction, handleDuplicate, handleMove, handleAddTag } =
+  const { handleDelete, handleToggleCleared, handleEditTransaction, handleDuplicate, handleMove, handleSetCategory, handleAddTag, restoreDeleted } =
     useTransactionActions({
       transactions, setTransactions, refreshIdRef, loadAccounts, setUnclearedCount,
       moveMode: 'remap', accounts: otherAccounts,
@@ -204,10 +213,10 @@ export default function SpendingScreen() {
               onLongPress={handleLongPress}
               onDuplicate={handleDuplicate}
               onMove={handleMove}
+              onSetCategory={handleSetCategory}
               onAddTag={handleAddTag}
               showAccountName
               tags={tags}
-              moveAccounts={otherAccounts}
               isFirst={item.isFirst}
               isLast={item.isLast}
               isSelectMode={isSelectMode}
@@ -247,9 +256,8 @@ export default function SpendingScreen() {
           selectedCount={selectedIds.size}
           onToggleCleared={handleBulkToggleCleared}
           onDelete={handleBulkDelete}
-          onMove={handleBulkMove}
+          onMove={triggerAccountPicker}
           onSetCategory={triggerCategoryPicker}
-          moveAccounts={otherAccounts}
         />
       )}
     </>

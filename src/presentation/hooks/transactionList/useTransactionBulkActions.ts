@@ -7,6 +7,8 @@ import {
   updateTransaction,
   type TransactionDisplay,
 } from '../../../transactions';
+import { batchMessages } from '../../../sync';
+import { undoable } from '../../../sync/undo';
 import { useUndoStore } from '../../../stores/undoStore';
 
 interface UseTransactionBulkActionsOptions {
@@ -51,6 +53,9 @@ export function useTransactionBulkActions({
   const onBulkToggleClearedRef = useRef(onBulkToggleCleared);
   onBulkToggleClearedRef.current = onBulkToggleCleared;
 
+  // Track last bulk-deleted items so undo can restore them optimistically
+  const lastBulkDeletedRef = useRef<Array<{ txn: TransactionDisplay; index: number }>>([]);
+
   const handleBulkDelete = useCallback(() => {
     const count = selectedIdsRef.current.size;
     Alert.alert(
@@ -64,12 +69,24 @@ export function useTransactionBulkActions({
           onPress: async () => {
             refreshIdRef.current++;
             const ids = new Set(selectedIdsRef.current);
+            // Snapshot positions before removing so undo can restore them
+            const snapshot: Array<{ txn: TransactionDisplay; index: number }> = [];
+            transactionsRef.current.forEach((t, i) => {
+              if (ids.has(t.id)) snapshot.push({ txn: t, index: i });
+            });
+            lastBulkDeletedRef.current = snapshot;
             setTransactions(prev => prev.filter(t => !ids.has(t.id)));
             resetSelectionRef.current();
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            for (const txnId of ids) {
-              await deleteTransaction(txnId);
-            }
+            // Wrap in undoable so all deletes share one undo marker,
+            // and batchMessages so they apply in a single DB transaction.
+            await undoable(async () => {
+              await batchMessages(async () => {
+                for (const txnId of ids) {
+                  await deleteTransaction(txnId);
+                }
+              });
+            })();
             queueMicrotask(() => useUndoStore.getState().showUndo(`${ids.size} transaction${ids.size === 1 ? '' : 's'} deleted`));
             loadAccountsRef.current();
           },
@@ -97,9 +114,13 @@ export function useTransactionBulkActions({
             }
             resetSelectionRef.current();
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            for (const txnId of ids) {
-              await updateTransaction(txnId, { acct: targetAccountId });
-            }
+            await undoable(async () => {
+              await batchMessages(async () => {
+                for (const txnId of ids) {
+                  await updateTransaction(txnId, { acct: targetAccountId });
+                }
+              });
+            })();
             loadAccountsRef.current();
           },
         },
@@ -137,15 +158,38 @@ export function useTransactionBulkActions({
     resetSelectionRef.current();
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-    for (const txnId of ids) {
-      await updateTransaction(txnId, { category: categoryId });
-    }
+    await undoable(async () => {
+      await batchMessages(async () => {
+        for (const txnId of ids) {
+          await updateTransaction(txnId, { category: categoryId });
+        }
+      });
+    })();
   }, [setTransactions, refreshIdRef]);
+
+  /** Restore the last bulk-deleted items into the local list optimistically. */
+  const restoreBulkDeleted = useCallback(() => {
+    const deleted = lastBulkDeletedRef.current;
+    if (deleted.length === 0) return;
+    lastBulkDeletedRef.current = [];
+    setTransactions(prev => {
+      const existingIds = new Set(prev.map(t => t.id));
+      const toRestore = deleted.filter(d => !existingIds.has(d.txn.id));
+      if (toRestore.length === 0) return prev;
+      const next = [...prev];
+      // Insert in reverse order so indices stay correct
+      for (let i = toRestore.length - 1; i >= 0; i--) {
+        next.splice(Math.min(toRestore[i].index, next.length), 0, toRestore[i].txn);
+      }
+      return next;
+    });
+  }, [setTransactions]);
 
   return {
     handleBulkDelete,
     handleBulkMove,
     handleBulkToggleCleared,
     handleBulkChangeCategory,
+    restoreBulkDeleted,
   };
 }

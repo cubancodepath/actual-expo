@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { memo, useRef } from 'react';
 import { Platform, Pressable, View } from 'react-native';
 import * as ContextMenu from 'zeego/context-menu';
 import { useTheme } from '../../providers/ThemeProvider';
@@ -32,7 +32,7 @@ interface BudgetCategoryRowProps {
   showProgressBar?: boolean;
 }
 
-export function BudgetCategoryRow({
+export const BudgetCategoryRow = memo(function BudgetCategoryRow({
   cat,
   isIncome,
   isFirst = false,
@@ -341,4 +341,4 @@ export function BudgetCategoryRow({
   }
 
   return pressableContent;
-}
+});

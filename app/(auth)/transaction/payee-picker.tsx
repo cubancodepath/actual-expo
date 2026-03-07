@@ -6,6 +6,7 @@ import { usePayeesStore } from '../../../src/stores/payeesStore';
 import { usePickerStore } from '../../../src/stores/pickerStore';
 import { useTheme, useThemedStyles } from '../../../src/presentation/providers/ThemeProvider';
 import { Text } from '../../../src/presentation/components/atoms/Text';
+import { GlassButton } from '../../../src/presentation/components/atoms/GlassButton';
 import { SearchBar } from '../../../src/presentation/components/molecules/SearchBar';
 import type { Theme } from '../../../src/theme';
 
@@ -86,6 +87,23 @@ export default function PayeePickerScreen() {
 
   return (
     <View style={styles.container}>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingHorizontal: spacing.lg,
+          paddingTop: spacing.lg,
+          paddingBottom: spacing.sm,
+          backgroundColor: colors.headerBackground,
+        }}
+      >
+        <GlassButton icon="chevron.left" onPress={() => router.back()} />
+        <Text variant="headingSm" color={colors.headerText}>
+          Payee
+        </Text>
+        <View style={{ width: 48 }} />
+      </View>
       <SearchBar
         value={search}
         onChangeText={setSearch}

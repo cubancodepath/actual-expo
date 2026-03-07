@@ -71,7 +71,7 @@ export async function downloadAndImportBudget(
   // Diagnose: log content-type and first bytes so we can see what the server sent
   const contentType = res.headers.get('content-type') ?? 'unknown';
   const firstBytes = Array.from(zipBytes.slice(0, 4)).map(b => b.toString(16).padStart(2, '0')).join(' ');
-  console.log(`[download] content-type: ${contentType}, size: ${zipBytes.length}, first bytes: ${firstBytes}`);
+  if (__DEV__) console.log(`[download] content-type: ${contentType}, size: ${zipBytes.length}, first bytes: ${firstBytes}`);
 
   // ZIP magic bytes are 50 4b 03 04 — if it's something else, show what we got
   if (zipBytes[0] !== 0x50 || zipBytes[1] !== 0x4b) {

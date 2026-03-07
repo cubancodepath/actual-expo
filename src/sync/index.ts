@@ -202,14 +202,22 @@ export async function applyMessages(messages: SyncMessage[]): Promise<OldData> {
   }
 
   for (const [dataset, rowIds] of rowsToFetch) {
-    for (const rowId of rowIds) {
-      const row = await first<Record<string, unknown>>(
-        `SELECT * FROM ${dataset} WHERE id = ?`,
-        [rowId],
+    const ids = [...rowIds];
+    // Batch fetch: SELECT ... WHERE id IN (?, ?, ...)
+    // SQLite has a limit of ~999 variables — chunk if needed
+    const CHUNK_SIZE = 500;
+    for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
+      const chunk = ids.slice(i, i + CHUNK_SIZE);
+      const placeholders = chunk.map(() => '?').join(',');
+      const rows = await runQuery<Record<string, unknown>>(
+        `SELECT * FROM ${dataset} WHERE id IN (${placeholders})`,
+        chunk,
       );
-      if (row) {
+      if (rows.length > 0) {
         if (!oldData[dataset]) oldData[dataset] = {};
-        oldData[dataset][rowId] = row;
+        for (const row of rows) {
+          oldData[dataset][row.id as string] = row;
+        }
       }
     }
   }
@@ -352,7 +360,7 @@ export async function fullSync(attempt = 0): Promise<void> {
 
     // Critical guard: discard results if budget changed during network request
     if (gen !== _syncGeneration) {
-      console.log('[fullSync] generation changed during network request — discarding results');
+      if (__DEV__) console.log('[fullSync] generation changed during network request — discarding results');
       return;
     }
 
@@ -361,13 +369,14 @@ export async function fullSync(attempt = 0): Promise<void> {
       prefs.encryptKeyId,
     );
 
-    console.log(`[fullSync] received ${serverMessages.length} messages from server (attempt ${attempt})`);
+    if (__DEV__) console.log(`[fullSync] received ${serverMessages.length} messages from server (attempt ${attempt})`);
 
     if (serverMessages.length > 0) {
       if (gen !== _syncGeneration) return;
       await applyMessages(serverMessages);
       if (gen !== _syncGeneration) return;
-      await refreshAllStores();
+      const affectedDatasets = new Set(serverMessages.map(m => m.dataset));
+      await refreshAffectedStores(affectedDatasets);
     }
 
     if (gen !== _syncGeneration) return;
@@ -375,9 +384,10 @@ export async function fullSync(attempt = 0): Promise<void> {
     // Persist last synced timestamp — persist middleware auto-saves to MMKV
     prefs.setPrefs({ lastSyncedTimestamp: new Date().toISOString() });
 
-    // Check merkle divergence — retry up to 5 times
+    // Check merkle divergence — only retry if server actually sent messages
+    // (otherwise we'd loop 5 times with 0 messages, achieving nothing)
     const diffTime = merkle.diff(serverMerkle as any, getClock().merkle);
-    if (diffTime !== null && attempt < 5) {
+    if (diffTime !== null && serverMessages.length > 0 && attempt < 5) {
       return fullSync(attempt + 1);
     }
 
@@ -398,6 +408,70 @@ export async function fullSync(attempt = 0): Promise<void> {
 // ---------------------------------------------------------------------------
 // Store refresh — called after applyMessages()
 // ---------------------------------------------------------------------------
+
+// Map CRDT datasets → which stores need refreshing
+const DATASET_STORE_MAP: Record<string, string[]> = {
+  accounts: ['accounts'],
+  transactions: ['accounts', 'transactions', 'budget'], // transactions affect account balances + budget spent
+  categories: ['categories', 'budget'],
+  category_groups: ['categories', 'budget'],
+  category_mapping: ['categories'],
+  payees: ['payees'],
+  payee_mapping: ['payees'],
+  zero_budgets: ['budget'],
+  zero_budget_months: ['budget'],
+  preferences: ['preferences'],
+  tags: ['tags'],
+  notes: [],
+  prefs: ['preferences'],
+};
+
+async function refreshAffectedStores(datasets: Set<string>): Promise<void> {
+  const storesToRefresh = new Set<string>();
+  for (const ds of datasets) {
+    const stores = DATASET_STORE_MAP[ds];
+    if (stores) {
+      for (const s of stores) storesToRefresh.add(s);
+    } else {
+      // Unknown dataset — refresh everything to be safe
+      return refreshAllStores();
+    }
+  }
+
+  if (storesToRefresh.size === 0) return;
+
+  const [
+    { useAccountsStore },
+    { useTransactionsStore },
+    { useCategoriesStore },
+    { useBudgetStore },
+    { usePreferencesStore },
+    { useTagsStore },
+  ] = await Promise.all([
+    import('../stores/accountsStore'),
+    import('../stores/transactionsStore'),
+    import('../stores/categoriesStore'),
+    import('../stores/budgetStore'),
+    import('../stores/preferencesStore'),
+    import('../stores/tagsStore'),
+  ]);
+
+  const refreshes: Promise<void>[] = [];
+  if (storesToRefresh.has('accounts')) refreshes.push(useAccountsStore.getState().load());
+  if (storesToRefresh.has('transactions'))
+    refreshes.push(useTransactionsStore.getState().load(useTransactionsStore.getState().accountId ?? undefined));
+  if (storesToRefresh.has('categories')) refreshes.push(useCategoriesStore.getState().load());
+  if (storesToRefresh.has('budget')) refreshes.push(useBudgetStore.getState().load());
+  if (storesToRefresh.has('preferences')) refreshes.push(usePreferencesStore.getState().load());
+  if (storesToRefresh.has('tags')) refreshes.push(useTagsStore.getState().load());
+
+  const results = await Promise.allSettled(refreshes);
+  for (const result of results) {
+    if (result.status === 'rejected') {
+      console.warn('[refreshAffectedStores] store load failed:', result.reason);
+    }
+  }
+}
 
 export async function refreshAllStores(): Promise<void> {
   // Lazy import to avoid circular dependencies

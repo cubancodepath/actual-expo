@@ -121,6 +121,29 @@ const MIGRATIONS = [
   'ALTER TABLE transactions ADD COLUMN parent_id TEXT',
 ];
 
+const INDEXES = `
+CREATE INDEX IF NOT EXISTS idx_transactions_acct ON transactions(acct);
+CREATE INDEX IF NOT EXISTS idx_transactions_category ON transactions(category);
+CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date);
+CREATE INDEX IF NOT EXISTS idx_transactions_parent_id ON transactions(parent_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_tombstone ON transactions(tombstone);
+
+CREATE INDEX IF NOT EXISTS idx_categories_cat_group ON categories(cat_group);
+CREATE INDEX IF NOT EXISTS idx_categories_tombstone ON categories(tombstone);
+
+CREATE INDEX IF NOT EXISTS idx_category_groups_tombstone ON category_groups(tombstone);
+
+CREATE INDEX IF NOT EXISTS idx_payees_transfer_acct ON payees(transfer_acct);
+CREATE INDEX IF NOT EXISTS idx_payees_tombstone ON payees(tombstone);
+
+CREATE INDEX IF NOT EXISTS idx_zero_budgets_month_category ON zero_budgets(month, category);
+
+CREATE INDEX IF NOT EXISTS idx_payee_mapping_targetId ON payee_mapping(targetId);
+CREATE INDEX IF NOT EXISTS idx_category_mapping_transferId ON category_mapping(transferId);
+
+CREATE INDEX IF NOT EXISTS idx_messages_crdt_dataset_row ON messages_crdt(dataset, row);
+`;
+
 export async function runSchema(db: SQLiteDatabase): Promise<void> {
   await db.execAsync(TABLES);
   for (const sql of MIGRATIONS) {
@@ -130,4 +153,5 @@ export async function runSchema(db: SQLiteDatabase): Promise<void> {
       // Column already exists — ignore
     }
   }
+  await db.execAsync(INDEXES);
 }

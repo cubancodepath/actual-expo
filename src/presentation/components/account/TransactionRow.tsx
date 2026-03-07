@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { memo, useEffect } from 'react';
 import { Platform, Pressable, View } from 'react-native';
 import Animated, {
   Easing,
@@ -26,18 +26,18 @@ interface TransactionRowProps {
   onToggleCleared: (id: string) => void;
   onLongPress?: (id: string) => void;
   onDuplicate?: (id: string) => void;
-  onMove?: (id: string, targetAccountId: string) => void;
+  onMove?: (id: string) => void;
+  onSetCategory?: (id: string) => void;
   onAddTag?: (id: string) => void;
   showAccountName?: boolean;
   tags?: Tag[];
-  moveAccounts?: Array<{ id: string; name: string }>;
   isFirst?: boolean;
   isLast?: boolean;
   isSelectMode?: boolean;
   isSelected?: boolean;
 }
 
-export function TransactionRow({
+export const TransactionRow = memo(function TransactionRow({
   item,
   onPress,
   onDelete,
@@ -45,10 +45,10 @@ export function TransactionRow({
   onLongPress,
   onDuplicate,
   onMove,
+  onSetCategory,
   onAddTag,
   showAccountName,
   tags,
-  moveAccounts,
   isFirst = false,
   isLast = false,
   isSelectMode = false,
@@ -258,23 +258,23 @@ export function TransactionRow({
             <ContextMenu.ItemTitle>Duplicate</ContextMenu.ItemTitle>
             <ContextMenu.ItemIcon ios={{ name: 'doc.on.doc' }} />
           </ContextMenu.Item>
-          {moveAccounts && moveAccounts.length > 0 && (
-            <ContextMenu.Sub>
-              <ContextMenu.SubTrigger key="move">
-                <ContextMenu.ItemTitle>Move to...</ContextMenu.ItemTitle>
-                <ContextMenu.ItemIcon ios={{ name: 'arrow.right.arrow.left' }} />
-              </ContextMenu.SubTrigger>
-              <ContextMenu.SubContent>
-                {moveAccounts.map(acc => (
-                  <ContextMenu.Item
-                    key={acc.id}
-                    onSelect={() => onMove?.(item.id, acc.id)}
-                  >
-                    <ContextMenu.ItemTitle>{acc.name}</ContextMenu.ItemTitle>
-                  </ContextMenu.Item>
-                ))}
-              </ContextMenu.SubContent>
-            </ContextMenu.Sub>
+          {onMove && (
+            <ContextMenu.Item
+              key="move"
+              onSelect={() => onMove(item.id)}
+            >
+              <ContextMenu.ItemTitle>Move to…</ContextMenu.ItemTitle>
+              <ContextMenu.ItemIcon ios={{ name: 'arrow.right.arrow.left' }} />
+            </ContextMenu.Item>
+          )}
+          {onSetCategory && (
+            <ContextMenu.Item
+              key="set-category"
+              onSelect={() => onSetCategory(item.id)}
+            >
+              <ContextMenu.ItemTitle>Categorize</ContextMenu.ItemTitle>
+              <ContextMenu.ItemIcon ios={{ name: 'tag' }} />
+            </ContextMenu.Item>
           )}
           <ContextMenu.Item
             key="add-tag"
@@ -298,7 +298,7 @@ export function TransactionRow({
   }
 
   return swipeableContent;
-}
+});
 
 const createStyles = (theme: Theme) => ({
   row: {

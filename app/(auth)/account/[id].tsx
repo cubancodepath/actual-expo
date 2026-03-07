@@ -39,6 +39,7 @@ import {
   useTransactionBulkActions,
   useSelectModeHeader,
   useBulkCategoryPicker,
+  useBulkAccountPicker,
   useTransactionActions,
   type ListItem,
 } from '../../../src/presentation/hooks/transactionList';
@@ -98,7 +99,7 @@ export default function AccountTransactionsScreen() {
   } = useTransactionSelection({ transactions });
 
   // ---- Bulk actions ----
-  const { handleBulkDelete, handleBulkMove, handleBulkToggleCleared, handleBulkChangeCategory } = useTransactionBulkActions({
+  const { handleBulkDelete, handleBulkMove, handleBulkToggleCleared, handleBulkChangeCategory, restoreBulkDeleted } = useTransactionBulkActions({
     selectedIds,
     transactions,
     setTransactions,
@@ -117,6 +118,7 @@ export default function AccountTransactionsScreen() {
   });
 
   const { triggerCategoryPicker } = useBulkCategoryPicker(handleBulkChangeCategory);
+  const { triggerAccountPicker } = useBulkAccountPicker(handleBulkMove);
 
   // ---- Select mode header ----
   useSelectModeHeader({
@@ -147,7 +149,11 @@ export default function AccountTransactionsScreen() {
   // Refresh local list after undo restores data in DB
   useEffect(() => {
     if (undoVersion > 0) {
-      silentRefreshWithBalance();
+      setTimeout(() => {
+        restoreDeleted();
+        restoreBulkDeleted();
+        silentRefreshWithBalance();
+      }, 0);
     }
   }, [undoVersion]);
 
@@ -171,7 +177,7 @@ export default function AccountTransactionsScreen() {
   }
 
   // ---- Single-item handlers ----
-  const { handleDelete, handleToggleCleared, handleEditTransaction, handleDuplicate, handleMove, handleAddTag } =
+  const { handleDelete, handleToggleCleared, handleEditTransaction, handleDuplicate, handleMove, handleSetCategory, handleAddTag, restoreDeleted } =
     useTransactionActions({
       transactions, setTransactions, refreshIdRef, loadAccounts, setUnclearedCount,
       moveMode: 'remove', accounts: otherAccounts,
@@ -277,9 +283,9 @@ export default function AccountTransactionsScreen() {
                 onLongPress={handleLongPress}
                 onDuplicate={handleDuplicate}
                 onMove={handleMove}
+                onSetCategory={handleSetCategory}
                 onAddTag={handleAddTag}
                 tags={tags}
-                moveAccounts={otherAccounts}
                 isFirst={item.isFirst}
                 isLast={item.isLast}
                 isSelectMode={isSelectMode}
@@ -334,9 +340,8 @@ export default function AccountTransactionsScreen() {
           selectedCount={selectedIds.size}
           onToggleCleared={handleBulkToggleCleared}
           onDelete={handleBulkDelete}
-          onMove={handleBulkMove}
+          onMove={triggerAccountPicker}
           onSetCategory={triggerCategoryPicker}
-          moveAccounts={otherAccounts}
         />
       )}
     </View>

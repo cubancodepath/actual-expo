@@ -196,7 +196,10 @@ export async function computeCarryoverChain(
 // toBudget = cumulativeIncome - cumulativeBudgeted - bufferedSelected + overspendingPenalty
 // ---------------------------------------------------------------------------
 
-export async function computeToBudget(month: string): Promise<number> {
+export async function computeToBudget(
+  month: string,
+  opts?: { groups?: CategoryGroupRow[]; categories?: CategoryRow[] },
+): Promise<number> {
   const monthInt  = monthToInt(month);
   const endDate   = monthInt * 100 + 31;
 
@@ -224,15 +227,16 @@ export async function computeToBudget(month: string): Promise<number> {
   );
 
   // Overspending penalty from carryover chain
-  const groups = await runQuery<CategoryGroupRow>(
+  const groups = opts?.groups ?? await runQuery<CategoryGroupRow>(
     'SELECT * FROM category_groups WHERE tombstone = 0',
   );
-  const categories = await runQuery<CategoryRow>(
+  const categories = opts?.categories ?? await runQuery<CategoryRow>(
     'SELECT * FROM categories WHERE tombstone = 0',
   );
+  const groupMap = new Map(groups.map(g => [g.id, g]));
   const expenseCatIds = categories
     .filter(c => {
-      const g = groups.find(g => g.id === c.cat_group);
+      const g = groupMap.get(c.cat_group);
       return g && g.is_income === 0;
     })
     .map(c => c.id);
@@ -270,7 +274,7 @@ export async function computeToBudget(month: string): Promise<number> {
 
     const incomeCatIds = categories
       .filter(c => {
-        const g = groups.find(g => g.id === c.cat_group);
+        const g = groupMap.get(c.cat_group);
         return g && g.is_income === 1;
       })
       .map(c => c.id);
@@ -329,9 +333,10 @@ export async function getBudgetMonth(month: string): Promise<BudgetMonth> {
   const currentMap = new Map(currentMonthRows.map(r => [r.category, r.amount]));
 
   // ── Carryover chain ──
+  const groupMap = new Map(groups.map(g => [g.id, g]));
   const expenseCatIds = categories
     .filter(c => {
-      const g = groups.find(g => g.id === c.cat_group);
+      const g = groupMap.get(c.cat_group);
       return g && g.is_income === 0;
     })
     .map(c => c.id);
@@ -376,7 +381,7 @@ export async function getBudgetMonth(month: string): Promise<BudgetMonth> {
     // Auto-buffer: sum of income from categories that have carryover flag set
     const incomeCatIds = categories
       .filter(c => {
-        const g = groups.find(g => g.id === c.cat_group);
+        const g = groupMap.get(c.cat_group);
         return g && g.is_income === 1;
       })
       .map(c => c.id);

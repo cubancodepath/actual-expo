@@ -5,9 +5,8 @@ interface SelectModeToolbarProps {
   selectedCount: number;
   onToggleCleared: () => void;
   onDelete: () => void;
-  onMove: (accountId: string, accountName: string) => void;
+  onMove: () => void;
   onSetCategory: () => void;
-  moveAccounts: Array<{ id: string; name: string }>;
 }
 
 export function SelectModeToolbar({
@@ -17,7 +16,6 @@ export function SelectModeToolbar({
   onDelete,
   onMove,
   onSetCategory,
-  moveAccounts,
 }: SelectModeToolbarProps) {
   const hasSelection = selectedCount > 0;
 
@@ -39,18 +37,12 @@ export function SelectModeToolbar({
       </Stack.Toolbar.Button>
       <Stack.Toolbar.Spacer />
       <Stack.Toolbar.Menu icon="ellipsis">
-        {moveAccounts.length > 0 && (
-          <Stack.Toolbar.Menu icon="arrow.right.arrow.left" title="Move to...">
-            {moveAccounts.map(acc => (
-              <Stack.Toolbar.MenuAction
-                key={acc.id}
-                onPress={() => onMove(acc.id, acc.name)}
-              >
-                {acc.name}
-              </Stack.Toolbar.MenuAction>
-            ))}
-          </Stack.Toolbar.Menu>
-        )}
+        <Stack.Toolbar.MenuAction
+          icon="arrow.right.arrow.left"
+          onPress={onMove}
+        >
+          Move to…
+        </Stack.Toolbar.MenuAction>
         <Stack.Toolbar.MenuAction
           icon="trash"
           destructive

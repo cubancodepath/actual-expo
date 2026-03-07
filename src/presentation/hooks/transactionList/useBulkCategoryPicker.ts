@@ -23,7 +23,7 @@ export function useBulkCategoryPicker(
 
   const triggerCategoryPicker = useCallback(() => {
     bulkCategoryPending.current = true;
-    router.push('/(auth)/transaction/category-picker');
+    router.push({ pathname: '/(auth)/transaction/category-picker', params: { hideSplit: '1' } });
   }, [router]);
 
   return { triggerCategoryPicker };

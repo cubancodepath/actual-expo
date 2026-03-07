@@ -354,7 +354,7 @@ export default function NewTransactionScreen() {
 
           {/* Title — centered */}
           <View style={{ position: 'absolute', top: 24, left: 0, right: 0, alignItems: 'center', pointerEvents: 'none' }}>
-            <Text variant="body" color={colors.text} style={{ fontWeight: '600' }}>
+            <Text variant="body" color={colors.textPrimary} style={{ fontWeight: '600' }}>
               {isEdit ? 'Edit Transaction' : 'Add Transaction'}
             </Text>
           </View>

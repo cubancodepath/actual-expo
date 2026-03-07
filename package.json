@@ -4,9 +4,7 @@
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
-    "android": "expo run:android",
-    "ios": "expo run:ios",
-    "web": "expo start --web"
+    "ios": "expo run:ios"
   },
   "dependencies": {
     "@expo/ui": "55.0.1",
@@ -24,6 +22,7 @@
     "expo-haptics": "~55.0.8",
     "expo-linear-gradient": "~55.0.8",
     "expo-linking": "^55.0.7",
+    "expo-notifications": "~55.0.11",
     "expo-quick-actions": "^6.0.1",
     "expo-router": "~55.0.3",
     "expo-secure-store": "~55.0.8",
@@ -35,7 +34,6 @@
     "murmurhash": "^2.0.1",
     "protobufjs": "^8.0.0",
     "react": "19.2.0",
-    "react-dom": "^19.2.4",
     "react-native": "0.83.2",
     "react-native-gesture-handler": "~2.30.0",
     "react-native-ios-context-menu": "^3.2.1",

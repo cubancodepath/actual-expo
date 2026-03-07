@@ -12,29 +12,25 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    "platforms": ["ios"],
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.actual-expo"
-    },
-    "android": {
-      "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
-      },
-      "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.actualexpo"
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
+      "supportsTablet": false,
+      "bundleIdentifier": "com.anonymous.actual-expo",
+      "deploymentTarget": "26.0"
     },
     "plugins": [
       "expo-sqlite",
       "expo-router",
       "expo-secure-store",
       "expo-web-browser",
-      "expo-quick-actions"
-    ]
+      "expo-quick-actions",
+      "expo-notifications"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "a8e63a50-f2fa-488a-86e7-b7f5332032ae"
+      }
+    }
   }
 }

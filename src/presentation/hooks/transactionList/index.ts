@@ -6,3 +6,4 @@ export { useSelectModeHeader } from './useSelectModeHeader';
 export { useBulkCategoryPicker } from './useBulkCategoryPicker';
 export { useBulkAccountPicker } from './useBulkAccountPicker';
 export { useTransactionActions } from './useTransactionActions';
+export { useTransactionList, type UseTransactionListOptions } from './useTransactionList';

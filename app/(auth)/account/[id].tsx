@@ -1,13 +1,12 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { useSharedValue } from 'react-native-reanimated';
 import {
   ActivityIndicator,
-  Alert,
   RefreshControl,
   View,
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
-import { Stack, useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useAccountsStore } from '../../../src/stores/accountsStore';
 import {
   getClearedBalance,
@@ -15,7 +14,6 @@ import {
   getUnclearedCount,
   lockTransactions,
   reconcileAccount,
-  type TransactionDisplay,
 } from '../../../src/transactions';
 import { ReconcileOverlay } from '../../../src/presentation/components/account/ReconcileOverlay';
 import { useTheme, useThemedStyles } from '../../../src/presentation/providers/ThemeProvider';
@@ -33,14 +31,8 @@ import { useUndoStore } from '../../../src/stores/undoStore';
 import { getCommonMenuItems } from '../../../src/presentation/hooks/useCommonMenuItems';
 import { useTagsStore } from '../../../src/stores/tagsStore';
 import {
-  buildListData,
-  useTransactionPagination,
-  useTransactionSelection,
-  useTransactionBulkActions,
   useSelectModeHeader,
-  useBulkCategoryPicker,
-  useBulkAccountPicker,
-  useTransactionActions,
+  useTransactionList,
   type ListItem,
 } from '../../../src/presentation/hooks/transactionList';
 import { SelectModeToolbar } from '../../../src/presentation/components/transaction/SelectModeToolbar';
@@ -53,7 +45,6 @@ export default function AccountTransactionsScreen() {
   const styles = useThemedStyles(createScreenStyles);
   const { accounts, load: loadAccounts } = useAccountsStore();
   const account = accounts.find(a => a.id === id);
-  const otherAccounts = accounts.filter(a => a.id !== id && !a.closed);
 
   const [clearedBalance, setClearedBalance] = useState(0);
   const [unclearedCount, setUnclearedCount] = useState(0);
@@ -64,48 +55,33 @@ export default function AccountTransactionsScreen() {
   const tags = useTagsStore((s) => s.tags);
   const [showReconcile, setShowReconcile] = useState(false);
 
-  // ---- Pagination ----
+  // ---- Consolidated transaction list ----
   const fetchTransactions = useCallback(
     (limit: number, offset: number) => {
-      // Read hideReconciled from store at call time (not closure time)
       const hide = usePrefsStore.getState().hideReconciled;
       return getTransactionsForAccount(id, { limit, offset, hideReconciled: hide });
     },
     [id],
   );
 
-  const {
-    transactions, setTransactions, loading, loadingMore,
-    loadAll, silentRefresh, loadMore, refreshIdRef, skipNextRefreshRef, hasLoaded, refreshControlProps,
-  } = useTransactionPagination({ fetchTransactions });
-
-  // Load cleared balance + uncleared count alongside transactions
-  const loadWithClearedBalance = useCallback(async () => {
-    const [, cleared, uncleared] = await Promise.all([loadAll(), getClearedBalance(id), getUnclearedCount(id)]);
-    setClearedBalance(cleared);
-    setUnclearedCount(uncleared);
-  }, [loadAll, id]);
-
-  const silentRefreshWithBalance = useCallback(async () => {
-    const [, cleared, uncleared] = await Promise.all([silentRefresh(), getClearedBalance(id), getUnclearedCount(id)]);
-    setClearedBalance(cleared);
-    setUnclearedCount(uncleared);
-  }, [silentRefresh, id]);
-
-  // ---- Selection ----
-  const {
-    selectedIds, isSelectMode, allCleared, selectedTotal,
-    handleLongPress, enterSelectMode, handleSelectAll, handleDoneSelection, resetSelection,
-  } = useTransactionSelection({ transactions });
-
-  // ---- Bulk actions ----
-  const { handleBulkDelete, handleBulkMove, handleBulkToggleCleared, handleBulkChangeCategory, restoreBulkDeleted } = useTransactionBulkActions({
-    selectedIds,
-    transactions,
-    setTransactions,
-    refreshIdRef,
-    resetSelection,
-    loadAccounts,
+  const txnList = useTransactionList({
+    fetchTransactions,
+    moveMode: 'remove',
+    onDelete: (txn) => {
+      if (!txn.cleared && !txn.reconciled) {
+        setUnclearedCount(c => Math.max(0, c - 1));
+      }
+    },
+    onDuplicate: () => {
+      setUnclearedCount(c => c + 1);
+    },
+    onToggleCleared: (txn) => {
+      if (!txn.reconciled) {
+        setUnclearedCount(c => Math.max(0, c + (txn.cleared ? 1 : -1)));
+      }
+      const delta = txn.cleared ? -txn.amount : txn.amount;
+      setClearedBalance(prev => prev + delta);
+    },
     onBulkToggleCleared: (_ids, targetVal, affectedTxns) => {
       let balanceDelta = 0;
       for (const t of affectedTxns) {
@@ -117,16 +93,26 @@ export default function AccountTransactionsScreen() {
     },
   });
 
-  const { triggerCategoryPicker } = useBulkCategoryPicker(handleBulkChangeCategory);
-  const { triggerAccountPicker } = useBulkAccountPicker(handleBulkMove);
+  // Load cleared balance + uncleared count alongside transactions
+  const loadWithClearedBalance = useCallback(async () => {
+    const [, cleared, uncleared] = await Promise.all([txnList.loadAll(), getClearedBalance(id), getUnclearedCount(id)]);
+    setClearedBalance(cleared);
+    setUnclearedCount(uncleared);
+  }, [txnList.loadAll, id]);
+
+  const silentRefreshWithBalance = useCallback(async () => {
+    const [, cleared, uncleared] = await Promise.all([txnList.silentRefresh(), getClearedBalance(id), getUnclearedCount(id)]);
+    setClearedBalance(cleared);
+    setUnclearedCount(uncleared);
+  }, [txnList.silentRefresh, id]);
 
   // ---- Select mode header ----
   useSelectModeHeader({
-    isSelectMode,
-    selectedCount: selectedIds.size,
-    selectedTotal,
-    onSelectAll: handleSelectAll,
-    onDoneSelection: handleDoneSelection,
+    isSelectMode: txnList.isSelectMode,
+    selectedCount: txnList.selectedIds.size,
+    selectedTotal: txnList.selectedTotal,
+    onSelectAll: txnList.handleSelectAll,
+    onDoneSelection: txnList.handleDoneSelection,
   });
 
   // ---- Scroll-driven FAB collapse ----
@@ -137,21 +123,21 @@ export default function AccountTransactionsScreen() {
 
   // ---- Data loading ----
   useFocusEffect(useCallback(() => {
-    if (!hasLoaded.current) {
+    if (!txnList.hasLoaded.current) {
       loadWithClearedBalance();
-      hasLoaded.current = true;
+      txnList.hasLoaded.current = true;
     } else {
       silentRefreshWithBalance();
     }
-    return () => { resetSelection(); };
-  }, [loadWithClearedBalance, silentRefreshWithBalance, resetSelection]));
+    return () => { txnList.resetSelection(); };
+  }, [loadWithClearedBalance, silentRefreshWithBalance, txnList.resetSelection]));
 
   // Refresh local list after undo restores data in DB
   useEffect(() => {
     if (undoVersion > 0) {
       setTimeout(() => {
-        restoreDeleted();
-        restoreBulkDeleted();
+        txnList.restoreDeleted();
+        txnList.restoreBulkDeleted();
         silentRefreshWithBalance();
       }, 0);
     }
@@ -161,13 +147,13 @@ export default function AccountTransactionsScreen() {
 
   async function handleConfirmMatch() {
     await lockTransactions(id);
-    await Promise.all([loadAccounts(), loadAll()]);
+    await Promise.all([loadAccounts(), txnList.loadAll()]);
     setClearedBalance(await getClearedBalance(id));
   }
 
   async function handleReconcile(bankBalance: number) {
     await reconcileAccount(id, bankBalance);
-    await Promise.all([loadAccounts(), loadAll()]);
+    await Promise.all([loadAccounts(), txnList.loadAll()]);
     setClearedBalance(await getClearedBalance(id));
   }
 
@@ -176,20 +162,9 @@ export default function AccountTransactionsScreen() {
     loadWithClearedBalance();
   }
 
-  // ---- Single-item handlers ----
-  const { handleDelete, handleToggleCleared, handleEditTransaction, handleDuplicate, handleMove, handleSetCategory, handleAddTag, restoreDeleted } =
-    useTransactionActions({
-      transactions, setTransactions, refreshIdRef, skipNextRefreshRef, loadAccounts, setUnclearedCount,
-      moveMode: 'remove', accounts: otherAccounts,
-      onToggleCleared: (txn) => {
-        const delta = txn.cleared ? -txn.amount : txn.amount;
-        setClearedBalance(prev => prev + delta);
-      },
-    });
-
   // ---- Normal-mode header ----
   useLayoutEffect(() => {
-    if (isSelectMode) return;
+    if (txnList.isSelectMode) return;
     navigation.setOptions({
       title: account?.name ?? 'Account',
       headerTitle: undefined,
@@ -207,7 +182,7 @@ export default function AccountTransactionsScreen() {
         {
           type: 'button' as const,
           label: 'Select',
-          onPress: enterSelectMode,
+          onPress: txnList.enterSelectMode,
         },
         {
           type: 'menu' as const,
@@ -238,11 +213,9 @@ export default function AccountTransactionsScreen() {
         },
       ],
     });
-  }, [account?.name, id, isSelectMode, hideReconciled, privacyMode, canUndo]);
+  }, [account?.name, id, txnList.isSelectMode, hideReconciled, privacyMode, canUndo]);
 
   // ---- Render ----
-
-  const listData = useMemo(() => buildListData(transactions), [transactions]);
 
   return (
     <View style={styles.container}>
@@ -261,11 +234,11 @@ export default function AccountTransactionsScreen() {
         />
       )}
 
-      {loading ? (
+      {txnList.loading ? (
         <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
       ) : (
         <FlashList<ListItem>
-          data={listData}
+          data={txnList.listData}
           keyExtractor={(item) => item.key}
           getItemType={(item) => item.type}
           onScroll={handleScroll}
@@ -277,24 +250,24 @@ export default function AccountTransactionsScreen() {
             return (
               <TransactionRow
                 item={item.data}
-                onPress={handleEditTransaction}
-                onDelete={handleDelete}
-                onToggleCleared={handleToggleCleared}
-                onLongPress={handleLongPress}
-                onDuplicate={handleDuplicate}
-                onMove={handleMove}
-                onSetCategory={handleSetCategory}
-                onAddTag={handleAddTag}
+                onPress={txnList.handleEditTransaction}
+                onDelete={txnList.handleDelete}
+                onToggleCleared={txnList.handleToggleCleared}
+                onLongPress={txnList.handleLongPress}
+                onDuplicate={txnList.handleDuplicate}
+                onMove={txnList.handleMove}
+                onSetCategory={txnList.handleSetCategory}
+                onAddTag={txnList.handleAddTag}
                 tags={tags}
                 isFirst={item.isFirst}
                 isLast={item.isLast}
-                isSelectMode={isSelectMode}
-                isSelected={selectedIds.has(item.data.id)}
+                isSelectMode={txnList.isSelectMode}
+                isSelected={txnList.selectedIds.has(item.data.id)}
               />
             );
           }}
           ListFooterComponent={
-            loadingMore
+            txnList.loadingMore
               ? <ActivityIndicator color={colors.primary} style={{ paddingVertical: 20 }} />
               : null
           }
@@ -313,11 +286,11 @@ export default function AccountTransactionsScreen() {
                   description="Add your first transaction to get started"
                 />
           }
-          onEndReached={loadMore}
+          onEndReached={txnList.loadMore}
           onEndReachedThreshold={0.3}
           contentContainerStyle={{ paddingBottom: 80 }}
           refreshControl={
-            <RefreshControl {...refreshControlProps} />
+            <RefreshControl {...txnList.refreshControlProps} />
           }
         />
       )}
@@ -330,18 +303,18 @@ export default function AccountTransactionsScreen() {
         onClose={() => setShowReconcile(false)}
       />
 
-      {!isSelectMode && (
+      {!txnList.isSelectMode && (
         <AddTransactionButton accountId={id as string} bottom={28} collapsed={fabCollapsed} />
       )}
 
-      {isSelectMode && (
+      {txnList.isSelectMode && (
         <SelectModeToolbar
-          allCleared={allCleared}
-          selectedCount={selectedIds.size}
-          onToggleCleared={handleBulkToggleCleared}
-          onDelete={handleBulkDelete}
-          onMove={triggerAccountPicker}
-          onSetCategory={triggerCategoryPicker}
+          allCleared={txnList.allCleared}
+          selectedCount={txnList.selectedIds.size}
+          onToggleCleared={txnList.handleBulkToggleCleared}
+          onDelete={txnList.handleBulkDelete}
+          onMove={txnList.triggerAccountPicker}
+          onSetCategory={txnList.triggerCategoryPicker}
         />
       )}
     </View>

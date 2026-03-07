@@ -60,7 +60,7 @@ export function useTransactionActions({
           }
           setTransactions(prev => prev.filter(t => t.id !== txnId));
           await deleteTransaction(txnId);
-          useUndoStore.getState().showUndo('Transaction deleted');
+          queueMicrotask(() => useUndoStore.getState().showUndo('Transaction deleted'));
           loadAccountsRef.current();
         },
       },

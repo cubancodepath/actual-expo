@@ -284,9 +284,6 @@ export async function applyMessages(messages: SyncMessage[]): Promise<OldData> {
     }
   }
 
-  // Notify all Zustand stores
-  await refreshAllStores();
-
   return oldData;
 }
 
@@ -369,6 +366,8 @@ export async function fullSync(attempt = 0): Promise<void> {
     if (serverMessages.length > 0) {
       if (gen !== _syncGeneration) return;
       await applyMessages(serverMessages);
+      if (gen !== _syncGeneration) return;
+      await refreshAllStores();
     }
 
     if (gen !== _syncGeneration) return;
@@ -400,7 +399,7 @@ export async function fullSync(attempt = 0): Promise<void> {
 // Store refresh — called after applyMessages()
 // ---------------------------------------------------------------------------
 
-async function refreshAllStores(): Promise<void> {
+export async function refreshAllStores(): Promise<void> {
   // Lazy import to avoid circular dependencies
   const [
     { useAccountsStore },

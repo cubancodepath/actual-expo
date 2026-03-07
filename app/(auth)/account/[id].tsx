@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { useSharedValue } from 'react-native-reanimated';
 import {
   ActivityIndicator,
@@ -28,6 +28,9 @@ import { DateSectionHeader } from '../../../src/presentation/components/account/
 import { AddTransactionButton } from '../../../src/presentation/components/molecules/AddTransactionButton';
 import { UnclearedPill } from '../../../src/presentation/components/transaction/UnclearedPill';
 import { usePrefsStore } from '../../../src/stores/prefsStore';
+import { usePrivacyStore } from '../../../src/stores/privacyStore';
+import { useUndoStore } from '../../../src/stores/undoStore';
+import { getCommonMenuItems } from '../../../src/presentation/hooks/useCommonMenuItems';
 import { useTagsStore } from '../../../src/stores/tagsStore';
 import {
   buildListData,
@@ -54,6 +57,9 @@ export default function AccountTransactionsScreen() {
   const [clearedBalance, setClearedBalance] = useState(0);
   const [unclearedCount, setUnclearedCount] = useState(0);
   const { hideReconciled, toggleHideReconciled } = usePrefsStore();
+  const { privacyMode } = usePrivacyStore();
+  const canUndo = useUndoStore((s) => s.canUndo);
+  const undoVersion = useUndoStore((s) => s.undoVersion);
   const tags = useTagsStore((s) => s.tags);
   const [showReconcile, setShowReconcile] = useState(false);
 
@@ -138,6 +144,13 @@ export default function AccountTransactionsScreen() {
     return () => { resetSelection(); };
   }, [loadWithClearedBalance, silentRefreshWithBalance, resetSelection]));
 
+  // Refresh local list after undo restores data in DB
+  useEffect(() => {
+    if (undoVersion > 0) {
+      silentRefreshWithBalance();
+    }
+  }, [undoVersion]);
+
   // ---- Account-specific handlers ----
 
   async function handleConfirmMatch() {
@@ -213,12 +226,13 @@ export default function AccountTransactionsScreen() {
                 icon: { type: 'sfSymbol' as const, name: 'pencil' },
                 onPress: () => router.push({ pathname: '/(auth)/account/settings', params: { id } }),
               },
+              ...getCommonMenuItems(router),
             ],
           },
         },
       ],
     });
-  }, [account?.name, id, isSelectMode, hideReconciled]);
+  }, [account?.name, id, isSelectMode, hideReconciled, privacyMode, canUndo]);
 
   // ---- Render ----
 

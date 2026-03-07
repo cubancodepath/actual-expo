@@ -165,6 +165,10 @@ export async function undo(): Promise<string[]> {
     _undoDisabled = false;
   }
 
+  // Refresh stores so the UI reflects the reverted state
+  const { refreshAllStores } = await import('./index');
+  await refreshAllStores();
+
   // Collect affected tables for the UI notification
   const tables = [...new Set(reversed.map(m => m.dataset))];
 

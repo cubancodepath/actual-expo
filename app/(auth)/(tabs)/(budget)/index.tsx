@@ -15,7 +15,7 @@ import { useSharedValue } from 'react-native-reanimated';
 import { AddTransactionButton } from '../../../../src/presentation/components/molecules/AddTransactionButton';
 import { KeyboardToolbar } from '../../../../src/presentation/components/molecules/KeyboardToolbar';
 import { useBudgetStore } from '../../../../src/stores/budgetStore';
-import { useUndoStore } from '../../../../src/stores/undoStore';
+import { useCommonMenuActions } from '../../../../src/presentation/hooks/useCommonMenuItems';
 import { useRefreshControl } from '../../../../src/presentation/hooks/useRefreshControl';
 import { useKeyboardHeight } from '../../../../src/presentation/hooks/useKeyboardHeight';
 import type { BudgetCategory, BudgetGroup } from '../../../../src/budgets/types';
@@ -30,7 +30,6 @@ import { Text } from '../../../../src/presentation/components/atoms/Text';
 import { Amount } from '../../../../src/presentation/components/atoms/Amount';
 import { Button } from '../../../../src/presentation/components/atoms/Button';
 import { formatPrivacyAware } from '../../../../src/lib/format';
-import { usePrivacyStore } from '../../../../src/stores/privacyStore';
 import { usePrefsStore } from '../../../../src/stores/prefsStore';
 import { useTabBarStore } from '../../../../src/stores/tabBarStore';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -88,9 +87,8 @@ export default function BudgetScreen() {
   const { bottom: safeBottom } = useSafeAreaInsets();
   const { month, data, loading, load, setAmount, setCarryover, resetHold } = useBudgetStore();
   const { refreshControlProps } = useRefreshControl();
-  const { privacyMode, toggle: togglePrivacy } = usePrivacyStore();
   const { showProgressBars, toggleProgressBars, showHiddenCategories, toggleShowHiddenCategories } = usePrefsStore();
-  const canUndo = useUndoStore((s) => s.canUndo);
+  const commonActions = useCommonMenuActions();
   const [uncategorizedCount, setUncategorizedCount] = useState(0);
 
   // Load uncategorized stats when data changes
@@ -473,21 +471,6 @@ export default function BudgetScreen() {
       </Stack.Toolbar.Menu>
       <Stack.Toolbar.Menu icon="ellipsis">
         <Stack.Toolbar.MenuAction
-          icon="arrow.uturn.backward"
-          disabled={!canUndo}
-          onPress={async () => {
-            await useUndoStore.getState().undo();
-          }}
-        >
-          Undo
-        </Stack.Toolbar.MenuAction>
-        <Stack.Toolbar.MenuAction
-          icon={privacyMode ? 'eye' : 'eye.slash'}
-          onPress={togglePrivacy}
-        >
-          {privacyMode ? 'Show Amounts' : 'Hide Amounts'}
-        </Stack.Toolbar.MenuAction>
-        <Stack.Toolbar.MenuAction
           icon={showProgressBars ? 'line.3.horizontal' : 'line.3.horizontal'}
           onPress={toggleProgressBars}
         >
@@ -499,12 +482,7 @@ export default function BudgetScreen() {
         >
           {showHiddenCategories ? 'Hide Hidden Categories' : 'Show Hidden Categories'}
         </Stack.Toolbar.MenuAction>
-        <Stack.Toolbar.MenuAction
-          icon="gearshape"
-          onPress={() => router.push('/(auth)/settings')}
-        >
-          Settings
-        </Stack.Toolbar.MenuAction>
+        {commonActions}
       </Stack.Toolbar.Menu>
     </Stack.Toolbar>
     </>

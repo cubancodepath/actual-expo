@@ -1,129 +1,159 @@
 import { useEffect, useCallback } from 'react';
-import { StyleSheet, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
+  withSpring,
   withTiming,
-  withDelay,
   runOnJS,
+  useReducedMotion,
+  Easing,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUndoStore } from '../../../stores/undoStore';
 import { useTheme } from '../../providers/ThemeProvider';
 import { Text } from '../atoms/Text';
 
+const SPRING_CONFIG = { damping: 18, stiffness: 200, mass: 0.8 } as const;
+const TRANSLATE_OUT = 80;
 const AUTO_DISMISS_MS = 5000;
 
 export function UndoToast() {
-  const theme = useTheme();
+  const { colors, spacing, borderRadius: br, shadows } = useTheme();
   const insets = useSafeAreaInsets();
+  const reducedMotion = useReducedMotion();
+
   const notification = useUndoStore((s) => s.notification);
   const canUndo = useUndoStore((s) => s.canUndo);
   const undo = useUndoStore((s) => s.undo);
   const clearNotification = useUndoStore((s) => s.clearNotification);
 
-  const translateY = useSharedValue(100);
+  const translateY = useSharedValue(TRANSLATE_OUT);
   const opacity = useSharedValue(0);
 
   const dismiss = useCallback(() => {
-    translateY.value = withTiming(100, { duration: 200 });
-    opacity.value = withTiming(0, { duration: 200 }, () => {
+    if (reducedMotion) {
+      opacity.value = withTiming(0, { duration: 0 }, () => runOnJS(clearNotification)());
+      return;
+    }
+    translateY.value = withTiming(TRANSLATE_OUT, {
+      duration: 220,
+      easing: Easing.in(Easing.ease),
+    });
+    opacity.value = withTiming(0, { duration: 180 }, () => {
       runOnJS(clearNotification)();
     });
-  }, [clearNotification, translateY, opacity]);
+  }, [clearNotification, translateY, opacity, reducedMotion]);
 
   useEffect(() => {
-    if (notification) {
-      // Show
-      translateY.value = withTiming(0, { duration: 250 });
-      opacity.value = withTiming(1, { duration: 250 });
+    if (!notification) return;
 
-      // Auto-dismiss
-      const timer = setTimeout(dismiss, AUTO_DISMISS_MS);
-      return () => clearTimeout(timer);
+    if (reducedMotion) {
+      opacity.value = withTiming(1, { duration: 0 });
+      translateY.value = 0;
+    } else {
+      translateY.value = withSpring(0, SPRING_CONFIG);
+      opacity.value = withTiming(1, { duration: 180 });
     }
-  }, [notification?.key]);
+
+    const timer = setTimeout(dismiss, AUTO_DISMISS_MS);
+    return () => clearTimeout(timer);
+  }, [notification?.key]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }],
     opacity: opacity.value,
   }));
 
-  if (!notification) return null;
+  const pan = Gesture.Pan()
+    .activeOffsetY([0, 10])
+    .onUpdate((e) => {
+      if (e.translationY > 0) {
+        translateY.value = e.translationY;
+        opacity.value = Math.max(0, 1 - e.translationY / 120);
+      }
+    })
+    .onEnd((e) => {
+      if (e.translationY > 30 || e.velocityY > 600) {
+        runOnJS(dismiss)();
+      } else {
+        translateY.value = withSpring(0, SPRING_CONFIG);
+        opacity.value = withTiming(1, { duration: 120 });
+      }
+    });
 
   const handleUndo = async () => {
     dismiss();
     await undo();
   };
 
-  return (
-    <Animated.View
-      style={[
-        styles.container,
-        {
-          bottom: insets.bottom + 16,
-          backgroundColor: theme.colors.headerBackground,
-        },
-        animatedStyle,
-      ]}
-      pointerEvents="box-none"
+  if (!notification) return null;
+
+  const innerContent = (
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        minHeight: 44,
+        paddingHorizontal: 20,
+        gap: spacing.md,
+      }}
     >
-      <View style={styles.content}>
-        <Text
-          style={[styles.message, { color: theme.colors.headerText }]}
-          numberOfLines={1}
+      <Text
+        variant="bodyLg"
+        color={colors.primaryText}
+        numberOfLines={1}
+        style={{ flex: 1 }}
+        accessibilityElementsHidden
+      >
+        {notification.message}
+      </Text>
+
+      {canUndo && (
+        <Pressable
+          onPress={handleUndo}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={`Undo: ${notification.message}`}
+          style={({ pressed }) => [
+            { paddingVertical: spacing.sm, opacity: pressed ? 0.6 : 1 },
+          ]}
         >
-          {notification.message}
-        </Text>
-        {canUndo && (
-          <Pressable onPress={handleUndo} hitSlop={8}>
-            <Text style={[styles.undoButton, { color: theme.colors.primary }]}>
-              Undo
-            </Text>
-          </Pressable>
-        )}
-        <Pressable onPress={dismiss} hitSlop={8}>
-          <Text style={[styles.dismissButton, { color: theme.colors.headerText, opacity: 0.6 }]}>
-            Dismiss
+          <Text
+            variant="bodyLg"
+            color={colors.primaryText}
+            style={{ fontWeight: '600' }}
+          >
+            Undo
           </Text>
         </Pressable>
-      </View>
-    </Animated.View>
+      )}
+    </View>
+  );
+
+  return (
+    <GestureDetector gesture={pan}>
+      <Animated.View
+        style={[
+          {
+            position: 'absolute',
+            left: spacing.lg,
+            right: spacing.lg,
+            bottom: insets.bottom + spacing.lg,
+            borderRadius: br.full,
+            backgroundColor: colors.primary,
+            zIndex: 9999,
+            ...shadows.modal,
+          },
+          animatedStyle,
+        ]}
+        accessibilityLiveRegion="polite"
+        accessibilityLabel={notification.message}
+        pointerEvents="box-none"
+      >
+        {innerContent}
+      </Animated.View>
+    </GestureDetector>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 6,
-    zIndex: 9999,
-  },
-  content: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    gap: 12,
-  },
-  message: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  undoButton: {
-    fontSize: 15,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-  },
-  dismissButton: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
-});

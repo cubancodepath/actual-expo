@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { useSharedValue } from 'react-native-reanimated';
 import {
   ActivityIndicator,
@@ -14,6 +14,8 @@ import {
 } from '../../../../src/transactions';
 import { useAccountsStore } from '../../../../src/stores/accountsStore';
 import { usePrivacyStore } from '../../../../src/stores/privacyStore';
+import { useUndoStore } from '../../../../src/stores/undoStore';
+import { getCommonMenuItems } from '../../../../src/presentation/hooks/useCommonMenuItems';
 import { useTabBarStore } from '../../../../src/stores/tabBarStore';
 import { useTheme } from '../../../../src/presentation/providers/ThemeProvider';
 import { EmptyState, Text } from '../../../../src/presentation/components';
@@ -39,7 +41,9 @@ export default function SpendingScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { accounts, load: loadAccounts } = useAccountsStore();
-  const { privacyMode, toggle: togglePrivacy } = usePrivacyStore();
+  const { privacyMode } = usePrivacyStore();
+  const canUndo = useUndoStore((s) => s.canUndo);
+  const undoVersion = useUndoStore((s) => s.undoVersion);
   const setTabBarHidden = useTabBarStore((s) => s.setHidden);
   const tags = useTagsStore((s) => s.tags);
   const [unclearedCount, setUnclearedCount] = useState(0);
@@ -112,6 +116,14 @@ export default function SpendingScreen() {
     return () => { resetSelection(); };
   }, [loadAll, silentRefresh, resetSelection]));
 
+  // Refresh local list after undo restores data in DB
+  useEffect(() => {
+    if (undoVersion > 0) {
+      silentRefresh();
+      getUnclearedCount().then(setUnclearedCount);
+    }
+  }, [undoVersion]);
+
   // ---- Single-item handlers ----
   const { handleDelete, handleToggleCleared, handleEditTransaction, handleDuplicate, handleMove, handleAddTag } =
     useTransactionActions({
@@ -142,25 +154,12 @@ export default function SpendingScreen() {
           type: 'menu' as const,
           icon: { type: 'sfSymbol' as const, name: 'ellipsis' },
           menu: {
-            items: [
-              {
-                type: 'action' as const,
-                label: privacyMode ? 'Show Amounts' : 'Hide Amounts',
-                icon: { type: 'sfSymbol' as const, name: privacyMode ? 'eye' : 'eye.slash' },
-                onPress: togglePrivacy,
-              },
-              {
-                type: 'action' as const,
-                label: 'Settings',
-                icon: { type: 'sfSymbol' as const, name: 'gearshape' },
-                onPress: () => router.push('/(auth)/settings'),
-              },
-            ],
+            items: getCommonMenuItems(router),
           },
         },
       ],
     });
-  }, [isSelectMode, privacyMode]);
+  }, [isSelectMode, privacyMode, canUndo]);
 
   // ---- Render ----
 

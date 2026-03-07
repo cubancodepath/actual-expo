@@ -70,7 +70,7 @@ export function useTransactionBulkActions({
             for (const txnId of ids) {
               await deleteTransaction(txnId);
             }
-            useUndoStore.getState().showUndo(`${ids.size} transaction${ids.size === 1 ? '' : 's'} deleted`);
+            queueMicrotask(() => useUndoStore.getState().showUndo(`${ids.size} transaction${ids.size === 1 ? '' : 's'} deleted`));
             loadAccountsRef.current();
           },
         },

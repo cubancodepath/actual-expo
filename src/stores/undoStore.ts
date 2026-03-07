@@ -13,25 +13,34 @@ type UndoNotification = {
 type UndoState = {
   canUndo: boolean;
   notification: UndoNotification | null;
+  /** Incremented after each successful undo — screens with local state can watch this to refresh */
+  undoVersion: number;
   undo(): Promise<void>;
   showUndo(message: string): void;
   clearNotification(): void;
 };
 
 export const useUndoStore = create<UndoState>((set) => {
-  // Wire up the undo module's state change callback
+  // Wire up the undo module's state change callback.
+  // Deferred via queueMicrotask to avoid triggering Zustand re-renders
+  // during React's commit phase (e.g. when called from sync/undo.ts
+  // inside an ongoing render cycle).
   setOnStateChange((canUndo) => {
-    set({ canUndo });
+    queueMicrotask(() => set({ canUndo }));
   });
 
   return {
     canUndo: false,
     notification: null,
+    undoVersion: 0,
 
     async undo() {
       const tables = await performUndo();
       if (tables.length > 0) {
-        set({ notification: { message: 'Undone', key: Date.now() } });
+        set((s) => ({
+          notification: { message: 'Undone', key: Date.now() },
+          undoVersion: s.undoVersion + 1,
+        }));
       }
     },
 

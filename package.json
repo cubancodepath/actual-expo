@@ -7,6 +7,8 @@
     "ios": "expo run:ios"
   },
   "dependencies": {
+    "@bacons/apple-targets": "^4.0.6",
+    "@expo/prebuild-config": "^55.0.8",
     "@expo/ui": "55.0.1",
     "@expo/vector-icons": "^15.0.2",
     "@noble/ciphers": "^2.1.1",
@@ -34,6 +36,7 @@
     "murmurhash": "^2.0.1",
     "protobufjs": "^8.0.0",
     "react": "19.2.0",
+    "react-dom": "^19.2.4",
     "react-native": "0.83.2",
     "react-native-gesture-handler": "~2.30.0",
     "react-native-ios-context-menu": "^3.2.1",

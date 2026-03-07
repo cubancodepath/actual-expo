@@ -1,12 +1,12 @@
-import { useEffect, useState } from "react";
-import { AppState, useColorScheme } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { AppState, Settings, useColorScheme } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
   ThemeProvider as NavigationThemeProvider,
   DarkTheme,
   DefaultTheme,
 } from "@react-navigation/native";
-import { Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import * as QuickActions from "expo-quick-actions";
 import { ThemeProvider } from "../src/presentation/providers/ThemeProvider";
 import { usePrefsStore } from "../src/stores/prefsStore";
@@ -86,6 +86,31 @@ export default function RootLayout() {
     } else {
       QuickActions.setItems([]);
     }
+  }, [isConfigured]);
+
+  // Handle pending deep links from App Shortcuts (Siri)
+  const router = useRouter();
+  const prevAppState = useRef(AppState.currentState);
+  useEffect(() => {
+    if (!isConfigured) return;
+    // Check on initial mount (cold launch from shortcut)
+    const pendingLink = Settings.get("pendingDeepLink");
+    if (pendingLink) {
+      Settings.set({ pendingDeepLink: null });
+      router.push(`/(auth)/${pendingLink}` as any);
+    }
+    // Check when app returns to foreground (warm launch from shortcut)
+    const sub = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "active" && prevAppState.current !== "active") {
+        const link = Settings.get("pendingDeepLink");
+        if (link) {
+          Settings.set({ pendingDeepLink: null });
+          router.push(`/(auth)/${link}` as any);
+        }
+      }
+      prevAppState.current = nextState;
+    });
+    return () => sub.remove();
   }, [isConfigured]);
 
   // Sync when app comes back to foreground — mirrors loot-core's app-focused handler

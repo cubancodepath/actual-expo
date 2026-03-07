@@ -8,9 +8,9 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/icon.png",
+      "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#6236FF"
+      "backgroundColor": "#8719e0"
     },
     "platforms": ["ios"],
     "ios": {
@@ -27,7 +27,8 @@
       "expo-secure-store",
       "expo-web-browser",
       "expo-quick-actions",
-      "expo-notifications"
+      "expo-notifications",
+      "@bacons/apple-targets"
     ],
     "extra": {
       "router": {},

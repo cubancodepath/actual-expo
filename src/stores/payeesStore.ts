@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { registerStore } from './storeRegistry';
 import { getPayees, createPayee, updatePayee, deletePayee } from '../payees';
 import type { Payee } from '../payees/types';
 
@@ -37,3 +38,5 @@ export const usePayeesStore = create<PayeesState>((set) => ({
     return deletePayee(id);
   },
 }));
+
+registerStore('payees', ['payees', 'payee_mapping'], () => usePayeesStore.getState().load());

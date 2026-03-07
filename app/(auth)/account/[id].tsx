@@ -76,7 +76,7 @@ export default function AccountTransactionsScreen() {
 
   const {
     transactions, setTransactions, loading, loadingMore,
-    loadAll, silentRefresh, loadMore, refreshIdRef, hasLoaded, refreshControlProps,
+    loadAll, silentRefresh, loadMore, refreshIdRef, skipNextRefreshRef, hasLoaded, refreshControlProps,
   } = useTransactionPagination({ fetchTransactions });
 
   // Load cleared balance + uncleared count alongside transactions
@@ -179,7 +179,7 @@ export default function AccountTransactionsScreen() {
   // ---- Single-item handlers ----
   const { handleDelete, handleToggleCleared, handleEditTransaction, handleDuplicate, handleMove, handleSetCategory, handleAddTag, restoreDeleted } =
     useTransactionActions({
-      transactions, setTransactions, refreshIdRef, loadAccounts, setUnclearedCount,
+      transactions, setTransactions, refreshIdRef, skipNextRefreshRef, loadAccounts, setUnclearedCount,
       moveMode: 'remove', accounts: otherAccounts,
       onToggleCleared: (txn) => {
         const delta = txn.cleared ? -txn.amount : txn.amount;

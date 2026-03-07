@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { registerStore } from './storeRegistry';
 import {
   getCategories,
   getCategoryGroups,
@@ -84,6 +85,9 @@ export const useCategoriesStore = create<CategoriesState>((set) => ({
 
   async setGoalDef(categoryId, templates) {
     await setGoalTemplates(categoryId, templates);
-    // load() will be called by applyMessages → refreshAllStores
   },
 }));
+
+registerStore('categories', ['categories', 'category_groups', 'category_mapping'], () =>
+  useCategoriesStore.getState().load(),
+);

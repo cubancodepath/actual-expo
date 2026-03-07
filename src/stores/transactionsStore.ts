@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { registerStore } from './storeRegistry';
 import {
   getTransactions,
   addTransaction,
@@ -44,3 +45,8 @@ export const useTransactionsStore = create<TransactionsState>((set, get) => ({
     return deleteTransaction(id);
   },
 }));
+
+registerStore('transactions', ['transactions'], () => {
+  const s = useTransactionsStore.getState();
+  return s.load(s.accountId ?? undefined);
+});

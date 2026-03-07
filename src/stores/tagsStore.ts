@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { registerStore } from './storeRegistry';
 import { getTags, createTag, updateTag, deleteTag } from '../tags';
 import type { Tag } from '../tags/types';
 
@@ -37,3 +38,5 @@ export const useTagsStore = create<TagsState>((set) => ({
     return deleteTag(id);
   },
 }));
+
+registerStore('tags', ['tags'], () => useTagsStore.getState().load());

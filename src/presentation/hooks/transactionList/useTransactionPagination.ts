@@ -20,6 +20,8 @@ export function useTransactionPagination({
   const offsetRef = useRef(0);
   const refreshIdRef = useRef(0);
   const hasLoaded = useRef(false);
+  // When true, silentRefresh skips one cycle (set by picker-based actions to prevent race)
+  const skipNextRefreshRef = useRef(false);
 
   // Use a ref so loadAll/silentRefresh/loadMore always call the latest fetchTransactions
   const fetchRef = useRef(fetchTransactions);
@@ -41,6 +43,10 @@ export function useTransactionPagination({
   }, [pageSize]);
 
   const silentRefresh = useCallback(async () => {
+    if (skipNextRefreshRef.current) {
+      skipNextRefreshRef.current = false;
+      return;
+    }
     const id = ++refreshIdRef.current;
     const count = Math.max(offsetRef.current, pageSize);
     const txns = await fetchRef.current(count, 0);
@@ -86,6 +92,7 @@ export function useTransactionPagination({
     silentRefresh,
     loadMore,
     refreshIdRef,
+    skipNextRefreshRef,
     hasLoaded,
     refreshControlProps,
   };

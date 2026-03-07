@@ -16,6 +16,8 @@ interface UseTransactionActionsOptions {
   transactions: TransactionDisplay[];
   setTransactions: React.Dispatch<React.SetStateAction<TransactionDisplay[]>>;
   refreshIdRef: React.MutableRefObject<number>;
+  /** Set before navigating to a picker to prevent silentRefresh from overwriting optimistic updates */
+  skipNextRefreshRef?: React.MutableRefObject<boolean>;
   loadAccounts: () => void;
   setUnclearedCount: React.Dispatch<React.SetStateAction<number>>;
   /** Called during toggleCleared for screen-specific side effects (e.g. clearedBalance) */
@@ -29,6 +31,7 @@ export function useTransactionActions({
   transactions,
   setTransactions,
   refreshIdRef,
+  skipNextRefreshRef,
   loadAccounts,
   setUnclearedCount,
   onToggleCleared: onToggleClearedCb,
@@ -175,11 +178,13 @@ export function useTransactionActions({
 
   function handleMove(txnId: string) {
     pendingMoveRef.current = txnId;
+    if (skipNextRefreshRef) skipNextRefreshRef.current = true;
     router.push({ pathname: '/(auth)/transaction/account-picker', params: { selectedId: '' } });
   }
 
   function handleSetCategory(txnId: string) {
     pendingCategoryRef.current = txnId;
+    if (skipNextRefreshRef) skipNextRefreshRef.current = true;
     router.push({ pathname: '/(auth)/transaction/category-picker', params: { hideSplit: '1' } });
   }
 

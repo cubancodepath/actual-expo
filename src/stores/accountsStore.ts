@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { registerStore } from './storeRegistry';
 import {
   getAccounts,
   createAccount,
@@ -48,3 +49,5 @@ export const useAccountsStore = create<AccountsState>((set) => ({
     return deleteAccount(id);
   },
 }));
+
+registerStore('accounts', ['accounts'], () => useAccountsStore.getState().load());

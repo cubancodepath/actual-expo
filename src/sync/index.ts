@@ -21,6 +21,7 @@ import { postBinary } from '../post';
 import { run, runQuery, first, transaction } from '../db';
 import type { MessagesCrdtRow } from '../db/types';
 import { appendMessages as undoAppendMessages, clearUndo, type OldData } from './undo';
+import { refreshStoresForDatasets, refreshAllRegisteredStores } from '../stores/storeRegistry';
 
 // ---------------------------------------------------------------------------
 // Value serialization — identical to loot-core
@@ -163,6 +164,9 @@ export async function sendMessages(messages: SyncMessage[]): Promise<void> {
 async function _applyAndRecord(messages: SyncMessage[]): Promise<void> {
   const oldData = await applyMessages(messages);
   undoAppendMessages(messages, oldData);
+  // Refresh affected stores so UI updates immediately after local mutations
+  const affectedDatasets = new Set(messages.map((m) => m.dataset));
+  refreshStoresForDatasets(affectedDatasets); // fire-and-forget
   scheduleFullSync(); // upload local changes to server after every mutation
 }
 
@@ -376,7 +380,7 @@ export async function fullSync(attempt = 0): Promise<void> {
       await applyMessages(serverMessages);
       if (gen !== _syncGeneration) return;
       const affectedDatasets = new Set(serverMessages.map(m => m.dataset));
-      await refreshAffectedStores(affectedDatasets);
+      await refreshStoresForDatasets(affectedDatasets);
     }
 
     if (gen !== _syncGeneration) return;
@@ -406,106 +410,7 @@ export async function fullSync(attempt = 0): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// Store refresh — called after applyMessages()
+// Store refresh — delegated to storeRegistry
 // ---------------------------------------------------------------------------
 
-// Map CRDT datasets → which stores need refreshing
-const DATASET_STORE_MAP: Record<string, string[]> = {
-  accounts: ['accounts'],
-  transactions: ['accounts', 'transactions', 'budget'], // transactions affect account balances + budget spent
-  categories: ['categories', 'budget'],
-  category_groups: ['categories', 'budget'],
-  category_mapping: ['categories'],
-  payees: ['payees'],
-  payee_mapping: ['payees'],
-  zero_budgets: ['budget'],
-  zero_budget_months: ['budget'],
-  preferences: ['preferences'],
-  tags: ['tags'],
-  notes: [],
-  prefs: ['preferences'],
-};
-
-async function refreshAffectedStores(datasets: Set<string>): Promise<void> {
-  const storesToRefresh = new Set<string>();
-  for (const ds of datasets) {
-    const stores = DATASET_STORE_MAP[ds];
-    if (stores) {
-      for (const s of stores) storesToRefresh.add(s);
-    } else {
-      // Unknown dataset — refresh everything to be safe
-      return refreshAllStores();
-    }
-  }
-
-  if (storesToRefresh.size === 0) return;
-
-  const [
-    { useAccountsStore },
-    { useTransactionsStore },
-    { useCategoriesStore },
-    { useBudgetStore },
-    { usePreferencesStore },
-    { useTagsStore },
-  ] = await Promise.all([
-    import('../stores/accountsStore'),
-    import('../stores/transactionsStore'),
-    import('../stores/categoriesStore'),
-    import('../stores/budgetStore'),
-    import('../stores/preferencesStore'),
-    import('../stores/tagsStore'),
-  ]);
-
-  const refreshes: Promise<void>[] = [];
-  if (storesToRefresh.has('accounts')) refreshes.push(useAccountsStore.getState().load());
-  if (storesToRefresh.has('transactions'))
-    refreshes.push(useTransactionsStore.getState().load(useTransactionsStore.getState().accountId ?? undefined));
-  if (storesToRefresh.has('categories')) refreshes.push(useCategoriesStore.getState().load());
-  if (storesToRefresh.has('budget')) refreshes.push(useBudgetStore.getState().load());
-  if (storesToRefresh.has('preferences')) refreshes.push(usePreferencesStore.getState().load());
-  if (storesToRefresh.has('tags')) refreshes.push(useTagsStore.getState().load());
-
-  const results = await Promise.allSettled(refreshes);
-  for (const result of results) {
-    if (result.status === 'rejected') {
-      console.warn('[refreshAffectedStores] store load failed:', result.reason);
-    }
-  }
-}
-
-export async function refreshAllStores(): Promise<void> {
-  // Lazy import to avoid circular dependencies
-  const [
-    { useAccountsStore },
-    { useTransactionsStore },
-    { useCategoriesStore },
-    { useBudgetStore },
-    { usePreferencesStore },
-    { useTagsStore },
-  ] = await Promise.all([
-    import('../stores/accountsStore'),
-    import('../stores/transactionsStore'),
-    import('../stores/categoriesStore'),
-    import('../stores/budgetStore'),
-    import('../stores/preferencesStore'),
-    import('../stores/tagsStore'),
-  ]);
-
-  // Use allSettled so one failure doesn't block the others
-  const results = await Promise.allSettled([
-    useAccountsStore.getState().load(),
-    useTransactionsStore
-      .getState()
-      .load(useTransactionsStore.getState().accountId ?? undefined),
-    useCategoriesStore.getState().load(),
-    useBudgetStore.getState().load(),
-    usePreferencesStore.getState().load(),
-    useTagsStore.getState().load(),
-  ]);
-
-  for (const result of results) {
-    if (result.status === 'rejected') {
-      console.warn('[refreshAllStores] store load failed:', result.reason);
-    }
-  }
-}
+export const refreshAllStores = refreshAllRegisteredStores;

@@ -57,7 +57,7 @@ export default function SpendingScreen() {
 
   const {
     transactions, setTransactions, loading, loadingMore,
-    loadAll, silentRefresh, loadMore, refreshIdRef, hasLoaded, refreshControlProps,
+    loadAll, silentRefresh, loadMore, refreshIdRef, skipNextRefreshRef, hasLoaded, refreshControlProps,
   } = useTransactionPagination({ fetchTransactions });
 
   // ---- Selection ----
@@ -136,7 +136,7 @@ export default function SpendingScreen() {
   // ---- Single-item handlers ----
   const { handleDelete, handleToggleCleared, handleEditTransaction, handleDuplicate, handleMove, handleSetCategory, handleAddTag, restoreDeleted } =
     useTransactionActions({
-      transactions, setTransactions, refreshIdRef, loadAccounts, setUnclearedCount,
+      transactions, setTransactions, refreshIdRef, skipNextRefreshRef, loadAccounts, setUnclearedCount,
       moveMode: 'remap', accounts: otherAccounts,
     });
 

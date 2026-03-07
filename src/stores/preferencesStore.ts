@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { registerStore } from './storeRegistry';
 import { getAllPreferences, setPreference } from '../preferences';
 import { PREFERENCE_DEFAULTS, type PreferenceKey } from '../preferences/types';
 
@@ -24,3 +25,7 @@ export const usePreferencesStore = create<PreferencesState>((set) => ({
     await setPreference(key, value);
   },
 }));
+
+registerStore('preferences', ['preferences', 'prefs'], () =>
+  usePreferencesStore.getState().load(),
+);

@@ -21,6 +21,7 @@ import { openDatabase } from "../src/db";
 import { loadClock, fullSync, isSwitchingBudget } from "../src/sync";
 import { updateAppBadge } from "../src/lib/badge";
 import { UndoToast } from "../src/presentation/components";
+import { useShakeUndo } from "../src/presentation/hooks/useShakeUndo";
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -138,6 +139,8 @@ export default function RootLayout() {
       sub.remove();
     };
   }, [ready, isConfigured, router]);
+
+  useShakeUndo();
 
   if (!ready) return null;
 

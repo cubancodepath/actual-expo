@@ -280,6 +280,18 @@ export default function NewTransactionScreen() {
       return;
     }
 
+    if (!categoryId && !isSplit) {
+      Alert.alert(
+        'No Category',
+        'This transaction has no category. Save anyway?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Save', onPress: performSave },
+        ],
+      );
+      return;
+    }
+
     performSave();
   }
 

@@ -33,6 +33,7 @@ type PrefsState = {
   showProgressBars: boolean;
   hideReconciled: boolean;
   showHiddenCategories: boolean;
+  hasSeenOnboarding: boolean;
 
   // Token — in-memory only; persisted in iOS Keychain / Android Keystore
   token: string;
@@ -50,6 +51,7 @@ type PrefsState = {
   toggleProgressBars(): void;
   toggleHideReconciled(): void;
   toggleShowHiddenCategories(): void;
+  markOnboardingSeen(): void;
   /** Full logout: wipe MMKV + SecureStore and reset state. */
   clearAll(): Promise<void>;
 };
@@ -74,6 +76,7 @@ export const usePrefsStore = create<PrefsState>()(
       showProgressBars: true,
       hideReconciled: false,
       showHiddenCategories: false,
+      hasSeenOnboarding: false,
       hasToken: false,
       isConfigured: false,
 
@@ -94,6 +97,10 @@ export const usePrefsStore = create<PrefsState>()(
 
       toggleShowHiddenCategories() {
         set((state) => ({ showHiddenCategories: !state.showHiddenCategories }));
+      },
+
+      markOnboardingSeen() {
+        set({ hasSeenOnboarding: true });
       },
 
       async loadToken() {
@@ -140,6 +147,7 @@ export const usePrefsStore = create<PrefsState>()(
         showProgressBars: state.showProgressBars,
         hideReconciled: state.hideReconciled,
         showHiddenCategories: state.showHiddenCategories,
+        hasSeenOnboarding: state.hasSeenOnboarding,
       }),
     },
   ),

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -34,6 +34,13 @@ export default function LoginScreen() {
   const theme = useTheme();
   const styles = useThemedStyles(createStyles);
   const { setPrefs, saveToken } = usePrefsStore();
+  const hasSeenOnboarding = usePrefsStore((s) => s.hasSeenOnboarding);
+
+  useEffect(() => {
+    if (!hasSeenOnboarding) {
+      router.replace('/(public)/onboarding');
+    }
+  }, [hasSeenOnboarding]);
 
   const [serverUrl, setServerUrl] = useState('');
   const [password, setPassword] = useState('');
@@ -151,6 +158,8 @@ export default function LoginScreen() {
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
+  if (!hasSeenOnboarding) return null;
+
   return (
     <KeyboardAvoidingView
       style={styles.flex}
@@ -287,6 +296,21 @@ export default function LoginScreen() {
               loading={loading}
               style={styles.actionButton}
             />
+          )}
+
+          {/* DEV: Reset onboarding */}
+          {__DEV__ && (
+            <Pressable
+              onPress={() => {
+                usePrefsStore.getState().setPrefs({ hasSeenOnboarding: false });
+                router.replace('/(public)/onboarding');
+              }}
+              style={{ marginTop: 32, alignSelf: 'center' }}
+            >
+              <Text variant="caption" color={theme.colors.textMuted}>
+                [DEV] Replay onboarding
+              </Text>
+            </Pressable>
           )}
         </View>
       </ScrollView>

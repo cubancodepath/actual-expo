@@ -26,9 +26,9 @@ const sizeMap = {
 } as const;
 
 const radiusMap: Record<ButtonSize, keyof Theme["borderRadius"]> = {
-  sm: "md",
-  md: "lg",
-  lg: "xl",
+  sm: "lg",
+  md: "xl",
+  lg: "full",
 };
 
 function getVariantStyles(theme: Theme, variant: ButtonVariant, size: ButtonSize) {

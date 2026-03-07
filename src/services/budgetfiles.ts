@@ -7,7 +7,16 @@ import {
 import { unzipSync } from 'fflate';
 import { closeDatabase, openDatabase } from '../db';
 import { run } from '../db';
-import { loadClock } from '../sync';
+import { loadClock, resetSyncState, clearSwitchingFlag, fullSync } from '../sync';
+import { resetAllStores } from '../stores/resetStores';
+import { usePrefsStore } from '../stores/prefsStore';
+import { useAccountsStore } from '../stores/accountsStore';
+import { useCategoriesStore } from '../stores/categoriesStore';
+import { useBudgetStore } from '../stores/budgetStore';
+import { usePayeesStore } from '../stores/payeesStore';
+import { usePreferencesStore } from '../stores/preferencesStore';
+import { useTagsStore } from '../stores/tagsStore';
+import type { BudgetFile } from './authService';
 
 /**
  * Convert a Uint8Array to a base64 string.
@@ -95,5 +104,41 @@ export async function downloadAndImportBudget(
   //    (mirrors loot-core's resetClock logic in importBuffer)
   await run('DELETE FROM messages_clock');
   await loadClock();
+}
+
+/**
+ * Switch to a different budget file. Handles the full lifecycle:
+ * invalidate in-flight syncs → reset stores → download & import →
+ * reload stores → update prefs → trigger initial sync.
+ */
+export async function switchBudget(
+  serverUrl: string,
+  token: string,
+  file: BudgetFile,
+): Promise<void> {
+  resetSyncState();
+  resetAllStores();
+
+  await downloadAndImportBudget(serverUrl, token, file.fileId, file.encryptKeyId);
+
+  await Promise.allSettled([
+    useAccountsStore.getState().load(),
+    useCategoriesStore.getState().load(),
+    useBudgetStore.getState().load(),
+    usePayeesStore.getState().load(),
+    usePreferencesStore.getState().load(),
+    useTagsStore.getState().load(),
+  ]);
+
+  usePrefsStore.getState().setPrefs({
+    fileId: file.fileId,
+    groupId: file.groupId,
+    encryptKeyId: file.encryptKeyId,
+    budgetName: file.name || 'Unnamed budget',
+    lastSyncedTimestamp: undefined,
+  });
+
+  clearSwitchingFlag();
+  fullSync().catch(console.warn);
 }
 

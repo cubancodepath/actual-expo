@@ -50,6 +50,7 @@ function scheduleFullSync(): void {
   if (_syncTimeout) clearTimeout(_syncTimeout);
   _syncTimeout = setTimeout(async () => {
     _syncTimeout = null;
+    if (_switchingBudget) return;
     try {
       const { usePrefsStore } = await import('../stores/prefsStore');
       if (!usePrefsStore.getState().isConfigured) return;
@@ -73,6 +74,34 @@ export function clearSyncTimeout(): void {
 
 let _isBatching = false;
 let _batched: SyncMessage[] = [];
+
+// ---------------------------------------------------------------------------
+// Budget switch guards — generation counter invalidates in-flight syncs
+// ---------------------------------------------------------------------------
+
+let _syncGeneration = 0;
+let _switchingBudget = false;
+
+/**
+ * Reset all module-level sync state. Call during budget switch or disconnect
+ * BEFORE opening a new database. Increments the generation counter so any
+ * in-flight fullSync() silently discards its results.
+ */
+export function resetSyncState(): void {
+  _syncGeneration++;
+  clearSyncTimeout();
+  _isBatching = false;
+  _batched = [];
+  _switchingBudget = true;
+}
+
+export function clearSwitchingFlag(): void {
+  _switchingBudget = false;
+}
+
+export function isSwitchingBudget(): boolean {
+  return _switchingBudget;
+}
 
 export async function batchMessages(fn: () => Promise<void>): Promise<void> {
   _isBatching = true;
@@ -251,6 +280,10 @@ export async function getMessagesSince(since: string): Promise<SyncMessage[]> {
 // ---------------------------------------------------------------------------
 
 export async function fullSync(attempt = 0): Promise<void> {
+  if (_switchingBudget) return;
+
+  const gen = _syncGeneration;
+
   // Avoid circular import — import store lazily
   const { usePrefsStore } = await import('../stores/prefsStore');
   const { useSyncStore } = await import('../stores/syncStore');
@@ -267,6 +300,8 @@ export async function fullSync(attempt = 0): Promise<void> {
     const since = Timestamp.since(sinceStr);
 
     const localMessages = await getMessagesSince(since);
+
+    if (gen !== _syncGeneration) return;
 
     const requestBytes = await encode(
       prefs.groupId,
@@ -285,6 +320,12 @@ export async function fullSync(attempt = 0): Promise<void> {
       },
     );
 
+    // Critical guard: discard results if budget changed during network request
+    if (gen !== _syncGeneration) {
+      console.log('[fullSync] generation changed during network request — discarding results');
+      return;
+    }
+
     const { messages: serverMessages, merkle: serverMerkle } = await decode(
       responseBytes,
       prefs.encryptKeyId,
@@ -293,8 +334,11 @@ export async function fullSync(attempt = 0): Promise<void> {
     console.log(`[fullSync] received ${serverMessages.length} messages from server (attempt ${attempt})`);
 
     if (serverMessages.length > 0) {
+      if (gen !== _syncGeneration) return;
       await applyMessages(serverMessages);
     }
+
+    if (gen !== _syncGeneration) return;
 
     // Persist last synced timestamp — persist middleware auto-saves to MMKV
     prefs.setPrefs({ lastSyncedTimestamp: new Date().toISOString() });
@@ -307,6 +351,7 @@ export async function fullSync(attempt = 0): Promise<void> {
 
     useSyncStore.getState()._setStatus('success');
   } catch (e: unknown) {
+    if (gen !== _syncGeneration) return;
     const msg = e instanceof Error ? e.message : String(e);
     useSyncStore.getState()._setError(msg);
     throw e;

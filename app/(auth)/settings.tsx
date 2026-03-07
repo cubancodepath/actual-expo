@@ -16,7 +16,7 @@ import { useSyncStore } from "../../src/stores/syncStore";
 import { usePreferencesStore } from "../../src/stores/preferencesStore";
 import { resetAllStores } from "../../src/stores/resetStores";
 import { usePrivacyStore } from "../../src/stores/privacyStore";
-import { clearSyncTimeout } from "../../src/sync";
+import { resetSyncState, clearSwitchingFlag } from "../../src/sync";
 import { clearLocalData } from "../../src/db";
 import {
   DATE_FORMAT_OPTIONS,
@@ -148,11 +148,12 @@ export default function SettingsScreen() {
           onPress: async () => {
             setLoggingOut(true);
             try {
-              clearSyncTimeout();
+              resetSyncState();
               resetAllStores();
               await clearLocalData();
               await clearAll();
             } finally {
+              clearSwitchingFlag();
               setLoggingOut(false);
             }
           },

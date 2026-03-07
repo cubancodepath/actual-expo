@@ -18,7 +18,7 @@ import { useTagsStore } from "../src/stores/tagsStore";
 import { usePayeesStore } from "../src/stores/payeesStore";
 import { useTransactionsStore } from "../src/stores/transactionsStore";
 import { openDatabase } from "../src/db";
-import { loadClock, fullSync } from "../src/sync";
+import { loadClock, fullSync, isSwitchingBudget } from "../src/sync";
 import { updateAppBadge } from "../src/lib/badge";
 
 export default function RootLayout() {
@@ -88,7 +88,7 @@ export default function RootLayout() {
   // Sync when app comes back to foreground — mirrors loot-core's app-focused handler
   useEffect(() => {
     const sub = AppState.addEventListener("change", (nextState) => {
-      if (nextState === "active" && usePrefsStore.getState().isConfigured) {
+      if (nextState === "active" && usePrefsStore.getState().isConfigured && !isSwitchingBudget()) {
         fullSync().catch(console.warn);
       }
     });

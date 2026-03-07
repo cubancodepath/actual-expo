@@ -9,9 +9,9 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { usePrefsStore } from '../../src/stores/prefsStore';
 import { listFiles, type BudgetFile } from '../../src/services/authService';
-import { downloadAndImportBudget } from '../../src/services/budgetfiles';
+import { switchBudget } from '../../src/services/budgetfiles';
 import { resetAllStores } from '../../src/stores/resetStores';
-import { fullSync, clearSyncTimeout } from '../../src/sync';
+import { resetSyncState, clearSwitchingFlag } from '../../src/sync';
 import { useTheme, useThemedStyles } from '../../src/presentation/providers/ThemeProvider';
 import { Text } from '../../src/presentation/components/atoms/Text';
 import { Card } from '../../src/presentation/components/atoms/Card';
@@ -41,45 +41,20 @@ export default function FilesScreen() {
   async function handleSelect(file: BudgetFile) {
     setSelecting(file.fileId);
     try {
-      clearSyncTimeout();
-      resetAllStores();
-      await downloadAndImportBudget(serverUrl, token, file.fileId, file.encryptKeyId);
-
-      const [
-        { useAccountsStore },
-        { useCategoriesStore },
-        { useBudgetStore },
-      ] = await Promise.all([
-        import('../../src/stores/accountsStore'),
-        import('../../src/stores/categoriesStore'),
-        import('../../src/stores/budgetStore'),
-      ]);
-      await Promise.allSettled([
-        useAccountsStore.getState().load(),
-        useCategoriesStore.getState().load(),
-        useBudgetStore.getState().load(),
-      ]);
-
-      usePrefsStore.getState().setPrefs({
-        fileId: file.fileId,
-        groupId: file.groupId,
-        encryptKeyId: file.encryptKeyId,
-        budgetName: file.name || 'Unnamed budget',
-        lastSyncedTimestamp: undefined,
-      });
-
-      fullSync().catch(console.warn);
+      await switchBudget(serverUrl, token, file);
       router.replace('/(auth)/(tabs)/(budget)');
     } catch (e: unknown) {
+      clearSwitchingFlag();
       setError(e instanceof Error ? e.message : String(e));
       setSelecting(null);
     }
   }
 
   async function handleLogout() {
-    clearSyncTimeout();
+    resetSyncState();
     resetAllStores();
     await clearAll();
+    clearSwitchingFlag();
     router.replace('/');
   }
 

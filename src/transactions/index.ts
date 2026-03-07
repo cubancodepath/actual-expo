@@ -514,15 +514,17 @@ export async function searchTransactions(opts: {
     params.push(opts.accountId);
   }
   if (opts.categoryId) {
-    conditions.push('t.category = ?');
-    params.push(opts.categoryId);
+    conditions.push(
+      '(t.category = ? OR (t.isParent = 1 AND EXISTS (SELECT 1 FROM transactions ch WHERE ch.parent_id = t.id AND ch.tombstone = 0 AND ch.category = ?)))',
+    );
+    params.push(opts.categoryId, opts.categoryId);
   }
   if (opts.payeeId) {
     conditions.push('COALESCE(pm.targetId, t.description) = ?');
     params.push(opts.payeeId);
   }
   if (opts.uncategorized) {
-    conditions.push('t.category IS NULL');
+    conditions.push('(t.category IS NULL AND t.isParent = 0)');
     // Exclude transfers between on-budget accounts (they don't need a category)
     conditions.push('(p.transfer_acct IS NULL OR tr_acc.offbudget = 1)');
   }

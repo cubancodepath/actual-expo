@@ -353,6 +353,11 @@ export async function fullSync(attempt = 0): Promise<void> {
   } catch (e: unknown) {
     if (gen !== _syncGeneration) return;
     const msg = e instanceof Error ? e.message : String(e);
+    // Silently ignore errors from DB closing during budget switch
+    if (msg.includes('closed resource') || msg.includes('not initialized')) {
+      useSyncStore.getState()._setStatus('idle');
+      return;
+    }
     useSyncStore.getState()._setError(msg);
     throw e;
   }

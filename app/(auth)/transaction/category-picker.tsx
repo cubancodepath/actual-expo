@@ -85,7 +85,7 @@ export default function CategoryPickerScreen() {
           paddingHorizontal: spacing.lg,
           paddingTop: spacing.lg,
           paddingBottom: spacing.sm,
-          backgroundColor: colors.headerBackground,
+          backgroundColor: colors.pageBackground,
         }}
       >
         <GlassButton icon="chevron.left" onPress={() => router.back()} />

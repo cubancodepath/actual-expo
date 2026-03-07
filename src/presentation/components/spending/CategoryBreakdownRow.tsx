@@ -25,7 +25,7 @@ export function CategoryBreakdownRow({
 
   return (
     <View style={styles.row}>
-      <View style={[styles.iconWell, { backgroundColor: colors.primary + '18' }]}>
+      <View style={[styles.iconWell, { backgroundColor: colors.primarySubtle }]}>
         <Ionicons name="pricetag-outline" size={14} color={colors.primary} />
       </View>
 
@@ -37,7 +37,7 @@ export function CategoryBreakdownRow({
           <View
             style={[
               styles.barFill,
-              { width: `${barPct * 100}%`, backgroundColor: colors.negative + 'AA' },
+              { width: `${barPct * 100}%`, backgroundColor: colors.negativeSubtle },
             ]}
           />
         </View>

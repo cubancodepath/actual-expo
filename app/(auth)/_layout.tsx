@@ -66,7 +66,7 @@ export default function AuthLayout() {
           title: "New Group",
           presentation: "formSheet",
           sheetAllowedDetents: "fitToContents",
-          contentStyle: { backgroundColor: theme.colors.headerBackground },
+          contentStyle: { backgroundColor: theme.colors.pageBackground },
         }}
       />
       <Stack.Screen
@@ -76,7 +76,7 @@ export default function AuthLayout() {
           title: "New Category",
           presentation: "formSheet",
           sheetAllowedDetents: "fitToContents",
-          contentStyle: { backgroundColor: theme.colors.headerBackground },
+          contentStyle: { backgroundColor: theme.colors.pageBackground },
         }}
       />
       <Stack.Screen
@@ -86,7 +86,7 @@ export default function AuthLayout() {
           title: "Edit Group",
           presentation: "formSheet",
           sheetAllowedDetents: "fitToContents",
-          contentStyle: { backgroundColor: theme.colors.headerBackground },
+          contentStyle: { backgroundColor: theme.colors.pageBackground },
         }}
       />
       <Stack.Screen
@@ -96,7 +96,7 @@ export default function AuthLayout() {
           title: "Edit Category",
           presentation: "formSheet",
           sheetAllowedDetents: "fitToContents",
-          contentStyle: { backgroundColor: theme.colors.headerBackground },
+          contentStyle: { backgroundColor: theme.colors.pageBackground },
         }}
       />
       <Stack.Screen
@@ -106,7 +106,7 @@ export default function AuthLayout() {
           title: "Goal Target",
           presentation: "formSheet",
           sheetAllowedDetents: [1.0],
-          contentStyle: { backgroundColor: theme.colors.headerBackground },
+          contentStyle: { backgroundColor: theme.colors.pageBackground },
         }}
       />
       <Stack.Screen
@@ -116,7 +116,7 @@ export default function AuthLayout() {
           title: "Overspent Categories",
           presentation: "formSheet",
           sheetAllowedDetents: "fitToContents",
-          contentStyle: { backgroundColor: theme.colors.headerBackground },
+          contentStyle: { backgroundColor: theme.colors.pageBackground },
         }}
       />
       <Stack.Screen

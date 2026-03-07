@@ -369,7 +369,7 @@ export default function NewTransactionScreen() {
             type={type}
             autoFocus={!isEdit}
             color={headerText}
-            style={{ paddingVertical: spacing.sm }}
+            style={{ paddingVertical: spacing.sm, alignSelf: 'stretch' }}
           />
         </View>
 

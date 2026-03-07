@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Keyboard, Pressable, SectionList, View, useColorScheme } from 'react-native';
+import { Alert, Keyboard, Pressable, SectionList, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,7 +12,7 @@ import { KeyboardDoneButton } from '../../../src/presentation/components/atoms/K
 import { CompactCurrencyInput, type CompactCurrencyInputRef } from '../../../src/presentation/components/atoms/CompactCurrencyInput';
 import { HoldModal } from '../../../src/presentation/components/budget/HoldModal';
 import { Amount } from '../../../src/presentation/components/atoms/Amount';
-import { withOpacity } from '../../../src/lib/colors';
+
 import { getGoalProgress } from '../../../src/goals/progress';
 import type { BudgetCategory } from '../../../src/budgets/types';
 
@@ -24,8 +24,6 @@ type CategorySection = {
 
 export default function AssignBudgetScreen() {
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { data, setAmount, hold, resetHold } = useBudgetStore();
@@ -174,18 +172,16 @@ export default function AssignBudgetScreen() {
   const isNegative = remaining < 0;
 
   const statusColor = isPositive
-    ? isDark ? colors.warning : '#79400a'
+    ? colors.budgetHealthy
     : isNegative
-      ? isDark ? colors.negative : '#ab091e'
-      : isDark ? colors.positive : colors.positive;
+      ? colors.budgetOverspent
+      : colors.textMuted;
 
-  const fillOpacity = isPositive
-    ? isDark ? 0.18 : 0.12
+  const cardBg = isPositive
+    ? colors.budgetHealthyBg
     : isNegative
-      ? isDark ? 0.17 : 0.11
-      : isDark ? 0.15 : 0.10;
-
-  const cardBg = withOpacity(statusColor, fillOpacity);
+      ? colors.budgetOverspentBg
+      : colors.cardBackground;
 
   const statusLabel = isPositive
     ? 'Ready to Assign'

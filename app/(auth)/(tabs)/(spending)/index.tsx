@@ -114,6 +114,7 @@ export default function SpendingScreen() {
   useLayoutEffect(() => {
     if (txnList.isSelectMode) return;
     navigation.setOptions({
+      headerStyle: undefined,
       title: 'Spending',
       headerTitle: undefined,
       headerLeft: undefined,

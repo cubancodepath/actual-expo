@@ -11,9 +11,10 @@ export default function BudgetStack() {
   return (
     <Stack
       screenOptions={{
-        headerStyle: { backgroundColor: colors.headerBackground },
+        headerStyle: { backgroundColor: colors.pageBackground },
         headerTintColor: colors.headerText,
         headerShadowVisible: false,
+        contentStyle: { backgroundColor: colors.pageBackground },
       }}
     >
       <Stack.Screen

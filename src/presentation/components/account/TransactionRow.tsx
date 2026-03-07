@@ -77,7 +77,7 @@ export const TransactionRow = memo(function TransactionRow({
       style={({ pressed }) => [
         styles.row,
         pressed && styles.pressed,
-        isSelected && { backgroundColor: colors.primary + '12' },
+        isSelected && { backgroundColor: colors.primarySubtle },
       ]}
       onPress={() => {
         if (isSelectMode) {
@@ -123,11 +123,7 @@ export const TransactionRow = memo(function TransactionRow({
           <View style={styles.amountRow}>
             <Amount value={item.amount} variant="body" showSign style={{ fontWeight: '600' as const }} />
             {!isSelectMode && (
-              <Pressable
-                onPress={() => { if (!item.reconciled) onToggleCleared(item.id); }}
-                hitSlop={10}
-                style={{ marginLeft: spacing.sm }}
-              >
+              <View style={{ marginLeft: spacing.sm }}>
                 {item.reconciled ? (
                   <Ionicons name="lock-closed" size={14} color={colors.primary} />
                 ) : (
@@ -137,7 +133,7 @@ export const TransactionRow = memo(function TransactionRow({
                     color={item.cleared ? colors.positive : colors.textMuted}
                   />
                 )}
-              </Pressable>
+              </View>
             )}
           </View>
         </View>

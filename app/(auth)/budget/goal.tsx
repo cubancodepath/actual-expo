@@ -452,7 +452,7 @@ export default function GoalEditorScreen() {
 
   return (
     <ScrollView
-      style={{ backgroundColor: colors.headerBackground }}
+      style={{ backgroundColor: colors.pageBackground }}
       contentContainerStyle={{ padding: spacing.lg, paddingTop: 72 }}
       keyboardShouldPersistTaps="handled"
     >

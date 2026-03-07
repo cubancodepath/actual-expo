@@ -113,39 +113,39 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
     // Limit goals: green = under limit, yellow = approaching, red = over
     const ratio = spentAbs / cat.goal!;
     pillBg = ratio >= 1
-      ? colors.negative + '30'
+      ? colors.budgetOverspentBg
       : ratio >= 0.8
-        ? colors.warning + '30'
-        : colors.positive + '30';
+        ? colors.budgetCautionBg
+        : colors.budgetHealthyBg;
     pillText = ratio >= 1
-      ? colors.negative
+      ? colors.budgetOverspent
       : ratio >= 0.8
-        ? colors.warning
-        : colors.positive;
+        ? colors.budgetCaution
+        : colors.budgetHealthy;
   } else if (hasGoal) {
     const funded = cat.longGoal
       ? cat.balance >= cat.goal!
       : cat.budgeted >= cat.goal!;
     pillBg = cat.balance < 0
-      ? colors.negative + '30'
+      ? colors.budgetOverspentBg
       : funded
-        ? colors.positive + '30'
-        : colors.warning + '30';
+        ? colors.budgetHealthyBg
+        : colors.budgetCautionBg;
     pillText = cat.balance < 0
-      ? colors.negative
+      ? colors.budgetOverspent
       : funded
-        ? colors.positive
-        : colors.warning;
+        ? colors.budgetHealthy
+        : colors.budgetCaution;
   } else {
     pillBg = cat.balance > 0
-      ? colors.positive + '30'
+      ? colors.budgetHealthyBg
       : cat.balance < 0
-        ? colors.negative + '30'
+        ? colors.budgetOverspentBg
         : colors.cardBackground;
     pillText = cat.balance > 0
-      ? colors.positive
+      ? colors.budgetHealthy
       : cat.balance < 0
-        ? colors.negative
+        ? colors.budgetOverspent
         : colors.textMuted;
   }
 

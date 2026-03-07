@@ -47,7 +47,7 @@ function AccountContent({
     <Card style={styles.listCard}>
       {group.accounts.map((account, i) => (
         <View key={account.id}>
-          {i > 0 && <Divider />}
+          {i > 0 && <Divider style={{ marginHorizontal: theme.spacing.md }} />}
           <Pressable
             style={styles.accountRow}
             onPress={() => onPressAccount(account)}
@@ -188,6 +188,8 @@ export default function AccountsScreen() {
             icon="wallet-outline"
             title="No accounts yet"
             description="Add your first account to get started."
+            actionLabel="Add Account"
+            onAction={() => router.push('/(auth)/account/new')}
           />
         )}
       </ScrollView>

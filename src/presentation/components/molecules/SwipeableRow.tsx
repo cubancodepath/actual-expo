@@ -62,7 +62,7 @@ export function SwipeableRow({
   const passedRightOpenThreshold = useSharedValue(false);
 
   const hasRightAction = onSwipeRight != null;
-  const rightColor = swipeRightColor ?? colors.positive;
+  const rightColor = swipeRightColor ?? colors.positiveFill;
 
   function handleDelete() {
     onDelete();
@@ -318,7 +318,7 @@ export function SwipeableRow({
       <Animated.View style={[styles.deleteArea, deleteAreaStyle]}>
         <Animated.View style={deletePillStyle}>
           <Pressable
-            style={[styles.pill, { backgroundColor: colors.negative }]}
+            style={[styles.pill, { backgroundColor: colors.negativeFill }]}
             onPress={() => {
               translateX.value = withTiming(0, { duration: 200 });
               handleDelete();

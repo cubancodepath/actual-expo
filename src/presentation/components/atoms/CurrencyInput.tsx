@@ -107,8 +107,8 @@ export function CurrencyInput({
   }
 
   return (
-    <View style={[styles.container, style]}>
-      <Pressable style={styles.display} onPress={() => inputRef.current?.focus()}>
+    <Pressable style={[styles.container, style]} onPress={() => inputRef.current?.focus()}>
+      <View style={styles.display}>
         <Text style={[styles.prefix, { color: amountColor }]}>
           {prefix}
         </Text>
@@ -118,7 +118,7 @@ export function CurrencyInput({
         <Animated.View
           style={[styles.cursor, { backgroundColor: theme.colors.primary }, cursorStyle]}
         />
-      </Pressable>
+      </View>
       <TextInput
         ref={inputRef}
         style={styles.hiddenInput}
@@ -131,7 +131,7 @@ export function CurrencyInput({
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
       />
-    </View>
+    </Pressable>
   );
 }
 

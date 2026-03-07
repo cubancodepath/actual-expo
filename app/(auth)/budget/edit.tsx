@@ -516,7 +516,7 @@ export default function EditBudgetScreen() {
                 paddingBottom: hasGoal ? 10 : 12,
                 minHeight: 44,
                 backgroundColor: pressed
-                  ? colors.cardBackground + "cc"
+                  ? colors.elevatedBackground
                   : colors.cardBackground,
                 borderTopWidth: isFirst ? 0 : bw.thin,
                 borderTopColor: colors.divider,
@@ -552,7 +552,7 @@ export default function EditBudgetScreen() {
   // ---------- Header ----------
 
   const headerBg = colors.primary;
-  const headerText = "#ffffff";
+  const headerText = colors.primaryText;
 
   // ---------- Sticky card scroll tracking ----------
 

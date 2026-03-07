@@ -10,6 +10,7 @@ export { Amount, type AmountProps } from "./atoms/Amount";
 export { Icon, type IconProps } from "./atoms/Icon";
 export { CurrencyInput } from "./atoms/CurrencyInput";
 export { CompactCurrencyInput, type CompactCurrencyInputRef } from "./atoms/CompactCurrencyInput";
+export { InfoPill } from "./atoms/InfoPill";
 export { TagPill, type TagPillProps } from "./atoms/TagPill";
 export { NotesWithTags, type NotesWithTagsProps } from "./atoms/NotesWithTags";
 export { KeyboardDoneButton } from "./atoms/KeyboardDoneButton";

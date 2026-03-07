@@ -13,6 +13,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUndoStore } from '../../../stores/undoStore';
 import { useTheme } from '../../providers/ThemeProvider';
+import { palette } from '../../../theme/colors';
 import { Text } from '../atoms/Text';
 
 const SPRING_CONFIG = { damping: 18, stiffness: 200, mass: 0.8 } as const;
@@ -106,7 +107,7 @@ export function UndoToast() {
     >
       <Text
         variant="bodyLg"
-        color={colors.primaryText}
+        color={palette.white}
         numberOfLines={1}
         style={{ flex: 1 }}
         accessibilityElementsHidden
@@ -126,7 +127,7 @@ export function UndoToast() {
         >
           <Text
             variant="bodyLg"
-            color={colors.primaryText}
+            color={colors.primary}
             style={{ fontWeight: '600' }}
           >
             Undo
@@ -146,7 +147,7 @@ export function UndoToast() {
             right: spacing.lg,
             bottom: insets.bottom + spacing.lg,
             borderRadius: br.full,
-            backgroundColor: colors.primary,
+            backgroundColor: colors.toastBackground,
             zIndex: 9999,
             ...shadows.modal,
           },

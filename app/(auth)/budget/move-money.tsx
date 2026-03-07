@@ -12,6 +12,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
+import { palette } from '../../../src/theme/colors';
 import { useBudgetStore } from '../../../src/stores/budgetStore';
 import { transferMultipleCategories } from '../../../src/budgets';
 import { Text } from '../../../src/presentation/components/atoms/Text';
@@ -74,7 +75,7 @@ function SourceRow({
 
       <View
         style={{
-          backgroundColor: remainingBalance >= 0 ? colors.positive + '30' : colors.negative + '30',
+          backgroundColor: remainingBalance >= 0 ? colors.positiveSubtle : colors.negativeSubtle,
           borderRadius: 100,
           paddingHorizontal: 8,
           paddingVertical: 2,
@@ -117,6 +118,7 @@ function DirectionToggle({
   direction: MoveDirection;
   onToggle: () => void;
 }) {
+  const { colors } = useTheme();
   const progress = useSharedValue(direction === 'to' ? 0 : 1);
 
   useEffect(() => {
@@ -162,7 +164,7 @@ function DirectionToggle({
             ]}
           >
             <Animated.View style={arrowStyle}>
-              <Ionicons name="arrow-up" size={16} color="#8719e0" />
+              <Ionicons name="arrow-up" size={16} color={colors.primary} />
             </Animated.View>
           </Animated.View>
         </View>
@@ -266,9 +268,13 @@ export default function MoveMoneyScreen() {
     }
   }
 
-  // Header uses primary/purple tones
-  const headerBg = colors.primary;
-  const headerText = '#ffffff';
+  // Header color reflects budget health of the category
+  const headerBg = projectedBalance > 0
+    ? colors.positiveFill
+    : projectedBalance < 0
+      ? colors.negativeFill
+      : colors.primary;
+  const headerText = palette.white;
 
   return (
     <ScrollView

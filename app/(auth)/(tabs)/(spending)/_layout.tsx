@@ -17,6 +17,7 @@ export default function SpendingStack() {
         name="search"
         options={{
           title: "Spending",
+          headerStyle: { backgroundColor: colors.pageBackground },
           animation: "fade",
           animationDuration: 150,
           headerBackVisible: false,

@@ -131,7 +131,7 @@ function SignToggle({
     backgroundColor: interpolateColor(
       progress.value,
       [0, 1],
-      [colors.positive + '50', colors.negative + '50'],
+      [colors.positiveSubtle, colors.negativeSubtle],
     ),
   }));
 

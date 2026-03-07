@@ -37,6 +37,7 @@ export function useSelectModeHeader({
     if (!isSelectMode) return;
 
     navigation.setOptions({
+      headerStyle: { backgroundColor: colors.pageBackground },
       title: selectedCount > 0
         ? `${selectedCount} Selected`
         : 'Select Items',

@@ -81,7 +81,7 @@ export default function EditCategoryScreen() {
   const goalDescription = hasGoal ? describeTemplate(templates[0]) : null;
 
   return (
-    <View style={{ backgroundColor: colors.headerBackground, padding: spacing.lg, paddingTop: 72 }}>
+    <View style={{ backgroundColor: colors.pageBackground, padding: spacing.lg, paddingTop: 72 }}>
       <Stack.Screen
         options={{
           headerLeft: () => (

@@ -4,9 +4,10 @@ import type { Theme } from "../../theme";
 /** Default header styling from theme tokens. */
 export function themedScreenOptions(theme: Theme): NativeStackNavigationOptions {
   return {
-    headerStyle: { backgroundColor: theme.colors.headerBackground },
+    headerStyle: { backgroundColor: theme.colors.pageBackground },
     headerTintColor: theme.colors.headerText,
     headerShadowVisible: false,
+    contentStyle: { backgroundColor: theme.colors.pageBackground },
   };
 }
 

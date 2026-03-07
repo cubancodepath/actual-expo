@@ -206,7 +206,7 @@ const createStyles = (theme: Theme) => ({
     width: 36,
     height: 36,
     borderRadius: theme.borderRadius.md,
-    backgroundColor: theme.colors.primary + '15',
+    backgroundColor: theme.colors.primarySubtle,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
   },

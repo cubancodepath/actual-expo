@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, useColorScheme, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
+import { palette } from '../../../src/theme/colors';
 import { useBudgetStore } from '../../../src/stores/budgetStore';
 import { transferMultipleCategories } from '../../../src/budgets';
 import { Text } from '../../../src/presentation/components/atoms/Text';
@@ -60,7 +61,7 @@ function SourceRow({
       {/* Remaining pill */}
       <View
         style={{
-          backgroundColor: remainingBalance >= 0 ? colors.positive + '30' : colors.negative + '30',
+          backgroundColor: remainingBalance >= 0 ? colors.positiveSubtle : colors.negativeSubtle,
           borderRadius: 100,
           paddingHorizontal: 8,
           paddingVertical: 2,
@@ -90,8 +91,6 @@ function SourceRow({
 
 export default function CoverSourceScreen() {
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
   const router = useRouter();
   const { catId, catName, balance } = useLocalSearchParams<{
     catId: string;
@@ -170,16 +169,12 @@ export default function CoverSourceScreen() {
     }
   }
 
-  // Header colors — green when fully covered, yellow otherwise
+  // Header color reflects cover progress — amber → green as overspending is covered
   const isCovered = remaining <= 0 && sources.length > 0;
-  const headerBg = isCovered ? colors.successBackground : colors.warningBackground;
-  const headerText = isCovered ? colors.successText : colors.warningText;
-  const amountBadgeBg = isCovered
-    ? (isDark ? colors.positive + '40' : colors.positive + '20')
-    : (isDark ? '#8a041a' : '#fce8e8');
-  const amountBadgeColor = isCovered
-    ? colors.positive
-    : (isDark ? '#ffffff' : '#ab091e');
+  const headerBg = isCovered ? colors.positiveFill : colors.warningFill;
+  const headerText = palette.white;
+  const amountBadgeBg = 'rgba(255,255,255,0.2)';
+  const amountBadgeColor = palette.white;
 
   return (
     <ScrollView
@@ -189,7 +184,7 @@ export default function CoverSourceScreen() {
     >
       <Stack.Screen options={{ headerShown: false }} />
 
-      {/* Custom yellow header with rounded bottom corners */}
+      {/* Health-colored header with rounded bottom corners */}
       <View
         style={{
           backgroundColor: headerBg,

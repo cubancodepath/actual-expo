@@ -29,7 +29,7 @@ export default function NewGroupScreen() {
   }
 
   return (
-    <View style={{ backgroundColor: colors.headerBackground, padding: spacing.lg, paddingTop: 72 }}>
+    <View style={{ backgroundColor: colors.pageBackground, padding: spacing.lg, paddingTop: 72 }}>
       <Stack.Screen
         options={{
           headerLeft: () => (

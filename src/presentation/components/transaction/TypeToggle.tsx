@@ -19,13 +19,13 @@ export function TypeToggle({ type, onChangeType }: TypeToggleProps) {
       <Pressable
         style={[
           styles.btn,
-          type === 'expense' && { backgroundColor: theme.colors.negative },
+          type === 'expense' && { backgroundColor: theme.colors.negativeSubtle },
         ]}
         onPress={() => onChangeType('expense')}
       >
         <Text
           variant="caption"
-          color={type === 'expense' ? theme.colors.primaryText : theme.colors.textSecondary}
+          color={type === 'expense' ? theme.colors.negative : theme.colors.textSecondary}
           style={styles.btnText}
         >
           Expense
@@ -34,13 +34,13 @@ export function TypeToggle({ type, onChangeType }: TypeToggleProps) {
       <Pressable
         style={[
           styles.btn,
-          type === 'income' && { backgroundColor: theme.colors.positive },
+          type === 'income' && { backgroundColor: theme.colors.positiveSubtle },
         ]}
         onPress={() => onChangeType('income')}
       >
         <Text
           variant="caption"
-          color={type === 'income' ? theme.colors.primaryText : theme.colors.textSecondary}
+          color={type === 'income' ? theme.colors.positive : theme.colors.textSecondary}
           style={styles.btnText}
         >
           Income

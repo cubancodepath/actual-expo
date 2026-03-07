@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Pressable, ScrollView, useColorScheme, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
 import { useBudgetStore } from '../../../src/stores/budgetStore';
@@ -16,8 +16,6 @@ type OverspentCategory = {
 
 export default function CoverOverspentScreen() {
   const { colors, spacing, borderRadius: br } = useTheme();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
   const router = useRouter();
   const data = useBudgetStore((s) => s.data);
 
@@ -32,10 +30,10 @@ export default function CoverOverspentScreen() {
       );
   }, [data]);
 
-  const pillBg = isDark ? colors.buttonSecondaryBackground : colors.cardBackground;
-  const pillBorder = isDark ? colors.divider : colors.cardBorder;
-  const amountBadgeBg = isDark ? '#8a041a' : '#fce8e8';
-  const amountBadgeColor = isDark ? '#ffffff' : '#ab091e';
+  const pillBg = colors.cardBackground;
+  const pillBorder = colors.cardBorder;
+  const amountBadgeBg = colors.budgetOverspentBg;
+  const amountBadgeColor = colors.budgetOverspent;
 
   function handleSelect(cat: OverspentCategory) {
     router.push({
@@ -46,7 +44,7 @@ export default function CoverOverspentScreen() {
 
   return (
     <ScrollView
-      style={{ backgroundColor: colors.headerBackground }}
+      style={{ backgroundColor: colors.pageBackground }}
       contentContainerStyle={{ paddingTop: 72, paddingBottom: spacing.xl }}
     >
       <Stack.Screen

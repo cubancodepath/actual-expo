@@ -20,6 +20,7 @@ import { useTransactionsStore } from "../src/stores/transactionsStore";
 import { openDatabase } from "../src/db";
 import { loadClock, fullSync, isSwitchingBudget } from "../src/sync";
 import { updateAppBadge } from "../src/lib/badge";
+import { UndoToast } from "../src/presentation/components";
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -149,6 +150,7 @@ export default function RootLayout() {
           <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         </Stack.Protected>
       </Stack>
+      <UndoToast />
     </ThemeProvider>
     </NavigationThemeProvider>
     </GestureHandlerRootView>

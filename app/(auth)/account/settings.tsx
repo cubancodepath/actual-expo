@@ -11,6 +11,7 @@ import {
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAccountsStore } from '../../../src/stores/accountsStore';
+import { useUndoStore } from '../../../src/stores/undoStore';
 import { useTheme, useThemedStyles } from '../../../src/presentation/providers/ThemeProvider';
 import { Text } from '../../../src/presentation/components/atoms/Text';
 import { Button } from '../../../src/presentation/components/atoms/Button';
@@ -89,7 +90,7 @@ export default function AccountSettingsScreen() {
   function handleDelete() {
     Alert.alert(
       'Delete Account',
-      'Permanently delete this account and all its transactions? This cannot be undone.',
+      'Permanently delete this account and all its transactions?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -100,6 +101,7 @@ export default function AccountSettingsScreen() {
             try {
               await delete_(id);
               await load();
+              useUndoStore.getState().showUndo('Account deleted');
               router.dismiss();
             } finally {
               setSaving(false);

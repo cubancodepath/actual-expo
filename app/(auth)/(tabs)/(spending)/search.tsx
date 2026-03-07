@@ -21,6 +21,7 @@ import {
   updateTransaction,
   type TransactionDisplay,
 } from '../../../../src/transactions';
+import { useUndoStore } from '../../../../src/stores/undoStore';
 import type { SearchToken } from '../../../../src/transactions/types';
 import { useAccountsStore } from '../../../../src/stores/accountsStore';
 import { useCategoriesStore } from '../../../../src/stores/categoriesStore';
@@ -343,6 +344,7 @@ export default function SearchScreen() {
         onPress: async () => {
           setResults(prev => prev.filter(t => t.id !== txnId));
           await deleteTransaction(txnId);
+          useUndoStore.getState().showUndo('Transaction deleted');
         },
       },
     ]);

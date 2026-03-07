@@ -1,6 +1,7 @@
 import { randomUUID } from 'expo-crypto';
 import { runQuery, run, first } from '../db';
 import { sendMessages, batchMessages } from '../sync';
+import { undoable } from '../sync/undo';
 import { Timestamp } from '../crdt';
 import { todayInt } from '../lib/date';
 import type { AccountRow } from '../db/types';
@@ -116,7 +117,7 @@ async function getStartingBalancePayee(): Promise<{ id: string; categoryId: stri
   return { id: payeeId, categoryId: cat?.id ?? null };
 }
 
-export async function createAccount(
+export const createAccount = undoable(async function createAccount(
   fields: Omit<Partial<Account>, 'id' | 'tombstone'>,
   startingBalance = 0,
 ): Promise<string> {
@@ -168,9 +169,9 @@ export async function createAccount(
   });
 
   return id;
-}
+});
 
-export async function updateAccount(
+export const updateAccount = undoable(async function updateAccount(
   id: string,
   fields: Omit<Partial<Account>, 'id' | 'tombstone'>,
 ): Promise<void> {
@@ -191,14 +192,14 @@ export async function updateAccount(
       value: value as string | number | null,
     })),
   );
-}
+});
 
 export async function closeAccount(id: string): Promise<void> {
   await updateAccount(id, { closed: true });
 }
 
-export async function deleteAccount(id: string): Promise<void> {
+export const deleteAccount = undoable(async function deleteAccount(id: string): Promise<void> {
   await sendMessages([
     { timestamp: Timestamp.send()!, dataset: 'accounts', row: id, column: 'tombstone', value: 1 },
   ]);
-}
+});

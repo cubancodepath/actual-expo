@@ -20,6 +20,7 @@ import { encode, decode, type SyncMessage } from './encoder';
 import { postBinary } from '../post';
 import { run, runQuery, first, transaction } from '../db';
 import type { MessagesCrdtRow } from '../db/types';
+import { appendMessages as undoAppendMessages, clearUndo, type OldData } from './undo';
 
 // ---------------------------------------------------------------------------
 // Value serialization — identical to loot-core
@@ -90,6 +91,7 @@ let _switchingBudget = false;
 export function resetSyncState(): void {
   _syncGeneration++;
   clearSyncTimeout();
+  clearUndo();
   _isBatching = false;
   _batched = [];
   _switchingBudget = true;
@@ -159,7 +161,8 @@ export async function sendMessages(messages: SyncMessage[]): Promise<void> {
 }
 
 async function _applyAndRecord(messages: SyncMessage[]): Promise<void> {
-  await applyMessages(messages);
+  const oldData = await applyMessages(messages);
+  undoAppendMessages(messages, oldData);
   scheduleFullSync(); // upload local changes to server after every mutation
 }
 
@@ -179,8 +182,8 @@ const ALLOWED_TABLES = new Set([
   'tags',
 ]);
 
-export async function applyMessages(messages: SyncMessage[]): Promise<void> {
-  if (messages.length === 0) return;
+export async function applyMessages(messages: SyncMessage[]): Promise<OldData> {
+  if (messages.length === 0) return {};
 
   // Sort by timestamp for deterministic application
   const sorted = [...messages].sort((a, b) =>
@@ -188,6 +191,28 @@ export async function applyMessages(messages: SyncMessage[]): Promise<void> {
   );
 
   const prefsToSet: Record<string, string | number | null> = {};
+
+  // Capture current DB state for each affected row BEFORE mutating (needed for undo)
+  const oldData: OldData = {};
+  const rowsToFetch = new Map<string, Set<string>>(); // dataset → Set<rowId>
+  for (const msg of sorted) {
+    if (msg.dataset === 'prefs' || !ALLOWED_TABLES.has(msg.dataset)) continue;
+    if (!rowsToFetch.has(msg.dataset)) rowsToFetch.set(msg.dataset, new Set());
+    rowsToFetch.get(msg.dataset)!.add(msg.row);
+  }
+
+  for (const [dataset, rowIds] of rowsToFetch) {
+    for (const rowId of rowIds) {
+      const row = await first<Record<string, unknown>>(
+        `SELECT * FROM ${dataset} WHERE id = ?`,
+        [rowId],
+      );
+      if (row) {
+        if (!oldData[dataset]) oldData[dataset] = {};
+        oldData[dataset][rowId] = row;
+      }
+    }
+  }
 
   await transaction(async () => {
     for (const msg of sorted) {
@@ -215,19 +240,25 @@ export async function applyMessages(messages: SyncMessage[]): Promise<void> {
         continue;
       }
 
-      // Check if row exists
-      const existing = await first<{ id: string }>(
-        `SELECT id FROM ${dataset} WHERE id = ?`,
-        [row],
-      );
+      // Check if row already existed (use oldData to avoid extra query)
+      const existed = oldData[dataset]?.[row] != null;
 
-      if (existing) {
+      if (existed) {
         await run(`UPDATE ${dataset} SET ${column} = ? WHERE id = ?`, [value, row]);
       } else {
-        await run(
-          `INSERT INTO ${dataset} (id, ${column}) VALUES (?, ?)`,
-          [row, value],
+        // Row may have been created by a prior message in this batch
+        const existing = await first<{ id: string }>(
+          `SELECT id FROM ${dataset} WHERE id = ?`,
+          [row],
         );
+        if (existing) {
+          await run(`UPDATE ${dataset} SET ${column} = ? WHERE id = ?`, [value, row]);
+        } else {
+          await run(
+            `INSERT INTO ${dataset} (id, ${column}) VALUES (?, ?)`,
+            [row, value],
+          );
+        }
       }
 
       // Record in CRDT log
@@ -255,6 +286,8 @@ export async function applyMessages(messages: SyncMessage[]): Promise<void> {
 
   // Notify all Zustand stores
   await refreshAllStores();
+
+  return oldData;
 }
 
 // ---------------------------------------------------------------------------

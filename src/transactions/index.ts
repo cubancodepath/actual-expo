@@ -1,6 +1,7 @@
 import { randomUUID } from 'expo-crypto';
 import { runQuery, first } from '../db';
 import { sendMessages, batchMessages } from '../sync';
+import { undoable } from '../sync/undo';
 import { Timestamp } from '../crdt';
 import type { TransactionRow } from '../db/types';
 import type { Transaction, GetTransactionsOptions } from './types';
@@ -58,7 +59,7 @@ export async function getTransactions(
   return rows.map(rowToTransaction);
 }
 
-export async function addTransaction(
+export const addTransaction = undoable(async function addTransaction(
   fields: Omit<Partial<Transaction>, 'id' | 'tombstone'> & { acct: string; date: number; amount: number },
 ): Promise<string> {
   const id = randomUUID();
@@ -101,10 +102,10 @@ export async function addTransaction(
   });
 
   return id;
-}
+});
 
 /** Duplicate a transaction — copies all fields except cleared/reconciled (reset to false). */
-export async function duplicateTransaction(id: string): Promise<string | null> {
+export const duplicateTransaction = undoable(async function duplicateTransaction(id: string): Promise<string | null> {
   const original = await getTransactionById(id);
   if (!original) return null;
 
@@ -118,9 +119,9 @@ export async function duplicateTransaction(id: string): Promise<string | null> {
     cleared: false,
     reconciled: false,
   });
-}
+});
 
-export async function updateTransaction(
+export const updateTransaction = undoable(async function updateTransaction(
   id: string,
   fields: Omit<Partial<Transaction>, 'id' | 'tombstone'>,
 ): Promise<void> {
@@ -171,10 +172,10 @@ export async function updateTransaction(
       },
     );
   }
-}
+});
 
 /** Toggle the cleared flag on a transaction (skips reconciled transactions). */
-export async function toggleCleared(id: string): Promise<void> {
+export const toggleCleared = undoable(async function toggleCleared(id: string): Promise<void> {
   const row = await first<{ cleared: number; reconciled: number }>(
     'SELECT cleared, reconciled FROM transactions WHERE id = ? AND tombstone = 0', [id],
   );
@@ -182,14 +183,14 @@ export async function toggleCleared(id: string): Promise<void> {
   await sendMessages([
     { timestamp: Timestamp.send()!, dataset: 'transactions', row: id, column: 'cleared', value: row.cleared === 1 ? 0 : 1 },
   ]);
-}
+});
 
 /**
  * Set the cleared flag on multiple transactions at once.
  * Skips reconciled transactions and those already in the target state.
  * Uses batchMessages for sync efficiency.
  */
-export async function setClearedBulk(ids: string[], cleared: boolean): Promise<number> {
+export const setClearedBulk = undoable(async function setClearedBulk(ids: string[], cleared: boolean): Promise<number> {
   if (ids.length === 0) return 0;
 
   const placeholders = ids.map(() => '?').join(',');
@@ -211,7 +212,7 @@ export async function setClearedBulk(ids: string[], cleared: boolean): Promise<n
   });
 
   return toUpdate.length;
-}
+});
 
 /**
  * Sum of cleared (non-parent) transaction amounts for an account, in cents.
@@ -253,7 +254,7 @@ export async function lockTransactions(accountId: string): Promise<void> {
  * Reconcile an account: optionally create an adjustment transaction
  * to match the bank balance, then lock all cleared transactions.
  */
-export async function reconcileAccount(
+export const reconcileAccount = undoable(async function reconcileAccount(
   accountId: string,
   bankBalance: number,
 ): Promise<{ adjusted: boolean; diff: number }> {
@@ -275,9 +276,9 @@ export async function reconcileAccount(
   });
 
   return { adjusted: diff !== 0, diff };
-}
+});
 
-export async function deleteTransaction(id: string): Promise<void> {
+export const deleteTransaction = undoable(async function deleteTransaction(id: string): Promise<void> {
   // Fetch row info before tombstoning
   const row = await first<{ transferred_id: string | null; isParent: 0 | 1 }>(
     'SELECT transferred_id, isParent FROM transactions WHERE id = ? AND tombstone = 0',
@@ -308,7 +309,7 @@ export async function deleteTransaction(id: string): Promise<void> {
   if (row?.transferred_id) {
     await onDeleteTransfer(row.transferred_id);
   }
-}
+});
 
 // ---------------------------------------------------------------------------
 // Display query — joins payee and category names

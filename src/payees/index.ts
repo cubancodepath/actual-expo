@@ -1,6 +1,7 @@
 import { randomUUID } from 'expo-crypto';
 import { runQuery, first } from '../db';
 import { sendMessages } from '../sync';
+import { undoable } from '../sync/undo';
 import { Timestamp } from '../crdt';
 import type { PayeeRow } from '../db/types';
 import type { Payee } from './types';
@@ -39,7 +40,7 @@ export async function getPayees(): Promise<Payee[]> {
   }));
 }
 
-export async function createPayee(
+export const createPayee = undoable(async function createPayee(
   fields: Pick<Payee, 'name'> & Partial<Pick<Payee, 'transfer_acct' | 'favorite'>>,
 ): Promise<string> {
   const id = randomUUID();
@@ -58,9 +59,9 @@ export async function createPayee(
     { timestamp: Timestamp.send()!, dataset: 'payee_mapping', row: id, column: 'targetId', value: id },
   ]);
   return id;
-}
+});
 
-export async function updatePayee(
+export const updatePayee = undoable(async function updatePayee(
   id: string,
   fields: Partial<Pick<Payee, 'name' | 'favorite'>>,
 ): Promise<void> {
@@ -74,13 +75,13 @@ export async function updatePayee(
       value: value as string | number | null,
     })),
   );
-}
+});
 
-export async function deletePayee(id: string): Promise<void> {
+export const deletePayee = undoable(async function deletePayee(id: string): Promise<void> {
   await sendMessages([
     { timestamp: Timestamp.send()!, dataset: 'payees', row: id, column: 'tombstone', value: 1 },
   ]);
-}
+});
 
 /** Find an existing payee by name (case-insensitive) or create a new one. */
 export async function findOrCreatePayee(name: string): Promise<string | null> {

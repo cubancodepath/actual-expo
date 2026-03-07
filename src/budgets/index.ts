@@ -1,5 +1,6 @@
 import { runQuery, first } from '../db';
 import { sendMessages } from '../sync';
+import { undoable } from '../sync/undo';
 import { Timestamp } from '../crdt';
 import { monthToInt } from '../lib/date';
 import type { ZeroBudgetRow, CategoryGroupRow, CategoryRow } from '../db/types';
@@ -482,7 +483,7 @@ export async function getBudgetMonth(month: string): Promise<BudgetMonth> {
 // When flag=true, also ensures a row exists for the current month.
 // ---------------------------------------------------------------------------
 
-export async function setCategoryCarryover(
+export const setCategoryCarryover = undoable(async function setCategoryCarryover(
   month: string,
   categoryId: string,
   flag: boolean,
@@ -517,7 +518,7 @@ export async function setCategoryCarryover(
   });
 
   await sendMessages(messages);
-}
+});
 
 // ---------------------------------------------------------------------------
 // Hold for Next Month
@@ -528,7 +529,7 @@ function calcBufferedAmount(toBudget: number, buffered: number, delta: number): 
   return buffered + clamped;
 }
 
-export async function holdForNextMonth(
+export const holdForNextMonth = undoable(async function holdForNextMonth(
   month: string,
   amount: number,
   currentToBudget: number,
@@ -550,9 +551,9 @@ export async function holdForNextMonth(
   }]);
 
   return newBuffered;
-}
+});
 
-export async function resetHold(month: string): Promise<void> {
+export const resetHold = undoable(async function resetHold(month: string): Promise<void> {
   await sendMessages([{
     timestamp: Timestamp.send()!,
     dataset:   'zero_budget_months',
@@ -560,7 +561,7 @@ export async function resetHold(month: string): Promise<void> {
     column:    'buffered',
     value:     0,
   }]);
-}
+});
 
 // ---------------------------------------------------------------------------
 // Transfer money between categories (cover overspending / move surplus)
@@ -570,7 +571,7 @@ export async function resetHold(month: string): Promise<void> {
 //   dest   budget  += amount
 // ---------------------------------------------------------------------------
 
-export async function transferBetweenCategories(
+export const transferBetweenCategories = undoable(async function transferBetweenCategories(
   month: string,
   fromCategoryId: string,
   toCategoryId: string,
@@ -604,7 +605,7 @@ export async function transferBetweenCategories(
     { timestamp: Timestamp.send()!, dataset: 'zero_budgets', row: toId,   column: 'category', value: toCategoryId },
     { timestamp: Timestamp.send()!, dataset: 'zero_budgets', row: toId,   column: 'amount',   value: toBudgeted + amountCents },
   ]);
-}
+});
 
 // ---------------------------------------------------------------------------
 // Transfer money from multiple sources to/from a single target category
@@ -614,7 +615,7 @@ export async function transferBetweenCategories(
 // in a single bulk call — avoiding stale-read bugs with batched CRDT messages.
 // ---------------------------------------------------------------------------
 
-export async function transferMultipleCategories(
+export const transferMultipleCategories = undoable(async function transferMultipleCategories(
   month: string,
   targetCategoryId: string,
   sources: Array<{ categoryId: string; amountCents: number }>,
@@ -666,7 +667,7 @@ export async function transferMultipleCategories(
   );
 
   await sendMessages(messages);
-}
+});
 
 // ---------------------------------------------------------------------------
 // Category balances for a month (used by transaction category picker)
@@ -691,7 +692,7 @@ export async function getCategoryBalancesForMonth(month: string): Promise<Map<st
 // Set budget amount
 // ---------------------------------------------------------------------------
 
-export async function setBudgetAmount(
+export const setBudgetAmount = undoable(async function setBudgetAmount(
   month: string,
   categoryId: string,
   amount: number,
@@ -704,4 +705,4 @@ export async function setBudgetAmount(
     { timestamp: Timestamp.send()!, dataset: 'zero_budgets', row: id, column: 'category', value: categoryId },
     { timestamp: Timestamp.send()!, dataset: 'zero_budgets', row: id, column: 'amount',   value: amount },
   ]);
-}
+});

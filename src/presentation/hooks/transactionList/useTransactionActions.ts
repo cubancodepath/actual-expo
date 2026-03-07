@@ -9,6 +9,7 @@ import {
   updateTransaction,
   type TransactionDisplay,
 } from '../../../transactions';
+import { useUndoStore } from '../../../stores/undoStore';
 
 interface UseTransactionActionsOptions {
   transactions: TransactionDisplay[];
@@ -59,6 +60,7 @@ export function useTransactionActions({
           }
           setTransactions(prev => prev.filter(t => t.id !== txnId));
           await deleteTransaction(txnId);
+          useUndoStore.getState().showUndo('Transaction deleted');
           loadAccountsRef.current();
         },
       },

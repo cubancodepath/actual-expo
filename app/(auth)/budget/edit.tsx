@@ -22,6 +22,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
 import { useCategoriesStore } from "../../../src/stores/categoriesStore";
 import { useBudgetStore } from "../../../src/stores/budgetStore";
+import { useUndoStore } from "../../../src/stores/undoStore";
 import { Text } from "../../../src/presentation/components/atoms/Text";
 import { Amount } from "../../../src/presentation/components/atoms/Amount";
 import { Button } from "../../../src/presentation/components/atoms/Button";
@@ -342,6 +343,7 @@ export default function EditBudgetScreen() {
           await useCategoriesStore.getState().deleteCategoryGroup(group.id);
           await useCategoriesStore.getState().load();
           await useBudgetStore.getState().load();
+          useUndoStore.getState().showUndo('Category group deleted');
         },
       },
     ]);
@@ -362,6 +364,7 @@ export default function EditBudgetScreen() {
             await useCategoriesStore.getState().deleteCategory(cat.id);
             await useCategoriesStore.getState().load();
             await useBudgetStore.getState().load();
+            useUndoStore.getState().showUndo('Category deleted');
           },
         },
       ],

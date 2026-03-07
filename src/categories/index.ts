@@ -1,6 +1,7 @@
 import { randomUUID } from 'expo-crypto';
 import { runQuery } from '../db';
 import { sendMessages } from '../sync';
+import { undoable } from '../sync/undo';
 import { Timestamp } from '../crdt';
 import type { CategoryGroupRow, CategoryRow } from '../db/types';
 import type { Category, CategoryGroup } from './types';
@@ -55,7 +56,7 @@ export async function getCategoriesGrouped(): Promise<CategoryGroup[]> {
   }));
 }
 
-export async function createCategoryGroup(
+export const createCategoryGroup = undoable(async function createCategoryGroup(
   fields: Pick<CategoryGroup, 'name'> & Partial<Pick<CategoryGroup, 'is_income' | 'sort_order'>>,
 ): Promise<string> {
   const id = randomUUID();
@@ -71,9 +72,9 @@ export async function createCategoryGroup(
     })),
   );
   return id;
-}
+});
 
-export async function createCategory(
+export const createCategory = undoable(async function createCategory(
   fields: Pick<Category, 'name' | 'cat_group'> & Partial<Pick<Category, 'is_income' | 'sort_order'>>,
 ): Promise<string> {
   const id = randomUUID();
@@ -93,9 +94,9 @@ export async function createCategory(
     { timestamp: Timestamp.send()!, dataset: 'category_mapping', row: id, column: 'transferId', value: id },
   ]);
   return id;
-}
+});
 
-export async function updateCategory(
+export const updateCategory = undoable(async function updateCategory(
   id: string,
   fields: Partial<Pick<Category, 'name' | 'hidden' | 'sort_order' | 'goal_def'> & { template_settings: string }>,
 ): Promise<void> {
@@ -112,9 +113,9 @@ export async function updateCategory(
       value: value as string | number | null,
     })),
   );
-}
+});
 
-export async function deleteCategory(id: string, transferId?: string): Promise<void> {
+export const deleteCategory = undoable(async function deleteCategory(id: string, transferId?: string): Promise<void> {
   if (transferId) {
     // Walk every mapping that currently points to `id` and forward it to `transferId`.
     // This handles chains: if A → id, after deletion A should point to transferId.
@@ -144,9 +145,9 @@ export async function deleteCategory(id: string, transferId?: string): Promise<v
   await sendMessages([
     { timestamp: Timestamp.send()!, dataset: 'categories', row: id, column: 'tombstone', value: 1 },
   ]);
-}
+});
 
-export async function updateCategoryGroup(
+export const updateCategoryGroup = undoable(async function updateCategoryGroup(
   id: string,
   fields: Partial<Pick<CategoryGroup, 'name' | 'hidden' | 'sort_order'>>,
 ): Promise<void> {
@@ -161,7 +162,7 @@ export async function updateCategoryGroup(
       value: value as string | number | null,
     })),
   );
-}
+});
 
 export async function moveCategoryGroup(
   id: string,
@@ -230,7 +231,7 @@ export async function moveCategory(
   await sendMessages(messages);
 }
 
-export async function deleteCategoryGroup(id: string, transferId?: string): Promise<void> {
+export const deleteCategoryGroup = undoable(async function deleteCategoryGroup(id: string, transferId?: string): Promise<void> {
   // Cascade: delete every category in this group (mirrors loot-core behavior)
   const groupCategories = await runQuery<{ id: string }>(
     'SELECT id FROM categories WHERE cat_group = ? AND tombstone = 0',
@@ -242,4 +243,4 @@ export async function deleteCategoryGroup(id: string, transferId?: string): Prom
   await sendMessages([
     { timestamp: Timestamp.send()!, dataset: 'category_groups', row: id, column: 'tombstone', value: 1 },
   ]);
-}
+});

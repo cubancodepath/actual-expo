@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useCategoriesStore } from '../../src/stores/categoriesStore';
+import { useUndoStore } from '../../src/stores/undoStore';
 import type { Category, CategoryGroup } from '../../src/categories/types';
 
 // ---------------------------------------------------------------------------
@@ -309,7 +310,7 @@ export default function CategoriesScreen() {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: async () => { await deleteCategory(id); load(); },
+          onPress: async () => { await deleteCategory(id); load(); useUndoStore.getState().showUndo('Category deleted'); },
         },
       ]);
     }
@@ -337,7 +338,7 @@ export default function CategoriesScreen() {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: async () => { await deleteCategoryGroup(id); load(); },
+          onPress: async () => { await deleteCategoryGroup(id); load(); useUndoStore.getState().showUndo('Category group deleted'); },
         },
       ]);
     }
@@ -345,13 +346,15 @@ export default function CategoriesScreen() {
 
   async function confirmDelete(transferId?: string) {
     if (!pendingDelete) return;
-    if (pendingDelete.kind === 'category') {
+    const kind = pendingDelete.kind;
+    if (kind === 'category') {
       await deleteCategory(pendingDelete.id, transferId);
     } else {
       await deleteCategoryGroup(pendingDelete.id, transferId);
     }
     setPendingDelete(null);
     load();
+    useUndoStore.getState().showUndo(kind === 'category' ? 'Category deleted' : 'Category group deleted');
   }
 
   // ---------------------------------------------------------------------------

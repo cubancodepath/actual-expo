@@ -4,6 +4,7 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
 import { useCategoriesStore } from '../../../src/stores/categoriesStore';
 import { useBudgetStore } from '../../../src/stores/budgetStore';
+import { useUndoStore } from '../../../src/stores/undoStore';
 import { Text } from '../../../src/presentation/components/atoms/Text';
 import { Button } from '../../../src/presentation/components/atoms/Button';
 import { IconButton } from '../../../src/presentation/components/atoms/IconButton';
@@ -54,6 +55,7 @@ export default function EditGroupScreen() {
             await useCategoriesStore.getState().deleteCategoryGroup(groupId);
             await useCategoriesStore.getState().load();
             await useBudgetStore.getState().load();
+            useUndoStore.getState().showUndo('Category group deleted');
             router.back();
           },
         },

@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { usePayeesStore } from '../../src/stores/payeesStore';
+import { useUndoStore } from '../../src/stores/undoStore';
 import { runQuery, run } from '../../src/db';
 import { updateTransaction } from '../../src/transactions';
 import type { Payee } from '../../src/payees/types';
@@ -173,7 +174,7 @@ export default function PayeesScreen() {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: async () => { await delete_(id); load(); loadCounts(); },
+          onPress: async () => { await delete_(id); load(); loadCounts(); useUndoStore.getState().showUndo('Payee deleted'); },
         },
       ]);
     }
@@ -194,6 +195,7 @@ export default function PayeesScreen() {
     setPendingDelete(null);
     load();
     loadCounts();
+    useUndoStore.getState().showUndo('Payee deleted');
   }
 
   async function confirmDeleteNoMerge() {
@@ -202,6 +204,7 @@ export default function PayeesScreen() {
     setPendingDelete(null);
     load();
     loadCounts();
+    useUndoStore.getState().showUndo('Payee deleted');
   }
 
   // Sort: favorites first, then alphabetical

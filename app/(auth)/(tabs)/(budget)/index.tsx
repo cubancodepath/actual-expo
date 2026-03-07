@@ -15,6 +15,7 @@ import { useSharedValue } from 'react-native-reanimated';
 import { AddTransactionButton } from '../../../../src/presentation/components/molecules/AddTransactionButton';
 import { KeyboardToolbar } from '../../../../src/presentation/components/molecules/KeyboardToolbar';
 import { useBudgetStore } from '../../../../src/stores/budgetStore';
+import { useUndoStore } from '../../../../src/stores/undoStore';
 import { useRefreshControl } from '../../../../src/presentation/hooks/useRefreshControl';
 import { useKeyboardHeight } from '../../../../src/presentation/hooks/useKeyboardHeight';
 import type { BudgetCategory, BudgetGroup } from '../../../../src/budgets/types';
@@ -89,6 +90,7 @@ export default function BudgetScreen() {
   const { refreshControlProps } = useRefreshControl();
   const { privacyMode, toggle: togglePrivacy } = usePrivacyStore();
   const { showProgressBars, toggleProgressBars, showHiddenCategories, toggleShowHiddenCategories } = usePrefsStore();
+  const canUndo = useUndoStore((s) => s.canUndo);
   const [uncategorizedCount, setUncategorizedCount] = useState(0);
 
   // Load uncategorized stats when data changes
@@ -470,6 +472,15 @@ export default function BudgetScreen() {
         </Stack.Toolbar.MenuAction>
       </Stack.Toolbar.Menu>
       <Stack.Toolbar.Menu icon="ellipsis">
+        <Stack.Toolbar.MenuAction
+          icon="arrow.uturn.backward"
+          disabled={!canUndo}
+          onPress={async () => {
+            await useUndoStore.getState().undo();
+          }}
+        >
+          Undo
+        </Stack.Toolbar.MenuAction>
         <Stack.Toolbar.MenuAction
           icon={privacyMode ? 'eye' : 'eye.slash'}
           onPress={togglePrivacy}

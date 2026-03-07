@@ -7,6 +7,7 @@ import {
   updateTransaction,
   type TransactionDisplay,
 } from '../../../transactions';
+import { useUndoStore } from '../../../stores/undoStore';
 
 interface UseTransactionBulkActionsOptions {
   selectedIds: Set<string>;
@@ -69,6 +70,7 @@ export function useTransactionBulkActions({
             for (const txnId of ids) {
               await deleteTransaction(txnId);
             }
+            useUndoStore.getState().showUndo(`${ids.size} transaction${ids.size === 1 ? '' : 's'} deleted`);
             loadAccountsRef.current();
           },
         },

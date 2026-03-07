@@ -4,7 +4,9 @@
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
-    "ios": "expo run:ios"
+    "ios": "expo run:ios",
+    "ios:dev": "APP_VARIANT=development expo run:ios",
+    "prebuild:dev": "APP_VARIANT=development npx expo prebuild --clean"
   },
   "dependencies": {
     "@bacons/apple-targets": "^4.0.6",

@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -12,6 +13,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
+import Constants from 'expo-constants';
 import {
   getBootstrapInfo,
   login,
@@ -43,14 +45,28 @@ export default function LoginScreen() {
 
   // ── Step 1: Probe server ──────────────────────────────────────────────────
   async function probeWithRetry(url: string) {
+    // iOS shows a Local Network permission dialog on first access.
+    // The user may take several seconds to tap "Allow", so we retry
+    // a few times with increasing delays before giving up.
+    const retryDelays = [1500, 2500, 3000];
+    let lastError: unknown;
+
     try {
       return await getBootstrapInfo(url);
-    } catch {
-      // iOS may have just shown the Local Network permission dialog.
-      // Wait briefly and retry once after the user grants access.
-      await new Promise(r => setTimeout(r, 1000));
-      return await getBootstrapInfo(url);
+    } catch (e) {
+      lastError = e;
     }
+
+    for (const delay of retryDelays) {
+      await new Promise(r => setTimeout(r, delay));
+      try {
+        return await getBootstrapInfo(url);
+      } catch (e) {
+        lastError = e;
+      }
+    }
+
+    throw lastError;
   }
 
   async function handleProbe() {
@@ -143,11 +159,12 @@ export default function LoginScreen() {
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.logoContainer}>
-            <Ionicons name="wallet" size={48} color={theme.colors.primary} />
-          </View>
+          <Image
+            source={require('../../assets/splash-icon.png')}
+            style={styles.logoImage}
+          />
           <Text variant="displayLg" color={theme.colors.primary} style={styles.logoText}>
-            actual
+            {Constants.expoConfig?.name ?? 'Actual'}
           </Text>
           <Text variant="bodySm" color={theme.colors.textMuted}>
             Open-source personal finance
@@ -294,14 +311,11 @@ const createStyles = (theme: Theme) => ({
     alignItems: 'center' as const,
     marginBottom: theme.spacing.xxxl,
   },
-  logoContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 24,
-    backgroundColor: theme.colors.primary + '15',
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-    marginBottom: theme.spacing.lg,
+  logoImage: {
+    width: 100,
+    height: 100,
+    resizeMode: 'contain' as const,
+    marginBottom: theme.spacing.sm,
   },
   logoText: {
     letterSpacing: -1,
@@ -323,10 +337,10 @@ const createStyles = (theme: Theme) => ({
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     backgroundColor: theme.colors.inputBackground,
-    borderRadius: theme.borderRadius.lg,
+    borderRadius: theme.borderRadius.full,
     borderWidth: theme.borderWidth.default,
     borderColor: theme.colors.inputBorder,
-    paddingHorizontal: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
     gap: theme.spacing.sm,
     minHeight: 50,
   },
@@ -346,10 +360,10 @@ const createStyles = (theme: Theme) => ({
   },
   changeBtn: {
     backgroundColor: theme.colors.buttonSecondaryBackground,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: theme.borderRadius.full,
     borderWidth: theme.borderWidth.default,
     borderColor: theme.colors.inputBorder,
-    paddingHorizontal: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.md,
     minHeight: 50,
     justifyContent: 'center' as const,

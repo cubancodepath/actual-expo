@@ -67,26 +67,33 @@ export async function post(
   return responseData.data;
 }
 
+const DEFAULT_TIMEOUT = 10_000; // 10 seconds
+
 export async function postBinary(
   url: string,
   data: Uint8Array,
   headers: Record<string, string> = {},
+  timeout: number = DEFAULT_TIMEOUT,
 ): Promise<Uint8Array> {
   let res: Response;
 
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
     res = await fetch(url, {
       method: 'POST',
       body: data.buffer.slice(
         data.byteOffset,
         data.byteOffset + data.byteLength,
       ) as ArrayBuffer,
+      signal: controller.signal,
       headers: {
         'Content-Length': String(data.byteLength),
         'Content-Type': 'application/actual-sync',
         ...headers,
       },
     });
+    clearTimeout(timeoutId);
   } catch {
     throw new PostError('network-failure');
   }

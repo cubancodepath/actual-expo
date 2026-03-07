@@ -23,9 +23,11 @@ import { updateAppBadge } from "../src/lib/badge";
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  const router = useRouter();
   const hasToken = usePrefsStore((s) => s.hasToken);
   const isConfigured = usePrefsStore((s) => s.isConfigured);
   const [ready, setReady] = useState(false);
+  const handledTimestamp = useRef(0);
 
   // Bootstrap: load prefs + open DB + restore CRDT clock + pre-load stores
   useEffect(() => {
@@ -88,31 +90,6 @@ export default function RootLayout() {
     }
   }, [isConfigured]);
 
-  // Handle pending deep links from App Shortcuts (Siri)
-  const router = useRouter();
-  const prevAppState = useRef(AppState.currentState);
-  useEffect(() => {
-    if (!isConfigured) return;
-    // Check on initial mount (cold launch from shortcut)
-    const pendingLink = Settings.get("pendingDeepLink");
-    if (pendingLink) {
-      Settings.set({ pendingDeepLink: null });
-      router.push(`/(auth)/${pendingLink}` as any);
-    }
-    // Check when app returns to foreground (warm launch from shortcut)
-    const sub = AppState.addEventListener("change", (nextState) => {
-      if (nextState === "active" && prevAppState.current !== "active") {
-        const link = Settings.get("pendingDeepLink");
-        if (link) {
-          Settings.set({ pendingDeepLink: null });
-          router.push(`/(auth)/${link}` as any);
-        }
-      }
-      prevAppState.current = nextState;
-    });
-    return () => sub.remove();
-  }, [isConfigured]);
-
   // Sync when app comes back to foreground — mirrors loot-core's app-focused handler
   useEffect(() => {
     const sub = AppState.addEventListener("change", (nextState) => {
@@ -122,6 +99,38 @@ export default function RootLayout() {
     });
     return () => sub.remove();
   }, []);
+
+  // Handle pending shortcut action (written to UserDefaults by AddTransactionIntent)
+  useEffect(() => {
+    if (!ready || !isConfigured) return;
+
+    function checkShortcutAction() {
+      const path = Settings.get("shortcutAction") as string | null;
+      const ts = Settings.get("shortcutActionTimestamp") as number | null;
+      if (!path || !ts) return;
+      // Ignore stale actions (> 10s old) or already-handled ones
+      const age = Date.now() / 1000 - ts;
+      if (age > 10 || ts <= handledTimestamp.current) return;
+      handledTimestamp.current = ts;
+      Settings.set({ shortcutAction: null, shortcutActionTimestamp: null });
+      router.push(path as any);
+    }
+
+    // Check once after bootstrap (cold launch from shortcut)
+    const timer = setTimeout(checkShortcutAction, 300);
+
+    // Check when app returns to foreground (warm launch from shortcut)
+    const sub = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "active") {
+        setTimeout(checkShortcutAction, 300);
+      }
+    });
+
+    return () => {
+      clearTimeout(timer);
+      sub.remove();
+    };
+  }, [ready, isConfigured, router]);
 
   if (!ready) return null;
 

@@ -1,5 +1,4 @@
 import AppIntents
-import Foundation
 
 @available(iOS 16.0, *)
 struct AddTransactionIntent: AppIntent {
@@ -8,8 +7,13 @@ struct AddTransactionIntent: AppIntent {
 
   static let openAppWhenRun: Bool = true
 
+  @MainActor
   func perform() async throws -> some IntentResult {
-    UserDefaults.standard.set("transaction/new", forKey: "pendingDeepLink")
+    // openAppWhenRun = true opens the app and runs perform() in the app process.
+    // Write the desired route to UserDefaults so the React Native layer can navigate.
+    UserDefaults.standard.set("/(auth)/transaction/new", forKey: "shortcutAction")
+    UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: "shortcutActionTimestamp")
+    UserDefaults.standard.synchronize()
     return .result()
   }
 }

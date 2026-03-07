@@ -5,6 +5,7 @@ import {
   Pressable,
   View,
 } from 'react-native';
+
 import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,6 +16,7 @@ import { resetAllStores } from '../../src/stores/resetStores';
 import { resetSyncState, clearSwitchingFlag } from '../../src/sync';
 import { useTheme, useThemedStyles } from '../../src/presentation/providers/ThemeProvider';
 import { Text } from '../../src/presentation/components/atoms/Text';
+import { GlassButton } from '../../src/presentation/components/atoms/GlassButton';
 import { Card } from '../../src/presentation/components/atoms/Card';
 import { Divider } from '../../src/presentation/components/atoms/Divider';
 import { Banner } from '../../src/presentation/components/molecules/Banner';
@@ -76,19 +78,14 @@ export default function FilesScreen() {
     <View style={styles.container}>
       {/* Header bar */}
       <View style={styles.headerBar}>
-        <Pressable style={styles.headerBtn} onPress={handleLogout} hitSlop={8}>
-          <Text variant="body" color={theme.colors.textPrimary} style={styles.headerBtnText}>
-            Log Out
-          </Text>
-        </Pressable>
+        <GlassButton label="Log Out" onPress={handleLogout} />
 
         <Text variant="bodyLg" color={theme.colors.textPrimary} style={styles.headerTitle}>
           Open Budget
         </Text>
 
-        <Pressable
-          style={styles.headerBtn}
-          hitSlop={8}
+        <GlassButton
+          label="New"
           onPress={async () => {
             await WebBrowser.openAuthSessionAsync(serverUrl, undefined, {
               preferEphemeralSession: true,
@@ -99,12 +96,7 @@ export default function FilesScreen() {
               .catch(e => setError(e instanceof Error ? e.message : String(e)))
               .finally(() => setLoading(false));
           }}
-          disabled={loading}
-        >
-          <Text variant="body" color={theme.colors.primary} style={styles.headerBtnText}>
-            New
-          </Text>
-        </Pressable>
+        />
       </View>
 
       {/* Error */}
@@ -204,15 +196,6 @@ const createStyles = (theme: Theme) => ({
     justifyContent: 'space-between' as const,
     paddingTop: theme.spacing.xxxl + theme.spacing.xl,
     paddingBottom: theme.spacing.lg,
-  },
-  headerBtn: {
-    backgroundColor: theme.colors.cardBackground,
-    borderRadius: theme.borderRadius.lg,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-  },
-  headerBtnText: {
-    fontWeight: '600' as const,
   },
   headerTitle: {
     fontWeight: '700' as const,

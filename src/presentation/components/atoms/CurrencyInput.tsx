@@ -141,7 +141,7 @@ export const CurrencyInput = forwardRef<CurrencyInputRef, CurrencyInputProps>(
               style={[styles.amount, { color: theme.colors.primary }]}
               numberOfLines={1}
             >
-              {formatExpression(expr.expression)}
+              {formatExpression(expr.fullExpression)}
             </Text>
           )}
           <Animated.View
@@ -163,12 +163,13 @@ export const CurrencyInput = forwardRef<CurrencyInputRef, CurrencyInputProps>(
         <TextInput
           ref={inputRef}
           style={styles.hiddenInput}
-          keyboardType={expr.expressionMode ? 'decimal-pad' : 'number-pad'}
+          keyboardType="number-pad"
           autoFocus={autoFocus}
           caretHidden
           contextMenuHidden
           value={currentInputValue}
-          onChangeText={expr.expressionMode ? expr.handleChangeTextExpression : handleChangeTextNormal}
+          onChangeText={expr.expressionMode ? expr.handleChangeTextOperand : handleChangeTextNormal}
+          onKeyPress={expr.expressionMode ? expr.handleKeyPress : undefined}
           onFocus={() => setFocused(true)}
           onBlur={handleBlur}
         />

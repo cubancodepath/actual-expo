@@ -165,7 +165,7 @@ export const CompactCurrencyInput = forwardRef<CompactCurrencyInputRef, CompactC
               }}
               numberOfLines={1}
             >
-              {formatExpression(expr.expression)}
+              {formatExpression(expr.fullExpression)}
             </Text>
           )}
 
@@ -197,12 +197,13 @@ export const CompactCurrencyInput = forwardRef<CompactCurrencyInputRef, CompactC
         <TextInput
           ref={inputRef}
           style={{ position: 'absolute', opacity: 0, height: 0, width: 0 }}
-          keyboardType={expr.expressionMode ? 'decimal-pad' : 'number-pad'}
+          keyboardType="number-pad"
           autoFocus={autoFocus}
           caretHidden
           contextMenuHidden
           value={currentInputValue}
-          onChangeText={expr.expressionMode ? expr.handleChangeTextExpression : handleChangeTextNormal}
+          onChangeText={expr.expressionMode ? expr.handleChangeTextOperand : handleChangeTextNormal}
+          onKeyPress={expr.expressionMode ? expr.handleKeyPress : undefined}
           onFocus={() => { setFocused(true); onFocusProp?.(); }}
           onBlur={handleBlur}
         />

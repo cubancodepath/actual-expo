@@ -6,10 +6,10 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   withTiming,
-  runOnJS,
   useReducedMotion,
   Easing,
 } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUndoStore } from '../../../stores/undoStore';
 import { useTheme } from '../../providers/ThemeProvider';
@@ -35,7 +35,7 @@ export function UndoToast() {
 
   const dismiss = useCallback(() => {
     if (reducedMotion) {
-      opacity.value = withTiming(0, { duration: 0 }, () => runOnJS(clearNotification)());
+      opacity.value = withTiming(0, { duration: 0 }, () => scheduleOnRN(clearNotification));
       return;
     }
     translateY.value = withTiming(TRANSLATE_OUT, {
@@ -43,7 +43,7 @@ export function UndoToast() {
       easing: Easing.in(Easing.ease),
     });
     opacity.value = withTiming(0, { duration: 180 }, () => {
-      runOnJS(clearNotification)();
+      scheduleOnRN(clearNotification);
     });
   }, [clearNotification, translateY, opacity, reducedMotion]);
 
@@ -81,7 +81,7 @@ export function UndoToast() {
     })
     .onEnd((e) => {
       if (e.translationY > 30 || e.velocityY > 600) {
-        runOnJS(dismiss)();
+        scheduleOnRN(dismiss);
       } else {
         translateY.value = withSpring(0, SPRING_CONFIG);
         opacity.value = withTiming(1, { duration: 120 });

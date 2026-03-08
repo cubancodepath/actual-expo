@@ -4,8 +4,8 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
   withSequence,
-  runOnJS,
 } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../providers/ThemeProvider';
@@ -48,7 +48,7 @@ export function MonthSelector() {
     .onEnd((e) => {
       if (Math.abs(e.translationX) > SWIPE_THRESHOLD) {
         const direction = e.translationX > 0 ? -1 : 1;
-        runOnJS(goToMonth)(direction as -1 | 1);
+        scheduleOnRN(goToMonth, direction as -1 | 1);
       } else {
         translateX.value = withTiming(0, { duration: 150 });
         opacity.value = withTiming(1, { duration: 150 });

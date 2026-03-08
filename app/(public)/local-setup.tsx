@@ -11,8 +11,8 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { scheduleOnRN } from 'react-native-worklets';
 import Animated, {
-  runOnJS,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
@@ -326,7 +326,7 @@ export default function LocalSetupScreen() {
       const outEnd =
         dir === "forward" ? -SCREEN_WIDTH * PARALLAX : SCREEN_WIDTH;
       inX.value = withSpring(0, SPRING, (done) => {
-        if (done) runOnJS(onTransitionDone)();
+        if (done) scheduleOnRN(onTransitionDone);
       });
       outX.value = withSpring(outEnd, SPRING);
     });

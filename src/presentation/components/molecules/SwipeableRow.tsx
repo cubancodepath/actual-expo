@@ -2,18 +2,18 @@ import { Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   interpolate,
-  runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../providers/ThemeProvider';
 
 const ACTION_WIDTH = 80;
-const SWIPE_THRESHOLD = ACTION_WIDTH * 0.4;
+const SWIPE_THRESHOLD = ACTION_WIDTH * 0.6;
 const FULL_THRESHOLD = 200;
 const CIRCLE_SIZE = 44;
 
@@ -87,7 +87,7 @@ export function SwipeableRow({
     'worklet';
     translateX.value = withTiming(-FULL_THRESHOLD, { duration: 200 }, () => {
       translateX.value = withTiming(0, { duration: 150 });
-      runOnJS(handleDelete)();
+      scheduleOnRN(handleDelete);
     });
   }
 
@@ -101,7 +101,7 @@ export function SwipeableRow({
     'worklet';
     translateX.value = withTiming(FULL_THRESHOLD, { duration: 200 }, () => {
       translateX.value = withTiming(0, { duration: 150 });
-      runOnJS(handleSwipeRight)();
+      scheduleOnRN(handleSwipeRight);
     });
   }
 
@@ -128,14 +128,14 @@ export function SwipeableRow({
         const fullThreshold = FULL_THRESHOLD * 0.7;
         if (leftAmount >= fullThreshold && !passedDeleteThreshold.value) {
           passedDeleteThreshold.value = true;
-          runOnJS(mediumHaptic)();
+          scheduleOnRN(mediumHaptic);
         } else if (leftAmount < fullThreshold && passedDeleteThreshold.value) {
           passedDeleteThreshold.value = false;
-          runOnJS(lightHaptic)();
+          scheduleOnRN(lightHaptic);
         }
         if (leftAmount >= SWIPE_THRESHOLD && !passedDeleteOpenThreshold.value) {
           passedDeleteOpenThreshold.value = true;
-          runOnJS(lightHaptic)();
+          scheduleOnRN(lightHaptic);
         }
       }
 
@@ -145,14 +145,14 @@ export function SwipeableRow({
         const fullThreshold = FULL_THRESHOLD * 0.7;
         if (rightAmount >= fullThreshold && !passedRightThreshold.value) {
           passedRightThreshold.value = true;
-          runOnJS(mediumHaptic)();
+          scheduleOnRN(mediumHaptic);
         } else if (rightAmount < fullThreshold && passedRightThreshold.value) {
           passedRightThreshold.value = false;
-          runOnJS(lightHaptic)();
+          scheduleOnRN(lightHaptic);
         }
         if (rightAmount >= SWIPE_THRESHOLD && !passedRightOpenThreshold.value) {
           passedRightOpenThreshold.value = true;
-          runOnJS(lightHaptic)();
+          scheduleOnRN(lightHaptic);
         }
       }
     })

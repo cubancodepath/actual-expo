@@ -29,7 +29,7 @@ export function SelectModeToolbar({
         {allCleared ? 'Unclear' : 'Clear'}
       </Stack.Toolbar.Button>
       <Stack.Toolbar.Button
-        icon="tag"
+        icon="folder"
         onPress={onSetCategory}
         disabled={!hasSelection}
       >
@@ -40,6 +40,7 @@ export function SelectModeToolbar({
         <Stack.Toolbar.MenuAction
           icon="arrow.right.arrow.left"
           onPress={onMove}
+          disabled={!hasSelection}
         >
           Move to…
         </Stack.Toolbar.MenuAction>
@@ -47,6 +48,7 @@ export function SelectModeToolbar({
           icon="trash"
           destructive
           onPress={onDelete}
+          disabled={!hasSelection}
         >
           Delete
         </Stack.Toolbar.MenuAction>

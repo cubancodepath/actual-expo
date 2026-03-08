@@ -205,7 +205,7 @@ export function SearchSuggestions({
         }
         break;
       case 'account': return 'wallet-outline';
-      case 'category': return 'pricetag-outline';
+      case 'category': return 'folder-outline';
       case 'payee': return 'person-outline';
       case 'tag': return 'pricetags-outline';
       case 'uncategorized': return 'help-circle-outline';

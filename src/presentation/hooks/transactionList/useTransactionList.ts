@@ -309,6 +309,8 @@ export function useTransactionList({
   }, []);
 
   const resetSelection = useCallback(() => {
+    // Don't reset if a bulk picker is pending — the selection is still needed
+    if (bulkCategoryPendingRef.current || bulkMovePendingRef.current) return;
     dispatch({ type: 'EXIT_SELECT_MODE' });
     onExitRef.current?.();
   }, []);
@@ -462,12 +464,12 @@ export function useTransactionList({
     await setClearedBulk(selected.map(t => t.id), anyUncleared);
   }, []);
 
-  const handleBulkChangeCategory = useCallback(async (categoryId: string | null) => {
+  const handleBulkChangeCategory = useCallback(async (categoryId: string | null, categoryName?: string) => {
     const ids = new Set(stateRef.current.selectedIds);
     if (ids.size === 0) return;
 
     refreshIdRef.current++;
-    dispatch({ type: 'BULK_UPDATE', ids, fields: { category: categoryId } });
+    dispatch({ type: 'BULK_UPDATE', ids, fields: { category: categoryId, categoryName: categoryName ?? null } });
     dispatch({ type: 'EXIT_SELECT_MODE' });
     onExitRef.current?.();
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -509,12 +511,12 @@ export function useTransactionList({
       const txnId = pendingCategoryRef.current;
       pendingCategoryRef.current = null;
       refreshIdRef.current++;
-      dispatch({ type: 'UPDATE', txnId, fields: { category: selectedCategory.id } });
+      dispatch({ type: 'UPDATE', txnId, fields: { category: selectedCategory.id, categoryName: selectedCategory.name } });
       updateTransaction(txnId, { category: selectedCategory.id });
       clearPicker();
     } else if (bulkCategoryPendingRef.current) {
       bulkCategoryPendingRef.current = false;
-      handleBulkChangeCategory(selectedCategory.id);
+      handleBulkChangeCategory(selectedCategory.id, selectedCategory.name);
       clearPicker();
     }
   }, [selectedCategory, clearPicker, handleBulkChangeCategory]);

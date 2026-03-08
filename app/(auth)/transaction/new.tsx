@@ -345,7 +345,7 @@ export default function NewTransactionScreen() {
             <View style={dividerStyle} />
 
             <DetailRow
-              icon={isSplit ? 'git-branch-outline' : 'pricetag-outline'}
+              icon={isSplit ? 'git-branch-outline' : 'folder-outline'}
               label={isSplit ? `Split (${splitCategories!.length} categories)` : (categoryId ? categoryName : '')}
               placeholder="Category"
               onClear={categoryId && !isSplit ? () => { setCategoryId(null); setCategoryName(''); } : undefined}

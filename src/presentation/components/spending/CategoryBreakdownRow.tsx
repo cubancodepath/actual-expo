@@ -26,7 +26,7 @@ export function CategoryBreakdownRow({
   return (
     <View style={styles.row}>
       <View style={[styles.iconWell, { backgroundColor: colors.primarySubtle }]}>
-        <Ionicons name="pricetag-outline" size={14} color={colors.primary} />
+        <Ionicons name="folder-outline" size={14} color={colors.primary} />
       </View>
 
       <View style={styles.nameCol}>

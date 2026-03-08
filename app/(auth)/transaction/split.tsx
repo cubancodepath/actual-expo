@@ -58,7 +58,7 @@ function SplitRow({
         onPress={() => onCategoryPress(line.id)}
         style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}
       >
-        <Ionicons name="pricetag-outline" size={16} color={colors.textMuted} style={{ marginRight: spacing.xs }} />
+        <Ionicons name="folder-outline" size={16} color={colors.textMuted} style={{ marginRight: spacing.xs }} />
         <Text
           variant="body"
           color={line.categoryName ? colors.textPrimary : colors.textMuted}

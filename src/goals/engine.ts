@@ -8,6 +8,7 @@
 
 import { first, runQuery } from '../db';
 import { addMonths, monthToInt } from '../lib/date';
+import { ALIVE_TX_FILTER } from '../db/filters';
 import type {
   AverageTemplate,
   ByTemplate,
@@ -38,18 +39,7 @@ export function integerToAmount(amount: number): number {
   return amount / 100;
 }
 
-// ---------------------------------------------------------------------------
-// Transaction filter (same as budgets/index.ts)
-// ---------------------------------------------------------------------------
-
-const ALIVE_TX_FILTER = `
-  t.tombstone = 0
-  AND t.isParent = 0
-  AND t.date IS NOT NULL
-  AND t.acct IS NOT NULL
-  AND (t.isChild = 0 OR NOT EXISTS (
-    SELECT 1 FROM transactions t2 WHERE t2.id = t.parent_id AND t2.tombstone = 1
-  ))`;
+// ALIVE_TX_FILTER imported from db/filters
 
 // ---------------------------------------------------------------------------
 // Data query helpers

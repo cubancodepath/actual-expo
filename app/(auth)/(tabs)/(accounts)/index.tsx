@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import {
   ActivityIndicator,
+  Alert,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -12,6 +14,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
+import * as ContextMenu from 'zeego/context-menu';
 import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAccountsStore } from '../../../../src/stores/accountsStore';
@@ -33,13 +36,104 @@ import type { Account } from '../../../../src/accounts/types';
 // Collapsible section
 // ---------------------------------------------------------------------------
 
+function AccountRow({
+  account,
+  onPress,
+  onEdit,
+  onClose,
+  onReopen,
+  onDelete,
+  styles,
+}: {
+  account: Account;
+  onPress: () => void;
+  onEdit: () => void;
+  onClose: () => void;
+  onReopen: () => void;
+  onDelete: () => void;
+  styles: ReturnType<typeof createStyles>;
+}) {
+  const theme = useTheme();
+
+  const row = (
+    <Pressable
+      style={styles.accountRow}
+      onPress={onPress}
+      onLongPress={Platform.OS === 'android'
+        ? () => {
+            const items = [
+              { text: 'View Transactions', onPress },
+              { text: 'Edit Account', onPress: onEdit },
+              account.closed
+                ? { text: 'Reopen Account', onPress: onReopen }
+                : { text: 'Close Account', onPress: onClose },
+              { text: 'Delete Account', style: 'destructive' as const, onPress: onDelete },
+              { text: 'Cancel', style: 'cancel' as const },
+            ];
+            Alert.alert(account.name, undefined, items);
+          }
+        : undefined}
+    >
+      <Text variant="body" color={theme.colors.textPrimary} style={styles.accountName}>
+        {account.name}
+      </Text>
+      <Amount value={account.balance ?? 0} variant="body" />
+      <Ionicons name="chevron-forward" size={16} color={theme.colors.textMuted} />
+    </Pressable>
+  );
+
+  if (Platform.OS === 'ios') {
+    return (
+      <ContextMenu.Root>
+        <ContextMenu.Trigger>{row}</ContextMenu.Trigger>
+        <ContextMenu.Content>
+          <ContextMenu.Item key="view" onSelect={onPress}>
+            <ContextMenu.ItemTitle>View Transactions</ContextMenu.ItemTitle>
+            <ContextMenu.ItemIcon ios={{ name: 'list.bullet' }} />
+          </ContextMenu.Item>
+          <ContextMenu.Item key="edit" onSelect={onEdit}>
+            <ContextMenu.ItemTitle>Edit Account</ContextMenu.ItemTitle>
+            <ContextMenu.ItemIcon ios={{ name: 'pencil' }} />
+          </ContextMenu.Item>
+          {account.closed ? (
+            <ContextMenu.Item key="reopen" onSelect={onReopen}>
+              <ContextMenu.ItemTitle>Reopen Account</ContextMenu.ItemTitle>
+              <ContextMenu.ItemIcon ios={{ name: 'arrow.counterclockwise' }} />
+            </ContextMenu.Item>
+          ) : (
+            <ContextMenu.Item key="close" onSelect={onClose}>
+              <ContextMenu.ItemTitle>Close Account</ContextMenu.ItemTitle>
+              <ContextMenu.ItemIcon ios={{ name: 'xmark.circle' }} />
+            </ContextMenu.Item>
+          )}
+          <ContextMenu.Separator />
+          <ContextMenu.Item key="delete" destructive onSelect={onDelete}>
+            <ContextMenu.ItemTitle>Delete Account</ContextMenu.ItemTitle>
+            <ContextMenu.ItemIcon ios={{ name: 'trash' }} />
+          </ContextMenu.Item>
+        </ContextMenu.Content>
+      </ContextMenu.Root>
+    );
+  }
+
+  return row;
+}
+
 function AccountContent({
   group,
   onPressAccount,
+  onEditAccount,
+  onCloseAccount,
+  onReopenAccount,
+  onDeleteAccount,
   styles,
 }: {
   group: AccountGroup;
   onPressAccount: (a: Account) => void;
+  onEditAccount: (a: Account) => void;
+  onCloseAccount: (a: Account) => void;
+  onReopenAccount: (a: Account) => void;
+  onDeleteAccount: (a: Account) => void;
   styles: ReturnType<typeof createStyles>;
 }) {
   const theme = useTheme();
@@ -48,16 +142,15 @@ function AccountContent({
       {group.accounts.map((account, i) => (
         <View key={account.id}>
           {i > 0 && <Divider style={{ marginHorizontal: theme.spacing.md }} />}
-          <Pressable
-            style={styles.accountRow}
+          <AccountRow
+            account={account}
             onPress={() => onPressAccount(account)}
-          >
-            <Text variant="body" color={theme.colors.textPrimary} style={styles.accountName}>
-              {account.name}
-            </Text>
-            <Amount value={account.balance ?? 0} variant="body" />
-            <Ionicons name="chevron-forward" size={16} color={theme.colors.textMuted} />
-          </Pressable>
+            onEdit={() => onEditAccount(account)}
+            onClose={() => onCloseAccount(account)}
+            onReopen={() => onReopenAccount(account)}
+            onDelete={() => onDeleteAccount(account)}
+            styles={styles}
+          />
         </View>
       ))}
     </Card>
@@ -67,9 +160,17 @@ function AccountContent({
 function AccountSection({
   group,
   onPressAccount,
+  onEditAccount,
+  onCloseAccount,
+  onReopenAccount,
+  onDeleteAccount,
 }: {
   group: AccountGroup;
   onPressAccount: (a: Account) => void;
+  onEditAccount: (a: Account) => void;
+  onCloseAccount: (a: Account) => void;
+  onReopenAccount: (a: Account) => void;
+  onDeleteAccount: (a: Account) => void;
 }) {
   const theme = useTheme();
   const styles = useThemedStyles(createStyles);
@@ -115,12 +216,12 @@ function AccountSection({
         onLayout={e => { height.value = e.nativeEvent.layout.height; }}
         pointerEvents="none"
       >
-        <AccountContent group={group} onPressAccount={onPressAccount} styles={styles} />
+        <AccountContent group={group} onPressAccount={onPressAccount} onEditAccount={onEditAccount} onCloseAccount={onCloseAccount} onReopenAccount={onReopenAccount} onDeleteAccount={onDeleteAccount} styles={styles} />
       </View>
 
       {/* Animated collapsible body */}
       <Animated.View style={bodyStyle}>
-        <AccountContent group={group} onPressAccount={onPressAccount} styles={styles} />
+        <AccountContent group={group} onPressAccount={onPressAccount} onEditAccount={onEditAccount} onCloseAccount={onCloseAccount} onReopenAccount={onReopenAccount} onDeleteAccount={onDeleteAccount} styles={styles} />
       </Animated.View>
     </View>
   );
@@ -134,7 +235,7 @@ export default function AccountsScreen() {
   const router = useRouter();
   const theme = useTheme();
   const styles = useThemedStyles(createStyles);
-  const { accounts, loading, load } = useAccountsStore();
+  const { accounts, loading, load, update, close: closeAccount, delete_: deleteAccount } = useAccountsStore();
   const { refreshControlProps } = useRefreshControl();
   const commonActions = useCommonMenuActions();
 
@@ -144,6 +245,36 @@ export default function AccountsScreen() {
 
   function handlePressAccount(account: Account) {
     router.push(`/(auth)/account/${account.id}`);
+  }
+
+  function handleEditAccount(account: Account) {
+    router.push({ pathname: '/(auth)/account/settings', params: { id: account.id } });
+  }
+
+  function handleCloseAccount(account: Account) {
+    Alert.alert(
+      'Close Account',
+      `Are you sure you want to close "${account.name}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Close', style: 'destructive', onPress: async () => { await closeAccount(account.id); load(); } },
+      ],
+    );
+  }
+
+  function handleReopenAccount(account: Account) {
+    update(account.id, { closed: false }).then(() => load());
+  }
+
+  function handleDeleteAccount(account: Account) {
+    Alert.alert(
+      'Delete Account',
+      `Permanently delete "${account.name}"? This cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: async () => { await deleteAccount(account.id); load(); } },
+      ],
+    );
   }
 
   if (loading && accounts.length === 0) {
@@ -172,6 +303,10 @@ export default function AccountsScreen() {
                 key={group.type}
                 group={group}
                 onPressAccount={handlePressAccount}
+                onEditAccount={handleEditAccount}
+                onCloseAccount={handleCloseAccount}
+                onReopenAccount={handleReopenAccount}
+                onDeleteAccount={handleDeleteAccount}
               />
             ))}
 
@@ -249,7 +384,8 @@ const createStyles = (theme: Theme) => ({
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.md,
+    paddingVertical: theme.spacing.lg,
+    minHeight: 44,
     gap: theme.spacing.sm,
   },
   accountName: {

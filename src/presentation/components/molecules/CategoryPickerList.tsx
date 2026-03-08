@@ -187,13 +187,16 @@ export function CategoryPickerList({
               </Text>
               {renderRight?.(cat)}
             </Pressable>
-            {/* Inset divider */}
+            {/* Inset divider (HIG) — doesn't touch container edges */}
             {!isLast && (
               <View
                 style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: spacing.md,
+                  right: spacing.md,
                   height: bw.thin,
                   backgroundColor: colors.divider,
-                  marginHorizontal: spacing.md,
                 }}
               />
             )}

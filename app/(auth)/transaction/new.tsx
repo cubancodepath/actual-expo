@@ -25,8 +25,21 @@ import { GlassButton } from '../../../src/presentation/components/atoms/GlassBut
 import { ClearedToggle } from '../../../src/presentation/components/transaction/ClearedToggle';
 
 export default function NewTransactionScreen() {
-  const { accountId, transactionId } = useLocalSearchParams<{
+  const {
+    accountId,
+    accountName: accountNameParam,
+    categoryId: categoryIdParam,
+    categoryName: categoryNameParam,
+    amount: amountParam,
+    payeeName: payeeNameParam,
+    transactionId,
+  } = useLocalSearchParams<{
     accountId: string;
+    accountName?: string;
+    categoryId?: string;
+    categoryName?: string;
+    amount?: string;
+    payeeName?: string;
     transactionId?: string;
   }>();
   const isEdit = !!transactionId;
@@ -53,13 +66,13 @@ export default function NewTransactionScreen() {
   const initialAccount = accounts.find((a) => a.id === accountId);
 
   const [type, setType] = useState<TransactionType>('expense');
-  const [cents, setCents] = useState(0);
+  const [cents, setCents] = useState(amountParam ? Number(amountParam) : 0);
   const [acctId, setAcctId] = useState<string | null>(accountId ?? null);
-  const [acctName, setAcctName] = useState(initialAccount?.name ?? '');
+  const [acctName, setAcctName] = useState(accountNameParam ?? initialAccount?.name ?? '');
   const [payeeId, setPayeeId] = useState<string | null>(null);
-  const [payeeName, setPayeeName] = useState('');
-  const [categoryId, setCategoryId] = useState<string | null>(null);
-  const [categoryName, setCategoryName] = useState('');
+  const [payeeName, setPayeeName] = useState(payeeNameParam ?? '');
+  const [categoryId, setCategoryId] = useState<string | null>(categoryIdParam ?? null);
+  const [categoryName, setCategoryName] = useState(categoryNameParam ?? '');
   const [dateInt, setDateInt] = useState(todayInt());
   const [dateStr, setDateStr] = useState(todayStr());
   const [notes, setNotes] = useState('');
@@ -327,7 +340,7 @@ export default function NewTransactionScreen() {
               icon="person-outline"
               label={payeeName}
               placeholder="Payee"
-              onPress={() => router.push({ pathname: './payee-picker', params: { selectedId: payeeId ?? '', accountId: acctId ?? '' } })}
+              onPress={() => router.push({ pathname: './payee-picker', params: { selectedId: payeeId ?? '', selectedName: payeeName, accountId: acctId ?? '' } })}
             />
             <View style={dividerStyle} />
 
@@ -335,6 +348,7 @@ export default function NewTransactionScreen() {
               icon={isSplit ? 'git-branch-outline' : 'pricetag-outline'}
               label={isSplit ? `Split (${splitCategories!.length} categories)` : (categoryId ? categoryName : '')}
               placeholder="Category"
+              onClear={categoryId && !isSplit ? () => { setCategoryId(null); setCategoryName(''); } : undefined}
               onPress={() => {
                 if (isSplit) {
                   router.push({

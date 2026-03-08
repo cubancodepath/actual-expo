@@ -11,13 +11,13 @@ import { SearchBar } from '../../../src/presentation/components/molecules/Search
 import type { Theme } from '../../../src/theme';
 
 export default function PayeePickerScreen() {
-  const { selectedId, accountId } = useLocalSearchParams<{ selectedId?: string; accountId?: string }>();
+  const { selectedId, selectedName, accountId } = useLocalSearchParams<{ selectedId?: string; selectedName?: string; accountId?: string }>();
   const router = useRouter();
   const { colors, spacing, borderWidth: bw } = useTheme();
   const styles = useThemedStyles(createStyles);
   const { payees, load } = usePayeesStore();
   const setPayee = usePickerStore((s) => s.setPayee);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(selectedName ?? '');
 
   useEffect(() => {
     if (payees.length === 0) load();

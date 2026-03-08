@@ -21,7 +21,14 @@ const config = ({ config }: ConfigContext): ExpoConfig => ({
     bundleIdentifier: IS_DEV
       ? "com.anonymous.actual-expo.dev"
       : "com.anonymous.actual-expo",
-infoPlist: {
+    entitlements: {
+      "com.apple.security.application-groups": [
+        IS_DEV
+          ? "group.com.anonymous.actual-expo.dev"
+          : "group.com.anonymous.actual-expo",
+      ],
+    },
+    infoPlist: {
       NSLocalNetworkUsageDescription:
         "Actual Budget needs access to your local network to connect to your self-hosted budget server.",
     },

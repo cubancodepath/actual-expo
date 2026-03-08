@@ -20,6 +20,7 @@ import { useTransactionsStore } from "../src/stores/transactionsStore";
 import { openDatabase } from "../src/db";
 import { loadClock, fullSync, isSwitchingBudget } from "../src/sync";
 import { updateAppBadge } from "../src/lib/badge";
+import { syncShortcutCache } from "../src/lib/syncShortcutCache";
 import { UndoToast } from "../src/presentation/components";
 import { useShakeUndo } from "../src/presentation/hooks/useShakeUndo";
 
@@ -49,11 +50,23 @@ export default function RootLayout() {
         useTagsStore.getState().load(),
         usePayeesStore.getState().load(),
       ]);
+      syncShortcutCache();
     }
     bootstrap()
       .catch(console.error)
       .finally(() => setReady(true));
   }, []);
+
+  // Keep shortcut cache in sync when accounts or categories change
+  useEffect(() => {
+    if (!ready) return;
+    const unsubAccounts = useAccountsStore.subscribe(() => syncShortcutCache());
+    const unsubCategories = useCategoriesStore.subscribe(() => syncShortcutCache());
+    return () => {
+      unsubAccounts();
+      unsubCategories();
+    };
+  }, [ready]);
 
   useEffect(() => {
     if (!isConfigured) return;
@@ -116,8 +129,36 @@ export default function RootLayout() {
       const age = Date.now() / 1000 - ts;
       if (age > 10 || ts <= handledTimestamp.current) return;
       handledTimestamp.current = ts;
-      Settings.set({ shortcutAction: null, shortcutActionTimestamp: null });
-      router.push(path as any);
+
+      // Read optional pre-selections from intent parameters
+      const accountId = Settings.get("shortcutAccountId") as string | null;
+      const accountName = Settings.get("shortcutAccountName") as string | null;
+      const categoryId = Settings.get("shortcutCategoryId") as string | null;
+      const categoryName = Settings.get("shortcutCategoryName") as string | null;
+      const amount = Settings.get("shortcutAmount") as number | null;
+      const payeeName = Settings.get("shortcutPayeeName") as string | null;
+
+      // Clear all shortcut state
+      Settings.set({
+        shortcutAction: null,
+        shortcutActionTimestamp: null,
+        shortcutAccountId: null,
+        shortcutAccountName: null,
+        shortcutCategoryId: null,
+        shortcutCategoryName: null,
+        shortcutAmount: null,
+        shortcutPayeeName: null,
+      });
+
+      const params: Record<string, string> = {};
+      if (accountId) params.accountId = accountId;
+      if (accountName) params.accountName = accountName;
+      if (categoryId) params.categoryId = categoryId;
+      if (categoryName) params.categoryName = categoryName;
+      if (amount != null) params.amount = String(amount);
+      if (payeeName) params.payeeName = payeeName;
+
+      router.push({ pathname: path as any, params });
     }
 
     // Check once after bootstrap (cold launch from shortcut)

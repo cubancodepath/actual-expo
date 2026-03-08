@@ -9,9 +9,10 @@ interface DetailRowProps {
   label: string;
   placeholder: string;
   onPress: () => void;
+  onClear?: () => void;
 }
 
-export function DetailRow({ icon, label, placeholder, onPress }: DetailRowProps) {
+export function DetailRow({ icon, label, placeholder, onPress, onClear }: DetailRowProps) {
   const theme = useTheme();
   const styles = useThemedStyles(createStyles);
   const hasValue = !!label;
@@ -24,11 +25,18 @@ export function DetailRow({ icon, label, placeholder, onPress }: DetailRowProps)
           variant="body"
           color={hasValue ? theme.colors.textPrimary : theme.colors.textMuted}
           style={styles.label}
+          numberOfLines={1}
         >
           {hasValue ? label : placeholder}
         </Text>
       </View>
-      <Ionicons name="chevron-forward" size={18} color={theme.colors.textMuted} />
+      {hasValue && onClear ? (
+        <Pressable onPress={onClear} hitSlop={8}>
+          <Ionicons name="close-circle" size={18} color={theme.colors.textMuted} />
+        </Pressable>
+      ) : (
+        <Ionicons name="chevron-forward" size={18} color={theme.colors.textMuted} />
+      )}
     </Pressable>
   );
 }

@@ -8,8 +8,10 @@ import { useBudgetStore } from '../../../src/stores/budgetStore';
 import { Text } from '../../../src/presentation/components/atoms/Text';
 import { IconButton } from '../../../src/presentation/components/atoms/IconButton';
 import { Button } from '../../../src/presentation/components/atoms/Button';
-import { KeyboardDoneButton } from '../../../src/presentation/components/atoms/KeyboardDoneButton';
 import { CompactCurrencyInput, type CompactCurrencyInputRef } from '../../../src/presentation/components/atoms/CompactCurrencyInput';
+import { CalculatorToolbar } from '../../../src/presentation/components/atoms/CalculatorToolbar';
+import { KeyboardToolbar } from '../../../src/presentation/components/molecules/KeyboardToolbar';
+import { GlassButton } from '../../../src/presentation/components/atoms/GlassButton';
 import { HoldModal } from '../../../src/presentation/components/budget/HoldModal';
 import { Amount } from '../../../src/presentation/components/atoms/Amount';
 
@@ -37,6 +39,7 @@ export default function AssignBudgetScreen() {
   const [saving, setSaving] = useState(false);
   const [holdModalVisible, setHoldModalVisible] = useState(false);
   const hapticFiredRef = useRef(false);
+  const focusedInputRef = useRef<CompactCurrencyInputRef | null>(null);
 
   // Initialize edits from current budget data (re-run when groups change, e.g. month switch)
   useEffect(() => {
@@ -278,6 +281,7 @@ export default function AssignBudgetScreen() {
         sections={sections}
         keyExtractor={(item) => item.id}
         keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
         stickySectionHeadersEnabled
         renderSectionHeader={({ section }) => (
           <View
@@ -303,6 +307,7 @@ export default function AssignBudgetScreen() {
               cat={cat}
               value={editedValue}
               onChange={updateEdit}
+              onInputFocus={(ref) => { focusedInputRef.current = ref; }}
               isFirst={isFirst}
               isLast={isLast}
               isEdited={isEdited}
@@ -312,7 +317,14 @@ export default function AssignBudgetScreen() {
         contentContainerStyle={{ paddingBottom: hasChanges ? 120 : 40 }}
       />
 
-      <KeyboardDoneButton />
+      <KeyboardToolbar>
+        <CalculatorToolbar
+          onOperator={(op) => focusedInputRef.current?.injectOperator(op)}
+          onEvaluate={() => focusedInputRef.current?.evaluate()}
+        />
+        <View style={{ flex: 1 }} />
+        <GlassButton icon="checkmark" iconSize={18} onPress={() => Keyboard.dismiss()} />
+      </KeyboardToolbar>
 
       {/* Save button — fixed at bottom */}
       {hasChanges && (
@@ -361,6 +373,7 @@ function CategoryAmountRow({
   cat,
   value,
   onChange,
+  onInputFocus,
   isFirst,
   isLast,
   isEdited,
@@ -368,6 +381,7 @@ function CategoryAmountRow({
   cat: BudgetCategory;
   value: number;
   onChange: (catId: string, cents: number) => void;
+  onInputFocus?: (ref: CompactCurrencyInputRef) => void;
   isFirst: boolean;
   isLast: boolean;
   isEdited: boolean;
@@ -421,6 +435,7 @@ function CategoryAmountRow({
           ref={inputRef}
           value={value}
           onChangeValue={(cents) => onChange(cat.id, cents)}
+          onFocus={() => { if (inputRef.current) onInputFocus?.(inputRef.current); }}
         />
       </View>
 

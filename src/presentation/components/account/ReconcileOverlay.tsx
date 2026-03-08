@@ -21,6 +21,9 @@ import * as Haptics from 'expo-haptics';
 import { useTheme, useThemedStyles } from '../../providers/ThemeProvider';
 import { Text, Amount } from '..';
 import { CompactCurrencyInput, type CompactCurrencyInputRef } from '../atoms/CompactCurrencyInput';
+import { CalculatorToolbar } from '../atoms/CalculatorToolbar';
+import { GlassButton } from '../atoms/GlassButton';
+import { KeyboardToolbar } from '../molecules/KeyboardToolbar';
 import { formatAmount } from '../../../lib/format';
 import type { Theme } from '../../../theme';
 
@@ -369,6 +372,20 @@ export function ReconcileOverlay({
           )}
         </CardWrapper>
       </KeyboardAvoidingView>
+      <KeyboardToolbar>
+        <CalculatorToolbar
+          onOperator={(op) => inputRef.current?.injectOperator(op)}
+          onEvaluate={() => inputRef.current?.evaluate()}
+        />
+        <View style={{ flex: 1 }} />
+        <GlassButton
+          icon="checkmark"
+          iconSize={16}
+          variant="tinted"
+          tintColor={colors.primary}
+          onPress={() => Keyboard.dismiss()}
+        />
+      </KeyboardToolbar>
     </View>
   );
 }

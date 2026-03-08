@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Keyboard, Pressable, ScrollView, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,6 +17,9 @@ import {
   type CompactCurrencyInputRef,
 } from '../../../src/presentation/components/atoms/CompactCurrencyInput';
 import { formatAmount } from '../../../src/lib/format';
+import { CalculatorToolbar } from '../../../src/presentation/components/atoms/CalculatorToolbar';
+import { GlassButton } from '../../../src/presentation/components/atoms/GlassButton';
+import { KeyboardToolbar } from '../../../src/presentation/components/molecules/KeyboardToolbar';
 import type { Theme } from '../../../src/theme';
 
 // ---------------------------------------------------------------------------
@@ -121,6 +124,7 @@ export default function SplitScreen() {
   });
 
   const [activeLineId, setActiveLineId] = useState<string | null>(null);
+  const focusedInputRef = useRef<CompactCurrencyInputRef | null>(null);
 
   // Keep refs for each split line input
   const inputRefs = useRef<Map<string, React.RefObject<CompactCurrencyInputRef | null>>>(new Map());
@@ -274,7 +278,11 @@ export default function SplitScreen() {
                 onAmountChange={handleAmountChange}
                 onCategoryPress={handleCategoryPress}
                 onRemove={handleRemove}
-                onFocus={setActiveLineId}
+                onFocus={(id) => {
+                  setActiveLineId(id);
+                  const ref = getInputRef(id);
+                  if (ref.current) focusedInputRef.current = ref.current;
+                }}
                 inputRef={getInputRef(line.id)}
               />
               {index < splits.length - 1 && (
@@ -300,6 +308,21 @@ export default function SplitScreen() {
           </Pressable>
         </View>
       </ScrollView>
+
+      <KeyboardToolbar>
+        <CalculatorToolbar
+          onOperator={(op) => focusedInputRef.current?.injectOperator(op)}
+          onEvaluate={() => focusedInputRef.current?.evaluate()}
+        />
+        <View style={{ flex: 1 }} />
+        <GlassButton
+          icon="checkmark"
+          iconSize={16}
+          variant="tinted"
+          tintColor={theme.colors.primary}
+          onPress={() => Keyboard.dismiss()}
+        />
+      </KeyboardToolbar>
 
       {/* Floating "assign remaining" button — appears when keyboard is visible */}
       {keyboardVisible && totalCents > 0 && remaining > 0 && (

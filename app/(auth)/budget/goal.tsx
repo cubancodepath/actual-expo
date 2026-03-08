@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, Switch, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Alert, Keyboard, Pressable, ScrollView, Switch, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Host, DatePicker, Picker, Text as SwiftText } from '@expo/ui/swift-ui';
@@ -13,7 +13,10 @@ import { IconButton } from '../../../src/presentation/components/atoms/IconButto
 import { Card } from '../../../src/presentation/components/atoms/Card';
 import { ListItem } from '../../../src/presentation/components/molecules/ListItem';
 import { Divider } from '../../../src/presentation/components/atoms/Divider';
-import { CurrencyInput } from '../../../src/presentation/components/atoms/CurrencyInput';
+import { CurrencyInput, type CurrencyInputRef } from '../../../src/presentation/components/atoms/CurrencyInput';
+import { CalculatorToolbar } from '../../../src/presentation/components/atoms/CalculatorToolbar';
+import { GlassButton } from '../../../src/presentation/components/atoms/GlassButton';
+import { KeyboardToolbar } from '../../../src/presentation/components/molecules/KeyboardToolbar';
 import { getGoalTemplates, setGoalTemplates } from '../../../src/goals';
 import { updateGoalIndicator } from '../../../src/goals/apply';
 import { amountToInteger, integerToAmount } from '../../../src/goals/engine';
@@ -139,6 +142,7 @@ export default function GoalEditorScreen() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const currencyInputRef = useRef<CurrencyInputRef>(null);
 
   // Common state
   const [goalType, setGoalType] = useState<GoalType>('simple');
@@ -451,6 +455,7 @@ export default function GoalEditorScreen() {
   // ---------------------------------------------------------------------------
 
   return (
+    <>
     <ScrollView
       style={{ backgroundColor: colors.pageBackground }}
       contentContainerStyle={{ padding: spacing.lg, paddingTop: 72 }}
@@ -491,7 +496,7 @@ export default function GoalEditorScreen() {
               <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.xs }}>
                 {simpleRefill ? 'Refill to' : 'Monthly amount'}
               </Text>
-              <CurrencyInput value={amountCents} onChangeValue={setAmountCents} type="income" autoFocus />
+              <CurrencyInput ref={currencyInputRef} value={amountCents} onChangeValue={setAmountCents} type="income" autoFocus />
             </View>
             <Divider />
             <ToggleRow
@@ -526,7 +531,7 @@ export default function GoalEditorScreen() {
               <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.xs }}>
                 Target amount
               </Text>
-              <CurrencyInput value={amountCents} onChangeValue={setAmountCents} type="income" autoFocus />
+              <CurrencyInput ref={currencyInputRef} value={amountCents} onChangeValue={setAmountCents} type="income" autoFocus />
             </View>
             <Divider />
             <DateRow
@@ -581,7 +586,7 @@ export default function GoalEditorScreen() {
               <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.xs }}>
                 Amount per occurrence
               </Text>
-              <CurrencyInput value={amountCents} onChangeValue={setAmountCents} type="income" autoFocus />
+              <CurrencyInput ref={currencyInputRef} value={amountCents} onChangeValue={setAmountCents} type="income" autoFocus />
             </View>
             <Divider />
             <MenuPickerRow
@@ -623,7 +628,7 @@ export default function GoalEditorScreen() {
               <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.xs }}>
                 Target amount
               </Text>
-              <CurrencyInput value={amountCents} onChangeValue={setAmountCents} type="income" autoFocus />
+              <CurrencyInput ref={currencyInputRef} value={amountCents} onChangeValue={setAmountCents} type="income" autoFocus />
             </View>
             <Divider />
             <DateRow
@@ -700,7 +705,7 @@ export default function GoalEditorScreen() {
               <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.xs }}>
                 Maximum spending
               </Text>
-              <CurrencyInput value={amountCents} onChangeValue={setAmountCents} type="income" autoFocus />
+              <CurrencyInput ref={currencyInputRef} value={amountCents} onChangeValue={setAmountCents} type="income" autoFocus />
             </View>
             <Divider />
             <View style={{ padding: spacing.md }}>
@@ -763,5 +768,20 @@ export default function GoalEditorScreen() {
         </View>
       )}
     </ScrollView>
+    <KeyboardToolbar>
+      <CalculatorToolbar
+        onOperator={(op) => currencyInputRef.current?.injectOperator(op)}
+        onEvaluate={() => currencyInputRef.current?.evaluate()}
+      />
+      <View style={{ flex: 1 }} />
+      <GlassButton
+        icon="checkmark"
+        iconSize={16}
+        variant="tinted"
+        tintColor={colors.primary}
+        onPress={() => Keyboard.dismiss()}
+      />
+    </KeyboardToolbar>
+    </>
   );
 }

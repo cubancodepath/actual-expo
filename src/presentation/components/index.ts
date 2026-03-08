@@ -8,13 +8,14 @@ export { Badge, type BadgeProps } from "./atoms/Badge";
 export { Spacer, type SpacerProps } from "./atoms/Spacer";
 export { Amount, type AmountProps } from "./atoms/Amount";
 export { Icon, type IconProps } from "./atoms/Icon";
-export { CurrencyInput } from "./atoms/CurrencyInput";
+export { CurrencyInput, type CurrencyInputRef } from "./atoms/CurrencyInput";
 export { CompactCurrencyInput, type CompactCurrencyInputRef } from "./atoms/CompactCurrencyInput";
 export { InfoPill } from "./atoms/InfoPill";
 export { TagPill, type TagPillProps } from "./atoms/TagPill";
 export { NotesWithTags, type NotesWithTagsProps } from "./atoms/NotesWithTags";
 export { KeyboardDoneButton } from "./atoms/KeyboardDoneButton";
 export { GlassButton } from "./atoms/GlassButton";
+export { CalculatorToolbar } from "./atoms/CalculatorToolbar";
 
 // Molecules
 export { ListItem, type ListItemProps } from "./molecules/ListItem";

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Dimensions,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -27,7 +28,10 @@ import { Text } from "../../src/presentation/components/atoms/Text";
 import { Button } from "../../src/presentation/components/atoms/Button";
 import { Card } from "../../src/presentation/components/atoms/Card";
 import { Icon } from "../../src/presentation/components/atoms/Icon";
-import { CurrencyInput } from "../../src/presentation/components/atoms/CurrencyInput";
+import { CurrencyInput, type CurrencyInputRef } from "../../src/presentation/components/atoms/CurrencyInput";
+import { CalculatorToolbar } from "../../src/presentation/components/atoms/CalculatorToolbar";
+import { GlassButton } from "../../src/presentation/components/atoms/GlassButton";
+import { KeyboardToolbar } from "../../src/presentation/components/molecules/KeyboardToolbar";
 import { Banner } from "../../src/presentation/components/molecules/Banner";
 import { usePrefsStore } from "../../src/stores/prefsStore";
 import {
@@ -280,6 +284,7 @@ export default function LocalSetupScreen() {
   );
   const [seeding, setSeeding] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const currencyInputRef = useRef<CurrencyInputRef>(null);
 
   const animating = useRef(false);
   const inX = useSharedValue(0);
@@ -476,6 +481,7 @@ export default function LocalSetupScreen() {
           CURRENT BALANCE
         </Text>
         <CurrencyInput
+          ref={currencyInputRef}
           value={startingBalance}
           onChangeValue={setStartingBalance}
           type="income"
@@ -610,6 +616,7 @@ export default function LocalSetupScreen() {
   // ── Render ──────────────────────────────────────────────────────────────
 
   return (
+    <>
     <KeyboardAvoidingView
       style={styles.flex}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -672,6 +679,21 @@ export default function LocalSetupScreen() {
         </Animated.View>
       </View>
     </KeyboardAvoidingView>
+    <KeyboardToolbar>
+      <CalculatorToolbar
+        onOperator={(op) => currencyInputRef.current?.injectOperator(op)}
+        onEvaluate={() => currencyInputRef.current?.evaluate()}
+      />
+      <View style={{ flex: 1 }} />
+      <GlassButton
+        icon="checkmark"
+        iconSize={16}
+        variant="tinted"
+        tintColor={theme.colors.primary}
+        onPress={() => Keyboard.dismiss()}
+      />
+    </KeyboardToolbar>
+    </>
   );
 }
 

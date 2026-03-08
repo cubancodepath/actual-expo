@@ -1,5 +1,5 @@
-import { memo, useRef } from 'react';
-import { Platform, Pressable, View } from 'react-native';
+import { memo, useRef, useState } from 'react';
+import { Keyboard, Platform, Pressable, View } from 'react-native';
 import * as ContextMenu from 'zeego/context-menu';
 import { useTheme } from '../../providers/ThemeProvider';
 import { Text } from '../atoms/Text';
@@ -16,20 +16,19 @@ interface BudgetCategoryRowProps {
   isIncome: boolean;
   isFirst?: boolean;
   isLast?: boolean;
-  /** Whether this row is in inline-edit mode (global edit mode). */
-  editing?: boolean;
-  /** Auto-focus the currency input when entering edit mode on this row. */
-  autoFocusInput?: boolean;
-  /** Current edit value in cents (only used when editing). */
-  editValue?: number;
-  onPress?: (cat: BudgetCategory) => void;
   onLongPress: (cat: BudgetCategory) => void;
   onMoveMoney?: (cat: BudgetCategory) => void;
   onToggleCarryover?: (cat: BudgetCategory) => void;
-  /** Called on every keystroke while editing. */
-  onEditChange?: (catId: string, cents: number) => void;
+  /** Called when the user commits a new budget amount (blur / done). */
+  onCommit?: (catId: string, cents: number) => void;
+  /** Called when the currency input gains focus, with a ref to the input. */
+  onInputFocus?: (ref: CompactCurrencyInputRef) => void;
+  /** Called when the row exits edit mode. */
+  onInputBlur?: () => void;
   /** Whether to show progress bars and goal text (default true). */
   showProgressBar?: boolean;
+  /** Whether to show the budgeted column (Amount or input). */
+  showBudgetedColumn?: boolean;
 }
 
 export const BudgetCategoryRow = memo(function BudgetCategoryRow({
@@ -37,15 +36,14 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
   isIncome,
   isFirst = false,
   isLast = false,
-  editing = false,
-  autoFocusInput = false,
-  editValue,
-  onPress,
   onLongPress,
   onMoveMoney,
   onToggleCarryover,
-  onEditChange,
+  onCommit,
+  onInputFocus,
+  onInputBlur,
   showProgressBar = true,
+  showBudgetedColumn = true,
 }: BudgetCategoryRowProps) {
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const inputRef = useRef<CompactCurrencyInputRef>(null);
@@ -225,6 +223,22 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
         : colors.textMuted;
   }
 
+  // Local edit state — tracks value while editing, commits on blur
+  const [editValue, setEditValue] = useState<number | null>(null);
+  const isEditing = editValue !== null;
+
+  function handleFocus() {
+    if (inputRef.current) onInputFocus?.(inputRef.current);
+  }
+
+  function handleBlur() {
+    if (editValue !== null && editValue !== cat.budgeted) {
+      onCommit?.(cat.id, editValue);
+    }
+    setEditValue(null);
+    onInputBlur?.();
+  }
+
   const pressableContent = (
     <Pressable
       style={{
@@ -235,16 +249,17 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
         ...insetStyle,
       }}
       onPress={() => {
-        if (editing) {
-          inputRef.current?.focus();
+        if (editValue !== null) {
+          handleBlur();
+          Keyboard.dismiss();
         } else {
-          onPress?.(cat);
+          setEditValue(cat.budgeted);
         }
       }}
       onLongPress={Platform.OS === 'android' ? () => onLongPress(cat) : undefined}
       delayLongPress={400}
     >
-      {/* Line 1: Name + Budget input (when editing) + Available pill */}
+      {/* Line 1: Name + Budget input + Available pill */}
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4, overflow: 'hidden' }}>
           <Text variant="body" numberOfLines={1} style={{ flexShrink: 1 }}>
@@ -256,14 +271,24 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
             </Text>
           )}
         </View>
-        {editing && (
+        {isEditing ? (
           <CompactCurrencyInput
             ref={inputRef}
-            value={editValue ?? cat.budgeted}
-            onChangeValue={(cents) => onEditChange?.(cat.id, cents)}
-            autoFocus={autoFocusInput}
+            value={editValue}
+            onChangeValue={(cents) => setEditValue(cents)}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            autoFocus
           />
-        )}
+        ) : showBudgetedColumn ? (
+          <Amount
+            value={cat.budgeted}
+            variant="body"
+            color={cat.budgeted !== 0 ? colors.textPrimary : colors.textMuted}
+            weight="600"
+            style={{ fontVariant: ['tabular-nums'] }}
+          />
+        ) : null}
         <View
           accessibilityLabel={`${formatPrivacyAware(cat.balance)} available`}
           style={{

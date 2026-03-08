@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
 import {
   ActivityIndicator,
   Alert,
@@ -14,6 +15,9 @@ import { useTheme } from '../../../../src/presentation/providers/ThemeProvider';
 import { useSharedValue } from 'react-native-reanimated';
 import { AddTransactionButton } from '../../../../src/presentation/components/molecules/AddTransactionButton';
 import { KeyboardToolbar } from '../../../../src/presentation/components/molecules/KeyboardToolbar';
+import { CalculatorToolbar } from '../../../../src/presentation/components/atoms/CalculatorToolbar';
+import { GlassButton } from '../../../../src/presentation/components/atoms/GlassButton';
+import type { CompactCurrencyInputRef } from '../../../../src/presentation/components/atoms/CompactCurrencyInput';
 import { useBudgetStore } from '../../../../src/stores/budgetStore';
 import { useCommonMenuActions } from '../../../../src/presentation/hooks/useCommonMenuItems';
 import { useRefreshControl } from '../../../../src/presentation/hooks/useRefreshControl';
@@ -28,11 +32,8 @@ import { UnclearedPill } from '../../../../src/presentation/components/transacti
 import { getUncategorizedStats } from '../../../../src/transactions';
 import { Text } from '../../../../src/presentation/components/atoms/Text';
 import { Amount } from '../../../../src/presentation/components/atoms/Amount';
-import { Button } from '../../../../src/presentation/components/atoms/Button';
 import { formatPrivacyAware } from '../../../../src/lib/format';
 import { usePrefsStore } from '../../../../src/stores/prefsStore';
-import { useTabBarStore } from '../../../../src/stores/tabBarStore';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -84,7 +85,6 @@ function filterBudgetGroups(groups: BudgetGroup[], filter: BudgetFilter, showHid
 export default function BudgetScreen() {
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const router = useRouter();
-  const { bottom: safeBottom } = useSafeAreaInsets();
   const { month, data, loading, load, setAmount, setCarryover, resetHold } = useBudgetStore();
   const { refreshControlProps } = useRefreshControl();
   const { showProgressBars, toggleProgressBars, showHiddenCategories, toggleShowHiddenCategories } = usePrefsStore();
@@ -105,20 +105,9 @@ export default function BudgetScreen() {
   const [filter, setFilter] = useState<BudgetFilter>('all');
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
-  // -- Inline budget editing (global edit mode) --
-  const [editMode, setEditMode] = useState(false);
-  const [edits, setEdits] = useState<Record<string, number>>({});
-  const [editsVersion, setEditsVersion] = useState(0);
-  const [saving, setSaving] = useState(false);
-  const [focusCatId, setFocusCatId] = useState<string | null>(null);
-
-  // Clear focusCatId after it triggers autoFocus on the next render
-  useEffect(() => {
-    if (focusCatId) {
-      const timer = setTimeout(() => setFocusCatId(null), 100);
-      return () => clearTimeout(timer);
-    }
-  }, [focusCatId]);
+  // -- Calculator: track the currently focused input ref --
+  const focusedInputRef = useRef<CompactCurrencyInputRef | null>(null);
+  const [anyRowEditing, setAnyRowEditing] = useState(false);
 
   // -- Collapsible groups --
   function toggleGroup(groupId: string) {
@@ -133,15 +122,20 @@ export default function BudgetScreen() {
   // -- Keyboard tracking --
   const { visible: keyboardVisible } = useKeyboardHeight();
 
-  // -- Reset filter and exit edit mode on month change --
+  // -- Dismiss keyboard when leaving screen --
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        focusedInputRef.current?.blur();
+        Keyboard.dismiss();
+      };
+    }, []),
+  );
+
+  // -- Reset filter on month change --
   useEffect(() => {
     setFilter('all');
-    if (editMode) {
-      Keyboard.dismiss();
-      setEditMode(false);
-      setEdits({});
-      useTabBarStore.getState().setHidden(false);
-    }
+    Keyboard.dismiss();
   }, [month]);
 
   // -- Sections (filtered) --
@@ -178,68 +172,10 @@ export default function BudgetScreen() {
     ]);
   }
 
-  // -- Global edit mode --
-  function enterEditMode(catId?: string) {
-    if (editMode) return;
-    const initial: Record<string, number> = {};
-    for (const g of data?.groups ?? []) {
-      if (g.is_income) continue;
-      for (const cat of g.categories) {
-        initial[cat.id] = cat.budgeted;
-      }
-    }
-    setEdits(initial);
-    setEditMode(true);
-    setFocusCatId(catId ?? null);
-    useTabBarStore.getState().setHidden(true);
+  // -- Save individual budget amount --
+  function handleCommit(catId: string, cents: number) {
+    setAmount(catId, cents);
   }
-
-  function handleCategoryPress(cat: BudgetCategory) {
-    if (!editMode) enterEditMode(cat.id);
-  }
-
-  function handleEditChange(catId: string, cents: number) {
-    setEdits((prev) => ({ ...prev, [catId]: cents }));
-    setEditsVersion((v) => v + 1);
-  }
-
-  async function handleSaveEdits() {
-    setSaving(true);
-    try {
-      const groups = data?.groups ?? [];
-      for (const g of groups) {
-        if (g.is_income) continue;
-        for (const cat of g.categories) {
-          const newCents = edits[cat.id] ?? cat.budgeted;
-          if (newCents !== cat.budgeted) {
-            await setAmount(cat.id, newCents);
-          }
-        }
-      }
-      setEditMode(false);
-      setEdits({});
-      useTabBarStore.getState().setHidden(false);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  function handleCancelEdits() {
-    setEditMode(false);
-    setEdits({});
-    useTabBarStore.getState().setHidden(false);
-  }
-
-  const hasEdits = useMemo(() => {
-    if (!editMode) return false;
-    for (const g of data?.groups ?? []) {
-      if (g.is_income) continue;
-      for (const cat of g.categories) {
-        if ((edits[cat.id] ?? cat.budgeted) !== cat.budgeted) return true;
-      }
-    }
-    return false;
-  }, [editMode, edits, data]);
 
   // -- Budget assignment balance --
   const toBudget = data?.toBudget ?? 0;
@@ -256,7 +192,6 @@ export default function BudgetScreen() {
       );
   }, [data]);
   const overspentCount = overspentCategories.length;
-  const overspentTotal = overspentCategories.reduce((sum, c) => sum + c.balance, 0);
 
 
   function handleOverspentPress() {
@@ -264,20 +199,25 @@ export default function BudgetScreen() {
   }
 
   // -- Render helpers --
+  function dismissEdit() {
+    focusedInputRef.current?.blur();
+    Keyboard.dismiss();
+    setAnyRowEditing(false);
+  }
+
   function renderSectionHeader({ section }: { section: BudgetSection }) {
     return (
       <View style={section.group.hidden ? { opacity: 0.5 } : undefined}>
         <BudgetGroupHeader
           group={section.group}
           isCollapsed={collapsedGroups.has(section.group.id)}
-          onToggle={() => toggleGroup(section.group.id)}
+          onToggle={() => { dismissEdit(); toggleGroup(section.group.id); }}
         />
       </View>
     );
   }
 
   function renderItem({ item: cat, index, section }: { item: BudgetCategory; index: number; section: BudgetSection }) {
-    const isExpenseEdit = editMode && !section.group.is_income;
     return (
       <View style={cat.hidden ? { opacity: 0.5 } : undefined}>
       <BudgetCategoryRow
@@ -285,43 +225,18 @@ export default function BudgetScreen() {
         isIncome={section.group.is_income}
         isFirst={index === 0}
         isLast={index === section.data.length - 1}
-        editing={isExpenseEdit}
-        autoFocusInput={isExpenseEdit && cat.id === focusCatId}
-        editValue={isExpenseEdit ? (edits[cat.id] ?? cat.budgeted) : undefined}
-        onPress={handleCategoryPress}
         onLongPress={handleCategoryLongPress}
         onMoveMoney={handleMoveMoney}
         onToggleCarryover={handleToggleCarryover}
-        onEditChange={handleEditChange}
+        onCommit={handleCommit}
+        onInputFocus={(ref) => { focusedInputRef.current = ref; setAnyRowEditing(true); }}
+        onInputBlur={() => setAnyRowEditing(false)}
         showProgressBar={showProgressBars}
+        showBudgetedColumn={anyRowEditing || !showProgressBars}
       />
       </View>
     );
   }
-
-  const editToolbarButtons = (
-    <>
-      <View style={{ flex: 1 }}>
-        <Button
-          title="Cancel"
-          variant="secondary"
-          onPress={() => { Keyboard.dismiss(); handleCancelEdits(); }}
-          style={{ borderRadius: br.full }}
-        />
-      </View>
-      <View style={{ flex: 1 }}>
-        <Button
-          title={saving ? 'Saving...' : 'Save'}
-          icon="checkmark"
-          variant="primary"
-          loading={saving}
-          disabled={!hasEdits}
-          onPress={() => { Keyboard.dismiss(); handleSaveEdits(); }}
-          style={{ borderRadius: br.full }}
-        />
-      </View>
-    </>
-  );
 
   return (
     <>
@@ -376,12 +291,15 @@ export default function BudgetScreen() {
           sections={sections}
           keyExtractor={(c) => c.id}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          automaticallyAdjustKeyboardInsets
           renderItem={renderItem}
           renderSectionHeader={renderSectionHeader}
           stickySectionHeadersEnabled
           onScroll={handleScroll}
+          onScrollBeginDrag={() => Keyboard.dismiss()}
           scrollEventThrottle={16}
-          extraData={`${collapsedGroups.size}-${editMode}-${editsVersion}`}
+          extraData={`${collapsedGroups.size}-${anyRowEditing}`}
           ListHeaderComponent={
             data && (overspentCount > 0 || uncategorizedCount > 0) ? (
               <View style={{ paddingTop: spacing.xs, paddingBottom: spacing.xs, gap: spacing.xs }}>
@@ -422,36 +340,28 @@ export default function BudgetScreen() {
               </View>
             )
           }
-          contentContainerStyle={{ paddingBottom: editMode ? 100 : 80 }}
+          contentContainerStyle={{ paddingBottom: 80 }}
         />
       )}
 
-      {!editMode && <AddTransactionButton collapsed={fabCollapsed} />}
+      {!keyboardVisible && <AddTransactionButton collapsed={fabCollapsed} />}
     </View>
 
-    {/* Edit mode toolbar — always mounted to track keyboard height */}
-    <KeyboardToolbar visible={editMode && keyboardVisible}>
-      {editToolbarButtons}
+    {/* Calculator toolbar — floats above keyboard */}
+    <KeyboardToolbar>
+      <CalculatorToolbar
+        onOperator={(op) => focusedInputRef.current?.injectOperator(op)}
+        onEvaluate={() => focusedInputRef.current?.evaluate()}
+      />
+      <View style={{ flex: 1 }} />
+      <GlassButton
+        icon="checkmark"
+        iconSize={16}
+        variant="tinted"
+        tintColor={colors.primary}
+        onPress={dismissEdit}
+      />
     </KeyboardToolbar>
-
-    {/* Fixed bottom toolbar when keyboard is closed */}
-    {editMode && !keyboardVisible && (
-      <View
-        style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          flexDirection: 'row',
-          gap: spacing.sm,
-          paddingHorizontal: spacing.md,
-          paddingTop: spacing.sm,
-          paddingBottom: safeBottom + spacing.sm,
-        }}
-      >
-        {editToolbarButtons}
-      </View>
-    )}
     <Stack.Toolbar placement="right">
       <Stack.Toolbar.Menu
         icon={filter === 'all' ? 'line.3.horizontal.decrease' : 'line.3.horizontal.decrease.circle.fill'}

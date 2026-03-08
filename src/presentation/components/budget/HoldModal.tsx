@@ -1,10 +1,13 @@
-import { useEffect, useState } from 'react';
-import { Modal, Pressable, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Keyboard, Modal, Pressable, View } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { useTheme } from '../../providers/ThemeProvider';
 import { Text } from '../atoms/Text';
-import { CurrencyInput } from '../atoms/CurrencyInput';
+import { CurrencyInput, type CurrencyInputRef } from '../atoms/CurrencyInput';
+import { CalculatorToolbar } from '../atoms/CalculatorToolbar';
+import { GlassButton } from '../atoms/GlassButton';
+import { KeyboardToolbar } from '../molecules/KeyboardToolbar';
 
 interface HoldModalProps {
   visible: boolean;
@@ -18,6 +21,7 @@ export function HoldModal({ visible, current, maxAmount, onSave, onClose }: Hold
   const { colors, spacing, borderRadius: br, borderWidth: bw, isDark } = useTheme();
   const [cents, setCents] = useState(0);
   const glass = isLiquidGlassAvailable();
+  const currencyInputRef = useRef<CurrencyInputRef>(null);
 
   useEffect(() => {
     if (visible) {
@@ -50,6 +54,7 @@ export function HoldModal({ visible, current, maxAmount, onSave, onClose }: Hold
       </Text>
 
       <CurrencyInput
+        ref={currencyInputRef}
         value={cents}
         onChangeValue={setCents}
         type="income"
@@ -123,6 +128,20 @@ export function HoldModal({ visible, current, maxAmount, onSave, onClose }: Hold
           )}
         </Pressable>
       </Pressable>
+      <KeyboardToolbar>
+        <CalculatorToolbar
+          onOperator={(op) => currencyInputRef.current?.injectOperator(op)}
+          onEvaluate={() => currencyInputRef.current?.evaluate()}
+        />
+        <View style={{ flex: 1 }} />
+        <GlassButton
+          icon="checkmark"
+          iconSize={16}
+          variant="tinted"
+          tintColor={colors.primary}
+          onPress={() => Keyboard.dismiss()}
+        />
+      </KeyboardToolbar>
     </Modal>
   );
 }

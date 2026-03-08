@@ -1,5 +1,5 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
-import { TextInput, View, type ViewStyle } from 'react-native';
+import { Keyboard, Platform, TextInput, View, type ViewStyle } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -10,9 +10,17 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useTheme } from '../../providers/ThemeProvider';
 import { Text } from './Text';
+import { useExpressionMode } from '../../hooks/useExpressionMode';
+import { MAX_CENTS, formatCents, formatExpression } from '../../../lib/currency';
 
 export interface CompactCurrencyInputRef {
   focus: () => void;
+  /** Blur the input, committing any pending expression */
+  blur: () => void;
+  /** Inject an arithmetic operator (+, -, *, /) into the current value */
+  injectOperator: (op: string) => void;
+  /** Evaluate the current expression and commit the result */
+  evaluate: () => void;
 }
 
 interface CompactCurrencyInputProps {
@@ -32,33 +40,23 @@ interface CompactCurrencyInputProps {
   style?: ViewStyle;
 }
 
-/** Max value: $999,999.99 = 99999999 cents */
-const MAX_CENTS = 99999999;
-
-function formatCents(c: number): string {
-  const abs = Math.abs(c);
-  const dollars = Math.floor(abs / 100);
-  const remainder = abs % 100;
-  const formatted = `${dollars.toLocaleString('en-US')}.${String(remainder).padStart(2, '0')}`;
-  return c < 0 ? `-${formatted}` : formatted;
-}
-
 /**
  * Compact banking-style currency input for inline use in lists/rows.
  * Digits fill from right to left: 0.00 → 0.01 → 0.15 → 1.52
  * No border/background — designed to look inline. Shows blinking cursor when focused.
+ *
+ * Supports inline calculator: inject operators via ref.injectOperator().
+ * In expression mode, shows the expression and a live preview of the result.
  */
 export const CompactCurrencyInput = forwardRef<CompactCurrencyInputRef, CompactCurrencyInputProps>(
-  function CompactCurrencyInput({ value, onChangeValue, onFocus: onFocusProp, onBlur, autoFocus = false, color: colorProp, style }, ref) {
+  function CompactCurrencyInput({ value, onChangeValue, onFocus: onFocusProp, onBlur: onBlurProp, autoFocus = false, color: colorProp, style }, ref) {
     const { colors } = useTheme();
     const inputRef = useRef<TextInput>(null);
     const [focused, setFocused] = useState(autoFocus);
 
-    const cursorOpacity = useSharedValue(autoFocus ? 1 : 0);
+    const expr = useExpressionMode({ value, onChangeValue });
 
-    useImperativeHandle(ref, () => ({
-      focus: () => inputRef.current?.focus(),
-    }));
+    const cursorOpacity = useSharedValue(autoFocus ? 1 : 0);
 
     useEffect(() => {
       if (focused) {
@@ -81,61 +79,132 @@ export const CompactCurrencyInput = forwardRef<CompactCurrencyInputRef, CompactC
       opacity: cursorOpacity.value,
     }));
 
-    function handleChangeText(text: string) {
+    // ── Normal mode: banking-style digit handling ──
+    function handleChangeTextNormal(text: string) {
       const digits = text.replace(/\D/g, '');
       const newCents = Math.min(parseInt(digits || '0', 10), MAX_CENTS);
-      // Editing always produces a positive value — user is setting a new budget amount
       onChangeValue(newCents);
     }
+
+    // ── Blur handler: finalize expression ──
+    function handleBlur() {
+      expr.handleBlurExpression();
+      setFocused(false);
+      onBlurProp?.();
+    }
+
+    // Refs to avoid stale closures in useImperativeHandle and keyboard listener
+    const focusedRef = useRef(false);
+    focusedRef.current = focused;
+    const handleBlurRef = useRef(handleBlur);
+    handleBlurRef.current = handleBlur;
+
+    useImperativeHandle(ref, () => ({
+      focus: () => inputRef.current?.focus(),
+      blur: () => {
+        inputRef.current?.blur();
+        // Run blur logic directly — zero-size TextInput may not fire onBlur reliably
+        if (focusedRef.current) handleBlurRef.current();
+      },
+      injectOperator: (op: string) => expr.injectOperator(op, () => inputRef.current?.focus()),
+      evaluate: () => expr.evaluate(),
+    }));
+
+    // Fallback: when the keyboard hides, force blur if still focused.
+    // Catches scroll-dismiss, tab switches, and Keyboard.dismiss()
+    // even when the zero-size TextInput doesn't fire onBlur reliably.
+    useEffect(() => {
+      const event = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+      const sub = Keyboard.addListener(event, () => {
+        if (focusedRef.current) {
+          handleBlurRef.current();
+        }
+      });
+      return () => sub.remove();
+    }, []);
+
+    const currentInputValue = expr.expressionMode
+      ? expr.expressionInputValue
+      : String(Math.abs(value));
 
     const isNeg = value < 0;
     const displayColor = colorProp ?? (value !== 0 ? colors.textPrimary : colors.textMuted);
 
     return (
-      <View style={[{ flexDirection: 'row', alignItems: 'center' }, style]}>
-        <Text
-          variant="body"
-          color={isNeg ? displayColor : colors.textMuted}
-          style={{ marginRight: 1 }}
-        >
-          {isNeg ? '-$' : '$'}
-        </Text>
-        <Text
-          variant="body"
-          style={{
-            fontWeight: '600',
-            fontVariant: ['tabular-nums'],
-            color: displayColor,
-          }}
-        >
-          {formatCents(Math.abs(value))}
-        </Text>
-        <Animated.View
-          style={[
-            {
-              width: 1.5,
-              height: 16,
-              marginLeft: 1,
-              borderRadius: 1,
-              backgroundColor: colors.primary,
-            },
-            cursorStyle,
-          ]}
-        />
+      <View style={[{ flexDirection: 'column', alignItems: 'flex-end' }, style]}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          {!expr.expressionMode && (
+            <>
+              <Text
+                variant="body"
+                color={isNeg ? displayColor : colors.textMuted}
+                style={{ marginRight: 1 }}
+              >
+                {isNeg ? '-$' : '$'}
+              </Text>
+              <Text
+                variant="body"
+                style={{
+                  fontWeight: '600',
+                  fontVariant: ['tabular-nums'],
+                  color: displayColor,
+                }}
+              >
+                {formatCents(Math.abs(value))}
+              </Text>
+            </>
+          )}
+
+          {expr.expressionMode && (
+            <Text
+              variant="body"
+              style={{
+                fontWeight: '600',
+                fontVariant: ['tabular-nums'],
+                color: colors.primary,
+              }}
+              numberOfLines={1}
+            >
+              {formatExpression(expr.expression)}
+            </Text>
+          )}
+
+          <Animated.View
+            style={[
+              {
+                width: 1.5,
+                height: 16,
+                marginLeft: 1,
+                borderRadius: 1,
+                backgroundColor: colors.primary,
+              },
+              cursorStyle,
+            ]}
+          />
+        </View>
+
+        {/* Live preview of expression result */}
+        {expr.expressionMode && expr.previewCents !== null && (
+          <Text
+            variant="captionSm"
+            color={colors.textMuted}
+            style={{ fontVariant: ['tabular-nums'], marginTop: 1 }}
+          >
+            = ${formatCents(expr.previewCents)}
+          </Text>
+        )}
+
         <TextInput
           ref={inputRef}
           style={{ position: 'absolute', opacity: 0, height: 0, width: 0 }}
-          keyboardType="number-pad"
+          keyboardType={expr.expressionMode ? 'decimal-pad' : 'number-pad'}
           autoFocus={autoFocus}
           caretHidden
           contextMenuHidden
-          value={String(Math.abs(value))}
-          onChangeText={handleChangeText}
+          value={currentInputValue}
+          onChangeText={expr.expressionMode ? expr.handleChangeTextExpression : handleChangeTextNormal}
           onFocus={() => { setFocused(true); onFocusProp?.(); }}
-          onBlur={() => {
-            setFocused(false);
-            onBlur?.();
-          }}
+          onBlur={handleBlur}
         />
       </View>
     );

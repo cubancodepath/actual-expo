@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Keyboard, Pressable, ScrollView, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -21,6 +21,8 @@ import { Button } from '../../../src/presentation/components/atoms/Button';
 import { IconButton } from '../../../src/presentation/components/atoms/IconButton';
 import { CompactCurrencyInput, type CompactCurrencyInputRef } from '../../../src/presentation/components/atoms/CompactCurrencyInput';
 import { GlassButton } from '../../../src/presentation/components/atoms/GlassButton';
+import { CalculatorToolbar } from '../../../src/presentation/components/atoms/CalculatorToolbar';
+import { KeyboardToolbar } from '../../../src/presentation/components/molecules/KeyboardToolbar';
 
 type SourceEntry = {
   id: string;
@@ -37,11 +39,13 @@ function SourceRow({
   direction,
   onAmountChange,
   onRemove,
+  onInputFocus,
 }: {
   source: SourceEntry;
   direction: MoveDirection;
   onAmountChange: (id: string, cents: number) => void;
   onRemove: (id: string) => void;
+  onInputFocus?: (ref: CompactCurrencyInputRef) => void;
 }) {
   const { colors, spacing } = useTheme();
   const inputRef = useRef<CompactCurrencyInputRef>(null);
@@ -71,6 +75,7 @@ function SourceRow({
         ref={inputRef}
         value={source.amount}
         onChangeValue={(cents) => onAmountChange(source.id, cents)}
+        onFocus={() => { if (inputRef.current) onInputFocus?.(inputRef.current); }}
       />
 
       <View
@@ -199,6 +204,7 @@ export default function MoveMoneyScreen() {
   const [direction, setDirection] = useState<MoveDirection>('to');
   const [sources, setSources] = useState<SourceEntry[]>([]);
   const [saving, setSaving] = useState(false);
+  const focusedInputRef = useRef<CompactCurrencyInputRef | null>(null);
 
   const balanceCents = Number(balance);
   const totalAmount = sources.reduce((sum, s) => sum + s.amount, 0);
@@ -277,6 +283,7 @@ export default function MoveMoneyScreen() {
   const headerText = palette.white;
 
   return (
+    <>
     <ScrollView
       style={{ backgroundColor: colors.pageBackground }}
       contentContainerStyle={{ paddingBottom: spacing.xl }}
@@ -348,6 +355,7 @@ export default function MoveMoneyScreen() {
                 direction={direction}
                 onAmountChange={handleAmountChange}
                 onRemove={handleRemoveSource}
+                onInputFocus={(ref) => { focusedInputRef.current = ref; }}
               />
               {(index < sources.length - 1 || true) && (
                 <View style={{ height: bw.thin, backgroundColor: colors.divider, marginHorizontal: spacing.md }} />
@@ -389,5 +397,20 @@ export default function MoveMoneyScreen() {
         />
       </View>
     </ScrollView>
+    <KeyboardToolbar>
+      <CalculatorToolbar
+        onOperator={(op) => focusedInputRef.current?.injectOperator(op)}
+        onEvaluate={() => focusedInputRef.current?.evaluate()}
+      />
+      <View style={{ flex: 1 }} />
+      <GlassButton
+        icon="checkmark"
+        iconSize={16}
+        variant="tinted"
+        tintColor={colors.primary}
+        onPress={() => Keyboard.dismiss()}
+      />
+    </KeyboardToolbar>
+    </>
   );
 }

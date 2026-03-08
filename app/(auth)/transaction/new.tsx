@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, useColorScheme, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Alert, Keyboard, Pressable, ScrollView, useColorScheme, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useAccountsStore } from '../../../src/stores/accountsStore';
 import { useTransactionsStore } from '../../../src/stores/transactionsStore';
@@ -12,9 +12,10 @@ import { todayStr, todayInt, strToInt, intToStr } from '../../../src/lib/date';
 import { withOpacity } from '../../../src/lib/colors';
 import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
 import { Button } from '../../../src/presentation/components/atoms/Button';
-import { KeyboardDoneButton } from '../../../src/presentation/components/atoms/KeyboardDoneButton';
+import { KeyboardToolbar } from '../../../src/presentation/components/molecules/KeyboardToolbar';
+import { CalculatorToolbar } from '../../../src/presentation/components/atoms/CalculatorToolbar';
 import { Banner } from '../../../src/presentation/components/molecules/Banner';
-import { CurrencyInput } from '../../../src/presentation/components/atoms/CurrencyInput';
+import { CurrencyInput, type CurrencyInputRef } from '../../../src/presentation/components/atoms/CurrencyInput';
 import { TypeToggle, type TransactionType } from '../../../src/presentation/components/transaction/TypeToggle';
 import { DetailRow } from '../../../src/presentation/components/transaction/DetailRow';
 import { DatePickerField } from '../../../src/presentation/components/transaction/DatePickerField';
@@ -66,6 +67,7 @@ export default function NewTransactionScreen() {
   const [reconciled, setReconciled] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const currencyInputRef = useRef<CurrencyInputRef>(null);
 
   // Clear picker on mount, load categories if needed
   useEffect(() => {
@@ -300,6 +302,7 @@ export default function NewTransactionScreen() {
           </View>
 
           <CurrencyInput
+            ref={currencyInputRef}
             value={cents}
             onChangeValue={(v) => { setCents(v); setError(null); }}
             type={type}
@@ -429,7 +432,20 @@ export default function NewTransactionScreen() {
         </View>
       </ScrollView>
 
-      <KeyboardDoneButton />
+      <KeyboardToolbar>
+        <CalculatorToolbar
+          onOperator={(op) => currencyInputRef.current?.injectOperator(op)}
+          onEvaluate={() => currencyInputRef.current?.evaluate()}
+        />
+        <View style={{ flex: 1 }} />
+        <GlassButton
+          icon="checkmark"
+          iconSize={16}
+          variant="tinted"
+          tintColor={colors.primary}
+          onPress={() => Keyboard.dismiss()}
+        />
+      </KeyboardToolbar>
     </>
   );
 }

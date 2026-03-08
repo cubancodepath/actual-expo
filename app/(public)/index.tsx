@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -9,7 +9,13 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
+import Animated, {
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
@@ -49,6 +55,18 @@ export default function LoginScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const urlRef = useRef('');
+  const reducedMotion = useReducedMotion();
+  const contentOpacity = useSharedValue(1);
+
+  const contentAnimStyle = useAnimatedStyle(() => ({
+    opacity: contentOpacity.value,
+  }));
+
+  useFocusEffect(
+    useCallback(() => {
+      contentOpacity.value = withTiming(1, { duration: 200 });
+    }, []),
+  );
 
   // ── Step 1: Probe server ──────────────────────────────────────────────────
   async function probeWithRetry(url: string) {
@@ -166,6 +184,7 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <Animated.View style={contentAnimStyle}>
         {/* Header */}
         <View style={styles.header}>
           <Image
@@ -298,6 +317,23 @@ export default function LoginScreen() {
             />
           )}
 
+          {/* Local mode */}
+          <Pressable
+            onPress={() => {
+              if (!reducedMotion) {
+                contentOpacity.value = withTiming(0, { duration: 200 });
+                setTimeout(() => router.push('/(public)/local-setup'), 180);
+              } else {
+                router.push('/(public)/local-setup');
+              }
+            }}
+            style={{ marginTop: 32, alignSelf: 'center' }}
+          >
+            <Text variant="bodySm" color={theme.colors.textSecondary}>
+              Use without a server
+            </Text>
+          </Pressable>
+
           {/* DEV: Reset onboarding */}
           {__DEV__ && (
             <Pressable
@@ -313,6 +349,7 @@ export default function LoginScreen() {
             </Pressable>
           )}
         </View>
+        </Animated.View>
       </ScrollView>
     </KeyboardAvoidingView>
   );

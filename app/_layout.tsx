@@ -28,6 +28,7 @@ export default function RootLayout() {
   const router = useRouter();
   const hasToken = usePrefsStore((s) => s.hasToken);
   const isConfigured = usePrefsStore((s) => s.isConfigured);
+  const isLocalOnly = usePrefsStore((s) => s.isLocalOnly);
   const [ready, setReady] = useState(false);
   const handledTimestamp = useRef(0);
 
@@ -126,7 +127,8 @@ export default function RootLayout() {
     const sub = AppState.addEventListener("change", (nextState) => {
       if (nextState !== "active") return;
       // Sync on foreground
-      if (usePrefsStore.getState().isConfigured && !isSwitchingBudget()) {
+      const p = usePrefsStore.getState();
+      if (p.isConfigured && !p.isLocalOnly && !isSwitchingBudget()) {
         fullSync().catch(console.warn);
       }
       // Check shortcut action with debounced timer
@@ -149,7 +151,7 @@ export default function RootLayout() {
     <NavigationThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
     <ThemeProvider>
       <Stack>
-        <Stack.Protected guard={!hasToken}>
+        <Stack.Protected guard={!hasToken && !isLocalOnly}>
           <Stack.Screen name="(public)" options={{ headerShown: false }} />
         </Stack.Protected>
         <Stack.Protected guard={hasToken && !isConfigured}>

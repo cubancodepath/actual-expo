@@ -16,7 +16,7 @@ import { useSyncStore } from "../../src/stores/syncStore";
 import { usePreferencesStore } from "../../src/stores/preferencesStore";
 import { resetAllStores } from "../../src/stores/resetStores";
 import { usePrivacyStore } from "../../src/stores/privacyStore";
-import { resetSyncState, clearSwitchingFlag } from "../../src/sync";
+import { resetSyncState, clearSwitchingFlag, loadClock } from "../../src/sync";
 import { clearLocalData } from "../../src/db";
 import {
   DATE_FORMAT_OPTIONS,
@@ -109,7 +109,7 @@ export default function SettingsScreen() {
   const { colors, spacing } = useTheme();
   const styles = useThemedStyles(createStyles);
 
-  const { serverUrl, fileId, groupId, encryptKeyId, budgetName, lastSyncedTimestamp, clearAll } =
+  const { serverUrl, fileId, groupId, encryptKeyId, budgetName, lastSyncedTimestamp, isLocalOnly, clearAll } =
     usePrefsStore();
   const { status, error, lastSync, sync } = useSyncStore();
   const { dateFormat, numberFormat, firstDayOfWeekIdx, hideFraction, set } =
@@ -136,6 +136,33 @@ export default function SettingsScreen() {
     label: o.example,
   }));
 
+  function handleDeleteLocal() {
+    Alert.alert(
+      "Delete All Data",
+      "This will permanently delete all your local budget data. This cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            setLoggingOut(true);
+            try {
+              resetSyncState();
+              resetAllStores();
+              await clearAll();
+              await clearLocalData();
+              await loadClock();
+            } finally {
+              clearSwitchingFlag();
+              setLoggingOut(false);
+            }
+          },
+        },
+      ],
+    );
+  }
+
   function handleLogout() {
     Alert.alert(
       "Disconnect",
@@ -150,8 +177,9 @@ export default function SettingsScreen() {
             try {
               resetSyncState();
               resetAllStores();
-              await clearLocalData();
               await clearAll();
+              await clearLocalData();
+              await loadClock();
             } finally {
               clearSwitchingFlag();
               setLoggingOut(false);
@@ -176,35 +204,39 @@ export default function SettingsScreen() {
           ),
         }}
       />
-      {/* Sync */}
-      <SectionHeader title="Sync" style={{ marginTop: spacing.lg }} />
-      <Card>
-        <ListItem
-          title="Last sync"
-          right={
-            <Text variant="bodySm" color={colors.textSecondary}>
-              {lastSyncText}
-            </Text>
-          }
-        />
-        {error && (
-          <View style={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.sm }}>
-            <Text variant="bodySm" color={colors.negative}>
-              {error}
-            </Text>
-          </View>
-        )}
-        <View style={{ padding: spacing.md }}>
-          <Button
-            title={syncButtonTitle}
-            onPress={sync}
-            loading={status === "syncing"}
-            disabled={status === "syncing"}
-            variant="primary"
-            size="md"
-          />
-        </View>
-      </Card>
+      {/* Sync — only when connected to a server */}
+      {!isLocalOnly && (
+        <>
+          <SectionHeader title="Sync" style={{ marginTop: spacing.lg }} />
+          <Card>
+            <ListItem
+              title="Last sync"
+              right={
+                <Text variant="bodySm" color={colors.textSecondary}>
+                  {lastSyncText}
+                </Text>
+              }
+            />
+            {error && (
+              <View style={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.sm }}>
+                <Text variant="bodySm" color={colors.negative}>
+                  {error}
+                </Text>
+              </View>
+            )}
+            <View style={{ padding: spacing.md }}>
+              <Button
+                title={syncButtonTitle}
+                onPress={sync}
+                loading={status === "syncing"}
+                disabled={status === "syncing"}
+                variant="primary"
+                size="md"
+              />
+            </View>
+          </Card>
+        </>
+      )}
 
       {/* Manage */}
       <SectionHeader title="Manage" style={{ marginTop: spacing.xl }} />
@@ -278,44 +310,62 @@ export default function SettingsScreen() {
         />
       </Card>
 
-      {/* Budget */}
-      <SectionHeader title="Budget" style={{ marginTop: spacing.xl }} />
-      <Card>
-        <ListItem
-          title={budgetName || 'Current Budget'}
-          subtitle="Tap to switch budget"
-          showChevron
-          onPress={() => router.push("/(auth)/change-budget")}
-        />
-      </Card>
+      {/* Budget — only when connected (switching requires server) */}
+      {!isLocalOnly && (
+        <>
+          <SectionHeader title="Budget" style={{ marginTop: spacing.xl }} />
+          <Card>
+            <ListItem
+              title={budgetName || 'Current Budget'}
+              subtitle="Tap to switch budget"
+              showChevron
+              onPress={() => router.push("/(auth)/change-budget")}
+            />
+          </Card>
+        </>
+      )}
 
-      {/* Server */}
-      <SectionHeader title="Server" style={{ marginTop: spacing.xl }} />
-      <Card>
-        <ServerRow label="URL" value={serverUrl} />
-        <Divider />
-        <ServerRow label="File ID" value={fileId ? `${fileId.slice(0, 8)}…` : ""} />
-        <Divider />
-        <ServerRow
-          label="Group ID"
-          value={groupId ? `${groupId.slice(0, 8)}…` : ""}
-        />
-        {encryptKeyId && (
-          <>
+      {/* Server / Mode */}
+      {isLocalOnly ? (
+        <>
+          <SectionHeader title="Mode" style={{ marginTop: spacing.xl }} />
+          <Card>
+            <ListItem
+              title="Local Only"
+              subtitle="Data is stored on this device only"
+            />
+          </Card>
+        </>
+      ) : (
+        <>
+          <SectionHeader title="Server" style={{ marginTop: spacing.xl }} />
+          <Card>
+            <ServerRow label="URL" value={serverUrl} />
+            <Divider />
+            <ServerRow label="File ID" value={fileId ? `${fileId.slice(0, 8)}…` : ""} />
             <Divider />
             <ServerRow
-              label="Encryption"
-              value={`${encryptKeyId.slice(0, 8)}…`}
+              label="Group ID"
+              value={groupId ? `${groupId.slice(0, 8)}…` : ""}
             />
-          </>
-        )}
-      </Card>
+            {encryptKeyId && (
+              <>
+                <Divider />
+                <ServerRow
+                  label="Encryption"
+                  value={`${encryptKeyId.slice(0, 8)}…`}
+                />
+              </>
+            )}
+          </Card>
+        </>
+      )}
 
-      {/* Disconnect */}
+      {/* Disconnect / Delete */}
       <View style={{ marginTop: spacing.xxl }}>
         <Button
-          title="Disconnect from server"
-          onPress={handleLogout}
+          title={isLocalOnly ? "Delete All Data" : "Disconnect from server"}
+          onPress={isLocalOnly ? handleDeleteLocal : handleLogout}
           variant="danger"
           size="lg"
           loading={loggingOut}

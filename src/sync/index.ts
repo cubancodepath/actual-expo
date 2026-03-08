@@ -55,7 +55,8 @@ function scheduleFullSync(): void {
     if (_switchingBudget) return;
     try {
       const { usePrefsStore } = await import('../stores/prefsStore');
-      if (!usePrefsStore.getState().isConfigured) return;
+      const prefs = usePrefsStore.getState();
+      if (prefs.isLocalOnly || !prefs.isConfigured) return;
       await fullSync();
     } catch {
       // fullSync already writes the error into syncStore — nothing to do here
@@ -331,6 +332,7 @@ export async function fullSync(attempt = 0): Promise<void> {
   const { useSyncStore } = await import('../stores/syncStore');
 
   const prefs = usePrefsStore.getState();
+  if (prefs.isLocalOnly) return;
   if (!prefs.isConfigured) {
     throw new Error('Server not configured — set serverUrl, token, fileId, groupId first');
   }

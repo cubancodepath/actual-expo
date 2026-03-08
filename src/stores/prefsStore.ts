@@ -34,6 +34,7 @@ type PrefsState = {
   hideReconciled: boolean;
   showHiddenCategories: boolean;
   hasSeenOnboarding: boolean;
+  isLocalOnly: boolean;
 
   // Token — in-memory only; persisted in iOS Keychain / Android Keystore
   token: string;
@@ -56,7 +57,8 @@ type PrefsState = {
   clearAll(): Promise<void>;
 };
 
-function computeIsConfigured(s: Pick<PrefsState, 'serverUrl' | 'token' | 'fileId' | 'groupId'>): boolean {
+function computeIsConfigured(s: Pick<PrefsState, 'serverUrl' | 'token' | 'fileId' | 'groupId' | 'isLocalOnly'>): boolean {
+  if (s.isLocalOnly) return true;
   return !!(s.serverUrl && s.token && s.fileId && s.groupId);
 }
 
@@ -77,6 +79,7 @@ export const usePrefsStore = create<PrefsState>()(
       hideReconciled: false,
       showHiddenCategories: false,
       hasSeenOnboarding: false,
+      isLocalOnly: false,
       hasToken: false,
       isConfigured: false,
 
@@ -128,6 +131,7 @@ export const usePrefsStore = create<PrefsState>()(
           groupId: '',
           encryptKeyId: undefined,
           lastSyncedTimestamp: undefined,
+          isLocalOnly: false,
           hasToken: false,
           isConfigured: false,
         });
@@ -148,6 +152,7 @@ export const usePrefsStore = create<PrefsState>()(
         hideReconciled: state.hideReconciled,
         showHiddenCategories: state.showHiddenCategories,
         hasSeenOnboarding: state.hasSeenOnboarding,
+        isLocalOnly: state.isLocalOnly,
       }),
     },
   ),

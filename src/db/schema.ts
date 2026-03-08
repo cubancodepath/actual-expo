@@ -142,6 +142,18 @@ CREATE INDEX IF NOT EXISTS idx_payee_mapping_targetId ON payee_mapping(targetId)
 CREATE INDEX IF NOT EXISTS idx_category_mapping_transferId ON category_mapping(transferId);
 
 CREATE INDEX IF NOT EXISTS idx_messages_crdt_dataset_row ON messages_crdt(dataset, row);
+
+CREATE INDEX IF NOT EXISTS idx_transactions_display
+  ON transactions(acct, tombstone, isChild, date DESC, sort_order DESC);
+
+CREATE INDEX IF NOT EXISTS idx_transactions_children
+  ON transactions(parent_id, tombstone);
+
+CREATE INDEX IF NOT EXISTS idx_transactions_budget
+  ON transactions(tombstone, isParent, date);
+
+CREATE INDEX IF NOT EXISTS idx_transactions_cleared
+  ON transactions(acct, cleared, isParent, tombstone);
 `;
 
 export async function runSchema(db: SQLiteDatabase): Promise<void> {

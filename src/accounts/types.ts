@@ -4,6 +4,7 @@ export type Account = {
   offbudget: boolean;
   closed: boolean;
   sort_order: number | null;
+  lastReconciled: string | null;
   tombstone: boolean;
   balance?: number;           // cents, total (cleared + uncleared)
   clearedBalance?: number;    // cents, sum of cleared transactions

@@ -242,15 +242,22 @@ export async function lockTransactions(accountId: string): Promise<void> {
     [accountId],
   );
   if (rows.length === 0) return;
-  await sendMessages(
-    rows.map(r => ({
+  await sendMessages([
+    ...rows.map(r => ({
       timestamp: Timestamp.send()!,
       dataset: 'transactions',
       row: r.id,
       column: 'reconciled',
-      value: 1,
+      value: 1 as string | number | null,
     })),
-  );
+    {
+      timestamp: Timestamp.send()!,
+      dataset: 'accounts',
+      row: accountId,
+      column: 'last_reconciled',
+      value: new Date().getTime().toString(),
+    },
+  ]);
 }
 
 /**

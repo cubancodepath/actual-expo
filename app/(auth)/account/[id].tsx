@@ -222,6 +222,7 @@ export default function AccountTransactionsScreen() {
       <BalanceSummary
         balance={account?.balance ?? 0}
         clearedBalance={clearedBalance}
+        lastReconciled={account?.lastReconciled}
       />
 
       {unclearedCount > 0 && (

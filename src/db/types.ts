@@ -6,6 +6,7 @@ export type AccountRow = {
   offbudget: 0 | 1;
   closed: 0 | 1;
   sort_order: number | null;
+  last_reconciled: string | null;
   tombstone: 0 | 1;
 };
 

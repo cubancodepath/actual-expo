@@ -119,6 +119,7 @@ const MIGRATIONS = [
   'ALTER TABLE zero_budgets ADD COLUMN long_goal INTEGER DEFAULT NULL',
   "ALTER TABLE categories ADD COLUMN template_settings TEXT DEFAULT '{\"source\": \"notes\"}'",
   'ALTER TABLE transactions ADD COLUMN parent_id TEXT',
+  'ALTER TABLE accounts ADD COLUMN last_reconciled TEXT',
 ];
 
 const INDEXES = `

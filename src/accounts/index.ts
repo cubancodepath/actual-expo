@@ -20,6 +20,7 @@ function rowToAccount(r: AccountWithBalance): Account {
     offbudget: r.offbudget === 1,
     closed: r.closed === 1,
     sort_order: r.sort_order,
+    lastReconciled: r.last_reconciled,
     tombstone: r.tombstone === 1,
     balance: r.balance ?? 0,
     clearedBalance: r.clearedBalance ?? 0,
@@ -180,6 +181,7 @@ export const updateAccount = undoable(async function updateAccount(
   if (fields.offbudget !== undefined) dbFields.offbudget = fields.offbudget ? 1 : 0;
   if (fields.closed !== undefined) dbFields.closed = fields.closed ? 1 : 0;
   if (fields.sort_order !== undefined) dbFields.sort_order = fields.sort_order;
+  if (fields.lastReconciled !== undefined) dbFields.last_reconciled = fields.lastReconciled;
 
   if (Object.keys(dbFields).length === 0) return;
 

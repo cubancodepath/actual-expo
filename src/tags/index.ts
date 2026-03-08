@@ -1,6 +1,7 @@
 import { randomUUID } from 'expo-crypto';
 import { runQuery, first } from '../db';
 import { sendMessages } from '../sync';
+import { undoable } from '../sync/undo';
 import { Timestamp } from '../crdt';
 import type { TagRow } from '../db/types';
 import type { Tag } from './types';
@@ -25,7 +26,7 @@ export async function getTags(): Promise<Tag[]> {
   return rows.map(rowToTag);
 }
 
-export async function createTag(
+export const createTag = undoable(async function createTag(
   fields: Pick<Tag, 'tag'> & Partial<Pick<Tag, 'color' | 'description'>>,
 ): Promise<string> {
   const tagName = fields.tag.trim();
@@ -57,9 +58,9 @@ export async function createTag(
     { timestamp: Timestamp.send()!, dataset: 'tags', row: id, column: 'description', value: fields.description ?? null },
   ]);
   return id;
-}
+});
 
-export async function updateTag(
+export const updateTag = undoable(async function updateTag(
   id: string,
   fields: Partial<Pick<Tag, 'tag' | 'color' | 'description'>>,
 ): Promise<void> {
@@ -75,13 +76,13 @@ export async function updateTag(
       value,
     })),
   );
-}
+});
 
-export async function deleteTag(id: string): Promise<void> {
+export const deleteTag = undoable(async function deleteTag(id: string): Promise<void> {
   await sendMessages([
     { timestamp: Timestamp.send()!, dataset: 'tags', row: id, column: 'tombstone', value: 1 },
   ]);
-}
+});
 
 // ---------------------------------------------------------------------------
 // Notes parsing — split notes into text + tag segments for rendering
@@ -96,7 +97,7 @@ export function parseNotes(notes: string | null): NoteSegment[] {
   if (!notes) return [];
 
   const segments: NoteSegment[] = [];
-  const regex = /(?<!#)#([^#\s]+)/g;
+  const regex = new RegExp(TAG_REGEX.source, TAG_REGEX.flags);
   let lastIndex = 0;
   let match;
 

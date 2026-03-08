@@ -4,9 +4,12 @@ import { sendMessages, batchMessages } from '../sync';
 import { undoable } from '../sync/undo';
 import { Timestamp } from '../crdt';
 import type { TransactionRow } from '../db/types';
-import type { Transaction, GetTransactionsOptions } from './types';
+import type { Transaction, GetTransactionsOptions, TransactionDisplay } from './types';
 import { onInsert, onUpdate, onDelete as onDeleteTransfer } from './transfer';
 import { todayInt, startOfMonthInt, endOfMonthInt } from '../lib/date';
+import { transactionQuery } from './query';
+
+export type { TransactionDisplay } from './types';
 
 function rowToTransaction(r: TransactionRow): Transaction {
   return {
@@ -316,50 +319,12 @@ export const deleteTransaction = undoable(async function deleteTransaction(id: s
 // ---------------------------------------------------------------------------
 
 export async function getTransactionById(id: string): Promise<TransactionDisplay | null> {
-  const rows = await runQuery<TransactionRow & { payee_name: string | null; category_name: string | null }>(
-    `SELECT t.*,
-            COALESCE(a.name, p.name) AS payee_name,
-            c.name AS category_name
-     FROM   transactions t
-     LEFT JOIN payee_mapping    pm ON pm.id = t.description
-     LEFT JOIN payees            p ON COALESCE(pm.targetId, t.description) = p.id AND p.tombstone = 0
-     LEFT JOIN accounts          a ON p.transfer_acct = a.id AND a.tombstone = 0
-     LEFT JOIN category_mapping cm ON cm.id = t.category
-     LEFT JOIN categories        c ON COALESCE(cm.transferId, t.category) = c.id AND c.tombstone = 0
-     WHERE  t.id = ? AND t.tombstone = 0`,
-    [id],
-  );
-  if (rows.length === 0) return null;
-  const r = rows[0];
-  return {
-    id: r.id,
-    isParent: r.isParent === 1,
-    isChild: r.isChild === 1,
-    acct: r.acct,
-    date: r.date,
-    amount: r.amount,
-    category: r.category,
-    description: r.description,
-    notes: r.notes,
-    parent_id: r.parent_id ?? null,
-    transferred_id: r.transferred_id,
-    cleared: r.cleared === 1,
-    reconciled: r.reconciled === 1,
-    sort_order: r.sort_order,
-    starting_balance_flag: r.starting_balance_flag === 1,
-    tombstone: r.tombstone === 1,
-    payeeName: r.payee_name,
-    categoryName: r.category_name,
-  };
+  const rows = await transactionQuery()
+    .filter('t.id = ?', [id])
+    .filter('t.tombstone = 0')
+    .execute();
+  return rows[0] ?? null;
 }
-
-export type TransactionDisplay = Transaction & {
-  payeeName: string | null;
-  categoryName: string | null;
-  accountName?: string | null; // populated by getAllTransactions
-  splitCategoryNames?: string | null; // comma-separated child category names for parent splits
-  splitCategoryAmounts?: string | null; // comma-separated child amounts for parent splits
-};
 
 const PAGE_SIZE = 25;
 
@@ -367,56 +332,14 @@ export async function getTransactionsForAccount(
   accountId: string,
   opts?: { limit?: number; offset?: number; hideReconciled?: boolean },
 ): Promise<TransactionDisplay[]> {
-  const limit  = opts?.limit  ?? PAGE_SIZE;
-  const offset = opts?.offset ?? 0;
-  const reconciledClause = opts?.hideReconciled ? 'AND t.reconciled = 0' : '';
-  const rows = await runQuery<TransactionRow & { payee_name: string | null; category_name: string | null; split_category_names: string | null; split_category_amounts: string | null }>(
-    `SELECT t.*,
-            COALESCE(a.name, p.name) AS payee_name,
-            c.name AS category_name,
-            (SELECT GROUP_CONCAT(COALESCE(c2.name, ''), '||')
-             FROM transactions ch
-             LEFT JOIN category_mapping cm2 ON cm2.id = ch.category
-             LEFT JOIN categories c2 ON COALESCE(cm2.transferId, ch.category) = c2.id AND c2.tombstone = 0
-             WHERE ch.parent_id = t.id AND ch.tombstone = 0
-            ) AS split_category_names,
-            (SELECT GROUP_CONCAT(ch.amount, '||')
-             FROM transactions ch
-             WHERE ch.parent_id = t.id AND ch.tombstone = 0
-            ) AS split_category_amounts
-     FROM   transactions t
-     LEFT JOIN payee_mapping    pm ON pm.id = t.description
-     LEFT JOIN payees            p ON COALESCE(pm.targetId, t.description) = p.id AND p.tombstone = 0
-     LEFT JOIN accounts          a ON p.transfer_acct = a.id AND a.tombstone = 0
-     LEFT JOIN category_mapping cm ON cm.id = t.category
-     LEFT JOIN categories        c ON COALESCE(cm.transferId, t.category) = c.id AND c.tombstone = 0
-     WHERE  t.acct = ? AND t.tombstone = 0 AND t.isChild = 0 ${reconciledClause}
-     ORDER  BY t.date DESC, t.sort_order DESC
-     LIMIT ${limit} OFFSET ${offset}`,
-    [accountId],
-  );
-  return rows.map(r => ({
-    id: r.id,
-    isParent: r.isParent === 1,
-    isChild: r.isChild === 1,
-    acct: r.acct,
-    date: r.date,
-    amount: r.amount,
-    category: r.category,
-    description: r.description,
-    notes: r.notes,
-    parent_id: r.parent_id ?? null,
-    transferred_id: r.transferred_id,
-    cleared: r.cleared === 1,
-    reconciled: r.reconciled === 1,
-    sort_order: r.sort_order,
-    starting_balance_flag: r.starting_balance_flag === 1,
-    tombstone: r.tombstone === 1,
-    payeeName: r.payee_name,
-    categoryName: r.category_name,
-    splitCategoryNames: r.split_category_names,
-    splitCategoryAmounts: r.split_category_amounts,
-  }));
+  return transactionQuery()
+    .forAccount(accountId)
+    .alive()
+    .when(opts?.hideReconciled, q => q.hideReconciled())
+    .includeSplitDetails()
+    .limit(opts?.limit ?? PAGE_SIZE)
+    .offset(opts?.offset ?? 0)
+    .execute();
 }
 
 /** All transactions across every account with pagination. */
@@ -425,63 +348,14 @@ export async function getAllTransactions(opts?: {
   offset?: number;
   hideReconciled?: boolean;
 }): Promise<TransactionDisplay[]> {
-  const limit  = opts?.limit  ?? PAGE_SIZE;
-  const offset = opts?.offset ?? 0;
-  const reconciledClause = opts?.hideReconciled ? 'AND t.reconciled = 0' : '';
-
-  const rows = await runQuery<
-    TransactionRow & { payee_name: string | null; category_name: string | null; account_name: string | null; split_category_names: string | null; split_category_amounts: string | null }
-  >(
-    `SELECT t.*,
-            COALESCE(tr_acc.name, p.name) AS payee_name,
-            c.name                        AS category_name,
-            acc.name                      AS account_name,
-            (SELECT GROUP_CONCAT(COALESCE(c2.name, ''), '||')
-             FROM transactions ch
-             LEFT JOIN category_mapping cm2 ON cm2.id = ch.category
-             LEFT JOIN categories c2 ON COALESCE(cm2.transferId, ch.category) = c2.id AND c2.tombstone = 0
-             WHERE ch.parent_id = t.id AND ch.tombstone = 0
-            ) AS split_category_names,
-            (SELECT GROUP_CONCAT(ch.amount, '||')
-             FROM transactions ch
-             WHERE ch.parent_id = t.id AND ch.tombstone = 0
-            ) AS split_category_amounts
-     FROM   transactions t
-     JOIN   accounts          acc    ON acc.id = t.acct AND acc.tombstone = 0
-     LEFT JOIN payee_mapping    pm   ON pm.id = t.description
-     LEFT JOIN payees            p   ON COALESCE(pm.targetId, t.description) = p.id AND p.tombstone = 0
-     LEFT JOIN accounts          tr_acc ON p.transfer_acct = tr_acc.id AND tr_acc.tombstone = 0
-     LEFT JOIN category_mapping  cm  ON cm.id = t.category
-     LEFT JOIN categories        c   ON COALESCE(cm.transferId, t.category) = c.id AND c.tombstone = 0
-     WHERE  t.tombstone = 0 AND t.isChild = 0 ${reconciledClause}
-     ORDER  BY t.date DESC, t.sort_order DESC
-     LIMIT ${limit} OFFSET ${offset}`,
-    [],
-  );
-
-  return rows.map(r => ({
-    id: r.id,
-    isParent: r.isParent === 1,
-    isChild: r.isChild === 1,
-    acct: r.acct,
-    date: r.date,
-    amount: r.amount,
-    category: r.category,
-    description: r.description,
-    notes: r.notes,
-    parent_id: r.parent_id ?? null,
-    transferred_id: r.transferred_id,
-    cleared: r.cleared === 1,
-    reconciled: r.reconciled === 1,
-    sort_order: r.sort_order,
-    starting_balance_flag: r.starting_balance_flag === 1,
-    tombstone: r.tombstone === 1,
-    payeeName: r.payee_name,
-    categoryName: r.category_name,
-    accountName: r.account_name,
-    splitCategoryNames: r.split_category_names,
-    splitCategoryAmounts: r.split_category_amounts,
-  }));
+  return transactionQuery()
+    .alive()
+    .includeAccountName()
+    .includeSplitDetails()
+    .when(opts?.hideReconciled, q => q.hideReconciled())
+    .limit(opts?.limit ?? PAGE_SIZE)
+    .offset(opts?.offset ?? 0)
+    .execute();
 }
 
 /** Search transactions with text + status filters across all accounts. */
@@ -501,120 +375,38 @@ export async function searchTransactions(opts: {
   limit?: number;
   offset?: number;
 }): Promise<TransactionDisplay[]> {
-  const limit = opts.limit ?? PAGE_SIZE;
-  const offset = opts.offset ?? 0;
-  const conditions: string[] = ['t.tombstone = 0', 't.isChild = 0'];
-  const params: (string | number)[] = [];
+  const q = transactionQuery()
+    .alive()
+    .includeAccountName()
+    .includeSplitDetails()
+    .when(opts.hideReconciled, q => q.hideReconciled())
+    .when(!!opts.accountId, q => q.forAccount(opts.accountId!))
+    .when(!!opts.categoryId, q => q.withCategory(opts.categoryId!))
+    .when(!!opts.payeeId, q => q.withPayee(opts.payeeId!))
+    .when(opts.uncategorized, q => q.uncategorized())
+    .when(!!opts.text, q => q.textSearch(opts.text!));
 
-  if (opts.hideReconciled) {
-    conditions.push('t.reconciled = 0');
-  }
-
-  if (opts.accountId) {
-    conditions.push('t.acct = ?');
-    params.push(opts.accountId);
-  }
-  if (opts.categoryId) {
-    conditions.push(
-      '(t.category = ? OR (t.isParent = 1 AND EXISTS (SELECT 1 FROM transactions ch WHERE ch.parent_id = t.id AND ch.tombstone = 0 AND ch.category = ?)))',
-    );
-    params.push(opts.categoryId, opts.categoryId);
-  }
-  if (opts.payeeId) {
-    conditions.push('COALESCE(pm.targetId, t.description) = ?');
-    params.push(opts.payeeId);
-  }
-  if (opts.uncategorized) {
-    conditions.push('(t.category IS NULL AND t.isParent = 0)');
-    // Exclude transfers between on-budget accounts (they don't need a category)
-    conditions.push('(p.transfer_acct IS NULL OR tr_acc.offbudget = 1)');
-  }
-
-  // Tag filter — match #tagName in notes
+  // Tag filters
   if (opts.tagNames && opts.tagNames.length > 0) {
-    for (const tag of opts.tagNames) {
-      conditions.push("t.notes LIKE ?");
-      params.push(`%#${tag}%`);
-    }
+    q.withTags(opts.tagNames);
   } else if (opts.tagName) {
-    conditions.push("t.notes LIKE ?");
-    params.push(`%#${opts.tagName}%`);
+    q.withTag(opts.tagName);
   }
 
-  // Text search across payee name, category name, notes, and account name
-  if (opts.text) {
-    const pattern = `%${opts.text}%`;
-    conditions.push(
-      '(COALESCE(tr_acc.name, p.name) LIKE ? OR c.name LIKE ? OR t.notes LIKE ? OR acc.name LIKE ?)',
-    );
-    params.push(pattern, pattern, pattern, pattern);
+  // Status filters
+  if (opts.cleared || opts.uncleared || opts.reconciled || opts.unreconciled) {
+    q.withStatus({
+      cleared: opts.cleared,
+      uncleared: opts.uncleared,
+      reconciled: opts.reconciled,
+      unreconciled: opts.unreconciled,
+    });
   }
 
-  // Status filters — combine with OR
-  const statusClauses: string[] = [];
-  if (opts.cleared) statusClauses.push('(t.cleared = 1 AND t.reconciled = 0)');
-  if (opts.uncleared) statusClauses.push('(t.cleared = 0)');
-  if (opts.reconciled) statusClauses.push('(t.reconciled = 1)');
-  if (opts.unreconciled) statusClauses.push('(t.reconciled = 0)');
-  if (statusClauses.length > 0) {
-    conditions.push(`(${statusClauses.join(' OR ')})`);
-  }
-
-  const where = conditions.join(' AND ');
-
-  const rows = await runQuery<
-    TransactionRow & { payee_name: string | null; category_name: string | null; account_name: string | null; split_category_names: string | null; split_category_amounts: string | null }
-  >(
-    `SELECT t.*,
-            COALESCE(tr_acc.name, p.name) AS payee_name,
-            c.name                        AS category_name,
-            acc.name                      AS account_name,
-            (SELECT GROUP_CONCAT(COALESCE(c2.name, ''), '||')
-             FROM transactions ch
-             LEFT JOIN category_mapping cm2 ON cm2.id = ch.category
-             LEFT JOIN categories c2 ON COALESCE(cm2.transferId, ch.category) = c2.id AND c2.tombstone = 0
-             WHERE ch.parent_id = t.id AND ch.tombstone = 0
-            ) AS split_category_names,
-            (SELECT GROUP_CONCAT(ch.amount, '||')
-             FROM transactions ch
-             WHERE ch.parent_id = t.id AND ch.tombstone = 0
-            ) AS split_category_amounts
-     FROM   transactions t
-     JOIN   accounts          acc    ON acc.id = t.acct AND acc.tombstone = 0
-     LEFT JOIN payee_mapping    pm   ON pm.id = t.description
-     LEFT JOIN payees            p   ON COALESCE(pm.targetId, t.description) = p.id AND p.tombstone = 0
-     LEFT JOIN accounts          tr_acc ON p.transfer_acct = tr_acc.id AND tr_acc.tombstone = 0
-     LEFT JOIN category_mapping  cm  ON cm.id = t.category
-     LEFT JOIN categories        c   ON COALESCE(cm.transferId, t.category) = c.id AND c.tombstone = 0
-     WHERE  ${where}
-     ORDER  BY t.date DESC, t.sort_order DESC
-     LIMIT ${limit} OFFSET ${offset}`,
-    params,
-  );
-
-  return rows.map(r => ({
-    id: r.id,
-    isParent: r.isParent === 1,
-    isChild: r.isChild === 1,
-    acct: r.acct,
-    date: r.date,
-    amount: r.amount,
-    category: r.category,
-    description: r.description,
-    notes: r.notes,
-    parent_id: r.parent_id ?? null,
-    transferred_id: r.transferred_id,
-    cleared: r.cleared === 1,
-    reconciled: r.reconciled === 1,
-    sort_order: r.sort_order,
-    starting_balance_flag: r.starting_balance_flag === 1,
-    tombstone: r.tombstone === 1,
-    payeeName: r.payee_name,
-    categoryName: r.category_name,
-    accountName: r.account_name,
-    splitCategoryNames: r.split_category_names,
-    splitCategoryAmounts: r.split_category_amounts,
-  }));
+  return q
+    .limit(opts.limit ?? PAGE_SIZE)
+    .offset(opts.offset ?? 0)
+    .execute();
 }
 
 // ---------------------------------------------------------------------------
@@ -722,40 +514,11 @@ export async function getUnclearedCount(accountId?: string): Promise<number> {
 
 /** Fetch all child transactions for a parent split transaction. */
 export async function getChildTransactions(parentId: string): Promise<TransactionDisplay[]> {
-  const rows = await runQuery<TransactionRow & { payee_name: string | null; category_name: string | null }>(
-    `SELECT t.*,
-            COALESCE(a.name, p.name) AS payee_name,
-            c.name AS category_name
-     FROM   transactions t
-     LEFT JOIN payee_mapping    pm ON pm.id = t.description
-     LEFT JOIN payees            p ON COALESCE(pm.targetId, t.description) = p.id AND p.tombstone = 0
-     LEFT JOIN accounts          a ON p.transfer_acct = a.id AND a.tombstone = 0
-     LEFT JOIN category_mapping cm ON cm.id = t.category
-     LEFT JOIN categories        c ON COALESCE(cm.transferId, t.category) = c.id AND c.tombstone = 0
-     WHERE  t.parent_id = ? AND t.tombstone = 0
-     ORDER  BY t.sort_order ASC`,
-    [parentId],
-  );
-  return rows.map(r => ({
-    id: r.id,
-    isParent: r.isParent === 1,
-    isChild: r.isChild === 1,
-    acct: r.acct,
-    date: r.date,
-    amount: r.amount,
-    category: r.category,
-    description: r.description,
-    notes: r.notes,
-    parent_id: r.parent_id ?? null,
-    transferred_id: r.transferred_id,
-    cleared: r.cleared === 1,
-    reconciled: r.reconciled === 1,
-    sort_order: r.sort_order,
-    starting_balance_flag: r.starting_balance_flag === 1,
-    tombstone: r.tombstone === 1,
-    payeeName: r.payee_name,
-    categoryName: r.category_name,
-  }));
+  return transactionQuery()
+    .filter('t.parent_id = ?', [parentId])
+    .filter('t.tombstone = 0')
+    .orderBy('t.sort_order ASC')
+    .execute();
 }
 
 /** Fetch a parent transaction with all its children grouped. */

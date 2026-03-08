@@ -45,3 +45,11 @@ export type GetTransactionsOptions = {
   limit?: number;
   offset?: number;
 };
+
+export type TransactionDisplay = Transaction & {
+  payeeName: string | null;
+  categoryName: string | null;
+  accountName?: string | null;
+  splitCategoryNames?: string | null;
+  splitCategoryAmounts?: string | null;
+};

@@ -5,9 +5,8 @@ import { useAccountsStore } from '../../../src/stores/accountsStore';
 import { useTransactionsStore } from '../../../src/stores/transactionsStore';
 import { useCategoriesStore } from '../../../src/stores/categoriesStore';
 import { usePickerStore } from '../../../src/stores/pickerStore';
-import { findOrCreatePayee } from '../../../src/payees';
-import { addTransaction, getTransactionById, getChildTransactions, deleteTransaction as deleteTransactionById } from '../../../src/transactions';
-import { batchMessages } from '../../../src/sync';
+import { getTransactionById, getChildTransactions } from '../../../src/transactions';
+import { saveTransaction } from '../../../src/transactions/save';
 import { extractTagsFromNotes } from '../../../src/tags';
 import { todayStr, todayInt, strToInt, intToStr } from '../../../src/lib/date';
 import { withOpacity } from '../../../src/lib/colors';
@@ -35,7 +34,7 @@ export default function NewTransactionScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const { accounts, load: loadAccounts } = useAccountsStore();
-  const { add, update, delete_ } = useTransactionsStore();
+  const { delete_ } = useTransactionsStore();
   const { groups, load: loadCategories } = useCategoriesStore();
 
   // Picker store subscriptions
@@ -158,97 +157,22 @@ export default function NewTransactionScreen() {
   }, [selectedTags]);
 
   async function performSave() {
-    const date = strToInt(dateStr) ?? dateInt;
-    const finalAmount = type === 'expense' ? -cents : cents;
-    const sign = type === 'expense' ? -1 : 1;
-
     setError(null);
     setLoading(true);
     try {
-      const resolvedPayeeId = payeeId ?? (await findOrCreatePayee(payeeName));
-
-      if (isSplit && isEdit) {
-        // Editing a split transaction — update parent, delete old children, create new children
-        await batchMessages(async () => {
-          await update(transactionId, {
-            date,
-            amount: finalAmount,
-            description: resolvedPayeeId,
-            category: null,
-            notes: notes.trim() || null,
-            cleared,
-            isParent: true,
-          });
-
-          // Delete old children
-          const oldChildren = await getChildTransactions(transactionId);
-          for (const child of oldChildren) {
-            await deleteTransactionById(child.id);
-          }
-
-          // Create new children
-          for (const line of splitCategories!) {
-            await addTransaction({
-              acct: acctId!,
-              date,
-              amount: sign * line.amount,
-              description: resolvedPayeeId,
-              category: line.categoryId,
-              notes: null,
-              cleared,
-              isChild: true,
-              parent_id: transactionId,
-            });
-          }
-        });
-      } else if (isSplit) {
-        // New split transaction — create parent + children in a single batch
-        await batchMessages(async () => {
-          const parentId = await addTransaction({
-            acct: acctId!,
-            date,
-            amount: finalAmount,
-            description: resolvedPayeeId,
-            category: null,
-            notes: notes.trim() || null,
-            cleared,
-            isParent: true,
-          });
-
-          for (const line of splitCategories!) {
-            await addTransaction({
-              acct: acctId!,
-              date,
-              amount: sign * line.amount,
-              description: resolvedPayeeId,
-              category: line.categoryId,
-              notes: null,
-              cleared,
-              isChild: true,
-              parent_id: parentId,
-            });
-          }
-        });
-      } else if (isEdit) {
-        await update(transactionId, {
-          date,
-          amount: finalAmount,
-          description: resolvedPayeeId,
-          category: categoryId,
-          notes: notes.trim() || null,
-          cleared,
-        });
-      } else {
-        await add({
-          acct: acctId!,
-          date,
-          amount: finalAmount,
-          description: resolvedPayeeId,
-          category: categoryId,
-          notes: notes.trim() || null,
-          cleared,
-        });
-      }
+      await saveTransaction({
+        transactionId: isEdit ? transactionId : undefined,
+        acct: acctId!,
+        date: strToInt(dateStr) ?? dateInt,
+        amount: cents,
+        type,
+        payeeId,
+        payeeName,
+        categoryId,
+        notes: notes.trim() || null,
+        cleared,
+        splitCategories: isSplit ? splitCategories : null,
+      });
       await loadAccounts();
       router.dismiss();
     } catch (e: unknown) {

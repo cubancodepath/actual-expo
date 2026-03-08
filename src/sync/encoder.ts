@@ -9,20 +9,7 @@ import {
 import { Timestamp } from '../crdt/timestamp';
 import * as encryption from '../encryption';
 import { SyncError } from '../errors';
-
-// Wire-format serialization — identical to loot-core
-function serializeValue(value: string | number | null): string {
-  if (value === null) return '0:';
-  if (typeof value === 'number') return 'N:' + value;
-  return 'S:' + value;
-}
-
-function deserializeValue(value: string): string | number | null {
-  if (value === '0:') return null;
-  if (value.startsWith('N:')) return parseFloat(value.slice(2));
-  if (value.startsWith('S:')) return value.slice(2);
-  return value;
-}
+import { serializeValue, deserializeValue } from './values';
 
 export type SyncMessage = {
   timestamp: Timestamp;

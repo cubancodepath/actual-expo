@@ -16,9 +16,14 @@ struct CategoryEntity: AppEntity {
 }
 
 @available(iOS 16.0, *)
-struct CategoryEntityQuery: EntityQuery {
+struct CategoryEntityQuery: EntityStringQuery {
     func entities(for identifiers: [String]) async throws -> [CategoryEntity] {
         return allCategories().filter { identifiers.contains($0.id) }
+    }
+
+    func entities(matching string: String) async throws -> [CategoryEntity] {
+        let query = string.lowercased()
+        return allCategories().filter { $0.name.lowercased().contains(query) }
     }
 
     func suggestedEntities() async throws -> [CategoryEntity] {

@@ -15,9 +15,14 @@ struct AccountEntity: AppEntity {
 }
 
 @available(iOS 16.0, *)
-struct AccountEntityQuery: EntityQuery {
+struct AccountEntityQuery: EntityStringQuery {
     func entities(for identifiers: [String]) async throws -> [AccountEntity] {
         return allAccounts().filter { identifiers.contains($0.id) }
+    }
+
+    func entities(matching string: String) async throws -> [AccountEntity] {
+        let query = string.lowercased()
+        return allAccounts().filter { $0.name.lowercased().contains(query) }
     }
 
     func suggestedEntities() async throws -> [AccountEntity] {

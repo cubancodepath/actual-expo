@@ -7,6 +7,10 @@ struct AddTransactionIntent: AppIntent {
 
   static let openAppWhenRun: Bool = true
 
+  static var parameterSummary: some ParameterSummary {
+    Summary("Add \(\.$amount) at \(\.$payeeName) for \(\.$category) in \(\.$account)")
+  }
+
   @Parameter(title: "Account")
   var account: AccountEntity
 

@@ -5,7 +5,7 @@ import {
   createAccount,
   updateAccount,
   closeAccount,
-  deleteAccount,
+  type CloseAccountOpts,
 } from '../accounts';
 import type { Account } from '../accounts/types';
 
@@ -15,8 +15,7 @@ type AccountsState = {
   load(): Promise<void>;
   create(fields: Omit<Partial<Account>, 'id' | 'tombstone'>, startingBalance?: number): Promise<string>;
   update(id: string, fields: Omit<Partial<Account>, 'id' | 'tombstone'>): Promise<void>;
-  close(id: string): Promise<void>;
-  delete_(id: string): Promise<void>;
+  close(opts: CloseAccountOpts): Promise<void>;
 };
 
 export const useAccountsStore = create<AccountsState>((set) => ({
@@ -41,12 +40,8 @@ export const useAccountsStore = create<AccountsState>((set) => ({
     return updateAccount(id, fields);
   },
 
-  async close(id) {
-    return closeAccount(id);
-  },
-
-  async delete_(id) {
-    return deleteAccount(id);
+  async close(opts) {
+    return closeAccount(opts);
   },
 }));
 

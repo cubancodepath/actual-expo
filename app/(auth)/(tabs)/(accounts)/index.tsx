@@ -42,7 +42,6 @@ function AccountRow({
   onEdit,
   onClose,
   onReopen,
-  onDelete,
   styles,
 }: {
   account: Account;
@@ -50,7 +49,6 @@ function AccountRow({
   onEdit: () => void;
   onClose: () => void;
   onReopen: () => void;
-  onDelete: () => void;
   styles: ReturnType<typeof createStyles>;
 }) {
   const theme = useTheme();
@@ -66,8 +64,7 @@ function AccountRow({
               { text: 'Edit Account', onPress: onEdit },
               account.closed
                 ? { text: 'Reopen Account', onPress: onReopen }
-                : { text: 'Close Account', onPress: onClose },
-              { text: 'Delete Account', style: 'destructive' as const, onPress: onDelete },
+                : { text: 'Close Account', style: 'destructive' as const, onPress: onClose },
               { text: 'Cancel', style: 'cancel' as const },
             ];
             Alert.alert(account.name, undefined, items);
@@ -101,16 +98,11 @@ function AccountRow({
               <ContextMenu.ItemIcon ios={{ name: 'arrow.counterclockwise' }} />
             </ContextMenu.Item>
           ) : (
-            <ContextMenu.Item key="close" onSelect={onClose}>
+            <ContextMenu.Item key="close" destructive onSelect={onClose}>
               <ContextMenu.ItemTitle>Close Account</ContextMenu.ItemTitle>
-              <ContextMenu.ItemIcon ios={{ name: 'xmark.circle' }} />
+              <ContextMenu.ItemIcon ios={{ name: 'trash' }} />
             </ContextMenu.Item>
           )}
-          <ContextMenu.Separator />
-          <ContextMenu.Item key="delete" destructive onSelect={onDelete}>
-            <ContextMenu.ItemTitle>Delete Account</ContextMenu.ItemTitle>
-            <ContextMenu.ItemIcon ios={{ name: 'trash' }} />
-          </ContextMenu.Item>
         </ContextMenu.Content>
       </ContextMenu.Root>
     );
@@ -125,7 +117,6 @@ function AccountContent({
   onEditAccount,
   onCloseAccount,
   onReopenAccount,
-  onDeleteAccount,
   styles,
 }: {
   group: AccountGroup;
@@ -133,7 +124,6 @@ function AccountContent({
   onEditAccount: (a: Account) => void;
   onCloseAccount: (a: Account) => void;
   onReopenAccount: (a: Account) => void;
-  onDeleteAccount: (a: Account) => void;
   styles: ReturnType<typeof createStyles>;
 }) {
   const theme = useTheme();
@@ -148,7 +138,6 @@ function AccountContent({
             onEdit={() => onEditAccount(account)}
             onClose={() => onCloseAccount(account)}
             onReopen={() => onReopenAccount(account)}
-            onDelete={() => onDeleteAccount(account)}
             styles={styles}
           />
         </View>
@@ -163,14 +152,12 @@ function AccountSection({
   onEditAccount,
   onCloseAccount,
   onReopenAccount,
-  onDeleteAccount,
 }: {
   group: AccountGroup;
   onPressAccount: (a: Account) => void;
   onEditAccount: (a: Account) => void;
   onCloseAccount: (a: Account) => void;
   onReopenAccount: (a: Account) => void;
-  onDeleteAccount: (a: Account) => void;
 }) {
   const theme = useTheme();
   const styles = useThemedStyles(createStyles);
@@ -216,12 +203,12 @@ function AccountSection({
         onLayout={e => { height.value = e.nativeEvent.layout.height; }}
         pointerEvents="none"
       >
-        <AccountContent group={group} onPressAccount={onPressAccount} onEditAccount={onEditAccount} onCloseAccount={onCloseAccount} onReopenAccount={onReopenAccount} onDeleteAccount={onDeleteAccount} styles={styles} />
+        <AccountContent group={group} onPressAccount={onPressAccount} onEditAccount={onEditAccount} onCloseAccount={onCloseAccount} onReopenAccount={onReopenAccount} styles={styles} />
       </View>
 
       {/* Animated collapsible body */}
       <Animated.View style={bodyStyle}>
-        <AccountContent group={group} onPressAccount={onPressAccount} onEditAccount={onEditAccount} onCloseAccount={onCloseAccount} onReopenAccount={onReopenAccount} onDeleteAccount={onDeleteAccount} styles={styles} />
+        <AccountContent group={group} onPressAccount={onPressAccount} onEditAccount={onEditAccount} onCloseAccount={onCloseAccount} onReopenAccount={onReopenAccount} styles={styles} />
       </Animated.View>
     </View>
   );
@@ -235,7 +222,7 @@ export default function AccountsScreen() {
   const router = useRouter();
   const theme = useTheme();
   const styles = useThemedStyles(createStyles);
-  const { accounts, loading, load, update, close: closeAccount, delete_: deleteAccount } = useAccountsStore();
+  const { accounts, loading, load, update } = useAccountsStore();
   const { refreshControlProps } = useRefreshControl();
   const commonActions = useCommonMenuActions();
 
@@ -252,29 +239,11 @@ export default function AccountsScreen() {
   }
 
   function handleCloseAccount(account: Account) {
-    Alert.alert(
-      'Close Account',
-      `Are you sure you want to close "${account.name}"?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Close', style: 'destructive', onPress: async () => { await closeAccount(account.id); load(); } },
-      ],
-    );
+    router.push({ pathname: '/(auth)/account/close', params: { id: account.id } });
   }
 
   function handleReopenAccount(account: Account) {
     update(account.id, { closed: false }).then(() => load());
-  }
-
-  function handleDeleteAccount(account: Account) {
-    Alert.alert(
-      'Delete Account',
-      `Permanently delete "${account.name}"? This cannot be undone.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: async () => { await deleteAccount(account.id); load(); } },
-      ],
-    );
   }
 
   if (loading && accounts.length === 0) {
@@ -306,7 +275,6 @@ export default function AccountsScreen() {
                 onEditAccount={handleEditAccount}
                 onCloseAccount={handleCloseAccount}
                 onReopenAccount={handleReopenAccount}
-                onDeleteAccount={handleDeleteAccount}
               />
             ))}
 

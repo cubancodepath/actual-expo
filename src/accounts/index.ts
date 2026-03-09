@@ -4,6 +4,7 @@ import { sendMessages, batchMessages } from '../sync';
 import { undoable } from '../sync/undo';
 import { Timestamp } from '../crdt';
 import { todayInt } from '../lib/date';
+import { addTransaction } from '../transactions';
 import type { AccountRow } from '../db/types';
 import type { Account } from './types';
 
@@ -196,12 +197,119 @@ export const updateAccount = undoable(async function updateAccount(
   );
 });
 
-export async function closeAccount(id: string): Promise<void> {
-  await updateAccount(id, { closed: true });
+// ---------------------------------------------------------------------------
+// Account properties (balance + transaction count)
+// ---------------------------------------------------------------------------
+
+export async function getAccountProperties(id: string): Promise<{ balance: number; numTransactions: number }> {
+  const balanceResult = await first<{ balance: number }>(
+    'SELECT COALESCE(SUM(amount), 0) AS balance FROM transactions WHERE acct = ? AND isParent = 0 AND tombstone = 0',
+    [id],
+  );
+  const countResult = await first<{ count: number }>(
+    'SELECT COUNT(*) AS count FROM transactions WHERE acct = ? AND tombstone = 0',
+    [id],
+  );
+  return {
+    balance: balanceResult?.balance ?? 0,
+    numTransactions: countResult?.count ?? 0,
+  };
 }
 
-export const deleteAccount = undoable(async function deleteAccount(id: string): Promise<void> {
+// ---------------------------------------------------------------------------
+// Close account (unified — matches original Actual Budget behavior)
+// ---------------------------------------------------------------------------
+
+async function tombstoneAccount(id: string): Promise<void> {
   await sendMessages([
     { timestamp: Timestamp.send()!, dataset: 'accounts', row: id, column: 'tombstone', value: 1 },
   ]);
+}
+
+export type CloseAccountOpts = {
+  id: string;
+  transferAccountId?: string | null;
+  categoryId?: string | null;
+  forced?: boolean;
+};
+
+export const closeAccount = undoable(async function closeAccount(opts: CloseAccountOpts): Promise<void> {
+  const { id, transferAccountId, categoryId, forced = false } = opts;
+
+  const { balance, numTransactions } = await getAccountProperties(id);
+
+  // Case 1: No transactions — permanently delete (tombstone)
+  if (numTransactions === 0) {
+    await tombstoneAccount(id);
+    return;
+  }
+
+  // Case 2: Force close — delete all transactions + account
+  if (forced) {
+    const rows = await runQuery<{ id: string; transferred_id: string | null }>(
+      'SELECT id, transferred_id FROM transactions WHERE acct = ? AND tombstone = 0',
+      [id],
+    );
+
+    const transferPayee = await first<{ id: string }>(
+      'SELECT id FROM payees WHERE transfer_acct = ? AND tombstone = 0',
+      [id],
+    );
+
+    await batchMessages(async () => {
+      for (const row of rows) {
+        // Unlink transfer pair before tombstoning
+        if (row.transferred_id) {
+          await sendMessages([
+            { timestamp: Timestamp.send()!, dataset: 'transactions', row: row.transferred_id, column: 'description', value: null },
+            { timestamp: Timestamp.send()!, dataset: 'transactions', row: row.transferred_id, column: 'transferred_id', value: null },
+          ]);
+        }
+        // Tombstone the transaction
+        await sendMessages([
+          { timestamp: Timestamp.send()!, dataset: 'transactions', row: row.id, column: 'tombstone', value: 1 },
+        ]);
+      }
+
+      // Tombstone the account
+      await tombstoneAccount(id);
+
+      // Tombstone transfer payee
+      if (transferPayee) {
+        await sendMessages([
+          { timestamp: Timestamp.send()!, dataset: 'payees', row: transferPayee.id, column: 'tombstone', value: 1 },
+        ]);
+      }
+    });
+    return;
+  }
+
+  // Case 3: Normal close — mark closed + optional balance transfer
+  if (balance !== 0 && !transferAccountId) {
+    throw new Error('Balance is non-zero: transferAccountId is required');
+  }
+
+  await sendMessages([
+    { timestamp: Timestamp.send()!, dataset: 'accounts', row: id, column: 'closed', value: 1 },
+  ]);
+
+  if (balance !== 0 && transferAccountId) {
+    const transferPayee = await first<{ id: string }>(
+      'SELECT id FROM payees WHERE transfer_acct = ? AND tombstone = 0',
+      [transferAccountId],
+    );
+
+    if (!transferPayee) {
+      throw new Error(`Transfer payee for account ${transferAccountId} not found`);
+    }
+
+    await addTransaction({
+      acct: id,
+      amount: -balance,
+      date: todayInt(),
+      description: transferPayee.id,
+      notes: 'Closing account',
+      category: categoryId ?? undefined,
+    });
+  }
 });

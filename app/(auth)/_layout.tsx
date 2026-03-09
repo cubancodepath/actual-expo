@@ -42,6 +42,16 @@ export default function AuthLayout() {
         options={{ title: "Account Settings", ...modal }}
       />
       <Stack.Screen
+        name="account/close"
+        options={{
+          ...screen,
+          title: "Close Account",
+          presentation: "formSheet",
+          sheetAllowedDetents: [0.75, 1.0],
+          contentStyle: { backgroundColor: theme.colors.pageBackground },
+        }}
+      />
+      <Stack.Screen
         name="transaction"
         options={{ headerShown: false, ...modal }}
       />

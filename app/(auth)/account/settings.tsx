@@ -8,10 +8,10 @@ import {
   TextInput,
   View,
 } from 'react-native';
+
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAccountsStore } from '../../../src/stores/accountsStore';
-import { useUndoStore } from '../../../src/stores/undoStore';
 import { useTheme, useThemedStyles } from '../../../src/presentation/providers/ThemeProvider';
 import { Text } from '../../../src/presentation/components/atoms/Text';
 import { Button } from '../../../src/presentation/components/atoms/Button';
@@ -23,7 +23,7 @@ export default function AccountSettingsScreen() {
   const router = useRouter();
   const theme = useTheme();
   const styles = useThemedStyles(createStyles);
-  const { accounts, update, close, delete_, load } = useAccountsStore();
+  const { accounts, update, load } = useAccountsStore();
   const account = accounts.find(a => a.id === id);
 
   const [name, setName] = useState(account?.name ?? '');
@@ -64,52 +64,31 @@ export default function AccountSettingsScreen() {
   }
 
   function handleClose() {
-    Alert.alert(
-      account!.closed ? 'Reopen Account' : 'Close Account',
-      account!.closed
-        ? 'Reopen this account? It will appear in your budget again.'
-        : 'Close this account? It will be hidden but transactions are kept.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: account!.closed ? 'Reopen' : 'Close',
-          onPress: async () => {
-            setSaving(true);
-            try {
-              await update(id, { closed: !account!.closed });
-              await load();
-            } finally {
-              setSaving(false);
-            }
+    if (account!.closed) {
+      // Reopen — simple toggle
+      Alert.alert(
+        'Reopen Account',
+        'Reopen this account? It will appear in your budget again.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Reopen',
+            onPress: async () => {
+              setSaving(true);
+              try {
+                await update(id, { closed: false });
+                await load();
+              } finally {
+                setSaving(false);
+              }
+            },
           },
-        },
-      ],
-    );
-  }
-
-  function handleDelete() {
-    Alert.alert(
-      'Delete Account',
-      'Permanently delete this account and all its transactions?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            setSaving(true);
-            try {
-              await delete_(id);
-              await load();
-              useUndoStore.getState().showUndo('Account deleted');
-              router.dismiss();
-            } finally {
-              setSaving(false);
-            }
-          },
-        },
-      ],
-    );
+        ],
+      );
+    } else {
+      // Close — open the close account modal
+      router.push({ pathname: '/(auth)/account/close', params: { id } });
+    }
   }
 
   return (
@@ -176,24 +155,14 @@ export default function AccountSettingsScreen() {
           style={styles.saveButton}
         />
 
-        {/* Actions */}
-        <Text variant="caption" color={theme.colors.textSecondary} style={styles.actionsLabel}>
-          Actions
-        </Text>
-
         <Button
           title={account.closed ? 'Reopen Account' : 'Close Account'}
           onPress={handleClose}
-          variant="secondary"
+          variant="ghost"
+          icon={account.closed ? 'arrow-undo-outline' : 'trash-outline'}
+          textColor={account.closed ? undefined : theme.colors.negative}
           disabled={saving}
-        />
-
-        <Button
-          title="Delete Account"
-          onPress={handleDelete}
-          variant="danger"
-          disabled={saving}
-          style={styles.deleteButton}
+          style={styles.closeButton}
         />
       </ScrollView>
     </>
@@ -249,13 +218,7 @@ const createStyles = (theme: Theme) => ({
   saveButton: {
     marginTop: theme.spacing.xxl,
   },
-  actionsLabel: {
-    fontWeight: '600' as const,
-    marginTop: theme.spacing.xxl,
-    marginLeft: theme.spacing.xs,
-    marginBottom: theme.spacing.xs,
-  },
-  deleteButton: {
-    marginTop: theme.spacing.xs,
+  closeButton: {
+    marginTop: theme.spacing.sm,
   },
 });

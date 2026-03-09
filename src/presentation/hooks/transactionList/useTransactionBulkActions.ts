@@ -58,9 +58,13 @@ export function useTransactionBulkActions({
 
   const handleBulkDelete = useCallback(() => {
     const count = selectedIdsRef.current.size;
+    const hasReconciled = transactionsRef.current.some(t => selectedIdsRef.current.has(t.id) && t.reconciled);
+    const message = hasReconciled
+      ? `Some of the selected transactions are reconciled. Deleting them may bring your reconciliation out of balance.\n\nDelete ${count} transaction${count === 1 ? '' : 's'}?`
+      : `Delete ${count} transaction${count === 1 ? '' : 's'}?`;
     Alert.alert(
       'Delete Transactions',
-      `Delete ${count} transaction${count === 1 ? '' : 's'}?`,
+      message,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -97,9 +101,13 @@ export function useTransactionBulkActions({
 
   const handleBulkMove = useCallback((targetAccountId: string, targetAccountName?: string) => {
     const count = selectedIdsRef.current.size;
+    const hasReconciled = transactionsRef.current.some(t => selectedIdsRef.current.has(t.id) && t.reconciled);
+    const message = hasReconciled
+      ? `Some of the selected transactions are reconciled. Moving them may bring your reconciliation out of balance.\n\nMove ${count} transaction${count === 1 ? '' : 's'} to ${targetAccountName ?? 'account'}?`
+      : `Move ${count} transaction${count === 1 ? '' : 's'} to ${targetAccountName ?? 'account'}?`;
     Alert.alert(
       'Move Transactions',
-      `Move ${count} transaction${count === 1 ? '' : 's'} to ${targetAccountName ?? 'account'}?`,
+      message,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -151,20 +159,37 @@ export function useTransactionBulkActions({
     const ids = new Set(selectedIdsRef.current);
     if (ids.size === 0) return;
 
-    refreshIdRef.current++;
-    setTransactions(prev => prev.map(t =>
-      ids.has(t.id) ? { ...t, category: categoryId } : t
-    ));
-    resetSelectionRef.current();
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    const hasReconciled = transactionsRef.current.some(t => ids.has(t.id) && t.reconciled);
 
-    await undoable(async () => {
-      await batchMessages(async () => {
-        for (const txnId of ids) {
-          await updateTransaction(txnId, { category: categoryId });
-        }
-      });
-    })();
+    const performChange = async () => {
+      refreshIdRef.current++;
+      setTransactions(prev => prev.map(t =>
+        ids.has(t.id) ? { ...t, category: categoryId } : t
+      ));
+      resetSelectionRef.current();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+      await undoable(async () => {
+        await batchMessages(async () => {
+          for (const txnId of ids) {
+            await updateTransaction(txnId, { category: categoryId });
+          }
+        });
+      })();
+    };
+
+    if (hasReconciled) {
+      Alert.alert(
+        'Change Category',
+        'Some of the selected transactions are reconciled. Editing them may bring your reconciliation out of balance.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Change Anyway', style: 'destructive', onPress: performChange },
+        ],
+      );
+    } else {
+      await performChange();
+    }
   }, [setTransactions, refreshIdRef]);
 
   /** Restore the last bulk-deleted items into the local list optimistically. */

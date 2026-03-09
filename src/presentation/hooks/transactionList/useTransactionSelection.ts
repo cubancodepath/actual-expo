@@ -62,7 +62,7 @@ export function useTransactionSelection({
   }, []);
 
   const handleSelectAll = useCallback(() => {
-    const allIds = transactionsRef.current.filter(t => !t.reconciled).map(t => t.id);
+    const allIds = transactionsRef.current.map(t => t.id);
     setSelectedIds(new Set(allIds));
   }, []);
 

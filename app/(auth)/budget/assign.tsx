@@ -397,6 +397,10 @@ function CategoryAmountRow({
   if (hasGoal) {
     const funded = cat.longGoal ? cat.balance + (value - cat.budgeted) : value;
     progressPct = Math.min(Math.max(funded / cat.goal!, 0), 1);
+  } else if (value > 0) {
+    // No goal: show spending progress vs budgeted amount
+    const spentAbs = Math.abs(cat.spent);
+    progressPct = Math.min(spentAbs / value, 1);
   }
 
   const barColor = isEdited ? colors.primary : colors.textMuted;
@@ -440,17 +444,17 @@ function CategoryAmountRow({
         />
       </View>
 
-      {/* Line 2: Progress bar (only for goal categories) */}
-      {hasGoal && (
-        <View
-          style={{
-            height: 8,
-            borderRadius: 4,
-            backgroundColor: colors.divider,
-            marginTop: 6,
-            overflow: 'hidden',
-          }}
-        >
+      {/* Line 2: Progress bar */}
+      <View
+        style={{
+          height: 8,
+          borderRadius: 4,
+          backgroundColor: colors.divider,
+          marginTop: 6,
+          overflow: 'hidden',
+        }}
+      >
+        {progressPct > 0 && (
           <View
             style={{
               width: `${Math.round(progressPct * 100)}%`,
@@ -459,8 +463,8 @@ function CategoryAmountRow({
               backgroundColor: barColor,
             }}
           />
-        </View>
-      )}
+        )}
+      </View>
 
       {/* Line 3: Goal progress text */}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginTop: 3 }}>

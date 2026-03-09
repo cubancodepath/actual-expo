@@ -134,6 +134,7 @@ export default function AssignBudgetScreen() {
   }
 
   async function handleAutoAssign() {
+    Keyboard.dismiss();
     setSaving(true);
     try {
       // Dry run: compute allocations without writing to DB
@@ -257,22 +258,21 @@ export default function AssignBudgetScreen() {
       >
         <View style={{ flex: 1 }}>
           <Button
-            title="Hold"
+            title="Reserve"
             icon="calendar-outline"
             variant="secondary"
             size="sm"
-            onPress={() => setHoldModalVisible(true)}
+            onPress={() => { Keyboard.dismiss(); setHoldModalVisible(true); }}
             style={{ borderRadius: br.full }}
           />
         </View>
         <View style={{ flex: 1 }}>
           <Button
             title="Auto-assign"
-            icon="sparkles-outline"
-            variant="secondary"
+            icon="sparkles"
+            variant="primary"
             size="sm"
-            loading={saving}
-            onPress={handleAutoAssign}
+            onPress={() => handleAutoAssign()}
             style={{ borderRadius: br.full }}
           />
         </View>
@@ -284,6 +284,7 @@ export default function AssignBudgetScreen() {
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets
         stickySectionHeadersEnabled
+        keyboardDismissMode="on-drag"
         renderSectionHeader={({ section }) => (
           <View
             style={{
@@ -398,7 +399,6 @@ function CategoryAmountRow({
     const funded = cat.longGoal ? cat.balance + (value - cat.budgeted) : value;
     progressPct = Math.min(Math.max(funded / cat.goal!, 0), 1);
   } else if (value > 0) {
-    // No goal: show spending progress vs budgeted amount
     const spentAbs = Math.abs(cat.spent);
     progressPct = Math.min(spentAbs / value, 1);
   }

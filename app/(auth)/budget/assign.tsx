@@ -444,8 +444,8 @@ function CategoryAmountRow({
       {hasGoal && (
         <View
           style={{
-            height: 5,
-            borderRadius: 2.5,
+            height: 8,
+            borderRadius: 4,
             backgroundColor: colors.divider,
             marginTop: 6,
             overflow: 'hidden',
@@ -455,7 +455,7 @@ function CategoryAmountRow({
             style={{
               width: `${Math.round(progressPct * 100)}%`,
               height: '100%',
-              borderRadius: 2.5,
+              borderRadius: 4,
               backgroundColor: barColor,
             }}
           />

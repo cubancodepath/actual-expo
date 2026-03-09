@@ -66,9 +66,9 @@ export function inferGoalFromDef(
         }
         return { goal: Math.round(primary.monthly * 100), longGoal: false };
       }
-      // No monthly + limit = refill (#template up to X) — balance-based
+      // No monthly + limit = refill (#template up to X) — monthly refill
       if (primary.limit) {
-        return { goal: Math.round(primary.limit.amount * 100), longGoal: true };
+        return { goal: Math.round(primary.limit.amount * 100), longGoal: false };
       }
       return null;
 

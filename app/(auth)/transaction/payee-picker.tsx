@@ -43,8 +43,8 @@ export default function PayeePickerScreen() {
     (p) => p.name.toLowerCase() === search.trim().toLowerCase(),
   );
 
-  function select(id: string | null, name: string) {
-    setPayee({ id, name });
+  function select(id: string | null, name: string, transferAcct?: string | null) {
+    setPayee({ id, name, transferAcct });
     router.back();
   }
 
@@ -145,7 +145,7 @@ export default function PayeePickerScreen() {
                       styles.item,
                       pressed && styles.pressed,
                     ]}
-                    onPress={() => select(p.id, p.name)}
+                    onPress={() => select(p.id, p.name, p.transfer_acct)}
                   >
                     <Ionicons
                       name="swap-horizontal"

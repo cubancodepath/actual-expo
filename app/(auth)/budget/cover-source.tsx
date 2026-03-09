@@ -6,6 +6,7 @@ import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
 import { palette } from '../../../src/theme/colors';
 import { useBudgetStore } from '../../../src/stores/budgetStore';
 import { transferMultipleCategories } from '../../../src/budgets';
+import { TO_BUDGET_ID } from './cover-category-picker';
 import { Text } from '../../../src/presentation/components/atoms/Text';
 import { Amount } from '../../../src/presentation/components/atoms/Amount';
 import { Button } from '../../../src/presentation/components/atoms/Button';
@@ -162,12 +163,29 @@ export default function CoverSourceScreen() {
     if (!catId || saving) return;
     setSaving(true);
     try {
-      await transferMultipleCategories(
-        month,
-        catId,
-        sources.filter((s) => s.amount > 0).map((s) => ({ categoryId: s.id, amountCents: s.amount })),
-        'to',
-      );
+      const toBudgetSource = sources.find((s) => s.id === TO_BUDGET_ID && s.amount > 0);
+      const categorySources = sources.filter((s) => s.id !== TO_BUDGET_ID && s.amount > 0);
+
+      // Transfer from "To Budget": increase the target category's budget
+      if (toBudgetSource) {
+        const data = useBudgetStore.getState().data;
+        const targetCat = data?.groups
+          .flatMap((g) => g.categories)
+          .find((c) => c.id === catId);
+        const currentBudgeted = targetCat?.budgeted ?? 0;
+        await useBudgetStore.getState().setAmount(catId, currentBudgeted + toBudgetSource.amount);
+      }
+
+      // Transfer from other categories
+      if (categorySources.length > 0) {
+        await transferMultipleCategories(
+          month,
+          catId,
+          categorySources.map((s) => ({ categoryId: s.id, amountCents: s.amount })),
+          'to',
+        );
+      }
+
       await loadBudget();
       router.dismiss(2);
     } finally {

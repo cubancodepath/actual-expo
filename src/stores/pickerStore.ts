@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-type PayeeSelection = { id: string | null; name: string };
+type PayeeSelection = { id: string | null; name: string; transferAcct?: string | null };
 type CategorySelection = { id: string | null; name: string };
 type AccountSelection = { id: string; name: string };
 

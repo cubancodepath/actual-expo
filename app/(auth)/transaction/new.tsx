@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Keyboard, Pressable, ScrollView, useColorScheme, View } from 'react-native';
+import { Alert, Keyboard, useColorScheme, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import Animated, { useAnimatedScrollHandler, useAnimatedStyle, useSharedValue, interpolate } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAccountsStore } from '../../../src/stores/accountsStore';
 import { useTransactionsStore } from '../../../src/stores/transactionsStore';
 import { useCategoriesStore } from '../../../src/stores/categoriesStore';
@@ -71,6 +73,7 @@ export default function NewTransactionScreen() {
   const [acctName, setAcctName] = useState(accountNameParam ?? initialAccount?.name ?? '');
   const [payeeId, setPayeeId] = useState<string | null>(null);
   const [payeeName, setPayeeName] = useState(payeeNameParam ?? '');
+  const [isTransfer, setIsTransfer] = useState(false);
   const [categoryId, setCategoryId] = useState<string | null>(categoryIdParam ?? null);
   const [categoryName, setCategoryName] = useState(categoryNameParam ?? '');
   const [dateInt, setDateInt] = useState(todayInt());
@@ -81,6 +84,17 @@ export default function NewTransactionScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const currencyInputRef = useRef<CurrencyInputRef>(null);
+  const scrollY = useSharedValue(0);
+
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
+
+  const blurContainerStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(scrollY.value, [0, 50], [0, 1], 'clamp'),
+  }));
 
   // Clear picker on mount, load categories if needed
   useEffect(() => {
@@ -127,6 +141,7 @@ export default function NewTransactionScreen() {
     if (selectedPayee) {
       setPayeeId(selectedPayee.id);
       setPayeeName(selectedPayee.name);
+      setIsTransfer(!!selectedPayee.transferAcct);
     }
   }, [selectedPayee]);
 
@@ -219,7 +234,7 @@ export default function NewTransactionScreen() {
       return;
     }
 
-    if (!categoryId && !isSplit) {
+    if (!categoryId && !isSplit && !isTransfer) {
       Alert.alert(
         'No Category',
         'This transaction has no category. Save anyway?',
@@ -277,13 +292,15 @@ export default function NewTransactionScreen() {
   };
 
   return (
-    <>
+    <View style={{ flex: 1, backgroundColor: colors.pageBackground }}>
       <Stack.Screen options={{ headerShown: false }} />
-      <ScrollView
-        style={{ flex: 1, backgroundColor: colors.pageBackground }}
+      <Animated.ScrollView
+        style={{ flex: 1 }}
         contentContainerStyle={{ paddingBottom: spacing.xxxl }}
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
       >
         {/* ── Colored header ── */}
         <View
@@ -298,18 +315,6 @@ export default function NewTransactionScreen() {
             gap: spacing.md,
           }}
         >
-          {/* Close button — top left */}
-          <View style={{ position: 'absolute', top: 16, left: spacing.md }}>
-            <GlassButton icon="xmark" onPress={() => router.dismiss()} />
-          </View>
-
-          {/* Title — centered */}
-          <View style={{ position: 'absolute', top: 24, left: 0, right: 0, alignItems: 'center', pointerEvents: 'none' }}>
-            <Text variant="body" color={colors.textPrimary} style={{ fontWeight: '600' }}>
-              {isEdit ? 'Edit Transaction' : 'Add Transaction'}
-            </Text>
-          </View>
-
           <View style={{ alignSelf: 'stretch', marginTop: spacing.lg }}>
             <TypeToggle type={type} onChangeType={setType} />
           </View>
@@ -346,10 +351,14 @@ export default function NewTransactionScreen() {
 
             <DetailRow
               icon={isSplit ? 'git-branch-outline' : 'folder-outline'}
-              label={isSplit ? `Split (${splitCategories!.length} categories)` : (categoryId ? categoryName : '')}
-              placeholder="Category"
-              onClear={categoryId && !isSplit ? () => { setCategoryId(null); setCategoryName(''); } : undefined}
+              label={isTransfer ? '' : (isSplit ? `Split (${splitCategories!.length} categories)` : (categoryId ? categoryName : ''))}
+              placeholder={isTransfer ? 'No category needed' : 'Category'}
+              onClear={isEdit && categoryId && !isSplit && !isTransfer ? () => { setCategoryId(null); setCategoryName(''); } : undefined}
               onPress={() => {
+                if (isTransfer) {
+                  Alert.alert('Transfer', 'Transfers between accounts don\u2019t need a category.');
+                  return;
+                }
                 if (isSplit) {
                   router.push({
                     pathname: './split',
@@ -444,7 +453,39 @@ export default function NewTransactionScreen() {
             />
           )}
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
+
+      {/* ── Fixed top gradient: fades from header color to transparent ── */}
+      <Animated.View
+        style={[
+          {
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 10,
+          },
+          blurContainerStyle,
+        ]}
+        pointerEvents="none"
+      >
+        <LinearGradient
+          colors={[colors.pageBackground + '80', colors.pageBackground + '33', 'transparent']}
+          style={{ height: 80 }}
+        />
+      </Animated.View>
+
+      {/* Close button — always visible, fixed at top of modal */}
+      <View style={{ position: 'absolute', top: 12, left: spacing.md, zIndex: 11 }}>
+        <GlassButton icon="xmark" onPress={() => router.dismiss()} />
+      </View>
+
+      {/* Title — always visible, vertically centered with close button */}
+      <View style={{ position: 'absolute', top: 12, left: 0, right: 0, height: 48, justifyContent: 'center', alignItems: 'center', zIndex: 11, pointerEvents: 'none' }}>
+        <Text variant="body" color={colors.textPrimary} style={{ fontWeight: '600' }}>
+          {isEdit ? 'Edit Transaction' : 'Add Transaction'}
+        </Text>
+      </View>
 
       <KeyboardToolbar>
         <CalculatorToolbar
@@ -460,6 +501,6 @@ export default function NewTransactionScreen() {
           onPress={() => Keyboard.dismiss()}
         />
       </KeyboardToolbar>
-    </>
+    </View>
   );
 }

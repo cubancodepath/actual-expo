@@ -9,7 +9,8 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { Stack, useFocusEffect, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { usePayeesStore } from '../../src/stores/payeesStore';
 import { useUndoStore } from '../../src/stores/undoStore';
 import { runQuery, run } from '../../src/db';
@@ -217,8 +218,19 @@ export default function PayeesScreen() {
 
   const mergeCandidates = payees.filter(p => p.id !== pendingDelete?.id);
 
+  const router = useRouter();
+
   return (
     <View style={styles.container}>
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <Pressable onPress={() => router.back()} hitSlop={8}>
+              <Ionicons name="close" size={22} color="#999" />
+            </Pressable>
+          ),
+        }}
+      />
       <MergePicker
         visible={pendingDelete !== null}
         deletingName={pendingDelete?.name ?? ''}

@@ -463,7 +463,7 @@ export default function GoalEditorScreen() {
     >
       <Stack.Screen
         options={{
-          headerLeft: () => (
+          headerRight: () => (
             <IconButton icon="close" size={22} color={colors.headerText} onPress={() => router.back()} />
           ),
         }}

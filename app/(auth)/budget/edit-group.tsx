@@ -67,7 +67,7 @@ export default function EditGroupScreen() {
     <View style={{ backgroundColor: colors.pageBackground, padding: spacing.lg, paddingTop: 72 }}>
       <Stack.Screen
         options={{
-          headerLeft: () => (
+          headerRight: () => (
             <IconButton
               icon="close"
               size={22}
@@ -75,7 +75,6 @@ export default function EditGroupScreen() {
               onPress={() => router.back()}
             />
           ),
-          headerRight: () => null,
         }}
       />
 

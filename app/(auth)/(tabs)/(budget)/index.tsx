@@ -4,7 +4,6 @@ import {
   ActivityIndicator,
   Alert,
   Keyboard,
-  Pressable,
   RefreshControl,
   SectionList,
   View,
@@ -31,8 +30,6 @@ import { OverspentPill } from '../../../../src/presentation/components/budget/Ov
 import { UnclearedPill } from '../../../../src/presentation/components/transaction/UnclearedPill';
 import { getUncategorizedStats } from '../../../../src/transactions';
 import { Text } from '../../../../src/presentation/components/atoms/Text';
-import { Amount } from '../../../../src/presentation/components/atoms/Amount';
-import { formatPrivacyAware } from '../../../../src/lib/format';
 import { usePrefsStore } from '../../../../src/stores/prefsStore';
 
 // ---------------------------------------------------------------------------
@@ -244,42 +241,25 @@ export default function BudgetScreen() {
       {/* Sticky status area — stays fixed above the list */}
       {data && (toBudget !== 0 || data.buffered > 0) && (
         <View style={{ paddingTop: spacing.sm, paddingBottom: spacing.xs }}>
-          {toBudget !== 0 && (
-            <ReadyToAssignPill
-              amount={toBudget}
-              onPress={() => router.push('/(auth)/budget/assign')}
-            />
-          )}
-          {data.buffered > 0 && (
-            <Pressable
-              onPress={() =>
-                Alert.alert(
-                  'Reset Hold',
-                  'Release held funds back to "Ready to Assign"?',
-                  [
-                    { text: 'Cancel', style: 'cancel' },
-                    { text: 'Reset', style: 'destructive', onPress: () => resetHold() },
-                  ],
-                )
-              }
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginTop: spacing.xs,
-                gap: spacing.xxs,
-              }}
-            >
-              <Ionicons name="arrow-forward" size={11} color={colors.textMuted} />
-              <Text variant="captionSm" color={colors.textMuted}>
-                Holding{' '}
-              </Text>
-              <Amount value={data.buffered} variant="captionSm" color={colors.textMuted} weight="600" />
-              <Text variant="captionSm" color={colors.textMuted}>
-                {' '}for next month
-              </Text>
-            </Pressable>
-          )}
+          <ReadyToAssignPill
+            amount={toBudget}
+            onPress={() => router.push('/(auth)/budget/assign')}
+            holdAmount={data.buffered}
+            onEditHold={() => router.push({
+              pathname: '/(auth)/budget/hold',
+              params: { current: String(data.buffered), maxAmount: String((data.toBudget ?? 0) + (data.buffered ?? 0)) },
+            })}
+            onClearHold={() =>
+              Alert.alert(
+                'Release Hold',
+                `Release held funds back to "Ready to Assign"?`,
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Release', style: 'destructive', onPress: () => resetHold() },
+                ],
+              )
+            }
+          />
         </View>
       )}
 

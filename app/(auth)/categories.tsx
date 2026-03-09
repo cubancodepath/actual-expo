@@ -10,7 +10,8 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useCategoriesStore } from '../../src/stores/categoriesStore';
 import { useUndoStore } from '../../src/stores/undoStore';
 import type { Category, CategoryGroup } from '../../src/categories/types';
@@ -389,6 +390,15 @@ export default function CategoriesScreen() {
 
   return (
     <View style={styles.container}>
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <Pressable onPress={() => router.back()} hitSlop={8}>
+              <Ionicons name="close" size={22} color="#999" />
+            </Pressable>
+          ),
+        }}
+      />
       <TransferPicker
         visible={pendingDelete !== null}
         kind={pendingDelete?.kind ?? 'category'}

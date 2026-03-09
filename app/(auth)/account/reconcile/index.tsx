@@ -1,0 +1,86 @@
+import { useState } from 'react';
+import { View } from 'react-native';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useTheme } from '../../../../src/presentation/providers/ThemeProvider';
+import { useAccountsStore } from '../../../../src/stores/accountsStore';
+import { lockTransactions, getClearedBalance } from '../../../../src/transactions';
+import { Text } from '../../../../src/presentation/components/atoms/Text';
+import { Button } from '../../../../src/presentation/components/atoms/Button';
+import { Amount } from '../../../../src/presentation/components/atoms/Amount';
+import { IconButton } from '../../../../src/presentation/components/atoms/IconButton';
+
+export default function ReconcileConfirmScreen() {
+  const { colors, spacing, borderRadius: br } = useTheme();
+  const router = useRouter();
+  const { accountId, clearedBalance } = useLocalSearchParams<{
+    accountId: string;
+    clearedBalance: string;
+  }>();
+
+  const clearedCents = Number(clearedBalance) || 0;
+  const [loading, setLoading] = useState(false);
+
+  async function handleMatch() {
+    if (loading) return;
+    setLoading(true);
+    try {
+      await lockTransactions(accountId);
+      await useAccountsStore.getState().load();
+      router.dismiss();
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleEnterBalance() {
+    router.push({
+      pathname: '/(auth)/account/reconcile/amount',
+      params: { accountId, clearedBalance },
+    });
+  }
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.pageBackground, padding: spacing.lg }}>
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <IconButton
+              icon="close"
+              size={22}
+              color={colors.headerText}
+              onPress={() => router.dismiss()}
+            />
+          ),
+        }}
+      />
+
+      <Text
+        variant="body"
+        color={colors.textSecondary}
+        style={{ textAlign: 'center', marginBottom: spacing.xl }}
+      >
+        Does your cleared balance match your bank statement?
+      </Text>
+
+      <View style={{ alignItems: 'center', marginBottom: spacing.xl, paddingVertical: spacing.md }}>
+        <Amount value={clearedCents} variant="displayLg" colored />
+      </View>
+
+      <View style={{ gap: spacing.sm }}>
+        <Button
+          title="Yes, it matches"
+          variant="primary"
+          onPress={handleMatch}
+          loading={loading}
+          style={{ borderRadius: br.full }}
+        />
+        <Button
+          title="No, enter balance"
+          variant="secondary"
+          onPress={handleEnterBalance}
+          style={{ borderRadius: br.full }}
+        />
+      </View>
+    </View>
+  );
+}

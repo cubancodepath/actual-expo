@@ -49,7 +49,7 @@ export default function CoverOverspentScreen() {
     >
       <Stack.Screen
         options={{
-          headerLeft: () => (
+          headerRight: () => (
             <IconButton
               icon="close"
               size={22}
@@ -57,7 +57,6 @@ export default function CoverOverspentScreen() {
               onPress={() => router.back()}
             />
           ),
-          headerRight: () => null,
         }}
       />
 

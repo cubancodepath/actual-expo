@@ -33,7 +33,7 @@ export default function NewCategoryScreen() {
     <View style={{ backgroundColor: colors.pageBackground, padding: spacing.lg, paddingTop: 72 }}>
       <Stack.Screen
         options={{
-          headerLeft: () => (
+          headerRight: () => (
             <IconButton
               icon="close"
               size={22}
@@ -41,7 +41,6 @@ export default function NewCategoryScreen() {
               onPress={() => router.back()}
             />
           ),
-          headerRight: () => null,
         }}
       />
 

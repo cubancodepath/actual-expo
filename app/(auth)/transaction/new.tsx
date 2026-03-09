@@ -475,8 +475,8 @@ export default function NewTransactionScreen() {
         />
       </Animated.View>
 
-      {/* Close button — always visible, fixed at top of modal */}
-      <View style={{ position: 'absolute', top: 12, left: spacing.md, zIndex: 11 }}>
+      {/* Close button — always visible, fixed at top-right of modal */}
+      <View style={{ position: 'absolute', top: 12, right: spacing.md, zIndex: 11 }}>
         <GlassButton icon="xmark" onPress={() => router.dismiss()} />
       </View>
 

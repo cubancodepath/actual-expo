@@ -34,6 +34,10 @@ export default function AuthLayout() {
         }}
       />
       <Stack.Screen
+        name="account/reconcile"
+        options={{ headerShown: false, ...modal }}
+      />
+      <Stack.Screen
         name="account/settings"
         options={{ title: "Account Settings", ...modal }}
       />
@@ -134,6 +138,16 @@ export default function AuthLayout() {
           headerShown: false,
           presentation: "formSheet",
           sheetAllowedDetents: [0.5, 1.0],
+          contentStyle: { backgroundColor: theme.colors.pageBackground },
+        }}
+      />
+      <Stack.Screen
+        name="budget/hold"
+        options={{
+          ...screen,
+          title: "Hold for Next Month",
+          presentation: "formSheet",
+          sheetAllowedDetents: [0.45],
           contentStyle: { backgroundColor: theme.colors.pageBackground },
         }}
       />

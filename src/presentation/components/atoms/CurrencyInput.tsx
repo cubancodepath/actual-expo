@@ -67,6 +67,15 @@ export const CurrencyInput = forwardRef<CurrencyInputRef, CurrencyInputProps>(
     const inputRef = useRef<TextInput>(null);
     const [buffer, setBuffer] = useState(() => String(value));
     const [focused, setFocused] = useState(autoFocus);
+    const lastExternalValue = useRef(value);
+
+    // Sync buffer when value changes externally (e.g. parent setState in useEffect)
+    useEffect(() => {
+      if (value !== lastExternalValue.current) {
+        lastExternalValue.current = value;
+        setBuffer(String(value));
+      }
+    }, [value]);
 
     const expr = useExpressionMode({ value, onChangeValue });
 
@@ -111,6 +120,7 @@ export const CurrencyInput = forwardRef<CurrencyInputRef, CurrencyInputProps>(
       }
 
       setBuffer(digits);
+      lastExternalValue.current = newCents;
       onChangeValue(newCents);
     }
 

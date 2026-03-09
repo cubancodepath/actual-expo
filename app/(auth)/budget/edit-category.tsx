@@ -84,7 +84,7 @@ export default function EditCategoryScreen() {
     <View style={{ backgroundColor: colors.pageBackground, padding: spacing.lg, paddingTop: 72 }}>
       <Stack.Screen
         options={{
-          headerLeft: () => (
+          headerRight: () => (
             <IconButton
               icon="close"
               size={22}
@@ -92,7 +92,6 @@ export default function EditCategoryScreen() {
               onPress={() => router.back()}
             />
           ),
-          headerRight: () => null,
         }}
       />
 

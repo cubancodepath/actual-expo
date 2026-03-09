@@ -12,7 +12,6 @@ import { CompactCurrencyInput, type CompactCurrencyInputRef } from '../../../src
 import { CalculatorToolbar } from '../../../src/presentation/components/atoms/CalculatorToolbar';
 import { KeyboardToolbar } from '../../../src/presentation/components/molecules/KeyboardToolbar';
 import { GlassButton } from '../../../src/presentation/components/atoms/GlassButton';
-import { HoldModal } from '../../../src/presentation/components/budget/HoldModal';
 import { Amount } from '../../../src/presentation/components/atoms/Amount';
 
 import { getGoalProgress } from '../../../src/goals/progress';
@@ -28,7 +27,7 @@ export default function AssignBudgetScreen() {
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { data, setAmount, hold, resetHold } = useBudgetStore();
+  const { data, setAmount } = useBudgetStore();
 
   const toBudget = data?.toBudget ?? 0;
   const buffered = data?.buffered ?? 0;
@@ -37,7 +36,6 @@ export default function AssignBudgetScreen() {
   // Local edits: categoryId → cents
   const [edits, setEdits] = useState<Record<string, number>>({});
   const [saving, setSaving] = useState(false);
-  const [holdModalVisible, setHoldModalVisible] = useState(false);
   const hapticFiredRef = useRef(false);
   const focusedInputRef = useRef<CompactCurrencyInputRef | null>(null);
 
@@ -204,7 +202,7 @@ export default function AssignBudgetScreen() {
     <View style={{ flex: 1, backgroundColor: colors.pageBackground }}>
       <Stack.Screen
         options={{
-          headerLeft: () => (
+          headerRight: () => (
             <IconButton
               icon="close"
               size={22}
@@ -212,7 +210,6 @@ export default function AssignBudgetScreen() {
               onPress={() => router.back()}
             />
           ),
-          headerRight: () => null,
         }}
       />
 
@@ -262,7 +259,13 @@ export default function AssignBudgetScreen() {
             icon="calendar-outline"
             variant="secondary"
             size="sm"
-            onPress={() => { Keyboard.dismiss(); setHoldModalVisible(true); }}
+            onPress={() => {
+              Keyboard.dismiss();
+              router.push({
+                pathname: '/(auth)/budget/hold',
+                params: { current: String(buffered), maxAmount: String(remaining + buffered) },
+              });
+            }}
             style={{ borderRadius: br.full }}
           />
         </View>
@@ -357,14 +360,6 @@ export default function AssignBudgetScreen() {
         </View>
       )}
 
-      {/* Hold Modal */}
-      <HoldModal
-        visible={holdModalVisible}
-        current={buffered}
-        maxAmount={remaining + buffered}
-        onSave={(cents) => hold(cents)}
-        onClose={() => setHoldModalVisible(false)}
-      />
     </View>
   );
 }

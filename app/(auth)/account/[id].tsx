@@ -12,10 +12,7 @@ import {
   getClearedBalance,
   getTransactionsForAccount,
   getUnclearedCount,
-  lockTransactions,
-  reconcileAccount,
 } from '../../../src/transactions';
-import { ReconcileOverlay } from '../../../src/presentation/components/account/ReconcileOverlay';
 import { useTheme, useThemedStyles } from '../../../src/presentation/providers/ThemeProvider';
 import { EmptyState } from '../../../src/presentation/components';
 import type { Theme } from '../../../src/theme';
@@ -53,7 +50,6 @@ export default function AccountTransactionsScreen() {
   const canUndo = useUndoStore((s) => s.canUndo);
   const undoVersion = useUndoStore((s) => s.undoVersion);
   const tags = useTagsStore((s) => s.tags);
-  const [showReconcile, setShowReconcile] = useState(false);
 
   // ---- Consolidated transaction list ----
   const fetchTransactions = useCallback(
@@ -145,18 +141,6 @@ export default function AccountTransactionsScreen() {
 
   // ---- Account-specific handlers ----
 
-  async function handleConfirmMatch() {
-    await lockTransactions(id);
-    await Promise.all([loadAccounts(), txnList.loadAll()]);
-    setClearedBalance(await getClearedBalance(id));
-  }
-
-  async function handleReconcile(bankBalance: number) {
-    await reconcileAccount(id, bankBalance);
-    await Promise.all([loadAccounts(), txnList.loadAll()]);
-    setClearedBalance(await getClearedBalance(id));
-  }
-
   function handleToggleHideReconciled() {
     toggleHideReconciled();
     loadWithClearedBalance();
@@ -193,7 +177,10 @@ export default function AccountTransactionsScreen() {
                 type: 'action' as const,
                 label: 'Reconcile',
                 icon: { type: 'sfSymbol' as const, name: 'lock' },
-                onPress: () => setShowReconcile(true),
+                onPress: () => router.push({
+                  pathname: '/(auth)/account/reconcile',
+                  params: { accountId: id, clearedBalance: String(clearedBalance) },
+                }),
               },
               {
                 type: 'action' as const,
@@ -213,7 +200,7 @@ export default function AccountTransactionsScreen() {
         },
       ],
     });
-  }, [account?.name, id, txnList.isSelectMode, hideReconciled, privacyMode, canUndo]);
+  }, [account?.name, id, txnList.isSelectMode, hideReconciled, privacyMode, canUndo, clearedBalance]);
 
   // ---- Render ----
 
@@ -295,14 +282,6 @@ export default function AccountTransactionsScreen() {
           }
         />
       )}
-
-      <ReconcileOverlay
-        visible={showReconcile}
-        clearedBalance={clearedBalance}
-        onConfirmMatch={handleConfirmMatch}
-        onReconcile={handleReconcile}
-        onClose={() => setShowReconcile(false)}
-      />
 
       {!txnList.isSelectMode && (
         <AddTransactionButton accountId={id as string} bottom={28} collapsed={fabCollapsed} />

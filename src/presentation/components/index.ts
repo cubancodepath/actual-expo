@@ -36,7 +36,5 @@ export { OverspentPill } from "./budget/OverspentPill";
 // export { BudgetSummaryBar } from "./budget/BudgetSummaryBar";
 export { BudgetGroupHeader } from "./budget/BudgetGroupHeader";
 export { BudgetCategoryRow } from "./budget/BudgetCategoryRow";
-export { HoldBar } from "./budget/HoldBar";
-export { HoldModal } from "./budget/HoldModal";
 export { OverspendingBanner } from "./budget/OverspendingBanner";
 export { UncategorizedBanner } from "./budget/UncategorizedBanner";

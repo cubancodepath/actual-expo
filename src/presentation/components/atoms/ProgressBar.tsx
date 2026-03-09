@@ -6,6 +6,7 @@ import Animated, {
   withTiming,
   Easing,
 } from 'react-native-reanimated';
+import Svg, { Defs, Pattern, Line, Rect } from 'react-native-svg';
 import { useTheme } from '../../providers/ThemeProvider';
 
 // ---------------------------------------------------------------------------
@@ -13,17 +14,45 @@ import { useTheme } from '../../providers/ThemeProvider';
 // ---------------------------------------------------------------------------
 
 interface ProgressBarProps {
-  /** Spent portion 0–1 of budget/goal already consumed (darker shade). */
+  /** Spent portion 0–1 of budget/goal already consumed (shown as diagonal stripes). */
   spent: number;
-  /** Total funded portion 0–1 (spent + available). The lighter area extends from spent to this value. */
+  /** Total funded portion 0–1 (spent + available). Solid color behind spent stripes. */
   available: number;
-  /** Status color (green/yellow/red). Spent uses this darkened, available uses it at 50% opacity. */
+  /** Status color (green/yellow/red). Available uses this solid, spent uses striped overlay. */
   color: string;
-  /** Category is overspent — fills entire bar with the color (no animation). */
+  /** Category is overspent — fills entire bar with the color (no stripes). */
   overspent?: boolean;
+  /** Show diagonal stripes on spent layer. Set false for savings goals (solid bar). */
+  striped?: boolean;
   /** Height in px. */
   height?: number;
   style?: ViewStyle;
+}
+
+// ---------------------------------------------------------------------------
+// Stripe pattern
+// ---------------------------------------------------------------------------
+
+/** Diagonal stripe pattern using SVG — renders white semi-transparent lines over the base color. */
+function StripedFill({ color, height }: { color: string; height: number }) {
+  return (
+    <Svg width="100%" height={height}>
+      <Defs>
+        <Pattern
+          id="stripes"
+          x="0"
+          y="0"
+          width="6"
+          height="6"
+          patternUnits="userSpaceOnUse"
+          patternTransform="rotate(-45)"
+        >
+          <Line x1="0" y1="0" x2="0" y2="6" stroke={color} strokeWidth="3" />
+        </Pattern>
+      </Defs>
+      <Rect width="100%" height={height} fill="url(#stripes)" />
+    </Svg>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -56,6 +85,7 @@ export function ProgressBar({
   available,
   color,
   overspent = false,
+  striped = true,
   height = 8,
   style,
 }: ProgressBarProps) {
@@ -81,8 +111,7 @@ export function ProgressBar({
   }));
 
   const borderRadius = height / 2;
-  const spentColor = adjustBrightness(color, -0.15);
-  const availableColor = color + '50';
+  const spentBgColor = adjustBrightness(color, -0.25);
 
   return (
     <View
@@ -103,7 +132,7 @@ export function ProgressBar({
       ]}
     >
       {overspent ? (
-        /* Overspent: full bar in status color (static) */
+        /* Overspent: full bar in status color (static, no stripes) */
         <View
           style={{
             position: 'absolute',
@@ -117,7 +146,7 @@ export function ProgressBar({
         />
       ) : (
         <>
-          {/* Available layer (lighter, behind spent) — total funded width */}
+          {/* Available layer (solid color — total budgeted width) */}
           {available > 0 && (
             <Animated.View
               style={[
@@ -127,15 +156,15 @@ export function ProgressBar({
                   top: 0,
                   bottom: 0,
                   borderRadius,
-                  backgroundColor: availableColor,
+                  backgroundColor: color,
                 },
                 availableStyle,
               ]}
             />
           )}
 
-          {/* Spent layer (darker, on top from left) */}
-          {spent > 0 && (
+          {/* Spent layer (darker bg + striped overlay — consumed portion) */}
+          {spent > 0 && striped && (
             <Animated.View
               style={[
                 {
@@ -144,11 +173,14 @@ export function ProgressBar({
                   top: 0,
                   bottom: 0,
                   borderRadius,
-                  backgroundColor: spentColor,
+                  overflow: 'hidden',
+                  backgroundColor: spentBgColor,
                 },
                 spentStyle,
               ]}
-            />
+            >
+              <StripedFill color="rgba(0,0,0,0.25)" height={height} />
+            </Animated.View>
           )}
         </>
       )}

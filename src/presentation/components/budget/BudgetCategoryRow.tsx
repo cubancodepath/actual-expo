@@ -318,6 +318,7 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
           available={barAvailable}
           color={barColor}
           overspent={barOverspent}
+          striped={!(cat.longGoal || sinkingFundTotal > 0)}
           style={{ marginTop: 6 }}
         />
       )}

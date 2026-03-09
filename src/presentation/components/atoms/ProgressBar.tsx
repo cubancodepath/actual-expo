@@ -4,8 +4,6 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  withRepeat,
-  withSequence,
   Easing,
 } from 'react-native-reanimated';
 import { useTheme } from '../../providers/ThemeProvider';
@@ -21,7 +19,7 @@ interface ProgressBarProps {
   available: number;
   /** Status color (green/yellow/red). Spent uses this darkened, available uses it at 50% opacity. */
   color: string;
-  /** Category is overspent — fills entire bar red with pulsing animation. */
+  /** Category is overspent — fills entire bar with the color (no animation). */
   overspent?: boolean;
   /** Height in px. */
   height?: number;
@@ -58,14 +56,13 @@ export function ProgressBar({
   available,
   color,
   overspent = false,
-  height = 6,
+  height = 8,
   style,
 }: ProgressBarProps) {
   const { colors } = useTheme();
 
   const spentWidth = useSharedValue(spent);
   const availableWidth = useSharedValue(available);
-  const pulseOpacity = useSharedValue(1);
 
   useEffect(() => {
     spentWidth.value = withTiming(spent, TIMING_CONFIG);
@@ -75,22 +72,6 @@ export function ProgressBar({
     availableWidth.value = withTiming(available, TIMING_CONFIG);
   }, [available]);
 
-  // Pulse animation for overspent state
-  useEffect(() => {
-    if (overspent) {
-      pulseOpacity.value = withRepeat(
-        withSequence(
-          withTiming(0.55, { duration: 800, easing: Easing.inOut(Easing.ease) }),
-          withTiming(1, { duration: 800, easing: Easing.inOut(Easing.ease) }),
-        ),
-        -1,
-        false,
-      );
-    } else {
-      pulseOpacity.value = withTiming(1, { duration: 200 });
-    }
-  }, [overspent]);
-
   const spentStyle = useAnimatedStyle(() => ({
     width: `${Math.round(spentWidth.value * 100)}%` as unknown as number,
   }));
@@ -99,16 +80,18 @@ export function ProgressBar({
     width: `${Math.round(availableWidth.value * 100)}%` as unknown as number,
   }));
 
-  const overspentStyle = useAnimatedStyle(() => ({
-    opacity: pulseOpacity.value,
-  }));
-
   const borderRadius = height / 2;
   const spentColor = adjustBrightness(color, -0.15);
   const availableColor = color + '50';
 
   return (
     <View
+      accessibilityRole="progressbar"
+      accessibilityValue={{
+        min: 0,
+        max: 100,
+        now: Math.round((overspent ? 1 : spent) * 100),
+      }}
       style={[
         {
           height,
@@ -120,20 +103,17 @@ export function ProgressBar({
       ]}
     >
       {overspent ? (
-        /* Overspent: full red bar with pulse */
-        <Animated.View
-          style={[
-            {
-              position: 'absolute',
-              left: 0,
-              top: 0,
-              bottom: 0,
-              right: 0,
-              borderRadius,
-              backgroundColor: color,
-            },
-            overspentStyle,
-          ]}
+        /* Overspent: full bar in status color (static) */
+        <View
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            bottom: 0,
+            right: 0,
+            borderRadius,
+            backgroundColor: color,
+          }}
         />
       ) : (
         <>

@@ -1,4 +1,4 @@
-import { parseGoalDef } from './index';
+import { parseGoalDef } from './parse';
 import type { BudgetCategory } from '../budgets/types';
 
 // ---------------------------------------------------------------------------
@@ -107,7 +107,7 @@ export function getGoalProgress(cat: BudgetCategory): ProgressSegment[] {
     // #goal — balance target (savings goal, no date)
     case 'goal':
       if (funded) {
-        return [{ text: 'Fully funded' }];
+        return [{ text: 'Funded' }];
       }
       return [
         { amount: Math.max(cat.balance, 0) },
@@ -120,13 +120,17 @@ export function getGoalProgress(cat: BudgetCategory): ProgressSegment[] {
     case 'simple': {
       // Pure spending cap: monthly: 0 + limit → show limit-style text
       if (primary.monthly === 0 && primary.limit) {
-        if (absSpent === 0) return [{ text: 'Nothing spent of ' }, { amount: cat.goal! }, { text: ' limit' }];
-        if (absSpent >= cat.goal!) return [{ text: 'Limit reached. Spent ' }, { amount: absSpent }];
-        return [{ text: 'Spent ' }, { amount: absSpent }, { text: ' of ' }, { amount: cat.goal! }, { text: ' limit' }];
+        if (absSpent === 0) return [{ text: 'Funded' }];
+        if (absSpent === cat.goal!) return [{ text: 'Fully Spent' }];
+        if (absSpent > cat.goal!) return [{ text: 'Overspent. Spent ' }, { amount: absSpent }, { text: ' of ' }, { amount: cat.goal! }];
+        return [{ text: 'Funded. Spent ' }, { amount: absSpent }, { text: ' of ' }, { amount: cat.goal! }];
       }
       // Refill or fixed monthly: funded/needed
       if (funded) {
-        return fundedSegments(cat);
+        if (absSpent === 0) return [{ text: 'Funded' }];
+        if (absSpent === cat.budgeted) return [{ text: 'Fully Spent' }];
+        if (absSpent > cat.budgeted) return [{ text: 'Overspent. Spent ' }, { amount: absSpent }, { text: ' of ' }, { amount: cat.budgeted }];
+        return [{ text: 'Funded. Spent ' }, { amount: absSpent }, { text: ' of ' }, { amount: cat.budgeted }];
       }
       return [
         { amount: remaining },
@@ -157,9 +161,10 @@ export function getGoalProgress(cat: BudgetCategory): ProgressSegment[] {
     // Spending limit types
     case 'limit':
     case 'refill': {
-      if (absSpent === 0) return [{ text: 'Nothing spent of ' }, { amount: cat.goal! }, { text: ' limit' }];
-      if (absSpent >= cat.goal!) return [{ text: 'Limit reached. Spent ' }, { amount: absSpent }];
-      return [{ text: 'Spent ' }, { amount: absSpent }, { text: ' of ' }, { amount: cat.goal! }, { text: ' limit' }];
+      if (absSpent === 0) return [{ text: 'Funded' }];
+      if (absSpent === cat.goal!) return [{ text: 'Fully Spent' }];
+      if (absSpent > cat.goal!) return [{ text: 'Overspent. Spent ' }, { amount: absSpent }, { text: ' of ' }, { amount: cat.goal! }];
+      return [{ text: 'Funded. Spent ' }, { amount: absSpent }, { text: ' of ' }, { amount: cat.goal! }];
     }
 
     // average, copy, periodic, percentage, remainder
@@ -172,4 +177,16 @@ export function getGoalProgress(cat: BudgetCategory): ProgressSegment[] {
         { text: ' more needed this month' },
       ];
   }
+}
+
+/**
+ * Plain-text version of goal progress for accessibility labels.
+ * Formats amounts as dollar values (e.g. "$50.00").
+ */
+export function getGoalProgressLabel(cat: BudgetCategory): string {
+  return getGoalProgress(cat)
+    .map(seg =>
+      'text' in seg ? seg.text : `$${(Math.abs(seg.amount) / 100).toFixed(2)}`,
+    )
+    .join('');
 }

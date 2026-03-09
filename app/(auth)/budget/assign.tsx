@@ -97,6 +97,7 @@ export default function AssignBudgetScreen() {
       if (g.is_income) continue;
       for (const cat of g.categories) {
         if (cat.goal == null || cat.goal <= 0) continue;
+        if (cat.longGoal) continue;
         const editedBudgeted = edits[cat.id] ?? cat.budgeted;
         const funded = cat.longGoal ? cat.balance + (editedBudgeted - cat.budgeted) : editedBudgeted;
         const needed = cat.goal - funded;

@@ -6,7 +6,7 @@ import { Text } from '../atoms/Text';
 import { Amount } from '../atoms/Amount';
 import { CompactCurrencyInput, type CompactCurrencyInputRef } from '../atoms/CompactCurrencyInput';
 import { formatPrivacyAware } from '../../../lib/format';
-import { getGoalProgress } from '../../../goals/progress';
+import { getGoalProgress, getGoalProgressLabel } from '../../../goals/progress';
 import { parseGoalDef } from '../../../goals';
 import { ProgressBar } from '../atoms/ProgressBar';
 import type { BudgetCategory } from '../../../budgets/types';
@@ -324,7 +324,11 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
 
       {/* Line 3: Progress text (informational) */}
       {showProgressBar && (
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginTop: 3 }}>
+        <View
+          accessible
+          accessibilityLabel={getGoalProgressLabel(cat)}
+          style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginTop: 3 }}
+        >
           {getGoalProgress(cat).map((seg, i) =>
             'text' in seg
               ? <Text key={i} variant="captionSm" color={colors.textMuted}>{seg.text}</Text>

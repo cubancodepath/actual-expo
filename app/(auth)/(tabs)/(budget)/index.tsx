@@ -57,7 +57,7 @@ function matchesFilter(cat: BudgetCategory, filter: BudgetFilter): boolean {
     case 'all':
       return true;
     case 'underfunded':
-      return cat.goal !== null && cat.balance < cat.goal;
+      return cat.goal !== null && !cat.longGoal && cat.budgeted < cat.goal;
     case 'overfunded':
       if (cat.goal !== null) return cat.balance > cat.goal;
       return cat.balance > 0 && cat.budgeted > 0;

@@ -6,7 +6,9 @@
     "start": "expo start",
     "ios": "expo run:ios",
     "ios:dev": "APP_VARIANT=development expo run:ios",
-    "prebuild:dev": "APP_VARIANT=development npx expo prebuild --clean"
+    "prebuild:dev": "APP_VARIANT=development npx expo prebuild --clean",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@bacons/apple-targets": "^4.0.6",
@@ -57,7 +59,8 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
-    "typescript": "~5.9.2"
+    "typescript": "~5.9.2",
+    "vitest": "^4.0.18"
   },
   "private": true
 }

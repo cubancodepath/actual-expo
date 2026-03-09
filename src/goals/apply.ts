@@ -14,8 +14,8 @@ import { monthToInt } from '../lib/date';
 import { setBudgetAmount, computeToBudget, computeCarryoverChain } from '../budgets';
 import type { CategoryRow, ZeroBudgetRow } from '../db/types';
 import { calculateGoal, type GoalContext } from './engine';
-import { parseGoalDef } from './index';
-import { setGoalResult } from './index';
+import { parseGoalDef } from './parse';
+import { setGoalResult } from './persist';
 
 // ---------------------------------------------------------------------------
 // Result types

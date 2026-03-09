@@ -289,7 +289,7 @@ export async function getBudgetMonth(month: string): Promise<BudgetMonth> {
       // (average, copy, percentage, spend — these need DB queries).
       let goal: number | null = null;
       let longGoal = false;
-      const inferred = goalDef ? inferGoalFromDef(goalDef, month) : null;
+      const inferred = goalDef ? inferGoalFromDef(goalDef, month, carryIn) : null;
       if (inferred) {
         goal = inferred.goal;
         longGoal = inferred.longGoal;

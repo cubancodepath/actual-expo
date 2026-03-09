@@ -7,8 +7,11 @@ import { useAccountsStore } from '../../../src/stores/accountsStore';
 import { useTransactionsStore } from '../../../src/stores/transactionsStore';
 import { useCategoriesStore } from '../../../src/stores/categoriesStore';
 import { usePickerStore } from '../../../src/stores/pickerStore';
+import { useSchedulesStore } from '../../../src/stores/schedulesStore';
 import { getTransactionById, getChildTransactions } from '../../../src/transactions';
 import { saveTransaction } from '../../../src/transactions/save';
+import { getRecurringDescription } from '../../../src/schedules';
+import type { RecurConfig } from '../../../src/schedules/types';
 import { extractTagsFromNotes } from '../../../src/tags';
 import { todayStr, todayInt, strToInt, intToStr } from '../../../src/lib/date';
 import { withOpacity } from '../../../src/lib/colors';
@@ -58,6 +61,7 @@ export default function NewTransactionScreen() {
   const selectedCategory = usePickerStore((s) => s.selectedCategory);
   const selectedAccount = usePickerStore((s) => s.selectedAccount);
   const selectedTags = usePickerStore((s) => s.selectedTags);
+  const selectedRecurConfig = usePickerStore((s) => s.selectedRecurConfig);
   const splitCategories = usePickerStore((s) => s.splitCategories);
   const setSplitCategories = usePickerStore((s) => s.setSplitCategories);
   const clearPicker = usePickerStore((s) => s.clear);
@@ -81,6 +85,7 @@ export default function NewTransactionScreen() {
   const [notes, setNotes] = useState('');
   const [cleared, setCleared] = useState(false);
   const [reconciled, setReconciled] = useState(false);
+  const [recurConfig, setRecurConfig] = useState<RecurConfig | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const currencyInputRef = useRef<CurrencyInputRef>(null);
@@ -186,6 +191,12 @@ export default function NewTransactionScreen() {
     }
   }, [selectedTags]);
 
+  useEffect(() => {
+    if (selectedRecurConfig) {
+      setRecurConfig(selectedRecurConfig);
+    }
+  }, [selectedRecurConfig]);
+
   async function performSave() {
     setError(null);
     setLoading(true);
@@ -202,8 +213,12 @@ export default function NewTransactionScreen() {
         notes: notes.trim() || null,
         cleared,
         splitCategories: isSplit ? splitCategories : null,
+        recurConfig: !isEdit ? recurConfig : undefined,
       });
       await loadAccounts();
+      if (recurConfig) {
+        useSchedulesStore.getState().load();
+      }
       router.dismiss();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
@@ -406,6 +421,23 @@ export default function NewTransactionScreen() {
         <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.md }}>
           <View style={cardStyle}>
             <ClearedToggle value={cleared} onValueChange={setCleared} />
+            {!isEdit && (
+              <>
+                <View style={dividerStyle} />
+                <DetailRow
+                  icon="repeat"
+                  label={recurConfig ? getRecurringDescription(recurConfig) : ''}
+                  placeholder="Repeat"
+                  onClear={recurConfig ? () => setRecurConfig(null) : undefined}
+                  onPress={() => {
+                    router.push({
+                      pathname: './recurrence',
+                      params: recurConfig ? { config: JSON.stringify(recurConfig) } : {},
+                    });
+                  }}
+                />
+              </>
+            )}
             <View style={dividerStyle} />
             <DetailRow
               icon="pricetags-outline"

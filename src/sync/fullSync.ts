@@ -35,6 +35,17 @@ export async function fullSync(attempt = 0): Promise<void> {
 
     const localMessages = await getMessagesSince(since);
 
+    if (__DEV__) {
+      const scheduleTables = new Set(['rules', 'schedules', 'schedules_next_date']);
+      const relevant = localMessages.filter(m => scheduleTables.has(m.dataset));
+      console.log(`[fullSync] sending ${localMessages.length} local messages (${relevant.length} schedule-related)`);
+      if (relevant.length > 0) {
+        console.log('[fullSync] schedule messages to sync:', relevant.map(m => ({
+          dataset: m.dataset, row: m.row.slice(0, 8), column: m.column,
+        })));
+      }
+    }
+
     if (gen !== getSyncGeneration()) return;
 
     const requestBytes = await encode(
@@ -88,6 +99,14 @@ export async function fullSync(attempt = 0): Promise<void> {
     }
 
     useSyncStore.getState()._setStatus('success');
+
+    // Advance schedules after successful sync (auto-post due transactions)
+    try {
+      const { advanceSchedules } = await import('../schedules');
+      await advanceSchedules(true);
+    } catch (e) {
+      if (__DEV__) console.warn('[fullSync] advanceSchedules failed:', e);
+    }
   } catch (e: unknown) {
     if (gen !== getSyncGeneration()) return;
     const msg = e instanceof Error ? e.message : String(e);

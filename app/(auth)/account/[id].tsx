@@ -1,11 +1,13 @@
-import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useSharedValue } from 'react-native-reanimated';
 import {
   ActivityIndicator,
+  Alert,
+  LayoutAnimation,
   RefreshControl,
   View,
 } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
+import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useAccountsStore } from '../../../src/stores/accountsStore';
 import {
@@ -20,6 +22,8 @@ import type { Theme } from '../../../src/theme';
 import { BalanceSummary } from '../../../src/presentation/components/account/BalanceSummary';
 import { TransactionRow } from '../../../src/presentation/components/account/TransactionRow';
 import { DateSectionHeader } from '../../../src/presentation/components/account/DateSectionHeader';
+import { UpcomingSectionHeader } from '../../../src/presentation/components/account/UpcomingSectionHeader';
+import { UpcomingScheduleRow } from '../../../src/presentation/components/account/UpcomingScheduleRow';
 import { AddTransactionButton } from '../../../src/presentation/components/molecules/AddTransactionButton';
 import { UnclearedPill } from '../../../src/presentation/components/transaction/UnclearedPill';
 import { usePrefsStore } from '../../../src/stores/prefsStore';
@@ -28,11 +32,21 @@ import { useUndoStore } from '../../../src/stores/undoStore';
 import { getCommonMenuItems } from '../../../src/presentation/hooks/useCommonMenuItems';
 import { useTagsStore } from '../../../src/stores/tagsStore';
 import {
+  buildListData,
   useSelectModeHeader,
   useTransactionList,
   type ListItem,
 } from '../../../src/presentation/hooks/transactionList';
 import { SelectModeToolbar } from '../../../src/presentation/components/transaction/SelectModeToolbar';
+import { getPreviewTransactionsForAccount, type PreviewTransaction } from '../../../src/schedules/preview';
+import {
+  skipNextDate,
+  postTransactionForSchedule,
+  postTransactionForScheduleToday,
+  deleteSchedule,
+  updateSchedule,
+} from '../../../src/schedules';
+import { useSchedulesStore } from '../../../src/stores/schedulesStore';
 
 export default function AccountTransactionsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -50,6 +64,11 @@ export default function AccountTransactionsScreen() {
   const canUndo = useUndoStore((s) => s.canUndo);
   const undoVersion = useUndoStore((s) => s.undoVersion);
   const tags = useTagsStore((s) => s.tags);
+
+  // ---- Upcoming scheduled transactions ----
+  const listRef = useRef<FlashListRef<ListItem>>(null);
+  const [upcomingExpanded, setUpcomingExpanded] = useState(false);
+  const [previewTransactions, setPreviewTransactions] = useState<PreviewTransaction[]>([]);
 
   // ---- Consolidated transaction list ----
   const fetchTransactions = useCallback(
@@ -89,17 +108,30 @@ export default function AccountTransactionsScreen() {
     },
   });
 
-  // Load cleared balance + uncleared count alongside transactions
+  // Load previews, balance, and uncleared count BEFORE transactions
+  // so everything is ready when the FlashList first renders.
   const loadWithClearedBalance = useCallback(async () => {
-    const [, cleared, uncleared] = await Promise.all([txnList.loadAll(), getClearedBalance(id), getUnclearedCount(id)]);
+    const [previews, cleared, uncleared] = await Promise.all([
+      getPreviewTransactionsForAccount(id),
+      getClearedBalance(id),
+      getUnclearedCount(id),
+    ]);
+    setPreviewTransactions(previews);
     setClearedBalance(cleared);
     setUnclearedCount(uncleared);
+    await txnList.loadAll();
   }, [txnList.loadAll, id]);
 
   const silentRefreshWithBalance = useCallback(async () => {
-    const [, cleared, uncleared] = await Promise.all([txnList.silentRefresh(), getClearedBalance(id), getUnclearedCount(id)]);
+    const [previews, cleared, uncleared] = await Promise.all([
+      getPreviewTransactionsForAccount(id),
+      getClearedBalance(id),
+      getUnclearedCount(id),
+    ]);
+    setPreviewTransactions(previews);
     setClearedBalance(cleared);
     setUnclearedCount(uncleared);
+    await txnList.silentRefresh();
   }, [txnList.silentRefresh, id]);
 
   // ---- Select mode header ----
@@ -145,6 +177,72 @@ export default function AccountTransactionsScreen() {
     toggleHideReconciled();
     loadWithClearedBalance();
   }
+
+  // ---- Upcoming actions ----
+  const handlePostSchedule = useCallback(async (scheduleId: string) => {
+    await postTransactionForSchedule(scheduleId);
+    await Promise.all([
+      silentRefreshWithBalance(),
+      useSchedulesStore.getState().load(),
+    ]);
+  }, [silentRefreshWithBalance]);
+
+  const handleSkipSchedule = useCallback(async (scheduleId: string) => {
+    await skipNextDate(scheduleId);
+    const [previews] = await Promise.all([
+      getPreviewTransactionsForAccount(id),
+      useSchedulesStore.getState().load(),
+    ]);
+    setPreviewTransactions(previews);
+  }, [id]);
+
+  const handlePostScheduleToday = useCallback(async (scheduleId: string) => {
+    await postTransactionForScheduleToday(scheduleId);
+    await Promise.all([
+      silentRefreshWithBalance(),
+      useSchedulesStore.getState().load(),
+    ]);
+  }, [silentRefreshWithBalance]);
+
+  const handleCompleteSchedule = useCallback(async (scheduleId: string) => {
+    await updateSchedule({ schedule: { id: scheduleId, completed: true } });
+    const [previews] = await Promise.all([
+      getPreviewTransactionsForAccount(id),
+      useSchedulesStore.getState().load(),
+    ]);
+    setPreviewTransactions(previews);
+  }, [id]);
+
+  const handleDeleteSchedule = useCallback((scheduleId: string) => {
+    Alert.alert('Delete Schedule', 'Delete this schedule and all future occurrences?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          await deleteSchedule(scheduleId);
+          const [previews] = await Promise.all([
+            getPreviewTransactionsForAccount(id),
+            useSchedulesStore.getState().load(),
+          ]);
+          setPreviewTransactions(previews);
+        },
+      },
+    ]);
+  }, [id]);
+
+  const handlePressSchedule = useCallback((scheduleId: string) => {
+    router.push({ pathname: '/(auth)/schedule/[id]', params: { id: scheduleId } });
+  }, [router]);
+
+  // ---- Merged list data (transactions + upcoming) ----
+  const mergedListData = useMemo(
+    () => buildListData(txnList.transactions, {
+      previewTransactions,
+      upcomingExpanded,
+    }),
+    [txnList.transactions, previewTransactions, upcomingExpanded],
+  );
 
   // ---- Normal-mode header ----
   useLayoutEffect(() => {
@@ -226,12 +324,42 @@ export default function AccountTransactionsScreen() {
         <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
       ) : (
         <FlashList<ListItem>
-          data={txnList.listData}
+          ref={listRef}
+          data={mergedListData}
           keyExtractor={(item) => item.key}
           getItemType={(item) => item.type}
+
           onScroll={handleScroll}
           scrollEventThrottle={16}
           renderItem={({ item }) => {
+            if (item.type === 'upcoming-header') {
+              return (
+                <UpcomingSectionHeader
+                  count={item.count}
+                  expanded={item.expanded}
+                  onToggle={() => {
+                    listRef.current?.prepareForLayoutAnimationRender();
+                    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                    setUpcomingExpanded((v) => !v);
+                  }}
+                />
+              );
+            }
+            if (item.type === 'upcoming') {
+              return (
+                <UpcomingScheduleRow
+                  item={item.data}
+                  onPost={handlePostSchedule}
+                  onPostToday={handlePostScheduleToday}
+                  onSkip={handleSkipSchedule}
+                  onComplete={handleCompleteSchedule}
+                  onDelete={handleDeleteSchedule}
+                  onPress={handlePressSchedule}
+                  isFirst={item.isFirst}
+                  isLast={item.isLast}
+                />
+              );
+            }
             if (item.type === 'date') {
               return <DateSectionHeader date={item.date} />;
             }

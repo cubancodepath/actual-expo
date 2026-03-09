@@ -242,6 +242,12 @@ export default function SettingsScreen() {
       <SectionHeader title="Manage" style={{ marginTop: spacing.xl }} />
       <Card>
         <ListItem
+          title="Schedules"
+          showChevron
+          onPress={() => router.push("/(auth)/schedules")}
+        />
+        <Divider />
+        <ListItem
           title="Payees"
           showChevron
           onPress={() => router.push("/(auth)/payees")}

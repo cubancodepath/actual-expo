@@ -46,6 +46,18 @@ function scheduleFullSync(): void {
 }
 
 export async function sendMessages(messages: SyncMessage[]): Promise<void> {
+  if (__DEV__) {
+    const scheduleTables = new Set(['rules', 'schedules', 'schedules_next_date']);
+    const relevant = messages.filter(m => scheduleTables.has(m.dataset));
+    if (relevant.length > 0) {
+      console.log('[sendMessages] schedule-related messages:', relevant.map(m => ({
+        dataset: m.dataset,
+        row: m.row,
+        column: m.column,
+        value: typeof m.value === 'string' && m.value.length > 80 ? m.value.slice(0, 80) + '…' : m.value,
+      })));
+    }
+  }
   if (_isBatching) {
     _batched = _batched.concat(messages);
     return;

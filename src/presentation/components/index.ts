@@ -14,6 +14,7 @@ export { InfoPill } from "./atoms/InfoPill";
 export { TagPill, type TagPillProps } from "./atoms/TagPill";
 export { NotesWithTags, type NotesWithTagsProps } from "./atoms/NotesWithTags";
 export { KeyboardDoneButton } from "./atoms/KeyboardDoneButton";
+export { ScheduleStatusBadge } from "./atoms/ScheduleStatusBadge";
 export { GlassButton } from "./atoms/GlassButton";
 export { CalculatorToolbar } from "./atoms/CalculatorToolbar";
 

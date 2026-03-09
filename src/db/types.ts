@@ -26,6 +26,7 @@ export type TransactionRow = {
   reconciled: 0 | 1;
   sort_order: number | null;
   starting_balance_flag: 0 | 1;
+  schedule: string | null;
   tombstone: 0 | 1;
 };
 
@@ -101,4 +102,41 @@ export type MessagesCrdtRow = {
 export type MessagesClockRow = {
   id: number;
   clock: string;
+};
+
+export type ScheduleRow = {
+  id: string;
+  name: string | null;
+  rule: string | null;
+  active: 0 | 1;
+  completed: 0 | 1;
+  posts_transaction: 0 | 1;
+  tombstone: 0 | 1;
+};
+
+export type ScheduleNextDateRow = {
+  id: string;
+  schedule_id: string;
+  local_next_date: number | null;
+  local_next_date_ts: number | null;
+  base_next_date: number | null;
+  base_next_date_ts: number | null;
+  tombstone: 0 | 1;
+};
+
+export type ScheduleJsonPathsRow = {
+  schedule_id: string;
+  payee: string | null;
+  account: string | null;
+  amount: string | null;
+  date: string | null;
+};
+
+export type RuleRow = {
+  id: string;
+  stage: string | null;
+  conditions: string | null;
+  actions: string | null;
+  tombstone: 0 | 1;
+  conditions_op: string | null;
 };

@@ -16,6 +16,7 @@ import { useBudgetStore } from "../src/stores/budgetStore";
 import { usePreferencesStore } from "../src/stores/preferencesStore";
 import { useTagsStore } from "../src/stores/tagsStore";
 import { usePayeesStore } from "../src/stores/payeesStore";
+import { useSchedulesStore } from "../src/stores/schedulesStore";
 import { useTransactionsStore } from "../src/stores/transactionsStore";
 import { openDatabase } from "../src/db";
 import { loadClock, fullSync, isSwitchingBudget } from "../src/sync";
@@ -49,6 +50,7 @@ export default function RootLayout() {
         usePreferencesStore.getState().load(),
         useTagsStore.getState().load(),
         usePayeesStore.getState().load(),
+        useSchedulesStore.getState().load(),
       ]);
       syncShortcutCache();
     }

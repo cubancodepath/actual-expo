@@ -28,6 +28,7 @@ function rowToTransaction(r: TransactionRow): Transaction {
     reconciled: r.reconciled === 1,
     sort_order: r.sort_order,
     starting_balance_flag: r.starting_balance_flag === 1,
+    schedule: r.schedule ?? null,
     tombstone: r.tombstone === 1,
   };
 }
@@ -82,6 +83,7 @@ export const addTransaction = undoable(async function addTransaction(
     reconciled: fields.reconciled ? 1 : 0,
     sort_order: fields.sort_order ?? Date.now(),
     starting_balance_flag: fields.starting_balance_flag ? 1 : 0,
+    schedule: fields.schedule ?? null,
   };
 
   await sendMessages(
@@ -133,7 +135,7 @@ export const updateTransaction = undoable(async function updateTransaction(
 
   const dbFields: Record<string, unknown> = {};
   const boolFields = ['isParent', 'isChild', 'cleared', 'reconciled', 'starting_balance_flag'] as const;
-  const directFields = ['acct', 'date', 'amount', 'category', 'description', 'notes', 'parent_id', 'transferred_id', 'sort_order'] as const;
+  const directFields = ['acct', 'date', 'amount', 'category', 'description', 'notes', 'parent_id', 'transferred_id', 'sort_order', 'schedule'] as const;
 
   for (const f of boolFields) {
     if (fields[f] !== undefined) dbFields[f] = fields[f] ? 1 : 0;

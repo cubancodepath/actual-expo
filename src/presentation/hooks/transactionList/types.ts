@@ -1,4 +1,5 @@
 import type { TransactionDisplay } from '../../../transactions';
+import type { PreviewTransaction } from '../../../schedules/preview';
 
 export type DateHeader = { type: 'date'; date: number; key: string };
 export type TransactionItem = {
@@ -8,10 +9,56 @@ export type TransactionItem = {
   isFirst: boolean;
   isLast: boolean;
 };
-export type ListItem = DateHeader | TransactionItem;
+export type UpcomingHeader = {
+  type: 'upcoming-header';
+  key: string;
+  count: number;
+  expanded: boolean;
+};
+export type UpcomingItem = {
+  type: 'upcoming';
+  data: PreviewTransaction;
+  key: string;
+  isFirst: boolean;
+  isLast: boolean;
+};
 
-export function buildListData(transactions: TransactionDisplay[]): ListItem[] {
+export type ListItem = DateHeader | TransactionItem | UpcomingHeader | UpcomingItem;
+
+export function buildListData(
+  transactions: TransactionDisplay[],
+  opts?: {
+    previewTransactions?: PreviewTransaction[];
+    upcomingExpanded?: boolean;
+  },
+): ListItem[] {
   const items: ListItem[] = [];
+
+  // Prepend upcoming section if preview transactions exist
+  const previews = opts?.previewTransactions ?? [];
+  if (previews.length > 0) {
+    const expanded = opts?.upcomingExpanded ?? false;
+    items.push({
+      type: 'upcoming-header',
+      key: 'upcoming-header',
+      count: previews.length,
+      expanded,
+    });
+
+    if (expanded) {
+      for (let i = 0; i < previews.length; i++) {
+        items.push({
+          type: 'upcoming',
+          data: previews[i],
+          key: previews[i].id,
+          isFirst: i === 0,
+          isLast: i === previews.length - 1,
+        });
+      }
+    }
+  }
+
+  // Regular transactions grouped by date
   let lastDate: number | null = null;
 
   for (let i = 0; i < transactions.length; i++) {

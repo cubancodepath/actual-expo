@@ -14,6 +14,10 @@ import {
   getChildTransactions,
   deleteTransaction,
 } from './index';
+import { createSchedule, setNextDate } from '../schedules';
+import { addDays } from 'date-fns';
+import { parseDate } from '../schedules/recurrence';
+import type { RecurConfig, RuleCondition } from '../schedules/types';
 
 export type SplitLine = {
   id?: string;
@@ -37,6 +41,8 @@ export type SaveTransactionInput = {
   cleared: boolean;
   /** Non-null with length > 1 = split transaction */
   splitCategories: SplitLine[] | null;
+  /** If set, creates a recurring schedule linked to this transaction */
+  recurConfig?: RecurConfig | null;
 };
 
 /**
@@ -56,6 +62,7 @@ export async function saveTransaction(input: SaveTransactionInput): Promise<stri
     notes,
     cleared,
     splitCategories,
+    recurConfig,
   } = input;
 
   const isEdit = !!transactionId;
@@ -146,7 +153,7 @@ export async function saveTransaction(input: SaveTransactionInput): Promise<stri
   }
 
   // Simple new
-  return addTransaction({
+  const newId = await addTransaction({
     acct,
     date,
     amount: finalAmount,
@@ -154,5 +161,46 @@ export async function saveTransaction(input: SaveTransactionInput): Promise<stri
     category: categoryId,
     notes,
     cleared,
+  });
+
+  // Create a linked schedule if recurrence was configured
+  if (recurConfig) {
+    if (__DEV__) console.log('[saveTransaction] linking schedule for txn', newId, 'recurConfig:', recurConfig.frequency);
+    await linkSchedule(newId, recurConfig, resolvedPayeeId, acct, finalAmount);
+  }
+
+  return newId;
+}
+
+/**
+ * Creates a schedule linked to a transaction.
+ */
+async function linkSchedule(
+  txnId: string,
+  recurConfig: RecurConfig,
+  payeeId: string | null,
+  acct: string,
+  amount: number,
+): Promise<void> {
+  const conditions: RuleCondition[] = [
+    { field: 'payee', op: 'is', value: payeeId },
+    { field: 'account', op: 'is', value: acct },
+    { field: 'amount', op: 'isapprox', value: amount },
+    { field: 'date', op: 'isapprox', value: recurConfig },
+  ];
+
+  const scheduleId = await createSchedule({
+    schedule: { posts_transaction: true },
+    conditions,
+  });
+
+  await updateTransaction(txnId, { schedule: scheduleId });
+
+  // The transaction we just created "pays" the current occurrence,
+  // so advance the schedule to the next date immediately.
+  await setNextDate({
+    id: scheduleId,
+    conditions,
+    start: (nextDate) => addDays(parseDate(nextDate), 1),
   });
 }

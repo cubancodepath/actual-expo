@@ -5,6 +5,7 @@ import { usePayeesStore } from './payeesStore';
 import { usePickerStore } from './pickerStore';
 import { usePreferencesStore } from './preferencesStore';
 import { useSyncStore } from './syncStore';
+import { useSchedulesStore } from './schedulesStore';
 import { useTagsStore } from './tagsStore';
 import { useTransactionsStore } from './transactionsStore';
 import { currentMonth } from '../lib/date';
@@ -25,4 +26,5 @@ export function resetAllStores(): void {
   useSyncStore.setState({ status: 'idle', error: null, lastSync: null });
   useTagsStore.setState({ tags: [], loading: false });
   useTransactionsStore.setState({ transactions: [], accountId: null, loading: false });
+  useSchedulesStore.setState({ schedules: [], loading: false });
 }

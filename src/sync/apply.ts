@@ -25,6 +25,9 @@ const ALLOWED_TABLES = new Set([
   'zero_budget_months',
   'preferences',
   'tags',
+  'rules',
+  'schedules',
+  'schedules_next_date',
 ]);
 
 export async function applyMessages(messages: SyncMessage[]): Promise<OldData> {
@@ -89,7 +92,7 @@ export async function applyMessages(messages: SyncMessage[]): Promise<OldData> {
       }
 
       if (!ALLOWED_TABLES.has(dataset)) {
-        console.warn(`applyMessages: ignoring unknown dataset "${dataset}"`);
+        console.warn(`[applyMessages] REJECTED unknown dataset "${dataset}" row=${row} column=${column}`);
         continue;
       }
 

@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useSharedValue } from 'react-native-reanimated';
 import {
   ActivityIndicator,
+  Alert,
+  LayoutAnimation,
   RefreshControl,
 } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
+import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { Stack, useFocusEffect, useNavigation, useRouter } from 'expo-router';
 import {
   getAllTransactions,
@@ -19,14 +21,26 @@ import { EmptyState } from '../../../../src/presentation/components';
 import { UnclearedPill } from '../../../../src/presentation/components/transaction/UnclearedPill';
 import { TransactionRow } from '../../../../src/presentation/components/account/TransactionRow';
 import { DateSectionHeader } from '../../../../src/presentation/components/account/DateSectionHeader';
+import { UpcomingSectionHeader } from '../../../../src/presentation/components/account/UpcomingSectionHeader';
+import { UpcomingScheduleRow } from '../../../../src/presentation/components/account/UpcomingScheduleRow';
 import { AddTransactionButton } from '../../../../src/presentation/components/molecules/AddTransactionButton';
 import { useTagsStore } from '../../../../src/stores/tagsStore';
 import {
+  buildListData,
   useSelectModeHeader,
   useTransactionList,
   type ListItem,
 } from '../../../../src/presentation/hooks/transactionList';
 import { SelectModeToolbar } from '../../../../src/presentation/components/transaction/SelectModeToolbar';
+import { getAllPreviewTransactions, type PreviewTransaction } from '../../../../src/schedules/preview';
+import {
+  skipNextDate,
+  postTransactionForSchedule,
+  postTransactionForScheduleToday,
+  deleteSchedule,
+  updateSchedule,
+} from '../../../../src/schedules';
+import { useSchedulesStore } from '../../../../src/stores/schedulesStore';
 
 export default function SpendingScreen() {
   const navigation = useNavigation();
@@ -38,6 +52,11 @@ export default function SpendingScreen() {
   const setTabBarHidden = useTabBarStore((s) => s.setHidden);
   const tags = useTagsStore((s) => s.tags);
   const [unclearedCount, setUnclearedCount] = useState(0);
+
+  // ---- Upcoming scheduled transactions ----
+  const listRef = useRef<FlashListRef<ListItem>>(null);
+  const [upcomingExpanded, setUpcomingExpanded] = useState(false);
+  const [previewTransactions, setPreviewTransactions] = useState<PreviewTransaction[]>([]);
 
   // ---- Consolidated transaction list ----
   const fetchTransactions = useCallback(
@@ -87,16 +106,35 @@ export default function SpendingScreen() {
   }, []);
 
   // ---- Data loading ----
+  const loadWithPreviews = useCallback(async () => {
+    const [previews, uncleared] = await Promise.all([
+      getAllPreviewTransactions(),
+      getUnclearedCount(),
+    ]);
+    setPreviewTransactions(previews);
+    setUnclearedCount(uncleared);
+    await txnList.loadAll();
+  }, [txnList.loadAll]);
+
+  const silentRefreshWithPreviews = useCallback(async () => {
+    const [previews, uncleared] = await Promise.all([
+      getAllPreviewTransactions(),
+      getUnclearedCount(),
+    ]);
+    setPreviewTransactions(previews);
+    setUnclearedCount(uncleared);
+    await txnList.silentRefresh();
+  }, [txnList.silentRefresh]);
+
   useFocusEffect(useCallback(() => {
     if (!txnList.hasLoaded.current) {
-      txnList.loadAll();
+      loadWithPreviews();
       txnList.hasLoaded.current = true;
     } else {
-      txnList.silentRefresh();
+      silentRefreshWithPreviews();
     }
-    getUnclearedCount().then(setUnclearedCount);
     return () => { txnList.resetSelection(); };
-  }, [txnList.loadAll, txnList.silentRefresh, txnList.resetSelection]));
+  }, [loadWithPreviews, silentRefreshWithPreviews, txnList.resetSelection]));
 
   // Refresh local list after undo restores data in DB
   useEffect(() => {
@@ -104,11 +142,76 @@ export default function SpendingScreen() {
       setTimeout(() => {
         txnList.restoreDeleted();
         txnList.restoreBulkDeleted();
-        txnList.silentRefresh();
-        getUnclearedCount().then(setUnclearedCount);
+        silentRefreshWithPreviews();
       }, 0);
     }
   }, [undoVersion]);
+
+  // ---- Upcoming actions ----
+  const handlePostSchedule = useCallback(async (scheduleId: string) => {
+    await postTransactionForSchedule(scheduleId);
+    await Promise.all([
+      silentRefreshWithPreviews(),
+      useSchedulesStore.getState().load(),
+    ]);
+  }, [silentRefreshWithPreviews]);
+
+  const handleSkipSchedule = useCallback(async (scheduleId: string) => {
+    await skipNextDate(scheduleId);
+    const [previews] = await Promise.all([
+      getAllPreviewTransactions(),
+      useSchedulesStore.getState().load(),
+    ]);
+    setPreviewTransactions(previews);
+  }, []);
+
+  const handlePostScheduleToday = useCallback(async (scheduleId: string) => {
+    await postTransactionForScheduleToday(scheduleId);
+    await Promise.all([
+      silentRefreshWithPreviews(),
+      useSchedulesStore.getState().load(),
+    ]);
+  }, [silentRefreshWithPreviews]);
+
+  const handleCompleteSchedule = useCallback(async (scheduleId: string) => {
+    await updateSchedule({ schedule: { id: scheduleId, completed: true } });
+    const [previews] = await Promise.all([
+      getAllPreviewTransactions(),
+      useSchedulesStore.getState().load(),
+    ]);
+    setPreviewTransactions(previews);
+  }, []);
+
+  const handleDeleteSchedule = useCallback((scheduleId: string) => {
+    Alert.alert('Delete Schedule', 'Delete this schedule and all future occurrences?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          await deleteSchedule(scheduleId);
+          const [previews] = await Promise.all([
+            getAllPreviewTransactions(),
+            useSchedulesStore.getState().load(),
+          ]);
+          setPreviewTransactions(previews);
+        },
+      },
+    ]);
+  }, []);
+
+  const handlePressSchedule = useCallback((scheduleId: string) => {
+    router.push({ pathname: '/(auth)/schedule/[id]', params: { id: scheduleId } });
+  }, [router]);
+
+  // ---- Merged list data ----
+  const mergedListData = useMemo(
+    () => buildListData(txnList.transactions, {
+      previewTransactions,
+      upcomingExpanded,
+    }),
+    [txnList.transactions, previewTransactions, upcomingExpanded],
+  );
 
   // ---- Normal-mode header ----
   useLayoutEffect(() => {
@@ -146,7 +249,8 @@ export default function SpendingScreen() {
   return (
     <>
       <FlashList<ListItem>
-        data={txnList.loading ? [] : txnList.listData}
+        ref={listRef}
+        data={txnList.loading ? [] : mergedListData}
         keyExtractor={(item) => item.key}
         getItemType={(item) => item.type}
         onScroll={handleScroll}
@@ -170,9 +274,38 @@ export default function SpendingScreen() {
           ) : null
         }
         renderItem={({ item }) => {
+          if (item.type === 'upcoming-header') {
+            return (
+              <UpcomingSectionHeader
+                count={item.count}
+                expanded={item.expanded}
+                onToggle={() => {
+                  listRef.current?.prepareForLayoutAnimationRender();
+                  LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                  setUpcomingExpanded((v) => !v);
+                }}
+              />
+            );
+          }
+          if (item.type === 'upcoming') {
+            return (
+              <UpcomingScheduleRow
+                item={item.data}
+                onPost={handlePostSchedule}
+                onPostToday={handlePostScheduleToday}
+                onSkip={handleSkipSchedule}
+                onComplete={handleCompleteSchedule}
+                onDelete={handleDeleteSchedule}
+                onPress={handlePressSchedule}
+                isFirst={item.isFirst}
+                isLast={item.isLast}
+              />
+            );
+          }
           if (item.type === 'date') {
             return <DateSectionHeader date={item.date} />;
           }
+          if (item.type !== 'transaction') return null;
           return (
             <TransactionRow
               item={item.data}

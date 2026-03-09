@@ -14,6 +14,7 @@ export type Transaction = {
   reconciled: boolean;
   sort_order: number | null;
   starting_balance_flag: boolean;
+  schedule: string | null;
   tombstone: boolean;
 };
 

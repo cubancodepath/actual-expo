@@ -470,6 +470,7 @@ export default function SearchScreen() {
           if (item.type === 'date') {
             return <DateSectionHeader date={item.date} />;
           }
+          if (item.type !== 'transaction') return null;
           return (
             <TransactionRow
               item={item.data}

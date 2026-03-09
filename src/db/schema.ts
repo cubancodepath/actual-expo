@@ -111,6 +111,43 @@ CREATE TABLE IF NOT EXISTS messages_clock (
   id INTEGER PRIMARY KEY,
   clock TEXT
 );
+
+CREATE TABLE IF NOT EXISTS schedules (
+  id TEXT PRIMARY KEY,
+  name TEXT,
+  rule TEXT,
+  active INTEGER DEFAULT 0,
+  completed INTEGER DEFAULT 0,
+  posts_transaction INTEGER DEFAULT 0,
+  tombstone INTEGER DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS schedules_next_date (
+  id TEXT PRIMARY KEY,
+  schedule_id TEXT,
+  local_next_date INTEGER,
+  local_next_date_ts INTEGER,
+  base_next_date INTEGER,
+  base_next_date_ts INTEGER,
+  tombstone INTEGER DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS schedules_json_paths (
+  schedule_id TEXT PRIMARY KEY,
+  payee TEXT,
+  account TEXT,
+  amount TEXT,
+  date TEXT
+);
+
+CREATE TABLE IF NOT EXISTS rules (
+  id TEXT PRIMARY KEY,
+  stage TEXT,
+  conditions TEXT,
+  actions TEXT,
+  tombstone INTEGER DEFAULT 0,
+  conditions_op TEXT
+);
 `;
 
 const MIGRATIONS = [
@@ -120,6 +157,7 @@ const MIGRATIONS = [
   "ALTER TABLE categories ADD COLUMN template_settings TEXT DEFAULT '{\"source\": \"notes\"}'",
   'ALTER TABLE transactions ADD COLUMN parent_id TEXT',
   'ALTER TABLE accounts ADD COLUMN last_reconciled TEXT',
+  'ALTER TABLE transactions ADD COLUMN schedule TEXT',
 ];
 
 const INDEXES = `
@@ -155,6 +193,12 @@ CREATE INDEX IF NOT EXISTS idx_transactions_budget
 
 CREATE INDEX IF NOT EXISTS idx_transactions_cleared
   ON transactions(acct, cleared, isParent, tombstone);
+
+CREATE INDEX IF NOT EXISTS idx_transactions_schedule ON transactions(schedule);
+
+CREATE INDEX IF NOT EXISTS idx_schedules_tombstone ON schedules(tombstone);
+
+CREATE INDEX IF NOT EXISTS idx_schedules_next_date_schedule_id ON schedules_next_date(schedule_id);
 `;
 
 export async function runSchema(db: SQLiteDatabase): Promise<void> {

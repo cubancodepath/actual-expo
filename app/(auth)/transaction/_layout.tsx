@@ -14,6 +14,8 @@ export default function TransactionLayout() {
       <Stack.Screen name="account-picker" options={{ headerShown: false }} />
       <Stack.Screen name="split" options={{ title: 'Split Transaction' }} />
       <Stack.Screen name="split-category-picker" options={{ title: 'Category' }} />
+      <Stack.Screen name="recurrence" options={{ headerShown: false }} />
+      <Stack.Screen name="recurrence-custom" options={{ headerShown: false }} />
       <Stack.Screen
         name="tags"
         options={{

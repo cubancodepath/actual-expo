@@ -188,6 +188,44 @@ export default function AuthLayout() {
         options={{ title: "Manage Payees", ...modal }}
       />
       <Stack.Screen
+        name="schedules"
+        options={{ title: "Schedules", ...modal }}
+      />
+      <Stack.Screen
+        name="schedule/[id]"
+        options={{
+          ...screen,
+          title: "Schedule",
+          presentation: "formSheet",
+          sheetAllowedDetents: [0.85, 1.0],
+          contentStyle: { backgroundColor: theme.colors.pageBackground },
+        }}
+      />
+      <Stack.Screen
+        name="schedule/new"
+        options={{
+          ...screen,
+          title: "New Schedule",
+          presentation: "formSheet",
+          sheetAllowedDetents: [0.85, 1.0],
+          contentStyle: { backgroundColor: theme.colors.pageBackground },
+        }}
+      />
+      <Stack.Screen
+        name="schedule/recurrence"
+        options={{
+          ...screen,
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="schedule/recurrence-custom"
+        options={{
+          ...screen,
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
         name="change-budget"
         options={{ title: "Change Budget", ...modal }}
       />

@@ -56,6 +56,7 @@ export async function clearLocalData(): Promise<void> {
     'payees', 'zero_budgets', 'zero_budget_months', 'messages_crdt',
     'messages_clock', 'payee_mapping', 'category_mapping', 'notes',
     'preferences', 'tags',
+    'schedules', 'schedules_next_date', 'schedules_json_paths', 'rules',
   ];
   await db.execAsync(tables.map(t => `DELETE FROM ${t};`).join('\n'));
 }

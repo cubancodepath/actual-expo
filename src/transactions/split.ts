@@ -157,6 +157,7 @@ export function makeChild(
       data.reconciled !== undefined ? data.reconciled : parent.reconciled,
     sort_order: data.sort_order ?? null,
     starting_balance_flag: parent.starting_balance_flag,
+    schedule: parent.schedule,
     tombstone: false,
   };
 }

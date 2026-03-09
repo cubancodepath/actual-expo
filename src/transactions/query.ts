@@ -64,6 +64,7 @@ function rowToDisplay(r: RawDisplayRow): TransactionDisplay {
     reconciled: r.reconciled === 1,
     sort_order: r.sort_order,
     starting_balance_flag: r.starting_balance_flag === 1,
+    schedule: r.schedule ?? null,
     tombstone: r.tombstone === 1,
     payeeName: r.payee_name,
     categoryName: r.category_name,

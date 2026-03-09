@@ -165,7 +165,6 @@ export async function saveTransaction(input: SaveTransactionInput): Promise<stri
 
   // Create a linked schedule if recurrence was configured
   if (recurConfig) {
-    if (__DEV__) console.log('[saveTransaction] linking schedule for txn', newId, 'recurConfig:', recurConfig.frequency);
     await linkSchedule(newId, recurConfig, resolvedPayeeId, acct, finalAmount);
   }
 

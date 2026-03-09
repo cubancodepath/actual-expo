@@ -37,7 +37,6 @@ export async function getPreviewTransactionsForAccount(
     (s) => !s.completed && !s.tombstone && s._account === accountId,
   );
 
-  if (__DEV__) console.log('[preview] all schedules:', schedules.length, 'active for account', accountId.slice(0, 8) + ':', active.length);
   return buildPreviews(active, upcomingDays);
 }
 
@@ -52,7 +51,6 @@ export async function getAllPreviewTransactions(
     (s) => !s.completed && !s.tombstone && s._account != null,
   );
 
-  if (__DEV__) console.log('[preview] all schedules:', schedules.length, 'active total:', active.length);
   return buildPreviews(active, upcomingDays);
 }
 
@@ -80,8 +78,6 @@ async function buildPreviews(
       schedule.completed,
       hasLinkedTxn,
     );
-
-    if (__DEV__) console.log('[preview] schedule', schedule.id.slice(0, 8), '→ status:', status, '| next_date:', schedule.next_date, '| hasLinkedTxn:', hasLinkedTxn);
 
     // Only show upcoming, due, or missed — skip paid/completed
     if (status === 'paid' || status === 'completed') continue;
@@ -121,8 +117,6 @@ async function buildPreviews(
     upcoming: 2,
     scheduled: 3,
   };
-
-  if (__DEV__) console.log('[preview] computed', previews.length, 'preview transactions');
 
   previews.sort((a, b) => {
     const aOrder = statusOrder[a.status] ?? 9;

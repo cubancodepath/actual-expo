@@ -86,7 +86,6 @@ export async function getSchedules(): Promise<Schedule[]> {
      WHERE s.tombstone = 0
      ORDER BY COALESCE(snd.local_next_date, snd.base_next_date) ASC`,
   );
-  if (__DEV__) console.log('[getSchedules] raw rows:', rows.length, rows.map(r => ({ id: r.id?.slice(0, 8), rule: r.rule?.slice(0, 8), tombstone: r.tombstone, conditions: r.conditions?.slice(0, 60), local_next_date: r.local_next_date, base_next_date: r.base_next_date })));
   return rows.map(rowToSchedule);
 }
 
@@ -255,7 +254,6 @@ export const createSchedule = undoable(async function createSchedule(opts: {
   conditions: RuleCondition[];
 }): Promise<string> {
   const scheduleId = opts.schedule?.id ?? randomUUID();
-  if (__DEV__) console.log('[createSchedule] creating schedule', scheduleId, 'conditions:', opts.conditions.length);
 
   const { date: dateCond } = extractScheduleConds(opts.conditions);
   if (!dateCond) {

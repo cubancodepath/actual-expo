@@ -36,7 +36,6 @@ export const useSchedulesStore = create<SchedulesState>((set) => ({
     set({ loading: true });
     try {
       const schedules = await getSchedules();
-      if (__DEV__) console.log('[schedulesStore] loaded', schedules.length, 'schedules', schedules.map(s => ({ id: s.id.slice(0, 8), next_date: s.next_date, _account: s._account?.slice(0, 8), _payee: s._payee?.slice(0, 8), completed: s.completed })));
       set({ schedules });
     } finally {
       set({ loading: false });

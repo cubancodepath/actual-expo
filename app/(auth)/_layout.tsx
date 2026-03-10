@@ -101,6 +101,16 @@ export default function AuthLayout() {
         }}
       />
       <Stack.Screen
+        name="budget/quick-edit-category"
+        options={{
+          ...screen,
+          title: "Edit Category",
+          presentation: "formSheet",
+          sheetAllowedDetents: "fitToContents",
+          contentStyle: { backgroundColor: theme.colors.pageBackground },
+        }}
+      />
+      <Stack.Screen
         name="budget/edit-group"
         options={{
           ...screen,

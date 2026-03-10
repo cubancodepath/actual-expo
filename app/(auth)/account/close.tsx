@@ -135,9 +135,9 @@ export default function CloseAccountScreen() {
     >
       <Stack.Screen
         options={{
-          headerRight: () => (
+          headerLeft: () => (
             <IconButton
-              icon="close"
+              sfSymbol="xmark"
               size={22}
               color={theme.colors.headerText}
               onPress={() => router.back()}

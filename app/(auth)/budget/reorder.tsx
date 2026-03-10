@@ -304,7 +304,7 @@ export default function ReorderBudgetScreen() {
         options={{
           headerRight: () => (
             <IconButton
-              icon="checkmark"
+              ionIcon="checkmark"
               size={22}
               color={colors.headerText}
               onPress={() => router.back()}

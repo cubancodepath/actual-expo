@@ -43,9 +43,9 @@ export default function ReconcileConfirmScreen() {
     <View style={{ flex: 1, backgroundColor: colors.pageBackground, padding: spacing.lg }}>
       <Stack.Screen
         options={{
-          headerRight: () => (
+          headerLeft: () => (
             <IconButton
-              icon="close"
+              sfSymbol="xmark"
               size={22}
               color={colors.headerText}
               onPress={() => router.dismiss()}

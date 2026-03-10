@@ -60,9 +60,16 @@ export default function NewAccountScreen() {
     <>
       <Stack.Screen
         options={{
-          headerRight: () => (
+          headerLeft: () => (
             <Pressable onPress={() => router.back()} hitSlop={8}>
               <Ionicons name="close" size={24} color={theme.colors.textSecondary} />
+            </Pressable>
+          ),
+          headerRight: () => (
+            <Pressable onPress={handleCreate} hitSlop={8} disabled={!name.trim() || loading}>
+              <Text variant="body" color={name.trim() && !loading ? theme.colors.primary : theme.colors.textMuted} style={{ fontWeight: '600', fontSize: 17 }}>
+                Create
+              </Text>
             </Pressable>
           ),
         }}

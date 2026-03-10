@@ -49,9 +49,9 @@ export default function CoverOverspentScreen() {
     >
       <Stack.Screen
         options={{
-          headerRight: () => (
+          headerLeft: () => (
             <IconButton
-              icon="close"
+              sfSymbol="xmark"
               size={22}
               color={colors.headerText}
               onPress={() => router.back()}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, Switch, TextInput, View } from 'react-native';
+import { Alert, Pressable, Switch, TextInput, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
 import { useCategoriesStore } from '../../../src/stores/categoriesStore';
@@ -67,13 +67,20 @@ export default function EditGroupScreen() {
     <View style={{ backgroundColor: colors.pageBackground, padding: spacing.lg, paddingTop: 72 }}>
       <Stack.Screen
         options={{
-          headerRight: () => (
+          headerLeft: () => (
             <IconButton
-              icon="close"
+              sfSymbol="xmark"
               size={22}
               color={colors.headerText}
               onPress={() => router.back()}
             />
+          ),
+          headerRight: () => (
+            <Pressable onPress={handleSave} hitSlop={8} disabled={!name.trim() || saving}>
+              <Text variant="body" color={name.trim() && !saving ? colors.primary : colors.textMuted} style={{ fontWeight: '600', fontSize: 17 }}>
+                Save
+              </Text>
+            </Pressable>
           ),
         }}
       />
@@ -129,15 +136,6 @@ export default function EditGroupScreen() {
           />
         </View>
       )}
-
-      <Button
-        title="Save"
-        variant="primary"
-        onPress={handleSave}
-        disabled={!name.trim()}
-        loading={saving}
-        style={{ marginTop: spacing.lg, borderRadius: 999 }}
-      />
 
       <Button
         title="Delete Group"

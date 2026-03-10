@@ -202,9 +202,9 @@ export default function AssignBudgetScreen() {
     <View style={{ flex: 1, backgroundColor: colors.pageBackground }}>
       <Stack.Screen
         options={{
-          headerRight: () => (
+          headerLeft: () => (
             <IconButton
-              icon="close"
+              sfSymbol="xmark"
               size={22}
               color={colors.headerText}
               onPress={() => router.back()}

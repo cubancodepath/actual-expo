@@ -133,7 +133,7 @@ export default function TransactionTagsScreen() {
           title: 'Tags',
           headerLeft: () => (
             <IconButton
-              icon="close"
+              sfSymbol="xmark"
               size={22}
               color={colors.headerText}
               onPress={() => router.back()}

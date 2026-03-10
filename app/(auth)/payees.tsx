@@ -224,7 +224,7 @@ export default function PayeesScreen() {
     <View style={styles.container}>
       <Stack.Screen
         options={{
-          headerRight: () => (
+          headerLeft: () => (
             <Pressable onPress={() => router.back()} hitSlop={8}>
               <Ionicons name="close" size={22} color="#999" />
             </Pressable>

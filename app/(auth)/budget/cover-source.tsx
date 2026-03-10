@@ -85,7 +85,7 @@ function SourceRow({
 
       {/* Remove */}
       <IconButton
-        icon="close-circle"
+        sfSymbol="xmark.circle.fill"
         size={18}
         color={colors.textMuted}
         onPress={() => onRemove(source.id)}
@@ -222,8 +222,8 @@ export default function CoverSourceScreen() {
           gap: spacing.sm,
         }}
       >
-        {/* Close button — top right */}
-        <View style={{ position: 'absolute', top: 16, right: spacing.md }}>
+        {/* Close button — top left */}
+        <View style={{ position: 'absolute', top: 16, left: spacing.md }}>
           <GlassButton icon="xmark" onPress={() => router.back()} color={headerText} />
         </View>
 

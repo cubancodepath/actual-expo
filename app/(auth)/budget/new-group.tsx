@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import { TextInput, View } from 'react-native';
+import { Pressable, TextInput, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
 import { useCategoriesStore } from '../../../src/stores/categoriesStore';
 import { useBudgetStore } from '../../../src/stores/budgetStore';
 import { Text } from '../../../src/presentation/components/atoms/Text';
-import { Button } from '../../../src/presentation/components/atoms/Button';
 import { IconButton } from '../../../src/presentation/components/atoms/IconButton';
 
 export default function NewGroupScreen() {
@@ -32,13 +31,20 @@ export default function NewGroupScreen() {
     <View style={{ backgroundColor: colors.pageBackground, padding: spacing.lg, paddingTop: 72 }}>
       <Stack.Screen
         options={{
-          headerRight: () => (
+          headerLeft: () => (
             <IconButton
-              icon="close"
+              sfSymbol="xmark"
               size={22}
               color={colors.headerText}
               onPress={() => router.back()}
             />
+          ),
+          headerRight: () => (
+            <Pressable onPress={handleSave} hitSlop={8} disabled={!name.trim() || saving}>
+              <Text variant="body" color={name.trim() && !saving ? colors.primary : colors.textMuted} style={{ fontWeight: '600', fontSize: 17 }}>
+                Save
+              </Text>
+            </Pressable>
           ),
         }}
       />
@@ -63,15 +69,6 @@ export default function NewGroupScreen() {
           borderWidth: bw.thin,
           borderColor: colors.divider,
         }}
-      />
-
-      <Button
-        title="Save"
-        variant="primary"
-        onPress={handleSave}
-        disabled={!name.trim()}
-        loading={saving}
-        style={{ marginTop: spacing.lg, borderRadius: 999 }}
       />
     </View>
   );

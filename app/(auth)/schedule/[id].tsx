@@ -197,6 +197,11 @@ export default function ScheduleDetailScreen() {
       <Stack.Screen
         options={{
           title: "Schedule",
+          headerLeft: () => (
+            <Pressable onPress={() => router.back()} hitSlop={8}>
+              <Ionicons name="close" size={24} color={colors.textSecondary} />
+            </Pressable>
+          ),
           headerRight: () => (
             <Button
               title="Save"

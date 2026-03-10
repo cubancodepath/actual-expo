@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Keyboard, useColorScheme, View } from 'react-native';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import Animated, { useAnimatedScrollHandler, useAnimatedStyle, useSharedValue, interpolate } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAccountsStore } from '../../../src/stores/accountsStore';
@@ -308,7 +308,6 @@ export default function NewTransactionScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.pageBackground }}>
-      <Stack.Screen options={{ headerShown: false }} />
       <Animated.ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingBottom: spacing.xxxl }}
@@ -507,8 +506,8 @@ export default function NewTransactionScreen() {
         />
       </Animated.View>
 
-      {/* Close button — always visible, fixed at top-right of modal */}
-      <View style={{ position: 'absolute', top: 12, right: spacing.md, zIndex: 11 }}>
+      {/* Close button — always visible, fixed at top-left of modal */}
+      <View style={{ position: 'absolute', top: 12, left: spacing.md, zIndex: 11 }}>
         <GlassButton icon="xmark" onPress={() => router.dismiss()} />
       </View>
 

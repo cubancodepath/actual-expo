@@ -95,7 +95,7 @@ export default function AccountSettingsScreen() {
     <>
       <Stack.Screen
         options={{
-          headerRight: () => (
+          headerLeft: () => (
             <Pressable onPress={() => router.back()} hitSlop={8}>
               <Ionicons name="close" size={24} color={theme.colors.textSecondary} />
             </Pressable>

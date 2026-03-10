@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Keyboard, Pressable, ScrollView, Switch, View } from "react-native";
 import { Stack, useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import {
   useTheme,
   useThemedStyles,
@@ -145,6 +146,11 @@ export default function NewScheduleScreen() {
       <Stack.Screen
         options={{
           title: "New Schedule",
+          headerLeft: () => (
+            <Pressable onPress={() => router.back()} hitSlop={8}>
+              <Ionicons name="close" size={24} color={colors.textSecondary} />
+            </Pressable>
+          ),
           headerRight: () => (
             <Button
               title="Save"

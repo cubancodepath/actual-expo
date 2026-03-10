@@ -178,18 +178,18 @@ export default function SchedulesScreen() {
     <View style={styles.container}>
       <Stack.Screen
         options={{
+          headerLeft: () => (
+            <Pressable onPress={() => router.back()} hitSlop={8}>
+              <Ionicons name="close" size={24} color={colors.textSecondary} />
+            </Pressable>
+          ),
           headerRight: () => (
-            <View style={{ flexDirection: "row", gap: spacing.md }}>
-              <Pressable
-                onPress={() => router.push("/(auth)/schedule/new")}
-                hitSlop={8}
-              >
-                <Ionicons name="add" size={24} color={colors.primary} />
-              </Pressable>
-              <Pressable onPress={() => router.back()} hitSlop={8}>
-                <Ionicons name="close" size={24} color={colors.textSecondary} />
-              </Pressable>
-            </View>
+            <Pressable
+              onPress={() => router.push("/(auth)/schedule/new")}
+              hitSlop={8}
+            >
+              <Ionicons name="add" size={24} color={colors.primary} />
+            </Pressable>
           ),
         }}
       />

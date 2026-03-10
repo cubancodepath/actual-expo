@@ -84,13 +84,20 @@ export default function EditCategoryScreen() {
     <View style={{ backgroundColor: colors.pageBackground, padding: spacing.lg, paddingTop: 72 }}>
       <Stack.Screen
         options={{
-          headerRight: () => (
+          headerLeft: () => (
             <IconButton
-              icon="close"
+              sfSymbol="xmark"
               size={22}
               color={colors.headerText}
               onPress={() => router.back()}
             />
+          ),
+          headerRight: () => (
+            <Pressable onPress={handleSave} hitSlop={8} disabled={!name.trim() || busy}>
+              <Text variant="body" color={name.trim() && !busy ? colors.primary : colors.textMuted} style={{ fontWeight: '600', fontSize: 17 }}>
+                Save
+              </Text>
+            </Pressable>
           ),
         }}
       />
@@ -211,17 +218,7 @@ export default function EditCategoryScreen() {
         </View>
       )}
 
-      {/* Save */}
-      <Button
-        title="Save"
-        variant="primary"
-        onPress={handleSave}
-        disabled={!name.trim() || busy}
-        loading={saving}
-        style={{ marginTop: spacing.xl, borderRadius: 999 }}
-      />
-
-      {/* Delete — separated from Save, ghost style */}
+      {/* Delete — separated from form, ghost style */}
       <View style={{ marginTop: spacing.xl }}>
         <Button
           title="Delete Category"

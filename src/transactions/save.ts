@@ -76,6 +76,7 @@ export async function saveTransaction(input: SaveTransactionInput): Promise<stri
     // Edit split: update parent, delete old children, create new children
     await batchMessages(async () => {
       await updateTransaction(transactionId, {
+        acct,
         date,
         amount: finalAmount,
         description: resolvedPayeeId,
@@ -142,6 +143,7 @@ export async function saveTransaction(input: SaveTransactionInput): Promise<stri
   if (isEdit) {
     // Simple edit
     await updateTransaction(transactionId, {
+      acct,
       date,
       amount: finalAmount,
       description: resolvedPayeeId,

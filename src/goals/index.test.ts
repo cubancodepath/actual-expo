@@ -90,6 +90,15 @@ describe('inferGoalFromDef', () => {
     expect(inferGoalFromDef(def)).toEqual({ goal: 20000, longGoal: false });
   });
 
+  it('simple monthly with limit → goal is limit amount', () => {
+    const def = JSON.stringify([{
+      type: 'simple', monthly: 200,
+      limit: { amount: 800, hold: false, period: 'monthly' },
+      priority: 0, directive: 'template',
+    }]);
+    expect(inferGoalFromDef(def)).toEqual({ goal: 80000, longGoal: false });
+  });
+
   it('simple refill (no monthly, with limit) → longGoal false (monthly refill)', () => {
     const def = JSON.stringify([{
       type: 'simple', limit: { amount: 500, hold: false, period: 'monthly' }, priority: 0, directive: 'template',

@@ -492,6 +492,40 @@ describe('calculateGoal — limit capping', () => {
     const result = await calculateGoal('cat-1', '2026-03', templates, ctx());
     expect(result.budgeted).toBe(30000); // capped at inline limit
   });
+
+  it('monthly + limit: under limit budgets full monthly', async () => {
+    const templates: Template[] = [
+      { type: 'simple', monthly: 200, limit: { amount: 800, hold: false, period: 'monthly' }, priority: 0, directive: 'template' },
+    ];
+    const result = await calculateGoal('cat-1', '2026-03', templates, ctx());
+    expect(result.budgeted).toBe(20000);
+    expect(result.goal).toBe(20000);
+    expect(result.longGoal).toBe(false);
+  });
+
+  it('monthly + limit: carryover reduces to fit limit', async () => {
+    const templates: Template[] = [
+      { type: 'simple', monthly: 200, limit: { amount: 800, hold: false, period: 'monthly' }, priority: 0, directive: 'template' },
+    ];
+    const result = await calculateGoal('cat-1', '2026-03', templates, ctx({ fromLastMonth: 70000 }));
+    expect(result.budgeted).toBe(10000); // 80000 - 70000
+  });
+
+  it('monthly + limit: at limit budgets 0', async () => {
+    const templates: Template[] = [
+      { type: 'simple', monthly: 200, limit: { amount: 800, hold: false, period: 'monthly' }, priority: 0, directive: 'template' },
+    ];
+    const result = await calculateGoal('cat-1', '2026-03', templates, ctx({ fromLastMonth: 80000 }));
+    expect(result.budgeted).toBe(0);
+  });
+
+  it('monthly + limit: over limit budgets 0', async () => {
+    const templates: Template[] = [
+      { type: 'simple', monthly: 200, limit: { amount: 800, hold: false, period: 'monthly' }, priority: 0, directive: 'template' },
+    ];
+    const result = await calculateGoal('cat-1', '2026-03', templates, ctx({ fromLastMonth: 90000 }));
+    expect(result.budgeted).toBe(0);
+  });
 });
 
 // ═══════════════════════════════════════════════════════════════════════════

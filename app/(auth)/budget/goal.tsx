@@ -22,6 +22,7 @@ import { updateGoalIndicator } from '../../../src/goals/apply';
 import { amountToInteger, integerToAmount } from '../../../src/goals/engine';
 import { batchMessages } from '../../../src/sync';
 import { formatDateLong } from '../../../src/lib/date';
+import { formatBalance } from '../../../src/lib/format';
 import type { Template } from '../../../src/goals/types';
 
 // ---------------------------------------------------------------------------
@@ -150,6 +151,8 @@ export default function GoalEditorScreen() {
 
   // Simple-specific: "set aside" (false) vs "refill to" (true)
   const [simpleRefill, setSimpleRefill] = useState(false);
+  const [capEnabled, setCapEnabled] = useState(false);
+  const [capCents, setCapCents] = useState(0);
 
   // By-specific
   const [targetDate, setTargetDate] = useState<Date>(getDefaultTargetDate);
@@ -235,6 +238,10 @@ export default function GoalEditorScreen() {
       switch (t.type) {
         case 'simple':
           setAmountCents(t.monthly != null ? amountToInteger(t.monthly) : 0);
+          if (t.limit) {
+            setCapEnabled(true);
+            setCapCents(amountToInteger(t.limit.amount));
+          }
           break;
         case 'goal':
           setAmountCents(amountToInteger(t.amount));
@@ -291,7 +298,14 @@ export default function GoalEditorScreen() {
             priority: 0, directive: 'template' as const,
           }];
         }
-        // "#template X" — fixed monthly amount
+        // "#template X" or "#template X up to Y" — fixed monthly with optional balance cap
+        if (capEnabled && capCents > 0) {
+          return [{
+            type: 'simple', monthly: displayAmount,
+            limit: { amount: integerToAmount(capCents), hold: false, period: 'monthly' as const },
+            priority: 0, directive: 'template' as const,
+          }];
+        }
         return [{ type: 'simple', monthly: displayAmount, priority: 0, directive: 'template' }];
       case 'goal':
         return [{ type: 'goal', amount: displayAmount, directive: 'goal' }];
@@ -341,7 +355,10 @@ export default function GoalEditorScreen() {
 
   const canSave = (() => {
     switch (goalType) {
-      case 'simple': case 'goal': case 'by': case 'periodic': case 'spend': case 'limit':
+      case 'simple':
+        if (capEnabled) return amountCents > 0 && capCents > amountCents;
+        return amountCents > 0;
+      case 'goal': case 'by': case 'periodic': case 'spend': case 'limit':
         return amountCents > 0;
       case 'percentage':
         return percent > 0;
@@ -502,15 +519,32 @@ export default function GoalEditorScreen() {
             <ToggleRow
               label="Refill mode"
               value={simpleRefill}
-              onValueChange={setSimpleRefill}
+              onValueChange={(v) => {
+                setSimpleRefill(v);
+                if (v) { setCapEnabled(false); setCapCents(0); }
+              }}
             />
-            <View style={{ paddingHorizontal: spacing.md, paddingBottom: spacing.md }}>
-              <Text variant="captionSm" color={colors.textMuted}>
-                {simpleRefill
-                  ? 'Budget only what\'s needed to bring the balance back up to the target. If you have leftover from last month, less will be budgeted.'
-                  : 'Budget the full amount every month, regardless of the current balance.'}
-              </Text>
-            </View>
+            {!simpleRefill && (
+              <>
+                <Divider />
+                <ToggleRow
+                  label="Balance cap"
+                  value={capEnabled}
+                  onValueChange={setCapEnabled}
+                />
+                {capEnabled && (
+                  <>
+                    <Divider />
+                    <ListItem
+                      title="Maximum balance"
+                      right={
+                        <CurrencyInput value={capCents} onChangeValue={setCapCents} type="income" compact style={{ paddingVertical: 0 }} />
+                      }
+                    />
+                  </>
+                )}
+              </>
+            )}
           </View>
         )}
 
@@ -690,11 +724,6 @@ export default function GoalEditorScreen() {
               options={Array.from({ length: 10 }, (_, i) => ({ value: i + 1, label: `${i + 1}` }))}
               onSelectionChange={setWeight}
             />
-            <View style={{ paddingHorizontal: spacing.md, paddingBottom: spacing.md }}>
-              <Text variant="captionSm" color={colors.textMuted}>
-                Higher weight means a larger share of the remaining budget.
-              </Text>
-            </View>
           </View>
         )}
 
@@ -730,21 +759,49 @@ export default function GoalEditorScreen() {
               value={limitHold}
               onValueChange={setLimitHold}
             />
-            <View style={{ paddingHorizontal: spacing.md, paddingBottom: spacing.sm }}>
-              <Text variant="captionSm" color={colors.textMuted}>
-                {limitHold
-                  ? `If you spend less than ${amountCents > 0 ? '$' + integerToAmount(amountCents) : 'the limit'}, the leftover rolls into next ${limitPeriod === 'daily' ? 'day' : limitPeriod === 'weekly' ? 'week' : 'month'}.`
-                  : `Unspent budget is removed at the end of each ${limitPeriod === 'daily' ? 'day' : limitPeriod === 'weekly' ? 'week' : 'month'}.`}
-              </Text>
-            </View>
-            <View style={{ paddingHorizontal: spacing.md, paddingBottom: spacing.md }}>
-              <Text variant="captionSm" color={colors.textMuted}>
-                This sets a spending cap. Use "Monthly" with refill mode instead if you want to auto-budget up to a target.
-              </Text>
-            </View>
           </View>
         )}
       </Card>
+
+      {/* ── Section footers (outside card per Apple HIG) ────── */}
+      {goalType === 'simple' && (
+        <Text
+          variant="captionSm"
+          color={capEnabled && capCents > 0 && capCents <= amountCents ? colors.negative : colors.textMuted}
+          style={{ paddingHorizontal: spacing.xs, marginTop: spacing.xs }}
+        >
+          {capEnabled
+            ? capCents > 0 && amountCents > 0
+              ? capCents <= amountCents
+                ? 'Balance cap must be greater than the monthly amount.'
+                : `${formatBalance(amountCents)} will be budgeted each month until the balance reaches ${formatBalance(capCents)}.`
+              : 'Once the balance hits this amount, no more will be budgeted.'
+            : simpleRefill
+              ? 'Budget only what\'s needed to bring the balance back up to the target. If you have leftover from last month, less will be budgeted.'
+              : 'Budget the full amount every month, regardless of the current balance.'}
+        </Text>
+      )}
+      {goalType === 'remainder' && (
+        <Text
+          variant="captionSm"
+          color={colors.textMuted}
+          style={{ paddingHorizontal: spacing.xs, marginTop: spacing.xs }}
+        >
+          Higher weight means a larger share of the remaining budget.
+        </Text>
+      )}
+      {goalType === 'limit' && (
+        <Text
+          variant="captionSm"
+          color={colors.textMuted}
+          style={{ paddingHorizontal: spacing.xs, marginTop: spacing.xs }}
+        >
+          {limitHold
+            ? `If you spend less than ${amountCents > 0 ? '$' + integerToAmount(amountCents) : 'the limit'}, the leftover rolls into next ${limitPeriod === 'daily' ? 'day' : limitPeriod === 'weekly' ? 'week' : 'month'}.`
+            : `Unspent budget is removed at the end of each ${limitPeriod === 'daily' ? 'day' : limitPeriod === 'weekly' ? 'week' : 'month'}.`}
+          {' '}This sets a spending cap. Use "Monthly" with refill mode instead if you want to auto-budget up to a target.
+        </Text>
+      )}
 
       {/* ── Save / Delete ──────────────────────────────────────── */}
       <Button

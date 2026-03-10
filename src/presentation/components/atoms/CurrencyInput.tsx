@@ -44,6 +44,8 @@ interface CurrencyInputProps {
   style?: ViewStyle;
   /** Override the amount text color (defaults to expense/income semantic color) */
   color?: string;
+  /** Compact variant with smaller font for secondary inputs */
+  compact?: boolean;
 }
 
 /**
@@ -61,6 +63,7 @@ export const CurrencyInput = forwardRef<CurrencyInputRef, CurrencyInputProps>(
     autoFocus = false,
     style,
     color: colorOverride,
+    compact = false,
   }, ref) {
     const theme = useTheme();
     const styles = useThemedStyles(createStyles);
@@ -133,29 +136,36 @@ export const CurrencyInput = forwardRef<CurrencyInputRef, CurrencyInputProps>(
       ? expr.expressionInputValue
       : buffer;
 
+    const compactOverride = compact ? {
+      fontSize: 20,
+      lineHeight: 26,
+    } : undefined;
+    const compactCursor = compact ? { height: 18 } : undefined;
+    const compactContainer = compact ? { paddingVertical: theme.spacing.sm } : undefined;
+
     return (
-      <Pressable style={[styles.container, style]} onPress={() => inputRef.current?.focus()}>
+      <Pressable style={[styles.container, compactContainer, style]} onPress={() => inputRef.current?.focus()}>
         <View style={styles.display}>
           {!expr.expressionMode && (
             <>
-              <Text style={[styles.prefix, { color: amountColor }]}>
+              <Text style={[styles.prefix, { color: amountColor }, compactOverride]}>
                 {prefix}
               </Text>
-              <Text style={[styles.amount, { color: amountColor }]}>
+              <Text style={[styles.amount, { color: amountColor }, compactOverride]}>
                 {formatCents(value)}
               </Text>
             </>
           )}
           {expr.expressionMode && (
             <Text
-              style={[styles.amount, { color: theme.colors.primary }]}
+              style={[styles.amount, { color: theme.colors.primary }, compactOverride]}
               numberOfLines={1}
             >
               {formatExpression(expr.fullExpression)}
             </Text>
           )}
           <Animated.View
-            style={[styles.cursor, { backgroundColor: theme.colors.primary }, cursorStyle]}
+            style={[styles.cursor, { backgroundColor: theme.colors.primary }, cursorStyle, compactCursor]}
           />
         </View>
 

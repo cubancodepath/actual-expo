@@ -421,10 +421,32 @@ export async function switchBudget(
 // Delete
 // ---------------------------------------------------------------------------
 
+/** Delete a budget's local files. Closes the budget first if it's active. */
 export async function deleteBudget(budgetId: string): Promise<void> {
   const prefs = usePrefsStore.getState();
   if (prefs.activeBudgetId === budgetId) {
     await closeBudget();
   }
   await deleteBudgetDir(budgetId);
+}
+
+/** Soft-delete a budget from the server (marks deleted=true). */
+export async function deleteFromServer(
+  serverUrl: string,
+  token: string,
+  cloudFileId: string,
+): Promise<void> {
+  const res = await fetch(`${serverUrl}/sync/delete-user-file`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-actual-token': token,
+    },
+    body: JSON.stringify({ fileId: cloudFileId }),
+  });
+  throwIfUnauthorized(res);
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`Server delete failed (${res.status}): ${text}`);
+  }
 }

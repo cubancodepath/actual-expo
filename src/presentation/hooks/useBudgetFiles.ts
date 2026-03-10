@@ -6,7 +6,11 @@ import {
   type ReconciledBudgetFile,
   reconcileFiles,
   switchBudget,
+  deleteBudget,
+  deleteFromServer,
+  uploadBudget,
 } from '../../services/budgetfiles';
+import { openBudget } from '../../services/budgetfiles';
 import { clearSwitchingFlag } from '../../sync';
 
 type UseBudgetFilesReturn = {
@@ -22,6 +26,10 @@ type UseBudgetFilesReturn = {
   /** Key of file currently being selected/downloaded */
   selecting: string | null;
   selectFile: (file: ReconciledBudgetFile) => Promise<void>;
+  /** Delete a file locally and/or from server */
+  deleteFile: (file: ReconciledBudgetFile, fromServer?: boolean) => Promise<void>;
+  /** Upload a local-only file to the server */
+  uploadFile: (file: ReconciledBudgetFile) => Promise<void>;
   retry: () => void;
   refresh: () => void;
   dismissError: () => void;
@@ -87,6 +95,46 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
     }
   }, [serverUrl, token]);
 
+  const handleDeleteFile = useCallback(async (file: ReconciledBudgetFile, fromServer?: boolean) => {
+    try {
+      if (fromServer && file.cloudFileId) {
+        await deleteFromServer(serverUrl, token, file.cloudFileId);
+      }
+      if (file.localId) {
+        await deleteBudget(file.localId);
+      }
+      // Refresh list after delete
+      const updated = await fetchFiles();
+      if (isMounted.current) setFiles(updated);
+    } catch (e: unknown) {
+      if (isMounted.current) {
+        setError(e instanceof Error ? e.message : String(e));
+      }
+      throw e;
+    }
+  }, [serverUrl, token, fetchFiles]);
+
+  const handleUploadFile = useCallback(async (file: ReconciledBudgetFile) => {
+    if (!file.localId) throw new Error('No local ID to upload');
+    try {
+      // Need the budget DB open to read the file
+      const { activeBudgetId } = usePrefsStore.getState();
+      const needsOpen = activeBudgetId !== file.localId;
+      if (needsOpen) {
+        await openBudget(file.localId);
+      }
+      await uploadBudget(serverUrl, token, file.localId);
+      // Refresh list to show updated state
+      const updated = await fetchFiles();
+      if (isMounted.current) setFiles(updated);
+    } catch (e: unknown) {
+      if (isMounted.current) {
+        setError(e instanceof Error ? e.message : String(e));
+      }
+      throw e;
+    }
+  }, [serverUrl, token, fetchFiles]);
+
   const localFiles = files.filter(f => f.state !== 'remote');
   const remoteFiles = files.filter(f => f.state === 'remote');
 
@@ -98,6 +146,8 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
     error,
     selecting,
     selectFile,
+    deleteFile: handleDeleteFile,
+    uploadFile: handleUploadFile,
     retry: loadFiles,
     refresh: refreshFiles,
     dismissError: () => setError(null),

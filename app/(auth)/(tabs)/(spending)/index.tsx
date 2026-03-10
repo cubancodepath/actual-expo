@@ -14,7 +14,7 @@ import {
 } from '../../../../src/transactions';
 import { usePrivacyStore } from '../../../../src/stores/privacyStore';
 import { useUndoStore } from '../../../../src/stores/undoStore';
-import { getCommonMenuItems } from '../../../../src/presentation/hooks/useCommonMenuItems';
+import { useCommonMenuActions } from '../../../../src/presentation/hooks/useCommonMenuItems';
 import { useTabBarStore } from '../../../../src/stores/tabBarStore';
 import { useTheme } from '../../../../src/presentation/providers/ThemeProvider';
 import { EmptyState } from '../../../../src/presentation/components';
@@ -213,6 +213,9 @@ export default function SpendingScreen() {
     [txnList.transactions, previewTransactions, upcomingExpanded],
   );
 
+  // ---- Common menu actions (JSX) ----
+  const commonActions = useCommonMenuActions();
+
   // ---- Normal-mode header ----
   useLayoutEffect(() => {
     if (txnList.isSelectMode) return;
@@ -222,27 +225,8 @@ export default function SpendingScreen() {
       headerTitle: undefined,
       headerLeft: undefined,
       headerRight: undefined,
-      unstable_headerRightItems: () => [
-        {
-          type: 'button' as const,
-          icon: { type: 'sfSymbol' as const, name: 'magnifyingglass' },
-          onPress: () => router.push('/(auth)/(tabs)/(spending)/search'),
-        },
-        {
-          type: 'button' as const,
-          label: 'Select',
-          onPress: txnList.enterSelectMode,
-        },
-        {
-          type: 'menu' as const,
-          icon: { type: 'sfSymbol' as const, name: 'ellipsis' },
-          menu: {
-            items: getCommonMenuItems(router),
-          },
-        },
-      ],
     });
-  }, [txnList.isSelectMode, privacyMode, canUndo]);
+  }, [txnList.isSelectMode]);
 
   // ---- Render ----
 
@@ -361,6 +345,19 @@ export default function SpendingScreen() {
           onMove={txnList.triggerAccountPicker}
           onSetCategory={txnList.triggerCategoryPicker}
         />
+      )}
+
+      {!txnList.isSelectMode && (
+        <Stack.Toolbar placement="right">
+          <Stack.Toolbar.Button onPress={txnList.enterSelectMode}>Select</Stack.Toolbar.Button>
+          <Stack.Toolbar.Button
+            icon="magnifyingglass"
+            onPress={() => router.push('/(auth)/(tabs)/(spending)/search')}
+          />
+          <Stack.Toolbar.Menu icon="ellipsis">
+            {commonActions}
+          </Stack.Toolbar.Menu>
+        </Stack.Toolbar>
       )}
     </>
   );

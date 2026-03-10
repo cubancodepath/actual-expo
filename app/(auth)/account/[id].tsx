@@ -8,7 +8,7 @@ import {
   View,
 } from 'react-native';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
-import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import { Stack, useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useAccountsStore } from '../../../src/stores/accountsStore';
 import {
   getClearedBalance,
@@ -29,7 +29,7 @@ import { UnclearedPill } from '../../../src/presentation/components/transaction/
 import { usePrefsStore } from '../../../src/stores/prefsStore';
 import { usePrivacyStore } from '../../../src/stores/privacyStore';
 import { useUndoStore } from '../../../src/stores/undoStore';
-import { getCommonMenuItems } from '../../../src/presentation/hooks/useCommonMenuItems';
+import { useCommonMenuActions } from '../../../src/presentation/hooks/useCommonMenuItems';
 import { useTagsStore } from '../../../src/stores/tagsStore';
 import {
   buildListData,
@@ -244,6 +244,9 @@ export default function AccountTransactionsScreen() {
     [txnList.transactions, previewTransactions, upcomingExpanded],
   );
 
+  // ---- Common menu actions (JSX) ----
+  const commonActions = useCommonMenuActions();
+
   // ---- Normal-mode header ----
   useLayoutEffect(() => {
     if (txnList.isSelectMode) return;
@@ -252,53 +255,8 @@ export default function AccountTransactionsScreen() {
       headerTitle: undefined,
       headerLeft: undefined,
       headerRight: undefined,
-      unstable_headerRightItems: () => [
-        {
-          type: 'button' as const,
-          icon: { type: 'sfSymbol' as const, name: 'magnifyingglass' },
-          onPress: () => router.push({
-            pathname: '/(auth)/account/search',
-            params: { accountId: id, accountName: account?.name ?? 'Account' },
-          }),
-        },
-        {
-          type: 'button' as const,
-          label: 'Select',
-          onPress: txnList.enterSelectMode,
-        },
-        {
-          type: 'menu' as const,
-          icon: { type: 'sfSymbol' as const, name: 'ellipsis' },
-          menu: {
-            items: [
-              {
-                type: 'action' as const,
-                label: 'Reconcile',
-                icon: { type: 'sfSymbol' as const, name: 'lock' },
-                onPress: () => router.push({
-                  pathname: '/(auth)/account/reconcile',
-                  params: { accountId: id, clearedBalance: String(clearedBalance) },
-                }),
-              },
-              {
-                type: 'action' as const,
-                label: hideReconciled ? 'Show Reconciled' : 'Hide Reconciled',
-                icon: { type: 'sfSymbol' as const, name: hideReconciled ? 'checkmark.circle' : 'checkmark.circle.badge.xmark' },
-                onPress: handleToggleHideReconciled,
-              },
-              {
-                type: 'action' as const,
-                label: 'Edit Account',
-                icon: { type: 'sfSymbol' as const, name: 'pencil' },
-                onPress: () => router.push({ pathname: '/(auth)/account/settings', params: { id } }),
-              },
-              ...getCommonMenuItems(router),
-            ],
-          },
-        },
-      ],
     });
-  }, [account?.name, id, txnList.isSelectMode, hideReconciled, privacyMode, canUndo, clearedBalance]);
+  }, [account?.name, txnList.isSelectMode]);
 
   // ---- Render ----
 
@@ -424,6 +382,43 @@ export default function AccountTransactionsScreen() {
           onMove={txnList.triggerAccountPicker}
           onSetCategory={txnList.triggerCategoryPicker}
         />
+      )}
+
+      {!txnList.isSelectMode && (
+        <Stack.Toolbar placement="right">
+          <Stack.Toolbar.Button onPress={txnList.enterSelectMode}>Select</Stack.Toolbar.Button>
+          <Stack.Toolbar.Button
+            icon="magnifyingglass"
+            onPress={() => router.push({
+              pathname: '/(auth)/account/search',
+              params: { accountId: id, accountName: account?.name ?? 'Account' },
+            })}
+          />
+          <Stack.Toolbar.Menu icon="ellipsis">
+            <Stack.Toolbar.MenuAction
+              icon="lock"
+              onPress={() => router.push({
+                pathname: '/(auth)/account/reconcile',
+                params: { accountId: id, clearedBalance: String(clearedBalance) },
+              })}
+            >
+              Reconcile
+            </Stack.Toolbar.MenuAction>
+            <Stack.Toolbar.MenuAction
+              icon={hideReconciled ? 'checkmark.circle' : 'checkmark.circle.badge.xmark'}
+              onPress={handleToggleHideReconciled}
+            >
+              {hideReconciled ? 'Show Reconciled' : 'Hide Reconciled'}
+            </Stack.Toolbar.MenuAction>
+            <Stack.Toolbar.MenuAction
+              icon="pencil"
+              onPress={() => router.push({ pathname: '/(auth)/account/settings', params: { id } })}
+            >
+              Edit Account
+            </Stack.Toolbar.MenuAction>
+            {commonActions}
+          </Stack.Toolbar.Menu>
+        </Stack.Toolbar>
       )}
     </View>
   );

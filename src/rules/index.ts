@@ -47,7 +47,7 @@ export async function createRule(opts: {
 
 export async function updateRule(
   id: string,
-  fields: { conditions?: RuleCondition[]; conditionsOp?: string },
+  fields: { conditions?: RuleCondition[]; conditionsOp?: string; actions?: RuleAction[] },
 ): Promise<void> {
   const dbFields: Record<string, string | number | null> = {};
   if (fields.conditions !== undefined) {
@@ -55,6 +55,9 @@ export async function updateRule(
   }
   if (fields.conditionsOp !== undefined) {
     dbFields.conditions_op = fields.conditionsOp;
+  }
+  if (fields.actions !== undefined) {
+    dbFields.actions = JSON.stringify(fields.actions);
   }
   if (Object.keys(dbFields).length === 0) return;
 

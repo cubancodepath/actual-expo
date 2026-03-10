@@ -40,6 +40,7 @@ export type Schedule = {
   _amount: number | { num1: number; num2: number } | null;
   _amountOp: string | null;
   _date: RecurConfig | string | null;
+  _category: string | null;
   _conditions: RuleCondition[];
 };
 

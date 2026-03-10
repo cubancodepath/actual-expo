@@ -8,7 +8,7 @@ import {
   skipNextDate,
   postTransactionForSchedule,
 } from '../schedules';
-import type { Schedule, RuleCondition } from '../schedules/types';
+import type { Schedule, RuleCondition, RuleAction } from '../schedules/types';
 
 type SchedulesState = {
   schedules: Schedule[];
@@ -17,10 +17,12 @@ type SchedulesState = {
   create(opts: {
     schedule?: Partial<Schedule> & { id?: string };
     conditions: RuleCondition[];
+    actions?: RuleAction[];
   }): Promise<string>;
   update(opts: {
     schedule: Partial<Schedule> & { id: string };
     conditions?: RuleCondition[];
+    actions?: RuleAction[];
     resetNextDate?: boolean;
   }): Promise<string>;
   delete_(id: string): Promise<void>;

@@ -42,7 +42,7 @@ export const UpcomingScheduleRow = memo(function UpcomingScheduleRow({
         styles.row,
         pressed && styles.pressed,
       ]}
-      onPress={undefined}
+      onPress={() => onPress(item.scheduleId)}
     >
       <View style={styles.content}>
         {/* Top row: payee + amount */}
@@ -109,6 +109,14 @@ export const UpcomingScheduleRow = memo(function UpcomingScheduleRow({
       <ContextMenu.Root>
         <ContextMenu.Trigger>{swipeableContent}</ContextMenu.Trigger>
         <ContextMenu.Content>
+          <ContextMenu.Item
+            key="edit"
+            onSelect={() => onPress(item.scheduleId)}
+          >
+            <ContextMenu.ItemTitle>Edit Schedule</ContextMenu.ItemTitle>
+            <ContextMenu.ItemIcon ios={{ name: 'pencil' }} />
+          </ContextMenu.Item>
+          <ContextMenu.Separator />
           <ContextMenu.Item
             key="post"
             onSelect={() => onPost(item.scheduleId)}

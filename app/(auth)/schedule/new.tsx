@@ -1,62 +1,84 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Alert, Keyboard, Pressable, ScrollView, Switch, View } from "react-native";
-import { Stack, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import {
-  useTheme,
-  useThemedStyles,
-} from "../../../src/presentation/providers/ThemeProvider";
-import {
-  Text,
-  Button,
-  Card,
-  ListItem,
-  SectionHeader,
-  Divider,
-  CurrencyInput,
-  type CurrencyInputRef,
-} from "../../../src/presentation/components";
-import { useSchedulesStore } from "../../../src/stores/schedulesStore";
-import { usePayeesStore } from "../../../src/stores/payeesStore";
-import { useAccountsStore } from "../../../src/stores/accountsStore";
-import { usePickerStore } from "../../../src/stores/pickerStore";
-import { getRecurringDescription } from "../../../src/schedules";
-import { todayStr } from "../../../src/lib/date";
-import type { RecurConfig, RuleCondition } from "../../../src/schedules/types";
-import type { Theme } from "../../../src/theme";
+import { useEffect, useRef, useState } from 'react';
+import { Alert, Keyboard, Pressable, Switch, useColorScheme, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import Animated, { useAnimatedScrollHandler, useAnimatedStyle, useSharedValue, interpolate } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useAccountsStore } from '../../../src/stores/accountsStore';
+import { useSchedulesStore } from '../../../src/stores/schedulesStore';
+import { usePickerStore } from '../../../src/stores/pickerStore';
+import { useCategoriesStore } from '../../../src/stores/categoriesStore';
+import { getRecurringDescription } from '../../../src/schedules';
+import { todayStr } from '../../../src/lib/date';
+import { withOpacity } from '../../../src/lib/colors';
+import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
+import { Button } from '../../../src/presentation/components/atoms/Button';
+import { Text } from '../../../src/presentation/components/atoms/Text';
+import { GlassButton } from '../../../src/presentation/components/atoms/GlassButton';
+import { CurrencyInput, type CurrencyInputRef } from '../../../src/presentation/components/atoms/CurrencyInput';
+import { KeyboardToolbar } from '../../../src/presentation/components/molecules/KeyboardToolbar';
+import { CalculatorToolbar } from '../../../src/presentation/components/atoms/CalculatorToolbar';
+import { Banner } from '../../../src/presentation/components/molecules/Banner';
+import { TypeToggle, type TransactionType } from '../../../src/presentation/components/transaction/TypeToggle';
+import { DetailRow } from '../../../src/presentation/components/transaction/DetailRow';
+import type { RecurConfig, RuleCondition, RuleAction } from '../../../src/schedules/types';
 
 export default function NewScheduleScreen() {
   const router = useRouter();
-  const { colors, spacing } = useTheme();
-  const styles = useThemedStyles(createStyles);
+  const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   const { create, load } = useSchedulesStore();
-  const payees = usePayeesStore((s) => s.payees);
   const accounts = useAccountsStore((s) => s.accounts);
 
-  // Picker store for payee/account selection
+  // Picker store
   const selectedPayee = usePickerStore((s) => s.selectedPayee);
   const selectedAccount = usePickerStore((s) => s.selectedAccount);
+  const selectedCategory = usePickerStore((s) => s.selectedCategory);
+  const selectedRecurConfig = usePickerStore((s) => s.selectedRecurConfig);
   const clearPicker = usePickerStore((s) => s.clear);
 
   // Form state
-  const [name, setName] = useState("");
+  const [type, setType] = useState<TransactionType>('expense');
   const [cents, setCents] = useState(0);
+  const [name, setName] = useState('');
   const [payeeId, setPayeeId] = useState<string | null>(null);
-  const [payeeName, setPayeeName] = useState("");
+  const [payeeName, setPayeeName] = useState('');
   const [acctId, setAcctId] = useState<string | null>(null);
-  const [acctName, setAcctName] = useState("");
+  const [acctName, setAcctName] = useState('');
+  const [categoryId, setCategoryId] = useState<string | null>(null);
+  const [categoryName, setCategoryName] = useState('');
   const [postsTransaction, setPostsTransaction] = useState(false);
   const [recurConfig, setRecurConfig] = useState<RecurConfig>({
-    frequency: "monthly",
+    frequency: 'monthly',
     start: todayStr(),
   });
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const currencyRef = useRef<CurrencyInputRef>(null);
+  const scrollY = useSharedValue(0);
+
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
+
+  const blurContainerStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(scrollY.value, [0, 50], [0, 1], 'clamp'),
+  }));
+
+  // Clear picker on mount, set default account
+  useEffect(() => {
+    clearPicker();
+    const openAccounts = accounts.filter((a) => !a.closed);
+    if (openAccounts.length > 0) {
+      setAcctId(openAccounts[0].id);
+      setAcctName(openAccounts[0].name);
+    }
+  }, []);
 
   // Sync picker selections
-  const selectedRecurConfig = usePickerStore((s) => s.selectedRecurConfig);
-
   useEffect(() => {
     if (selectedPayee) {
       setPayeeId(selectedPayee.id);
@@ -72,51 +94,72 @@ export default function NewScheduleScreen() {
   }, [selectedAccount]);
 
   useEffect(() => {
+    if (selectedCategory) {
+      setCategoryId(selectedCategory.id);
+      setCategoryName(selectedCategory.name);
+    }
+  }, [selectedCategory]);
+
+  useEffect(() => {
     if (selectedRecurConfig) {
       setRecurConfig(selectedRecurConfig);
     }
   }, [selectedRecurConfig]);
 
-  // Clear picker on mount
-  useEffect(() => {
-    clearPicker();
-    // Set default account
-    const openAccounts = accounts.filter((a) => !a.closed);
-    if (openAccounts.length > 0) {
-      setAcctId(openAccounts[0].id);
-      setAcctName(openAccounts[0].name);
-    }
-  }, []);
-
   const recurDesc = getRecurringDescription(recurConfig);
 
-  function handleRecurrencePicker() {
-    router.push({
-      pathname: "/(auth)/schedule/recurrence",
-      params: {
-        config: JSON.stringify(recurConfig),
-      },
-    });
-  }
+  // ── Header colors based on type ──
+  const isExpense = type === 'expense';
+  const headerBg = isExpense
+    ? (isDark ? withOpacity(colors.negative, 0.18) : colors.errorBackground)
+    : (isDark ? withOpacity(colors.positive, 0.18) : colors.successBackground);
+  const headerText = isExpense
+    ? (isDark ? colors.negative : colors.errorText)
+    : (isDark ? colors.positive : colors.successText);
+
+  const cardStyle = {
+    backgroundColor: colors.cardBackground,
+    borderRadius: br.lg,
+    borderWidth: bw.thin,
+    borderColor: colors.cardBorder,
+    overflow: 'hidden' as const,
+  };
+
+  const dividerStyle = {
+    height: bw.thin,
+    backgroundColor: colors.divider,
+    marginHorizontal: spacing.lg,
+  };
 
   async function handleSave() {
     if (!acctId) {
-      Alert.alert("Error", "Please select an account.");
+      setError('Please select an account.');
+      return;
+    }
+    if (cents === 0) {
+      setError('Enter an amount.');
       return;
     }
 
     Keyboard.dismiss();
+    setError(null);
     setSaving(true);
 
     try {
       const conditions: RuleCondition[] = [];
 
       if (payeeId) {
-        conditions.push({ field: "payee", op: "is", value: payeeId });
+        conditions.push({ field: 'payee', op: 'is', value: payeeId });
       }
-      conditions.push({ field: "account", op: "is", value: acctId });
-      conditions.push({ field: "amount", op: "is", value: -Math.abs(cents) });
-      conditions.push({ field: "date", op: "isapprox", value: recurConfig });
+      conditions.push({ field: 'account', op: 'is', value: acctId });
+
+      const signedAmount = type === 'expense' ? -Math.abs(cents) : Math.abs(cents);
+      conditions.push({ field: 'amount', op: 'is', value: signedAmount });
+      conditions.push({ field: 'date', op: 'isapprox', value: recurConfig });
+
+      const actions: RuleAction[] = categoryId
+        ? [{ op: 'set', field: 'category', value: categoryId }]
+        : [];
 
       await create({
         schedule: {
@@ -124,12 +167,13 @@ export default function NewScheduleScreen() {
           posts_transaction: postsTransaction,
         },
         conditions,
+        actions,
       });
 
       load();
-      router.back();
+      router.dismiss();
     } catch (e) {
-      Alert.alert("Error", e instanceof Error ? e.message : "Failed to create schedule");
+      setError(e instanceof Error ? e.message : 'Failed to create schedule');
     } finally {
       setSaving(false);
     }
@@ -138,123 +182,193 @@ export default function NewScheduleScreen() {
   const canSave = acctId && cents !== 0;
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={{ paddingBottom: spacing.xxxl }}
-      keyboardDismissMode="on-drag"
-    >
-      <Stack.Screen
-        options={{
-          title: "New Schedule",
-          headerLeft: () => (
-            <Pressable onPress={() => router.back()} hitSlop={8}>
-              <Ionicons name="close" size={24} color={colors.textSecondary} />
-            </Pressable>
-          ),
-          headerRight: () => (
-            <Button
-              title="Save"
-              variant="primary"
-              size="sm"
-              onPress={handleSave}
-              loading={saving}
-              disabled={!canSave || saving}
-            />
-          ),
-        }}
-      />
+    <View style={{ flex: 1, backgroundColor: colors.pageBackground }}>
+      <Animated.ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: spacing.xxxl }}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
+      >
+        {/* ── Colored header ── */}
+        <View
+          style={{
+            backgroundColor: headerBg,
+            paddingTop: 56,
+            paddingBottom: spacing.xxxl,
+            paddingHorizontal: spacing.lg,
+            borderBottomLeftRadius: br.lg,
+            borderBottomRightRadius: br.lg,
+            alignItems: 'center',
+            gap: spacing.md,
+          }}
+        >
+          <View style={{ alignSelf: 'stretch', marginTop: spacing.lg }}>
+            <TypeToggle type={type} onChangeType={setType} />
+          </View>
 
-      {/* Amount */}
-      <View style={styles.amountContainer}>
-        <CurrencyInput
-          ref={currencyRef}
-          value={cents}
-          onChangeValue={setCents}
-          autoFocus
+          <CurrencyInput
+            ref={currencyRef}
+            value={cents}
+            onChangeValue={(v) => { setCents(v); setError(null); }}
+            type={type}
+            autoFocus
+            color={headerText}
+            style={{ paddingVertical: spacing.sm, alignSelf: 'stretch' }}
+          />
+        </View>
+
+        {/* ── Details card ── */}
+        <View style={{ marginTop: -20, zIndex: 1, paddingHorizontal: spacing.lg }}>
+          <View style={cardStyle}>
+            <DetailRow
+              icon="wallet-outline"
+              label={acctName}
+              placeholder="Account"
+              onPress={() => router.push({ pathname: './account-picker', params: { selectedId: acctId ?? '' } })}
+            />
+            <View style={dividerStyle} />
+
+            <DetailRow
+              icon="person-outline"
+              label={payeeName}
+              placeholder="Payee"
+              onPress={() => router.push({ pathname: './payee-picker', params: { selectedId: payeeId ?? '', selectedName: payeeName, accountId: acctId ?? '' } })}
+            />
+            <View style={dividerStyle} />
+
+            <DetailRow
+              icon="folder-outline"
+              label={categoryName}
+              placeholder="Category"
+              onClear={categoryId ? () => { setCategoryId(null); setCategoryName(''); } : undefined}
+              onPress={() => router.push({ pathname: './category-picker', params: { selectedId: categoryId ?? '', hideSplit: '1' } })}
+            />
+            <View style={dividerStyle} />
+
+            <DetailRow
+              icon="repeat"
+              label={recurDesc}
+              placeholder="Repeat"
+              onPress={() => {
+                router.push({
+                  pathname: './recurrence',
+                  params: { config: JSON.stringify(recurConfig) },
+                });
+              }}
+            />
+          </View>
+        </View>
+
+        {/* ── Settings card ── */}
+        <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.md }}>
+          <View style={cardStyle}>
+            <DetailRow
+              icon="text-outline"
+              label={name}
+              placeholder="Name"
+              onPress={() => {
+                Alert.prompt('Schedule Name', 'Optional display name', (text) => {
+                  if (text !== undefined) setName(text);
+                }, 'plain-text', name);
+              }}
+              onClear={name ? () => setName('') : undefined}
+            />
+            <View style={dividerStyle} />
+
+            <Pressable
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingHorizontal: spacing.md,
+                paddingVertical: spacing.md,
+                minHeight: 44,
+              }}
+              onPress={() => setPostsTransaction(!postsTransaction)}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                <Text variant="body" color={colors.textPrimary}>
+                  Auto-post Transaction
+                </Text>
+              </View>
+              <Switch
+                value={postsTransaction}
+                onValueChange={setPostsTransaction}
+                trackColor={{ false: colors.inputBorder, true: colors.primary }}
+                thumbColor={colors.cardBackground}
+                ios_backgroundColor={colors.inputBorder}
+              />
+            </Pressable>
+          </View>
+        </View>
+
+        {/* ── Error banner ── */}
+        {error && (
+          <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.md }}>
+            <Banner message={error} variant="error" onDismiss={() => setError(null)} />
+          </View>
+        )}
+
+        {/* ── Save button ── */}
+        <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.xl }}>
+          <Button
+            title="Create Schedule"
+            onPress={handleSave}
+            size="lg"
+            loading={saving}
+            disabled={!canSave || saving}
+          />
+        </View>
+      </Animated.ScrollView>
+
+      {/* ── Fixed top gradient: fades from header color to transparent ── */}
+      <Animated.View
+        style={[
+          {
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 10,
+          },
+          blurContainerStyle,
+        ]}
+        pointerEvents="none"
+      >
+        <LinearGradient
+          colors={[colors.pageBackground + '80', colors.pageBackground + '33', 'transparent']}
+          style={{ height: 80 }}
         />
+      </Animated.View>
+
+      {/* Close button */}
+      <View style={{ position: 'absolute', top: 12, left: spacing.md, zIndex: 11 }}>
+        <GlassButton icon="xmark" onPress={() => router.dismiss()} />
       </View>
 
-      {/* Details */}
-      <SectionHeader title="Details" style={{ marginTop: spacing.lg, paddingHorizontal: spacing.lg }} />
-      <Card>
-        <ListItem
-          title="Payee"
-          right={
-            <Text variant="body" color={payeeName ? colors.textPrimary : colors.textMuted}>
-              {payeeName || "Optional"}
-            </Text>
-          }
-          showChevron
-          onPress={() => router.push("/(auth)/transaction/payee-picker")}
-        />
-        <Divider />
-        <ListItem
-          title="Account"
-          right={
-            <Text variant="body" color={acctName ? colors.textPrimary : colors.textMuted}>
-              {acctName || "Select account"}
-            </Text>
-          }
-          showChevron
-          onPress={() => router.push("/(auth)/transaction/account-picker")}
-        />
-        <Divider />
-        <ListItem
-          title="Repeats"
-          right={
-            <Text variant="body" color={colors.textSecondary} numberOfLines={1} style={{ maxWidth: 200 }}>
-              {recurDesc}
-            </Text>
-          }
-          showChevron
-          onPress={handleRecurrencePicker}
-        />
-      </Card>
+      {/* Title */}
+      <View style={{ position: 'absolute', top: 12, left: 0, right: 0, height: 48, justifyContent: 'center', alignItems: 'center', zIndex: 11, pointerEvents: 'none' }}>
+        <Text variant="body" color={colors.textPrimary} style={{ fontWeight: '600' }}>
+          New Schedule
+        </Text>
+      </View>
 
-      {/* Settings */}
-      <SectionHeader title="Settings" style={{ marginTop: spacing.xl, paddingHorizontal: spacing.lg }} />
-      <Card>
-        <ListItem
-          title="Name"
-          right={
-            <Pressable
-              onPress={() => {
-                Alert.prompt("Schedule Name", "Optional display name", (text) => {
-                  if (text !== undefined) setName(text);
-                }, "plain-text", name);
-              }}
-            >
-              <Text variant="body" color={name ? colors.textPrimary : colors.textMuted}>
-                {name || "Add name..."}
-              </Text>
-            </Pressable>
-          }
+      <KeyboardToolbar>
+        <CalculatorToolbar
+          onOperator={(op) => currencyRef.current?.injectOperator(op)}
+          onEvaluate={() => currencyRef.current?.evaluate()}
         />
-        <Divider />
-        <ListItem
-          title="Auto-post Transaction"
-          subtitle="Automatically create a transaction when due"
-          right={
-            <Switch
-              value={postsTransaction}
-              onValueChange={setPostsTransaction}
-              trackColor={{ true: colors.primary }}
-            />
-          }
+        <View style={{ flex: 1 }} />
+        <GlassButton
+          icon="checkmark"
+          iconSize={16}
+          variant="tinted"
+          tintColor={colors.primary}
+          onPress={() => Keyboard.dismiss()}
         />
-      </Card>
-    </ScrollView>
+      </KeyboardToolbar>
+    </View>
   );
 }
-
-const createStyles = (theme: Theme) => ({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.pageBackground,
-    paddingHorizontal: theme.spacing.lg,
-  } as const,
-  amountContainer: {
-    alignItems: "center" as const,
-    paddingVertical: theme.spacing.xl,
-  },
-});

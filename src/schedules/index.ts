@@ -23,7 +23,7 @@ import {
 import { extractScheduleConds, getStatus, getScheduledAmount } from './helpers';
 import { todayStr, todayInt, intToStr, strToInt } from '../lib/date';
 import { addDays, startOfDay, isFriday, isWeekend, nextMonday } from 'date-fns';
-import type { Schedule, RuleCondition, RecurConfig } from './types';
+import type { Schedule, RuleCondition, RuleAction, RecurConfig } from './types';
 import type { ScheduleRow, ScheduleNextDateRow } from '../db/types';
 
 export type { Schedule } from './types';
@@ -48,7 +48,14 @@ function rowToSchedule(row: any): Schedule {
   const conditions: RuleCondition[] = row.conditions
     ? JSON.parse(row.conditions)
     : [];
+  const actions: RuleAction[] = row.actions
+    ? JSON.parse(row.actions)
+    : [];
   const conds = extractScheduleConds(conditions);
+
+  const categoryAction = actions.find(
+    (a) => a.op === 'set' && a.field === 'category',
+  );
 
   return {
     id: row.id,
@@ -65,6 +72,7 @@ function rowToSchedule(row: any): Schedule {
     _amount: (conds.amount?.value as number | { num1: number; num2: number }) ?? null,
     _amountOp: conds.amount?.op ?? null,
     _date: (conds.date?.value as RecurConfig | string) ?? null,
+    _category: (categoryAction?.value as string) ?? null,
     _conditions: conditions,
   };
 }
@@ -252,6 +260,7 @@ export async function setNextDate(opts: {
 export const createSchedule = undoable(async function createSchedule(opts: {
   schedule?: Partial<Schedule> & { id?: string };
   conditions: RuleCondition[];
+  actions?: RuleAction[];
 }): Promise<string> {
   const scheduleId = opts.schedule?.id ?? randomUUID();
 
@@ -277,11 +286,15 @@ export const createSchedule = undoable(async function createSchedule(opts: {
   const nextDate = computeNextDate(dateCond);
   const nextDateRepr = nextDate ? toDateRepr(nextDate) : null;
 
-  // Create the rule with link-schedule action
+  // Create the rule with link-schedule action + optional set actions
+  const ruleActions: RuleAction[] = [
+    { op: 'link-schedule', value: scheduleId },
+    ...(opts.actions ?? []),
+  ];
   const ruleId = await createRule({
     conditionsOp: 'and',
     conditions: opts.conditions,
-    actions: [{ op: 'link-schedule', value: scheduleId }],
+    actions: ruleActions,
   });
 
   // Create schedules_next_date entry
@@ -314,9 +327,10 @@ export const createSchedule = undoable(async function createSchedule(opts: {
 export const updateSchedule = undoable(async function updateSchedule(opts: {
   schedule: Partial<Schedule> & { id: string };
   conditions?: RuleCondition[];
+  actions?: RuleAction[];
   resetNextDate?: boolean;
 }): Promise<string> {
-  const { schedule, conditions, resetNextDate } = opts;
+  const { schedule, conditions, actions, resetNextDate } = opts;
 
   if (conditions) {
     const { date: dateCond } = extractScheduleConds(conditions);
@@ -337,7 +351,14 @@ export const updateSchedule = undoable(async function updateSchedule(opts: {
     await batchMessages(async () => {
       // Merge old conditions with new
       const newConditions = mergeConditions(rule.conditions, conditions);
-      await updateRule(rule.id, { conditions: newConditions });
+      // Merge actions: keep link-schedule, replace set actions
+      const newActions = actions !== undefined
+        ? [
+            ...rule.actions.filter((a) => a.op === 'link-schedule'),
+            ...actions,
+          ]
+        : undefined;
+      await updateRule(rule.id, { conditions: newConditions, actions: newActions });
 
       // Recalculate next date if conditions changed or reset requested
       if (resetNextDate) {
@@ -415,6 +436,7 @@ export const postTransactionForSchedule = undoable(
       date,
       amount,
       description: schedule._payee ?? undefined,
+      category: schedule._category ?? undefined,
       cleared: false,
       schedule: id,
     });
@@ -434,6 +456,7 @@ export const postTransactionForScheduleToday = undoable(
       date: todayInt(),
       amount,
       description: schedule._payee ?? undefined,
+      category: schedule._category ?? undefined,
       cleared: false,
       schedule: id,
     });

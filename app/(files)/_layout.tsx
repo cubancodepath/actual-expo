@@ -8,6 +8,7 @@ export default function FilesLayout() {
   return (
     <Stack screenOptions={themedScreenOptions(theme)}>
       <Stack.Screen name="files" options={{ title: 'Open Budget' }} />
+      <Stack.Screen name="new-budget" options={{ headerShown: false }} />
     </Stack>
   );
 }

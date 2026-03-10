@@ -1,6 +1,5 @@
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePrefsStore } from '../../src/stores/prefsStore';
 import { useTheme, useThemedStyles } from '../../src/presentation/providers/ThemeProvider';
@@ -22,7 +21,7 @@ export default function ChangeBudgetScreen() {
   const { colors, spacing } = useTheme();
   const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
-  const { serverUrl, activeBudgetId } = usePrefsStore();
+  const { activeBudgetId } = usePrefsStore();
   const {
     localFiles, remoteFiles, loading, refreshing, error,
     selecting, selectFile, retry, refresh, dismissError,
@@ -64,12 +63,7 @@ export default function ChangeBudgetScreen() {
           ),
           headerRight: () => (
             <Pressable
-              onPress={async () => {
-                await WebBrowser.openAuthSessionAsync(serverUrl, undefined, {
-                  preferEphemeralSession: true,
-                });
-                retry();
-              }}
+              onPress={() => router.push('/(auth)/new-budget')}
               hitSlop={8}
               style={styles.headerBtn}
             >
@@ -138,13 +132,8 @@ export default function ChangeBudgetScreen() {
           icon="folder-open-outline"
           title="No budgets found"
           description="There are no budget files on this server or on this device."
-          actionLabel="Create on Server"
-          onAction={async () => {
-            await WebBrowser.openAuthSessionAsync(serverUrl, undefined, {
-              preferEphemeralSession: true,
-            });
-            retry();
-          }}
+          actionLabel="Create New Budget"
+          onAction={() => router.push('/(auth)/new-budget')}
         />
       )}
     </ScrollView>

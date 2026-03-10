@@ -1,9 +1,13 @@
 import { Stack } from 'expo-router';
+import { useTheme } from '../../src/presentation/providers/ThemeProvider';
+import { themedScreenOptions } from '../../src/presentation/navigation/screenOptions';
 
 export default function FilesLayout() {
+  const theme = useTheme();
+
   return (
-    <Stack>
-      <Stack.Screen name="files" options={{ headerShown: false }} />
+    <Stack screenOptions={themedScreenOptions(theme)}>
+      <Stack.Screen name="files" options={{ title: 'Open Budget' }} />
     </Stack>
   );
 }

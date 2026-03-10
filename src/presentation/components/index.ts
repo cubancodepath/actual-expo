@@ -29,6 +29,7 @@ export { KeyboardToolbar } from "./molecules/KeyboardToolbar";
 export { SyncBadge } from "./molecules/SyncBadge";
 export { CategoryPickerList, type CategoryPickerListProps, type GroupedCategory, type PickerCategory } from "./molecules/CategoryPickerList";
 export { UndoToast } from "./molecules/UndoToast";
+export { BudgetFileRow, type BudgetFileRowProps } from "./molecules/BudgetFileRow";
 
 // Budget
 export { MonthSelector } from "./budget/MonthSelector";

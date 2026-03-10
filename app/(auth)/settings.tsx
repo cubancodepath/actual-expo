@@ -1,15 +1,16 @@
 import { useState } from "react";
-import { Alert, Platform, Pressable, ScrollView, Switch, View } from "react-native";
+import { Alert, Platform, ScrollView, Switch, View } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme, useThemedStyles } from "../../src/presentation/providers/ThemeProvider";
 import {
   Text,
-  Button,
   Card,
   ListItem,
   SectionHeader,
   Divider,
+  IconButton,
 } from "../../src/presentation/components";
 import { usePrefsStore } from "../../src/stores/prefsStore";
 import { useSyncStore } from "../../src/stores/syncStore";
@@ -95,7 +96,6 @@ function ServerRow({ label, value }: { label: string; value: string }) {
           variant="bodySm"
           color={colors.textSecondary}
           numberOfLines={1}
-          style={{ fontFamily: "monospace" }}
         >
           {value || "—"}
         </Text>
@@ -108,6 +108,7 @@ export default function SettingsScreen() {
   const router = useRouter();
   const { colors, spacing } = useTheme();
   const styles = useThemedStyles(createStyles);
+  const insets = useSafeAreaInsets();
 
   const { serverUrl, fileId, groupId, encryptKeyId, budgetName, lastSyncedTimestamp, isLocalOnly, clearAll } =
     usePrefsStore();
@@ -122,9 +123,6 @@ export default function SettingsScreen() {
     : lastSyncedTimestamp
       ? lastSyncedTimestamp.slice(0, 16)
       : "Never";
-
-  const syncButtonTitle =
-    status === "success" ? "Sync again" : status === "error" ? "Retry sync" : "Sync now";
 
   const dateOptions = DATE_FORMAT_OPTIONS.map((o) => ({
     value: o.value,
@@ -193,14 +191,17 @@ export default function SettingsScreen() {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={{ paddingBottom: spacing.xxxl }}
+      contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xl }}
     >
       <Stack.Screen
         options={{
-          headerRight: () => (
-            <Pressable onPress={() => router.back()} hitSlop={8}>
-              <Ionicons name="close" size={24} color={colors.textSecondary} />
-            </Pressable>
+          headerLeft: () => (
+            <IconButton
+              sfSymbol="xmark"
+              size={22}
+              color={colors.headerText}
+              onPress={() => router.back()}
+            />
           ),
         }}
       />
@@ -218,22 +219,26 @@ export default function SettingsScreen() {
               }
             />
             {error && (
-              <View style={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.sm }}>
-                <Text variant="bodySm" color={colors.negative}>
-                  {error}
-                </Text>
-              </View>
+              <>
+                <Divider />
+                <View style={{ paddingHorizontal: spacing.lg, paddingVertical: spacing.sm }}>
+                  <Text variant="bodySm" color={colors.negative}>
+                    {error}
+                  </Text>
+                </View>
+              </>
             )}
-            <View style={{ padding: spacing.md }}>
-              <Button
-                title={syncButtonTitle}
-                onPress={sync}
-                loading={status === "syncing"}
-                disabled={status === "syncing"}
-                variant="primary"
-                size="md"
-              />
-            </View>
+            <Divider />
+            <ListItem
+              title={status === "syncing" ? "Syncing…" : status === "error" ? "Retry Sync" : "Sync Now"}
+              onPress={status === "syncing" ? undefined : sync}
+              right={
+                status === "syncing" ? (
+                  <Ionicons name="sync" size={18} color={colors.primary} />
+                ) : undefined
+              }
+              style={{ opacity: status === "syncing" ? 0.5 : 1 }}
+            />
           </Card>
         </>
       )}
@@ -279,11 +284,13 @@ export default function SettingsScreen() {
         <Divider />
         <ListItem
           title="Hide Decimal Places"
+          onPress={() => set('hideFraction', hideFraction === 'true' ? 'false' : 'true')}
           right={
             <Switch
               value={hideFraction === 'true'}
               onValueChange={(v) => set('hideFraction', v ? 'true' : 'false')}
               trackColor={{ true: colors.primary }}
+              accessibilityLabel="Hide decimal places"
             />
           }
         />
@@ -306,11 +313,13 @@ export default function SettingsScreen() {
         <ListItem
           title="Hide Amounts"
           subtitle="Mask all monetary values for privacy"
+          onPress={togglePrivacy}
           right={
             <Switch
               value={privacyMode}
               onValueChange={togglePrivacy}
               trackColor={{ true: colors.primary }}
+              accessibilityLabel="Hide monetary amounts"
             />
           }
         />
@@ -367,16 +376,15 @@ export default function SettingsScreen() {
         </>
       )}
 
-      {/* Disconnect / Delete */}
-      <View style={{ marginTop: spacing.xxl }}>
-        <Button
-          title={isLocalOnly ? "Delete All Data" : "Disconnect from server"}
-          onPress={isLocalOnly ? handleDeleteLocal : handleLogout}
-          variant="danger"
-          size="lg"
-          loading={loggingOut}
-          disabled={loggingOut}
-        />
+      {/* Disconnect / Delete — grouped row with red text, iOS Settings style */}
+      <View style={{ marginTop: spacing.xl }}>
+        <Card>
+          <ListItem
+            title={isLocalOnly ? "Delete All Data" : "Disconnect from Server"}
+            titleColor={colors.negative}
+            onPress={isLocalOnly ? handleDeleteLocal : handleLogout}
+          />
+        </Card>
       </View>
     </ScrollView>
   );

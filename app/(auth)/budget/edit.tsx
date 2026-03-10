@@ -506,7 +506,7 @@ export default function EditBudgetScreen() {
             <Pressable
               onPress={() =>
                 router.push({
-                  pathname: "/(auth)/budget/edit-category",
+                  pathname: "/(auth)/budget/quick-edit-category",
                   params: { categoryId: item.id },
                 })
               }
@@ -525,12 +525,12 @@ export default function EditBudgetScreen() {
               accessibilityLabel={`${item.name}${hasGoal ? `, Target: ${goalDescription}` : ""}`}
               accessibilityHint="Edit category"
             >
-              {/* Line 1: Name + Goal description */}
+              {/* Line 1: Name + Goal description or Add Target */}
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <Text variant="body" style={{ flex: 1 }} numberOfLines={1}>
                   {item.name}
                 </Text>
-                {hasGoal && goalDescription && (
+                {hasGoal && goalDescription ? (
                   <Text
                     variant="captionSm"
                     color={colors.textSecondary}
@@ -539,6 +539,19 @@ export default function EditBudgetScreen() {
                   >
                     {goalDescription}
                   </Text>
+                ) : (
+                  <Button
+                    title="Add Target"
+                    icon="add-circle"
+                    variant="ghost"
+                    size="sm"
+                    onPress={() => {
+                      router.push({
+                        pathname: "/(auth)/budget/goal",
+                        params: { categoryId: item.id },
+                      });
+                    }}
+                  />
                 )}
               </View>
             </Pressable>

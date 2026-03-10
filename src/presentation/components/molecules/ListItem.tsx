@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 
 export interface ListItemProps {
   title: string;
+  titleColor?: string;
   subtitle?: string;
   left?: ReactNode;
   right?: ReactNode;
@@ -16,6 +17,7 @@ export interface ListItemProps {
 
 export function ListItem({
   title,
+  titleColor,
   subtitle,
   left,
   right,
@@ -30,7 +32,7 @@ export function ListItem({
       {left && <View style={[styles.left, { marginRight: spacing.md }]}>{left}</View>}
 
       <View style={styles.content}>
-        <Text variant="bodyLg">{title}</Text>
+        <Text variant="bodyLg" color={titleColor}>{title}</Text>
         {subtitle && (
           <Text variant="bodySm" color={colors.textSecondary}>
             {subtitle}

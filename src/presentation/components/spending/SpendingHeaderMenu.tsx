@@ -30,7 +30,7 @@ export function SpendingHeaderMenu({
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
       <IconButton
-        icon="search-outline"
+        ionIcon="search-outline"
         size={20}
         color={headerTextColor}
         onPress={() => {}}
@@ -59,7 +59,7 @@ export function SpendingHeaderMenu({
         </Host>
       ) : (
         <IconButton
-          icon="ellipsis-horizontal"
+          ionIcon="ellipsis-horizontal"
           size={20}
           color={headerTextColor}
           onPress={onToggleHideReconciled}

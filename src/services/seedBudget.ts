@@ -65,6 +65,8 @@ export async function seedLocalBudget(opts: {
 }): Promise<void> {
   const { accountName, startingBalance, selectedCategories } = opts;
 
+  // Create categories first in a batch so they're committed to the DB
+  // before createAccount queries for "Starting Balances" category.
   await batchMessages(async () => {
     let groupSort = 1000;
 
@@ -101,12 +103,14 @@ export async function seedLocalBudget(opts: {
         catSort += 1000;
       }
     }
-
-    await createAccount(
-      { name: accountName, offbudget: false },
-      startingBalance,
-    );
   });
+
+  // Create account separately — it queries the DB for the "Starting Balances"
+  // category and payee, which must already be committed.
+  await createAccount(
+    { name: accountName, offbudget: false },
+    startingBalance,
+  );
 
   await refreshAllRegisteredStores();
 }

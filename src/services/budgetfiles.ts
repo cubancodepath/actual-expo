@@ -29,6 +29,17 @@ import {
 } from './budgetMetadata';
 
 // ---------------------------------------------------------------------------
+// Auth guard
+// ---------------------------------------------------------------------------
+
+function throwIfUnauthorized(res: Response): void {
+  if (res.status === 401 || res.status === 403) {
+    usePrefsStore.getState().clearAll();
+    throw new Error('Session expired. Please log in again.');
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
@@ -200,6 +211,7 @@ export async function uploadBudget(
   });
 
   console.log('[upload] Response status:', res.status);
+  throwIfUnauthorized(res);
 
   if (!res.ok) {
     const text = await res.text().catch(() => '');
@@ -249,6 +261,8 @@ export async function downloadBudget(
       'x-actual-file-id': file.fileId,
     },
   });
+
+  throwIfUnauthorized(res);
 
   if (!res.ok) {
     const text = await res.text().catch(() => '');

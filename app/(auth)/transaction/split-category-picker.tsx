@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, SafeAreaView, ScrollView, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useCategoriesStore } from '../../../src/stores/categoriesStore';
@@ -8,6 +8,7 @@ import { getCategoryBalancesForMonth } from '../../../src/budgets';
 import { useTheme, useThemedStyles } from '../../../src/presentation/providers/ThemeProvider';
 import { Text } from '../../../src/presentation/components/atoms/Text';
 import { Amount } from '../../../src/presentation/components/atoms/Amount';
+import { GlassButton } from '../../../src/presentation/components/atoms/GlassButton';
 import { currentMonth } from '../../../src/lib/date';
 import type { Theme } from '../../../src/theme';
 
@@ -42,7 +43,20 @@ export default function SplitCategoryPickerScreen() {
   const noneSelected = !selectedId;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.list}>
+    <View style={styles.container}>
+      {/* Back button — top left */}
+      <View style={{ position: 'absolute', top: 12, left: spacing.md, zIndex: 11 }}>
+        <GlassButton icon="chevron.left" onPress={() => router.back()} />
+      </View>
+
+      {/* Title — centered */}
+      <View style={{ position: 'absolute', top: 12, left: 0, right: 0, height: 48, justifyContent: 'center', alignItems: 'center', zIndex: 11, pointerEvents: 'none' }}>
+        <Text variant="body" color={colors.textPrimary} style={{ fontWeight: '600' }}>
+          Category
+        </Text>
+      </View>
+
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.list}>
       {/* No category */}
       <View style={styles.standaloneCard}>
         <Pressable
@@ -126,6 +140,7 @@ export default function SplitCategoryPickerScreen() {
           );
         })}
     </ScrollView>
+    </View>
   );
 }
 
@@ -135,6 +150,7 @@ const createStyles = (theme: Theme) => ({
     backgroundColor: theme.colors.pageBackground,
   },
   list: {
+    paddingTop: 72,
     paddingBottom: 40,
   },
   sectionHeader: {
@@ -148,7 +164,7 @@ const createStyles = (theme: Theme) => ({
   },
   standaloneCard: {
     marginHorizontal: theme.spacing.lg,
-    marginTop: theme.spacing.lg,
+    marginTop: theme.spacing.sm,
     backgroundColor: theme.colors.cardBackground,
     borderRadius: theme.borderRadius.lg,
     borderWidth: theme.borderWidth.thin,

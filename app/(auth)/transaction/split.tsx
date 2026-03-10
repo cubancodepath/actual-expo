@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Keyboard, Pressable, ScrollView, View } from 'react-native';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { randomUUID } from 'expo-crypto';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
@@ -80,7 +80,7 @@ function SplitRow({
       </Pressable>
 
       <IconButton
-        icon="close-circle"
+        sfSymbol="xmark.circle.fill"
         size={18}
         color={colors.textMuted}
         onPress={() => onRemove(line.id)}
@@ -218,15 +218,22 @@ export default function SplitScreen() {
 
   return (
     <>
-      <Stack.Screen
-        options={{
-          headerRight: () => (
-            <Pressable onPress={handleDone} hitSlop={8}>
-              <Ionicons name="checkmark" size={24} color={theme.colors.primary} />
-            </Pressable>
-          ),
-        }}
-      />
+      {/* Back button — top left */}
+      <View style={{ position: 'absolute', top: 12, left: theme.spacing.md, zIndex: 11 }}>
+        <GlassButton icon="chevron.left" onPress={() => router.back()} />
+      </View>
+
+      {/* Title — centered */}
+      <View style={{ position: 'absolute', top: 12, left: 0, right: 0, height: 48, justifyContent: 'center', alignItems: 'center', zIndex: 11, pointerEvents: 'none' }}>
+        <Text variant="body" color={theme.colors.textPrimary} style={{ fontWeight: '600' }}>
+          Split Transaction
+        </Text>
+      </View>
+
+      {/* Done button — top right */}
+      <View style={{ position: 'absolute', top: 12, right: theme.spacing.md, zIndex: 11 }}>
+        <GlassButton icon="checkmark" onPress={handleDone} />
+      </View>
 
       <ScrollView
         style={styles.scroll}
@@ -378,7 +385,9 @@ const createStyles = (theme: Theme) => ({
     backgroundColor: theme.colors.pageBackground,
   },
   container: {
-    padding: theme.spacing.lg,
+    paddingTop: 72,
+    paddingHorizontal: theme.spacing.lg,
+    paddingBottom: theme.spacing.lg,
     gap: theme.spacing.md,
   },
   headerCard: {

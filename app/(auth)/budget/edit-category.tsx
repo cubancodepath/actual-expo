@@ -1,235 +1,784 @@
-import { useEffect, useState } from 'react';
-import { Alert, Pressable, Switch, TextInput, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
-import { useCategoriesStore } from '../../../src/stores/categoriesStore';
-import { useBudgetStore } from '../../../src/stores/budgetStore';
-import { useUndoStore } from '../../../src/stores/undoStore';
-import { Text } from '../../../src/presentation/components/atoms/Text';
-import { Button } from '../../../src/presentation/components/atoms/Button';
-import { IconButton } from '../../../src/presentation/components/atoms/IconButton';
-import { parseGoalDef } from '../../../src/goals';
-import { describeTemplate } from '../../../src/goals/describe';
+import { useEffect, useState } from "react";
+import { Alert, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import Animated, {
+  useSharedValue,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  interpolate,
+  Extrapolation,
+} from "react-native-reanimated";
+import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
+import { useCategoriesStore } from "../../../src/stores/categoriesStore";
+import { useBudgetStore } from "../../../src/stores/budgetStore";
+import { useUndoStore } from "../../../src/stores/undoStore";
+import { Text } from "../../../src/presentation/components/atoms/Text";
+import { Button } from "../../../src/presentation/components/atoms/Button";
+import { Amount } from "../../../src/presentation/components/atoms/Amount";
+import { GlassButton } from "../../../src/presentation/components/atoms/GlassButton";
+import { CircularProgress } from "../../../src/presentation/components/atoms/CircularProgress";
+import { parseGoalDef } from "../../../src/goals";
+import { describeTemplate } from "../../../src/goals/describe";
+import type { BudgetCategory } from "../../../src/budgets/types";
+import type { ThemeColors } from "../../../src/theme/colors";
 
-export default function EditCategoryScreen() {
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+const COLLAPSE_THRESHOLD = 56;
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function monthName(yyyymm: string): string {
+  const [y, m] = yyyymm.split("-").map(Number);
+  return new Date(y, m - 1).toLocaleDateString("en-US", { month: "long" });
+}
+
+function prevMonth(yyyymm: string): string {
+  const [y, m] = yyyymm.split("-").map(Number);
+  if (m === 1) return `${y - 1}-12`;
+  return `${y}-${String(m - 1).padStart(2, "0")}`;
+}
+
+function getPillColors(
+  cat: BudgetCategory,
+  colors: ThemeColors,
+): { bg: string; text: string } {
+  const hasGoal = cat.goal !== null && cat.goal > 0;
+  const templates = hasGoal ? parseGoalDef(cat.goalDef) : [];
+  const primaryTemplate = templates[0];
+  const spentAbs = Math.abs(cat.spent);
+
+  const isLimitGoal =
+    hasGoal &&
+    !!primaryTemplate &&
+    (primaryTemplate.type === "limit" ||
+      primaryTemplate.type === "refill" ||
+      (primaryTemplate.type === "simple" &&
+        primaryTemplate.monthly === 0 &&
+        !!primaryTemplate.limit));
+
+  if (isLimitGoal) {
+    const ratio = spentAbs / cat.goal!;
+    return {
+      bg:
+        ratio >= 1
+          ? colors.budgetOverspentBg
+          : ratio >= 0.8
+            ? colors.budgetCautionBg
+            : colors.budgetHealthyBg,
+      text:
+        ratio >= 1
+          ? colors.budgetOverspent
+          : ratio >= 0.8
+            ? colors.budgetCaution
+            : colors.budgetHealthy,
+    };
+  }
+
+  if (hasGoal) {
+    const funded = cat.longGoal
+      ? cat.balance >= cat.goal!
+      : cat.budgeted >= cat.goal!;
+    return {
+      bg:
+        cat.balance < 0
+          ? colors.budgetOverspentBg
+          : funded
+            ? colors.budgetHealthyBg
+            : colors.budgetCautionBg,
+      text:
+        cat.balance < 0
+          ? colors.budgetOverspent
+          : funded
+            ? colors.budgetHealthy
+            : colors.budgetCaution,
+    };
+  }
+
+  return {
+    bg:
+      cat.balance > 0
+        ? colors.budgetHealthyBg
+        : cat.balance < 0
+          ? colors.budgetOverspentBg
+          : colors.cardBackground,
+    text:
+      cat.balance > 0
+        ? colors.budgetHealthy
+        : cat.balance < 0
+          ? colors.budgetOverspent
+          : colors.textMuted,
+  };
+}
+
+function getGoalChartData(
+  cat: BudgetCategory,
+  colors: ThemeColors,
+): { progress: number; percent: number; color: string; funded: boolean } {
+  if (cat.goal == null || cat.goal <= 0) {
+    return { progress: 0, percent: 0, color: colors.textMuted, funded: false };
+  }
+
+  const templates = parseGoalDef(cat.goalDef);
+  const primary = templates[0];
+  const spentAbs = Math.abs(cat.spent);
+
+  const isLimitGoal =
+    !!primary &&
+    (primary.type === "limit" ||
+      primary.type === "refill" ||
+      (primary.type === "simple" && primary.monthly === 0 && !!primary.limit));
+
+  // Sinking fund (by/spend): cumulative balance vs total target amount
+  const isSinkingFund =
+    !!primary &&
+    !isLimitGoal &&
+    !cat.longGoal &&
+    (primary.type === "by" || primary.type === "spend");
+  const sinkingFundTotal = isSinkingFund ? Math.round(primary.amount * 100) : 0;
+
+  if (isLimitGoal) {
+    const ratio = spentAbs / cat.goal;
+    const percent = Math.round(ratio * 100);
+    const color =
+      ratio >= 1
+        ? colors.negative
+        : ratio >= 0.8
+          ? colors.warning
+          : colors.positive;
+    return { progress: Math.min(ratio, 1), percent, color, funded: ratio < 1 };
+  }
+
+  if (cat.longGoal) {
+    const ratio = cat.balance / cat.goal;
+    const percent = Math.round(Math.max(0, ratio) * 100);
+    const funded = ratio >= 1;
+    const color =
+      cat.balance < 0
+        ? colors.negative
+        : funded
+          ? colors.positive
+          : colors.warning;
+    return {
+      progress: Math.max(0, Math.min(ratio, 1)),
+      percent,
+      color,
+      funded,
+    };
+  }
+
+  if (isSinkingFund && sinkingFundTotal > 0) {
+    const ratio = cat.balance / sinkingFundTotal;
+    const percent = Math.round(Math.max(0, ratio) * 100);
+    const funded = cat.budgeted >= cat.goal;
+    const color =
+      cat.balance < 0
+        ? colors.negative
+        : funded
+          ? colors.positive
+          : colors.warning;
+    return {
+      progress: Math.max(0, Math.min(ratio, 1)),
+      percent,
+      color,
+      funded,
+    };
+  }
+
+  // Monthly goals: budgeted vs goal
+  const ratio = cat.budgeted / cat.goal;
+  const percent = Math.round(Math.max(0, ratio) * 100);
+  const funded = ratio >= 1;
+  const color =
+    cat.balance < 0
+      ? colors.negative
+      : funded
+        ? colors.positive
+        : colors.warning;
+  return { progress: Math.max(0, Math.min(ratio, 1)), percent, color, funded };
+}
+
+// ---------------------------------------------------------------------------
+// Screen
+// ---------------------------------------------------------------------------
+
+export default function CategoryDetailsScreen() {
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const router = useRouter();
   const { categoryId } = useLocalSearchParams<{ categoryId: string }>();
+
+  // Data
+  const { month, data } = useBudgetStore();
+  const coverTarget = useBudgetStore((s) => s.coverTarget);
+  const setCoverTarget = useBudgetStore((s) => s.setCoverTarget);
   const categories = useCategoriesStore((s) => s.categories);
-  const groups = useCategoriesStore((s) => s.groups);
   const category = categories.find((c) => c.id === categoryId);
-  const parentGroup = groups.find((g) => g.id === category?.cat_group);
+  const budgetCat = data?.groups
+    .flatMap((g) => g.categories)
+    .find((c) => c.id === categoryId);
 
-  const [name, setName] = useState('');
-  const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const busy = saving || deleting;
+  const [pendingDelete, setPendingDelete] = useState(false);
+  const categoryName = category?.name ?? "Category";
 
-  useEffect(() => {
-    if (category) setName(category.name);
-  }, [category?.id]);
+  // -- Scroll-driven large title --
+  const scrollY = useSharedValue(0);
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
 
-  async function handleSave() {
-    const trimmed = name.trim();
-    if (!trimmed || !categoryId || busy) return;
-    if (trimmed === category?.name) {
-      router.back();
-      return;
-    }
-    setSaving(true);
-    try {
-      await useCategoriesStore.getState().updateCategory(categoryId, { name: trimmed });
-      await useCategoriesStore.getState().load();
-      await useBudgetStore.getState().load();
-      router.back();
-    } finally {
-      setSaving(false);
-    }
-  }
+  // Large title: fades out + slides up as you scroll (gone by 60% of threshold)
+  const largeTitleStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(
+      scrollY.value,
+      [0, COLLAPSE_THRESHOLD * 0.6],
+      [1, 0],
+      Extrapolation.CLAMP,
+    ),
+    transform: [
+      {
+        translateY: interpolate(
+          scrollY.value,
+          [0, COLLAPSE_THRESHOLD],
+          [0, -12],
+          Extrapolation.CLAMP,
+        ),
+      },
+    ],
+  }));
+
+  // Inline header title: fades in after large title is gone
+  const headerTitleStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(
+      scrollY.value,
+      [COLLAPSE_THRESHOLD * 0.6, COLLAPSE_THRESHOLD],
+      [0, 1],
+      Extrapolation.CLAMP,
+    ),
+  }));
+
+  // Blur gradient: fades in as you scroll
+  const blurContainerStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(scrollY.value, [0, 50], [0, 1], "clamp"),
+  }));
+
+  // -- Actions --
 
   function handleDelete() {
-    if (!categoryId || busy) return;
+    if (!categoryId || deleting) return;
     Alert.alert(
-      'Delete Category',
-      `Are you sure you want to delete "${category?.name ?? 'this category'}"?`,
+      "Delete Category",
+      `Are you sure you want to delete "${category?.name ?? "this category"}"? You'll need to select a category to move its transactions to.`,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: "Cancel", style: "cancel" },
         {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            setDeleting(true);
-            try {
-              await useCategoriesStore.getState().deleteCategory(categoryId);
-              await useCategoriesStore.getState().load();
-              await useBudgetStore.getState().load();
-              useUndoStore.getState().showUndo('Category deleted');
-              router.back();
-            } catch {
-              setDeleting(false);
-              Alert.alert('Error', 'Could not delete the category. Please try again.');
-            }
+          text: "Select Category",
+          onPress: () => {
+            setCoverTarget(null);
+            setPendingDelete(true);
+            router.push({
+              pathname: "/(auth)/budget/delete-category-picker",
+              params: { excludeIds: categoryId, moveCatId: categoryId },
+            });
           },
         },
       ],
     );
   }
 
+  // Complete deletion after user picks a transfer category
+  useEffect(() => {
+    if (!pendingDelete || !coverTarget || !categoryId) return;
+    (async () => {
+      setDeleting(true);
+      try {
+        await useCategoriesStore.getState().deleteCategory(categoryId, coverTarget.catId);
+        await useCategoriesStore.getState().load();
+        await useBudgetStore.getState().load();
+        useUndoStore.getState().showUndo("Category deleted");
+        setCoverTarget(null);
+        setPendingDelete(false);
+        router.back();
+      } catch {
+        setDeleting(false);
+        setPendingDelete(false);
+        setCoverTarget(null);
+        Alert.alert("Error", "Could not delete the category. Please try again.");
+      }
+    })();
+  }, [pendingDelete, coverTarget, categoryId, setCoverTarget, router]);
+
+  // -- Derived data --
+  const currentMonth = monthName(month);
+  const previousMonth = monthName(prevMonth(month));
+
   const templates = parseGoalDef(category?.goal_def ?? null);
-  const hasGoal = templates.length > 0;
+  const hasGoal = templates.length > 0 && budgetCat?.goal != null;
   const goalDescription = hasGoal ? describeTemplate(templates[0]) : null;
 
+  const pill = budgetCat
+    ? getPillColors(budgetCat, colors)
+    : { bg: colors.cardBackground, text: colors.textMuted };
+  const goalChart = budgetCat ? getGoalChartData(budgetCat, colors) : null;
+
+  const isUnderfunded =
+    hasGoal &&
+    budgetCat != null &&
+    budgetCat.goal != null &&
+    !budgetCat.longGoal &&
+    budgetCat.budgeted < budgetCat.goal;
+
+  // -- Styles --
+  const cardStyle = {
+    backgroundColor: colors.cardBackground,
+    borderRadius: br.lg,
+    borderWidth: bw.thin,
+    borderColor: colors.divider,
+    overflow: "hidden" as const,
+  };
+
+  const rowStyle = {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 13,
+    minHeight: 44,
+  };
+
+  const dividerStyle = {
+    height: bw.thin,
+    backgroundColor: colors.divider,
+    marginHorizontal: spacing.lg,
+  };
+
+  const sectionLabelStyle = {
+    marginBottom: spacing.xs,
+    textTransform: "uppercase" as const,
+    letterSpacing: 0.5,
+  };
+
   return (
-    <View style={{ backgroundColor: colors.pageBackground, padding: spacing.lg, paddingTop: 72 }}>
-      <Stack.Screen
-        options={{
-          headerLeft: () => (
-            <IconButton
-              sfSymbol="xmark"
-              size={22}
-              color={colors.headerText}
-              onPress={() => router.back()}
-            />
-          ),
-          headerRight: () => (
-            <Pressable onPress={handleSave} hitSlop={8} disabled={!name.trim() || busy}>
-              <Text variant="body" color={name.trim() && !busy ? colors.primary : colors.textMuted} style={{ fontWeight: '600', fontSize: 17 }}>
-                Save
-              </Text>
-            </Pressable>
-          ),
+    <View style={{ flex: 1, backgroundColor: colors.pageBackground }}>
+      {/* ── Scrollable content ── */}
+      <Animated.ScrollView
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
+        contentContainerStyle={{
+          paddingTop: 84,
+          paddingHorizontal: spacing.lg,
+          paddingBottom: spacing.lg,
         }}
-      />
-
-      {/* Category name */}
-      <Text
-        variant="caption"
-        color={colors.textMuted}
-        style={{ marginBottom: spacing.xs, textTransform: 'uppercase', letterSpacing: 0.5 }}
+        keyboardShouldPersistTaps="handled"
       >
-        Category Name
-      </Text>
-      <TextInput
-        value={name}
-        onChangeText={setName}
-        placeholder="Category name"
-        placeholderTextColor={colors.textMuted}
-        autoFocus
-        returnKeyType="done"
-        onSubmitEditing={handleSave}
-        accessibilityLabel="Category name"
-        style={{
-          backgroundColor: colors.cardBackground,
-          color: colors.textPrimary,
-          fontSize: 16,
-          padding: spacing.md,
-          borderRadius: br.md,
-          borderWidth: bw.thin,
-          borderColor: colors.inputBorder,
-        }}
-      />
+        {/* ── Large title ── */}
+        <Animated.View style={[{ marginBottom: spacing.lg }, largeTitleStyle]}>
+          <Text variant="displayLg" numberOfLines={1}>
+            {categoryName}
+          </Text>
+        </Animated.View>
 
-      {/* Goal target — disclosure row */}
-      <View style={{ marginTop: spacing.lg }}>
+        {/* ── Balance Section ── */}
+        {budgetCat && (
+          <View style={[cardStyle, { marginBottom: spacing.xl }]}>
+            <View style={rowStyle}>
+              <Text variant="body" color={colors.textSecondary}>
+                From {previousMonth}
+              </Text>
+              <Amount
+                value={budgetCat.carryIn}
+                variant="body"
+                weight="500"
+                color={
+                  budgetCat.carryIn !== 0
+                    ? colors.textPrimary
+                    : colors.textMuted
+                }
+              />
+            </View>
+            <View style={dividerStyle} />
+
+            <View style={rowStyle}>
+              <Text variant="body" color={colors.textSecondary}>
+                Assigned for {currentMonth}
+              </Text>
+              <Amount
+                value={budgetCat.budgeted}
+                variant="body"
+                weight="500"
+                color={
+                  budgetCat.budgeted !== 0
+                    ? colors.textPrimary
+                    : colors.textMuted
+                }
+              />
+            </View>
+            <View style={dividerStyle} />
+
+            <View style={rowStyle}>
+              <Text variant="body" color={colors.textSecondary}>
+                Activity in {currentMonth}
+              </Text>
+              <Amount
+                value={budgetCat.spent}
+                variant="body"
+                weight="500"
+                color={
+                  budgetCat.spent !== 0 ? colors.textPrimary : colors.textMuted
+                }
+              />
+            </View>
+
+            <View
+              style={{
+                height: bw.thin + 1,
+                backgroundColor: colors.divider,
+                marginHorizontal: spacing.md,
+              }}
+            />
+            <View style={[rowStyle, { paddingVertical: spacing.md }]}>
+              <Text variant="body" style={{ fontWeight: "600" }}>
+                Available
+              </Text>
+              <View
+                style={{
+                  backgroundColor: pill.bg,
+                  borderRadius: 100,
+                  paddingHorizontal: 14,
+                  paddingVertical: 5,
+                  minWidth: 64,
+                  alignItems: "center",
+                }}
+              >
+                <Amount
+                  value={budgetCat.balance}
+                  variant="body"
+                  color={pill.text}
+                  weight="700"
+                />
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* ── Target Section ── */}
         <Text
           variant="caption"
           color={colors.textMuted}
-          style={{ marginBottom: spacing.xs, textTransform: 'uppercase', letterSpacing: 0.5 }}
+          style={sectionLabelStyle}
         >
           Target
         </Text>
-        <Pressable
-          onPress={() => {
-            if (categoryId) {
-              router.push({ pathname: '/(auth)/budget/goal', params: { categoryId } });
-            }
-          }}
-          style={({ pressed }) => ({
-            flexDirection: 'row',
-            alignItems: 'center',
-            backgroundColor: colors.cardBackground,
-            borderRadius: br.md,
-            borderWidth: bw.thin,
-            borderColor: colors.divider,
-            paddingVertical: spacing.md,
-            paddingHorizontal: spacing.md,
-            minHeight: 44,
-            opacity: pressed ? 0.7 : 1,
-          })}
-          accessibilityRole="button"
-          accessibilityLabel={
-            hasGoal
-              ? `Target: ${goalDescription}`
-              : 'Target: Not set'
-          }
-          accessibilityHint={hasGoal ? 'Opens target editor' : 'Opens target setup'}
-        >
-          <Text variant="body" color={colors.textPrimary} style={{ marginRight: spacing.sm }}>
-            Target
-          </Text>
-          <View style={{ flex: 1, alignItems: 'flex-end' }}>
-            {goalDescription ? (
-              <Text variant="bodySm" color={colors.textSecondary} numberOfLines={1}>
+
+        {hasGoal && budgetCat && goalChart ? (
+          <View
+            style={[
+              cardStyle,
+              { padding: spacing.lg, marginBottom: spacing.lg },
+            ]}
+          >
+            {/* Chart */}
+            <View style={{ alignItems: "center", marginBottom: spacing.lg }}>
+              <CircularProgress
+                progress={goalChart.progress}
+                color={goalChart.color}
+                size={80}
+                strokeWidth={7}
+              >
+                {goalChart.percent >= 100 ? (
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={30}
+                    color={goalChart.color}
+                  />
+                ) : (
+                  <Text
+                    variant="body"
+                    color={colors.textPrimary}
+                    style={{ fontWeight: "700", fontSize: 16 }}
+                  >
+                    {goalChart.percent}%
+                  </Text>
+                )}
+              </CircularProgress>
+            </View>
+
+            {/* Status: underfunded or on track */}
+            {isUnderfunded && budgetCat.goal != null ? (
+              <View
+                style={{
+                  backgroundColor: colors.budgetCautionBg,
+                  borderRadius: br.md,
+                  padding: spacing.md,
+                  alignItems: "center",
+                  gap: spacing.sm,
+                  marginBottom: spacing.md,
+                }}
+              >
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Text
+                    variant="bodySm"
+                    color={colors.budgetCaution}
+                    style={{ fontWeight: "600" }}
+                  >
+                    Budget{" "}
+                  </Text>
+                  <Amount
+                    value={budgetCat.goal - budgetCat.budgeted}
+                    variant="bodySm"
+                    color={colors.budgetCaution}
+                    weight="600"
+                  />
+                  <Text
+                    variant="bodySm"
+                    color={colors.budgetCaution}
+                    style={{ fontWeight: "600" }}
+                  >
+                    {" "}
+                    to meet your goal
+                  </Text>
+                </View>
+                <Button
+                  title="Assign"
+                  size="md"
+                  variant="primary"
+                  style={{
+                    backgroundColor: colors.budgetCaution,
+                    alignSelf: "stretch",
+                  }}
+                  textColor="#000"
+                  onPress={async () => {
+                    const needed = budgetCat.goal! - budgetCat.budgeted;
+                    if (needed > 0) {
+                      await useBudgetStore
+                        .getState()
+                        .setAmount(budgetCat.id, budgetCat.budgeted + needed);
+                      await useBudgetStore.getState().load();
+                    }
+                  }}
+                />
+              </View>
+            ) : (
+              <View
+                style={{
+                  backgroundColor: colors.budgetHealthyBg,
+                  borderRadius: br.md,
+                  paddingVertical: spacing.sm,
+                  paddingHorizontal: spacing.md,
+                  alignItems: "center",
+                  marginBottom: spacing.md,
+                }}
+              >
+                <Text
+                  variant="bodySm"
+                  color={colors.budgetHealthy}
+                  style={{ fontWeight: "600" }}
+                >
+                  You reached your goal
+                </Text>
+              </View>
+            )}
+
+            {/* Goal description */}
+            {goalDescription && (
+              <Text
+                variant="bodySm"
+                color={colors.textSecondary}
+                style={{ textAlign: "center", marginBottom: spacing.md }}
+              >
                 {goalDescription}
               </Text>
-            ) : (
-              <Text variant="bodySm" color={colors.primary} style={{ fontWeight: '600' }}>
-                Add
-              </Text>
             )}
+
+            {/* Edit Target — full width pill */}
+            <Button
+              title="Edit Target"
+              variant="secondary"
+              size="md"
+              icon="flag-outline"
+              style={{ alignSelf: "stretch" }}
+              onPress={() => {
+                if (categoryId) {
+                  router.navigate({
+                    pathname: "/(auth)/budget/goal",
+                    params: { categoryId },
+                  });
+                }
+              }}
+            />
           </View>
-          <Ionicons
-            name={hasGoal ? 'chevron-forward' : 'add-circle'}
-            size={hasGoal ? 16 : 18}
-            color={hasGoal ? colors.textMuted : colors.primary}
-            style={{ marginLeft: spacing.xs }}
-          />
-        </Pressable>
-      </View>
+        ) : (
+          <View
+            style={[
+              cardStyle,
+              {
+                padding: spacing.lg,
+                alignItems: "center",
+                marginBottom: spacing.lg,
+              },
+            ]}
+          >
+            <Ionicons
+              name="flag-outline"
+              size={28}
+              color={colors.textMuted}
+              style={{ marginBottom: spacing.sm }}
+            />
+            <Text
+              variant="body"
+              color={colors.textPrimary}
+              style={{
+                fontWeight: "600",
+                textAlign: "center",
+                marginBottom: spacing.xs,
+              }}
+            >
+              Want to set a savings goal?
+            </Text>
+            <Text
+              variant="bodySm"
+              color={colors.textSecondary}
+              style={{ textAlign: "center", marginBottom: spacing.md }}
+            >
+              Targets help you plan how much to budget each month to reach your
+              goal on time.
+            </Text>
+            <Button
+              title="Create Target"
+              variant="primary"
+              size="md"
+              style={{ alignSelf: "stretch" }}
+              onPress={() => {
+                if (categoryId) {
+                  router.navigate({
+                    pathname: "/(auth)/budget/goal",
+                    params: { categoryId },
+                  });
+                }
+              }}
+            />
+          </View>
+        )}
 
-      {/* Hidden toggle — only if parent group is not hidden */}
-      {parentGroup && !parentGroup.hidden && (
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            backgroundColor: colors.cardBackground,
-            borderRadius: br.md,
-            borderWidth: bw.thin,
-            borderColor: colors.divider,
-            paddingVertical: spacing.sm,
-            paddingHorizontal: spacing.md,
-            marginTop: spacing.lg,
+        {/* ── Actions ── */}
+        <View style={{ height: spacing.lg }} />
+        <Button
+          title="Rename Category"
+          variant="secondary"
+          size="md"
+          icon="pencil-outline"
+          style={{ alignSelf: "stretch" }}
+          onPress={() => {
+            if (categoryId) {
+              router.navigate({
+                pathname: "/(auth)/budget/rename-category",
+                params: { categoryId, currentName: categoryName },
+              });
+            }
           }}
-        >
-          <Text variant="body" color={colors.textPrimary}>Hidden</Text>
-          <Switch
-            value={category?.hidden ?? false}
-            onValueChange={async (val) => {
-              if (!categoryId) return;
-              await useCategoriesStore.getState().updateCategory(categoryId, { hidden: val });
-              await useCategoriesStore.getState().load();
-              await useBudgetStore.getState().load();
-            }}
-            trackColor={{ true: colors.primary }}
-          />
-        </View>
-      )}
-
-      {/* Delete — separated from form, ghost style */}
-      <View style={{ marginTop: spacing.xl }}>
+        />
+        <View style={{ height: spacing.sm }} />
+        <Button
+          title={category?.hidden ? "Show Category" : "Hide Category"}
+          variant="secondary"
+          size="md"
+          icon={category?.hidden ? "eye-outline" : "eye-off-outline"}
+          style={{ alignSelf: "stretch" }}
+          onPress={async () => {
+            if (!categoryId) return;
+            await useCategoriesStore.getState().updateCategory(categoryId, { hidden: !category?.hidden });
+            await useCategoriesStore.getState().load();
+            await useBudgetStore.getState().load();
+          }}
+        />
         <Button
           title="Delete Category"
           variant="ghost"
           icon="trash-outline"
           textColor={colors.negative}
           onPress={handleDelete}
-          disabled={busy}
+          disabled={deleting}
           loading={deleting}
         />
+      </Animated.ScrollView>
+
+      {/* ── Fixed top blur gradient: fades in on scroll ── */}
+      <Animated.View
+        style={[
+          {
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 10,
+          },
+          blurContainerStyle,
+        ]}
+        pointerEvents="none"
+      >
+        <LinearGradient
+          colors={[
+            colors.pageBackground + "80",
+            colors.pageBackground + "33",
+            "transparent",
+          ]}
+          style={{ height: 80 }}
+        />
+      </Animated.View>
+
+      {/* ── Close button — Apple position ── */}
+      <View
+        style={{
+          position: "absolute",
+          top: 12,
+          left: spacing.md,
+          zIndex: 11,
+        }}
+      >
+        <GlassButton icon="xmark" onPress={() => router.back()} />
       </View>
+
+      {/* ── Inline title — fades in on scroll ── */}
+      <Animated.View
+        style={[
+          {
+            position: "absolute",
+            top: 12,
+            left: 0,
+            right: 0,
+            height: 48,
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 11,
+            pointerEvents: "none",
+          },
+          headerTitleStyle,
+        ]}
+      >
+        <Text
+          variant="body"
+          color={colors.textPrimary}
+          numberOfLines={1}
+          style={{ fontWeight: "600", maxWidth: "70%" }}
+        >
+          {categoryName}
+        </Text>
+      </Animated.View>
     </View>
   );
 }

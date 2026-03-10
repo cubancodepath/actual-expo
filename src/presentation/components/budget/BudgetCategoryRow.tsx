@@ -17,6 +17,7 @@ interface BudgetCategoryRowProps {
   isFirst?: boolean;
   isLast?: boolean;
   onLongPress: (cat: BudgetCategory) => void;
+  onCategoryDetails?: (cat: BudgetCategory) => void;
   onMoveMoney?: (cat: BudgetCategory) => void;
   onToggleCarryover?: (cat: BudgetCategory) => void;
   /** Called when the user commits a new budget amount (blur / done). */
@@ -37,6 +38,7 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
   isFirst = false,
   isLast = false,
   onLongPress,
+  onCategoryDetails,
   onMoveMoney,
   onToggleCarryover,
   onCommit,
@@ -349,6 +351,13 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
       <ContextMenu.Root>
         <ContextMenu.Trigger>{pressableContent}</ContextMenu.Trigger>
         <ContextMenu.Content>
+          <ContextMenu.Item
+            key="category-details"
+            onSelect={() => onCategoryDetails?.(cat)}
+          >
+            <ContextMenu.ItemTitle>Category Details</ContextMenu.ItemTitle>
+            <ContextMenu.ItemIcon ios={{ name: 'info.circle' }} />
+          </ContextMenu.Item>
           <ContextMenu.Item
             key="move-money"
             onSelect={() => onMoveMoney?.(cat)}

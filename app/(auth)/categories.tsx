@@ -285,8 +285,8 @@ export default function CategoriesScreen() {
     router.push({ pathname: '/(auth)/budget/edit-group', params: { id, name } });
   }
 
-  function handleRenameCategory(id: string, name: string) {
-    router.push({ pathname: '/(auth)/budget/edit-category', params: { id, name } });
+  function handleRenameCategory(id: string, _name: string) {
+    router.push({ pathname: '/(auth)/budget/edit-category', params: { categoryId: id } });
   }
 
   async function handleToggleHide(id: string, hidden: boolean) {

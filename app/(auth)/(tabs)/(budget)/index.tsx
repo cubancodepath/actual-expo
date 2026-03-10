@@ -159,10 +159,18 @@ export default function BudgetScreen() {
     setCarryover(cat.id, !cat.carryover);
   }
 
+  function handleCategoryDetails(cat: BudgetCategory) {
+    router.push({
+      pathname: '/(auth)/budget/edit-category',
+      params: { categoryId: cat.id },
+    });
+  }
+
   function handleCategoryLongPress(cat: BudgetCategory) {
     // Android fallback — iOS uses zeego context menu in BudgetCategoryRow
     const toggleLabel = cat.carryover ? 'Remove overspending rollover' : 'Rollover overspending';
     Alert.alert(cat.name, undefined, [
+      { text: 'Category Details', onPress: () => handleCategoryDetails(cat) },
       { text: 'Move Money', onPress: () => handleMoveMoney(cat) },
       { text: toggleLabel, onPress: () => handleToggleCarryover(cat) },
       { text: 'Cancel', style: 'cancel' },
@@ -223,6 +231,7 @@ export default function BudgetScreen() {
         isFirst={index === 0}
         isLast={index === section.data.length - 1}
         onLongPress={handleCategoryLongPress}
+        onCategoryDetails={handleCategoryDetails}
         onMoveMoney={handleMoveMoney}
         onToggleCarryover={handleToggleCarryover}
         onCommit={handleCommit}

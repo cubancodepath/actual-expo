@@ -17,6 +17,7 @@ export { KeyboardDoneButton } from "./atoms/KeyboardDoneButton";
 export { ScheduleStatusBadge } from "./atoms/ScheduleStatusBadge";
 export { GlassButton } from "./atoms/GlassButton";
 export { CalculatorToolbar } from "./atoms/CalculatorToolbar";
+export { CircularProgress } from "./atoms/CircularProgress";
 
 // Molecules
 export { ListItem, type ListItemProps } from "./molecules/ListItem";

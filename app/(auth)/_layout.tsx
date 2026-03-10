@@ -59,10 +59,7 @@ export default function AuthLayout() {
         name="budget/assign"
         options={{ title: "Assign Budget", ...modal }}
       />
-      <Stack.Screen
-        name="budget/edit"
-        options={{ headerShown: false }}
-      />
+      <Stack.Screen name="budget/edit" options={{ headerShown: false }} />
       <Stack.Screen
         name="budget/reorder"
         options={{
@@ -94,6 +91,16 @@ export default function AuthLayout() {
         }}
       />
       <Stack.Screen
+        name="budget/rename-category"
+        options={{
+          ...screen,
+          title: "Rename Category",
+          presentation: "formSheet",
+          sheetAllowedDetents: "fitToContents",
+          contentStyle: { backgroundColor: theme.colors.pageBackground },
+        }}
+      />
+      <Stack.Screen
         name="budget/edit-group"
         options={{
           ...screen,
@@ -106,11 +113,8 @@ export default function AuthLayout() {
       <Stack.Screen
         name="budget/edit-category"
         options={{
-          ...screen,
-          title: "Edit Category",
-          presentation: "formSheet",
-          sheetAllowedDetents: "fitToContents",
-          contentStyle: { backgroundColor: theme.colors.pageBackground },
+          headerShown: false,
+          ...modal,
         }}
       />
       <Stack.Screen
@@ -171,6 +175,13 @@ export default function AuthLayout() {
         }}
       />
       <Stack.Screen
+        name="budget/delete-category-picker"
+        options={{
+          headerShown: false,
+          ...modal,
+        }}
+      />
+      <Stack.Screen
         name="budget/move-category-picker"
         options={{
           headerShown: false,
@@ -199,10 +210,7 @@ export default function AuthLayout() {
         name="change-budget"
         options={{ title: "Change Budget", ...modal }}
       />
-      <Stack.Screen
-        name="settings"
-        options={{ title: "Settings", ...modal }}
-      />
+      <Stack.Screen name="settings" options={{ title: "Settings", ...modal }} />
     </Stack>
   );
 }

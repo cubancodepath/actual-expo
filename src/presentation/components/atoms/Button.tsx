@@ -26,8 +26,8 @@ const sizeMap = {
 } as const;
 
 const radiusMap: Record<ButtonSize, keyof Theme["borderRadius"]> = {
-  sm: "lg",
-  md: "xl",
+  sm: "full",
+  md: "full",
   lg: "full",
 };
 

@@ -282,6 +282,7 @@ export default function AssignBudgetScreen() {
       </View>
 
       <SectionList
+        style={{ flex: 1 }}
         sections={sections}
         keyExtractor={(item) => item.id}
         keyboardShouldPersistTaps="handled"
@@ -319,7 +320,8 @@ export default function AssignBudgetScreen() {
             />
           );
         }}
-        contentContainerStyle={{ paddingBottom: hasChanges ? 120 : 40 }}
+        contentContainerStyle={{ paddingBottom: hasChanges ? 200 : 120 }}
+        scrollIndicatorInsets={{ bottom: 120 }}
       />
 
       <KeyboardToolbar>

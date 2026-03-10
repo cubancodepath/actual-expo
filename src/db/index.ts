@@ -3,23 +3,28 @@ import { runSchema } from './schema';
 
 let _db: SQLiteDatabase | undefined;
 
-export async function openDatabase(): Promise<void> {
-  _db = await openDatabaseAsync('actual.db');
+export async function openDatabase(budgetDir: string): Promise<void> {
+  if (__DEV__) console.log('[db] openDatabase', budgetDir);
+  _db = await openDatabaseAsync('db.sqlite', { useNewConnection: true }, budgetDir);
   await _db.execAsync('PRAGMA journal_mode = WAL');
   await _db.execAsync('PRAGMA foreign_keys = ON');
   await runSchema(_db);
-  // loadClock() is called by sync/index after openDatabase
 }
 
 export async function closeDatabase(): Promise<void> {
   if (_db) {
-    await _db.closeAsync();
-    _db = undefined;
+    if (__DEV__) console.log('[db] closeDatabase');
+    const dbToClose = _db;
+    _db = undefined; // Null first so getDb() throws JS error, not native "closed resource"
+    await dbToClose.closeAsync();
   }
 }
 
 export function getDb(): SQLiteDatabase {
-  if (!_db) throw new Error('Database not initialized — call openDatabase() first');
+  if (!_db) {
+    if (__DEV__) console.trace('[db] getDb() called but _db is undefined');
+    throw new Error('Database not initialized — call openDatabase() first');
+  }
   return _db as SQLiteDatabase;
 }
 
@@ -27,21 +32,24 @@ export async function runQuery<T = unknown>(
   sql: string,
   params: SQLiteBindParams = [],
 ): Promise<T[]> {
-  return getDb().getAllAsync<T>(sql, params);
+  if (!_db) return [];
+  return _db.getAllAsync<T>(sql, params);
 }
 
 export async function first<T = unknown>(
   sql: string,
   params: SQLiteBindParams = [],
 ): Promise<T | null> {
-  return getDb().getFirstAsync<T>(sql, params);
+  if (!_db) return null;
+  return _db.getFirstAsync<T>(sql, params);
 }
 
 export async function run(
   sql: string,
   params: SQLiteBindParams = [],
 ): Promise<void> {
-  await getDb().runAsync(sql, params);
+  if (!_db) return;
+  await _db.runAsync(sql, params);
 }
 
 export async function transaction(fn: () => Promise<void>): Promise<void> {

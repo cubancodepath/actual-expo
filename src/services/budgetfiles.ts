@@ -1,13 +1,11 @@
 import {
-  documentDirectory,
   makeDirectoryAsync,
   writeAsStringAsync,
   EncodingType,
 } from 'expo-file-system/legacy';
 import { unzipSync } from 'fflate';
-import { closeDatabase, openDatabase } from '../db';
-import { run } from '../db';
-import { loadClock, resetSyncState, clearSwitchingFlag, fullSync } from '../sync';
+import { closeDatabase, openDatabase, run } from '../db';
+import { loadClock, resetSyncState, clearSwitchingFlag, fullSync, waitForSyncToSettle } from '../sync';
 import { resetAllStores } from '../stores/resetStores';
 import { usePrefsStore } from '../stores/prefsStore';
 import { useAccountsStore } from '../stores/accountsStore';
@@ -16,13 +14,22 @@ import { useBudgetStore } from '../stores/budgetStore';
 import { usePayeesStore } from '../stores/payeesStore';
 import { usePreferencesStore } from '../stores/preferencesStore';
 import { useTagsStore } from '../stores/tagsStore';
+import { useSchedulesStore } from '../stores/schedulesStore';
 import type { BudgetFile } from './authService';
+import {
+  type BudgetMetadata,
+  getBudgetDir,
+  readMetadata,
+  writeMetadata,
+  updateMetadata,
+  idFromBudgetName,
+  deleteBudgetDir,
+} from './budgetMetadata';
 
-/**
- * Convert a Uint8Array to a base64 string.
- * Uses btoa (available in Hermes/React Native). Processes in chunks
- * to avoid "maximum call stack" on large buffers.
- */
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
 function uint8ToBase64(bytes: Uint8Array): string {
   let binary = '';
   const chunkSize = 8192;
@@ -32,31 +39,109 @@ function uint8ToBase64(bytes: Uint8Array): string {
   return btoa(binary);
 }
 
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+export type BudgetFileState = 'local' | 'remote' | 'synced' | 'detached';
+
+export type ReconciledBudgetFile = {
+  state: BudgetFileState;
+  localId?: string;
+  cloudFileId?: string;
+  name: string;
+  groupId?: string;
+  encryptKeyId?: string;
+  ownerName?: string;
+  lastOpened?: string;
+};
+
+// ---------------------------------------------------------------------------
+// Reconciliation
+// ---------------------------------------------------------------------------
+
+export function reconcileFiles(
+  local: BudgetMetadata[],
+  remote: BudgetFile[],
+): ReconciledBudgetFile[] {
+  const result: ReconciledBudgetFile[] = [];
+  const matchedRemoteIds = new Set<string>();
+
+  for (const loc of local) {
+    const remoteMatch = remote.find(
+      (r) => !r.deleted && r.fileId === loc.cloudFileId,
+    );
+    if (remoteMatch) {
+      matchedRemoteIds.add(remoteMatch.fileId);
+      result.push({
+        state: 'synced',
+        localId: loc.id,
+        cloudFileId: remoteMatch.fileId,
+        name: loc.budgetName,
+        groupId: loc.groupId ?? remoteMatch.groupId,
+        encryptKeyId: remoteMatch.encryptKeyId,
+        ownerName: remoteMatch.ownerName,
+        lastOpened: loc.lastOpened,
+      });
+    } else if (loc.cloudFileId) {
+      result.push({
+        state: 'detached',
+        localId: loc.id,
+        cloudFileId: loc.cloudFileId,
+        name: loc.budgetName,
+        groupId: loc.groupId,
+        lastOpened: loc.lastOpened,
+      });
+    } else {
+      result.push({
+        state: 'local',
+        localId: loc.id,
+        name: loc.budgetName,
+        lastOpened: loc.lastOpened,
+      });
+    }
+  }
+
+  for (const rem of remote) {
+    if (!rem.deleted && !matchedRemoteIds.has(rem.fileId)) {
+      result.push({
+        state: 'remote',
+        cloudFileId: rem.fileId,
+        name: rem.name,
+        groupId: rem.groupId,
+        encryptKeyId: rem.encryptKeyId,
+        ownerName: rem.ownerName,
+      });
+    }
+  }
+
+  return result;
+}
+
+// ---------------------------------------------------------------------------
+// Download
+// ---------------------------------------------------------------------------
+
 /**
- * Download the full SQLite database from the actual-budget server,
- * replace the local database file, and reopen the connection.
- *
- * Mirrors loot-core's `download()` + `importBuffer()` in cloud-storage.ts.
- *
- * @throws if the file is encrypted (not yet supported) or the download fails.
+ * Download a budget from the server and save it to a new local directory.
+ * Returns the local budgetId. Does NOT open the budget.
  */
-export async function downloadAndImportBudget(
+export async function downloadBudget(
   serverUrl: string,
   token: string,
-  fileId: string,
-  encryptKeyId?: string,
-): Promise<void> {
-  if (encryptKeyId) {
+  file: BudgetFile,
+): Promise<string> {
+  if (file.encryptKeyId) {
     throw new Error(
-      'This budget file is encrypted. Encrypted files are not yet supported in the Expo app.',
+      'This budget file is encrypted. Encrypted files are not yet supported.',
     );
   }
 
-  // 1. Download ZIP from server
+  // 1. Download ZIP
   const res = await fetch(`${serverUrl}/sync/download-user-file`, {
     headers: {
       'x-actual-token': token,
-      'x-actual-file-id': fileId,
+      'x-actual-file-id': file.fileId,
     },
   });
 
@@ -68,59 +153,70 @@ export async function downloadAndImportBudget(
   const buffer = await res.arrayBuffer();
   const zipBytes = new Uint8Array(buffer);
 
-  // Diagnose: log content-type and first bytes so we can see what the server sent
-  const contentType = res.headers.get('content-type') ?? 'unknown';
-  const firstBytes = Array.from(zipBytes.slice(0, 4)).map(b => b.toString(16).padStart(2, '0')).join(' ');
-  if (__DEV__) console.log(`[download] content-type: ${contentType}, size: ${zipBytes.length}, first bytes: ${firstBytes}`);
-
-  // ZIP magic bytes are 50 4b 03 04 — if it's something else, show what we got
   if (zipBytes[0] !== 0x50 || zipBytes[1] !== 0x4b) {
+    const contentType = res.headers.get('content-type') ?? 'unknown';
     const preview = new TextDecoder().decode(zipBytes.slice(0, 200));
-    throw new Error(`Server did not return a ZIP file.\nContent-Type: ${contentType}\nPreview: ${preview}`);
+    throw new Error(
+      `Server did not return a ZIP file.\nContent-Type: ${contentType}\nPreview: ${preview}`,
+    );
   }
 
-  // 2. Unzip — extract db.sqlite (matches what loot-core's AdmZip does)
+  // 2. Extract db.sqlite
   const unzipped = unzipSync(zipBytes);
   const dbBytes = unzipped['db.sqlite'];
   if (!dbBytes) {
     throw new Error('Downloaded archive does not contain db.sqlite');
   }
 
-  // 3. Close existing DB connection before replacing the file
-  await closeDatabase();
+  // 3. Create budget directory and write files
+  const budgetId = idFromBudgetName(file.name || 'budget');
+  const budgetDir = getBudgetDir(budgetId);
+  await makeDirectoryAsync(budgetDir, { intermediates: true });
 
-  // 4. Write new db file to the Expo SQLite directory
-  const sqliteDir = `${documentDirectory}SQLite`;
-  await makeDirectoryAsync(sqliteDir, { intermediates: true });
-  const dbPath = `${sqliteDir}/actual.db`;
+  const dbPath = `${budgetDir}db.sqlite`;
   await writeAsStringAsync(dbPath, uint8ToBase64(dbBytes), {
     encoding: EncodingType.Base64,
   });
 
-  // 5. Reopen DB with the downloaded schema
-  await openDatabase();
+  // 4. Write metadata
+  await writeMetadata(budgetId, {
+    id: budgetId,
+    budgetName: file.name || 'Unnamed budget',
+    cloudFileId: file.fileId,
+    groupId: file.groupId,
+    encryptKeyId: file.encryptKeyId,
+    resetClock: true,
+  });
 
-  // 6. Reset CRDT clock so this device gets a fresh node ID
-  //    (mirrors loot-core's resetClock logic in importBuffer)
-  await run('DELETE FROM messages_clock');
-  await loadClock();
+  return budgetId;
 }
 
+// ---------------------------------------------------------------------------
+// Open / Close
+// ---------------------------------------------------------------------------
+
 /**
- * Switch to a different budget file. Handles the full lifecycle:
- * invalidate in-flight syncs → reset stores → download & import →
- * reload stores → update prefs → trigger initial sync.
+ * Open an existing local budget. Closes any currently open budget first.
  */
-export async function switchBudget(
-  serverUrl: string,
-  token: string,
-  file: BudgetFile,
-): Promise<void> {
+export async function openBudget(budgetId: string): Promise<void> {
+  await waitForSyncToSettle();
   resetSyncState();
   resetAllStores();
+  await closeDatabase();
 
-  await downloadAndImportBudget(serverUrl, token, file.fileId, file.encryptKeyId);
+  const budgetDir = getBudgetDir(budgetId);
+  await openDatabase(budgetDir);
 
+  // Handle resetClock flag (fresh downloads need a new node ID)
+  const meta = await readMetadata(budgetId);
+  if (meta?.resetClock) {
+    await run('DELETE FROM messages_clock');
+    await updateMetadata(budgetId, { resetClock: false });
+  }
+
+  await loadClock();
+
+  // Load all stores from the newly opened DB
   await Promise.allSettled([
     useAccountsStore.getState().load(),
     useCategoriesStore.getState().load(),
@@ -128,17 +224,88 @@ export async function switchBudget(
     usePayeesStore.getState().load(),
     usePreferencesStore.getState().load(),
     useTagsStore.getState().load(),
+    useSchedulesStore.getState().load(),
   ]);
 
+  // Update global prefs with active budget info
   usePrefsStore.getState().setPrefs({
-    fileId: file.fileId,
-    groupId: file.groupId,
-    encryptKeyId: file.encryptKeyId,
-    budgetName: file.name || 'Unnamed budget',
-    lastSyncedTimestamp: undefined,
+    activeBudgetId: budgetId,
+    fileId: meta?.cloudFileId ?? '',
+    groupId: meta?.groupId ?? '',
+    encryptKeyId: meta?.encryptKeyId,
+    budgetName: meta?.budgetName ?? 'Unnamed budget',
+    lastSyncedTimestamp: meta?.lastSyncedTimestamp,
+  });
+
+  // Update lastOpened
+  await updateMetadata(budgetId, {
+    lastOpened: new Date().toISOString(),
   });
 
   clearSwitchingFlag();
-  fullSync().catch(console.warn);
+
+  // Background sync for cloud-connected budgets
+  if (meta?.cloudFileId && meta?.groupId) {
+    fullSync().catch(console.warn);
+  }
 }
 
+/** Close the currently open budget without opening another. */
+export async function closeBudget(): Promise<void> {
+  await waitForSyncToSettle();
+  resetSyncState();
+  resetAllStores();
+  await closeDatabase();
+  usePrefsStore.getState().setPrefs({
+    activeBudgetId: '',
+    fileId: '',
+    groupId: '',
+    encryptKeyId: undefined,
+    lastSyncedTimestamp: undefined,
+    budgetName: undefined,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Switch
+// ---------------------------------------------------------------------------
+
+/**
+ * Switch to a budget. If remote-only, downloads first. Then opens.
+ */
+export async function switchBudget(
+  file: ReconciledBudgetFile,
+  serverUrl: string,
+  token: string,
+): Promise<void> {
+  let localId = file.localId;
+
+  if (file.state === 'remote' && file.cloudFileId) {
+    // Need to download first
+    const budgetFile: BudgetFile = {
+      fileId: file.cloudFileId,
+      groupId: file.groupId ?? '',
+      name: file.name,
+      encryptKeyId: file.encryptKeyId,
+    };
+    localId = await downloadBudget(serverUrl, token, budgetFile);
+  }
+
+  if (!localId) {
+    throw new Error('Cannot switch budget: no local ID available');
+  }
+
+  await openBudget(localId);
+}
+
+// ---------------------------------------------------------------------------
+// Delete
+// ---------------------------------------------------------------------------
+
+export async function deleteBudget(budgetId: string): Promise<void> {
+  const prefs = usePrefsStore.getState();
+  if (prefs.activeBudgetId === budgetId) {
+    await closeBudget();
+  }
+  await deleteBudgetDir(budgetId);
+}

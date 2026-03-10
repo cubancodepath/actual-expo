@@ -22,15 +22,19 @@ export async function updateAppBadge(): Promise<void> {
   const allowed = await ensureBadgePermission();
   if (!allowed) return;
 
-  const data = useBudgetStore.getState().data;
-  const overspentCount = data
-    ? data.groups
-        .filter((g) => !g.is_income)
-        .flatMap((g) => g.categories)
-        .filter((c) => c.balance < 0 && !c.carryover).length
-    : 0;
+  try {
+    const data = useBudgetStore.getState().data;
+    const overspentCount = data
+      ? data.groups
+          .filter((g) => !g.is_income)
+          .flatMap((g) => g.categories)
+          .filter((c) => c.balance < 0 && !c.carryover).length
+      : 0;
 
-  const { count: uncategorizedCount } = await getUncategorizedStats();
+    const { count: uncategorizedCount } = await getUncategorizedStats();
 
-  await Notifications.setBadgeCountAsync(overspentCount + uncategorizedCount);
+    await Notifications.setBadgeCountAsync(overspentCount + uncategorizedCount);
+  } catch {
+    // DB may be unavailable during budget switch — ignore
+  }
 }

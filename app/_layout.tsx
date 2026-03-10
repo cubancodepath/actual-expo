@@ -13,13 +13,10 @@ import { usePrefsStore } from "../src/stores/prefsStore";
 import { useAccountsStore } from "../src/stores/accountsStore";
 import { useCategoriesStore } from "../src/stores/categoriesStore";
 import { useBudgetStore } from "../src/stores/budgetStore";
-import { usePreferencesStore } from "../src/stores/preferencesStore";
-import { useTagsStore } from "../src/stores/tagsStore";
-import { usePayeesStore } from "../src/stores/payeesStore";
-import { useSchedulesStore } from "../src/stores/schedulesStore";
 import { useTransactionsStore } from "../src/stores/transactionsStore";
-import { openDatabase } from "../src/db";
-import { loadClock, fullSync, isSwitchingBudget } from "../src/sync";
+import { fullSync, isSwitchingBudget } from "../src/sync";
+import { ensureBudgetsDir, budgetExists } from "../src/services/budgetMetadata";
+import { openBudget } from "../src/services/budgetfiles";
 import { updateAppBadge } from "../src/lib/badge";
 import { syncShortcutCache } from "../src/lib/syncShortcutCache";
 import { UndoToast } from "../src/presentation/components";
@@ -34,24 +31,20 @@ export default function RootLayout() {
   const [ready, setReady] = useState(false);
   const handledTimestamp = useRef(0);
 
-  // Bootstrap: load prefs + open DB + restore CRDT clock + pre-load stores
+  // Bootstrap: load prefs + open last budget if available
   useEffect(() => {
     async function bootstrap() {
       // MMKV config hydrates synchronously via persist middleware.
       // Token needs an explicit async load from SecureStore.
       await usePrefsStore.getState().loadToken();
-      await openDatabase();
-      await loadClock();
-      // Pre-load stores from local DB so screens show cached data immediately
-      await Promise.allSettled([
-        useAccountsStore.getState().load(),
-        useCategoriesStore.getState().load(),
-        useBudgetStore.getState().load(),
-        usePreferencesStore.getState().load(),
-        useTagsStore.getState().load(),
-        usePayeesStore.getState().load(),
-        useSchedulesStore.getState().load(),
-      ]);
+      await ensureBudgetsDir();
+
+      // If a budget was previously open, reopen it
+      const { activeBudgetId } = usePrefsStore.getState();
+      if (activeBudgetId && (await budgetExists(activeBudgetId))) {
+        await openBudget(activeBudgetId);
+      }
+
       syncShortcutCache();
     }
     bootstrap()
@@ -73,7 +66,7 @@ export default function RootLayout() {
   }, [ready]);
 
   useEffect(() => {
-    if (!isConfigured) return;
+    if (!ready || !isConfigured) return;
 
     updateAppBadge();
 
@@ -103,7 +96,7 @@ export default function RootLayout() {
       unsubBudget();
       unsubTxns();
     };
-  }, [isConfigured]);
+  }, [ready, isConfigured]);
 
   // Register home screen quick actions only when fully authenticated with a budget
   useEffect(() => {

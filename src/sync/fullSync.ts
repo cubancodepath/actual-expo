@@ -10,9 +10,9 @@ import { encode, decode } from './encoder';
 import { postBinary } from '../post';
 import { applyMessages, getMessagesSince } from './apply';
 import { refreshStoresForDatasets } from '../stores/storeRegistry';
-import { getSyncGeneration, isSwitchingBudget } from './lifecycle';
+import { getSyncGeneration, isSwitchingBudget, setActiveSyncPromise } from './lifecycle';
 
-export async function fullSync(attempt = 0): Promise<void> {
+async function _fullSync(attempt = 0): Promise<void> {
   if (isSwitchingBudget()) return;
 
   const gen = getSyncGeneration();
@@ -89,7 +89,16 @@ export async function fullSync(attempt = 0): Promise<void> {
     if (gen !== getSyncGeneration()) return;
 
     // Persist last synced timestamp — persist middleware auto-saves to MMKV
-    prefs.setPrefs({ lastSyncedTimestamp: new Date().toISOString() });
+    const syncTimestamp = new Date().toISOString();
+    prefs.setPrefs({ lastSyncedTimestamp: syncTimestamp });
+
+    // Also persist to budget's metadata.json for offline access
+    const activeBudgetId = prefs.activeBudgetId;
+    if (activeBudgetId) {
+      import('../services/budgetMetadata').then(({ updateMetadata }) =>
+        updateMetadata(activeBudgetId, { lastSyncedTimestamp: syncTimestamp }).catch(() => {}),
+      );
+    }
 
     // Check merkle divergence — only retry if server actually sent messages
     // (otherwise we'd loop 5 times with 0 messages, achieving nothing)
@@ -118,4 +127,14 @@ export async function fullSync(attempt = 0): Promise<void> {
     useSyncStore.getState()._setError(msg);
     throw e;
   }
+}
+
+/**
+ * Public wrapper that tracks the active sync promise so budget-switch
+ * can wait for it to settle before closing the database.
+ */
+export function fullSync(attempt = 0): Promise<void> {
+  const p = _fullSync(attempt).finally(() => setActiveSyncPromise(null));
+  setActiveSyncPromise(p);
+  return p;
 }

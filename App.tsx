@@ -114,9 +114,13 @@ async function runDbTests(): Promise<TestResult[]> {
   const results: TestResult[] = [];
 
   try {
-    await openDatabase();
+    const { BUDGETS_DIR } = await import('./src/services/budgetMetadata');
+    const { makeDirectoryAsync } = await import('expo-file-system/legacy');
+    const testDir = `${BUDGETS_DIR}test-budget/`;
+    await makeDirectoryAsync(testDir, { intermediates: true });
+    await openDatabase(testDir);
     await loadClock();
-    results.push({ name: 'openDatabase() + loadClock()', ok: true, detail: 'actual.db opened' });
+    results.push({ name: 'openDatabase() + loadClock()', ok: true, detail: 'db.sqlite opened' });
   } catch (e: unknown) {
     results.push({ name: 'openDatabase() + loadClock()', ok: false, detail: String(e) });
     return results; // no point continuing if DB failed

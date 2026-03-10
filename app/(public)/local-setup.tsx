@@ -40,6 +40,9 @@ import {
   seedLocalBudget,
   type CategorySelection,
 } from "../../src/services/seedBudget";
+import { ensureBudgetsDir, idFromBudgetName, getBudgetDir, writeMetadata } from "../../src/services/budgetMetadata";
+import { openDatabase } from "../../src/db";
+import { loadClock } from "../../src/sync";
 import type { Theme } from "../../src/theme";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -346,22 +349,36 @@ export default function LocalSetupScreen() {
     setSeeding(true);
     setError(null);
     try {
+      // Create a budget directory and open the DB before seeding
+      const name = budgetName.trim() || "My Budget";
+      const budgetId = idFromBudgetName(name);
+      await ensureBudgetsDir();
+      await writeMetadata(budgetId, { id: budgetId, budgetName: name });
+      await openDatabase(getBudgetDir(budgetId));
+      await loadClock();
+
       await seedLocalBudget({
         accountName: accountName.trim() || "Checking",
         startingBalance,
         selectedCategories: categories,
       });
+
+      // Store the activeBudgetId so handleStart can complete the flow
+      budgetIdRef.current = budgetId;
       goTo("ready");
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setSeeding(false);
     }
-  }, [accountName, startingBalance, categories, step]);
+  }, [accountName, startingBalance, categories, budgetName, step]);
+
+  const budgetIdRef = useRef('');
 
   function handleStart() {
     usePrefsStore.getState().setPrefs({
       isLocalOnly: true,
+      activeBudgetId: budgetIdRef.current,
       budgetName: budgetName.trim() || "My Budget",
     });
   }

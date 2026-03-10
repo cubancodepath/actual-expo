@@ -22,6 +22,7 @@ export {
   clearSyncTimeout,
   clearSwitchingFlag,
   isSwitchingBudget,
+  waitForSyncToSettle,
 } from './lifecycle';
 export { refreshAllRegisteredStores as refreshAllStores } from '../stores/storeRegistry';
 

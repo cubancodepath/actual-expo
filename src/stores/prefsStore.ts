@@ -25,6 +25,7 @@ const SECURE_TOKEN_KEY = 'actual-token';
 type PrefsState = {
   // Config — persisted in MMKV (non-sensitive)
   serverUrl: string;
+  activeBudgetId: string;
   fileId: string;
   groupId: string;
   encryptKeyId?: string;
@@ -57,9 +58,9 @@ type PrefsState = {
   clearAll(): Promise<void>;
 };
 
-function computeIsConfigured(s: Pick<PrefsState, 'serverUrl' | 'token' | 'fileId' | 'groupId' | 'isLocalOnly'>): boolean {
+function computeIsConfigured(s: Pick<PrefsState, 'serverUrl' | 'token' | 'activeBudgetId' | 'isLocalOnly'>): boolean {
   if (s.isLocalOnly) return true;
-  return !!(s.serverUrl && s.token && s.fileId && s.groupId);
+  return !!(s.serverUrl && s.token && s.activeBudgetId);
 }
 
 // ---------------------------------------------------------------------------
@@ -71,6 +72,7 @@ export const usePrefsStore = create<PrefsState>()(
     (set, get) => ({
       serverUrl: '',
       token: '',
+      activeBudgetId: '',
       fileId: '',
       groupId: '',
       encryptKeyId: undefined,
@@ -127,6 +129,7 @@ export const usePrefsStore = create<PrefsState>()(
         set({
           serverUrl: '',
           token: '',
+          activeBudgetId: '',
           fileId: '',
           groupId: '',
           encryptKeyId: undefined,
@@ -143,6 +146,7 @@ export const usePrefsStore = create<PrefsState>()(
       // Only persist non-sensitive config to MMKV. Token stays in SecureStore.
       partialize: (state) => ({
         serverUrl: state.serverUrl,
+        activeBudgetId: state.activeBudgetId,
         fileId: state.fileId,
         groupId: state.groupId,
         encryptKeyId: state.encryptKeyId,

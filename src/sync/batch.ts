@@ -84,6 +84,6 @@ async function _applyAndRecord(messages: SyncMessage[]): Promise<void> {
   undoAppendMessages(messages, oldData);
   // Refresh affected stores so UI updates immediately after local mutations
   const affectedDatasets = new Set(messages.map((m) => m.dataset));
-  refreshStoresForDatasets(affectedDatasets); // fire-and-forget
+  await refreshStoresForDatasets(affectedDatasets);
   scheduleFullSync(); // upload local changes to server after every mutation
 }

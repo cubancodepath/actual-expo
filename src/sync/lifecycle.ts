@@ -10,6 +10,7 @@ import { clearUndo } from './undo';
 let _syncGeneration = 0;
 let _switchingBudget = false;
 let _syncTimeout: ReturnType<typeof setTimeout> | null = null;
+let _activeSyncPromise: Promise<void> | null = null;
 
 export function getSyncGeneration(): number {
   return _syncGeneration;
@@ -36,6 +37,26 @@ export function setSyncTimeout(timeout: ReturnType<typeof setTimeout>): void {
 
 export function getSyncTimeout(): ReturnType<typeof setTimeout> | null {
   return _syncTimeout;
+}
+
+/** Track the active sync promise so we can wait for it before closing the DB. */
+export function setActiveSyncPromise(p: Promise<void> | null): void {
+  _activeSyncPromise = p;
+}
+
+/**
+ * Wait for any in-flight sync to settle (resolve or reject).
+ * Call BEFORE closing the database to avoid "closed resource" errors.
+ */
+export async function waitForSyncToSettle(): Promise<void> {
+  if (_activeSyncPromise) {
+    if (__DEV__) console.log('[sync] waitForSyncToSettle: waiting for active sync…');
+    await _activeSyncPromise.catch(() => {});
+    _activeSyncPromise = null;
+    if (__DEV__) console.log('[sync] waitForSyncToSettle: sync settled');
+  } else {
+    if (__DEV__) console.log('[sync] waitForSyncToSettle: no active sync');
+  }
 }
 
 /**

@@ -86,9 +86,11 @@ export default function AccountTransactionsScreen() {
       if (!txn.cleared && !txn.reconciled) {
         setUnclearedCount(c => Math.max(0, c - 1));
       }
+      loadAccounts();
     },
     onDuplicate: () => {
       setUnclearedCount(c => c + 1);
+      loadAccounts();
     },
     onToggleCleared: (txn) => {
       if (!txn.reconciled) {
@@ -127,12 +129,13 @@ export default function AccountTransactionsScreen() {
       getPreviewTransactionsForAccount(id),
       getClearedBalance(id),
       getUnclearedCount(id),
+      loadAccounts(),
     ]);
     setPreviewTransactions(previews);
     setClearedBalance(cleared);
     setUnclearedCount(uncleared);
     await txnList.silentRefresh();
-  }, [txnList.silentRefresh, id]);
+  }, [txnList.silentRefresh, id, loadAccounts]);
 
   // ---- Select mode header ----
   useSelectModeHeader({

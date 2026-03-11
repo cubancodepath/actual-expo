@@ -9,7 +9,7 @@ export default function SettingsLayout() {
   const screen = themedScreenOptions(theme);
 
   return (
-    <Stack screenOptions={screen}>
+    <Stack screenOptions={{ ...screen, headerBackButtonDisplayMode: "minimal" }}>
       <Stack.Screen
         name="index"
         options={{
@@ -25,6 +25,7 @@ export default function SettingsLayout() {
         }}
       />
       <Stack.Screen name="budget" options={{ title: "Budget Settings" }} />
+      <Stack.Screen name="display" options={{ title: "Display" }} />
     </Stack>
   );
 }

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Alert, Platform, ScrollView, Switch, View } from "react-native";
+import { Alert, Platform, ScrollView, Switch } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SymbolView } from "expo-symbols";
@@ -20,35 +20,6 @@ import { resetSyncState, clearSwitchingFlag, loadClock } from "../../../src/sync
 import { clearLocalData } from "../../../src/db";
 import type { Theme } from "../../../src/theme";
 
-// Conditionally import SwiftUI Picker on iOS
-let SwiftPicker: typeof import('@expo/ui/swift-ui').Picker | null = null;
-let SwiftText: typeof import('@expo/ui/swift-ui').Text | null = null;
-let Host: typeof import('@expo/ui/swift-ui').Host | null = null;
-let tagMod: typeof import('@expo/ui/swift-ui/modifiers').tag | null = null;
-let pickerStyleMod: typeof import('@expo/ui/swift-ui/modifiers').pickerStyle | null = null;
-let tintMod: typeof import('@expo/ui/swift-ui/modifiers').tint | null = null;
-
-if (Platform.OS === 'ios') {
-  try {
-    const swiftUI = require('@expo/ui/swift-ui');
-    SwiftPicker = swiftUI.Picker;
-    SwiftText = swiftUI.Text;
-    Host = swiftUI.Host;
-    const mods = require('@expo/ui/swift-ui/modifiers');
-    tagMod = mods.tag;
-    pickerStyleMod = mods.pickerStyle;
-    tintMod = mods.tint;
-  } catch {
-    // Fallback — @expo/ui not available
-  }
-}
-
-const THEME_OPTIONS = [
-  { value: 'system', label: 'System' },
-  { value: 'light', label: 'Light' },
-  { value: 'dark', label: 'Dark' },
-];
-
 const ICON_SIZE = 20;
 
 function SettingsIcon({ sfSymbol, ionIcon, color }: { sfSymbol: SFSymbol; ionIcon: keyof typeof Ionicons.glyphMap; color: string }) {
@@ -56,58 +27,6 @@ function SettingsIcon({ sfSymbol, ionIcon, color }: { sfSymbol: SFSymbol; ionIco
     return <SymbolView name={sfSymbol} size={ICON_SIZE} tintColor={color} />;
   }
   return <Ionicons name={ionIcon} size={ICON_SIZE} color={color} />;
-}
-
-function PickerRow({
-  label,
-  sfSymbol,
-  ionIcon,
-  selection,
-  options,
-  onSelectionChange,
-  showSeparator,
-}: {
-  label: string;
-  sfSymbol: SFSymbol;
-  ionIcon: keyof typeof Ionicons.glyphMap;
-  selection: string;
-  options: { value: string; label: string }[];
-  onSelectionChange: (value: string) => void;
-  showSeparator?: boolean;
-}) {
-  const { colors } = useTheme();
-
-  const picker =
-    SwiftPicker && SwiftText && Host && tagMod && pickerStyleMod ? (
-      <Host style={{ width: 140, height: 32 }}>
-        <SwiftPicker
-          selection={selection}
-          onSelectionChange={(val) => onSelectionChange(val as string)}
-          modifiers={[pickerStyleMod('menu'), ...(tintMod ? [tintMod(colors.primary)] : [])]}
-        >
-          {options.map((opt) => (
-            <SwiftText key={opt.value} modifiers={[tagMod(opt.value)]}>
-              {opt.label}
-            </SwiftText>
-          ))}
-        </SwiftPicker>
-      </Host>
-    ) : (
-      <Text variant="bodySm" color={colors.primary}>
-        {options.find((o) => o.value === selection)?.label ?? selection}
-      </Text>
-    );
-
-  const { spacing } = useTheme();
-  return (
-    <ListItem
-      title={label}
-      left={<SettingsIcon sfSymbol={sfSymbol} ionIcon={ionIcon} color={colors.textMuted} />}
-      right={picker}
-      showSeparator={showSeparator}
-      separatorInsetLeft={spacing.lg + ICON_SIZE + spacing.md}
-    />
-  );
 }
 
 function ServerRow({ label, value, showSeparator }: { label: string; value: string; showSeparator?: boolean }) {
@@ -135,9 +54,8 @@ export default function SettingsScreen() {
   const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
 
-  const { serverUrl, fileId, groupId, encryptKeyId, budgetName, lastSyncedTimestamp, isLocalOnly, clearAll, setPrefs } =
+  const { serverUrl, fileId, groupId, encryptKeyId, budgetName, lastSyncedTimestamp, isLocalOnly, clearAll } =
     usePrefsStore();
-  const themeMode = usePrefsStore((s) => s.themeMode);
   const lastSync = useSyncStore((s) => s.lastSync);
   const { privacyMode, toggle: togglePrivacy } = usePrivacyStore();
   const [loggingOut, setLoggingOut] = useState(false);
@@ -245,14 +163,13 @@ export default function SettingsScreen() {
       {/* App */}
       <SectionHeader title="App" style={{ marginTop: spacing.xl }} />
       <Card>
-        <PickerRow
-          label="Theme"
-          sfSymbol="paintbrush"
-          ionIcon="color-palette-outline"
-          selection={themeMode}
-          options={THEME_OPTIONS}
-          onSelectionChange={(v) => setPrefs({ themeMode: v as 'system' | 'light' | 'dark' })}
+        <ListItem
+          title="Display"
+          left={<SettingsIcon sfSymbol="paintbrush" ionIcon="color-palette-outline" color={colors.textMuted} />}
+          showChevron
+          onPress={() => router.push("/(auth)/settings/display")}
           showSeparator
+          separatorInsetLeft={spacing.lg + ICON_SIZE + spacing.md}
         />
         <ListItem
           title="Hide Amounts"

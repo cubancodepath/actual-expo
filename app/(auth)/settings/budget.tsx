@@ -64,19 +64,21 @@ function PickerRow({
 
   const picker =
     SwiftPicker && SwiftText && Host && tagMod && pickerStyleMod ? (
-      <Host style={{ width: 140, height: 32 }}>
-        <SwiftPicker
-          selection={selection}
-          onSelectionChange={(val) => onSelectionChange(val as string)}
-          modifiers={[pickerStyleMod('menu'), ...(tintMod ? [tintMod(colors.primary)] : [])]}
-        >
-          {options.map((opt) => (
-            <SwiftText key={opt.value} modifiers={[tagMod(opt.value)]}>
-              {opt.label}
-            </SwiftText>
-          ))}
-        </SwiftPicker>
-      </Host>
+      <View style={{ minWidth: 140, alignItems: 'flex-end' }}>
+        <Host matchContents style={{ height: 32 }}>
+          <SwiftPicker
+            selection={selection}
+            onSelectionChange={(val) => onSelectionChange(val as string)}
+            modifiers={[pickerStyleMod('menu'), ...(tintMod ? [tintMod(colors.primary)] : [])]}
+          >
+            {options.map((opt) => (
+              <SwiftText key={opt.value} modifiers={[tagMod(opt.value)]}>
+                {opt.label}
+              </SwiftText>
+            ))}
+          </SwiftPicker>
+        </Host>
+      </View>
     ) : (
       <Text variant="bodySm" color={colors.primary}>
         {selectedLabel}

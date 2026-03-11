@@ -9,6 +9,7 @@ export interface BudgetFileRowProps {
   isActive?: boolean;
   isSelecting?: boolean;
   onPress?: () => void;
+  showSeparator?: boolean;
 }
 
 const STATE_ICON: Record<BudgetFileState, keyof typeof Ionicons.glyphMap> = {
@@ -25,8 +26,10 @@ const STATE_LABEL: Record<BudgetFileState, string> = {
   remote: 'Available on server',
 };
 
-export function BudgetFileRow({ file, isActive, isSelecting, onPress }: BudgetFileRowProps) {
-  const { colors } = useTheme();
+const ICON_SIZE = 22;
+
+export function BudgetFileRow({ file, isActive, isSelecting, onPress, showSeparator }: BudgetFileRowProps) {
+  const { colors, spacing } = useTheme();
 
   const subtitle = [
     STATE_LABEL[file.state],
@@ -36,7 +39,7 @@ export function BudgetFileRow({ file, isActive, isSelecting, onPress }: BudgetFi
 
   const iconName = STATE_ICON[file.state];
   const iconColor = file.state === 'remote' ? colors.textMuted : colors.primary;
-  const icon = <Ionicons name={iconName} size={22} color={iconColor} />;
+  const icon = <Ionicons name={iconName} size={ICON_SIZE} color={iconColor} />;
 
   let right: React.ReactNode = undefined;
   if (isSelecting) {
@@ -52,6 +55,8 @@ export function BudgetFileRow({ file, isActive, isSelecting, onPress }: BudgetFi
       subtitle={subtitle}
       right={right}
       onPress={isActive || isSelecting ? undefined : onPress}
+      showSeparator={showSeparator}
+      separatorInsetLeft={spacing.lg + ICON_SIZE + spacing.md}
     />
   );
 }

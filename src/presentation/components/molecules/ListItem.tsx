@@ -13,6 +13,8 @@ export interface ListItemProps {
   right?: ReactNode;
   onPress?: () => void;
   showChevron?: boolean;
+  /** Show a checkmark on the right side */
+  checkmark?: boolean;
   /** Show an inset separator at the bottom of this item */
   showSeparator?: boolean;
   /** Left inset for the separator (defaults to RowSeparator default = spacing.lg) */
@@ -28,6 +30,7 @@ export function ListItem({
   right,
   onPress,
   showChevron = false,
+  checkmark = false,
   showSeparator = false,
   separatorInsetLeft,
   style,
@@ -48,6 +51,15 @@ export function ListItem({
       </View>
 
       {right && <View style={styles.right}>{right}</View>}
+
+      {checkmark && (
+        <Ionicons
+          name="checkmark"
+          size={20}
+          color={colors.primary}
+          style={{ marginLeft: spacing.sm }}
+        />
+      )}
 
       {showChevron && (
         <Ionicons

@@ -8,7 +8,6 @@ import { useTheme, useThemedStyles } from '../../src/presentation/providers/Them
 import {
   Text,
   Card,
-  Divider,
   SectionHeader,
   Banner,
   EmptyState,
@@ -149,23 +148,22 @@ export default function FilesScreen() {
               <SectionHeader title="On This Device" style={{ marginTop: spacing.lg }} />
               <Card style={styles.listCard}>
                 {localFiles.map((file, index) => (
-                  <View key={fileKey(file)}>
-                    {index > 0 && <Divider />}
-                    <SwipeableRow
-                      onDelete={() => handleDelete(file)}
-                      onSwipeRight={file.state === 'local' ? () => handleUpload(file) : undefined}
-                      swipeRightIcon="cloud-upload-outline"
-                      swipeRightColor={colors.primary}
-                      isFirst={index === 0}
-                      isLast={index === localFiles.length - 1}
-                    >
-                      <BudgetFileRow
-                        file={file}
-                        isSelecting={selecting === fileKey(file)}
-                        onPress={() => handleSelect(file)}
-                      />
-                    </SwipeableRow>
-                  </View>
+                  <SwipeableRow
+                    key={fileKey(file)}
+                    onDelete={() => handleDelete(file)}
+                    onSwipeRight={file.state === 'local' ? () => handleUpload(file) : undefined}
+                    swipeRightIcon="cloud-upload-outline"
+                    swipeRightColor={colors.primary}
+                    isFirst={index === 0}
+                    isLast={index === localFiles.length - 1}
+                  >
+                    <BudgetFileRow
+                      file={file}
+                      isSelecting={selecting === fileKey(file)}
+                      onPress={() => handleSelect(file)}
+                      showSeparator={index < localFiles.length - 1}
+                    />
+                  </SwipeableRow>
                 ))}
               </Card>
             </>
@@ -176,20 +174,19 @@ export default function FilesScreen() {
               <SectionHeader title="Available on Server" style={{ marginTop: spacing.lg }} />
               <Card style={styles.listCard}>
                 {remoteFiles.map((file, index) => (
-                  <View key={fileKey(file)}>
-                    {index > 0 && <Divider />}
-                    <SwipeableRow
-                      onDelete={() => handleDelete(file)}
-                      isFirst={index === 0}
-                      isLast={index === remoteFiles.length - 1}
-                    >
-                      <BudgetFileRow
-                        file={file}
-                        isSelecting={selecting === fileKey(file)}
-                        onPress={() => handleSelect(file)}
-                      />
-                    </SwipeableRow>
-                  </View>
+                  <SwipeableRow
+                    key={fileKey(file)}
+                    onDelete={() => handleDelete(file)}
+                    isFirst={index === 0}
+                    isLast={index === remoteFiles.length - 1}
+                  >
+                    <BudgetFileRow
+                      file={file}
+                      isSelecting={selecting === fileKey(file)}
+                      onPress={() => handleSelect(file)}
+                      showSeparator={index < remoteFiles.length - 1}
+                    />
+                  </SwipeableRow>
                 ))}
               </Card>
             </>

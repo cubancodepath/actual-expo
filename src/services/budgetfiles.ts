@@ -328,7 +328,8 @@ export async function openBudget(budgetId: string): Promise<void> {
 
   // Handle resetClock flag (fresh downloads need a new node ID)
   const meta = await readMetadata(budgetId);
-  if (meta?.resetClock) {
+  const isFirstOpen = !!meta?.resetClock;
+  if (isFirstOpen) {
     await run('DELETE FROM messages_clock');
     await updateMetadata(budgetId, { resetClock: false });
   }
@@ -363,9 +364,15 @@ export async function openBudget(budgetId: string): Promise<void> {
 
   clearSwitchingFlag();
 
-  // Background sync for cloud-connected budgets
+  // Sync for cloud-connected budgets
   if (meta?.cloudFileId && meta?.groupId) {
-    fullSync().catch(console.warn);
+    const needsInitialSync = isFirstOpen || !meta?.lastSyncedTimestamp;
+    if (needsInitialSync) {
+      // First-time open: block until sync completes so the user doesn't see empty tabs
+      await fullSync().catch(console.warn);
+    } else {
+      fullSync().catch(console.warn);
+    }
   }
 }
 

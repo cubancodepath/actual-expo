@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { FlashList } from '@shopify/flash-list';
+import { LegendList } from '@legendapp/list';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 
 import {
@@ -46,7 +46,7 @@ import { useTabBarStore } from '../../../../src/stores/tabBarStore';
 import { SelectModeToolbar } from '../../../../src/presentation/components/transaction/SelectModeToolbar';
 
 // ---------------------------------------------------------------------------
-// Types for mixed FlashList data
+// Types for mixed list data
 // ---------------------------------------------------------------------------
 
 type DateHeader = { type: 'date'; date: number; key: string };
@@ -460,7 +460,7 @@ export default function SearchScreen() {
         )}
       </View>
 
-      <FlashList<ListItem>
+      <LegendList
         data={listData}
         keyExtractor={(item) => item.key}
         getItemType={(item) => item.type}

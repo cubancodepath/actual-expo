@@ -91,12 +91,14 @@ function PayeeRow({
   onToggleFavorite,
   onRename,
   onDelete,
+  isLast,
 }: {
   payee: Payee;
   txnCount: number;
   onToggleFavorite: (id: string, fav: boolean) => void;
   onRename: (id: string, current: string) => void;
   onDelete: (id: string, name: string) => void;
+  isLast?: boolean;
 }) {
   return (
     <View style={styles.row}>
@@ -120,6 +122,9 @@ function PayeeRow({
       <Pressable style={styles.delBtn} onPress={() => onDelete(payee.id, payee.name)} hitSlop={8}>
         <Text style={styles.delText}>del</Text>
       </Pressable>
+      {!isLast && (
+        <View style={styles.separator} />
+      )}
     </View>
   );
 }
@@ -250,16 +255,16 @@ export default function PayeesScreen() {
       <FlatList
         data={filtered}
         keyExtractor={p => p.id}
-        renderItem={({ item }) => (
+        renderItem={({ item, index }) => (
           <PayeeRow
             payee={item}
             txnCount={txnCounts.get(item.id) ?? 0}
             onToggleFavorite={async (id, fav) => { await update(id, { favorite: fav }); load(); }}
             onRename={handleRename}
             onDelete={handleDelete}
+            isLast={index === filtered.length - 1}
           />
         )}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListEmptyComponent={
           <View style={styles.empty}>
             <Text style={styles.emptyText}>
@@ -303,7 +308,7 @@ const styles = StyleSheet.create({
   },
   delText: { color: '#f87171', fontSize: 11, fontWeight: '700' },
 
-  separator: { height: 1, backgroundColor: '#1e293b', marginLeft: 52 },
+  separator: { position: 'absolute' as const, bottom: 0, left: 52, right: 16, height: 1, backgroundColor: '#1e293b' },
 
   empty: { alignItems: 'center', marginTop: 80, gap: 8, paddingHorizontal: 32 },
   emptyText: { color: '#94a3b8', fontSize: 16, fontWeight: '600', textAlign: 'center' },

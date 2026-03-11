@@ -8,7 +8,6 @@ import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
 import {
   Text,
   Card,
-  Divider,
   SectionHeader,
 } from "../../../src/presentation/components";
 import { ListItem } from "../../../src/presentation/components/molecules/ListItem";
@@ -299,6 +298,7 @@ export default function RecurrenceCustomScreen() {
                 setShowDatePicker(true);
               }
             }}
+            showSeparator={showEndDate}
           />
           {showEndDate && showDatePicker && (
             <View style={{ paddingHorizontal: spacing.md }}>
@@ -316,16 +316,13 @@ export default function RecurrenceCustomScreen() {
             </View>
           )}
           {showEndDate && (
-            <>
-              <Divider />
-              <ListItem
-                title="Remove end date"
-                onPress={() => {
-                  setShowEndDate(false);
-                  setShowDatePicker(false);
-                }}
-              />
-            </>
+            <ListItem
+              title="Remove end date"
+              onPress={() => {
+                setShowEndDate(false);
+                setShowDatePicker(false);
+              }}
+            />
           )}
         </Card>
 
@@ -338,10 +335,11 @@ export default function RecurrenceCustomScreen() {
             />
             <Card>
               {previewDates.map((date, i) => (
-                <View key={date}>
-                  {i > 0 && <Divider />}
-                  <ListItem title={date} />
-                </View>
+                <ListItem
+                  key={date}
+                  title={date}
+                  showSeparator={i < previewDates.length - 1}
+                />
               ))}
             </Card>
           </>

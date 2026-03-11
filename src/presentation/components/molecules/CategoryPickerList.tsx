@@ -2,6 +2,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { FlatList, Pressable, View } from 'react-native';
 import { useTheme } from '../../providers/ThemeProvider';
 import { Text } from '../atoms/Text';
+import { RowSeparator } from '../atoms/RowSeparator';
 import { SearchBar } from './SearchBar';
 
 // ── Public types ──────────────────────────────────────────────
@@ -187,19 +188,7 @@ export function CategoryPickerList({
               </Text>
               {renderRight?.(cat)}
             </Pressable>
-            {/* Inset divider (HIG) — doesn't touch container edges */}
-            {!isLast && (
-              <View
-                style={{
-                  position: 'absolute',
-                  bottom: 0,
-                  left: spacing.md,
-                  right: spacing.md,
-                  height: bw.thin,
-                  backgroundColor: colors.divider,
-                }}
-              />
-            )}
+            {!isLast && <RowSeparator insetLeft={spacing.md} insetRight={spacing.md} />}
           </View>
         );
       }}

@@ -11,7 +11,6 @@ import {
   Card,
   ListItem,
   SectionHeader,
-  Divider,
 } from "../../../src/presentation/components";
 import { usePrefsStore } from "../../../src/stores/prefsStore";
 import { resetAllStores } from "../../../src/stores/resetStores";
@@ -59,11 +58,6 @@ function SettingsIcon({ sfSymbol, ionIcon, color }: { sfSymbol: SFSymbol; ionIco
   return <Ionicons name={ionIcon} size={ICON_SIZE} color={color} />;
 }
 
-function InsetDivider() {
-  const { spacing } = useTheme();
-  return <Divider style={{ marginLeft: spacing.lg + ICON_SIZE + spacing.md }} />;
-}
-
 function PickerRow({
   label,
   sfSymbol,
@@ -71,6 +65,7 @@ function PickerRow({
   selection,
   options,
   onSelectionChange,
+  showSeparator,
 }: {
   label: string;
   sfSymbol: SFSymbol;
@@ -78,6 +73,7 @@ function PickerRow({
   selection: string;
   options: { value: string; label: string }[];
   onSelectionChange: (value: string) => void;
+  showSeparator?: boolean;
 }) {
   const { colors } = useTheme();
 
@@ -102,16 +98,19 @@ function PickerRow({
       </Text>
     );
 
+  const { spacing } = useTheme();
   return (
     <ListItem
       title={label}
       left={<SettingsIcon sfSymbol={sfSymbol} ionIcon={ionIcon} color={colors.textMuted} />}
       right={picker}
+      showSeparator={showSeparator}
+      separatorInsetLeft={spacing.lg + ICON_SIZE + spacing.md}
     />
   );
 }
 
-function ServerRow({ label, value }: { label: string; value: string }) {
+function ServerRow({ label, value, showSeparator }: { label: string; value: string; showSeparator?: boolean }) {
   const { colors } = useTheme();
   return (
     <ListItem
@@ -125,6 +124,7 @@ function ServerRow({ label, value }: { label: string; value: string }) {
           {value || "—"}
         </Text>
       }
+      showSeparator={showSeparator}
     />
   );
 }
@@ -223,15 +223,17 @@ export default function SettingsScreen() {
           left={<SettingsIcon sfSymbol="gearshape" ionIcon="settings-outline" color={colors.textMuted} />}
           showChevron
           onPress={() => router.push("/(auth)/settings/budget")}
+          showSeparator
+          separatorInsetLeft={spacing.lg + ICON_SIZE + spacing.md}
         />
-        <InsetDivider />
         <ListItem
           title="New Budget"
           left={<SettingsIcon sfSymbol="plus.circle" ionIcon="add-circle-outline" color={colors.textMuted} />}
           showChevron
           onPress={() => router.push("/(auth)/new-budget")}
+          showSeparator
+          separatorInsetLeft={spacing.lg + ICON_SIZE + spacing.md}
         />
-        <InsetDivider />
         <ListItem
           title="Open Budget"
           left={<SettingsIcon sfSymbol="folder" ionIcon="folder-outline" color={colors.textMuted} />}
@@ -250,8 +252,8 @@ export default function SettingsScreen() {
           selection={themeMode}
           options={THEME_OPTIONS}
           onSelectionChange={(v) => setPrefs({ themeMode: v as 'system' | 'light' | 'dark' })}
+          showSeparator
         />
-        <InsetDivider />
         <ListItem
           title="Hide Amounts"
           subtitle="Mask all monetary values for privacy"
@@ -277,8 +279,9 @@ export default function SettingsScreen() {
               title="Local Only"
               subtitle="Data is stored on this device only"
               left={<SettingsIcon sfSymbol="iphone" ionIcon="phone-portrait-outline" color={colors.textMuted} />}
+              showSeparator
+              separatorInsetLeft={spacing.lg + ICON_SIZE + spacing.md}
             />
-            <Divider />
             <ListItem
               title="Delete All Data"
               titleColor={colors.negative}
@@ -291,26 +294,21 @@ export default function SettingsScreen() {
         <>
           <SectionHeader title="Server" style={{ marginTop: spacing.xl }} />
           <Card>
-            <ServerRow label="URL" value={serverUrl} />
-            <Divider />
-            <ServerRow label="Last Sync" value={lastSyncText} />
-            <Divider />
-            <ServerRow label="File ID" value={fileId ? `${fileId.slice(0, 8)}…` : ""} />
-            <Divider />
+            <ServerRow label="URL" value={serverUrl} showSeparator />
+            <ServerRow label="Last Sync" value={lastSyncText} showSeparator />
+            <ServerRow label="File ID" value={fileId ? `${fileId.slice(0, 8)}…` : ""} showSeparator />
             <ServerRow
               label="Group ID"
               value={groupId ? `${groupId.slice(0, 8)}…` : ""}
+              showSeparator
             />
             {encryptKeyId && (
-              <>
-                <Divider />
-                <ServerRow
-                  label="Encryption"
-                  value={`${encryptKeyId.slice(0, 8)}…`}
-                />
-              </>
+              <ServerRow
+                label="Encryption"
+                value={`${encryptKeyId.slice(0, 8)}…`}
+                showSeparator
+              />
             )}
-            <Divider />
             <ListItem
               title="Disconnect from Server"
               titleColor={colors.negative}

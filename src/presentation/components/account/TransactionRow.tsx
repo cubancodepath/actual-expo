@@ -12,7 +12,7 @@ import Animated, {
 import { Ionicons } from '@expo/vector-icons';
 import * as ContextMenu from 'zeego/context-menu';
 import { useTheme, useThemedStyles } from '../../providers/ThemeProvider';
-import { Text, Amount, NotesWithTags } from '..';
+import { Text, Amount, NotesWithTags, RowSeparator } from '..';
 import { formatAmount } from '../../../lib/format';
 import { SwipeableRow } from '../molecules/SwipeableRow';
 import type { TransactionDisplay } from '../../../transactions';
@@ -54,7 +54,7 @@ export const TransactionRow = memo(function TransactionRow({
   isSelectMode = false,
   isSelected = false,
 }: TransactionRowProps) {
-  const { colors, spacing, borderWidth: bw } = useTheme();
+  const { colors, spacing } = useTheme();
   const styles = useThemedStyles(createStyles);
 
   // Select mode micro-animation: gentle shift when entering
@@ -189,19 +189,7 @@ export const TransactionRow = memo(function TransactionRow({
         )}
       </View>
 
-      {/* Inset separator (HIG) — doesn't touch container edges */}
-      {!isLast && (
-        <View
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            left: spacing.lg,
-            right: spacing.md,
-            height: bw.thin,
-            backgroundColor: colors.divider,
-          }}
-        />
-      )}
+      {!isLast && <RowSeparator />}
     </Pressable>
   );
 

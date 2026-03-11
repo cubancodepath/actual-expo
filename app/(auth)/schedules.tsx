@@ -9,11 +9,10 @@ import {
 import {
   Text,
   Amount,
-  Card,
   EmptyState,
   SectionHeader,
-  Divider,
   ScheduleStatusBadge,
+  RowSeparator,
 } from "../../src/presentation/components";
 import { SwipeableRow } from "../../src/presentation/components";
 import { useSchedulesStore } from "../../src/stores/schedulesStore";
@@ -72,12 +71,14 @@ function ScheduleRow({
   accountName,
   onPress,
   onDelete,
+  isLast,
 }: {
   schedule: Schedule;
   payeeName: string;
   accountName: string;
   onPress: () => void;
   onDelete: () => void;
+  isLast?: boolean;
 }) {
   const { colors, spacing } = useTheme();
   const styles = useThemedStyles(createStyles);
@@ -124,6 +125,7 @@ function ScheduleRow({
             <ScheduleStatusBadge status={status} />
           </View>
         </View>
+        {!isLast && <RowSeparator insetLeft={spacing.lg + 36 + spacing.md} />}
       </Pressable>
     </SwipeableRow>
   );
@@ -204,21 +206,19 @@ export default function SchedulesScreen() {
           />
         )}
         renderItem={({ item, index, section }) => (
-          <>
-            {index > 0 && <Divider style={{ marginLeft: 56 + spacing.lg }} />}
-            <ScheduleRow
-              schedule={item}
-              payeeName={payeeMap.get(item._payee ?? "") ?? ""}
-              accountName={accountMap.get(item._account ?? "") ?? ""}
-              onPress={() =>
-                router.push({
-                  pathname: "/(auth)/schedule/[id]",
-                  params: { id: item.id },
-                })
-              }
-              onDelete={() => handleDelete(item)}
-            />
-          </>
+          <ScheduleRow
+            schedule={item}
+            payeeName={payeeMap.get(item._payee ?? "") ?? ""}
+            accountName={accountMap.get(item._account ?? "") ?? ""}
+            onPress={() =>
+              router.push({
+                pathname: "/(auth)/schedule/[id]",
+                params: { id: item.id },
+              })
+            }
+            onDelete={() => handleDelete(item)}
+            isLast={index === section.data.length - 1}
+          />
         )}
         ListEmptyComponent={
           <EmptyState

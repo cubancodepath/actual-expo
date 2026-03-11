@@ -1,4 +1,3 @@
-import React from "react";
 import { Platform, ScrollView, Switch, TextInput, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -8,7 +7,6 @@ import {
   Card,
   ListItem,
   SectionHeader,
-  Divider,
 } from "../../../src/presentation/components";
 import { usePreferencesStore } from "../../../src/stores/preferencesStore";
 import { useFeatureFlagsStore } from "../../../src/stores/featureFlagsStore";
@@ -47,22 +45,18 @@ if (Platform.OS === 'ios') {
   }
 }
 
-/** Inset divider — iOS-style, doesn't touch left edge. */
-function InsetDivider() {
-  const { spacing } = useTheme();
-  return <Divider style={{ marginLeft: spacing.lg }} />;
-}
-
 function PickerRow({
   label,
   selection,
   options,
   onSelectionChange,
+  showSeparator,
 }: {
   label: string;
   selection: string;
   options: { value: string; label: string }[];
   onSelectionChange: (value: string) => void;
+  showSeparator?: boolean;
 }) {
   const { colors } = useTheme();
 
@@ -89,7 +83,7 @@ function PickerRow({
       </Text>
     );
 
-  return <ListItem title={label} right={picker} />;
+  return <ListItem title={label} right={picker} showSeparator={showSeparator} />;
 }
 
 export default function BudgetSettingsScreen() {
@@ -133,15 +127,15 @@ export default function BudgetSettingsScreen() {
           selection={dateFormat}
           options={dateOptions}
           onSelectionChange={(v) => set('dateFormat', v)}
+          showSeparator
         />
-        <InsetDivider />
         <PickerRow
           label="Number Format"
           selection={numberFormat}
           options={numberOptions}
           onSelectionChange={(v) => set('numberFormat', v)}
+          showSeparator
         />
-        <InsetDivider />
         <ListItem
           title="Hide Decimal Places"
           onPress={() => set('hideFraction', hideFraction === 'true' ? 'false' : 'true')}
@@ -179,10 +173,10 @@ export default function BudgetSettingsScreen() {
                   set('defaultCurrencyCustomSymbol', '');
                 }
               }}
+              showSeparator={hasCurrency}
             />
             {hasCurrency && (
               <>
-                <InsetDivider />
                 <PickerRow
                   label="Symbol Position"
                   selection={currencySymbolPosition || 'before'}
@@ -191,8 +185,8 @@ export default function BudgetSettingsScreen() {
                     { value: 'after', label: 'After' },
                   ]}
                   onSelectionChange={(v) => set('currencySymbolPosition', v)}
+                  showSeparator
                 />
-                <InsetDivider />
                 <ListItem
                   title="Space Between"
                   onPress={() =>
@@ -208,8 +202,8 @@ export default function BudgetSettingsScreen() {
                       trackColor={{ true: colors.primary }}
                     />
                   }
+                  showSeparator
                 />
-                <InsetDivider />
                 <ListItem
                   title="Custom Symbol"
                   right={
@@ -264,14 +258,14 @@ export default function BudgetSettingsScreen() {
           title="Schedules"
           showChevron
           onPress={() => router.push("/(auth)/schedules")}
+          showSeparator
         />
-        <InsetDivider />
         <ListItem
           title="Payees"
           showChevron
           onPress={() => router.push("/(auth)/payees")}
+          showSeparator
         />
-        <InsetDivider />
         <ListItem
           title="Categories"
           showChevron
@@ -283,21 +277,20 @@ export default function BudgetSettingsScreen() {
       <SectionHeader title="Experimental Features" style={{ marginTop: spacing.xl }} />
       <Card>
         {ALL_FEATURE_FLAGS.map((flag, index) => (
-          <React.Fragment key={flag}>
-            {index > 0 && <InsetDivider />}
-            <ListItem
-              title={FEATURE_FLAG_LABELS[flag].title}
-              subtitle={FEATURE_FLAG_LABELS[flag].subtitle}
-              onPress={() => featureFlags.set(flag, !featureFlags[flag])}
-              right={
-                <Switch
-                  value={featureFlags[flag]}
-                  onValueChange={(v) => featureFlags.set(flag, v)}
-                  trackColor={{ true: colors.primary }}
-                />
-              }
-            />
-          </React.Fragment>
+          <ListItem
+            key={flag}
+            title={FEATURE_FLAG_LABELS[flag].title}
+            subtitle={FEATURE_FLAG_LABELS[flag].subtitle}
+            onPress={() => featureFlags.set(flag, !featureFlags[flag])}
+            right={
+              <Switch
+                value={featureFlags[flag]}
+                onValueChange={(v) => featureFlags.set(flag, v)}
+                trackColor={{ true: colors.primary }}
+              />
+            }
+            showSeparator={index < ALL_FEATURE_FLAGS.length - 1}
+          />
         ))}
       </Card>
       <Text

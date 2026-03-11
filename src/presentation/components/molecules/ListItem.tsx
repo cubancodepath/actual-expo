@@ -2,6 +2,7 @@ import { Pressable, View, StyleSheet, type ViewStyle } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Text } from "../atoms/Text";
+import { RowSeparator } from "../atoms/RowSeparator";
 import type { ReactNode } from "react";
 
 export interface ListItemProps {
@@ -12,6 +13,10 @@ export interface ListItemProps {
   right?: ReactNode;
   onPress?: () => void;
   showChevron?: boolean;
+  /** Show an inset separator at the bottom of this item */
+  showSeparator?: boolean;
+  /** Left inset for the separator (defaults to RowSeparator default = spacing.lg) */
+  separatorInsetLeft?: number;
   style?: ViewStyle;
 }
 
@@ -23,6 +28,8 @@ export function ListItem({
   right,
   onPress,
   showChevron = false,
+  showSeparator = false,
+  separatorInsetLeft,
   style,
 }: ListItemProps) {
   const { colors, spacing } = useTheme();
@@ -50,6 +57,8 @@ export function ListItem({
           style={{ marginLeft: spacing.sm }}
         />
       )}
+
+      {showSeparator && <RowSeparator insetLeft={separatorInsetLeft} />}
     </View>
   );
 

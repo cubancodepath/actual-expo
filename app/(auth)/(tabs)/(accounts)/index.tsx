@@ -24,7 +24,7 @@ import { useTheme, useThemedStyles } from '../../../../src/presentation/provider
 import { Text } from '../../../../src/presentation/components/atoms/Text';
 import { Card } from '../../../../src/presentation/components/atoms/Card';
 import { Amount } from '../../../../src/presentation/components/atoms/Amount';
-import { Divider } from '../../../../src/presentation/components/atoms/Divider';
+import { RowSeparator } from '../../../../src/presentation/components/atoms/RowSeparator';
 import { Button } from '../../../../src/presentation/components/atoms/Button';
 import { EmptyState } from '../../../../src/presentation/components/molecules/EmptyState';
 import { AddTransactionButton } from '../../../../src/presentation/components/molecules/AddTransactionButton';
@@ -42,6 +42,7 @@ function AccountRow({
   onEdit,
   onClose,
   onReopen,
+  isLast,
   styles,
 }: {
   account: Account;
@@ -49,6 +50,7 @@ function AccountRow({
   onEdit: () => void;
   onClose: () => void;
   onReopen: () => void;
+  isLast?: boolean;
   styles: ReturnType<typeof createStyles>;
 }) {
   const theme = useTheme();
@@ -76,6 +78,7 @@ function AccountRow({
       </Text>
       <Amount value={account.balance ?? 0} variant="body" />
       <Ionicons name="chevron-forward" size={16} color={theme.colors.textMuted} />
+      {!isLast && <RowSeparator insetLeft={theme.spacing.md} insetRight={theme.spacing.md} />}
     </Pressable>
   );
 
@@ -130,17 +133,16 @@ function AccountContent({
   return (
     <Card style={styles.listCard}>
       {group.accounts.map((account, i) => (
-        <View key={account.id}>
-          {i > 0 && <Divider style={{ marginHorizontal: theme.spacing.md }} />}
-          <AccountRow
-            account={account}
-            onPress={() => onPressAccount(account)}
-            onEdit={() => onEditAccount(account)}
-            onClose={() => onCloseAccount(account)}
-            onReopen={() => onReopenAccount(account)}
-            styles={styles}
-          />
-        </View>
+        <AccountRow
+          key={account.id}
+          account={account}
+          onPress={() => onPressAccount(account)}
+          onEdit={() => onEditAccount(account)}
+          onClose={() => onCloseAccount(account)}
+          onReopen={() => onReopenAccount(account)}
+          isLast={i === group.accounts.length - 1}
+          styles={styles}
+        />
       ))}
     </Card>
   );

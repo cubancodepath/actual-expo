@@ -6,7 +6,7 @@ import {
   LayoutAnimation,
   RefreshControl,
 } from 'react-native';
-import { FlashList, type FlashListRef } from '@shopify/flash-list';
+import { LegendList } from '@legendapp/list';
 import { Stack, useFocusEffect, useNavigation, useRouter } from 'expo-router';
 import {
   getAllTransactions,
@@ -54,7 +54,6 @@ export default function SpendingScreen() {
   const [unclearedCount, setUnclearedCount] = useState(0);
 
   // ---- Upcoming scheduled transactions ----
-  const listRef = useRef<FlashListRef<ListItem>>(null);
   const [upcomingExpanded, setUpcomingExpanded] = useState(false);
   const [previewTransactions, setPreviewTransactions] = useState<PreviewTransaction[]>([]);
 
@@ -232,8 +231,7 @@ export default function SpendingScreen() {
 
   return (
     <>
-      <FlashList<ListItem>
-        ref={listRef}
+      <LegendList
         data={txnList.loading ? [] : mergedListData}
         keyExtractor={(item) => item.key}
         getItemType={(item) => item.type}
@@ -264,7 +262,6 @@ export default function SpendingScreen() {
                 count={item.count}
                 expanded={item.expanded}
                 onToggle={() => {
-                  listRef.current?.prepareForLayoutAnimationRender();
                   LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
                   setUpcomingExpanded((v) => !v);
                 }}

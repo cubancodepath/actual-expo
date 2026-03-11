@@ -9,6 +9,7 @@ export { Spacer, type SpacerProps } from "./atoms/Spacer";
 export { Amount, type AmountProps } from "./atoms/Amount";
 export { CurrencySymbol } from "./atoms/CurrencySymbol";
 export { Icon, type IconProps } from "./atoms/Icon";
+export { RowSeparator, type RowSeparatorProps } from "./atoms/RowSeparator";
 export { CurrencyInput, type CurrencyInputRef } from "./atoms/CurrencyInput";
 export { CompactCurrencyInput, type CompactCurrencyInputRef } from "./atoms/CompactCurrencyInput";
 export { InfoPill } from "./atoms/InfoPill";

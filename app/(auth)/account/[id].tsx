@@ -7,7 +7,7 @@ import {
   RefreshControl,
   View,
 } from 'react-native';
-import { FlashList, type FlashListRef } from '@shopify/flash-list';
+import { LegendList } from '@legendapp/list';
 import { Stack, useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useAccountsStore } from '../../../src/stores/accountsStore';
 import {
@@ -66,7 +66,6 @@ export default function AccountTransactionsScreen() {
   const tags = useTagsStore((s) => s.tags);
 
   // ---- Upcoming scheduled transactions ----
-  const listRef = useRef<FlashListRef<ListItem>>(null);
   const [upcomingExpanded, setUpcomingExpanded] = useState(false);
   const [previewTransactions, setPreviewTransactions] = useState<PreviewTransaction[]>([]);
 
@@ -111,7 +110,7 @@ export default function AccountTransactionsScreen() {
   });
 
   // Load previews, balance, and uncleared count BEFORE transactions
-  // so everything is ready when the FlashList first renders.
+  // so everything is ready when the list first renders.
   const loadWithClearedBalance = useCallback(async () => {
     const [previews, cleared, uncleared] = await Promise.all([
       getPreviewTransactionsForAccount(id),
@@ -284,8 +283,7 @@ export default function AccountTransactionsScreen() {
       {txnList.loading ? (
         <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
       ) : (
-        <FlashList<ListItem>
-          ref={listRef}
+        <LegendList
           data={mergedListData}
           keyExtractor={(item) => item.key}
           getItemType={(item) => item.type}
@@ -299,7 +297,6 @@ export default function AccountTransactionsScreen() {
                   count={item.count}
                   expanded={item.expanded}
                   onToggle={() => {
-                    listRef.current?.prepareForLayoutAnimationRender();
                     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
                     setUpcomingExpanded((v) => !v);
                   }}

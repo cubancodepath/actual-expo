@@ -124,8 +124,9 @@ export const usePrefsStore = create<PrefsState>()(
       },
 
       async clearAll() {
-        mmkv.clearAll();
+        const { hasSeenOnboarding } = get();
         await SecureStore.deleteItemAsync(SECURE_TOKEN_KEY);
+
         set({
           serverUrl: '',
           token: '',
@@ -134,9 +135,14 @@ export const usePrefsStore = create<PrefsState>()(
           groupId: '',
           encryptKeyId: undefined,
           lastSyncedTimestamp: undefined,
+          budgetName: undefined,
+          showProgressBars: true,
+          hideReconciled: false,
+          showHiddenCategories: false,
           isLocalOnly: false,
           hasToken: false,
           isConfigured: false,
+          hasSeenOnboarding,
         });
       },
     }),

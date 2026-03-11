@@ -112,7 +112,7 @@ export default function FilesScreen() {
         options={{
           headerLeft: () => (
             <Pressable onPress={handleLogout} hitSlop={8} style={styles.headerBtn}>
-              <Text variant="body" color={colors.negative}>Log Out</Text>
+              <Text variant="body">Log Out</Text>
             </Pressable>
           ),
           headerRight: () => (

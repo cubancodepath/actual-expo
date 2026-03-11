@@ -1,30 +1,25 @@
 import { useState } from "react";
 import { Alert, Platform, ScrollView, Switch, View } from "react-native";
-import { Stack, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { SymbolView } from "expo-symbols";
+import type { SFSymbol } from "sf-symbols-typescript";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useTheme, useThemedStyles } from "../../src/presentation/providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "../../../src/presentation/providers/ThemeProvider";
 import {
   Text,
   Card,
   ListItem,
   SectionHeader,
   Divider,
-  IconButton,
-} from "../../src/presentation/components";
-import { usePrefsStore } from "../../src/stores/prefsStore";
-import { useSyncStore } from "../../src/stores/syncStore";
-import { usePreferencesStore } from "../../src/stores/preferencesStore";
-import { resetAllStores } from "../../src/stores/resetStores";
-import { usePrivacyStore } from "../../src/stores/privacyStore";
-import { resetSyncState, clearSwitchingFlag, loadClock } from "../../src/sync";
-import { clearLocalData } from "../../src/db";
-import {
-  DATE_FORMAT_OPTIONS,
-  NUMBER_FORMAT_OPTIONS,
-  DAY_OF_WEEK_OPTIONS,
-} from "../../src/preferences/types";
-import type { Theme } from "../../src/theme";
+} from "../../../src/presentation/components";
+import { usePrefsStore } from "../../../src/stores/prefsStore";
+import { resetAllStores } from "../../../src/stores/resetStores";
+import { useSyncStore } from "../../../src/stores/syncStore";
+import { usePrivacyStore } from "../../../src/stores/privacyStore";
+import { resetSyncState, clearSwitchingFlag, loadClock } from "../../../src/sync";
+import { clearLocalData } from "../../../src/db";
+import type { Theme } from "../../../src/theme";
 
 // Conditionally import SwiftUI Picker on iOS
 let SwiftPicker: typeof import('@expo/ui/swift-ui').Picker | null = null;
@@ -49,13 +44,37 @@ if (Platform.OS === 'ios') {
   }
 }
 
+const THEME_OPTIONS = [
+  { value: 'system', label: 'System' },
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' },
+];
+
+const ICON_SIZE = 20;
+
+function SettingsIcon({ sfSymbol, ionIcon, color }: { sfSymbol: SFSymbol; ionIcon: keyof typeof Ionicons.glyphMap; color: string }) {
+  if (Platform.OS === 'ios') {
+    return <SymbolView name={sfSymbol} size={ICON_SIZE} tintColor={color} />;
+  }
+  return <Ionicons name={ionIcon} size={ICON_SIZE} color={color} />;
+}
+
+function InsetDivider() {
+  const { spacing } = useTheme();
+  return <Divider style={{ marginLeft: spacing.lg + ICON_SIZE + spacing.md }} />;
+}
+
 function PickerRow({
   label,
+  sfSymbol,
+  ionIcon,
   selection,
   options,
   onSelectionChange,
 }: {
   label: string;
+  sfSymbol: SFSymbol;
+  ionIcon: keyof typeof Ionicons.glyphMap;
   selection: string;
   options: { value: string; label: string }[];
   onSelectionChange: (value: string) => void;
@@ -64,7 +83,7 @@ function PickerRow({
 
   const picker =
     SwiftPicker && SwiftText && Host && tagMod && pickerStyleMod ? (
-      <Host matchContents>
+      <Host style={{ width: 140, height: 32 }}>
         <SwiftPicker
           selection={selection}
           onSelectionChange={(val) => onSelectionChange(val as string)}
@@ -83,7 +102,13 @@ function PickerRow({
       </Text>
     );
 
-  return <ListItem title={label} right={picker} />;
+  return (
+    <ListItem
+      title={label}
+      left={<SettingsIcon sfSymbol={sfSymbol} ionIcon={ionIcon} color={colors.textMuted} />}
+      right={picker}
+    />
+  );
 }
 
 function ServerRow({ label, value }: { label: string; value: string }) {
@@ -110,11 +135,10 @@ export default function SettingsScreen() {
   const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
 
-  const { serverUrl, fileId, groupId, encryptKeyId, budgetName, lastSyncedTimestamp, isLocalOnly, clearAll } =
+  const { serverUrl, fileId, groupId, encryptKeyId, budgetName, lastSyncedTimestamp, isLocalOnly, clearAll, setPrefs } =
     usePrefsStore();
-  const { status, error, lastSync, sync } = useSyncStore();
-  const { dateFormat, numberFormat, firstDayOfWeekIdx, hideFraction, set } =
-    usePreferencesStore();
+  const themeMode = usePrefsStore((s) => s.themeMode);
+  const lastSync = useSyncStore((s) => s.lastSync);
   const { privacyMode, toggle: togglePrivacy } = usePrivacyStore();
   const [loggingOut, setLoggingOut] = useState(false);
 
@@ -123,16 +147,6 @@ export default function SettingsScreen() {
     : lastSyncedTimestamp
       ? lastSyncedTimestamp.slice(0, 16)
       : "Never";
-
-  const dateOptions = DATE_FORMAT_OPTIONS.map((o) => ({
-    value: o.value,
-    label: o.example,
-  }));
-
-  const numberOptions = NUMBER_FORMAT_OPTIONS.map((o) => ({
-    value: o.value,
-    label: o.example,
-  }));
 
   function handleDeleteLocal() {
     Alert.alert(
@@ -192,127 +206,56 @@ export default function SettingsScreen() {
     <ScrollView
       style={styles.container}
       contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xl }}
+      contentInsetAdjustmentBehavior="automatic"
     >
-      <Stack.Screen
-        options={{
-          headerLeft: () => (
-            <IconButton
-              sfSymbol="xmark"
-              size={22}
-              color={colors.headerText}
-              onPress={() => router.back()}
-            />
-          ),
-        }}
-      />
-      {/* Sync — only when connected to a server */}
-      {!isLocalOnly && (
-        <>
-          <SectionHeader title="Sync" style={{ marginTop: spacing.lg }} />
-          <Card>
-            <ListItem
-              title="Last sync"
-              right={
-                <Text variant="bodySm" color={colors.textSecondary}>
-                  {lastSyncText}
-                </Text>
-              }
-            />
-            {error && (
-              <>
-                <Divider />
-                <View style={{ paddingHorizontal: spacing.lg, paddingVertical: spacing.sm }}>
-                  <Text variant="bodySm" color={colors.negative}>
-                    {error}
-                  </Text>
-                </View>
-              </>
-            )}
-            <Divider />
-            <ListItem
-              title={status === "syncing" ? "Syncing…" : status === "error" ? "Retry Sync" : "Sync Now"}
-              onPress={status === "syncing" ? undefined : sync}
-              right={
-                status === "syncing" ? (
-                  <Ionicons name="sync" size={18} color={colors.primary} />
-                ) : undefined
-              }
-              style={{ opacity: status === "syncing" ? 0.5 : 1 }}
-            />
-          </Card>
-        </>
-      )}
-
-      {/* Manage */}
-      <SectionHeader title="Manage" style={{ marginTop: spacing.xl }} />
+      {/* Budget */}
+      <SectionHeader title="Current Budget" style={{ marginTop: spacing.lg }} />
+      <Text
+        variant="headingLg"
+        color={colors.textPrimary}
+        style={{ paddingHorizontal: spacing.lg, marginBottom: spacing.md }}
+      >
+        {budgetName || "My Budget"}
+      </Text>
       <Card>
         <ListItem
-          title="Schedules"
+          title="Budget Settings"
+          left={<SettingsIcon sfSymbol="gearshape" ionIcon="settings-outline" color={colors.textMuted} />}
           showChevron
-          onPress={() => router.push("/(auth)/schedules")}
+          onPress={() => router.push("/(auth)/settings/budget")}
         />
-        <Divider />
+        <InsetDivider />
         <ListItem
-          title="Payees"
+          title="New Budget"
+          left={<SettingsIcon sfSymbol="plus.circle" ionIcon="add-circle-outline" color={colors.textMuted} />}
           showChevron
-          onPress={() => router.push("/(auth)/payees")}
+          onPress={() => router.push("/(auth)/new-budget")}
         />
-        <Divider />
+        <InsetDivider />
         <ListItem
-          title="Categories"
+          title="Open Budget"
+          left={<SettingsIcon sfSymbol="folder" ionIcon="folder-outline" color={colors.textMuted} />}
           showChevron
-          onPress={() => router.push("/(auth)/categories")}
+          onPress={() => router.push("/(auth)/change-budget")}
         />
       </Card>
 
-      {/* Formatting */}
-      <SectionHeader title="Formatting" style={{ marginTop: spacing.xl }} />
+      {/* App */}
+      <SectionHeader title="App" style={{ marginTop: spacing.xl }} />
       <Card>
         <PickerRow
-          label="Date Format"
-          selection={dateFormat}
-          options={dateOptions}
-          onSelectionChange={(v) => set('dateFormat', v)}
+          label="Theme"
+          sfSymbol="paintbrush"
+          ionIcon="color-palette-outline"
+          selection={themeMode}
+          options={THEME_OPTIONS}
+          onSelectionChange={(v) => setPrefs({ themeMode: v as 'system' | 'light' | 'dark' })}
         />
-        <Divider />
-        <PickerRow
-          label="Number Format"
-          selection={numberFormat}
-          options={numberOptions}
-          onSelectionChange={(v) => set('numberFormat', v)}
-        />
-        <Divider />
-        <ListItem
-          title="Hide Decimal Places"
-          onPress={() => set('hideFraction', hideFraction === 'true' ? 'false' : 'true')}
-          right={
-            <Switch
-              value={hideFraction === 'true'}
-              onValueChange={(v) => set('hideFraction', v ? 'true' : 'false')}
-              trackColor={{ true: colors.primary }}
-              accessibilityLabel="Hide decimal places"
-            />
-          }
-        />
-      </Card>
-
-      {/* Calendar */}
-      <SectionHeader title="Calendar" style={{ marginTop: spacing.xl }} />
-      <Card>
-        <PickerRow
-          label="First Day of Week"
-          selection={firstDayOfWeekIdx}
-          options={DAY_OF_WEEK_OPTIONS}
-          onSelectionChange={(v) => set('firstDayOfWeekIdx', v)}
-        />
-      </Card>
-
-      {/* Privacy */}
-      <SectionHeader title="Privacy" style={{ marginTop: spacing.xl }} />
-      <Card>
+        <InsetDivider />
         <ListItem
           title="Hide Amounts"
           subtitle="Mask all monetary values for privacy"
+          left={<SettingsIcon sfSymbol="eye.slash" ionIcon="eye-off-outline" color={colors.textMuted} />}
           onPress={togglePrivacy}
           right={
             <Switch
@@ -325,21 +268,6 @@ export default function SettingsScreen() {
         />
       </Card>
 
-      {/* Budget — only when connected (switching requires server) */}
-      {!isLocalOnly && (
-        <>
-          <SectionHeader title="Budget" style={{ marginTop: spacing.xl }} />
-          <Card>
-            <ListItem
-              title={budgetName || 'Current Budget'}
-              subtitle="Tap to switch budget"
-              showChevron
-              onPress={() => router.push("/(auth)/change-budget")}
-            />
-          </Card>
-        </>
-      )}
-
       {/* Server / Mode */}
       {isLocalOnly ? (
         <>
@@ -348,6 +276,14 @@ export default function SettingsScreen() {
             <ListItem
               title="Local Only"
               subtitle="Data is stored on this device only"
+              left={<SettingsIcon sfSymbol="iphone" ionIcon="phone-portrait-outline" color={colors.textMuted} />}
+            />
+            <Divider />
+            <ListItem
+              title="Delete All Data"
+              titleColor={colors.negative}
+              left={<SettingsIcon sfSymbol="trash" ionIcon="trash-outline" color={colors.negative} />}
+              onPress={handleDeleteLocal}
             />
           </Card>
         </>
@@ -356,6 +292,8 @@ export default function SettingsScreen() {
           <SectionHeader title="Server" style={{ marginTop: spacing.xl }} />
           <Card>
             <ServerRow label="URL" value={serverUrl} />
+            <Divider />
+            <ServerRow label="Last Sync" value={lastSyncText} />
             <Divider />
             <ServerRow label="File ID" value={fileId ? `${fileId.slice(0, 8)}…` : ""} />
             <Divider />
@@ -372,20 +310,16 @@ export default function SettingsScreen() {
                 />
               </>
             )}
+            <Divider />
+            <ListItem
+              title="Disconnect from Server"
+              titleColor={colors.negative}
+              left={<SettingsIcon sfSymbol="rectangle.portrait.and.arrow.right" ionIcon="log-out-outline" color={colors.negative} />}
+              onPress={handleLogout}
+            />
           </Card>
         </>
       )}
-
-      {/* Disconnect / Delete — grouped row with red text, iOS Settings style */}
-      <View style={{ marginTop: spacing.xl }}>
-        <Card>
-          <ListItem
-            title={isLocalOnly ? "Delete All Data" : "Disconnect from Server"}
-            titleColor={colors.negative}
-            onPress={isLocalOnly ? handleDeleteLocal : handleLogout}
-          />
-        </Card>
-      </View>
     </ScrollView>
   );
 }

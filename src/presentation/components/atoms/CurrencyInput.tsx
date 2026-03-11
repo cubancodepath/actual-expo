@@ -13,6 +13,7 @@ import { useTheme, useThemedStyles } from '../../providers/ThemeProvider';
 import { Text } from './Text';
 import { useExpressionMode } from '../../hooks/useExpressionMode';
 import { MAX_CENTS, formatCents, formatExpression } from '../../../lib/currency';
+import { usePreferencesStore } from '../../../stores/preferencesStore';
 import type { Theme } from '../../../theme';
 
 function triggerHaptic() {
@@ -36,7 +37,7 @@ interface CurrencyInputProps {
   value: number;
   /** Called with new amount in cents */
   onChangeValue: (cents: number) => void;
-  /** 'expense' shows -$, 'income' shows +$ */
+  /** 'expense' shows -, 'income' shows + */
   type?: 'expense' | 'income';
   /** Auto-focus the input on mount */
   autoFocus?: boolean;
@@ -111,8 +112,11 @@ export const CurrencyInput = forwardRef<CurrencyInputRef, CurrencyInputProps>(
       opacity: cursorOpacity.value,
     }));
 
+    // Subscribe to format prefs for reactivity (formatCents reads module-level config)
+    usePreferencesStore((s) => `${s.numberFormat}:${s.hideFraction}:${s.defaultCurrencyCode}:${s.defaultCurrencyCustomSymbol}:${s.currencySymbolPosition}:${s.currencySpaceBetweenAmountAndSymbol}`);
+
     const amountColor = colorOverride ?? (type === 'expense' ? theme.colors.negative : theme.colors.positive);
-    const prefix = type === 'expense' ? '-$' : '$';
+    const prefix = type === 'expense' ? '-' : '';
 
     function handleChangeTextNormal(text: string) {
       const digits = text.replace(/\D/g, '');
@@ -176,7 +180,7 @@ export const CurrencyInput = forwardRef<CurrencyInputRef, CurrencyInputProps>(
             color={theme.colors.textMuted}
             style={{ fontVariant: ['tabular-nums'], marginTop: 2, textAlign: 'center' }}
           >
-            = ${formatCents(expr.previewCents)}
+            = {formatCents(expr.previewCents)}
           </Text>
         )}
 

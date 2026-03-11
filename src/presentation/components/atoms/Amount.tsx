@@ -3,6 +3,7 @@ import { useTheme } from "../../providers/ThemeProvider";
 import { Text, type TextProps } from "./Text";
 import { formatAmount, formatBalance, PRIVACY_MASK } from "../../../lib/format";
 import { usePrivacyStore } from "../../../stores/privacyStore";
+import { usePreferencesStore } from "../../../stores/preferencesStore";
 import type { TypographyVariant } from "../../../theme";
 
 export interface AmountProps extends Omit<TextProps, "children" | "variant"> {
@@ -34,6 +35,11 @@ export function Amount({
 }: AmountProps) {
   const { colors } = useTheme();
   const privacyMode = usePrivacyStore((s) => s.privacyMode);
+  // Subscribe to format prefs so component re-renders when they change.
+  // The values aren't used directly — formatAmount/formatBalance read from
+  // module-level config — but subscribing triggers re-render after
+  // applyFormatConfig() updates the formatters.
+  usePreferencesStore((s) => `${s.numberFormat}:${s.hideFraction}:${s.defaultCurrencyCode}:${s.defaultCurrencyCustomSymbol}:${s.currencySymbolPosition}:${s.currencySpaceBetweenAmountAndSymbol}`);
 
   // Explicit color wins; otherwise auto-color when `colored` is true
   let color: string | undefined = colorProp;

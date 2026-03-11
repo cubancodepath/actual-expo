@@ -14,6 +14,24 @@ import {
   addMonths as dfnsAddMonths,
 } from "date-fns";
 
+// ── Configurable date format ─────────────────────────────────────────────────
+
+let dateFormatStr = 'MM/dd/yyyy';
+
+/** Update the global date format. Called from preferencesStore. */
+export function setDateFormat(fmt: string) {
+  dateFormatStr = fmt;
+}
+
+/** Strip the year portion from a date format to get a short format. */
+function getShortFormat(fmt: string): string {
+  // Remove year patterns and surrounding separators
+  return fmt
+    .replace(/[/.\-\s]*yyyy[/.\-\s]*/g, '')
+    .replace(/[/.\-\s]*$/, '')
+    .trim();
+}
+
 // ── Internal helper ───────────────────────────────────────────────────────────
 
 /** Convert YYYYMMDD integer to a Date object. */
@@ -44,14 +62,14 @@ export function todayStr(): string {
 
 // ── Format for display ────────────────────────────────────────────────────────
 
-/** YYYYMMDD → "Mar 2" */
+/** YYYYMMDD → formatted with short date (no year), e.g. "03/02" or "02/03" */
 export function formatDate(d: number): string {
-  return format(intToDate(d), "MMM d");
+  return format(intToDate(d), getShortFormat(dateFormatStr));
 }
 
-/** YYYYMMDD → "March 2, 2025" */
+/** YYYYMMDD → formatted with full date format from preferences, e.g. "03/02/2025" */
 export function formatDateLong(d: number): string {
-  return format(intToDate(d), "MMMM d, yyyy");
+  return format(intToDate(d), dateFormatStr);
 }
 
 // ── Conversion between int and string ─────────────────────────────────────────

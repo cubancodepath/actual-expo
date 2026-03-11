@@ -6,6 +6,7 @@ import {
 } from "react";
 import { useColorScheme, StyleSheet } from "react-native";
 import { lightTheme, darkTheme, type Theme } from "../../theme";
+import { usePrefsStore } from "../../stores/prefsStore";
 
 // ── Context ───────────────────────────────────────────────────────────────────
 
@@ -14,8 +15,10 @@ const ThemeContext = createContext<Theme>(lightTheme);
 // ── Provider ──────────────────────────────────────────────────────────────────
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const colorScheme = useColorScheme();
-  const theme = colorScheme === "dark" ? darkTheme : lightTheme;
+  const systemScheme = useColorScheme();
+  const themeMode = usePrefsStore((s) => s.themeMode);
+  const resolvedScheme = themeMode === 'system' ? systemScheme : themeMode;
+  const theme = resolvedScheme === "dark" ? darkTheme : lightTheme;
 
   return (
     <ThemeContext.Provider value={theme}>{children}</ThemeContext.Provider>

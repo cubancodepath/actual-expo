@@ -36,6 +36,7 @@ type PrefsState = {
   showHiddenCategories: boolean;
   hasSeenOnboarding: boolean;
   isLocalOnly: boolean;
+  themeMode: 'system' | 'light' | 'dark';
 
   // Token — in-memory only; persisted in iOS Keychain / Android Keystore
   token: string;
@@ -82,6 +83,7 @@ export const usePrefsStore = create<PrefsState>()(
       showHiddenCategories: false,
       hasSeenOnboarding: false,
       isLocalOnly: false,
+      themeMode: 'system',
       hasToken: false,
       isConfigured: false,
 
@@ -124,7 +126,7 @@ export const usePrefsStore = create<PrefsState>()(
       },
 
       async clearAll() {
-        const { hasSeenOnboarding } = get();
+        const { hasSeenOnboarding, themeMode } = get();
         await SecureStore.deleteItemAsync(SECURE_TOKEN_KEY);
 
         set({
@@ -143,6 +145,7 @@ export const usePrefsStore = create<PrefsState>()(
           hasToken: false,
           isConfigured: false,
           hasSeenOnboarding,
+          themeMode,
         });
       },
     }),
@@ -163,6 +166,7 @@ export const usePrefsStore = create<PrefsState>()(
         showHiddenCategories: state.showHiddenCategories,
         hasSeenOnboarding: state.hasSeenOnboarding,
         isLocalOnly: state.isLocalOnly,
+        themeMode: state.themeMode,
       }),
     },
   ),

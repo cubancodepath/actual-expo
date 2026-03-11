@@ -23,7 +23,9 @@ import { UndoToast } from "../src/presentation/components";
 import { useShakeUndo } from "../src/presentation/hooks/useShakeUndo";
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
+  const systemScheme = useColorScheme();
+  const themeMode = usePrefsStore((s) => s.themeMode);
+  const colorScheme = themeMode === 'system' ? systemScheme : themeMode;
   const router = useRouter();
   const hasToken = usePrefsStore((s) => s.hasToken);
   const isConfigured = usePrefsStore((s) => s.isConfigured);

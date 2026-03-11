@@ -16,13 +16,21 @@ export type PreferenceKey =
   | 'dateFormat'
   | 'numberFormat'
   | 'firstDayOfWeekIdx'
-  | 'hideFraction';
+  | 'hideFraction'
+  | 'defaultCurrencyCode'
+  | 'currencySymbolPosition'
+  | 'currencySpaceBetweenAmountAndSymbol'
+  | 'defaultCurrencyCustomSymbol';
 
 export const PREFERENCE_DEFAULTS: Record<PreferenceKey, string> = {
   dateFormat: 'MM/dd/yyyy',
   numberFormat: 'comma-dot',
   firstDayOfWeekIdx: '0',
   hideFraction: 'false',
+  defaultCurrencyCode: '',
+  currencySymbolPosition: 'before',
+  currencySpaceBetweenAmountAndSymbol: 'false',
+  defaultCurrencyCustomSymbol: '',
 };
 
 export const DATE_FORMAT_OPTIONS: { value: DateFormatOption; label: string; example: string }[] = [

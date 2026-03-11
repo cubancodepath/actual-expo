@@ -220,7 +220,7 @@ export default function AuthLayout() {
         name="change-budget"
         options={{ title: "Change Budget", ...modal }}
       />
-      <Stack.Screen name="settings" options={{ title: "Settings", ...modal }} />
+      <Stack.Screen name="settings" options={{ headerShown: false, presentation: "fullScreenModal" }} />
       <Stack.Screen name="new-budget" options={{ headerShown: false }} />
     </Stack>
   );

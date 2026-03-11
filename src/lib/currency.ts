@@ -1,16 +1,16 @@
+import { formatBalance } from './format';
+
 /** Max value: $999,999.99 = 99999999 cents */
 export const MAX_CENTS = 99999999;
 
 /**
- * Format cents as a display string: 152 → "1.52", 1500 → "15.00"
+ * Format cents as a display string using the configured number format.
+ * 152 → "1.52" (comma-dot) or "1,52" (dot-comma)
  * Supports negative values: -152 → "-1.52"
  */
 export function formatCents(c: number): string {
-  const abs = Math.abs(c);
-  const dollars = Math.floor(abs / 100);
-  const remainder = abs % 100;
-  const formatted = `${dollars.toLocaleString('en-US')}.${String(remainder).padStart(2, '0')}`;
-  return c < 0 ? `-${formatted}` : formatted;
+  // Delegate to formatBalance which uses the configured Intl.NumberFormat
+  return formatBalance(c);
 }
 
 /**

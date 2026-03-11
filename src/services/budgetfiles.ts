@@ -17,6 +17,7 @@ import { usePayeesStore } from '../stores/payeesStore';
 import { usePreferencesStore } from '../stores/preferencesStore';
 import { useTagsStore } from '../stores/tagsStore';
 import { useSchedulesStore } from '../stores/schedulesStore';
+import { useFeatureFlagsStore } from '../stores/featureFlagsStore';
 import type { BudgetFile } from './authService';
 import {
   type BudgetMetadata,
@@ -345,6 +346,7 @@ export async function openBudget(budgetId: string): Promise<void> {
     usePreferencesStore.getState().load(),
     useTagsStore.getState().load(),
     useSchedulesStore.getState().load(),
+    useFeatureFlagsStore.getState().load(),
   ]);
 
   // Update global prefs with active budget info

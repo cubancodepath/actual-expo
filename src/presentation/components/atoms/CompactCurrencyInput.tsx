@@ -12,6 +12,7 @@ import { useTheme } from '../../providers/ThemeProvider';
 import { Text } from './Text';
 import { useExpressionMode } from '../../hooks/useExpressionMode';
 import { MAX_CENTS, formatCents, formatExpression } from '../../../lib/currency';
+import { usePreferencesStore } from '../../../stores/preferencesStore';
 
 export interface CompactCurrencyInputRef {
   focus: () => void;
@@ -53,6 +54,9 @@ export const CompactCurrencyInput = forwardRef<CompactCurrencyInputRef, CompactC
     const { colors } = useTheme();
     const inputRef = useRef<TextInput>(null);
     const [focused, setFocused] = useState(autoFocus);
+
+    // Subscribe to format prefs for reactivity (formatCents reads module-level config)
+    usePreferencesStore((s) => `${s.numberFormat}:${s.hideFraction}:${s.defaultCurrencyCode}:${s.defaultCurrencyCustomSymbol}:${s.currencySymbolPosition}:${s.currencySpaceBetweenAmountAndSymbol}`);
 
     const expr = useExpressionMode({ value, onChangeValue });
 
@@ -135,13 +139,15 @@ export const CompactCurrencyInput = forwardRef<CompactCurrencyInputRef, CompactC
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           {!expr.expressionMode && (
             <>
-              <Text
-                variant="body"
-                color={isNeg ? displayColor : colors.textMuted}
-                style={{ marginRight: 1 }}
-              >
-                {isNeg ? '-$' : '$'}
-              </Text>
+              {isNeg && (
+                <Text
+                  variant="body"
+                  color={displayColor}
+                  style={{ marginRight: 1 }}
+                >
+                  -
+                </Text>
+              )}
               <Text
                 variant="body"
                 style={{
@@ -190,7 +196,7 @@ export const CompactCurrencyInput = forwardRef<CompactCurrencyInputRef, CompactC
             color={colors.textMuted}
             style={{ fontVariant: ['tabular-nums'], marginTop: 1 }}
           >
-            = ${formatCents(expr.previewCents)}
+            = {formatCents(expr.previewCents)}
           </Text>
         )}
 

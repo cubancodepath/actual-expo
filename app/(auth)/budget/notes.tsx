@@ -4,6 +4,7 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
 import { Text } from '../../../src/presentation/components/atoms/Text';
+import { RowSeparator } from '../../../src/presentation/components/atoms/RowSeparator';
 import { IconButton } from '../../../src/presentation/components/atoms/IconButton';
 import { useBudgetStore } from '../../../src/stores/budgetStore';
 import { first } from '../../../src/db';
@@ -47,7 +48,7 @@ function buildSections(lines: string[]): NoteSection[] {
 // ---------------------------------------------------------------------------
 
 export default function BudgetNotesScreen() {
-  const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
+  const { colors, spacing, borderRadius: br } = useTheme();
   const router = useRouter();
   const { categoryName } = useLocalSearchParams<{ categoryName?: string }>();
   const month = useBudgetStore((s) => s.month);
@@ -108,32 +109,37 @@ export default function BudgetNotesScreen() {
           </Text>
         </View>
       )}
-      renderItem={({ item }) => (
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'flex-start',
-            backgroundColor: colors.cardBackground,
-            borderRadius: br.lg,
-            borderWidth: bw.thin,
-            borderColor: colors.cardBorder,
-            padding: spacing.md,
-            paddingHorizontal: spacing.lg,
-            marginBottom: spacing.xs,
-            gap: spacing.sm,
-          }}
-        >
-          <Ionicons
-            name="swap-horizontal"
-            size={16}
-            color={colors.primary}
-            style={{ marginTop: 2 }}
-          />
-          <Text variant="body" color={colors.textPrimary} style={{ flex: 1 }}>
-            {item}
-          </Text>
-        </View>
-      )}
+      renderItem={({ item, index, section }) => {
+        const isFirst = index === 0;
+        const isLast = index === section.data.length - 1;
+        return (
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'flex-start',
+              backgroundColor: colors.cardBackground,
+              borderTopLeftRadius: isFirst ? br.lg : 0,
+              borderTopRightRadius: isFirst ? br.lg : 0,
+              borderBottomLeftRadius: isLast ? br.lg : 0,
+              borderBottomRightRadius: isLast ? br.lg : 0,
+              padding: spacing.md,
+              paddingHorizontal: spacing.lg,
+              gap: spacing.sm,
+            }}
+          >
+            <Ionicons
+              name="swap-horizontal"
+              size={16}
+              color={colors.primary}
+              style={{ marginTop: 2 }}
+            />
+            <Text variant="body" color={colors.textPrimary} style={{ flex: 1 }}>
+              {item}
+            </Text>
+            {!isLast && <RowSeparator />}
+          </View>
+        );
+      }}
       ListEmptyComponent={
         <View style={{ alignItems: 'center', paddingTop: 60, gap: spacing.md }}>
           <Ionicons name="document-text-outline" size={40} color={colors.textMuted} />

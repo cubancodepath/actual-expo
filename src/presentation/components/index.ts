@@ -7,6 +7,7 @@ export { Divider, type DividerProps } from "./atoms/Divider";
 export { Badge, type BadgeProps } from "./atoms/Badge";
 export { Spacer, type SpacerProps } from "./atoms/Spacer";
 export { Amount, type AmountProps } from "./atoms/Amount";
+export { CurrencySymbol } from "./atoms/CurrencySymbol";
 export { Icon, type IconProps } from "./atoms/Icon";
 export { CurrencyInput, type CurrencyInputRef } from "./atoms/CurrencyInput";
 export { CompactCurrencyInput, type CompactCurrencyInputRef } from "./atoms/CompactCurrencyInput";

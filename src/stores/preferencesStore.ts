@@ -39,6 +39,7 @@ function applyFormatConfig(prefs: {
   const effectiveSymbol = prefs.defaultCurrencyCustomSymbol || currency.symbol;
   setCurrencyConfig({
     symbol: effectiveSymbol,
+    svgSymbol: prefs.defaultCurrencyCustomSymbol ? undefined : currency.svgSymbol,
     position: (prefs.currencySymbolPosition || 'before') as 'before' | 'after',
     spaceBetween: prefs.currencySpaceBetweenAmountAndSymbol === 'true',
   });

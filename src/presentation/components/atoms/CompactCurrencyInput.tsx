@@ -10,8 +10,10 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useTheme } from '../../providers/ThemeProvider';
 import { Text } from './Text';
+import { CurrencySymbol } from './CurrencySymbol';
 import { useExpressionMode } from '../../hooks/useExpressionMode';
 import { MAX_CENTS, formatCents, formatExpression } from '../../../lib/currency';
+import { formatAmountParts } from '../../../lib/format';
 import { usePreferencesStore } from '../../../stores/preferencesStore';
 
 export interface CompactCurrencyInputRef {
@@ -137,29 +139,35 @@ export const CompactCurrencyInput = forwardRef<CompactCurrencyInputRef, CompactC
     return (
       <View style={[{ flexDirection: 'column', alignItems: 'flex-end' }, style]}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          {!expr.expressionMode && (
-            <>
-              {isNeg && (
+          {!expr.expressionMode && (() => {
+            const parts = formatAmountParts(Math.abs(value), false);
+            const fontSize = 14; // body variant
+            return (
+              <>
+                {isNeg && (
+                  <Text variant="body" color={displayColor} style={{ marginRight: 1 }}>-</Text>
+                )}
+                {parts.svgSymbol && parts.position === 'before' && (
+                  <>
+                    <CurrencySymbol symbol={parts.symbol} svgSymbol={parts.svgSymbol} fontSize={fontSize} color={displayColor} />
+                    {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
+                  </>
+                )}
                 <Text
                   variant="body"
-                  color={displayColor}
-                  style={{ marginRight: 1 }}
+                  style={{ fontWeight: '600', fontVariant: ['tabular-nums'], color: displayColor }}
                 >
-                  -
+                  {parts.svgSymbol ? parts.number : formatCents(Math.abs(value))}
                 </Text>
-              )}
-              <Text
-                variant="body"
-                style={{
-                  fontWeight: '600',
-                  fontVariant: ['tabular-nums'],
-                  color: displayColor,
-                }}
-              >
-                {formatCents(Math.abs(value))}
-              </Text>
-            </>
-          )}
+                {parts.svgSymbol && parts.position === 'after' && (
+                  <>
+                    {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
+                    <CurrencySymbol symbol={parts.symbol} svgSymbol={parts.svgSymbol} fontSize={fontSize} color={displayColor} />
+                  </>
+                )}
+              </>
+            );
+          })()}
 
           {expr.expressionMode && (
             <Text

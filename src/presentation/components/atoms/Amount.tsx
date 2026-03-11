@@ -1,10 +1,11 @@
-import type { TextStyle } from "react-native";
+import { View, type TextStyle } from "react-native";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Text, type TextProps } from "./Text";
-import { formatAmount, formatBalance, PRIVACY_MASK } from "../../../lib/format";
+import { CurrencySymbol } from "./CurrencySymbol";
+import { formatAmount, formatBalance, formatAmountParts, PRIVACY_MASK } from "../../../lib/format";
 import { usePrivacyStore } from "../../../stores/privacyStore";
 import { usePreferencesStore } from "../../../stores/preferencesStore";
-import type { TypographyVariant } from "../../../theme";
+import { typography, type TypographyVariant } from "../../../theme";
 
 export interface AmountProps extends Omit<TextProps, "children" | "variant"> {
   /** Amount in cents (integer) */
@@ -36,9 +37,6 @@ export function Amount({
   const { colors } = useTheme();
   const privacyMode = usePrivacyStore((s) => s.privacyMode);
   // Subscribe to format prefs so component re-renders when they change.
-  // The values aren't used directly — formatAmount/formatBalance read from
-  // module-level config — but subscribing triggers re-render after
-  // applyFormatConfig() updates the formatters.
   usePreferencesStore((s) => `${s.numberFormat}:${s.hideFraction}:${s.defaultCurrencyCode}:${s.defaultCurrencyCustomSymbol}:${s.currencySymbolPosition}:${s.currencySpaceBetweenAmountAndSymbol}`);
 
   // Explicit color wins; otherwise auto-color when `colored` is true
@@ -49,23 +47,50 @@ export function Amount({
     else color = colors.textSecondary;
   }
 
-  let text: string;
+  const textStyle: TextStyle[] = [{ fontVariant: ["tabular-nums"], fontWeight: weight }, style as TextStyle];
+
+  // Privacy mode or fallback — always plain text
   if (privacyMode) {
-    text = PRIVACY_MASK;
-  } else if (fallback && value === 0) {
-    text = fallback;
-  } else {
-    text = showSign ? formatAmount(value) : formatBalance(value);
+    return <Text variant={variant} color={color} style={textStyle} {...props}>{PRIVACY_MASK}</Text>;
+  }
+  if (fallback && value === 0) {
+    return <Text variant={variant} color={color} style={textStyle} {...props}>{fallback}</Text>;
   }
 
+  const parts = formatAmountParts(value, showSign);
+
+  // Fast path: no SVG symbol — single <Text> (unchanged behavior)
+  if (!parts.svgSymbol) {
+    const text = showSign ? formatAmount(value) : formatBalance(value);
+    return <Text variant={variant} color={color} style={textStyle} {...props}>{text}</Text>;
+  }
+
+  // SVG path: render sign + symbol + number as separate elements
+  const fontSize = typography[variant].fontSize;
+  const resolvedColor = color ?? colors.textPrimary;
+  // AED guidelines: clear space = 1/3 of symbol height
+  const spacerWidth = parts.svgSymbol ? Math.round(fontSize / 3) : 3;
+  const spacer = parts.spaceBetween ? <View style={{ width: spacerWidth }} /> : null;
+
+  const symbolEl = (
+    <CurrencySymbol
+      symbol={parts.symbol}
+      svgSymbol={parts.svgSymbol}
+      fontSize={fontSize}
+      color={resolvedColor}
+    />
+  );
+
   return (
-    <Text
-      variant={variant}
-      color={color}
-      style={[{ fontVariant: ["tabular-nums"], fontWeight: weight }, style]}
-      {...props}
-    >
-      {text}
-    </Text>
+    <View style={{ flexDirection: 'row', alignItems: 'center' }} {...props}>
+      {parts.sign !== '' && (
+        <Text variant={variant} color={resolvedColor} style={textStyle}>{parts.sign}</Text>
+      )}
+      {parts.position === 'before' && symbolEl}
+      {parts.position === 'before' && spacer}
+      <Text variant={variant} color={resolvedColor} style={textStyle}>{parts.number}</Text>
+      {parts.position === 'after' && spacer}
+      {parts.position === 'after' && symbolEl}
+    </View>
   );
 }

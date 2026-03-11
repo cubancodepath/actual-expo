@@ -69,8 +69,11 @@ function getFormatterShort(): Intl.NumberFormat {
 
 // ── Currency symbol config ────────────────────────────────────────────────────
 
+import type { SvgSymbolData } from './currencies';
+
 let currencyConfig: {
   symbol: string;
+  svgSymbol?: SvgSymbolData;
   position: 'before' | 'after';
   spaceBetween: boolean;
 } = { symbol: '', position: 'before', spaceBetween: false };
@@ -78,6 +81,7 @@ let currencyConfig: {
 /** Update the global currency symbol config. Called from preferencesStore. */
 export function setCurrencyConfig(config: {
   symbol: string;
+  svgSymbol?: SvgSymbolData;
   position: 'before' | 'after';
   spaceBetween: boolean;
 }) {
@@ -151,6 +155,37 @@ export function formatAmountShort(cents: number): string {
   const formatted = getFormatterShort().format(Math.abs(cents) / 100);
   const result = cents < 0 ? `-${formatted}` : formatted;
   return applyCurrencyStyling(result);
+}
+
+// ── Structured formatting (for component-based rendering with SVG symbols) ────
+
+export type FormattedAmountParts = {
+  sign: '' | '+' | '-';
+  number: string;
+  symbol: string;
+  svgSymbol?: SvgSymbolData;
+  position: 'before' | 'after';
+  spaceBetween: boolean;
+};
+
+/**
+ * Return structured parts for component-based rendering.
+ * Used by Amount and CurrencyInput when an SVG symbol is active.
+ */
+export function formatAmountParts(cents: number, showSign = false): FormattedAmountParts {
+  const formatted = getFormatter().format(Math.abs(cents) / 100);
+  let sign: '' | '+' | '-' = '';
+  if (showSign && cents > 0) sign = '+';
+  else if (cents < 0) sign = '-';
+
+  return {
+    sign,
+    number: formatted,
+    symbol: currencyConfig.symbol,
+    svgSymbol: currencyConfig.svgSymbol,
+    position: currencyConfig.position,
+    spaceBetween: currencyConfig.spaceBetween,
+  };
 }
 
 // ── Privacy-aware formatting (for strings / accessibility labels) ─────────────

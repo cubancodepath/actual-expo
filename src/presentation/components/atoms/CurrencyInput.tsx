@@ -13,6 +13,8 @@ import { useTheme, useThemedStyles } from '../../providers/ThemeProvider';
 import { Text } from './Text';
 import { useExpressionMode } from '../../hooks/useExpressionMode';
 import { MAX_CENTS, formatCents, formatExpression } from '../../../lib/currency';
+import { formatAmountParts } from '../../../lib/format';
+import { CurrencySymbol } from './CurrencySymbol';
 import { usePreferencesStore } from '../../../stores/preferencesStore';
 import type { Theme } from '../../../theme';
 
@@ -150,16 +152,32 @@ export const CurrencyInput = forwardRef<CurrencyInputRef, CurrencyInputProps>(
     return (
       <Pressable style={[styles.container, compactContainer, style]} onPress={() => inputRef.current?.focus()}>
         <View style={styles.display}>
-          {!expr.expressionMode && (
-            <>
-              <Text style={[styles.prefix, { color: amountColor }, compactOverride]}>
-                {prefix}
-              </Text>
-              <Text style={[styles.amount, { color: amountColor }, compactOverride]}>
-                {formatCents(value)}
-              </Text>
-            </>
-          )}
+          {!expr.expressionMode && (() => {
+            const parts = formatAmountParts(value, false);
+            const fontSize = compact ? 20 : 32;
+            return (
+              <>
+                <Text style={[styles.prefix, { color: amountColor }, compactOverride]}>
+                  {prefix}
+                </Text>
+                {parts.svgSymbol && parts.position === 'before' && (
+                  <>
+                    <CurrencySymbol symbol={parts.symbol} svgSymbol={parts.svgSymbol} fontSize={fontSize} color={amountColor} />
+                    {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
+                  </>
+                )}
+                <Text style={[styles.amount, { color: amountColor }, compactOverride]}>
+                  {parts.svgSymbol ? parts.number : formatCents(value)}
+                </Text>
+                {parts.svgSymbol && parts.position === 'after' && (
+                  <>
+                    {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
+                    <CurrencySymbol symbol={parts.symbol} svgSymbol={parts.svgSymbol} fontSize={fontSize} color={amountColor} />
+                  </>
+                )}
+              </>
+            );
+          })()}
           {expr.expressionMode && (
             <Text
               style={[styles.amount, { color: theme.colors.primary }, compactOverride]}

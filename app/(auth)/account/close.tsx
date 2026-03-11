@@ -10,7 +10,7 @@ import { useTheme, useThemedStyles } from '../../../src/presentation/providers/T
 import { Text } from '../../../src/presentation/components/atoms/Text';
 import { Button } from '../../../src/presentation/components/atoms/Button';
 import { IconButton } from '../../../src/presentation/components/atoms/IconButton';
-import { Amount } from '../../../src/presentation/components/atoms/Amount';
+import { formatBalance } from '../../../src/lib/format';
 import { Divider } from '../../../src/presentation/components/atoms/Divider';
 import type { Account } from '../../../src/accounts/types';
 import type { Category, CategoryGroup } from '../../../src/categories/types';
@@ -168,7 +168,9 @@ export default function CloseAccountScreen() {
 
           <Text variant="bodySm" color={theme.colors.textSecondary} style={styles.paragraph}>
             This account has a balance of{' '}
-            <Amount value={balance} variant="bodySm" weight="700" />
+            <Text variant="bodySm" color={theme.colors.textSecondary} style={{ fontWeight: '700' }}>
+              {formatBalance(balance)}
+            </Text>
             . To close this account, select a different account to transfer this balance to:
           </Text>
 

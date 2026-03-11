@@ -264,8 +264,9 @@ export default function MoveMoneyScreen() {
       await transferMultipleCategories(
         month,
         catId,
-        entries.map((s) => ({ categoryId: s.id, amountCents: s.amount })),
+        entries.map((s) => ({ categoryId: s.id, amountCents: s.amount, name: s.name })),
         direction === 'to' ? 'to' : 'from',
+        catName,
       );
       await loadBudget();
       router.back();

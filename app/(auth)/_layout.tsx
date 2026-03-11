@@ -138,6 +138,14 @@ export default function AuthLayout() {
         }}
       />
       <Stack.Screen
+        name="budget/notes"
+        options={{ title: "Budget Movements", ...modal }}
+      />
+      <Stack.Screen
+        name="budget/category-transactions"
+        options={{ title: "Transactions", ...modal }}
+      />
+      <Stack.Screen
         name="budget/cover-overspent"
         options={{
           ...screen,

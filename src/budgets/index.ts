@@ -1,4 +1,5 @@
-import { runQuery, first } from '../db';
+import { runQuery, first, run } from '../db';
+import { formatBalance } from '../lib/format';
 import { sendMessages } from '../sync';
 import { undoable } from '../sync/undo';
 import { Timestamp } from '../crdt';
@@ -420,6 +421,33 @@ export const resetHold = undoable(async function resetHold(month: string): Promi
 });
 
 // ---------------------------------------------------------------------------
+// Budget movement notes
+//
+// When money is moved between categories, append a note to the month's
+// budget notes (same format as loot-core's addMovementNotes).
+// ---------------------------------------------------------------------------
+
+export async function addMovementNote(opts: {
+  month: string;
+  amountCents: number;
+  fromName: string;
+  toName: string;
+}): Promise<void> {
+  const noteId = `budget-${opts.month}`;
+  const displayAmount = formatBalance(Math.abs(opts.amountCents));
+  const displayDay = new Date().toLocaleDateString(undefined, { month: 'long', day: 'numeric' });
+  const line = `- Reassigned ${displayAmount} from ${opts.fromName} → ${opts.toName} on ${displayDay}`;
+
+  const existing = await first<{ note: string }>('SELECT note FROM notes WHERE id = ?', [noteId]);
+
+  if (existing) {
+    await run('UPDATE notes SET note = ? WHERE id = ?', [existing.note + '\n' + line, noteId]);
+  } else {
+    await run('INSERT INTO notes (id, note) VALUES (?, ?)', [noteId, line]);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Transfer money between categories (cover overspending / move surplus)
 //
 // Mirrors loot-core's transferCategory() + coverOverspending():
@@ -432,6 +460,8 @@ export const transferBetweenCategories = undoable(async function transferBetween
   fromCategoryId: string,
   toCategoryId: string,
   amountCents: number, // positive integer
+  fromName?: string,
+  toName?: string,
 ): Promise<void> {
   if (amountCents <= 0) return;
 
@@ -461,6 +491,10 @@ export const transferBetweenCategories = undoable(async function transferBetween
     { timestamp: Timestamp.send()!, dataset: 'zero_budgets', row: toId,   column: 'category', value: toCategoryId },
     { timestamp: Timestamp.send()!, dataset: 'zero_budgets', row: toId,   column: 'amount',   value: toBudgeted + amountCents },
   ]);
+
+  if (fromName && toName) {
+    await addMovementNote({ month, amountCents, fromName, toName });
+  }
 });
 
 // ---------------------------------------------------------------------------
@@ -474,8 +508,9 @@ export const transferBetweenCategories = undoable(async function transferBetween
 export const transferMultipleCategories = undoable(async function transferMultipleCategories(
   month: string,
   targetCategoryId: string,
-  sources: Array<{ categoryId: string; amountCents: number }>,
+  sources: Array<{ categoryId: string; amountCents: number; name?: string }>,
   direction: 'to' | 'from', // 'to' = sources give to target, 'from' = target gives to sources
+  targetName?: string,
 ): Promise<void> {
   const validSources = sources.filter(s => s.amountCents > 0);
   if (validSources.length === 0) return;
@@ -524,6 +559,17 @@ export const transferMultipleCategories = undoable(async function transferMultip
   );
 
   await sendMessages(messages);
+
+  // Add movement notes for each source transfer
+  if (targetName) {
+    for (const source of validSources) {
+      if (source.name) {
+        const fromName = direction === 'to' ? source.name : targetName;
+        const toName = direction === 'to' ? targetName : source.name;
+        await addMovementNote({ month, amountCents: source.amountCents, fromName, toName });
+      }
+    }
+  }
 });
 
 // ---------------------------------------------------------------------------

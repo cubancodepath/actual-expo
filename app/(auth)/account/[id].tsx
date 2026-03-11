@@ -287,6 +287,7 @@ export default function AccountTransactionsScreen() {
           data={mergedListData}
           keyExtractor={(item) => item.key}
           getItemType={(item) => item.type}
+          extraData={`${txnList.isSelectMode}-${txnList.selectedIds.size}`}
 
           onScroll={handleScroll}
           scrollEventThrottle={16}

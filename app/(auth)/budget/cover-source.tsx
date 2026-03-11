@@ -181,8 +181,9 @@ export default function CoverSourceScreen() {
         await transferMultipleCategories(
           month,
           catId,
-          categorySources.map((s) => ({ categoryId: s.id, amountCents: s.amount })),
+          categorySources.map((s) => ({ categoryId: s.id, amountCents: s.amount, name: s.name })),
           'to',
+          catName,
         );
       }
 

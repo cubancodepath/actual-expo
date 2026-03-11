@@ -168,6 +168,20 @@ export default function BudgetScreen() {
     });
   }
 
+  function handleViewTransactions(cat: BudgetCategory) {
+    router.push({
+      pathname: '/(auth)/budget/category-transactions',
+      params: { categoryId: cat.id, categoryName: cat.name },
+    });
+  }
+
+  function handleBudgetNotes(cat: BudgetCategory) {
+    router.push({
+      pathname: '/(auth)/budget/notes',
+      params: { categoryName: cat.name },
+    });
+  }
+
   function handleCategoryLongPress(cat: BudgetCategory) {
     // Android fallback — iOS uses zeego context menu in BudgetCategoryRow
     const toggleLabel = cat.carryover ? 'Remove overspending rollover' : 'Rollover overspending';
@@ -175,6 +189,8 @@ export default function BudgetScreen() {
       { text: 'Category Details', onPress: () => handleCategoryDetails(cat) },
       { text: 'Move Money', onPress: () => handleMoveMoney(cat) },
       { text: toggleLabel, onPress: () => handleToggleCarryover(cat) },
+      { text: 'View Transactions', onPress: () => handleViewTransactions(cat) },
+      { text: 'Budget Movements', onPress: () => handleBudgetNotes(cat) },
       { text: 'Cancel', style: 'cancel' },
     ]);
   }
@@ -236,6 +252,8 @@ export default function BudgetScreen() {
         onCategoryDetails={handleCategoryDetails}
         onMoveMoney={handleMoveMoney}
         onToggleCarryover={handleToggleCarryover}
+        onViewTransactions={handleViewTransactions}
+        onBudgetNotes={handleBudgetNotes}
         onCommit={handleCommit}
         onInputFocus={(ref) => { focusedInputRef.current = ref; setAnyRowEditing(true); }}
         onInputBlur={() => setAnyRowEditing(false)}

@@ -235,6 +235,7 @@ export default function SpendingScreen() {
         data={txnList.loading ? [] : mergedListData}
         keyExtractor={(item) => item.key}
         getItemType={(item) => item.type}
+        extraData={`${txnList.isSelectMode}-${txnList.selectedIds.size}`}
         onScroll={handleScroll}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}

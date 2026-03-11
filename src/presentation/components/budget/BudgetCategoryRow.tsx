@@ -21,6 +21,8 @@ interface BudgetCategoryRowProps {
   onCategoryDetails?: (cat: BudgetCategory) => void;
   onMoveMoney?: (cat: BudgetCategory) => void;
   onToggleCarryover?: (cat: BudgetCategory) => void;
+  onViewTransactions?: (cat: BudgetCategory) => void;
+  onBudgetNotes?: (cat: BudgetCategory) => void;
   /** Called when the user commits a new budget amount (blur / done). */
   onCommit?: (catId: string, cents: number) => void;
   /** Called when the currency input gains focus, with a ref to the input. */
@@ -42,6 +44,8 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
   onCategoryDetails,
   onMoveMoney,
   onToggleCarryover,
+  onViewTransactions,
+  onBudgetNotes,
   onCommit,
   onInputFocus,
   onInputBlur,
@@ -375,6 +379,20 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
             <ContextMenu.ItemIcon
               ios={{ name: cat.carryover ? 'arrow.uturn.backward' : 'arrow.clockwise' }}
             />
+          </ContextMenu.Item>
+          <ContextMenu.Item
+            key="view-transactions"
+            onSelect={() => onViewTransactions?.(cat)}
+          >
+            <ContextMenu.ItemTitle>View Transactions</ContextMenu.ItemTitle>
+            <ContextMenu.ItemIcon ios={{ name: 'chart.line.uptrend.xyaxis' }} />
+          </ContextMenu.Item>
+          <ContextMenu.Item
+            key="budget-notes"
+            onSelect={() => onBudgetNotes?.(cat)}
+          >
+            <ContextMenu.ItemTitle>Budget Movements</ContextMenu.ItemTitle>
+            <ContextMenu.ItemIcon ios={{ name: 'clock.arrow.trianglehead.counterclockwise.rotate.90' }} />
           </ContextMenu.Item>
         </ContextMenu.Content>
       </ContextMenu.Root>

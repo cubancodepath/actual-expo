@@ -105,7 +105,7 @@ export default function RootLayout() {
         {
           id: "add_transaction",
           title: "Add Transaction",
-          icon: "plus.circle",
+          icon: "symbol:plus.circle",
           params: { href: "/(auth)/transaction/new" },
         },
       ]);

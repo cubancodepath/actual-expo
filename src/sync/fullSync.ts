@@ -8,6 +8,7 @@
 import { getClock, merkle, Timestamp } from '../crdt';
 import { encode, decode } from './encoder';
 import { postBinary } from '../post';
+import { PostError } from '../errors';
 import { applyMessages, getMessagesSince } from './apply';
 import { refreshStoresForDatasets } from '../stores/storeRegistry';
 import { getSyncGeneration, isSwitchingBudget, setActiveSyncPromise } from './lifecycle';
@@ -118,6 +119,15 @@ async function _fullSync(attempt = 0): Promise<void> {
     }
   } catch (e: unknown) {
     if (gen !== getSyncGeneration()) return;
+
+    // Auth error — clear everything and let router redirect to login
+    if (e instanceof PostError && (e.type === 'unauthorized' || e.type === 'token-expired')) {
+      const { closeBudget } = await import('../services/budgetfiles');
+      await closeBudget().catch(() => {});
+      usePrefsStore.getState().clearAll();
+      return;
+    }
+
     const msg = e instanceof Error ? e.message : String(e);
     // Silently ignore errors from DB closing during budget switch
     if (msg.includes('closed resource') || msg.includes('not initialized')) {

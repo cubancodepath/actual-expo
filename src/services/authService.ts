@@ -86,6 +86,12 @@ export async function listFiles(serverUrl: string, token: string): Promise<Budge
     },
   });
 
+  if (res.status === 401 || res.status === 403) {
+    const { usePrefsStore } = await import('../stores/prefsStore');
+    usePrefsStore.getState().clearAll();
+    throw new Error('Session expired. Please log in again.');
+  }
+
   if (!res.ok) {
     throw new Error(`Failed to list files (${res.status})`);
   }

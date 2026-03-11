@@ -1,10 +1,12 @@
 import {
   makeDirectoryAsync,
   writeAsStringAsync,
+  readAsStringAsync,
   EncodingType,
 } from 'expo-file-system/legacy';
-import { unzipSync } from 'fflate';
-import { closeDatabase, openDatabase, run } from '../db';
+import { unzipSync, zipSync } from 'fflate';
+import { randomUUID } from 'expo-crypto';
+import { closeDatabase, openDatabase, run, getDb } from '../db';
 import { loadClock, resetSyncState, clearSwitchingFlag, fullSync, waitForSyncToSettle } from '../sync';
 import { resetAllStores } from '../stores/resetStores';
 import { usePrefsStore } from '../stores/prefsStore';
@@ -27,6 +29,17 @@ import {
 } from './budgetMetadata';
 
 // ---------------------------------------------------------------------------
+// Auth guard
+// ---------------------------------------------------------------------------
+
+function throwIfUnauthorized(res: Response): void {
+  if (res.status === 401 || res.status === 403) {
+    usePrefsStore.getState().clearAll();
+    throw new Error('Session expired. Please log in again.');
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
@@ -37,6 +50,15 @@ function uint8ToBase64(bytes: Uint8Array): string {
     binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
   }
   return btoa(binary);
+}
+
+function base64ToUint8(base64: string): Uint8Array {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
 }
 
 // ---------------------------------------------------------------------------
@@ -119,6 +141,101 @@ export function reconcileFiles(
 }
 
 // ---------------------------------------------------------------------------
+// Upload
+// ---------------------------------------------------------------------------
+
+/**
+ * Upload a local budget to the server for the first time.
+ * Creates a ZIP with db.sqlite + metadata.json, POSTs to /sync/upload-user-file.
+ * Returns the server-assigned groupId.
+ */
+export async function uploadBudget(
+  serverUrl: string,
+  token: string,
+  budgetId: string,
+): Promise<{ cloudFileId: string; groupId: string }> {
+  const budgetDir = getBudgetDir(budgetId);
+  console.log('[upload] Starting upload for budget:', budgetId);
+
+  // 1. Switch from WAL to DELETE journal mode so the file is self-contained.
+  //    sql-wasm (used by the Actual web UI) doesn't support mmap/WAL.
+  //    This checkpoints any WAL data back into the main db file.
+  const db = getDb();
+  await db.execAsync('PRAGMA journal_mode = DELETE');
+  console.log('[upload] Switched journal_mode to DELETE');
+
+  // 2. Read the SQLite file as base64 → Uint8Array
+  const dbBase64 = await readAsStringAsync(`${budgetDir}db.sqlite`, {
+    encoding: EncodingType.Base64,
+  });
+  const dbBytes = base64ToUint8(dbBase64);
+  console.log('[upload] DB file size:', dbBytes.length, 'bytes');
+
+  // Restore WAL mode for continued local use
+  await db.execAsync('PRAGMA journal_mode = WAL');
+
+  // 2. Read metadata and set resetClock flag
+  const meta = await readMetadata(budgetId);
+  if (!meta) throw new Error(`No metadata for budget ${budgetId}`);
+  const metaWithReset = { ...meta, resetClock: true };
+  const metaBytes = new TextEncoder().encode(JSON.stringify(metaWithReset));
+  console.log('[upload] Metadata:', JSON.stringify(metaWithReset));
+
+  // 3. Create ZIP
+  const zipped = zipSync({
+    'db.sqlite': dbBytes,
+    'metadata.json': metaBytes,
+  });
+  console.log('[upload] ZIP size:', zipped.length, 'bytes');
+
+  // 4. Generate cloudFileId (alphanumeric, no dashes — server validates /^[a-zA-Z0-9_-]+$/)
+  const cloudFileId = randomUUID().replace(/-/g, '');
+  console.log('[upload] cloudFileId:', cloudFileId);
+
+  // 5. Upload
+  const url = `${serverUrl}/sync/upload-user-file`;
+  const headers = {
+    'Content-Type': 'application/encrypted-file',
+    'Content-Length': String(zipped.length),
+    'X-ACTUAL-TOKEN': token,
+    'X-ACTUAL-FILE-ID': cloudFileId,
+    'X-ACTUAL-NAME': encodeURIComponent(meta.budgetName),
+    'X-ACTUAL-FORMAT': '2',
+  };
+  console.log('[upload] POST', url, 'headers:', JSON.stringify(headers));
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: zipped.buffer as ArrayBuffer,
+  });
+
+  console.log('[upload] Response status:', res.status);
+  throwIfUnauthorized(res);
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    console.error('[upload] Upload failed:', res.status, text);
+    throw new Error(`Upload failed (${res.status}): ${text}`);
+  }
+
+  const json = await res.json();
+  console.log('[upload] Response body:', JSON.stringify(json));
+
+  if (json.status !== 'ok') {
+    throw new Error(`Upload failed: ${JSON.stringify(json)}`);
+  }
+
+  const groupId = json.groupId as string;
+
+  // 6. Update local metadata
+  await updateMetadata(budgetId, { cloudFileId, groupId });
+  console.log('[upload] Upload complete. groupId:', groupId);
+
+  return { cloudFileId, groupId };
+}
+
+// ---------------------------------------------------------------------------
 // Download
 // ---------------------------------------------------------------------------
 
@@ -144,6 +261,8 @@ export async function downloadBudget(
       'x-actual-file-id': file.fileId,
     },
   });
+
+  throwIfUnauthorized(res);
 
   if (!res.ok) {
     const text = await res.text().catch(() => '');
@@ -302,10 +421,32 @@ export async function switchBudget(
 // Delete
 // ---------------------------------------------------------------------------
 
+/** Delete a budget's local files. Closes the budget first if it's active. */
 export async function deleteBudget(budgetId: string): Promise<void> {
   const prefs = usePrefsStore.getState();
   if (prefs.activeBudgetId === budgetId) {
     await closeBudget();
   }
   await deleteBudgetDir(budgetId);
+}
+
+/** Soft-delete a budget from the server (marks deleted=true). */
+export async function deleteFromServer(
+  serverUrl: string,
+  token: string,
+  cloudFileId: string,
+): Promise<void> {
+  const res = await fetch(`${serverUrl}/sync/delete-user-file`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-actual-token': token,
+    },
+    body: JSON.stringify({ fileId: cloudFileId }),
+  });
+  throwIfUnauthorized(res);
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`Server delete failed (${res.status}): ${text}`);
+  }
 }

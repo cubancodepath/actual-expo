@@ -23,15 +23,12 @@ function confirmDelete(
   activeBudgetId: string,
   onDelete: (fromServer?: boolean) => void,
 ) {
-  if (file.localId && file.localId === activeBudgetId) {
-    Alert.alert('Close Budget First', 'You must switch to a different budget before deleting this one.');
-    return;
-  }
-
   const name = file.name || 'Unnamed budget';
+  const isActive = file.localId != null && file.localId === activeBudgetId;
+  const activeWarning = isActive ? ' This will close the current budget.' : '';
 
   if (file.state === 'synced') {
-    Alert.alert('Delete Budget', `"${name}" is synced with the server.`, [
+    Alert.alert('Delete Budget', `"${name}" is synced with the server.${activeWarning}`, [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete Locally', onPress: () => onDelete(false) },
       { text: 'Delete From All Devices', style: 'destructive', onPress: () => onDelete(true) },
@@ -42,7 +39,7 @@ function confirmDelete(
       { text: 'Delete From Server', style: 'destructive', onPress: () => onDelete(true) },
     ]);
   } else {
-    Alert.alert('Delete Budget', `Delete "${name}"? This cannot be undone.`, [
+    Alert.alert('Delete Budget', `Delete "${name}"?${activeWarning} This cannot be undone.`, [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: () => onDelete(false) },
     ]);

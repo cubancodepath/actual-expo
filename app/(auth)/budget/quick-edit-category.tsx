@@ -10,9 +10,11 @@ import { Button } from '../../../src/presentation/components/atoms/Button';
 import { IconButton } from '../../../src/presentation/components/atoms/IconButton';
 import { parseGoalDef } from '../../../src/goals';
 import { describeTemplate } from '../../../src/goals/describe';
+import { useFeatureFlag } from '../../../src/hooks/useFeatureFlag';
 
 export default function QuickEditCategoryScreen() {
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
+  const goalsEnabled = useFeatureFlag('goalTemplatesEnabled');
   const router = useRouter();
   const { categoryId } = useLocalSearchParams<{ categoryId: string }>();
 
@@ -164,6 +166,8 @@ export default function QuickEditCategoryScreen() {
       )}
 
       {/* Target */}
+      {goalsEnabled && (
+      <>
       <Text variant="caption" color={colors.textMuted} style={[labelStyle, { marginTop: spacing.lg }]}>
         Target
       </Text>
@@ -198,6 +202,8 @@ export default function QuickEditCategoryScreen() {
           }}
         />
       </View>
+      </>
+      )}
 
       {/* Hide + Delete side by side */}
       <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md }}>

@@ -9,6 +9,7 @@ import { formatPrivacyAware } from '../../../lib/format';
 import { getGoalProgress, getGoalProgressLabel } from '../../../goals/progress';
 import { parseGoalDef } from '../../../goals';
 import { ProgressBar } from '../atoms/ProgressBar';
+import { useFeatureFlag } from '../../../hooks/useFeatureFlag';
 import type { BudgetCategory } from '../../../budgets/types';
 
 interface BudgetCategoryRowProps {
@@ -48,6 +49,7 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
   showBudgetedColumn = true,
 }: BudgetCategoryRowProps) {
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
+  const goalsEnabled = useFeatureFlag('goalTemplatesEnabled');
   const inputRef = useRef<CompactCurrencyInputRef>(null);
 
   const insetStyle = {
@@ -85,7 +87,7 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
 
   // ── Expense row ──
 
-  const hasGoal = cat.goal !== null && cat.goal > 0;
+  const hasGoal = goalsEnabled && cat.goal !== null && cat.goal > 0;
   const templates = hasGoal ? parseGoalDef(cat.goalDef) : [];
   const primaryTemplate = templates[0];
 
@@ -314,7 +316,7 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
       </View>
 
       {/* Line 2: Progress bar (YNAB-style spending progress) */}
-      {showProgressBar && (
+      {showProgressBar && goalsEnabled && (
         <ProgressBar
           spent={barSpent}
           available={barAvailable}
@@ -326,7 +328,7 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
       )}
 
       {/* Line 3: Progress text (informational) */}
-      {showProgressBar && (
+      {showProgressBar && goalsEnabled && (
         <View
           accessible
           accessibilityLabel={getGoalProgressLabel(cat)}

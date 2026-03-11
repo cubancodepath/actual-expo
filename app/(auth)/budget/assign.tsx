@@ -15,6 +15,7 @@ import { GlassButton } from '../../../src/presentation/components/atoms/GlassBut
 import { Amount } from '../../../src/presentation/components/atoms/Amount';
 
 import { getGoalProgress } from '../../../src/goals/progress';
+import { useFeatureFlag } from '../../../src/hooks/useFeatureFlag';
 import type { BudgetCategory } from '../../../src/budgets/types';
 
 type CategorySection = {
@@ -25,6 +26,7 @@ type CategorySection = {
 
 export default function AssignBudgetScreen() {
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
+  const goalsEnabled = useFeatureFlag('goalTemplatesEnabled');
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { data, setAmount } = useBudgetStore();
@@ -90,6 +92,7 @@ export default function AssignBudgetScreen() {
 
   // Underfunded: sum of (goal - funded) for all categories with goals where not fully funded
   const underfunded = useMemo(() => {
+    if (!goalsEnabled) return 0;
     let sum = 0;
     for (const g of groups) {
       if (g.is_income) continue;
@@ -103,7 +106,7 @@ export default function AssignBudgetScreen() {
       }
     }
     return sum;
-  }, [groups, edits]);
+  }, [groups, edits, goalsEnabled]);
 
   // Check if any category has been changed
   const hasChanges = useMemo(() => {
@@ -269,6 +272,7 @@ export default function AssignBudgetScreen() {
             style={{ borderRadius: br.full }}
           />
         </View>
+        {goalsEnabled && (
         <View style={{ flex: 1 }}>
           <Button
             title="Auto-assign"
@@ -279,6 +283,7 @@ export default function AssignBudgetScreen() {
             style={{ borderRadius: br.full }}
           />
         </View>
+        )}
       </View>
 
       <SectionList
@@ -386,9 +391,10 @@ function CategoryAmountRow({
   isEdited: boolean;
 }) {
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
+  const goalsEnabled = useFeatureFlag('goalTemplatesEnabled');
   const inputRef = useRef<CompactCurrencyInputRef>(null);
 
-  const hasGoal = cat.goal != null && cat.goal > 0;
+  const hasGoal = goalsEnabled && cat.goal != null && cat.goal > 0;
 
   // Progress bar: funded ratio based on edited value
   let progressPct = 0;
@@ -442,6 +448,7 @@ function CategoryAmountRow({
       </View>
 
       {/* Line 2: Progress bar */}
+      {goalsEnabled && (
       <View
         style={{
           height: 8,
@@ -462,8 +469,10 @@ function CategoryAmountRow({
           />
         )}
       </View>
+      )}
 
       {/* Line 3: Goal progress text */}
+      {goalsEnabled && (
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginTop: 3 }}>
         {getGoalProgress(editedCat).map((seg, i) =>
           'text' in seg
@@ -471,6 +480,7 @@ function CategoryAmountRow({
             : <Amount key={i} value={seg.amount} variant="captionSm" color={colors.textMuted} colored={false} />
         )}
       </View>
+      )}
 
       {/* Inset divider */}
       {!isLast && (

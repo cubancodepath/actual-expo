@@ -30,6 +30,7 @@ import { SwipeableRow } from "../../../src/presentation/components/molecules/Swi
 import { GlassButton } from "../../../src/presentation/components/atoms/GlassButton";
 import { parseGoalDef } from "../../../src/goals";
 import { describeTemplate } from "../../../src/goals/describe";
+import { useFeatureFlag } from "../../../src/hooks/useFeatureFlag";
 import type { Category, CategoryGroup } from "../../../src/categories/types";
 
 // ---------- Section types ----------
@@ -177,6 +178,7 @@ function ComparativeBars({
 
 export default function EditBudgetScreen() {
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
+  const goalsEnabled = useFeatureFlag('goalTemplatesEnabled');
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { groups, categories, load } =
@@ -478,7 +480,7 @@ export default function EditBudgetScreen() {
       const isFirst = index === 0;
 
       // Goal info
-      const templates = parseGoalDef(item.goal_def ?? null);
+      const templates = goalsEnabled ? parseGoalDef(item.goal_def ?? null) : [];
       const hasGoal = templates.length > 0;
       const goalDescription = hasGoal ? describeTemplate(templates[0]) : null;
 
@@ -539,7 +541,7 @@ export default function EditBudgetScreen() {
                   >
                     {goalDescription}
                   </Text>
-                ) : (
+                ) : goalsEnabled ? (
                   <Button
                     title="Add Target"
                     icon="add-circle"
@@ -552,7 +554,7 @@ export default function EditBudgetScreen() {
                       });
                     }}
                   />
-                )}
+                ) : null}
               </View>
             </Pressable>
           </SwipeableRow>
@@ -614,7 +616,7 @@ export default function EditBudgetScreen() {
         </Text>
 
         {/* Big amount: needed to fund all goals */}
-        {totalGoals > 0 ? (
+        {goalsEnabled && totalGoals > 0 ? (
           <>
             <Amount
               value={needed}
@@ -761,7 +763,7 @@ export default function EditBudgetScreen() {
           ListHeaderComponent={
             <>
               {headerContent}
-              {totalGoals > 0 && (
+              {goalsEnabled && totalGoals > 0 && (
                 <View style={{ marginTop: -32, paddingTop: spacing.sm, opacity: 0 }}>
                   {cardInner}
                 </View>
@@ -787,7 +789,7 @@ export default function EditBudgetScreen() {
         />
 
       {/* Purple bg behind sticky card — zIndex 5 */}
-      {totalGoals > 0 && (
+      {goalsEnabled && totalGoals > 0 && (
         <Animated.View
           pointerEvents="none"
           style={[
@@ -808,7 +810,7 @@ export default function EditBudgetScreen() {
       )}
 
       {/* Card overlay — static top, animated translateY — zIndex 10 */}
-      {totalGoals > 0 && headerHeight > 0 && (
+      {goalsEnabled && totalGoals > 0 && headerHeight > 0 && (
         <Animated.View
           pointerEvents="box-none"
           style={[

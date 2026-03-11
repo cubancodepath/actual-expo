@@ -1,6 +1,5 @@
 export type FeatureFlag =
   | 'goalTemplatesEnabled'
-  | 'goalTemplatesUIEnabled'
   | 'actionTemplating'
   | 'formulaMode'
   | 'currency'
@@ -11,7 +10,6 @@ export type FeatureFlag =
 
 export const FEATURE_FLAG_DEFAULTS: Record<FeatureFlag, boolean> = {
   goalTemplatesEnabled: false,
-  goalTemplatesUIEnabled: false,
   actionTemplating: false,
   formulaMode: false,
   currency: false,
@@ -32,10 +30,6 @@ export const FEATURE_FLAG_LABELS: Record<
   goalTemplatesEnabled: {
     title: 'Goal Templates',
     subtitle: 'Enable goal template processing',
-  },
-  goalTemplatesUIEnabled: {
-    title: 'Budget Automations UI',
-    subtitle: 'Visual UI for goal templates',
   },
   actionTemplating: { title: 'Rule Action Templating' },
   formulaMode: {

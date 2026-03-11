@@ -29,6 +29,7 @@ let Host: typeof import('@expo/ui/swift-ui').Host | null = null;
 let tagMod: typeof import('@expo/ui/swift-ui/modifiers').tag | null = null;
 let pickerStyleMod: typeof import('@expo/ui/swift-ui/modifiers').pickerStyle | null = null;
 let tintMod: typeof import('@expo/ui/swift-ui/modifiers').tint | null = null;
+let frameMod: typeof import('@expo/ui/swift-ui/modifiers').frame | null = null;
 
 if (Platform.OS === 'ios') {
   try {
@@ -40,6 +41,7 @@ if (Platform.OS === 'ios') {
     tagMod = mods.tag;
     pickerStyleMod = mods.pickerStyle;
     tintMod = mods.tint;
+    frameMod = mods.frame;
   } catch {
     // Fallback — @expo/ui not available
   }
@@ -64,12 +66,12 @@ function PickerRow({
 
   const picker =
     SwiftPicker && SwiftText && Host && tagMod && pickerStyleMod ? (
-      <View style={{ minWidth: 140, alignItems: 'flex-end' }}>
-        <Host matchContents style={{ height: 32 }}>
+      <View style={{ alignItems: 'flex-end' }}>
+        <Host matchContents>
           <SwiftPicker
             selection={selection}
             onSelectionChange={(val) => onSelectionChange(val as string)}
-            modifiers={[pickerStyleMod('menu'), ...(tintMod ? [tintMod(colors.primary)] : [])]}
+            modifiers={[pickerStyleMod('menu'), ...(tintMod ? [tintMod(colors.primary)] : []), ...(frameMod ? [frameMod({ minWidth: 170, alignment: 'trailing' })] : [])]}
           >
             {options.map((opt) => (
               <SwiftText key={opt.value} modifiers={[tagMod(opt.value)]}>

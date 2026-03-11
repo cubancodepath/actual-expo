@@ -31,6 +31,7 @@ import { UnclearedPill } from '../../../../src/presentation/components/transacti
 import { getUncategorizedStats } from '../../../../src/transactions';
 import { Text } from '../../../../src/presentation/components/atoms/Text';
 import { usePrefsStore } from '../../../../src/stores/prefsStore';
+import { useFeatureFlag } from '../../../../src/hooks/useFeatureFlag';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -85,6 +86,7 @@ export default function BudgetScreen() {
   const { month, data, loading, load, setAmount, setCarryover, resetHold } = useBudgetStore();
   const { refreshControlProps } = useRefreshControl();
   const { showProgressBars, toggleProgressBars, showHiddenCategories, toggleShowHiddenCategories } = usePrefsStore();
+  const goalsEnabled = useFeatureFlag('goalTemplatesEnabled');
   const commonActions = useCommonMenuActions();
   const [uncategorizedCount, setUncategorizedCount] = useState(0);
 
@@ -237,8 +239,8 @@ export default function BudgetScreen() {
         onCommit={handleCommit}
         onInputFocus={(ref) => { focusedInputRef.current = ref; setAnyRowEditing(true); }}
         onInputBlur={() => setAnyRowEditing(false)}
-        showProgressBar={showProgressBars}
-        showBudgetedColumn={anyRowEditing || !showProgressBars}
+        showProgressBar={goalsEnabled && showProgressBars}
+        showBudgetedColumn={!goalsEnabled || anyRowEditing || !showProgressBars}
       />
       </View>
     );
@@ -360,9 +362,11 @@ export default function BudgetScreen() {
         <Stack.Toolbar.MenuAction isOn={filter === 'all'} icon="list.bullet" onPress={() => setFilter('all')}>
           All
         </Stack.Toolbar.MenuAction>
+        {goalsEnabled && (
         <Stack.Toolbar.MenuAction isOn={filter === 'underfunded'} icon="arrow.down.circle" onPress={() => setFilter('underfunded')}>
           Underfunded
         </Stack.Toolbar.MenuAction>
+        )}
         <Stack.Toolbar.MenuAction isOn={filter === 'overfunded'} icon="arrow.up.circle" onPress={() => setFilter('overfunded')}>
           Overfunded
         </Stack.Toolbar.MenuAction>
@@ -371,12 +375,14 @@ export default function BudgetScreen() {
         </Stack.Toolbar.MenuAction>
       </Stack.Toolbar.Menu>
       <Stack.Toolbar.Menu icon="ellipsis">
+        {goalsEnabled && (
         <Stack.Toolbar.MenuAction
           icon={showProgressBars ? 'line.3.horizontal' : 'line.3.horizontal'}
           onPress={toggleProgressBars}
         >
           {showProgressBars ? 'Hide Progress' : 'Show Progress'}
         </Stack.Toolbar.MenuAction>
+        )}
         <Stack.Toolbar.MenuAction
           icon={showHiddenCategories ? 'square.stack.3d.up.slash' : 'square.stack.3d.up'}
           onPress={toggleShowHiddenCategories}

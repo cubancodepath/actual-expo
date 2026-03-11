@@ -21,6 +21,7 @@ import { GlassButton } from "../../../src/presentation/components/atoms/GlassBut
 import { CircularProgress } from "../../../src/presentation/components/atoms/CircularProgress";
 import { parseGoalDef } from "../../../src/goals";
 import { describeTemplate } from "../../../src/goals/describe";
+import { useFeatureFlag } from "../../../src/hooks/useFeatureFlag";
 import type { BudgetCategory } from "../../../src/budgets/types";
 import type { ThemeColors } from "../../../src/theme/colors";
 
@@ -212,6 +213,7 @@ export default function CategoryDetailsScreen() {
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const router = useRouter();
   const { categoryId } = useLocalSearchParams<{ categoryId: string }>();
+  const goalsEnabled = useFeatureFlag('goalTemplatesEnabled');
 
   // Data
   const { month, data } = useBudgetStore();
@@ -321,7 +323,7 @@ export default function CategoryDetailsScreen() {
   const previousMonth = monthName(prevMonth(month));
 
   const templates = parseGoalDef(category?.goal_def ?? null);
-  const hasGoal = templates.length > 0 && budgetCat?.goal != null;
+  const hasGoal = goalsEnabled && templates.length > 0 && budgetCat?.goal != null;
   const goalDescription = hasGoal ? describeTemplate(templates[0]) : null;
 
   const pill = budgetCat
@@ -470,6 +472,8 @@ export default function CategoryDetailsScreen() {
         )}
 
         {/* ── Target Section ── */}
+        {goalsEnabled && (
+        <>
         <Text
           variant="caption"
           color={colors.textMuted}
@@ -673,6 +677,8 @@ export default function CategoryDetailsScreen() {
               }}
             />
           </View>
+        )}
+        </>
         )}
 
         {/* ── Actions ── */}

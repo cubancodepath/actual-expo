@@ -486,7 +486,7 @@ export default function NewTransactionScreen() {
         </View>
       </Animated.ScrollView>
 
-      {/* ── Fixed top gradient: fades from header color to transparent ── */}
+      {/* ── Fixed top blur: fades in on scroll like Apple nav bars ── */}
       <Animated.View
         style={[
           {
@@ -501,8 +501,8 @@ export default function NewTransactionScreen() {
         pointerEvents="none"
       >
         <LinearGradient
-          colors={[colors.pageBackground + '80', colors.pageBackground + '33', 'transparent']}
-          style={{ height: 80 }}
+          colors={[colors.pageBackground + 'B3', colors.pageBackground + '1A', 'transparent']}
+          style={{ height: 70 }}
         />
       </Animated.View>
 

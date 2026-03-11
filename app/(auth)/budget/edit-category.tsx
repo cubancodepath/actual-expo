@@ -717,7 +717,7 @@ export default function CategoryDetailsScreen() {
         />
       </Animated.ScrollView>
 
-      {/* ── Fixed top blur gradient: fades in on scroll ── */}
+      {/* ── Fixed top blur: fades in on scroll like Apple nav bars ── */}
       <Animated.View
         style={[
           {
@@ -733,11 +733,11 @@ export default function CategoryDetailsScreen() {
       >
         <LinearGradient
           colors={[
-            colors.pageBackground + "80",
-            colors.pageBackground + "33",
+            colors.pageBackground + "B3",
+            colors.pageBackground + "1A",
             "transparent",
           ]}
-          style={{ height: 80 }}
+          style={{ height: 70 }}
         />
       </Animated.View>
 

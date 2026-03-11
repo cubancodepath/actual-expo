@@ -6,13 +6,14 @@ struct AddTransactionIntent: AppIntent {
   static let description: IntentDescription = "Open Actual Budget to add a new transaction"
 
   static let openAppWhenRun: Bool = true
+  static let isDiscoverable: Bool = true
 
   static var parameterSummary: some ParameterSummary {
     Summary("Add \(\.$amount) at \(\.$payeeName) for \(\.$category) in \(\.$account)")
   }
 
   @Parameter(title: "Account")
-  var account: AccountEntity
+  var account: AccountEntity?
 
   @Parameter(title: "Category")
   var category: CategoryEntity?
@@ -28,9 +29,14 @@ struct AddTransactionIntent: AppIntent {
     UserDefaults.standard.set("/(auth)/transaction/new", forKey: "shortcutAction")
     UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: "shortcutActionTimestamp")
 
-    // Account (required)
-    UserDefaults.standard.set(account.id, forKey: "shortcutAccountId")
-    UserDefaults.standard.set(account.name, forKey: "shortcutAccountName")
+    // Account (optional)
+    if let acc = account {
+      UserDefaults.standard.set(acc.id, forKey: "shortcutAccountId")
+      UserDefaults.standard.set(acc.name, forKey: "shortcutAccountName")
+    } else {
+      UserDefaults.standard.removeObject(forKey: "shortcutAccountId")
+      UserDefaults.standard.removeObject(forKey: "shortcutAccountName")
+    }
 
     // Category (optional)
     if let cat = category {

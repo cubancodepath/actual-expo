@@ -54,11 +54,18 @@ function matchesFilter(cat: BudgetCategory, filter: BudgetFilter): boolean {
   switch (filter) {
     case 'all':
       return true;
-    case 'underfunded':
-      return cat.goal !== null && !cat.longGoal && cat.budgeted < cat.goal;
-    case 'overfunded':
-      if (cat.goal !== null) return cat.balance > cat.goal;
+    case 'underfunded': {
+      if (cat.goal == null) return false;
+      const funded = cat.longGoal ? cat.balance : cat.budgeted;
+      return funded < cat.goal;
+    }
+    case 'overfunded': {
+      if (cat.goal != null) {
+        const funded = cat.longGoal ? cat.balance : cat.budgeted;
+        return funded > cat.goal;
+      }
       return cat.balance > 0 && cat.budgeted > 0;
+    }
     case 'has-money':
       return cat.balance > 0;
   }

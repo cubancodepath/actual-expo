@@ -1,11 +1,20 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeAll } from 'vitest';
 
 // Mock modules that transitively import native dependencies (via format → privacyStore)
 vi.mock('../stores/privacyStore', () => ({
   usePrivacyStore: { getState: () => ({ privacyMode: false }) },
 }));
 
+import { setCurrencyConfig } from '../lib/format';
 import { describeTemplate } from './describe';
+
+// Set up currency symbol so formatted amounts include "$"
+// applyCurrencyStyling wraps with LTR marks: \u202A$\u202C
+const $ = '\u202A$\u202C';
+
+beforeAll(() => {
+  setCurrencyConfig({ symbol: '$', position: 'before', spaceBetween: false });
+});
 import type {
   SimpleTemplate,
   GoalTemplate,
@@ -23,7 +32,7 @@ import type {
 describe('describeTemplate', () => {
   it('simple monthly', () => {
     const t: SimpleTemplate = { type: 'simple', monthly: 200, priority: 0, directive: 'template' };
-    expect(describeTemplate(t)).toBe('Budget $200.00 monthly');
+    expect(describeTemplate(t)).toBe(`Budget ${$}200.00 monthly`);
   });
 
   it('simple monthly with limit', () => {
@@ -34,7 +43,7 @@ describe('describeTemplate', () => {
       priority: 0,
       directive: 'template',
     };
-    expect(describeTemplate(t)).toBe('Budget $200.00 monthly (up to $500.00)');
+    expect(describeTemplate(t)).toBe(`Budget ${$}200.00 monthly (up to ${$}500.00)`);
   });
 
   it('simple with no monthly', () => {
@@ -44,26 +53,26 @@ describe('describeTemplate', () => {
 
   it('goal (balance target)', () => {
     const t: GoalTemplate = { type: 'goal', amount: 5000, directive: 'goal' };
-    expect(describeTemplate(t)).toBe('Reach $5,000.00 balance');
+    expect(describeTemplate(t)).toBe(`Reach ${$}5,000.00 balance`);
   });
 
   it('by (sinking fund)', () => {
     const t: ByTemplate = { type: 'by', amount: 1200, month: '2026-12', priority: 0, directive: 'template' };
-    expect(describeTemplate(t)).toBe('Save $1,200.00 by Dec 2026');
+    expect(describeTemplate(t)).toBe(`Save ${$}1,200.00 by Dec 2026`);
   });
 
   it('by with annual repeat', () => {
     const t: ByTemplate = {
       type: 'by', amount: 600, month: '2026-06', annual: true, repeat: 1, priority: 0, directive: 'template',
     };
-    expect(describeTemplate(t)).toBe('Save $600.00 by Jun 2026 (repeats annually)');
+    expect(describeTemplate(t)).toBe(`Save ${$}600.00 by Jun 2026 (repeats annually)`);
   });
 
   it('by with monthly repeat', () => {
     const t: ByTemplate = {
       type: 'by', amount: 300, month: '2026-09', repeat: 3, priority: 0, directive: 'template',
     };
-    expect(describeTemplate(t)).toBe('Save $300.00 by Sep 2026 (every 3 months)');
+    expect(describeTemplate(t)).toBe(`Save ${$}300.00 by Sep 2026 (every 3 months)`);
   });
 
   it('average', () => {
@@ -99,21 +108,21 @@ describe('describeTemplate', () => {
     const t: PeriodicTemplate = {
       type: 'periodic', amount: 50, period: { period: 'month', amount: 1 }, priority: 0, directive: 'template',
     };
-    expect(describeTemplate(t)).toBe('Budget $50.00 every month');
+    expect(describeTemplate(t)).toBe(`Budget ${$}50.00 every month`);
   });
 
   it('periodic every 2 weeks', () => {
     const t: PeriodicTemplate = {
       type: 'periodic', amount: 100, period: { period: 'week', amount: 2 }, priority: 0, directive: 'template',
     };
-    expect(describeTemplate(t)).toBe('Budget $100.00 every 2 weeks');
+    expect(describeTemplate(t)).toBe(`Budget ${$}100.00 every 2 weeks`);
   });
 
   it('spend', () => {
     const t: SpendTemplate = {
       type: 'spend', amount: 600, month: '2026-06', from: '2026-01', priority: 0, directive: 'template',
     };
-    expect(describeTemplate(t)).toBe('Spend $600.00 by Jun 2026');
+    expect(describeTemplate(t)).toBe(`Spend ${$}600.00 by Jun 2026`);
   });
 
   it('percentage', () => {
@@ -149,13 +158,13 @@ describe('describeTemplate', () => {
     const t: LimitTemplate = {
       type: 'limit', amount: 400, hold: false, period: 'monthly', directive: 'template',
     };
-    expect(describeTemplate(t)).toBe('Limit: $400.00 monthly');
+    expect(describeTemplate(t)).toBe(`Limit: ${$}400.00 monthly`);
   });
 
   it('limit monthly with hold', () => {
     const t: LimitTemplate = {
       type: 'limit', amount: 400, hold: true, period: 'monthly', directive: 'template',
     };
-    expect(describeTemplate(t)).toBe('Limit: $400.00 monthly, hold');
+    expect(describeTemplate(t)).toBe(`Limit: ${$}400.00 monthly, hold`);
   });
 });

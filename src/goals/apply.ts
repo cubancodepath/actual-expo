@@ -59,11 +59,14 @@ export async function computeGoalAllocations(
 ): Promise<ComputeGoalsResult> {
   const monthInt = monthToInt(month);
 
-  // Get all categories with goal_def set
+  // Get all non-hidden categories with goal_def set
+  // Hidden categories are excluded — they should only be processed if
+  // the user explicitly selects them (matches original Actual behavior).
   const categories = await runQuery<CategoryRow>(
     `SELECT c.* FROM categories c
      JOIN category_groups g ON g.id = c.cat_group AND g.is_income = 0
-     WHERE c.tombstone = 0 AND c.goal_def IS NOT NULL AND c.goal_def != ''`,
+     WHERE c.tombstone = 0 AND c.hidden = 0 AND g.hidden = 0
+       AND c.goal_def IS NOT NULL AND c.goal_def != ''`,
   );
 
   // Get current month's budget rows for previouslyBudgeted

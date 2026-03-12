@@ -191,16 +191,14 @@ describe('calculateGoal — by (sinking fund)', () => {
     expect(result.budgeted).toBe(0);
   });
 
-  it('target month in past, no repeat → negative result (engine quirk)', async () => {
-    // When target is past and no repeat, numMonths is negative.
-    // runBy divides by (numMonths+1) which is negative → negative budget.
-    // This is pre-existing behavior from Actual's engine.
+  it('target month in past, no repeat → budgets 0', async () => {
+    // When target is past and no repeat, nothing to budget.
+    // Matches original Actual which throws an error for past targets.
     const templates: Template[] = [
       { type: 'by', amount: 1200, month: '2025-06', priority: 0, directive: 'template' },
     ];
     const result = await calculateGoal('cat-1', '2026-03', templates, ctx());
-    // (120000 - 0) / (-9 + 1) = -15000
-    expect(result.budgeted).toBe(-15000);
+    expect(result.budgeted).toBe(0);
   });
 
   it('target in past with annual repeat → advances and calculates', async () => {
@@ -568,6 +566,145 @@ describe('calculateGoal — refill', () => {
     ];
     const result = await calculateGoal('cat-1', '2026-03', templates, ctx({ fromLastMonth: 30000 }));
     expect(result.budgeted).toBe(20000); // 50000 - 30000
+  });
+
+  it('refill-only → longGoal true', async () => {
+    const templates: Template[] = [
+      { type: 'simple', limit: { amount: 500, hold: false, period: 'monthly' }, priority: 0, directive: 'template' },
+    ];
+    const result = await calculateGoal('cat-1', '2026-03', templates, ctx({ fromLastMonth: 30000 }));
+    expect(result.budgeted).toBe(20000);
+    expect(result.goal).toBe(50000);
+    expect(result.longGoal).toBe(true);
+  });
+
+  it('refill with negative fromLastMonth → budgets full limit', async () => {
+    const templates: Template[] = [
+      { type: 'simple', limit: { amount: 500, hold: false, period: 'monthly' }, priority: 0, directive: 'template' },
+    ];
+    const result = await calculateGoal('cat-1', '2026-03', templates, ctx({ fromLastMonth: -10000 }));
+    // Max(0, 50000 - (-10000)) = 60000, but capped by limit: 50000 - (-10000) = 60000
+    // limit check: 60000 + (-10000) = 50000 >= 50000 → caps at 50000 - (-10000) = 60000
+    // Actually: runSimple returns max(0, 50000 - (-10000)) = 60000
+    // Then limit check: 60000 + (-10000) = 50000 >= 50000 → limitMet, toBudget = 50000 - 0 - (-10000) = 60000
+    expect(result.budgeted).toBe(60000);
+    expect(result.longGoal).toBe(true);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// calculateGoal — edge cases from real budget data
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('calculateGoal — real data edge cases', () => {
+  it('by template: target = current month with 6-month repeat (Gym)', async () => {
+    // target 2026-03, month=2026-03, repeat=6 → numMonths=0, +1=1 → full amount
+    const templates: Template[] = [
+      { type: 'by', amount: 3000, month: '2026-03', repeat: 6, priority: 0, directive: 'template' },
+    ];
+    const result = await calculateGoal('cat-1', '2026-03', templates, ctx({ fromLastMonth: 147763 }));
+    // totalNeeded = 300000, fromLastMonth = 147763
+    // (300000 - 147763) / (0 + 1) = 152237
+    expect(result.budgeted).toBe(152237);
+  });
+
+  it('by template: target = current month with annual repeat (Amazon Prime)', async () => {
+    // target 2026-03, month=2026-03, annual=true → numMonths=0, +1=1 → full amount
+    const templates: Template[] = [
+      { type: 'by', amount: 140, month: '2026-03', annual: true, repeat: 1, priority: 0, directive: 'template' },
+    ];
+    const result = await calculateGoal('cat-1', '2026-03', templates, ctx({ fromLastMonth: 12728 }));
+    // totalNeeded = 14000, fromLastMonth = 12728
+    // (14000 - 12728) / (0 + 1) = 1272
+    expect(result.budgeted).toBe(1272);
+  });
+
+  it('simple monthly 0 + limit (pure spending cap)', async () => {
+    // monthly: 0 means budget nothing, limit is just a spending cap indicator
+    const templates: Template[] = [
+      { type: 'simple', monthly: 0, limit: { amount: 300, hold: false, period: 'monthly' }, priority: 0, directive: 'template' },
+    ];
+    const result = await calculateGoal('cat-1', '2026-03', templates, ctx());
+    expect(result.budgeted).toBe(0);
+    // Goal is toBudget (0), so null
+    expect(result.goal).toBeNull();
+  });
+
+  it('multiple by templates at same priority, different targets', async () => {
+    const templates: Template[] = [
+      { type: 'by', amount: 600, month: '2026-06', priority: 0, directive: 'template' },
+      { type: 'by', amount: 1200, month: '2026-12', priority: 0, directive: 'template' },
+    ];
+    const result = await calculateGoal('cat-1', '2026-03', templates, ctx());
+    // Shortest: 2026-06 → 3 months. shortNum = 3
+    // Template 1 (by 06): numMonths=3, amount=60000
+    // Template 2 (by 12): numMonths=9, no period → amount = round(120000/(9+1) * (3+1)) = 48000
+    // totalNeeded = 60000 + 48000 = 108000
+    // (108000 - 0) / (3 + 1) = 27000
+    expect(result.budgeted).toBe(27000);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// calculateGoal — goal value consistency (engine vs inferGoalFromDef)
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('calculateGoal — goal value correctness', () => {
+  it('simple monthly: goal equals budgeted amount', async () => {
+    const templates: Template[] = [
+      { type: 'simple', monthly: 200, priority: 0, directive: 'template' },
+    ];
+    const result = await calculateGoal('cat-1', '2026-03', templates, ctx());
+    expect(result.goal).toBe(20000);
+    expect(result.longGoal).toBe(false);
+  });
+
+  it('simple monthly + limit: goal equals monthly (not limit)', async () => {
+    const templates: Template[] = [
+      { type: 'simple', monthly: 200, limit: { amount: 800, hold: false, period: 'monthly' }, priority: 0, directive: 'template' },
+    ];
+    const result = await calculateGoal('cat-1', '2026-03', templates, ctx());
+    // budgeted = 20000 (monthly), goal = toBudget = 20000
+    expect(result.goal).toBe(20000);
+    expect(result.longGoal).toBe(false);
+  });
+
+  it('#goal only: goal from directive, longGoal true', async () => {
+    const templates: Template[] = [
+      { type: 'goal', amount: 5000, directive: 'goal' },
+    ];
+    const result = await calculateGoal('cat-1', '2026-03', templates, ctx());
+    expect(result.goal).toBe(500000);
+    expect(result.longGoal).toBe(true);
+  });
+
+  it('refill-only (simple no monthly + limit): longGoal true, goal = limit', async () => {
+    const templates: Template[] = [
+      { type: 'simple', limit: { amount: 1200, hold: false, period: 'monthly' }, priority: 0, directive: 'template' },
+    ];
+    const result = await calculateGoal('cat-1', '2026-03', templates, ctx());
+    expect(result.goal).toBe(120000);
+    expect(result.longGoal).toBe(true);
+  });
+
+  it('by template: goal equals computed installment', async () => {
+    const templates: Template[] = [
+      { type: 'by', amount: 1200, month: '2026-12', priority: 0, directive: 'template' },
+    ];
+    const result = await calculateGoal('cat-1', '2026-03', templates, ctx());
+    expect(result.goal).toBe(12000); // 120000 / 10
+    expect(result.longGoal).toBe(false);
+  });
+
+  it('goal + template combined: goal from directive, budget from template', async () => {
+    const templates: Template[] = [
+      { type: 'goal', amount: 10000, directive: 'goal' },
+      { type: 'simple', monthly: 500, priority: 0, directive: 'template' },
+    ];
+    const result = await calculateGoal('cat-1', '2026-03', templates, ctx());
+    expect(result.budgeted).toBe(50000);
+    expect(result.goal).toBe(1000000); // from #goal
+    expect(result.longGoal).toBe(true);
   });
 });
 

@@ -60,15 +60,12 @@ export function inferGoalFromDef(
     case 'simple':
       // #template N — fixed monthly amount
       if (primary.monthly != null) {
-        // monthly with limit = balance cap (goal is the limit, not the monthly amount)
-        if (primary.limit) {
-          return { goal: Math.round(primary.limit.amount * 100), longGoal: false };
-        }
+        // monthly with limit: goal is the monthly amount (limit just caps budget)
         return { goal: Math.round(primary.monthly * 100), longGoal: false };
       }
-      // No monthly + limit = refill (#template up to X) — monthly refill
+      // No monthly + limit = refill (#template up to X) — balance-based target
       if (primary.limit) {
-        return { goal: Math.round(primary.limit.amount * 100), longGoal: false };
+        return { goal: Math.round(primary.limit.amount * 100), longGoal: true };
       }
       return null;
 

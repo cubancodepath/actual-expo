@@ -340,6 +340,9 @@ function runBy(
       numMonths = diffMonths(targetMonth, month);
     }
 
+    // Target in the past with no repeat — nothing to budget
+    if (numMonths < 0) return 0;
+
     savedInfo.push({ numMonths, period });
     if (shortestNumMonths === undefined || numMonths < shortestNumMonths) {
       shortestNumMonths = numMonths;

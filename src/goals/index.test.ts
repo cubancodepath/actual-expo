@@ -90,27 +90,41 @@ describe('inferGoalFromDef', () => {
     expect(inferGoalFromDef(def)).toEqual({ goal: 20000, longGoal: false });
   });
 
-  it('simple monthly with limit → goal is limit amount', () => {
+  it('simple monthly with limit → goal is monthly amount (not limit)', () => {
     const def = JSON.stringify([{
       type: 'simple', monthly: 200,
       limit: { amount: 800, hold: false, period: 'monthly' },
       priority: 0, directive: 'template',
     }]);
-    expect(inferGoalFromDef(def)).toEqual({ goal: 80000, longGoal: false });
+    expect(inferGoalFromDef(def)).toEqual({ goal: 20000, longGoal: false });
   });
 
-  it('simple refill (no monthly, with limit) → longGoal false (monthly refill)', () => {
+  it('simple refill (no monthly, with limit) → longGoal true (balance-based)', () => {
     const def = JSON.stringify([{
       type: 'simple', limit: { amount: 500, hold: false, period: 'monthly' }, priority: 0, directive: 'template',
     }]);
-    expect(inferGoalFromDef(def)).toEqual({ goal: 50000, longGoal: false });
+    expect(inferGoalFromDef(def)).toEqual({ goal: 50000, longGoal: true });
   });
 
-  it('simple pure cap (monthly: 0 + limit) → longGoal false', () => {
+  it('simple refill with hold → longGoal true', () => {
+    const def = JSON.stringify([{
+      type: 'simple', limit: { amount: 1080, hold: true, period: 'monthly' }, priority: 0, directive: 'template',
+    }]);
+    expect(inferGoalFromDef(def)).toEqual({ goal: 108000, longGoal: true });
+  });
+
+  it('simple refill with daily limit → longGoal true', () => {
+    const def = JSON.stringify([{
+      type: 'simple', limit: { amount: 50, hold: false, period: 'daily' }, priority: 0, directive: 'template',
+    }]);
+    expect(inferGoalFromDef(def)).toEqual({ goal: 5000, longGoal: true });
+  });
+
+  it('simple pure cap (monthly: 0 + limit) → goal is 0 (the monthly amount)', () => {
     const def = JSON.stringify([{
       type: 'simple', monthly: 0, limit: { amount: 300, hold: false, period: 'monthly' }, priority: 0, directive: 'template',
     }]);
-    expect(inferGoalFromDef(def)).toEqual({ goal: 30000, longGoal: false });
+    expect(inferGoalFromDef(def)).toEqual({ goal: 0, longGoal: false });
   });
 
   it('simple with no monthly and no limit → null', () => {

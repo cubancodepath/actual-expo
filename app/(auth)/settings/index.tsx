@@ -30,11 +30,12 @@ function SettingsIcon({ sfSymbol, ionIcon, color }: { sfSymbol: SFSymbol; ionIco
   return <Ionicons name={ionIcon} size={ICON_SIZE} color={color} />;
 }
 
-function ServerRow({ label, value, showSeparator }: { label: string; value: string; showSeparator?: boolean }) {
-  const { colors } = useTheme();
+function ServerRow({ label, value, sfSymbol, ionIcon, showSeparator }: { label: string; value: string; sfSymbol: SFSymbol; ionIcon: keyof typeof Ionicons.glyphMap; showSeparator?: boolean }) {
+  const { colors, spacing } = useTheme();
   return (
     <ListItem
       title={label}
+      left={<SettingsIcon sfSymbol={sfSymbol} ionIcon={ionIcon} color={colors.textMuted} />}
       right={
         <Text
           variant="bodySm"
@@ -45,6 +46,7 @@ function ServerRow({ label, value, showSeparator }: { label: string; value: stri
         </Text>
       }
       showSeparator={showSeparator}
+      separatorInsetLeft={spacing.lg + ICON_SIZE + spacing.md}
     />
   );
 }
@@ -222,25 +224,30 @@ export default function SettingsScreen() {
         <>
           <SectionHeader title={t('server')} style={{ marginTop: spacing.xl }} />
           <Card>
-            <ServerRow label={t('url')} value={serverUrl} showSeparator />
-            <ServerRow label={t('lastSync')} value={lastSyncText} showSeparator />
-            <ServerRow label={t('fileId')} value={fileId ? `${fileId.slice(0, 8)}…` : ""} showSeparator />
+            <ServerRow label={t('url')} value={serverUrl} sfSymbol="link" ionIcon="link-outline" showSeparator />
+            <ServerRow label={t('lastSync')} value={lastSyncText} sfSymbol="arrow.triangle.2.circlepath" ionIcon="sync-outline" showSeparator />
+            <ServerRow label={t('fileId')} value={fileId ? `${fileId.slice(0, 8)}…` : ""} sfSymbol="doc" ionIcon="document-outline" showSeparator />
             <ServerRow
               label={t('groupId')}
               value={groupId ? `${groupId.slice(0, 8)}…` : ""}
+              sfSymbol="person.2"
+              ionIcon="people-outline"
               showSeparator
             />
             {encryptKeyId && (
               <ServerRow
                 label={t('encryption')}
                 value={`${encryptKeyId.slice(0, 8)}…`}
-                showSeparator
+                sfSymbol="lock.shield"
+                ionIcon="shield-checkmark-outline"
               />
             )}
+          </Card>
+          <Card style={{ marginTop: spacing.md }}>
             <ListItem
               title={t('disconnectFromServer')}
-              titleColor={colors.negative}
-              left={<SettingsIcon sfSymbol="rectangle.portrait.and.arrow.right" ionIcon="log-out-outline" color={colors.negative} />}
+              left={<SettingsIcon sfSymbol="rectangle.portrait.and.arrow.right" ionIcon="log-out-outline" color={colors.textMuted} />}
+              showChevron
               onPress={handleLogout}
             />
           </Card>

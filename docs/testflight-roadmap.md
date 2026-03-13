@@ -25,17 +25,15 @@ Ver fases abajo organizadas por prioridad.
 ## FASE 0 — BLOCKERS (Sin esto no se sube a TestFlight)
 Estimado: 1-2 dias
 
-### 0.1 Crear eas.json
-- **Que**: Archivo de configuracion EAS Build inexistente
-- **Donde**: `/eas.json` (raiz del proyecto)
-- **Que hacer**: Crear con perfiles development, preview, production
-- **Incluir**: auto-incremento de buildNumber, iOS distribution settings
+### ~~0.1 Crear eas.json~~ COMPLETADO
+- Creado con perfiles development, preview, production
+- autoIncrement habilitado en production
+- Build local via `eas build --local`
 
-### 0.2 Cambiar Bundle ID
-- **Que**: `com.anonymous.actual-expo` es placeholder — Apple lo rechaza
-- **Donde**: `app.config.ts` (lineas con bundleIdentifier)
-- **Que hacer**: Cambiar a identificador real (ej: `com.actualbudget.expo`)
-- **Tambien**: Actualizar app group ID en entitlements
+### ~~0.2 Cambiar Bundle ID~~ COMPLETADO
+- Cambiado de `com.anonymous.actual-expo` a `com.cubancodepath.actual`
+- App groups actualizados en entitlements y syncShortcutCache
+- appleTeamId configurado: `8668UQNRKV`
 
 ### 0.3 Verificar iOS Signing
 - **Que**: Certificados, provisioning profiles, y entitlements deben coincidir
@@ -47,7 +45,7 @@ Estimado: 1-2 dias
   - Verificar que entitlements (app groups) coincidan con capabilities del portal
 
 ### 0.4 Primer build de prueba
-- **Que**: Verificar que `eas build --platform ios --profile preview` compila sin errores
+- **Que**: Verificar que `eas build --local --platform ios --profile preview` compila sin errores
 - **Que hacer**: Resolver cualquier error de build nativo
 
 ---
@@ -55,36 +53,23 @@ Estimado: 1-2 dias
 ## FASE 1 — CALIDAD DE PRODUCCION (Antes del primer TestFlight)
 Estimado: 2-3 dias
 
-### 1.1 Limpiar console.log de produccion
-- **Que**: 38 console statements, algunos sin guard `__DEV__`
-- **Archivos principales**:
-  - `src/services/budgetfiles.ts` — logs de upload/download
-  - `src/sync/fullSync.ts` — logs de sync
-  - `src/stores/storeRegistry.ts` — console.warn
-  - `src/presentation/components/budget/BudgetSetupWizard.tsx` — 11 console.log
-- **Que hacer**: Envolver en `if (__DEV__)` o eliminar. Mantener solo ErrorBoundary console.error
+### ~~1.1 Limpiar console.log de produccion~~ COMPLETADO
+- 16 statements envueltos en `if (__DEV__)` en 8 archivos
+- ErrorBoundary console.error mantenido intencionalmente
 
-### 1.2 Fix Spacer component
-- **Que**: `Spacer.tsx` usa `height: 1` / `width: 1` que rompe el layout
-- **Donde**: `src/presentation/components/atoms/Spacer.tsx`
-- **Que hacer**: Cambiar a `height: 'auto'` / `width: 'auto'` o simplemente no fijar la dimension cruzada
+### ~~1.2 Fix Spacer component~~ COMPLETADO
+- Removido `width: 1` / `height: 1` de la dimension cruzada
 
-### 1.3 Corregir shadow opacity
-- **Que**: Todas las sombras usan `shadowOpacity: 1` — demasiado oscuras
-- **Donde**: `src/theme/shadows.ts`
-- **Que hacer**: card: 0.08, elevated: 0.12, modal: 0.16
+### ~~1.3 Corregir shadow opacity~~ NO NECESARIO
+- `colors.shadow` ya tiene alpha incluido (light: 0.12, dark: 0.4)
+- `shadowOpacity: 1` es correcto con este patron
 
-### 1.4 Extraer strings hardcodeados a i18n
-- **Que**: BudgetFileRow tiene 5 labels sin traduccion
-- **Donde**: `src/presentation/components/molecules/BudgetFileRow.tsx` (lineas 23-28)
-- **Strings**: "Synced", "Local only", "Detached", "Available on server", "Encrypted"
-- **Tambien**: 2 titulos "Spending" hardcodeados en `app/(auth)/(tabs)/(spending)/_layout.tsx`
-- **Que hacer**: Mover a `src/locales/en/translation.json` y `es/translation.json`
+### ~~1.4 Extraer strings hardcodeados a i18n~~ COMPLETADO
+- 5 strings de BudgetFileRow + 2 titulos de Spending extraidos
+- Traducciones en/es agregadas en `fileState.*`
 
-### 1.5 Version management
-- **Que**: CFBundleVersion hardcoded en "1"
-- **Donde**: `app.config.ts`
-- **Que hacer**: Configurar auto-incremento en eas.json (`autoIncrement: true`) o usar `expo-build-properties`
+### ~~1.5 Version management~~ COMPLETADO
+- `autoIncrement: true` configurado en eas.json perfil production
 
 ---
 
@@ -174,15 +159,15 @@ Estimado: 2-3 dias
 
 ## Checklist Pre-Submit TestFlight
 
-- [ ] eas.json creado con perfil production
-- [ ] Bundle ID actualizado (no com.anonymous)
+- [x] eas.json creado con perfil production
+- [x] Bundle ID actualizado (com.cubancodepath.actual)
 - [ ] iOS signing verificado (cert + profile + entitlements)
-- [ ] Build exitoso: `eas build --platform ios --profile production`
-- [ ] Console.log limpiados de produccion
-- [ ] Spacer component corregido
-- [ ] Shadow opacity ajustada
-- [ ] Strings de BudgetFileRow en i18n
-- [ ] `npx tsc --noEmit` — 0 errores
+- [ ] Build exitoso: `eas build --local --platform ios --profile production`
+- [x] Console.log limpiados de produccion
+- [x] Spacer component corregido
+- [x] Shadow opacity — no necesario (ya correcto)
+- [x] Strings de BudgetFileRow en i18n
+- [x] `npx tsc --noEmit` — 0 errores
 - [ ] App abre correctamente en dispositivo real
 - [ ] Login flow funciona
 - [ ] Sync con servidor funciona

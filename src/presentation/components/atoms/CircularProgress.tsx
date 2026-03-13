@@ -5,6 +5,7 @@ import Animated, {
   useSharedValue,
   useAnimatedProps,
   withTiming,
+  useReducedMotion,
   Easing,
 } from 'react-native-reanimated';
 import { useTheme } from '../../providers/ThemeProvider';
@@ -36,6 +37,7 @@ export function CircularProgress({
   style,
 }: CircularProgressProps) {
   const { colors } = useTheme();
+  const reducedMotion = useReducedMotion();
 
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -43,11 +45,11 @@ export function CircularProgress({
   const animatedProgress = useSharedValue(progress);
 
   useEffect(() => {
-    animatedProgress.value = withTiming(
-      Math.max(0, Math.min(progress, 1)),
-      TIMING_CONFIG,
-    );
-  }, [progress]);
+    const clamped = Math.max(0, Math.min(progress, 1));
+    animatedProgress.value = reducedMotion
+      ? clamped
+      : withTiming(clamped, TIMING_CONFIG);
+  }, [progress, reducedMotion]);
 
   const animatedProps = useAnimatedProps(() => ({
     strokeDashoffset: circumference * (1 - animatedProgress.value),

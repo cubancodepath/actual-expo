@@ -4,6 +4,7 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
+  useReducedMotion,
   Easing,
 } from 'react-native-reanimated';
 import Svg, { Defs, Pattern, Line, Rect } from 'react-native-svg';
@@ -90,17 +91,22 @@ export function ProgressBar({
   style,
 }: ProgressBarProps) {
   const { colors } = useTheme();
+  const reducedMotion = useReducedMotion();
 
   const spentWidth = useSharedValue(spent);
   const availableWidth = useSharedValue(available);
 
   useEffect(() => {
-    spentWidth.value = withTiming(spent, TIMING_CONFIG);
-  }, [spent]);
+    spentWidth.value = reducedMotion
+      ? spent
+      : withTiming(spent, TIMING_CONFIG);
+  }, [spent, reducedMotion]);
 
   useEffect(() => {
-    availableWidth.value = withTiming(available, TIMING_CONFIG);
-  }, [available]);
+    availableWidth.value = reducedMotion
+      ? available
+      : withTiming(available, TIMING_CONFIG);
+  }, [available, reducedMotion]);
 
   const spentStyle = useAnimatedStyle(() => ({
     width: `${Math.round(spentWidth.value * 100)}%` as unknown as number,

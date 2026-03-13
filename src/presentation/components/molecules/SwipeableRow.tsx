@@ -3,6 +3,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   interpolate,
   useAnimatedStyle,
+  useReducedMotion,
   useSharedValue,
   withSpring,
   withTiming,
@@ -10,6 +11,7 @@ import Animated, {
 import { scheduleOnRN } from 'react-native-worklets';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../providers/ThemeProvider';
 
 const ACTION_WIDTH = 80;
@@ -49,7 +51,9 @@ export function SwipeableRow({
   isLast,
   style,
 }: SwipeableRowProps) {
+  const { t } = useTranslation();
   const { colors, borderRadius: br } = useTheme();
+  const reducedMotion = useReducedMotion();
   const translateX = useSharedValue(0);
   const contextX = useSharedValue(0);
 
@@ -74,17 +78,22 @@ export function SwipeableRow({
 
   function snapToClose() {
     'worklet';
-    translateX.value = withSpring(0, SPRING_CONFIG);
+    translateX.value = reducedMotion ? 0 : withSpring(0, SPRING_CONFIG);
   }
 
   // Left-swipe helpers
   function snapToOpenLeft() {
     'worklet';
-    translateX.value = withSpring(-ACTION_WIDTH, SPRING_CONFIG);
+    translateX.value = reducedMotion ? -ACTION_WIDTH : withSpring(-ACTION_WIDTH, SPRING_CONFIG);
   }
 
   function triggerDelete() {
     'worklet';
+    if (reducedMotion) {
+      translateX.value = 0;
+      scheduleOnRN(handleDelete);
+      return;
+    }
     translateX.value = withTiming(-FULL_THRESHOLD, { duration: 200 }, () => {
       translateX.value = withTiming(0, { duration: 150 });
       scheduleOnRN(handleDelete);
@@ -94,11 +103,16 @@ export function SwipeableRow({
   // Right-swipe helpers
   function snapToOpenRight() {
     'worklet';
-    translateX.value = withSpring(ACTION_WIDTH, SPRING_CONFIG);
+    translateX.value = reducedMotion ? ACTION_WIDTH : withSpring(ACTION_WIDTH, SPRING_CONFIG);
   }
 
   function triggerRight() {
     'worklet';
+    if (reducedMotion) {
+      translateX.value = 0;
+      scheduleOnRN(handleSwipeRight);
+      return;
+    }
     translateX.value = withTiming(FULL_THRESHOLD, { duration: 200 }, () => {
       translateX.value = withTiming(0, { duration: 150 });
       scheduleOnRN(handleSwipeRight);
@@ -305,6 +319,7 @@ export function SwipeableRow({
                 translateX.value = withTiming(0, { duration: 200 });
                 handleSwipeRight();
               }}
+              accessibilityRole="button"
             >
               <Animated.View style={rightIconStyle}>
                 <Ionicons name={swipeRightIcon} size={20} color="#fff" />
@@ -323,6 +338,8 @@ export function SwipeableRow({
               translateX.value = withTiming(0, { duration: 200 });
               handleDelete();
             }}
+            accessibilityRole="button"
+            accessibilityLabel={t('a11y.delete')}
           >
             <Animated.View style={deleteIconStyle}>
               <Ionicons name="trash-outline" size={20} color="#fff" />

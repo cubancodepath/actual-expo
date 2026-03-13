@@ -1,6 +1,7 @@
 import { memo, useRef, useState } from 'react';
 import { Keyboard, Platform, Pressable, View } from 'react-native';
 import * as ContextMenu from 'zeego/context-menu';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../providers/ThemeProvider';
 import { Text } from '../atoms/Text';
 import { Amount } from '../atoms/Amount';
@@ -52,6 +53,7 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
   showProgressBar = true,
   showBudgetedColumn = true,
 }: BudgetCategoryRowProps) {
+  const { t } = useTranslation('budget');
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const goalsEnabled = useFeatureFlag('goalTemplatesEnabled');
   const inputRef = useRef<CompactCurrencyInputRef>(null);
@@ -335,12 +337,12 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
       {showProgressBar && goalsEnabled && (
         <View
           accessible
-          accessibilityLabel={getGoalProgressLabel(cat)}
+          accessibilityLabel={getGoalProgressLabel(cat, t as (key: string) => string)}
           style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginTop: 3 }}
         >
           {getGoalProgress(cat).map((seg, i) =>
-            'text' in seg
-              ? <Text key={i} variant="captionSm" color={colors.textMuted}>{seg.text}</Text>
+            'key' in seg
+              ? <Text key={i} variant="captionSm" color={colors.textMuted}>{t(seg.key as any)}</Text>
               : <Amount key={i} value={seg.amount} variant="captionSm" color={colors.textMuted} colored={false} />
           )}
         </View>
@@ -352,7 +354,7 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
   );
 
   if (Platform.OS === 'ios') {
-    const carryoverLabel = cat.carryover ? 'Remove Overspending Rollover' : 'Rollover Overspending';
+    const carryoverLabel = cat.carryover ? t('removeOverspendingRollover') : t('rolloverOverspending');
     return (
       <ContextMenu.Root>
         <ContextMenu.Trigger>{pressableContent}</ContextMenu.Trigger>
@@ -361,14 +363,14 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
             key="category-details"
             onSelect={() => onCategoryDetails?.(cat)}
           >
-            <ContextMenu.ItemTitle>Category Details</ContextMenu.ItemTitle>
+            <ContextMenu.ItemTitle>{t('categoryDetails')}</ContextMenu.ItemTitle>
             <ContextMenu.ItemIcon ios={{ name: 'info.circle' }} />
           </ContextMenu.Item>
           <ContextMenu.Item
             key="move-money"
             onSelect={() => onMoveMoney?.(cat)}
           >
-            <ContextMenu.ItemTitle>Move Money</ContextMenu.ItemTitle>
+            <ContextMenu.ItemTitle>{t('moveMoney')}</ContextMenu.ItemTitle>
             <ContextMenu.ItemIcon ios={{ name: 'arrow.left.arrow.right' }} />
           </ContextMenu.Item>
           <ContextMenu.Item
@@ -384,14 +386,14 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
             key="view-transactions"
             onSelect={() => onViewTransactions?.(cat)}
           >
-            <ContextMenu.ItemTitle>View Transactions</ContextMenu.ItemTitle>
+            <ContextMenu.ItemTitle>{t('viewTransactions')}</ContextMenu.ItemTitle>
             <ContextMenu.ItemIcon ios={{ name: 'chart.line.uptrend.xyaxis' }} />
           </ContextMenu.Item>
           <ContextMenu.Item
             key="budget-notes"
             onSelect={() => onBudgetNotes?.(cat)}
           >
-            <ContextMenu.ItemTitle>Budget Movements</ContextMenu.ItemTitle>
+            <ContextMenu.ItemTitle>{t('budgetMovements')}</ContextMenu.ItemTitle>
             <ContextMenu.ItemIcon ios={{ name: 'clock.arrow.trianglehead.counterclockwise.rotate.90' }} />
           </ContextMenu.Item>
         </ContextMenu.Content>

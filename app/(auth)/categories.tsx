@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useCategoriesStore } from '../../src/stores/categoriesStore';
 import { useUndoStore } from '../../src/stores/undoStore';
 import type { Category, CategoryGroup } from '../../src/categories/types';
@@ -39,6 +40,7 @@ function TransferPicker({
   onSkip: () => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation();
   // Build grouped list: only include expense groups that have at least one candidate
   const grouped = groups
     .filter(g => !g.is_income)
@@ -53,14 +55,14 @@ function TransferPicker({
 
   const subtitle =
     kind === 'group'
-      ? 'This group has categories with transactions. Transfer all of them to:'
-      : 'This category has transactions. Transfer them to:';
+      ? t('categories.transferGroupSubtitle')
+      : t('categories.transferCategorySubtitle');
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <Pressable style={styles.modalOverlay} onPress={onCancel}>
         <Pressable style={styles.modalSheet} onPress={() => {}}>
-          <Text style={styles.modalTitle}>Delete "{deletingName}"</Text>
+          <Text style={styles.modalTitle}>{t('categories.deleteCategoryConfirm', { name: deletingName })}</Text>
           <Text style={styles.modalSubtitle}>{subtitle}</Text>
           <ScrollView style={styles.modalList} bounces={false}>
             {grouped.map(({ group, cats }) => (
@@ -78,15 +80,15 @@ function TransferPicker({
               </View>
             ))}
             {grouped.length === 0 && (
-              <Text style={styles.modalEmpty}>No other categories available</Text>
+              <Text style={styles.modalEmpty}>{t('categories.noCategoriesAvailable')}</Text>
             )}
           </ScrollView>
           <View style={styles.modalActions}>
             <Pressable style={styles.modalActionBtn} onPress={onSkip}>
-              <Text style={styles.modalActionSkip}>Delete (leave uncategorized)</Text>
+              <Text style={styles.modalActionSkip}>{t('categories.deleteLeaveUncategorized')}</Text>
             </Pressable>
             <Pressable style={styles.modalActionBtn} onPress={onCancel}>
-              <Text style={styles.modalActionCancel}>Cancel</Text>
+              <Text style={styles.modalActionCancel}>{t('cancel')}</Text>
             </Pressable>
           </View>
         </Pressable>
@@ -139,6 +141,7 @@ function CategoryRow({
   onDelete: (id: string, name: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
+  const { t } = useTranslation();
 
   return (
     <View style={styles.catRow}>
@@ -151,7 +154,7 @@ function CategoryRow({
       ) : (
         <Pressable style={styles.nameArea} onPress={() => setEditing(true)}>
           <Text style={[styles.catName, cat.hidden && styles.dimmed]}>{cat.name}</Text>
-          <Text style={styles.editHint}>tap to rename</Text>
+          <Text style={styles.editHint}>{t('categories.tapToRename')}</Text>
         </Pressable>
       )}
 
@@ -162,7 +165,7 @@ function CategoryRow({
           hitSlop={8}
         >
           <Text style={[styles.iconBtnText, cat.hidden ? styles.colorMuted : styles.colorBlue]}>
-            {cat.hidden ? 'show' : 'hide'}
+            {cat.hidden ? t('show') : t('hide')}
           </Text>
         </Pressable>
         <Pressable
@@ -201,6 +204,7 @@ function GroupSection({
   onDeleteCategory: (id: string, name: string) => void;
 }) {
   const [editingGroup, setEditingGroup] = useState(false);
+  const { t } = useTranslation();
 
   return (
     <View style={styles.groupSection}>
@@ -215,14 +219,14 @@ function GroupSection({
         ) : (
           <Pressable style={styles.nameArea} onPress={() => setEditingGroup(true)}>
             <Text style={styles.groupName}>{group.name}</Text>
-            {group.is_income && <Text style={styles.incomeBadge}>INCOME</Text>}
+            {group.is_income && <Text style={styles.incomeBadge}>{t('categories.income')}</Text>}
           </Pressable>
         )}
 
         <View style={styles.rowActions}>
           {!group.is_income && (
             <Pressable style={styles.iconBtn} onPress={() => onAddCategory(group.id)} hitSlop={8}>
-              <Text style={[styles.iconBtnText, styles.colorBlue]}>+ cat</Text>
+              <Text style={[styles.iconBtnText, styles.colorBlue]}>{t('categories.addCat')}</Text>
             </Pressable>
           )}
           <Pressable
@@ -247,7 +251,7 @@ function GroupSection({
       ))}
 
       {categories.length === 0 && (
-        <Text style={styles.emptyGroup}>No categories — tap "+ cat" to add one</Text>
+        <Text style={styles.emptyGroup}>{t('categories.noCategoriesInGroup')}</Text>
       )}
     </View>
   );
@@ -263,6 +267,7 @@ type PendingDelete =
 
 export default function CategoriesScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { groups, categories, load, createGroup, createCategory, updateCategory, deleteCategory, deleteCategoryGroup } =
     useCategoriesStore();
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
@@ -306,12 +311,12 @@ export default function CategoriesScreen() {
       // Show transfer picker — candidates are non-deleted categories except the one being deleted
       setPendingDelete({ kind: 'category', id, name });
     } else {
-      Alert.alert('Delete Category', `Delete "${name}"?`, [
-        { text: 'Cancel', style: 'cancel' },
+      Alert.alert(t('categories.deleteCategoryTitle'), t('categories.deleteCategoryConfirm', { name }), [
+        { text: t('cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('delete'),
           style: 'destructive',
-          onPress: async () => { await deleteCategory(id); load(); useUndoStore.getState().showUndo('Category deleted'); },
+          onPress: async () => { await deleteCategory(id); load(); useUndoStore.getState().showUndo(t('categories.categoryDeleted')); },
         },
       ]);
     }
@@ -334,12 +339,12 @@ export default function CategoriesScreen() {
     if (hasTxns) {
       setPendingDelete({ kind: 'group', id, name });
     } else {
-      Alert.alert('Delete Group', `Delete "${name}" and all its categories?`, [
-        { text: 'Cancel', style: 'cancel' },
+      Alert.alert(t('categories.deleteGroupTitle'), t('categories.deleteGroupConfirm', { name }), [
+        { text: t('cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('delete'),
           style: 'destructive',
-          onPress: async () => { await deleteCategoryGroup(id); load(); useUndoStore.getState().showUndo('Category group deleted'); },
+          onPress: async () => { await deleteCategoryGroup(id); load(); useUndoStore.getState().showUndo(t('categories.groupDeleted')); },
         },
       ]);
     }
@@ -355,7 +360,7 @@ export default function CategoriesScreen() {
     }
     setPendingDelete(null);
     load();
-    useUndoStore.getState().showUndo(kind === 'category' ? 'Category deleted' : 'Category group deleted');
+    useUndoStore.getState().showUndo(kind === 'category' ? t('categories.categoryDeleted') : t('categories.groupDeleted'));
   }
 
   // ---------------------------------------------------------------------------
@@ -426,7 +431,7 @@ export default function CategoriesScreen() {
         )}
         ListFooterComponent={
           <Pressable style={styles.addGroupBtn} onPress={handleAddGroup}>
-            <Text style={styles.addGroupText}>+ Add Group</Text>
+            <Text style={styles.addGroupText}>{t('categories.addGroup')}</Text>
           </Pressable>
         }
         contentContainerStyle={{ paddingBottom: 60 }}

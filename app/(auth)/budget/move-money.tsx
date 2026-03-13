@@ -3,6 +3,7 @@ import { Keyboard, Pressable, ScrollView, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useTranslation } from 'react-i18next';
 import Animated, {
   FadeIn,
   FadeOut,
@@ -119,9 +120,13 @@ const THUMB_TRAVEL = TRACK_HEIGHT - THUMB_SIZE - 6; // 3px padding top/bottom
 function DirectionToggle({
   direction,
   onToggle,
+  fromLabel,
+  toLabel,
 }: {
   direction: MoveDirection;
   onToggle: () => void;
+  fromLabel: string;
+  toLabel: string;
 }) {
   const { colors } = useTheme();
   const progress = useSharedValue(direction === 'to' ? 0 : 1);
@@ -176,7 +181,7 @@ function DirectionToggle({
       </Pressable>
       <Animated.View key={direction} entering={FadeIn.duration(200)} exiting={FadeOut.duration(100)}>
         <Text variant="captionSm" color="rgba(255,255,255,0.8)" style={{ fontWeight: '600' }}>
-          {direction === 'to' ? 'From' : 'To'}
+          {direction === 'to' ? fromLabel : toLabel}
         </Text>
       </Animated.View>
     </View>
@@ -188,6 +193,7 @@ function DirectionToggle({
 // ---------------------------------------------------------------------------
 
 export default function MoveMoneyScreen() {
+  const { t } = useTranslation('budget');
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const router = useRouter();
   const { catId, catName, balance } = useLocalSearchParams<{
@@ -335,6 +341,8 @@ export default function MoveMoneyScreen() {
         <DirectionToggle
           direction={direction}
           onToggle={() => setDirection((d) => (d === 'to' ? 'from' : 'to'))}
+          fromLabel={t('from')}
+          toLabel={t('to')}
         />
       </View>
 
@@ -380,7 +388,7 @@ export default function MoveMoneyScreen() {
           >
             <Ionicons name="add-circle" size={20} color={colors.primary} />
             <Text variant="body" color={colors.primary} style={{ fontWeight: '600' }}>
-              {sources.length === 0 ? 'Add Category' : 'Add Another'}
+              {sources.length === 0 ? t('addCategory') : t('addAnother')}
             </Text>
           </Pressable>
         </View>
@@ -389,7 +397,7 @@ export default function MoveMoneyScreen() {
       {/* Move button */}
       <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.xl }}>
         <Button
-          title={saving ? 'Moving...' : 'Move'}
+          title={saving ? t('movingEllipsis') : t('move')}
           variant="primary"
           loading={saving}
           disabled={totalAmount === 0}

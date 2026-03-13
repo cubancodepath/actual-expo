@@ -11,6 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { useUndoStore } from '../../../stores/undoStore';
 import { useTheme } from '../../providers/ThemeProvider';
 import { palette } from '../../../theme/colors';
@@ -21,6 +22,7 @@ const TRANSLATE_OUT = 80;
 const AUTO_DISMISS_MS = 5000;
 
 export function UndoToast() {
+  const { t } = useTranslation();
   const { colors, spacing, borderRadius: br, shadows } = useTheme();
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
@@ -130,7 +132,7 @@ export function UndoToast() {
             color={colors.primary}
             style={{ fontWeight: '600' }}
           >
-            Undo
+            {t('undo')}
           </Text>
         </Pressable>
       )}

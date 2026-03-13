@@ -1,4 +1,5 @@
 import { View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../providers/ThemeProvider';
 import { palette } from '../../../theme/colors';
 import { Text } from '../atoms/Text';
@@ -12,15 +13,16 @@ interface OverspentPillProps {
 }
 
 export function OverspentPill({ count, onPress }: OverspentPillProps) {
+  const { t } = useTranslation('budget');
   const { colors, spacing, borderRadius: br } = useTheme();
 
-  const label = count === 1 ? 'category overspent' : 'categories overspent';
+  const label = t('overspent', { count });
 
   return (
     <InfoPill
       backgroundColor={colors.negativeSubtle}
       onPress={onPress}
-      accessibilityLabel={`${count} ${label}. Tap to cover.`}
+      accessibilityLabel={`${label}. Tap to cover.`}
       style={{ paddingHorizontal: spacing.md, paddingVertical: 8 }}
       left={
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
@@ -58,7 +60,7 @@ export function OverspentPill({ count, onPress }: OverspentPillProps) {
           }}
         >
           <Text variant="captionSm" color={colors.primaryText} style={{ fontWeight: '600' }}>
-            Cover
+            {t('coverAction')}
           </Text>
         </View>
       }

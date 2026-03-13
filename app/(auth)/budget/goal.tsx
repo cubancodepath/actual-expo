@@ -3,6 +3,7 @@ import { Alert, Keyboard, Pressable, ScrollView, Switch, View } from 'react-nati
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Host, DatePicker, Picker, Text as SwiftText } from '@expo/ui/swift-ui';
+import { useTranslation } from 'react-i18next';
 import { datePickerStyle, frame, pickerStyle, tag, tint } from '@expo/ui/swift-ui/modifiers';
 import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
 import { useCategoriesStore } from '../../../src/stores/categoriesStore';
@@ -34,46 +35,46 @@ type GoalType =
   | 'copy' | 'periodic' | 'spend' | 'percentage'
   | 'remainder' | 'limit';
 
-const TYPE_OPTIONS: { value: GoalType; label: string }[] = [
-  { value: 'simple', label: 'Monthly' },
-  { value: 'goal', label: 'Balance Target' },
-  { value: 'by', label: 'By Date' },
-  { value: 'average', label: 'Average' },
-  { value: 'copy', label: 'Copy' },
-  { value: 'periodic', label: 'Periodic' },
-  { value: 'spend', label: 'Spend By' },
-  { value: 'percentage', label: 'Percentage' },
-  { value: 'remainder', label: 'Remainder' },
-  { value: 'limit', label: 'Spending Limit' },
+const TYPE_OPTION_KEYS: { value: GoalType; key: string }[] = [
+  { value: 'simple', key: 'goalTypeSimple' },
+  { value: 'goal', key: 'goalTypeGoal' },
+  { value: 'by', key: 'goalTypeBy' },
+  { value: 'average', key: 'goalTypeAverage' },
+  { value: 'copy', key: 'goalTypeCopy' },
+  { value: 'periodic', key: 'goalTypePeriodic' },
+  { value: 'spend', key: 'goalTypeSpend' },
+  { value: 'percentage', key: 'goalTypePercentage' },
+  { value: 'remainder', key: 'goalTypeRemainder' },
+  { value: 'limit', key: 'goalTypeLimit' },
 ];
 
-const TYPE_DESCRIPTIONS: Record<GoalType, string> = {
-  simple: 'Budget a fixed amount each month, or refill to a target. E.g. $200/month for groceries.',
-  goal: 'Track progress toward a savings target. Shows a progress bar but does not auto-budget.',
-  by: 'Save a total amount by a specific date, split evenly across the remaining months.',
-  average: 'Budget based on what you actually spent over the last few months.',
-  copy: 'Reuse the same budget you set a few months ago.',
-  periodic: 'Budget for recurring events. E.g. $50 every 2 weeks.',
-  spend: 'Spread a target amount across a date range. E.g. save $1,200 between Jan–Dec.',
-  percentage: 'Budget a percentage of your income. E.g. save 10% of your paycheck.',
-  remainder: 'Gets whatever is left after all other categories are budgeted.',
-  limit: 'Cap spending for this category. Optionally refill it automatically.',
+const TYPE_DESCRIPTION_KEYS: Record<GoalType, string> = {
+  simple: 'goalDescSimple',
+  goal: 'goalDescGoal',
+  by: 'goalDescBy',
+  average: 'goalDescAverage',
+  copy: 'goalDescCopy',
+  periodic: 'goalDescPeriodic',
+  spend: 'goalDescSpend',
+  percentage: 'goalDescPercentage',
+  remainder: 'goalDescRemainder',
+  limit: 'goalDescLimit',
 };
 
-const AVG_OPTIONS = ['3 months', '6 months', '12 months'];
+const AVG_OPTION_KEYS = ['3months', '6months', '12months'];
 const AVG_VALUES = [3, 6, 12];
 
-const PERIOD_OPTIONS = [
-  { value: 'day', label: 'Daily' },
-  { value: 'week', label: 'Weekly' },
-  { value: 'month', label: 'Monthly' },
-  { value: 'year', label: 'Yearly' },
+const PERIOD_OPTION_KEYS = [
+  { value: 'day', key: 'daily' },
+  { value: 'week', key: 'weekly' },
+  { value: 'month', key: 'monthly' },
+  { value: 'year', key: 'yearly' },
 ];
 
-const LIMIT_PERIOD_OPTIONS = [
-  { value: 'daily', label: 'Daily' },
-  { value: 'weekly', label: 'Weekly' },
-  { value: 'monthly', label: 'Monthly' },
+const LIMIT_PERIOD_OPTION_KEYS = [
+  { value: 'daily', key: 'daily' },
+  { value: 'weekly', key: 'weekly' },
+  { value: 'monthly', key: 'monthly' },
 ];
 
 function getDefaultTargetDate(): Date {
@@ -137,6 +138,7 @@ function MenuPickerRow<T extends string | number>({
 // ---------------------------------------------------------------------------
 
 export default function GoalEditorScreen() {
+  const { t } = useTranslation('budget');
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const router = useRouter();
   const { categoryId } = useLocalSearchParams<{ categoryId: string }>();
@@ -380,7 +382,7 @@ export default function GoalEditorScreen() {
       await useBudgetStore.getState().load();
       router.back();
     } catch {
-      Alert.alert('Could Not Save', 'An error occurred while saving. Please try again.');
+      Alert.alert(t('couldNotSaveTitle'), t('couldNotSaveMessage'));
     } finally {
       setSaving(false);
     }
@@ -388,10 +390,10 @@ export default function GoalEditorScreen() {
 
   function handleDelete() {
     if (!categoryId) return;
-    Alert.alert('Remove Target', 'Are you sure you want to remove this goal target?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('removeTargetTitle'), t('removeTargetMessage'), [
+      { text: t('cancel'), style: 'cancel' },
       {
-        text: 'Remove', style: 'destructive',
+        text: t('remove'), style: 'destructive',
         onPress: async () => {
           try {
             await setGoalTemplates(categoryId, []);
@@ -399,7 +401,7 @@ export default function GoalEditorScreen() {
             await useBudgetStore.getState().load();
             router.back();
           } catch {
-            Alert.alert('Error', 'Could not remove the target. Please try again.');
+            Alert.alert(t('errorTitle'), t('couldNotRemoveTarget'));
           }
         },
       },
@@ -489,9 +491,9 @@ export default function GoalEditorScreen() {
       {/* ── Type selector ──────────────────────────────────────── */}
       <Card style={{ padding: 0, overflow: 'hidden' as const, marginBottom: spacing.sm }}>
         <MenuPickerRow
-          label="Goal Type"
+          label={t('goalType')}
           selection={goalType}
-          options={TYPE_OPTIONS}
+          options={TYPE_OPTION_KEYS.map((o) => ({ value: o.value, label: t(o.key as any) }))}
           onSelectionChange={setGoalType}
           pickerWidth={220}
         />
@@ -501,7 +503,7 @@ export default function GoalEditorScreen() {
         color={colors.textMuted}
         style={{ marginBottom: spacing.lg, paddingHorizontal: spacing.xs }}
       >
-        {TYPE_DESCRIPTIONS[goalType]}
+        {t(TYPE_DESCRIPTION_KEYS[goalType] as any)}
       </Text>
 
       {/* ── Type-specific fields ───────────────────────────────── */}
@@ -511,13 +513,13 @@ export default function GoalEditorScreen() {
           <View>
             <View style={{ padding: spacing.md }}>
               <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.xs }}>
-                {simpleRefill ? 'Refill to' : 'Monthly amount'}
+                {simpleRefill ? t('refillTo') : t('monthlyAmount')}
               </Text>
               <CurrencyInput ref={currencyInputRef} value={amountCents} onChangeValue={setAmountCents} type="income" autoFocus />
             </View>
             <Divider />
             <ToggleRow
-              label="Refill mode"
+              label={t('refillMode')}
               value={simpleRefill}
               onValueChange={(v) => {
                 setSimpleRefill(v);
@@ -528,7 +530,7 @@ export default function GoalEditorScreen() {
               <>
                 <Divider />
                 <ToggleRow
-                  label="Balance cap"
+                  label={t('balanceCap')}
                   value={capEnabled}
                   onValueChange={setCapEnabled}
                 />
@@ -536,7 +538,7 @@ export default function GoalEditorScreen() {
                   <>
                     <Divider />
                     <ListItem
-                      title="Maximum balance"
+                      title={t('maximumBalance')}
                       right={
                         <CurrencyInput value={capCents} onChangeValue={setCapCents} type="income" compact style={{ paddingVertical: 0 }} />
                       }
@@ -552,7 +554,7 @@ export default function GoalEditorScreen() {
         {goalType === 'goal' && (
           <View style={{ padding: spacing.md }}>
             <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.xs }}>
-              Target balance
+              {t('targetBalance')}
             </Text>
             <CurrencyInput value={amountCents} onChangeValue={setAmountCents} type="income" autoFocus />
           </View>
@@ -563,20 +565,20 @@ export default function GoalEditorScreen() {
           <View>
             <View style={{ padding: spacing.md }}>
               <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.xs }}>
-                Target amount
+                {t('targetAmount')}
               </Text>
               <CurrencyInput ref={currencyInputRef} value={amountCents} onChangeValue={setAmountCents} type="income" autoFocus />
             </View>
             <Divider />
             <DateRow
-              label="Target date"
+              label={t('targetDate')}
               date={targetDate}
               show={showDatePicker}
               onToggle={() => setShowDatePicker(!showDatePicker)}
               onDateChange={setTargetDate}
             />
             <Divider />
-            <ToggleRow label="Repeat annually" value={byRepeat} onValueChange={setByRepeat} />
+            <ToggleRow label={t('repeatAnnually')} value={byRepeat} onValueChange={setByRepeat} />
           </View>
         )}
 
@@ -584,7 +586,7 @@ export default function GoalEditorScreen() {
         {goalType === 'average' && (
           <View style={{ padding: spacing.md }}>
             <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.sm }}>
-              Look-back period
+              {t('lookBackPeriod')}
             </Text>
             <Host matchContents>
               <Picker
@@ -593,7 +595,7 @@ export default function GoalEditorScreen() {
                 modifiers={[pickerStyle('segmented'), tint(colors.primary)]}
               >
                 {AVG_VALUES.map((v, i) => (
-                  <SwiftText key={v} modifiers={[tag(v)]}>{AVG_OPTIONS[i]}</SwiftText>
+                  <SwiftText key={v} modifiers={[tag(v)]}>{t(AVG_OPTION_KEYS[i] as any)}</SwiftText>
                 ))}
               </Picker>
             </Host>
@@ -603,11 +605,11 @@ export default function GoalEditorScreen() {
         {/* Copy */}
         {goalType === 'copy' && (
           <MenuPickerRow
-            label="Copy from"
+            label={t('copyFrom')}
             selection={lookBack}
             options={Array.from({ length: 12 }, (_, i) => ({
               value: i + 1,
-              label: `${i + 1} month${i > 0 ? 's' : ''} ago`,
+              label: t('monthsAgo', { count: i + 1 }),
             }))}
             onSelectionChange={setLookBack}
           />
@@ -618,27 +620,27 @@ export default function GoalEditorScreen() {
           <View>
             <View style={{ padding: spacing.md }}>
               <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.xs }}>
-                Amount per occurrence
+                {t('amountPerOccurrence')}
               </Text>
               <CurrencyInput ref={currencyInputRef} value={amountCents} onChangeValue={setAmountCents} type="income" autoFocus />
             </View>
             <Divider />
             <MenuPickerRow
-              label="Frequency"
+              label={t('frequency')}
               selection={periodicPeriod}
-              options={PERIOD_OPTIONS.map((o) => ({ value: o.value as typeof periodicPeriod, label: o.label }))}
+              options={PERIOD_OPTION_KEYS.map((o) => ({ value: o.value as typeof periodicPeriod, label: t(o.key as any) }))}
               onSelectionChange={setPeriodicPeriod}
             />
             <Divider />
             <MenuPickerRow
-              label="Every"
+              label={t('every')}
               selection={periodicInterval}
               options={Array.from({ length: 12 }, (_, i) => ({ value: i + 1, label: `${i + 1}` }))}
               onSelectionChange={setPeriodicInterval}
             />
             <Divider />
             <DateRow
-              label="Starting date"
+              label={t('startingDate')}
               date={periodicStart ?? new Date()}
               show={showPeriodicStartPicker}
               onToggle={() => setShowPeriodicStartPicker(!showPeriodicStartPicker)}
@@ -649,7 +651,7 @@ export default function GoalEditorScreen() {
                 onPress={() => setPeriodicStart(null)}
                 style={{ padding: spacing.md, paddingTop: 0 }}
               >
-                <Text variant="captionSm" color={colors.primary}>Clear start date</Text>
+                <Text variant="captionSm" color={colors.primary}>{t('clearStartDate')}</Text>
               </Pressable>
             )}
           </View>
@@ -660,13 +662,13 @@ export default function GoalEditorScreen() {
           <View>
             <View style={{ padding: spacing.md }}>
               <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.xs }}>
-                Target amount
+                {t('targetAmount')}
               </Text>
               <CurrencyInput ref={currencyInputRef} value={amountCents} onChangeValue={setAmountCents} type="income" autoFocus />
             </View>
             <Divider />
             <DateRow
-              label="Starting from"
+              label={t('startingFrom')}
               date={spendFromDate}
               show={showSpendFromPicker}
               onToggle={() => setShowSpendFromPicker(!showSpendFromPicker)}
@@ -674,14 +676,14 @@ export default function GoalEditorScreen() {
             />
             <Divider />
             <DateRow
-              label="Spend by"
+              label={t('spendBy')}
               date={spendToDate}
               show={showSpendToPicker}
               onToggle={() => setShowSpendToPicker(!showSpendToPicker)}
               onDateChange={setSpendToDate}
             />
             <Divider />
-            <ToggleRow label="Repeat annually" value={spendRepeat} onValueChange={setSpendRepeat} />
+            <ToggleRow label={t('repeatAnnually')} value={spendRepeat} onValueChange={setSpendRepeat} />
           </View>
         )}
 
@@ -689,7 +691,7 @@ export default function GoalEditorScreen() {
         {goalType === 'percentage' && (
           <View>
             <MenuPickerRow
-              label="Percentage"
+              label={t('percentage')}
               selection={percent}
               options={[5, 10, 15, 20, 25, 30, 40, 50, 75, 100].map((v) => ({
                 value: v, label: `${v}%`,
@@ -698,17 +700,17 @@ export default function GoalEditorScreen() {
             />
             <Divider />
             <MenuPickerRow
-              label="Of income from"
+              label={t('ofIncomeFrom')}
               selection={percentCategory}
               options={[
-                { value: 'all-income', label: 'All Income' },
+                { value: 'all-income', label: t('allIncome') },
                 ...incomeCategories.map((c) => ({ value: c.id, label: c.name })),
               ]}
               onSelectionChange={setPercentCategory}
             />
             <Divider />
             <ToggleRow
-              label="Use last month"
+              label={t('useLastMonth')}
               value={percentPrevious}
               onValueChange={setPercentPrevious}
             />
@@ -719,7 +721,7 @@ export default function GoalEditorScreen() {
         {goalType === 'remainder' && (
           <View>
             <MenuPickerRow
-              label="Weight"
+              label={t('weight')}
               selection={weight}
               options={Array.from({ length: 10 }, (_, i) => ({ value: i + 1, label: `${i + 1}` }))}
               onSelectionChange={setWeight}
@@ -732,14 +734,14 @@ export default function GoalEditorScreen() {
           <View>
             <View style={{ padding: spacing.md }}>
               <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.xs }}>
-                Maximum spending
+                {t('maximumSpending')}
               </Text>
               <CurrencyInput ref={currencyInputRef} value={amountCents} onChangeValue={setAmountCents} type="income" autoFocus />
             </View>
             <Divider />
             <View style={{ padding: spacing.md }}>
               <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.sm }}>
-                Reset period
+                {t('resetPeriod')}
               </Text>
               <Host matchContents>
                 <Picker
@@ -747,15 +749,15 @@ export default function GoalEditorScreen() {
                   onSelectionChange={(val) => setLimitPeriod(val as typeof limitPeriod)}
                   modifiers={[pickerStyle('segmented'), tint(colors.primary)]}
                 >
-                  {LIMIT_PERIOD_OPTIONS.map((opt) => (
-                    <SwiftText key={opt.value} modifiers={[tag(opt.value)]}>{opt.label}</SwiftText>
+                  {LIMIT_PERIOD_OPTION_KEYS.map((opt) => (
+                    <SwiftText key={opt.value} modifiers={[tag(opt.value)]}>{t(opt.key as any)}</SwiftText>
                   ))}
                 </Picker>
               </Host>
             </View>
             <Divider />
             <ToggleRow
-              label="Keep surplus"
+              label={t('keepSurplus')}
               value={limitHold}
               onValueChange={setLimitHold}
             />
@@ -773,12 +775,12 @@ export default function GoalEditorScreen() {
           {capEnabled
             ? capCents > 0 && amountCents > 0
               ? capCents <= amountCents
-                ? 'Balance cap must be greater than the monthly amount.'
-                : `${formatBalance(amountCents)} will be budgeted each month until the balance reaches ${formatBalance(capCents)}.`
-              : 'Once the balance hits this amount, no more will be budgeted.'
+                ? t('balanceCapMustBeGreater')
+                : t('budgetedUntilReaches', { budgeted: formatBalance(amountCents), cap: formatBalance(capCents) })
+              : t('onceBalanceHits')
             : simpleRefill
-              ? 'Budget only what\'s needed to bring the balance back up to the target. If you have leftover from last month, less will be budgeted.'
-              : 'Budget the full amount every month, regardless of the current balance.'}
+              ? t('refillDescription')
+              : t('fixedMonthlyDescription')}
         </Text>
       )}
       {goalType === 'remainder' && (
@@ -787,7 +789,7 @@ export default function GoalEditorScreen() {
           color={colors.textMuted}
           style={{ paddingHorizontal: spacing.xs, marginTop: spacing.xs }}
         >
-          Higher weight means a larger share of the remaining budget.
+          {t('higherWeightDescription')}
         </Text>
       )}
       {goalType === 'limit' && (
@@ -797,15 +799,15 @@ export default function GoalEditorScreen() {
           style={{ paddingHorizontal: spacing.xs, marginTop: spacing.xs }}
         >
           {limitHold
-            ? `If you spend less than ${amountCents > 0 ? '$' + integerToAmount(amountCents) : 'the limit'}, the leftover rolls into next ${limitPeriod === 'daily' ? 'day' : limitPeriod === 'weekly' ? 'week' : 'month'}.`
-            : `Unspent budget is removed at the end of each ${limitPeriod === 'daily' ? 'day' : limitPeriod === 'weekly' ? 'week' : 'month'}.`}
-          {' '}This sets a spending cap. Use "Monthly" with refill mode instead if you want to auto-budget up to a target.
+            ? t('limitHoldDescription', { limit: amountCents > 0 ? '$' + integerToAmount(amountCents) : t('goalTypeLimit').toLowerCase(), period: limitPeriod === 'daily' ? t('periodDay') : limitPeriod === 'weekly' ? t('periodWeek') : t('periodMonth') })
+            : t('limitNoHoldDescription', { period: limitPeriod === 'daily' ? t('periodDay') : limitPeriod === 'weekly' ? t('periodWeek') : t('periodMonth') })}
+          {' '}{t('limitUseMonthlyNote')}
         </Text>
       )}
 
       {/* ── Save / Delete ──────────────────────────────────────── */}
       <Button
-        title={isEditing ? 'Save Target' : 'Add Target'}
+        title={isEditing ? t('saveTarget') : t('addTarget')}
         variant="primary"
         onPress={handleSave}
         disabled={!canSave}
@@ -816,7 +818,7 @@ export default function GoalEditorScreen() {
       {isEditing && (
         <View style={{ marginTop: spacing.xl }}>
           <Button
-            title="Remove Target"
+            title={t('removeTarget')}
             variant="ghost"
             icon="trash-outline"
             textColor={colors.negative}

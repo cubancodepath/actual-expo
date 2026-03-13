@@ -8,6 +8,7 @@ import Animated, {
 import { scheduleOnRN } from 'react-native-worklets';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useBudgetStore } from '../../../stores/budgetStore';
 import { addMonths, formatMonth } from '../../../lib/date';
@@ -15,6 +16,7 @@ import { addMonths, formatMonth } from '../../../lib/date';
 const SWIPE_THRESHOLD = 50;
 
 export function MonthSelector() {
+  const { i18n } = useTranslation();
   const { colors, spacing } = useTheme();
   const month = useBudgetStore((s) => s.month);
   const setMonth = useBudgetStore((s) => s.setMonth);
@@ -83,7 +85,7 @@ export function MonthSelector() {
               textAlign: 'center',
             }}
           >
-            {formatMonth(month)}
+            {formatMonth(month, i18n.language)}
           </Animated.Text>
         </Animated.View>
       </GestureDetector>

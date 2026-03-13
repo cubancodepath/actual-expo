@@ -1,0 +1,74 @@
+{
+  "addTransaction": "Agregar Transacción",
+  "editTransaction": "Editar Transacción",
+  "saveChanges": "Guardar Cambios",
+  "deleteTransaction": "Eliminar Transacción",
+
+  "account": "Cuenta",
+  "payee": "Beneficiario",
+  "category": "Categoría",
+  "repeat": "Repetir",
+  "tags": "Etiquetas",
+
+  "noCategoryNeeded": "No se necesita categoría",
+  "splitCategories": "Dividida ({{count}} categorías)",
+
+  "enterAmount": "Ingrese un monto",
+  "selectAccount": "Seleccione una cuenta",
+
+  "editReconciledTitle": "Editar Transacción Conciliada",
+  "editReconciledMessage": "Guardar los cambios en esta transacción conciliada puede desequilibrar tu conciliación.",
+  "saveAnyway": "Guardar de Todos Modos",
+
+  "noCategoryTitle": "Sin Categoría",
+  "noCategoryMessage": "Esta transacción no tiene categoría. ¿Guardar de todos modos?",
+  "save": "Guardar",
+
+  "deleteTitle": "Eliminar Transacción",
+  "deleteConfirm": "¿Eliminar esta transacción?",
+  "deleteReconciledMessage": "Eliminar transacciones conciliadas puede desequilibrar tu conciliación.",
+  "delete": "Eliminar",
+  "cancel": "Cancelar",
+
+  "transferTitle": "Transferencia",
+  "transferNoCategoryMessage": "Las transferencias entre cuentas no necesitan una categoría.",
+
+  "splitTransaction": "Dividir Transacción",
+  "selectCategory": "Seleccionar categoría",
+  "categories": "CATEGORÍAS",
+  "remaining": "{{amount}} restante",
+  "total": "{{amount}} total",
+  "addAnother": "Agregar Otra",
+  "noPayeeSet": "Sin beneficiario",
+
+  "amountsDontMatchTitle": "Los montos no coinciden",
+  "amountsDontMatchMessage": "Los montos divididos deben ser iguales al total de la transacción. {{amount}} restante.",
+  "noSplitsTitle": "Sin divisiones",
+  "noSplitsMessage": "Agrega al menos una división con un monto.",
+  "remainingLabel": "restante",
+
+  "statusCleared": "Liquidada",
+  "statusUncleared": "No Liquidada",
+  "statusReconciled": "Conciliada",
+  "statusUnreconciled": "No Conciliada",
+  "uncategorized": "Sin Categoría",
+  "accountIs": "Cuenta Es: {{name}}",
+  "categoryIs": "Categoría Es: {{name}}",
+  "payeeIs": "Beneficiario Es: {{name}}",
+  "tag": "Etiqueta: #{{name}}",
+
+  "deleteTransactionsTitle": "Eliminar Transacciones",
+  "deleteTransactionsReconciledMessage": "Algunas de las transacciones seleccionadas están conciliadas. Eliminarlas puede desequilibrar tu conciliación.\n\nEliminar {{count}} transacción{{plural}}?",
+  "deleteTransactionsMessage": "¿Eliminar {{count}} transacción{{plural}}?",
+  "bulkDeleted_one": "{{count}} transacción eliminada",
+  "bulkDeleted_other": "{{count}} transacciones eliminadas",
+
+  "moveTransactionsTitle": "Mover Transacciones",
+  "moveTransactionsReconciledMessage": "Algunas de las transacciones seleccionadas están conciliadas. Moverlas puede desequilibrar tu conciliación.\n\nMover {{count}} transacción{{plural}} a {{account}}?",
+  "moveTransactionsMessage": "¿Mover {{count}} transacción{{plural}} a {{account}}?",
+  "move": "Mover",
+
+  "changeCategoryTitle": "Cambiar Categoría",
+  "changeCategoryReconciledMessage": "Algunas de las transacciones seleccionadas están conciliadas. Editarlas puede desequilibrar tu conciliación.",
+  "changeAnyway": "Cambiar de Todos Modos"
+}

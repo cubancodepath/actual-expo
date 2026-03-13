@@ -37,6 +37,7 @@ type PrefsState = {
   hasSeenOnboarding: boolean;
   isLocalOnly: boolean;
   themeMode: 'system' | 'light' | 'dark';
+  language: 'system' | 'en' | 'es';
 
   // Token — in-memory only; persisted in iOS Keychain / Android Keystore
   token: string;
@@ -51,6 +52,7 @@ type PrefsState = {
   loadToken(): Promise<void>;
   /** Save token to SecureStore and update state. */
   saveToken(token: string): Promise<void>;
+  setLanguage(lang: 'system' | 'en' | 'es'): void;
   toggleProgressBars(): void;
   toggleHideReconciled(): void;
   toggleShowHiddenCategories(): void;
@@ -84,6 +86,7 @@ export const usePrefsStore = create<PrefsState>()(
       hasSeenOnboarding: false,
       isLocalOnly: false,
       themeMode: 'system',
+      language: 'system',
       hasToken: false,
       isConfigured: false,
 
@@ -92,6 +95,12 @@ export const usePrefsStore = create<PrefsState>()(
           const next = { ...state, ...prefs };
           return { ...next, hasToken: !!(next.serverUrl && next.token), isConfigured: computeIsConfigured(next) };
         });
+      },
+
+      setLanguage(lang: 'system' | 'en' | 'es') {
+        set({ language: lang });
+        // i18n language change is handled by the caller (settings screen)
+        // to avoid circular imports between prefsStore and i18n/config
       },
 
       toggleProgressBars() {
@@ -126,7 +135,7 @@ export const usePrefsStore = create<PrefsState>()(
       },
 
       async clearAll() {
-        const { hasSeenOnboarding, themeMode } = get();
+        const { hasSeenOnboarding, themeMode, language } = get();
         await SecureStore.deleteItemAsync(SECURE_TOKEN_KEY);
 
         set({
@@ -146,6 +155,7 @@ export const usePrefsStore = create<PrefsState>()(
           isConfigured: false,
           hasSeenOnboarding,
           themeMode,
+          language,
         });
       },
     }),
@@ -167,6 +177,7 @@ export const usePrefsStore = create<PrefsState>()(
         hasSeenOnboarding: state.hasSeenOnboarding,
         isLocalOnly: state.isLocalOnly,
         themeMode: state.themeMode,
+        language: state.language,
       }),
     },
   ),

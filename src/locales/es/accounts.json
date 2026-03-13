@@ -1,0 +1,109 @@
+{
+  "title": "Cuentas",
+  "addAccount": "Agregar cuenta",
+
+  "emptyState": {
+    "title": "No hay cuentas aún",
+    "description": "Agrega tu primera cuenta para comenzar."
+  },
+
+  "contextMenu": {
+    "viewTransactions": "Ver transacciones",
+    "editAccount": "Editar cuenta",
+    "closeAccount": "Cerrar cuenta",
+    "reopenAccount": "Reabrir cuenta"
+  },
+
+  "groups": {
+    "budgetAccounts": "Cuentas de presupuesto",
+    "offBudget": "Fuera de presupuesto"
+  },
+
+  "newAccount": {
+    "title": "Nueva cuenta",
+    "create": "Crear",
+    "createAccount": "Crear cuenta",
+    "accountNameLabel": "Nombre de la cuenta",
+    "accountNamePlaceholder": "ej. Corriente, Ahorros, Efectivo",
+    "startingBalanceLabel": "Saldo inicial",
+    "startingBalancePlaceholder": "0.00",
+    "startingBalanceHint": "Deja en blanco o 0 para comenzar con una cuenta vacía.\nUsa un valor negativo para una cuenta con deuda.",
+    "offBudget": "Fuera de presupuesto",
+    "offBudgetDescription": "Las transacciones no afectarán tu presupuesto",
+    "accountNameRequired": "El nombre de la cuenta es obligatorio"
+  },
+
+  "detail": {
+    "defaultTitle": "Cuenta",
+    "select": "Seleccionar",
+    "reconcile": "Conciliar",
+    "showReconciled": "Mostrar conciliadas",
+    "hideReconciled": "Ocultar conciliadas",
+    "editAccount": "Editar cuenta",
+    "allReconciled": {
+      "title": "Todas las transacciones conciliadas",
+      "description": "Las transacciones conciliadas están ocultas",
+      "showAll": "Mostrar todo"
+    },
+    "noTransactions": {
+      "title": "No hay transacciones aún",
+      "description": "Agrega tu primera transacción para comenzar"
+    },
+    "deleteScheduleTitle": "Eliminar programación",
+    "deleteScheduleMessage": "¿Eliminar esta programación y todas las ocurrencias futuras?",
+    "unclearedBanner_one": "{{count}} transacción sin conciliar",
+    "unclearedBanner_other": "{{count}} transacciones sin conciliar"
+  },
+
+  "search": {
+    "noResults": {
+      "title": "No hay transacciones coincidentes",
+      "description": "Prueba con otros términos o filtros"
+    },
+    "deleteTransactionTitle": "Eliminar transacción",
+    "deleteTransactionMessage": "¿Eliminar esta transacción?",
+    "transactionDeleted": "Transacción eliminada"
+  },
+
+  "settings": {
+    "title": "Configuración de cuenta",
+    "accountNameLabel": "Nombre de la cuenta",
+    "accountNamePlaceholder": "Nombre de la cuenta",
+    "offBudget": "Fuera de presupuesto",
+    "offBudgetDescription": "Las transacciones no afectarán tu presupuesto",
+    "accountNameRequired": "El nombre de la cuenta es obligatorio",
+    "reopenAccountTitle": "Reabrir cuenta",
+    "reopenAccountMessage": "¿Reabrir esta cuenta? Aparecerá en tu presupuesto de nuevo.",
+    "reopen": "Reabrir"
+  },
+
+  "close": {
+    "title": "Cerrar cuenta",
+    "confirmMessage": "¿Estás seguro de que quieres cerrar ",
+    "noTransactions": "Esta cuenta no tiene transacciones, por lo que será eliminada permanentemente.",
+    "hasTransactions": "Esta cuenta tiene transacciones, por lo que no se puede eliminar permanentemente.",
+    "balanceTransferMessage": "Esta cuenta tiene un saldo de {{balance}}. Para cerrar esta cuenta, selecciona una cuenta diferente para transferir este saldo:",
+    "transferRequired": "La transferencia es obligatoria",
+    "categoryTransferMessage": "Dado que estás transfiriendo el saldo de una cuenta dentro del presupuesto a una fuera del presupuesto, esta transacción debe ser categorizada. Selecciona una categoría:",
+    "categoryRequired": "La categoría es obligatoria",
+    "forceCloseTitle": "Forzar cierre de cuenta",
+    "forceCloseMessage": "Esto eliminará permanentemente \"{{name}}\" y todas sus transacciones. Esto puede cambiar tu presupuesto inesperadamente ya que el dinero en ella puede desaparecer.",
+    "forceClose": "Forzar cierre",
+    "forceCloseHint": "También puedes ",
+    "forceCloseLink": "forzar el cierre",
+    "forceCloseDescription": " de la cuenta, lo que la eliminará junto con todas sus transacciones permanentemente. Hacerlo puede cambiar tu presupuesto inesperadamente ya que el dinero en ella puede desaparecer.",
+    "accountDeleted": "Cuenta eliminada",
+    "accountClosed": "Cuenta cerrada"
+  },
+
+  "reconcile": {
+    "title": "Conciliar cuenta",
+    "question": "¿Tu saldo conciliado coincide con tu estado de cuenta bancario?",
+    "yesMatches": "Sí, coincide",
+    "noEnterBalance": "No, ingresar saldo",
+    "enterBankBalance": "Ingresar saldo bancario",
+    "bankBalanceQuestion": "¿Cuál es tu saldo bancario actual?",
+    "diff": "Dif: {{amount}}",
+    "reconcileButton": "Conciliar"
+  }
+}

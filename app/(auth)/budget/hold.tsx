@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Keyboard, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
 import { useBudgetStore } from '../../../src/stores/budgetStore';
 import { Text } from '../../../src/presentation/components/atoms/Text';
@@ -13,6 +14,7 @@ import { KeyboardToolbar } from '../../../src/presentation/components/molecules/
 import { Amount } from '../../../src/presentation/components/atoms/Amount';
 
 export default function HoldScreen() {
+  const { t } = useTranslation('budget');
   const { colors, spacing, borderRadius: br } = useTheme();
   const router = useRouter();
   const { current, maxAmount } = useLocalSearchParams<{ current: string; maxAmount: string }>();
@@ -56,7 +58,7 @@ export default function HoldScreen() {
         />
 
         <Text variant="bodySm" color={colors.textMuted} style={{ textAlign: 'center', marginBottom: spacing.lg }}>
-          Reserve money from Ready to Assign to carry it into next month.
+          {t('reserveDescription')}
         </Text>
 
         <CurrencyInput
@@ -70,13 +72,13 @@ export default function HoldScreen() {
 
         <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: spacing.sm }}>
           <Text variant="captionSm" color={colors.textMuted}>
-            Available to hold:{' '}
+            {t('availableToHold')}
           </Text>
           <Amount value={maxCents} variant="captionSm" color={colors.primary} weight="700" />
         </View>
 
         <Button
-          title="Hold"
+          title={t('hold')}
           variant="primary"
           onPress={handleSave}
           disabled={cents <= 0}

@@ -1,5 +1,6 @@
 import { Stack } from "expo-router";
 import { useQuickActionRouting } from "expo-quick-actions/router";
+import { useTranslation } from "react-i18next";
 import { useTheme } from "../../src/presentation/providers/ThemeProvider";
 import {
   themedScreenOptions,
@@ -11,13 +12,14 @@ export default function AuthLayout() {
   const theme = useTheme();
   const screen = themedScreenOptions(theme);
   const modal = themedModalOptions(theme);
+  const { t } = useTranslation();
 
   return (
     <Stack>
       <Stack.Screen name="(tabs)" options={{ headerShown: false, title: "" }} />
       <Stack.Screen
         name="account/new"
-        options={{ title: "New Account", ...modal }}
+        options={{ title: t('nav.newAccount'), ...modal }}
       />
       <Stack.Screen
         name="account/[id]"
@@ -39,13 +41,13 @@ export default function AuthLayout() {
       />
       <Stack.Screen
         name="account/settings"
-        options={{ title: "Account Settings", ...modal }}
+        options={{ title: t('nav.accountSettings'), ...modal }}
       />
       <Stack.Screen
         name="account/close"
         options={{
           ...screen,
-          title: "Close Account",
+          title: t('nav.closeAccount'),
           presentation: "formSheet",
           sheetAllowedDetents: [0.75, 1.0],
           contentStyle: { backgroundColor: theme.colors.pageBackground },
@@ -57,14 +59,14 @@ export default function AuthLayout() {
       />
       <Stack.Screen
         name="budget/assign"
-        options={{ title: "Assign Budget", ...modal }}
+        options={{ title: t('nav.assignBudget'), ...modal }}
       />
       <Stack.Screen name="budget/edit" options={{ headerShown: false }} />
       <Stack.Screen
         name="budget/reorder"
         options={{
           ...screen,
-          title: "Reorder",
+          title: t('nav.reorder'),
           presentation: "formSheet",
           sheetAllowedDetents: [1.0],
           contentStyle: { backgroundColor: theme.colors.pageBackground },
@@ -74,7 +76,7 @@ export default function AuthLayout() {
         name="budget/new-group"
         options={{
           ...screen,
-          title: "New Group",
+          title: t('nav.newGroup'),
           presentation: "formSheet",
           sheetAllowedDetents: "fitToContents",
           contentStyle: { backgroundColor: theme.colors.pageBackground },
@@ -84,7 +86,7 @@ export default function AuthLayout() {
         name="budget/new-category"
         options={{
           ...screen,
-          title: "New Category",
+          title: t('nav.newCategory'),
           presentation: "formSheet",
           sheetAllowedDetents: "fitToContents",
           contentStyle: { backgroundColor: theme.colors.pageBackground },
@@ -94,7 +96,7 @@ export default function AuthLayout() {
         name="budget/rename-category"
         options={{
           ...screen,
-          title: "Rename Category",
+          title: t('nav.renameCategory'),
           presentation: "formSheet",
           sheetAllowedDetents: "fitToContents",
           contentStyle: { backgroundColor: theme.colors.pageBackground },
@@ -104,7 +106,7 @@ export default function AuthLayout() {
         name="budget/quick-edit-category"
         options={{
           ...screen,
-          title: "Edit Category",
+          title: t('nav.editCategory'),
           presentation: "formSheet",
           sheetAllowedDetents: "fitToContents",
           contentStyle: { backgroundColor: theme.colors.pageBackground },
@@ -114,7 +116,7 @@ export default function AuthLayout() {
         name="budget/edit-group"
         options={{
           ...screen,
-          title: "Edit Group",
+          title: t('nav.editGroup'),
           presentation: "formSheet",
           sheetAllowedDetents: "fitToContents",
           contentStyle: { backgroundColor: theme.colors.pageBackground },
@@ -131,7 +133,7 @@ export default function AuthLayout() {
         name="budget/goal"
         options={{
           ...screen,
-          title: "Goal Target",
+          title: t('nav.goalTarget'),
           presentation: "formSheet",
           sheetAllowedDetents: [1.0],
           contentStyle: { backgroundColor: theme.colors.pageBackground },
@@ -139,17 +141,17 @@ export default function AuthLayout() {
       />
       <Stack.Screen
         name="budget/notes"
-        options={{ title: "Budget Movements", ...modal }}
+        options={{ title: t('nav.budgetMovements'), ...modal }}
       />
       <Stack.Screen
         name="budget/category-transactions"
-        options={{ title: "Transactions", ...modal }}
+        options={{ title: t('nav.transactions'), ...modal }}
       />
       <Stack.Screen
         name="budget/cover-overspent"
         options={{
           ...screen,
-          title: "Overspent Categories",
+          title: t('nav.overspentCategories'),
           presentation: "formSheet",
           sheetAllowedDetents: "fitToContents",
           contentStyle: { backgroundColor: theme.colors.pageBackground },
@@ -177,7 +179,7 @@ export default function AuthLayout() {
         name="budget/hold"
         options={{
           ...screen,
-          title: "Hold for Next Month",
+          title: t('nav.holdForNextMonth'),
           presentation: "formSheet",
           sheetAllowedDetents: [0.45],
           contentStyle: { backgroundColor: theme.colors.pageBackground },
@@ -210,15 +212,15 @@ export default function AuthLayout() {
       />
       <Stack.Screen
         name="categories"
-        options={{ title: "Manage Categories", ...modal }}
+        options={{ title: t('nav.manageCategories'), ...modal }}
       />
       <Stack.Screen
         name="payees"
-        options={{ title: "Manage Payees", ...modal }}
+        options={{ title: t('nav.managePayees'), ...modal }}
       />
       <Stack.Screen
         name="schedules"
-        options={{ title: "Schedules", ...modal }}
+        options={{ title: t('nav.schedules'), ...modal }}
       />
       <Stack.Screen
         name="schedule"
@@ -226,7 +228,7 @@ export default function AuthLayout() {
       />
       <Stack.Screen
         name="change-budget"
-        options={{ title: "Change Budget", ...modal }}
+        options={{ title: t('nav.changeBudget'), ...modal }}
       />
       <Stack.Screen name="settings" options={{ headerShown: false, presentation: "fullScreenModal" }} />
       <Stack.Screen name="new-budget" options={{ headerShown: false }} />

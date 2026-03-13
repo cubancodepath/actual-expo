@@ -40,6 +40,7 @@ const config = ({ config }: ConfigContext): ExpoConfig => ({
     "expo-web-browser",
     "expo-quick-actions",
     "expo-notifications",
+    "expo-localization",
     "@bacons/apple-targets",
   ],
   extra: {

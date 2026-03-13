@@ -1,5 +1,6 @@
 import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePrefsStore } from '../../src/stores/prefsStore';
 import { useTheme, useThemedStyles } from '../../src/presentation/providers/ThemeProvider';
@@ -21,26 +22,27 @@ function confirmDelete(
   file: ReconciledBudgetFile,
   activeBudgetId: string,
   onDelete: (fromServer?: boolean) => void,
+  t: any,
 ) {
-  const name = file.name || 'Unnamed budget';
+  const name = file.name || t('budget.unnamedBudget');
   const isActive = file.localId != null && file.localId === activeBudgetId;
-  const activeWarning = isActive ? ' This will close the current budget.' : '';
+  const warning = isActive ? t('budget.activeWarning') : '';
 
   if (file.state === 'synced') {
-    Alert.alert('Delete Budget', `"${name}" is synced with the server.${activeWarning}`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete Locally', onPress: () => onDelete(false) },
-      { text: 'Delete From All Devices', style: 'destructive', onPress: () => onDelete(true) },
+    Alert.alert(t('budget.deleteBudgetTitle'), t('budget.deleteSyncedMessage', { name, warning }), [
+      { text: t('cancel'), style: 'cancel' },
+      { text: t('budget.deleteLocally'), onPress: () => onDelete(false) },
+      { text: t('budget.deleteFromAllDevices'), style: 'destructive', onPress: () => onDelete(true) },
     ]);
   } else if (file.state === 'remote') {
-    Alert.alert('Delete Budget', `Delete "${name}" from the server?`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete From Server', style: 'destructive', onPress: () => onDelete(true) },
+    Alert.alert(t('budget.deleteBudgetTitle'), t('budget.deleteRemoteMessage', { name }), [
+      { text: t('cancel'), style: 'cancel' },
+      { text: t('budget.deleteFromServer'), style: 'destructive', onPress: () => onDelete(true) },
     ]);
   } else {
-    Alert.alert('Delete Budget', `Delete "${name}"?${activeWarning} This cannot be undone.`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => onDelete(false) },
+    Alert.alert(t('budget.deleteBudgetTitle'), t('budget.deleteLocalMessage', { name, warning }), [
+      { text: t('cancel'), style: 'cancel' },
+      { text: t('delete'), style: 'destructive', onPress: () => onDelete(false) },
     ]);
   }
 }
@@ -48,6 +50,7 @@ function confirmDelete(
 export default function ChangeBudgetScreen() {
   const router = useRouter();
   const { colors, spacing } = useTheme();
+  const { t } = useTranslation();
   const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const { activeBudgetId } = usePrefsStore();
@@ -72,13 +75,14 @@ export default function ChangeBudgetScreen() {
   function handleDelete(file: ReconciledBudgetFile) {
     confirmDelete(file, activeBudgetId, (fromServer) => {
       deleteFile(file, fromServer).catch(() => {});
-    });
+    }, t);
   }
 
   function handleUpload(file: ReconciledBudgetFile) {
-    Alert.alert('Upload to Server', `Upload "${file.name || 'Unnamed budget'}" to the server?`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Upload', onPress: () => uploadFile(file).catch(() => {}) },
+    const name = file.name || t('budget.unnamedBudget');
+    Alert.alert(t('budget.uploadToServer'), t('budget.uploadConfirm', { name }), [
+      { text: t('cancel'), style: 'cancel' },
+      { text: t('upload'), onPress: () => uploadFile(file).catch(() => {}) },
     ]);
   }
 
@@ -109,7 +113,7 @@ export default function ChangeBudgetScreen() {
               style={styles.headerBtn}
             >
               <Text variant="body" style={{ fontWeight: '600' }}>
-                New
+                {t('new')}
               </Text>
             </Pressable>
           ),
@@ -126,14 +130,14 @@ export default function ChangeBudgetScreen() {
         <Card style={{ marginTop: spacing.lg }}>
           <View style={styles.loadingRow}>
             <ActivityIndicator color={colors.primary} />
-            <Text variant="bodySm" color={colors.textMuted}>Loading…</Text>
+            <Text variant="bodySm" color={colors.textMuted}>{t('loading')}</Text>
           </View>
         </Card>
       ) : hasFiles ? (
         <>
           {localFiles.length > 0 && (
             <>
-              <SectionHeader title="On This Device" style={{ marginTop: spacing.lg }} />
+              <SectionHeader title={t('budget.onThisDevice')} style={{ marginTop: spacing.lg }} />
               <Card style={styles.listCard}>
                 {localFiles.map((file, index) => (
                   <SwipeableRow
@@ -160,7 +164,7 @@ export default function ChangeBudgetScreen() {
 
           {remoteFiles.length > 0 && (
             <>
-              <SectionHeader title="Available on Server" style={{ marginTop: spacing.lg }} />
+              <SectionHeader title={t('budget.availableOnServer')} style={{ marginTop: spacing.lg }} />
               <Card style={styles.listCard}>
                 {remoteFiles.map((file, index) => (
                   <SwipeableRow
@@ -184,9 +188,9 @@ export default function ChangeBudgetScreen() {
       ) : (
         <EmptyState
           icon="folder-open-outline"
-          title="No budgets found"
-          description="There are no budget files on this server or on this device."
-          actionLabel="Create New Budget"
+          title={t('budget.noBudgetsFound')}
+          description={t('budget.noBudgetsDescription')}
+          actionLabel={t('budget.createNewBudget')}
           onAction={() => router.push('/(auth)/new-budget')}
         />
       )}

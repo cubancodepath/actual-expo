@@ -1,5 +1,6 @@
 import { Alert, Pressable, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../providers/ThemeProvider';
 import { Text } from '../atoms/Text';
 import { Amount } from '../atoms/Amount';
@@ -27,6 +28,7 @@ export function ReadyToAssignPill({
   onEditHold,
   onClearHold,
 }: ReadyToAssignPillProps) {
+  const { t } = useTranslation('budget');
   const { colors, spacing, borderRadius: br } = useTheme();
 
   const isZero = amount === 0;
@@ -53,10 +55,10 @@ export function ReadyToAssignPill({
       : 'checkmark-circle-outline';
 
   const label = isPositive
-    ? 'Ready to Assign'
+    ? t('readyToAssign')
     : isNegative
-      ? 'Overassigned'
-      : 'Fully Assigned';
+      ? t('overassigned')
+      : t('fullyAssigned');
 
   // ── Simple pill (no hold) ──
   if (!hasHold) {
@@ -99,7 +101,7 @@ export function ReadyToAssignPill({
         backgroundColor,
         overflow: 'hidden',
       }}
-      accessibilityLabel={`${formatPrivacyAware(amount)} ${label}. Holding ${formatPrivacyAware(holdAmount)} for next month.`}
+      accessibilityLabel={`${formatPrivacyAware(amount)} ${label}. ${t('holding')}${formatPrivacyAware(holdAmount)}${t('nextMonth')}.`}
     >
       {/* Top row: Ready to Assign / Overassigned / Fully Assigned */}
       <Pressable
@@ -171,11 +173,11 @@ export function ReadyToAssignPill({
             style={{ opacity: 0.5, marginRight: spacing.xxs }}
           />
           <Text variant="captionSm" color={textColor} style={{ opacity: 0.7 }}>
-            Holding{' '}
+            {t('holding')}
           </Text>
           <Amount value={holdAmount} variant="captionSm" color={textColor} weight="700" />
           <Text variant="captionSm" color={textColor} style={{ opacity: 0.7 }}>
-            {' '}next month
+            {t('nextMonth')}
           </Text>
         </View>
 
@@ -183,7 +185,7 @@ export function ReadyToAssignPill({
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
           <Pressable onPress={onEditHold} hitSlop={8}>
             <Text variant="captionSm" color={textColor} style={{ fontWeight: '600' }}>
-              Edit
+              {t('editAction')}
             </Text>
           </Pressable>
           <Text variant="captionSm" color={textColor} style={{ opacity: 0.3 }}>
@@ -191,7 +193,7 @@ export function ReadyToAssignPill({
           </Text>
           <Pressable onPress={onClearHold} hitSlop={8}>
             <Text variant="captionSm" color={textColor} style={{ fontWeight: '600', opacity: 0.7 }}>
-              Clear
+              {t('clearAction')}
             </Text>
           </Pressable>
         </View>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, Switch, TextInput, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
 import { useCategoriesStore } from '../../../src/stores/categoriesStore';
 import { useBudgetStore } from '../../../src/stores/budgetStore';
@@ -10,6 +11,7 @@ import { Button } from '../../../src/presentation/components/atoms/Button';
 import { IconButton } from '../../../src/presentation/components/atoms/IconButton';
 
 export default function EditGroupScreen() {
+  const { t } = useTranslation('budget');
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const router = useRouter();
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
@@ -44,18 +46,18 @@ export default function EditGroupScreen() {
   function handleDelete() {
     if (!groupId) return;
     Alert.alert(
-      'Delete Group',
-      `Are you sure you want to delete "${group?.name ?? 'this group'}" and all its categories?`,
+      t('deleteGroupTitle'),
+      t('deleteGroupMessageEmpty', { name: group?.name ?? '' }),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('delete'),
           style: 'destructive',
           onPress: async () => {
             await useCategoriesStore.getState().deleteCategoryGroup(groupId);
             await useCategoriesStore.getState().load();
             await useBudgetStore.getState().load();
-            useUndoStore.getState().showUndo('Category group deleted');
+            useUndoStore.getState().showUndo(t('categoryGroupDeleted'));
             router.back();
           },
         },
@@ -78,7 +80,7 @@ export default function EditGroupScreen() {
           headerRight: () => (
             <Pressable onPress={handleSave} hitSlop={8} disabled={!name.trim() || saving}>
               <Text variant="body" color={name.trim() && !saving ? colors.primary : colors.textMuted} style={{ fontWeight: '600', fontSize: 17 }}>
-                Save
+                {t('save')}
               </Text>
             </Pressable>
           ),
@@ -86,12 +88,12 @@ export default function EditGroupScreen() {
       />
 
       <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.xs }}>
-        GROUP NAME
+        {t('groupNameLabel')}
       </Text>
       <TextInput
         value={name}
         onChangeText={setName}
-        placeholder="Group name"
+        placeholder={t('groupNamePlaceholder')}
         placeholderTextColor={colors.textMuted}
         autoFocus
         returnKeyType="done"
@@ -123,7 +125,7 @@ export default function EditGroupScreen() {
             marginTop: spacing.lg,
           }}
         >
-          <Text variant="body" color={colors.textPrimary}>Hidden</Text>
+          <Text variant="body" color={colors.textPrimary}>{t('hidden')}</Text>
           <Switch
             value={group.hidden}
             onValueChange={async (val) => {
@@ -138,7 +140,7 @@ export default function EditGroupScreen() {
       )}
 
       <Button
-        title="Delete Group"
+        title={t('deleteGroup')}
         variant="danger"
         icon="trash-outline"
         onPress={handleDelete}

@@ -30,6 +30,7 @@ import { EmptyState } from '../../../../src/presentation/components/molecules/Em
 import { AddTransactionButton } from '../../../../src/presentation/components/molecules/AddTransactionButton';
 import type { Theme } from '../../../../src/theme';
 import { useCommonMenuActions } from '../../../../src/presentation/hooks/useCommonMenuItems';
+import { useTranslation } from 'react-i18next';
 import type { Account } from '../../../../src/accounts/types';
 
 // ---------------------------------------------------------------------------
@@ -54,6 +55,8 @@ function AccountRow({
   styles: ReturnType<typeof createStyles>;
 }) {
   const theme = useTheme();
+  const { t } = useTranslation('accounts');
+  const { t: tc } = useTranslation('common');
 
   const row = (
     <Pressable
@@ -62,12 +65,12 @@ function AccountRow({
       onLongPress={Platform.OS === 'android'
         ? () => {
             const items = [
-              { text: 'View Transactions', onPress },
-              { text: 'Edit Account', onPress: onEdit },
+              { text: t('contextMenu.viewTransactions'), onPress },
+              { text: t('contextMenu.editAccount'), onPress: onEdit },
               account.closed
-                ? { text: 'Reopen Account', onPress: onReopen }
-                : { text: 'Close Account', style: 'destructive' as const, onPress: onClose },
-              { text: 'Cancel', style: 'cancel' as const },
+                ? { text: t('contextMenu.reopenAccount'), onPress: onReopen }
+                : { text: t('contextMenu.closeAccount'), style: 'destructive' as const, onPress: onClose },
+              { text: tc('cancel'), style: 'cancel' as const },
             ];
             Alert.alert(account.name, undefined, items);
           }
@@ -88,21 +91,21 @@ function AccountRow({
         <ContextMenu.Trigger>{row}</ContextMenu.Trigger>
         <ContextMenu.Content>
           <ContextMenu.Item key="view" onSelect={onPress}>
-            <ContextMenu.ItemTitle>View Transactions</ContextMenu.ItemTitle>
+            <ContextMenu.ItemTitle>{t('contextMenu.viewTransactions')}</ContextMenu.ItemTitle>
             <ContextMenu.ItemIcon ios={{ name: 'list.bullet' }} />
           </ContextMenu.Item>
           <ContextMenu.Item key="edit" onSelect={onEdit}>
-            <ContextMenu.ItemTitle>Edit Account</ContextMenu.ItemTitle>
+            <ContextMenu.ItemTitle>{t('contextMenu.editAccount')}</ContextMenu.ItemTitle>
             <ContextMenu.ItemIcon ios={{ name: 'pencil' }} />
           </ContextMenu.Item>
           {account.closed ? (
             <ContextMenu.Item key="reopen" onSelect={onReopen}>
-              <ContextMenu.ItemTitle>Reopen Account</ContextMenu.ItemTitle>
+              <ContextMenu.ItemTitle>{t('contextMenu.reopenAccount')}</ContextMenu.ItemTitle>
               <ContextMenu.ItemIcon ios={{ name: 'arrow.counterclockwise' }} />
             </ContextMenu.Item>
           ) : (
             <ContextMenu.Item key="close" destructive onSelect={onClose}>
-              <ContextMenu.ItemTitle>Close Account</ContextMenu.ItemTitle>
+              <ContextMenu.ItemTitle>{t('contextMenu.closeAccount')}</ContextMenu.ItemTitle>
               <ContextMenu.ItemIcon ios={{ name: 'trash' }} />
             </ContextMenu.Item>
           )}
@@ -163,6 +166,11 @@ function AccountSection({
 }) {
   const theme = useTheme();
   const styles = useThemedStyles(createStyles);
+  const { t } = useTranslation('accounts');
+
+  const groupLabel = group.type === 'budget'
+    ? t('groups.budgetAccounts')
+    : t('groups.offBudget');
 
   const isExpanded = useSharedValue(true);
   const height = useSharedValue(0);
@@ -194,7 +202,7 @@ function AccountSection({
           <Ionicons name="chevron-down" size={18} color={theme.colors.textSecondary} />
         </Animated.View>
         <Text variant="body" color={theme.colors.textPrimary} style={styles.sectionLabel}>
-          {group.label}
+          {groupLabel}
         </Text>
         <Amount value={group.total} variant="body" style={styles.sectionTotal} />
       </Pressable>
@@ -227,6 +235,7 @@ export default function AccountsScreen() {
   const { accounts, loading, load, update } = useAccountsStore();
   const { refreshControlProps } = useRefreshControl();
   const commonActions = useCommonMenuActions();
+  const { t } = useTranslation('accounts');
 
   useEffect(() => { load(); }, []);
 
@@ -265,7 +274,7 @@ export default function AccountsScreen() {
           <RefreshControl {...refreshControlProps} />
         }
       >
-        <Stack.Screen.Title large>Accounts</Stack.Screen.Title>
+        <Stack.Screen.Title large>{t('title')}</Stack.Screen.Title>
 
         {groups.length > 0 ? (
           <>
@@ -281,7 +290,7 @@ export default function AccountsScreen() {
             ))}
 
             <Button
-              title="Add Account"
+              title={t('addAccount')}
               variant="ghost"
               icon="add-circle-outline"
               onPress={() => router.push('/(auth)/account/new')}
@@ -291,9 +300,9 @@ export default function AccountsScreen() {
         ) : (
           <EmptyState
             icon="wallet-outline"
-            title="No accounts yet"
-            description="Add your first account to get started."
-            actionLabel="Add Account"
+            title={t('emptyState.title')}
+            description={t('emptyState.description')}
+            actionLabel={t('addAccount')}
             onAction={() => router.push('/(auth)/account/new')}
           />
         )}

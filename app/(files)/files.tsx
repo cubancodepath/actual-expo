@@ -1,6 +1,7 @@
 import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { usePrefsStore } from '../../src/stores/prefsStore';
 import { resetAllStores } from '../../src/stores/resetStores';
 import { resetSyncState, clearSwitchingFlag } from '../../src/sync';
@@ -21,24 +22,26 @@ import type { Theme } from '../../src/theme';
 function confirmDelete(
   file: ReconciledBudgetFile,
   onDelete: (fromServer?: boolean) => void,
+  t: (key: string, opts?: Record<string, string>) => string,
+  tc: (key: string) => string,
 ) {
-  const name = file.name || 'Unnamed budget';
+  const name = file.name || t('unnamedBudget');
 
   if (file.state === 'synced') {
-    Alert.alert('Delete Budget', `"${name}" is synced with the server.`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete Locally', onPress: () => onDelete(false) },
-      { text: 'Delete From All Devices', style: 'destructive', onPress: () => onDelete(true) },
+    Alert.alert(t('deleteBudget'), t('deleteBudgetSynced', { name }), [
+      { text: tc('cancel'), style: 'cancel' },
+      { text: t('deleteLocally'), onPress: () => onDelete(false) },
+      { text: t('deleteFromAllDevices'), style: 'destructive', onPress: () => onDelete(true) },
     ]);
   } else if (file.state === 'remote') {
-    Alert.alert('Delete Budget', `Delete "${name}" from the server?`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete From Server', style: 'destructive', onPress: () => onDelete(true) },
+    Alert.alert(t('deleteBudget'), t('deleteBudgetFromServer', { name }), [
+      { text: tc('cancel'), style: 'cancel' },
+      { text: t('deleteFromServer'), style: 'destructive', onPress: () => onDelete(true) },
     ]);
   } else {
-    Alert.alert('Delete Budget', `Delete "${name}"? This cannot be undone.`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => onDelete(false) },
+    Alert.alert(t('deleteBudget'), t('deleteBudgetLocal', { name }), [
+      { text: tc('cancel'), style: 'cancel' },
+      { text: tc('delete'), style: 'destructive', onPress: () => onDelete(false) },
     ]);
   }
 }
@@ -49,6 +52,8 @@ export default function FilesScreen() {
   const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const { clearAll } = usePrefsStore();
+  const { t } = useTranslation('auth');
+  const { t: tc } = useTranslation('common');
   const {
     localFiles, remoteFiles, loading, refreshing, error,
     selecting, selectFile, deleteFile, uploadFile, retry, refresh, dismissError,
@@ -66,24 +71,25 @@ export default function FilesScreen() {
   function handleDelete(file: ReconciledBudgetFile) {
     confirmDelete(file, (fromServer) => {
       deleteFile(file, fromServer).catch(() => {});
-    });
+    }, t as any, tc as any);
   }
 
   function handleUpload(file: ReconciledBudgetFile) {
-    Alert.alert('Upload to Server', `Upload "${file.name || 'Unnamed budget'}" to the server?`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Upload', onPress: () => uploadFile(file).catch(() => {}) },
+    const name = file.name || t('unnamedBudget');
+    Alert.alert(t('uploadToServer'), t('uploadBudgetConfirm', { name }), [
+      { text: tc('cancel'), style: 'cancel' },
+      { text: tc('upload'), onPress: () => uploadFile(file).catch(() => {}) },
     ]);
   }
 
   function handleLogout() {
     Alert.alert(
-      'Log Out',
-      'Disconnect from this server? You will need to reconnect to access your budgets.',
+      t('logOut'),
+      t('logOutMessage'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: tc('cancel'), style: 'cancel' },
         {
-          text: 'Log Out',
+          text: t('logOut'),
           style: 'destructive',
           onPress: async () => {
             resetSyncState();
@@ -111,7 +117,7 @@ export default function FilesScreen() {
         options={{
           headerLeft: () => (
             <Pressable onPress={handleLogout} hitSlop={8} style={styles.headerBtn}>
-              <Text variant="body">Log Out</Text>
+              <Text variant="body">{t('logOut')}</Text>
             </Pressable>
           ),
           headerRight: () => (
@@ -121,7 +127,7 @@ export default function FilesScreen() {
               style={styles.headerBtn}
             >
               <Text variant="body" style={{ fontWeight: '600' }}>
-                New
+                {t('new')}
               </Text>
             </Pressable>
           ),
@@ -138,14 +144,14 @@ export default function FilesScreen() {
         <Card style={{ marginTop: spacing.lg }}>
           <View style={styles.loadingRow}>
             <ActivityIndicator color={colors.primary} />
-            <Text variant="bodySm" color={colors.textMuted}>Loading…</Text>
+            <Text variant="bodySm" color={colors.textMuted}>{tc('loading')}</Text>
           </View>
         </Card>
       ) : hasFiles ? (
         <>
           {localFiles.length > 0 && (
             <>
-              <SectionHeader title="On This Device" style={{ marginTop: spacing.lg }} />
+              <SectionHeader title={t('onThisDevice')} style={{ marginTop: spacing.lg }} />
               <Card style={styles.listCard}>
                 {localFiles.map((file, index) => (
                   <SwipeableRow
@@ -171,7 +177,7 @@ export default function FilesScreen() {
 
           {remoteFiles.length > 0 && (
             <>
-              <SectionHeader title="Available on Server" style={{ marginTop: spacing.lg }} />
+              <SectionHeader title={t('availableOnServer')} style={{ marginTop: spacing.lg }} />
               <Card style={styles.listCard}>
                 {remoteFiles.map((file, index) => (
                   <SwipeableRow
@@ -195,9 +201,9 @@ export default function FilesScreen() {
       ) : (
         <EmptyState
           icon="folder-open-outline"
-          title="No budgets found"
-          description="There are no budget files on this server or on this device."
-          actionLabel="Create New Budget"
+          title={t('noBudgetsFound')}
+          description={t('noBudgetsDescription')}
+          actionLabel={t('createNewBudget')}
           onAction={() => router.push('/(files)/new-budget')}
         />
       )}

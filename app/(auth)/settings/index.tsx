@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { SymbolView } from "expo-symbols";
 import type { SFSymbol } from "sf-symbols-typescript";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 import { useTheme, useThemedStyles } from "../../../src/presentation/providers/ThemeProvider";
 import {
   Text,
@@ -53,6 +54,8 @@ export default function SettingsScreen() {
   const { colors, spacing } = useTheme();
   const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation('settings');
+  const { t: tc } = useTranslation('common');
 
   const { serverUrl, fileId, groupId, encryptKeyId, budgetName, lastSyncedTimestamp, isLocalOnly, clearAll } =
     usePrefsStore();
@@ -64,16 +67,16 @@ export default function SettingsScreen() {
     ? lastSync.toLocaleTimeString()
     : lastSyncedTimestamp
       ? lastSyncedTimestamp.slice(0, 16)
-      : "Never";
+      : tc('never');
 
   function handleDeleteLocal() {
     Alert.alert(
-      "Delete All Data",
-      "This will permanently delete all your local budget data. This cannot be undone.",
+      t('deleteAllData'),
+      t('deleteAllDataMessage'),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: tc('cancel'), style: "cancel" },
         {
-          text: "Delete",
+          text: tc('delete'),
           style: "destructive",
           onPress: async () => {
             setLoggingOut(true);
@@ -95,12 +98,12 @@ export default function SettingsScreen() {
 
   function handleLogout() {
     Alert.alert(
-      "Disconnect",
-      "Disconnect from this server? Local data will be cleared.",
+      t('disconnectTitle'),
+      t('disconnectMessage'),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: tc('cancel'), style: "cancel" },
         {
-          text: "Disconnect",
+          text: tc('disconnect'),
           style: "destructive",
           onPress: async () => {
             setLoggingOut(true);
@@ -127,17 +130,17 @@ export default function SettingsScreen() {
       contentInsetAdjustmentBehavior="automatic"
     >
       {/* Budget */}
-      <SectionHeader title="Current Budget" style={{ marginTop: spacing.lg }} />
+      <SectionHeader title={t('currentBudget')} style={{ marginTop: spacing.lg }} />
       <Text
         variant="headingLg"
         color={colors.textPrimary}
         style={{ paddingHorizontal: spacing.lg, marginBottom: spacing.md }}
       >
-        {budgetName || "My Budget"}
+        {budgetName || t('defaultBudgetName')}
       </Text>
       <Card>
         <ListItem
-          title="Budget Settings"
+          title={t('budgetSettings')}
           left={<SettingsIcon sfSymbol="gearshape" ionIcon="settings-outline" color={colors.textMuted} />}
           showChevron
           onPress={() => router.push("/(auth)/settings/budget")}
@@ -145,7 +148,7 @@ export default function SettingsScreen() {
           separatorInsetLeft={spacing.lg + ICON_SIZE + spacing.md}
         />
         <ListItem
-          title="New Budget"
+          title={t('newBudget')}
           left={<SettingsIcon sfSymbol="plus.circle" ionIcon="add-circle-outline" color={colors.textMuted} />}
           showChevron
           onPress={() => router.push("/(auth)/new-budget")}
@@ -153,7 +156,7 @@ export default function SettingsScreen() {
           separatorInsetLeft={spacing.lg + ICON_SIZE + spacing.md}
         />
         <ListItem
-          title="Open Budget"
+          title={t('openBudget')}
           left={<SettingsIcon sfSymbol="folder" ionIcon="folder-outline" color={colors.textMuted} />}
           showChevron
           onPress={() => router.push("/(auth)/change-budget")}
@@ -161,10 +164,10 @@ export default function SettingsScreen() {
       </Card>
 
       {/* App */}
-      <SectionHeader title="App" style={{ marginTop: spacing.xl }} />
+      <SectionHeader title={t('app')} style={{ marginTop: spacing.xl }} />
       <Card>
         <ListItem
-          title="Display"
+          title={t('display')}
           left={<SettingsIcon sfSymbol="paintbrush" ionIcon="color-palette-outline" color={colors.textMuted} />}
           showChevron
           onPress={() => router.push("/(auth)/settings/display")}
@@ -172,8 +175,16 @@ export default function SettingsScreen() {
           separatorInsetLeft={spacing.lg + ICON_SIZE + spacing.md}
         />
         <ListItem
-          title="Hide Amounts"
-          subtitle="Mask all monetary values for privacy"
+          title={t('language')}
+          left={<SettingsIcon sfSymbol="globe" ionIcon="globe-outline" color={colors.textMuted} />}
+          showChevron
+          onPress={() => router.push("/(auth)/settings/language")}
+          showSeparator
+          separatorInsetLeft={spacing.lg + ICON_SIZE + spacing.md}
+        />
+        <ListItem
+          title={t('hideAmounts')}
+          subtitle={t('hideAmountsDescription')}
           left={<SettingsIcon sfSymbol="eye.slash" ionIcon="eye-off-outline" color={colors.textMuted} />}
           onPress={togglePrivacy}
           right={
@@ -181,7 +192,7 @@ export default function SettingsScreen() {
               value={privacyMode}
               onValueChange={togglePrivacy}
               trackColor={{ true: colors.primary }}
-              accessibilityLabel="Hide monetary amounts"
+              accessibilityLabel={t('hideAmounts')}
             />
           }
         />
@@ -190,17 +201,17 @@ export default function SettingsScreen() {
       {/* Server / Mode */}
       {isLocalOnly ? (
         <>
-          <SectionHeader title="Mode" style={{ marginTop: spacing.xl }} />
+          <SectionHeader title={t('mode')} style={{ marginTop: spacing.xl }} />
           <Card>
             <ListItem
-              title="Local Only"
-              subtitle="Data is stored on this device only"
+              title={t('localOnly')}
+              subtitle={t('localOnlyDescription')}
               left={<SettingsIcon sfSymbol="iphone" ionIcon="phone-portrait-outline" color={colors.textMuted} />}
               showSeparator
               separatorInsetLeft={spacing.lg + ICON_SIZE + spacing.md}
             />
             <ListItem
-              title="Delete All Data"
+              title={t('deleteAllData')}
               titleColor={colors.negative}
               left={<SettingsIcon sfSymbol="trash" ionIcon="trash-outline" color={colors.negative} />}
               onPress={handleDeleteLocal}
@@ -209,25 +220,25 @@ export default function SettingsScreen() {
         </>
       ) : (
         <>
-          <SectionHeader title="Server" style={{ marginTop: spacing.xl }} />
+          <SectionHeader title={t('server')} style={{ marginTop: spacing.xl }} />
           <Card>
-            <ServerRow label="URL" value={serverUrl} showSeparator />
-            <ServerRow label="Last Sync" value={lastSyncText} showSeparator />
-            <ServerRow label="File ID" value={fileId ? `${fileId.slice(0, 8)}…` : ""} showSeparator />
+            <ServerRow label={t('url')} value={serverUrl} showSeparator />
+            <ServerRow label={t('lastSync')} value={lastSyncText} showSeparator />
+            <ServerRow label={t('fileId')} value={fileId ? `${fileId.slice(0, 8)}…` : ""} showSeparator />
             <ServerRow
-              label="Group ID"
+              label={t('groupId')}
               value={groupId ? `${groupId.slice(0, 8)}…` : ""}
               showSeparator
             />
             {encryptKeyId && (
               <ServerRow
-                label="Encryption"
+                label={t('encryption')}
                 value={`${encryptKeyId.slice(0, 8)}…`}
                 showSeparator
               />
             )}
             <ListItem
-              title="Disconnect from Server"
+              title={t('disconnectFromServer')}
               titleColor={colors.negative}
               left={<SettingsIcon sfSymbol="rectangle.portrait.and.arrow.right" ionIcon="log-out-outline" color={colors.negative} />}
               onPress={handleLogout}

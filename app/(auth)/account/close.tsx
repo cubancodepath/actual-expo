@@ -14,6 +14,7 @@ import { formatBalance } from '../../../src/lib/format';
 import { Divider } from '../../../src/presentation/components/atoms/Divider';
 import type { Account } from '../../../src/accounts/types';
 import type { Category, CategoryGroup } from '../../../src/categories/types';
+import { useTranslation } from 'react-i18next';
 import type { Theme } from '../../../src/theme';
 
 function needsCategory(
@@ -31,6 +32,8 @@ export default function CloseAccountScreen() {
   const theme = useTheme();
   const styles = useThemedStyles(createStyles);
 
+  const { t } = useTranslation('accounts');
+  const { t: tc } = useTranslation('common');
   const { accounts, close, load } = useAccountsStore();
   const { categories, groups } = useCategoriesStore();
   const account = accounts.find(a => a.id === id);
@@ -93,7 +96,7 @@ export default function CloseAccountScreen() {
       });
       await load();
       useUndoStore.getState().showUndo(
-        canDelete ? 'Account deleted' : 'Account closed',
+        canDelete ? t('close.accountDeleted') : t('close.accountClosed'),
       );
       router.dismiss();
     } finally {
@@ -103,19 +106,19 @@ export default function CloseAccountScreen() {
 
   function handleForceClose() {
     Alert.alert(
-      'Force Close Account',
-      `This will permanently delete "${account!.name}" and all its transactions. This may change your budget unexpectedly since money in it may vanish.`,
+      t('close.forceCloseTitle'),
+      t('close.forceCloseMessage', { name: account!.name }),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: tc('cancel'), style: 'cancel' },
         {
-          text: 'Force Close',
+          text: t('close.forceClose'),
           style: 'destructive',
           onPress: async () => {
             setSaving(true);
             try {
               await close({ id, forced: true });
               await load();
-              useUndoStore.getState().showUndo('Account deleted');
+              useUndoStore.getState().showUndo(t('close.accountDeleted'));
               router.dismiss();
             } finally {
               setSaving(false);
@@ -148,7 +151,7 @@ export default function CloseAccountScreen() {
 
       {/* Confirmation text */}
       <Text variant="body" color={theme.colors.textPrimary} style={styles.paragraph}>
-        Are you sure you want to close{' '}
+        {t('close.confirmMessage')}
         <Text variant="body" color={theme.colors.textPrimary} style={{ fontWeight: '700' }}>
           {account.name}
         </Text>
@@ -157,8 +160,8 @@ export default function CloseAccountScreen() {
 
       <Text variant="bodySm" color={theme.colors.textSecondary} style={styles.paragraph}>
         {canDelete
-          ? 'This account has no transactions so it will be permanently deleted.'
-          : 'This account has transactions so we can\'t permanently delete it.'}
+          ? t('close.noTransactions')
+          : t('close.hasTransactions')}
       </Text>
 
       {/* Balance transfer section */}
@@ -167,16 +170,12 @@ export default function CloseAccountScreen() {
           <Divider style={styles.divider} />
 
           <Text variant="bodySm" color={theme.colors.textSecondary} style={styles.paragraph}>
-            This account has a balance of{' '}
-            <Text variant="bodySm" color={theme.colors.textSecondary} style={{ fontWeight: '700' }}>
-              {formatBalance(balance)}
-            </Text>
-            . To close this account, select a different account to transfer this balance to:
+            {t('close.balanceTransferMessage', { balance: formatBalance(balance) })}
           </Text>
 
           {transferError && (
             <Text variant="captionSm" color={theme.colors.errorText} style={styles.errorText}>
-              Transfer is required
+              {t('close.transferRequired')}
             </Text>
           )}
 
@@ -201,13 +200,12 @@ export default function CloseAccountScreen() {
           <Divider style={styles.divider} />
 
           <Text variant="bodySm" color={theme.colors.textSecondary} style={styles.paragraph}>
-            Since you are transferring the balance from an on budget account to an off budget
-            account, this transaction must be categorized. Select a category:
+            {t('close.categoryTransferMessage')}
           </Text>
 
           {categoryError && (
             <Text variant="captionSm" color={theme.colors.errorText} style={styles.errorText}>
-              Category is required
+              {t('close.categoryRequired')}
             </Text>
           )}
 
@@ -229,17 +227,16 @@ export default function CloseAccountScreen() {
         <>
           <Divider style={styles.divider} />
           <Text variant="captionSm" color={theme.colors.textMuted} style={styles.paragraph}>
-            You can also{' '}
+            {t('close.forceCloseHint')}
             <Text
               variant="captionSm"
               color={theme.colors.errorText}
               style={{ fontWeight: '600' }}
               onPress={handleForceClose}
             >
-              force close
+              {t('close.forceCloseLink')}
             </Text>
-            {' '}the account which will delete it and all its transactions permanently. Doing so
-            may change your budget unexpectedly since money in it may vanish.
+            {t('close.forceCloseDescription')}
           </Text>
         </>
       )}
@@ -247,13 +244,13 @@ export default function CloseAccountScreen() {
       {/* Action buttons */}
       <View style={styles.buttonRow}>
         <Button
-          title="Cancel"
+          title={tc('cancel')}
           variant="secondary"
           onPress={() => router.back()}
           style={styles.buttonFlex}
         />
         <Button
-          title="Close Account"
+          title={t('close.title')}
           variant="danger"
           onPress={handleSubmit}
           loading={saving}

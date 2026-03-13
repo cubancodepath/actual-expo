@@ -1,83 +1,161 @@
 /**
  * Human-readable description of a goal template.
+ * Returns structured data (translation key + params) instead of hardcoded strings.
+ * The UI layer is responsible for translating via i18next.
  */
 
 import { formatBalance } from '../lib/format';
 import { amountToInteger } from './engine';
 import type { Template } from './types';
 
-const MONTH_NAMES = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-];
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+export interface TemplateDescription {
+  /** i18next translation key (e.g. 'budget:describe.saveBy') */
+  key: string;
+  /** Interpolation params for the translation key */
+  params?: Record<string, string | number>;
+  /** When set, the UI must translate this period key separately
+   *  (e.g. 'week' → t('budget:describe.period.week')) and inject as `period` param */
+  periodKey?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
 function formatDisplayAmount(displayUnits: number): string {
   return formatBalance(amountToInteger(displayUnits));
 }
 
-function formatMonth(yyyyMm: string): string {
+function formatMonth(yyyyMm: string, locale: string): string {
   const [year, month] = yyyyMm.split('-').map(Number);
-  return `${MONTH_NAMES[month - 1]} ${year}`;
+  return new Date(year, month - 1).toLocaleDateString(locale, { month: 'short', year: 'numeric' });
 }
 
-const PERIOD_LABELS: Record<string, string> = {
-  day: 'day',
-  week: 'week',
-  month: 'month',
-  year: 'year',
-};
+// ---------------------------------------------------------------------------
+// Main
+// ---------------------------------------------------------------------------
 
-export function describeTemplate(t: Template): string {
-  switch (t.type) {
+export function describeTemplate(tmpl: Template, locale: string = 'en'): TemplateDescription {
+  switch (tmpl.type) {
     case 'simple': {
-      let desc = t.monthly != null
-        ? `Budget ${formatDisplayAmount(t.monthly)} monthly`
-        : 'Budget monthly';
-      if (t.limit?.amount) {
-        desc += ` (up to ${formatDisplayAmount(t.limit.amount)})`;
+      if (tmpl.monthly != null) {
+        if (tmpl.limit?.amount) {
+          return {
+            key: 'budget:describe.budgetMonthlyWithLimit',
+            params: {
+              amount: formatDisplayAmount(tmpl.monthly),
+              limit: formatDisplayAmount(tmpl.limit.amount),
+            },
+          };
+        }
+        return {
+          key: 'budget:describe.budgetMonthly',
+          params: { amount: formatDisplayAmount(tmpl.monthly) },
+        };
       }
-      return desc;
+      return { key: 'budget:describe.budgetMonthlyBase' };
     }
     case 'goal':
-      return `Reach ${formatDisplayAmount(t.amount)} balance`;
+      return {
+        key: 'budget:describe.reachBalance',
+        params: { amount: formatDisplayAmount(tmpl.amount) },
+      };
     case 'by': {
-      let desc = `Save ${formatDisplayAmount(t.amount)} by ${formatMonth(t.month)}`;
-      if (t.repeat) {
-        desc += t.annual ? ' (repeats annually)' : ` (every ${t.repeat} months)`;
+      const baseParams = {
+        amount: formatDisplayAmount(tmpl.amount),
+        date: formatMonth(tmpl.month, locale),
+      };
+      if (tmpl.repeat) {
+        if (tmpl.annual) {
+          return {
+            key: 'budget:describe.saveByRepeatsAnnually',
+            params: baseParams,
+          };
+        }
+        return {
+          key: 'budget:describe.saveByEveryNMonths',
+          params: { ...baseParams, count: tmpl.repeat },
+        };
       }
-      return desc;
+      return { key: 'budget:describe.saveBy', params: baseParams };
     }
     case 'average': {
-      let desc = `Average of last ${t.numMonths} months`;
-      if (t.adjustment) {
-        const sign = t.adjustment > 0 ? '+' : '';
-        const suffix = t.adjustmentType === 'percent' ? '%' : '';
-        desc += ` (${sign}${t.adjustment}${suffix})`;
+      if (tmpl.adjustment) {
+        const sign = tmpl.adjustment > 0 ? '+' : '';
+        const suffix = tmpl.adjustmentType === 'percent' ? '%' : '';
+        return {
+          key: 'budget:describe.averageOfLastWithAdjustment',
+          params: { count: tmpl.numMonths, sign, value: tmpl.adjustment, suffix },
+        };
       }
-      return desc;
+      return {
+        key: 'budget:describe.averageOfLast',
+        params: { count: tmpl.numMonths },
+      };
     }
     case 'copy':
-      return `Copy budget from ${t.lookBack} month${t.lookBack > 1 ? 's' : ''} ago`;
+      return {
+        key: 'budget:describe.copyFrom',
+        params: { count: tmpl.lookBack },
+      };
     case 'periodic': {
-      const p = PERIOD_LABELS[t.period.period] ?? t.period.period;
-      const plural = t.period.amount > 1 ? `${t.period.amount} ${p}s` : p;
-      return `Budget ${formatDisplayAmount(t.amount)} every ${plural}`;
+      const p = tmpl.period.period;
+      const plural = tmpl.period.amount > 1 ? `${p}s` : p;
+      return {
+        key: 'budget:describe.budgetEvery',
+        params: { amount: formatDisplayAmount(tmpl.amount), periodAmount: tmpl.period.amount },
+        periodKey: plural,
+      };
     }
     case 'spend':
-      return `Spend ${formatDisplayAmount(t.amount)} by ${formatMonth(t.month)}`;
+      return {
+        key: 'budget:describe.spendBy',
+        params: { amount: formatDisplayAmount(tmpl.amount), date: formatMonth(tmpl.month, locale) },
+      };
     case 'percentage': {
-      const prev = t.previous ? "last month's " : '';
-      return `Budget ${t.percent}% of ${prev}income`;
+      const key = tmpl.previous
+        ? 'budget:describe.percentOfLastIncome'
+        : 'budget:describe.percentOfIncome';
+      return { key, params: { percent: tmpl.percent } };
     }
     case 'remainder': {
-      const w = t.weight !== 1 ? ` (weight: ${t.weight})` : '';
-      return `Fill with remaining budget${w}`;
+      if (tmpl.weight !== 1) {
+        return {
+          key: 'budget:describe.fillRemainingWeight',
+          params: { weight: tmpl.weight },
+        };
+      }
+      return { key: 'budget:describe.fillRemaining' };
     }
     case 'refill':
-      return 'Refill to limit';
+      return { key: 'budget:describe.refillToLimit' };
     case 'limit': {
-      const hold = t.hold ? ', hold' : '';
-      return `Limit: ${formatDisplayAmount(t.amount)} ${t.period}${hold}`;
+      const key = tmpl.hold ? 'budget:describe.limitPeriodHold' : 'budget:describe.limitPeriod';
+      return {
+        key,
+        params: { amount: formatDisplayAmount(tmpl.amount) },
+        periodKey: tmpl.period,
+      };
     }
   }
+}
+
+/**
+ * Helper to translate a TemplateDescription using a t() function.
+ * Resolves periodKey sub-translations automatically.
+ * Accepts any translation function compatible with i18next's TFunction.
+ */
+export function translateDescription(
+  desc: TemplateDescription,
+  t: (key: any, params?: any) => string,
+): string {
+  const params: Record<string, unknown> = { ...desc.params };
+  if (desc.periodKey) {
+    params.period = t(`budget:describe.period.${desc.periodKey}`);
+  }
+  return t(desc.key, params);
 }

@@ -1,0 +1,136 @@
+{
+  "cancel": "Cancel",
+  "delete": "Delete",
+  "save": "Save",
+  "done": "Done",
+  "ok": "OK",
+  "error": "Error",
+  "loading": "Loading…",
+  "never": "Never",
+  "search": "Search…",
+  "create": "Create",
+  "edit": "Edit",
+  "close": "Close",
+  "yes": "Yes",
+  "no": "No",
+  "none": "None",
+  "unnamed": "Unnamed",
+  "undo": "Undo",
+  "continue": "Continue",
+  "back": "Back",
+  "add": "Add",
+  "remove": "Remove",
+  "reconnect": "Reconnect",
+  "disconnect": "Disconnect",
+  "upload": "Upload",
+  "transfer": "Transfer",
+  "new": "New",
+  "select": "Select",
+  "show": "show",
+  "hide": "hide",
+
+  "tabs": {
+    "accounts": "Accounts",
+    "budget": "Budget",
+    "spending": "Spending"
+  },
+
+  "nav": {
+    "newAccount": "New Account",
+    "accountSettings": "Account Settings",
+    "closeAccount": "Close Account",
+    "assignBudget": "Assign Budget",
+    "reorder": "Reorder",
+    "newGroup": "New Group",
+    "newCategory": "New Category",
+    "renameCategory": "Rename Category",
+    "editCategory": "Edit Category",
+    "editGroup": "Edit Group",
+    "goalTarget": "Goal Target",
+    "budgetMovements": "Budget Movements",
+    "transactions": "Transactions",
+    "overspentCategories": "Overspent Categories",
+    "holdForNextMonth": "Hold for Next Month",
+    "manageCategories": "Manage Categories",
+    "managePayees": "Manage Payees",
+    "schedules": "Schedules",
+    "changeBudget": "Change Budget"
+  },
+
+  "payees": {
+    "deleteTitle": "Delete Payee",
+    "deleteConfirm": "Delete \"{{name}}\"?",
+    "payeeDeleted": "Payee deleted",
+    "renamePayee": "Rename Payee",
+    "searchPayees": "Search payees\u2026",
+    "reassignTransactions": "This payee has transactions. Reassign them to:",
+    "deleteKeepUnassigned": "Delete (keep transactions unassigned)",
+    "noPayeesFound": "No payees found",
+    "noPayeesMatch": "No payees match your search",
+    "noPayeesYet": "No payees yet",
+    "payeesCreatedHint": "Payees are created when you add transactions",
+    "transaction_one": "{{count}} transaction",
+    "transaction_other": "{{count}} transactions"
+  },
+
+  "categories": {
+    "deleteCategoryTitle": "Delete Category",
+    "deleteCategoryConfirm": "Delete \"{{name}}\"?",
+    "categoryDeleted": "Category deleted",
+    "deleteGroupTitle": "Delete Group",
+    "deleteGroupConfirm": "Delete \"{{name}}\" and all its categories?",
+    "groupDeleted": "Category group deleted",
+    "transferGroupSubtitle": "This group has categories with transactions. Transfer all of them to:",
+    "transferCategorySubtitle": "This category has transactions. Transfer them to:",
+    "deleteLeaveUncategorized": "Delete (leave uncategorized)",
+    "noCategoriesAvailable": "No other categories available",
+    "tapToRename": "tap to rename",
+    "income": "INCOME",
+    "addCat": "+ cat",
+    "noCategoriesInGroup": "No categories \u2014 tap \"+ cat\" to add one",
+    "addGroup": "+ Add Group"
+  },
+
+  "spending": {
+    "title": "Spending",
+    "noTransactionsYet": "No transactions yet",
+    "noTransactionsDescription": "Add your first transaction to get started",
+    "deleteScheduleTitle": "Delete Schedule",
+    "deleteScheduleConfirm": "Delete this schedule and all future occurrences?",
+    "noMatchingTransactions": "No matching transactions",
+    "tryDifferentSearch": "Try different search terms or filters",
+    "deleteTransactionTitle": "Delete Transaction",
+    "deleteTransactionConfirm": "Delete this transaction?",
+    "transactionDeleted": "Transaction deleted"
+  },
+
+  "budget": {
+    "deleteBudgetTitle": "Delete Budget",
+    "deleteSyncedMessage": "\"{{name}}\" is synced with the server.{{warning}}",
+    "deleteRemoteMessage": "Delete \"{{name}}\" from the server?",
+    "deleteLocalMessage": "Delete \"{{name}}\"?{{warning}} This cannot be undone.",
+    "activeWarning": " This will close the current budget.",
+    "deleteLocally": "Delete Locally",
+    "deleteFromAllDevices": "Delete From All Devices",
+    "deleteFromServer": "Delete From Server",
+    "uploadToServer": "Upload to Server",
+    "uploadConfirm": "Upload \"{{name}}\" to the server?",
+    "onThisDevice": "On This Device",
+    "availableOnServer": "Available on Server",
+    "noBudgetsFound": "No budgets found",
+    "noBudgetsDescription": "There are no budget files on this server or on this device.",
+    "createNewBudget": "Create New Budget",
+    "unnamedBudget": "Unnamed budget"
+  },
+
+  "quickAction": {
+    "addTransaction": "Add Transaction"
+  },
+
+  "undoAction": "Undo {{action}}",
+
+  "shakeUndo": {
+    "cancel": "Cancel",
+    "undo": "Undo"
+  }
+}

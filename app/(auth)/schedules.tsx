@@ -2,6 +2,7 @@ import { useCallback, useMemo } from "react";
 import { Alert, Pressable, SectionList, View } from "react-native";
 import { Stack, useFocusEffect, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import {
   useTheme,
   useThemedStyles,
@@ -28,41 +29,43 @@ type ScheduleSection = {
   data: Schedule[];
 };
 
-function useScheduleSections(schedules: Schedule[]): ScheduleSection[] {
+function useScheduleSections(schedules: Schedule[], t: any): ScheduleSection[] {
   return useMemo(() => {
-    const groups: Record<string, Schedule[]> = {
-      "Due & Missed": [],
-      "Upcoming": [],
-      "Paid": [],
-      "Scheduled": [],
-      "Completed": [],
-    };
+    const keys = [
+      { key: "dueMissed", label: t("dueMissed") },
+      { key: "upcoming", label: t("upcoming") },
+      { key: "paid", label: t("paid") },
+      { key: "scheduled", label: t("scheduled") },
+      { key: "completed", label: t("completed") },
+    ];
+    const groups: Record<string, Schedule[]> = {};
+    for (const k of keys) groups[k.key] = [];
 
     for (const s of schedules) {
       const status = getStatus(s.next_date, s.completed, false);
       switch (status) {
         case "due":
         case "missed":
-          groups["Due & Missed"].push(s);
+          groups["dueMissed"].push(s);
           break;
         case "upcoming":
-          groups["Upcoming"].push(s);
+          groups["upcoming"].push(s);
           break;
         case "paid":
-          groups["Paid"].push(s);
+          groups["paid"].push(s);
           break;
         case "completed":
-          groups["Completed"].push(s);
+          groups["completed"].push(s);
           break;
         default:
-          groups["Scheduled"].push(s);
+          groups["scheduled"].push(s);
       }
     }
 
-    return Object.entries(groups)
-      .filter(([, data]) => data.length > 0)
-      .map(([title, data]) => ({ title, data }));
-  }, [schedules]);
+    return keys
+      .filter(({ key }) => groups[key].length > 0)
+      .map(({ key, label }) => ({ title: label, data: groups[key] }));
+  }, [schedules, t]);
 }
 
 function ScheduleRow({
@@ -82,6 +85,7 @@ function ScheduleRow({
 }) {
   const { colors, spacing } = useTheme();
   const styles = useThemedStyles(createStyles);
+  const { t } = useTranslation(['schedules', 'common']);
 
   const status = getStatus(schedule.next_date, schedule.completed, false);
   const amount = getScheduledAmount(schedule._amount);
@@ -105,7 +109,7 @@ function ScheduleRow({
         <View style={styles.rowContent}>
           <View style={styles.rowTop}>
             <Text variant="bodyLg" style={{ flex: 1 }} numberOfLines={1}>
-              {schedule.name || payeeName || "No payee"}
+              {schedule.name || payeeName || t("noPayee")}
             </Text>
             <Amount value={amount} variant="bodyLg" weight="600" />
           </View>
@@ -118,7 +122,7 @@ function ScheduleRow({
                 </Text>
               ) : null}
               <Text variant="bodySm" color={colors.textSecondary} numberOfLines={1}>
-                {recurDesc ?? schedule.next_date ?? "No date"}
+                {recurDesc ?? schedule.next_date ?? t("noDate")}
                 {accountName ? ` \u00B7 ${accountName}` : ""}
               </Text>
             </View>
@@ -135,6 +139,7 @@ export default function SchedulesScreen() {
   const router = useRouter();
   const { colors, spacing } = useTheme();
   const styles = useThemedStyles(createStyles);
+  const { t } = useTranslation(['schedules', 'common']);
 
   const { schedules, load, delete_ } = useSchedulesStore();
   const payees = usePayeesStore((s) => s.payees);
@@ -155,21 +160,22 @@ export default function SchedulesScreen() {
     [accounts],
   );
 
-  const sections = useScheduleSections(schedules);
+  const sections = useScheduleSections(schedules, t);
 
   function handleDelete(schedule: Schedule) {
+    const name = schedule.name || payeeMap.get(schedule._payee ?? "") || t("title").toLowerCase();
     Alert.alert(
-      "Delete Schedule",
-      `Delete "${schedule.name || payeeMap.get(schedule._payee ?? "") || "this schedule"}"?`,
+      t("deleteSchedule"),
+      t("deleteConfirm", { name }),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common:cancel"), style: "cancel" },
         {
-          text: "Delete",
+          text: t("common:delete"),
           style: "destructive",
           onPress: async () => {
             await delete_(schedule.id);
             load();
-            useUndoStore.getState().showUndo("Schedule deleted");
+            useUndoStore.getState().showUndo(t("scheduleDeleted"));
           },
         },
       ],
@@ -223,8 +229,8 @@ export default function SchedulesScreen() {
         ListEmptyComponent={
           <EmptyState
             icon="calendar-outline"
-            title="No Schedules"
-            description="Create a schedule to automate recurring transactions"
+            title={t("noSchedules")}
+            description={t("noSchedulesDescription")}
           />
         }
         contentContainerStyle={{ paddingBottom: 80 }}

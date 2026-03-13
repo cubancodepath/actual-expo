@@ -38,13 +38,13 @@ function expectSegments(actual: ProgressSegment[], expected: ProgressSegment[]) 
 
 describe('getGoalProgress — no goal', () => {
   it('no spending', () => {
-    expectSegments(getGoalProgress(makeCat({})), [{ text: 'No spending' }]);
+    expectSegments(getGoalProgress(makeCat({})), [{ key: 'budget:progress.noSpending' }]);
   });
 
   it('has spending', () => {
     expectSegments(
       getGoalProgress(makeCat({ spent: -5000 })),
-      [{ text: 'Spent ' }, { amount: 5000 }],
+      [{ key: 'budget:progress.spent' }, { amount: 5000 }],
     );
   });
 });
@@ -59,35 +59,35 @@ describe('getGoalProgress — #goal (balance target)', () => {
   it('fully funded', () => {
     expectSegments(
       getGoalProgress(makeCat({ goal: 500000, longGoal: true, balance: 500000, goalDef })),
-      [{ text: 'Funded' }],
+      [{ key: 'budget:progress.funded' }],
     );
   });
 
   it('overfunded', () => {
     expectSegments(
       getGoalProgress(makeCat({ goal: 500000, longGoal: true, balance: 600000, goalDef })),
-      [{ text: 'Funded' }],
+      [{ key: 'budget:progress.funded' }],
     );
   });
 
   it('partially funded', () => {
     expectSegments(
       getGoalProgress(makeCat({ goal: 500000, longGoal: true, balance: 100000, goalDef })),
-      [{ amount: 100000 }, { text: ' of ' }, { amount: 500000 }, { text: ' saved' }],
+      [{ amount: 100000 }, { key: 'budget:progress.of' }, { amount: 500000 }, { key: 'budget:progress.saved' }],
     );
   });
 
   it('zero balance', () => {
     expectSegments(
       getGoalProgress(makeCat({ goal: 500000, longGoal: true, balance: 0, goalDef })),
-      [{ amount: 0 }, { text: ' of ' }, { amount: 500000 }, { text: ' saved' }],
+      [{ amount: 0 }, { key: 'budget:progress.of' }, { amount: 500000 }, { key: 'budget:progress.saved' }],
     );
   });
 
   it('negative balance shows zero', () => {
     expectSegments(
       getGoalProgress(makeCat({ goal: 500000, longGoal: true, balance: -5000, goalDef })),
-      [{ amount: 0 }, { text: ' of ' }, { amount: 500000 }, { text: ' saved' }],
+      [{ amount: 0 }, { key: 'budget:progress.of' }, { amount: 500000 }, { key: 'budget:progress.saved' }],
     );
   });
 });
@@ -102,42 +102,42 @@ describe('getGoalProgress — simple monthly', () => {
   it('fully funded, no spending', () => {
     expectSegments(
       getGoalProgress(makeCat({ goal: 20000, budgeted: 20000, balance: 20000, goalDef })),
-      [{ text: 'Funded' }],
+      [{ key: 'budget:progress.funded' }],
     );
   });
 
   it('fully funded, some spending', () => {
     expectSegments(
       getGoalProgress(makeCat({ goal: 20000, budgeted: 20000, spent: -5000, balance: 15000, goalDef })),
-      [{ text: 'Funded. Spent ' }, { amount: 5000 }, { text: ' of ' }, { amount: 20000 }],
+      [{ key: 'budget:progress.fundedSpent' }, { amount: 5000 }, { key: 'budget:progress.of' }, { amount: 20000 }],
     );
   });
 
   it('fully funded, all spent (fully spent)', () => {
     expectSegments(
       getGoalProgress(makeCat({ goal: 20000, budgeted: 20000, spent: -20000, balance: 0, goalDef })),
-      [{ text: 'Fully Spent' }],
+      [{ key: 'budget:progress.fullySpent' }],
     );
   });
 
   it('fully funded, overspent', () => {
     expectSegments(
       getGoalProgress(makeCat({ goal: 20000, budgeted: 20000, spent: -25000, balance: -5000, goalDef })),
-      [{ text: 'Overspent. Spent ' }, { amount: 25000 }, { text: ' of ' }, { amount: 20000 }],
+      [{ key: 'budget:progress.overspent' }, { amount: 25000 }, { key: 'budget:progress.of' }, { amount: 20000 }],
     );
   });
 
   it('underfunded', () => {
     expectSegments(
       getGoalProgress(makeCat({ goal: 20000, budgeted: 10000, balance: 10000, goalDef })),
-      [{ amount: 10000 }, { text: ' more needed this month' }],
+      [{ amount: 10000 }, { key: 'budget:progress.moreNeededThisMonth' }],
     );
   });
 
   it('not budgeted at all', () => {
     expectSegments(
       getGoalProgress(makeCat({ goal: 20000, budgeted: 0, balance: 0, goalDef })),
-      [{ amount: 20000 }, { text: ' more needed this month' }],
+      [{ amount: 20000 }, { key: 'budget:progress.moreNeededThisMonth' }],
     );
   });
 });
@@ -155,28 +155,28 @@ describe('getGoalProgress — simple spending cap', () => {
   it('nothing spent', () => {
     expectSegments(
       getGoalProgress(makeCat({ goal: 30000, budgeted: 0, spent: 0, goalDef })),
-      [{ text: 'Funded' }],
+      [{ key: 'budget:progress.funded' }],
     );
   });
 
   it('some spent, under limit', () => {
     expectSegments(
       getGoalProgress(makeCat({ goal: 30000, budgeted: 0, spent: -10000, goalDef })),
-      [{ text: 'Funded. Spent ' }, { amount: 10000 }, { text: ' of ' }, { amount: 30000 }],
+      [{ key: 'budget:progress.fundedSpent' }, { amount: 10000 }, { key: 'budget:progress.of' }, { amount: 30000 }],
     );
   });
 
   it('limit reached', () => {
     expectSegments(
       getGoalProgress(makeCat({ goal: 30000, budgeted: 0, spent: -30000, goalDef })),
-      [{ text: 'Fully Spent' }],
+      [{ key: 'budget:progress.fullySpent' }],
     );
   });
 
   it('over limit', () => {
     expectSegments(
       getGoalProgress(makeCat({ goal: 30000, budgeted: 0, spent: -40000, goalDef })),
-      [{ text: 'Overspent. Spent ' }, { amount: 40000 }, { text: ' of ' }, { amount: 30000 }],
+      [{ key: 'budget:progress.overspent' }, { amount: 40000 }, { key: 'budget:progress.of' }, { amount: 30000 }],
     );
   });
 });
@@ -193,14 +193,14 @@ describe('getGoalProgress — by (sinking fund)', () => {
   it('on track', () => {
     expectSegments(
       getGoalProgress(makeCat({ goal: 12000, budgeted: 12000, balance: 12000, goalDef })),
-      [{ text: 'On track' }],
+      [{ key: 'budget:progress.onTrack' }],
     );
   });
 
   it('underfunded', () => {
     expectSegments(
       getGoalProgress(makeCat({ goal: 12000, budgeted: 5000, balance: 5000, goalDef })),
-      [{ amount: 7000 }, { text: ' more needed this month' }],
+      [{ amount: 7000 }, { key: 'budget:progress.moreNeededThisMonth' }],
     );
   });
 });
@@ -217,14 +217,14 @@ describe('getGoalProgress — spend', () => {
   it('on track', () => {
     expectSegments(
       getGoalProgress(makeCat({ goal: 10000, budgeted: 10000, balance: 10000, goalDef })),
-      [{ text: 'On track' }],
+      [{ key: 'budget:progress.onTrack' }],
     );
   });
 
   it('underfunded', () => {
     expectSegments(
       getGoalProgress(makeCat({ goal: 10000, budgeted: 3000, balance: 3000, goalDef })),
-      [{ amount: 7000 }, { text: ' more needed this month' }],
+      [{ amount: 7000 }, { key: 'budget:progress.moreNeededThisMonth' }],
     );
   });
 });
@@ -241,28 +241,28 @@ describe('getGoalProgress — limit', () => {
   it('nothing spent', () => {
     expectSegments(
       getGoalProgress(makeCat({ goal: 40000, spent: 0, goalDef })),
-      [{ text: 'Funded' }],
+      [{ key: 'budget:progress.funded' }],
     );
   });
 
   it('under limit', () => {
     expectSegments(
       getGoalProgress(makeCat({ goal: 40000, spent: -15000, goalDef })),
-      [{ text: 'Funded. Spent ' }, { amount: 15000 }, { text: ' of ' }, { amount: 40000 }],
+      [{ key: 'budget:progress.fundedSpent' }, { amount: 15000 }, { key: 'budget:progress.of' }, { amount: 40000 }],
     );
   });
 
   it('at limit', () => {
     expectSegments(
       getGoalProgress(makeCat({ goal: 40000, spent: -40000, goalDef })),
-      [{ text: 'Fully Spent' }],
+      [{ key: 'budget:progress.fullySpent' }],
     );
   });
 
   it('over limit', () => {
     expectSegments(
       getGoalProgress(makeCat({ goal: 40000, spent: -50000, goalDef })),
-      [{ text: 'Overspent. Spent ' }, { amount: 50000 }, { text: ' of ' }, { amount: 40000 }],
+      [{ key: 'budget:progress.overspent' }, { amount: 50000 }, { key: 'budget:progress.of' }, { amount: 40000 }],
     );
   });
 });
@@ -273,7 +273,7 @@ describe('getGoalProgress — refill', () => {
   it('nothing spent', () => {
     expectSegments(
       getGoalProgress(makeCat({ goal: 50000, spent: 0, goalDef })),
-      [{ text: 'Funded' }],
+      [{ key: 'budget:progress.funded' }],
     );
   });
 });
@@ -290,21 +290,21 @@ describe('getGoalProgress — default (average/copy/periodic/percentage)', () =>
   it('funded, no spending', () => {
     expectSegments(
       getGoalProgress(makeCat({ goal: 15000, budgeted: 15000, balance: 15000, goalDef })),
-      [{ text: 'Budgeted. ' }, { amount: 15000 }, { text: ' available' }],
+      [{ key: 'budget:progress.budgeted' }, { amount: 15000 }, { key: 'budget:progress.available' }],
     );
   });
 
   it('funded, with spending', () => {
     expectSegments(
       getGoalProgress(makeCat({ goal: 15000, budgeted: 15000, spent: -3000, balance: 12000, goalDef })),
-      [{ text: 'Spent ' }, { amount: 3000 }, { text: ' of ' }, { amount: 15000 }],
+      [{ key: 'budget:progress.spent' }, { amount: 3000 }, { key: 'budget:progress.of' }, { amount: 15000 }],
     );
   });
 
   it('underfunded', () => {
     expectSegments(
       getGoalProgress(makeCat({ goal: 15000, budgeted: 5000, balance: 5000, goalDef })),
-      [{ amount: 10000 }, { text: ' more needed this month' }],
+      [{ amount: 10000 }, { key: 'budget:progress.moreNeededThisMonth' }],
     );
   });
 });
@@ -321,7 +321,7 @@ describe('getGoalProgress — goalDef present but goal null', () => {
   it('falls back to no-goal path', () => {
     expectSegments(
       getGoalProgress(makeCat({ goal: null, goalDef })),
-      [{ text: 'No spending' }],
+      [{ key: 'budget:progress.noSpending' }],
     );
   });
 });
@@ -331,21 +331,32 @@ describe('getGoalProgress — goalDef present but goal null', () => {
 // ---------------------------------------------------------------------------
 
 describe('getGoalProgressLabel', () => {
+  // Simple mock t function that returns the key suffix for testing
+  const mockT = (key: string) => {
+    const translations: Record<string, string> = {
+      'budget:progress.noSpending': 'No spending',
+      'budget:progress.of': ' of ',
+      'budget:progress.saved': ' saved',
+      'budget:progress.funded': 'Funded',
+    };
+    return translations[key] ?? key;
+  };
+
   it('returns plain text for no-goal', () => {
-    expect(getGoalProgressLabel(makeCat({}))).toBe('No spending');
+    expect(getGoalProgressLabel(makeCat({}), mockT)).toBe('No spending');
   });
 
   it('formats amounts as dollars', () => {
     const goalDef = toGoalDef([{ type: 'goal', amount: 5000, directive: 'goal' }]);
     expect(
-      getGoalProgressLabel(makeCat({ goal: 500000, longGoal: true, balance: 100000, goalDef })),
+      getGoalProgressLabel(makeCat({ goal: 500000, longGoal: true, balance: 100000, goalDef }), mockT),
     ).toBe('$1000.00 of $5000.00 saved');
   });
 
   it('returns funded label', () => {
     const goalDef = toGoalDef([{ type: 'goal', amount: 5000, directive: 'goal' }]);
     expect(
-      getGoalProgressLabel(makeCat({ goal: 500000, longGoal: true, balance: 500000, goalDef })),
+      getGoalProgressLabel(makeCat({ goal: 500000, longGoal: true, balance: 500000, goalDef }), mockT),
     ).toBe('Funded');
   });
 });

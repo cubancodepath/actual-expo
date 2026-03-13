@@ -1,6 +1,7 @@
 import { Platform, ScrollView, Switch, TextInput, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 import { useTheme, useThemedStyles } from "../../../src/presentation/providers/ThemeProvider";
 import {
   Text,
@@ -95,6 +96,7 @@ export default function BudgetSettingsScreen() {
   const { colors, spacing } = useTheme();
   const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation('settings');
 
   const prefs = usePreferencesStore();
   const {
@@ -124,31 +126,31 @@ export default function BudgetSettingsScreen() {
       contentInsetAdjustmentBehavior="automatic"
     >
       {/* Formatting */}
-      <SectionHeader title="Formatting" style={{ marginTop: spacing.lg }} />
+      <SectionHeader title={t('formatting')} style={{ marginTop: spacing.lg }} />
       <Card>
         <PickerRow
-          label="Date Format"
+          label={t('dateFormat')}
           selection={dateFormat}
           options={dateOptions}
           onSelectionChange={(v) => set('dateFormat', v)}
           showSeparator
         />
         <PickerRow
-          label="Number Format"
+          label={t('numberFormat')}
           selection={numberFormat}
           options={numberOptions}
           onSelectionChange={(v) => set('numberFormat', v)}
           showSeparator
         />
         <ListItem
-          title="Hide Decimal Places"
+          title={t('hideDecimalPlaces')}
           onPress={() => set('hideFraction', hideFraction === 'true' ? 'false' : 'true')}
           right={
             <Switch
               value={hideFraction === 'true'}
               onValueChange={(v) => set('hideFraction', v ? 'true' : 'false')}
               trackColor={{ true: colors.primary }}
-              accessibilityLabel="Hide decimal places"
+              accessibilityLabel={t('hideDecimalPlaces')}
             />
           }
         />
@@ -157,14 +159,14 @@ export default function BudgetSettingsScreen() {
       {/* Currency — gated by feature flag */}
       {featureFlags.currency && (
         <>
-          <SectionHeader title="Currency" style={{ marginTop: spacing.xl }} />
+          <SectionHeader title={t('currency')} style={{ marginTop: spacing.xl }} />
           <Card>
             <PickerRow
-              label="Currency"
+              label={t('currency')}
               selection={defaultCurrencyCode}
               options={currencies.map((c) => ({
                 value: c.code,
-                label: c.code ? `${c.code} (${c.symbol})` : 'None',
+                label: c.code ? `${c.code} (${c.symbol})` : t('none', { ns: 'common' }),
               }))}
               onSelectionChange={(code) => {
                 const cur = getCurrency(code);
@@ -182,17 +184,17 @@ export default function BudgetSettingsScreen() {
             {hasCurrency && (
               <>
                 <PickerRow
-                  label="Symbol Position"
+                  label={t('symbolPosition')}
                   selection={currencySymbolPosition || 'before'}
                   options={[
-                    { value: 'before', label: 'Before' },
-                    { value: 'after', label: 'After' },
+                    { value: 'before', label: t('symbolBefore') },
+                    { value: 'after', label: t('symbolAfter') },
                   ]}
                   onSelectionChange={(v) => set('currencySymbolPosition', v)}
                   showSeparator
                 />
                 <ListItem
-                  title="Space Between"
+                  title={t('spaceBetween')}
                   onPress={() =>
                     set('currencySpaceBetweenAmountAndSymbol',
                       currencySpaceBetweenAmountAndSymbol === 'true' ? 'false' : 'true')
@@ -209,7 +211,7 @@ export default function BudgetSettingsScreen() {
                   showSeparator
                 />
                 <ListItem
-                  title="Custom Symbol"
+                  title={t('customSymbol')}
                   right={
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                       <TextInput
@@ -238,17 +240,17 @@ export default function BudgetSettingsScreen() {
               color={colors.textMuted}
               style={{ paddingHorizontal: spacing.lg, marginTop: spacing.sm }}
             >
-              Custom Symbol overrides the default symbol for display. Leave empty to use the standard symbol.
+              {t('customSymbolHint')}
             </Text>
           )}
         </>
       )}
 
       {/* Calendar */}
-      <SectionHeader title="Calendar" style={{ marginTop: spacing.xl }} />
+      <SectionHeader title={t('calendar')} style={{ marginTop: spacing.xl }} />
       <Card>
         <PickerRow
-          label="First Day of Week"
+          label={t('firstDayOfWeek')}
           selection={firstDayOfWeekIdx}
           options={DAY_OF_WEEK_OPTIONS}
           onSelectionChange={(v) => set('firstDayOfWeekIdx', v)}
@@ -256,29 +258,29 @@ export default function BudgetSettingsScreen() {
       </Card>
 
       {/* Manage */}
-      <SectionHeader title="Manage" style={{ marginTop: spacing.xl }} />
+      <SectionHeader title={t('manage')} style={{ marginTop: spacing.xl }} />
       <Card>
         <ListItem
-          title="Schedules"
+          title={t('schedules')}
           showChevron
           onPress={() => router.push("/(auth)/schedules")}
           showSeparator
         />
         <ListItem
-          title="Payees"
+          title={t('payees')}
           showChevron
           onPress={() => router.push("/(auth)/payees")}
           showSeparator
         />
         <ListItem
-          title="Categories"
+          title={t('categories')}
           showChevron
           onPress={() => router.push("/(auth)/categories")}
         />
       </Card>
 
       {/* Experimental Features */}
-      <SectionHeader title="Experimental Features" style={{ marginTop: spacing.xl }} />
+      <SectionHeader title={t('experimentalFeatures')} style={{ marginTop: spacing.xl }} />
       <Card>
         {ALL_FEATURE_FLAGS.map((flag, index) => (
           <ListItem
@@ -302,7 +304,7 @@ export default function BudgetSettingsScreen() {
         color={colors.textMuted}
         style={{ paddingHorizontal: spacing.lg, marginTop: spacing.sm }}
       >
-        Experimental features are incomplete and may cause unexpected behavior or data loss. They are synced across all your devices. Use at your own risk.
+        {t('experimentalFeaturesWarning')}
       </Text>
     </ScrollView>
   );

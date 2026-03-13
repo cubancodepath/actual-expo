@@ -1,0 +1,23 @@
+{
+  "heroTitle": "Actual",
+  "heroSubtitle": "Your budget. Your data. Your rules.",
+  "pillPrivate": "Private by design",
+  "pillNoSub": "No subscription",
+  "privacyHeading": "Your data never leaves your server.",
+  "privacyBody": "Actual syncs to a server you control — your home, your NAS, or a private VPS. No company reads your finances.",
+  "featureEncrypted": "End-to-end encrypted",
+  "featureOpenSource": "Open source",
+  "featureNoTracking": "No tracking, ever",
+  "featuresHeading": "Budget the way it actually works.",
+  "featuresSubtitle": "Every dollar has a job. Track it without the guilt.",
+  "cardEnvelopeTitle": "Envelope budgeting",
+  "cardEnvelopeBody": "Assign every dollar to a category before you spend it.",
+  "cardAccountsTitle": "All your accounts",
+  "cardAccountsBody": "Checking, savings, cards — all in one place with live balances.",
+  "cardInsightsTitle": "Spending insights",
+  "cardInsightsBody": "See exactly where your money goes, by month.",
+  "skip": "Skip",
+  "getStarted": "Get Started",
+  "letsGo": "Let's Go",
+  "pageOf": "Page {{current}} of {{total}}"
+}

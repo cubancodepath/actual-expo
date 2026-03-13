@@ -1,0 +1,74 @@
+{
+  "addTransaction": "Add Transaction",
+  "editTransaction": "Edit Transaction",
+  "saveChanges": "Save Changes",
+  "deleteTransaction": "Delete Transaction",
+
+  "account": "Account",
+  "payee": "Payee",
+  "category": "Category",
+  "repeat": "Repeat",
+  "tags": "Tags",
+
+  "noCategoryNeeded": "No category needed",
+  "splitCategories": "Split ({{count}} categories)",
+
+  "enterAmount": "Enter an amount",
+  "selectAccount": "Select an account",
+
+  "editReconciledTitle": "Edit Reconciled Transaction",
+  "editReconciledMessage": "Saving your changes to this reconciled transaction may bring your reconciliation out of balance.",
+  "saveAnyway": "Save Anyway",
+
+  "noCategoryTitle": "No Category",
+  "noCategoryMessage": "This transaction has no category. Save anyway?",
+  "save": "Save",
+
+  "deleteTitle": "Delete Transaction",
+  "deleteConfirm": "Delete this transaction?",
+  "deleteReconciledMessage": "Deleting reconciled transactions may bring your reconciliation out of balance.",
+  "delete": "Delete",
+  "cancel": "Cancel",
+
+  "transferTitle": "Transfer",
+  "transferNoCategoryMessage": "Transfers between accounts don\u2019t need a category.",
+
+  "splitTransaction": "Split Transaction",
+  "selectCategory": "Select category",
+  "categories": "CATEGORIES",
+  "remaining": "{{amount}} remaining",
+  "total": "{{amount}} total",
+  "addAnother": "Add Another",
+  "noPayeeSet": "No payee set",
+
+  "amountsDontMatchTitle": "Amounts don\u2019t match",
+  "amountsDontMatchMessage": "The split amounts must equal the transaction total. {{amount}} remaining.",
+  "noSplitsTitle": "No splits",
+  "noSplitsMessage": "Add at least one split with an amount.",
+  "remainingLabel": "remaining",
+
+  "statusCleared": "Cleared",
+  "statusUncleared": "Uncleared",
+  "statusReconciled": "Reconciled",
+  "statusUnreconciled": "Unreconciled",
+  "uncategorized": "Uncategorized",
+  "accountIs": "Account Is: {{name}}",
+  "categoryIs": "Category Is: {{name}}",
+  "payeeIs": "Payee Is: {{name}}",
+  "tag": "Tag: #{{name}}",
+
+  "deleteTransactionsTitle": "Delete Transactions",
+  "deleteTransactionsReconciledMessage": "Some of the selected transactions are reconciled. Deleting them may bring your reconciliation out of balance.\n\nDelete {{count}} transaction{{plural}}?",
+  "deleteTransactionsMessage": "Delete {{count}} transaction{{plural}}?",
+  "bulkDeleted_one": "{{count}} transaction deleted",
+  "bulkDeleted_other": "{{count}} transactions deleted",
+
+  "moveTransactionsTitle": "Move Transactions",
+  "moveTransactionsReconciledMessage": "Some of the selected transactions are reconciled. Moving them may bring your reconciliation out of balance.\n\nMove {{count}} transaction{{plural}} to {{account}}?",
+  "moveTransactionsMessage": "Move {{count}} transaction{{plural}} to {{account}}?",
+  "move": "Move",
+
+  "changeCategoryTitle": "Change Category",
+  "changeCategoryReconciledMessage": "Some of the selected transactions are reconciled. Editing them may bring your reconciliation out of balance.",
+  "changeAnyway": "Change Anyway"
+}

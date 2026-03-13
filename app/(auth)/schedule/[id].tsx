@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Keyboard, Pressable, Switch, useColorScheme, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import Animated, { useAnimatedScrollHandler, useAnimatedStyle, useSharedValue, interpolate } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAccountsStore } from '../../../src/stores/accountsStore';
@@ -35,6 +36,7 @@ export default function ScheduleDetailScreen() {
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const { t } = useTranslation(['schedules', 'common']);
 
   const { update, delete_, skip, postTransaction, load } = useSchedulesStore();
   const payees = usePayeesStore((s) => s.payees);
@@ -273,21 +275,21 @@ export default function ScheduleDetailScreen() {
       load();
       router.dismiss();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to update schedule');
+      setError(e instanceof Error ? e.message : t('failedToUpdate'));
     } finally {
       setSaving(false);
     }
   }
 
   function handleSkip() {
-    Alert.alert('Skip Next Date', 'Move to the following occurrence?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('skipNextDate'), t('skipNextDateConfirm'), [
+      { text: t('common:cancel'), style: 'cancel' },
       {
-        text: 'Skip',
+        text: t('skip'),
         onPress: async () => {
           await skip(schedule!.id);
           load();
-          useUndoStore.getState().showUndo('Date skipped');
+          useUndoStore.getState().showUndo(t('dateSkipped'));
         },
       },
     ]);
@@ -295,16 +297,16 @@ export default function ScheduleDetailScreen() {
 
   function handlePostNow() {
     Alert.alert(
-      'Post Transaction',
-      'Create a transaction for this schedule now?',
+      t('postTransactionNow'),
+      t('postTransactionConfirm'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common:cancel'), style: 'cancel' },
         {
-          text: 'Post',
+          text: t('post'),
           onPress: async () => {
             await postTransaction(schedule!.id);
             load();
-            useUndoStore.getState().showUndo('Transaction posted');
+            useUndoStore.getState().showUndo(t('transactionPosted'));
           },
         },
       ],
@@ -313,12 +315,12 @@ export default function ScheduleDetailScreen() {
 
   function handleComplete() {
     Alert.alert(
-      'Complete Schedule',
-      'Mark this schedule as completed? It will no longer generate transactions.',
+      t('completeSchedule'),
+      t('completeConfirm'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common:cancel'), style: 'cancel' },
         {
-          text: 'Complete',
+          text: t('complete'),
           onPress: async () => {
             await update({
               schedule: { id: schedule!.id, completed: true },
@@ -332,15 +334,15 @@ export default function ScheduleDetailScreen() {
   }
 
   function handleDelete() {
-    Alert.alert('Delete Schedule', 'This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('deleteSchedule'), t('deleteCannotUndo'), [
+      { text: t('common:cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('common:delete'),
         style: 'destructive',
         onPress: async () => {
           await delete_(schedule!.id);
           load();
-          useUndoStore.getState().showUndo('Schedule deleted');
+          useUndoStore.getState().showUndo(t('scheduleDeleted'));
           router.dismiss();
         },
       },
@@ -392,7 +394,7 @@ export default function ScheduleDetailScreen() {
             <DetailRow
               icon="wallet-outline"
               label={acctName}
-              placeholder="Account"
+              placeholder={t('account')}
               onPress={() => router.push({ pathname: './account-picker', params: { selectedId: acctId ?? '' } })}
             />
             <View style={dividerStyle} />
@@ -400,7 +402,7 @@ export default function ScheduleDetailScreen() {
             <DetailRow
               icon="person-outline"
               label={payeeName}
-              placeholder="Payee"
+              placeholder={t('payee')}
               onPress={() => router.push({ pathname: './payee-picker', params: { selectedId: payeeId ?? '', selectedName: payeeName, accountId: acctId ?? '' } })}
             />
             <View style={dividerStyle} />
@@ -408,7 +410,7 @@ export default function ScheduleDetailScreen() {
             <DetailRow
               icon="folder-outline"
               label={categoryName}
-              placeholder="Category"
+              placeholder={t('category')}
               onClear={categoryId ? () => { setCategoryId(null); setCategoryName(''); } : undefined}
               onPress={() => router.push({ pathname: './category-picker', params: { selectedId: categoryId ?? '', hideSplit: '1' } })}
             />
@@ -417,7 +419,7 @@ export default function ScheduleDetailScreen() {
             <DetailRow
               icon="repeat"
               label={recurDesc}
-              placeholder="Repeat"
+              placeholder={t('repeat')}
               onClear={recurConfig ? () => setRecurConfig(null) : undefined}
               onPress={() => {
                 router.push({
@@ -435,9 +437,9 @@ export default function ScheduleDetailScreen() {
             <DetailRow
               icon="text-outline"
               label={name}
-              placeholder="Name"
+              placeholder={t('name')}
               onPress={() => {
-                Alert.prompt('Schedule Name', 'Optional display name', (text) => {
+                Alert.prompt(t('scheduleName'), t('scheduleNamePrompt'), (text) => {
                   if (text !== undefined) setName(text);
                 }, 'plain-text', name);
               }}
@@ -458,7 +460,7 @@ export default function ScheduleDetailScreen() {
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
                 <Text variant="body" color={colors.textPrimary}>
-                  Auto-post Transaction
+                  {t('autoPostTransaction')}
                 </Text>
               </View>
               <Switch
@@ -482,7 +484,7 @@ export default function ScheduleDetailScreen() {
         {/* ── Buttons ── */}
         <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.xl, gap: spacing.sm }}>
           <Button
-            title="Save Changes"
+            title={t('saveChanges')}
             onPress={handleSave}
             size="lg"
             loading={saving}
@@ -491,7 +493,7 @@ export default function ScheduleDetailScreen() {
 
           {isRecurring && (
             <Button
-              title="Skip Next Date"
+              title={t('skipNextDate')}
               icon="play-forward-outline"
               variant="ghost"
               onPress={handleSkip}
@@ -499,7 +501,7 @@ export default function ScheduleDetailScreen() {
           )}
 
           <Button
-            title="Post Transaction Now"
+            title={t('postTransactionNow')}
             icon="checkmark-circle-outline"
             variant="ghost"
             onPress={handlePostNow}
@@ -507,7 +509,7 @@ export default function ScheduleDetailScreen() {
 
           {schedule && !schedule.completed && (
             <Button
-              title="Complete Schedule"
+              title={t('completeSchedule')}
               icon="flag-outline"
               variant="ghost"
               onPress={handleComplete}
@@ -515,7 +517,7 @@ export default function ScheduleDetailScreen() {
           )}
 
           <Button
-            title="Delete Schedule"
+            title={t('deleteSchedule')}
             icon="trash-outline"
             variant="ghost"
             textColor={colors.negative}
@@ -552,7 +554,7 @@ export default function ScheduleDetailScreen() {
       {/* Title */}
       <View style={{ position: 'absolute', top: 12, left: 0, right: 0, height: 48, justifyContent: 'center', alignItems: 'center', zIndex: 11, pointerEvents: 'none' }}>
         <Text variant="body" color={colors.textPrimary} style={{ fontWeight: '600' }}>
-          Edit Schedule
+          {t('editSchedule')}
         </Text>
       </View>
 

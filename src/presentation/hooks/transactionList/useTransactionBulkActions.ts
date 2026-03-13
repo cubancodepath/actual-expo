@@ -1,6 +1,7 @@
 import { useCallback, useRef } from 'react';
 import { Alert } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import { useTranslation } from 'react-i18next';
 import {
   deleteTransaction,
   setClearedBulk,
@@ -39,6 +40,8 @@ export function useTransactionBulkActions({
   optimisticBulkMove,
   onBulkToggleCleared,
 }: UseTransactionBulkActionsOptions) {
+  const { t } = useTranslation('transactions');
+
   // Refs so callbacks always read the latest values without re-creating
   const selectedIdsRef = useRef(selectedIds);
   selectedIdsRef.current = selectedIds;
@@ -52,23 +55,26 @@ export function useTransactionBulkActions({
   optimisticBulkMoveRef.current = optimisticBulkMove;
   const onBulkToggleClearedRef = useRef(onBulkToggleCleared);
   onBulkToggleClearedRef.current = onBulkToggleCleared;
+  const tRef = useRef(t);
+  tRef.current = t;
 
   // Track last bulk-deleted items so undo can restore them optimistically
   const lastBulkDeletedRef = useRef<Array<{ txn: TransactionDisplay; index: number }>>([]);
 
   const handleBulkDelete = useCallback(() => {
     const count = selectedIdsRef.current.size;
+    const plural = count === 1 ? '' : 's';
     const hasReconciled = transactionsRef.current.some(t => selectedIdsRef.current.has(t.id) && t.reconciled);
     const message = hasReconciled
-      ? `Some of the selected transactions are reconciled. Deleting them may bring your reconciliation out of balance.\n\nDelete ${count} transaction${count === 1 ? '' : 's'}?`
-      : `Delete ${count} transaction${count === 1 ? '' : 's'}?`;
+      ? tRef.current('deleteTransactionsReconciledMessage', { count, plural })
+      : tRef.current('deleteTransactionsMessage', { count, plural });
     Alert.alert(
-      'Delete Transactions',
+      tRef.current('deleteTransactionsTitle'),
       message,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: tRef.current('cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: tRef.current('delete'),
           style: 'destructive',
           onPress: async () => {
             refreshIdRef.current++;
@@ -91,7 +97,7 @@ export function useTransactionBulkActions({
                 }
               });
             })();
-            queueMicrotask(() => useUndoStore.getState().showUndo(`${ids.size} transaction${ids.size === 1 ? '' : 's'} deleted`));
+            queueMicrotask(() => useUndoStore.getState().showUndo(tRef.current('bulkDeleted', { count: ids.size })));
             loadAccountsRef.current();
           },
         },
@@ -101,17 +107,19 @@ export function useTransactionBulkActions({
 
   const handleBulkMove = useCallback((targetAccountId: string, targetAccountName?: string) => {
     const count = selectedIdsRef.current.size;
+    const plural = count === 1 ? '' : 's';
+    const account = targetAccountName ?? tRef.current('account').toLowerCase();
     const hasReconciled = transactionsRef.current.some(t => selectedIdsRef.current.has(t.id) && t.reconciled);
     const message = hasReconciled
-      ? `Some of the selected transactions are reconciled. Moving them may bring your reconciliation out of balance.\n\nMove ${count} transaction${count === 1 ? '' : 's'} to ${targetAccountName ?? 'account'}?`
-      : `Move ${count} transaction${count === 1 ? '' : 's'} to ${targetAccountName ?? 'account'}?`;
+      ? tRef.current('moveTransactionsReconciledMessage', { count, plural, account })
+      : tRef.current('moveTransactionsMessage', { count, plural, account });
     Alert.alert(
-      'Move Transactions',
+      tRef.current('moveTransactionsTitle'),
       message,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: tRef.current('cancel'), style: 'cancel' },
         {
-          text: 'Move',
+          text: tRef.current('move'),
           onPress: async () => {
             refreshIdRef.current++;
             const ids = new Set(selectedIdsRef.current);
@@ -180,11 +188,11 @@ export function useTransactionBulkActions({
 
     if (hasReconciled) {
       Alert.alert(
-        'Change Category',
-        'Some of the selected transactions are reconciled. Editing them may bring your reconciliation out of balance.',
+        tRef.current('changeCategoryTitle'),
+        tRef.current('changeCategoryReconciledMessage'),
         [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Change Anyway', style: 'destructive', onPress: performChange },
+          { text: tRef.current('cancel'), style: 'cancel' },
+          { text: tRef.current('changeAnyway'), style: 'destructive', onPress: performChange },
         ],
       );
     } else {

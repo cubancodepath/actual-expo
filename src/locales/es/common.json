@@ -1,0 +1,136 @@
+{
+  "cancel": "Cancelar",
+  "delete": "Eliminar",
+  "save": "Guardar",
+  "done": "Listo",
+  "ok": "OK",
+  "error": "Error",
+  "loading": "Cargando…",
+  "never": "Nunca",
+  "search": "Buscar…",
+  "create": "Crear",
+  "edit": "Editar",
+  "close": "Cerrar",
+  "yes": "Sí",
+  "no": "No",
+  "none": "Ninguno",
+  "unnamed": "Sin nombre",
+  "undo": "Deshacer",
+  "continue": "Continuar",
+  "back": "Atrás",
+  "add": "Añadir",
+  "remove": "Eliminar",
+  "reconnect": "Reconectar",
+  "disconnect": "Desconectar",
+  "upload": "Subir",
+  "transfer": "Transferencia",
+  "new": "Nuevo",
+  "select": "Seleccionar",
+  "show": "mostrar",
+  "hide": "ocultar",
+
+  "tabs": {
+    "accounts": "Cuentas",
+    "budget": "Presupuesto",
+    "spending": "Gastos"
+  },
+
+  "nav": {
+    "newAccount": "Nueva Cuenta",
+    "accountSettings": "Ajustes de Cuenta",
+    "closeAccount": "Cerrar Cuenta",
+    "assignBudget": "Asignar Presupuesto",
+    "reorder": "Reordenar",
+    "newGroup": "Nuevo Grupo",
+    "newCategory": "Nueva Categoría",
+    "renameCategory": "Renombrar Categoría",
+    "editCategory": "Editar Categoría",
+    "editGroup": "Editar Grupo",
+    "goalTarget": "Meta Objetivo",
+    "budgetMovements": "Movimientos del Presupuesto",
+    "transactions": "Transacciones",
+    "overspentCategories": "Categorías Sobregiradas",
+    "holdForNextMonth": "Reservar para el Próximo Mes",
+    "manageCategories": "Administrar Categorías",
+    "managePayees": "Administrar Beneficiarios",
+    "schedules": "Programaciones",
+    "changeBudget": "Cambiar Presupuesto"
+  },
+
+  "payees": {
+    "deleteTitle": "Eliminar Beneficiario",
+    "deleteConfirm": "¿Eliminar \"{{name}}\"?",
+    "payeeDeleted": "Beneficiario eliminado",
+    "renamePayee": "Renombrar Beneficiario",
+    "searchPayees": "Buscar beneficiarios\u2026",
+    "reassignTransactions": "Este beneficiario tiene transacciones. Reasignarlas a:",
+    "deleteKeepUnassigned": "Eliminar (dejar transacciones sin asignar)",
+    "noPayeesFound": "No se encontraron beneficiarios",
+    "noPayeesMatch": "Ningún beneficiario coincide con tu búsqueda",
+    "noPayeesYet": "Aún no hay beneficiarios",
+    "payeesCreatedHint": "Los beneficiarios se crean al agregar transacciones",
+    "transaction_one": "{{count}} transacción",
+    "transaction_other": "{{count}} transacciones"
+  },
+
+  "categories": {
+    "deleteCategoryTitle": "Eliminar Categoría",
+    "deleteCategoryConfirm": "¿Eliminar \"{{name}}\"?",
+    "categoryDeleted": "Categoría eliminada",
+    "deleteGroupTitle": "Eliminar Grupo",
+    "deleteGroupConfirm": "¿Eliminar \"{{name}}\" y todas sus categorías?",
+    "groupDeleted": "Grupo de categorías eliminado",
+    "transferGroupSubtitle": "Este grupo tiene categorías con transacciones. Transferirlas todas a:",
+    "transferCategorySubtitle": "Esta categoría tiene transacciones. Transferirlas a:",
+    "deleteLeaveUncategorized": "Eliminar (dejar sin categoría)",
+    "noCategoriesAvailable": "No hay otras categorías disponibles",
+    "tapToRename": "toca para renombrar",
+    "income": "INGRESOS",
+    "addCat": "+ cat",
+    "noCategoriesInGroup": "Sin categorías — toca \"+ cat\" para agregar una",
+    "addGroup": "+ Agregar Grupo"
+  },
+
+  "spending": {
+    "title": "Gastos",
+    "noTransactionsYet": "Aún no hay transacciones",
+    "noTransactionsDescription": "Agrega tu primera transacción para comenzar",
+    "deleteScheduleTitle": "Eliminar Programación",
+    "deleteScheduleConfirm": "¿Eliminar esta programación y todas las ocurrencias futuras?",
+    "noMatchingTransactions": "No hay transacciones que coincidan",
+    "tryDifferentSearch": "Prueba con otros términos de búsqueda o filtros",
+    "deleteTransactionTitle": "Eliminar Transacción",
+    "deleteTransactionConfirm": "¿Eliminar esta transacción?",
+    "transactionDeleted": "Transacción eliminada"
+  },
+
+  "budget": {
+    "deleteBudgetTitle": "Eliminar Presupuesto",
+    "deleteSyncedMessage": "\"{{name}}\" está sincronizado con el servidor.{{warning}}",
+    "deleteRemoteMessage": "¿Eliminar \"{{name}}\" del servidor?",
+    "deleteLocalMessage": "¿Eliminar \"{{name}}\"?{{warning}} Esta acción no se puede deshacer.",
+    "activeWarning": " Esto cerrará el presupuesto actual.",
+    "deleteLocally": "Eliminar Localmente",
+    "deleteFromAllDevices": "Eliminar de Todos los Dispositivos",
+    "deleteFromServer": "Eliminar del Servidor",
+    "uploadToServer": "Subir al Servidor",
+    "uploadConfirm": "¿Subir \"{{name}}\" al servidor?",
+    "onThisDevice": "En Este Dispositivo",
+    "availableOnServer": "Disponible en el Servidor",
+    "noBudgetsFound": "No se encontraron presupuestos",
+    "noBudgetsDescription": "No hay archivos de presupuesto en este servidor ni en este dispositivo.",
+    "createNewBudget": "Crear Nuevo Presupuesto",
+    "unnamedBudget": "Presupuesto sin nombre"
+  },
+
+  "quickAction": {
+    "addTransaction": "Agregar Transacción"
+  },
+
+  "undoAction": "Deshacer {{action}}",
+
+  "shakeUndo": {
+    "cancel": "Cancelar",
+    "undo": "Deshacer"
+  }
+}

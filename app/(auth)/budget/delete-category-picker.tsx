@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Alert, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useBudgetStore } from '../../../src/stores/budgetStore';
 import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
 import { Amount } from '../../../src/presentation/components/atoms/Amount';
@@ -9,6 +10,7 @@ import { GlassButton } from '../../../src/presentation/components/atoms/GlassBut
 import { CategoryPickerList, type GroupedCategory } from '../../../src/presentation/components';
 
 export default function DeleteCategoryPickerScreen() {
+  const { t } = useTranslation('budget');
   const router = useRouter();
   const { colors, spacing } = useTheme();
   const { excludeIds, moveCatId } = useLocalSearchParams<{
@@ -45,7 +47,7 @@ export default function DeleteCategoryPickerScreen() {
           <GlassButton icon="xmark" onPress={() => router.back()} />
           <View style={{ flex: 1, alignItems: 'center', marginRight: 48 }}>
             <Text variant="body" color={colors.textPrimary} style={{ fontWeight: '600' }}>
-              Move transactions to
+              {t('moveTransactionsTo')}
             </Text>
           </View>
         </View>
@@ -57,12 +59,12 @@ export default function DeleteCategoryPickerScreen() {
         autoFocusSearch
         onSelect={(cat) => {
           Alert.alert(
-            'Confirm Delete',
-            `Transactions will be moved to "${cat.name}". This cannot be undone.`,
+            t('confirmDeleteTitle'),
+            t('confirmDeleteMessage', { name: cat.name }),
             [
-              { text: 'Cancel', style: 'cancel' },
+              { text: t('cancel'), style: 'cancel' },
               {
-                text: 'Delete',
+                text: t('delete'),
                 style: 'destructive',
                 onPress: () => {
                   setCoverTarget({ catId: cat.id, catName: cat.name, balance: cat.balance });

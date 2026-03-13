@@ -1,0 +1,109 @@
+{
+  "title": "Accounts",
+  "addAccount": "Add Account",
+
+  "emptyState": {
+    "title": "No accounts yet",
+    "description": "Add your first account to get started."
+  },
+
+  "contextMenu": {
+    "viewTransactions": "View Transactions",
+    "editAccount": "Edit Account",
+    "closeAccount": "Close Account",
+    "reopenAccount": "Reopen Account"
+  },
+
+  "groups": {
+    "budgetAccounts": "Budget Accounts",
+    "offBudget": "Off Budget"
+  },
+
+  "newAccount": {
+    "title": "New Account",
+    "create": "Create",
+    "createAccount": "Create Account",
+    "accountNameLabel": "Account name",
+    "accountNamePlaceholder": "e.g. Checking, Savings, Cash",
+    "startingBalanceLabel": "Starting balance",
+    "startingBalancePlaceholder": "0.00",
+    "startingBalanceHint": "Leave blank or 0 to start with an empty account.\nUse a negative value for an account already in debt.",
+    "offBudget": "Off budget",
+    "offBudgetDescription": "Transactions won't affect your budget",
+    "accountNameRequired": "Account name is required"
+  },
+
+  "detail": {
+    "defaultTitle": "Account",
+    "select": "Select",
+    "reconcile": "Reconcile",
+    "showReconciled": "Show Reconciled",
+    "hideReconciled": "Hide Reconciled",
+    "editAccount": "Edit Account",
+    "allReconciled": {
+      "title": "All transactions reconciled",
+      "description": "Reconciled transactions are hidden",
+      "showAll": "Show All"
+    },
+    "noTransactions": {
+      "title": "No transactions yet",
+      "description": "Add your first transaction to get started"
+    },
+    "deleteScheduleTitle": "Delete Schedule",
+    "deleteScheduleMessage": "Delete this schedule and all future occurrences?",
+    "unclearedBanner_one": "{{count}} uncleared transaction",
+    "unclearedBanner_other": "{{count}} uncleared transactions"
+  },
+
+  "search": {
+    "noResults": {
+      "title": "No matching transactions",
+      "description": "Try different search terms or filters"
+    },
+    "deleteTransactionTitle": "Delete Transaction",
+    "deleteTransactionMessage": "Delete this transaction?",
+    "transactionDeleted": "Transaction deleted"
+  },
+
+  "settings": {
+    "title": "Account Settings",
+    "accountNameLabel": "Account name",
+    "accountNamePlaceholder": "Account name",
+    "offBudget": "Off budget",
+    "offBudgetDescription": "Transactions won't affect your budget",
+    "accountNameRequired": "Account name is required",
+    "reopenAccountTitle": "Reopen Account",
+    "reopenAccountMessage": "Reopen this account? It will appear in your budget again.",
+    "reopen": "Reopen"
+  },
+
+  "close": {
+    "title": "Close Account",
+    "confirmMessage": "Are you sure you want to close ",
+    "noTransactions": "This account has no transactions so it will be permanently deleted.",
+    "hasTransactions": "This account has transactions so we can't permanently delete it.",
+    "balanceTransferMessage": "This account has a balance of {{balance}}. To close this account, select a different account to transfer this balance to:",
+    "transferRequired": "Transfer is required",
+    "categoryTransferMessage": "Since you are transferring the balance from an on budget account to an off budget account, this transaction must be categorized. Select a category:",
+    "categoryRequired": "Category is required",
+    "forceCloseTitle": "Force Close Account",
+    "forceCloseMessage": "This will permanently delete \"{{name}}\" and all its transactions. This may change your budget unexpectedly since money in it may vanish.",
+    "forceClose": "Force Close",
+    "forceCloseHint": "You can also ",
+    "forceCloseLink": "force close",
+    "forceCloseDescription": " the account which will delete it and all its transactions permanently. Doing so may change your budget unexpectedly since money in it may vanish.",
+    "accountDeleted": "Account deleted",
+    "accountClosed": "Account closed"
+  },
+
+  "reconcile": {
+    "title": "Reconcile Account",
+    "question": "Does your cleared balance match your bank statement?",
+    "yesMatches": "Yes, it matches",
+    "noEnterBalance": "No, enter balance",
+    "enterBankBalance": "Enter Bank Balance",
+    "bankBalanceQuestion": "What is your current bank balance?",
+    "diff": "Diff: {{amount}}",
+    "reconcileButton": "Reconcile"
+  }
+}

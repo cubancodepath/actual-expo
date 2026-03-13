@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Keyboard, useColorScheme, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Animated, { useAnimatedScrollHandler, useAnimatedStyle, useSharedValue, interpolate } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -48,6 +49,7 @@ export default function NewTransactionScreen() {
     transactionId?: string;
   }>();
   const isEdit = !!transactionId;
+  const { t } = useTranslation('transactions');
   const router = useRouter();
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const colorScheme = useColorScheme();
@@ -229,21 +231,21 @@ export default function NewTransactionScreen() {
 
   function handleSave() {
     if (cents === 0) {
-      setError('Enter an amount');
+      setError(t('enterAmount'));
       return;
     }
     if (!isEdit && !acctId) {
-      setError('Select an account');
+      setError(t('selectAccount'));
       return;
     }
 
     if (reconciled) {
       Alert.alert(
-        'Edit Reconciled Transaction',
-        'Saving your changes to this reconciled transaction may bring your reconciliation out of balance.',
+        t('editReconciledTitle'),
+        t('editReconciledMessage'),
         [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Save Anyway', style: 'destructive', onPress: performSave },
+          { text: t('cancel'), style: 'cancel' },
+          { text: t('saveAnyway'), style: 'destructive', onPress: performSave },
         ],
       );
       return;
@@ -251,11 +253,11 @@ export default function NewTransactionScreen() {
 
     if (!categoryId && !isSplit && !isTransfer) {
       Alert.alert(
-        'No Category',
-        'This transaction has no category. Save anyway?',
+        t('noCategoryTitle'),
+        t('noCategoryMessage'),
         [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Save', onPress: performSave },
+          { text: t('cancel'), style: 'cancel' },
+          { text: t('save'), onPress: performSave },
         ],
       );
       return;
@@ -266,13 +268,13 @@ export default function NewTransactionScreen() {
 
   function handleDelete() {
     const message = reconciled
-      ? 'Deleting reconciled transactions may bring your reconciliation out of balance.'
-      : 'Delete this transaction?';
+      ? t('deleteReconciledMessage')
+      : t('deleteConfirm');
 
-    Alert.alert('Delete Transaction', message, [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('deleteTitle'), message, [
+      { text: t('cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('delete'),
         style: 'destructive',
         onPress: async () => {
           await delete_(transactionId!);
@@ -350,7 +352,7 @@ export default function NewTransactionScreen() {
             <DetailRow
               icon="wallet-outline"
               label={acctName}
-              placeholder="Account"
+              placeholder={t('account')}
               onPress={() => router.push({ pathname: './account-picker', params: { selectedId: acctId ?? '' } })}
             />
             <View style={dividerStyle} />
@@ -358,19 +360,19 @@ export default function NewTransactionScreen() {
             <DetailRow
               icon="person-outline"
               label={payeeName}
-              placeholder="Payee"
+              placeholder={t('payee')}
               onPress={() => router.push({ pathname: './payee-picker', params: { selectedId: payeeId ?? '', selectedName: payeeName, accountId: acctId ?? '' } })}
             />
             <View style={dividerStyle} />
 
             <DetailRow
               icon={isSplit ? 'git-branch-outline' : 'folder-outline'}
-              label={isTransfer ? '' : (isSplit ? `Split (${splitCategories!.length} categories)` : (categoryId ? categoryName : ''))}
-              placeholder={isTransfer ? 'No category needed' : 'Category'}
+              label={isTransfer ? '' : (isSplit ? t('splitCategories', { count: splitCategories!.length }) : (categoryId ? categoryName : ''))}
+              placeholder={isTransfer ? t('noCategoryNeeded') : t('category')}
               onClear={isEdit && categoryId && !isSplit && !isTransfer ? () => { setCategoryId(null); setCategoryName(''); } : undefined}
               onPress={() => {
                 if (isTransfer) {
-                  Alert.alert('Transfer', 'Transfers between accounts don\u2019t need a category.');
+                  Alert.alert(t('transferTitle'), t('transferNoCategoryMessage'));
                   return;
                 }
                 if (isSplit) {
@@ -426,7 +428,7 @@ export default function NewTransactionScreen() {
                 <DetailRow
                   icon="repeat"
                   label={recurConfig ? getRecurringDescription(recurConfig) : ''}
-                  placeholder="Repeat"
+                  placeholder={t('repeat')}
                   onClear={recurConfig ? () => setRecurConfig(null) : undefined}
                   onPress={() => {
                     router.push({
@@ -445,7 +447,7 @@ export default function NewTransactionScreen() {
                   ? extractTagsFromNotes(notes).map((t) => `#${t}`).join(', ')
                   : ''
               }
-              placeholder="Tags"
+              placeholder={t('tags')}
               onPress={() => {
                 router.push({
                   pathname: './tags',
@@ -466,7 +468,7 @@ export default function NewTransactionScreen() {
         {/* ── Action buttons ── */}
         <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.xl }}>
           <Button
-            title={isEdit ? 'Save Changes' : 'Add Transaction'}
+            title={isEdit ? t('saveChanges') : t('addTransaction')}
             onPress={handleSave}
             size="lg"
             loading={loading}
@@ -475,7 +477,7 @@ export default function NewTransactionScreen() {
 
           {isEdit && (
             <Button
-              title="Delete Transaction"
+              title={t('deleteTransaction')}
               icon="trash-outline"
               variant="ghost"
               textColor={colors.negative}
@@ -514,7 +516,7 @@ export default function NewTransactionScreen() {
       {/* Title — always visible, vertically centered with close button */}
       <View style={{ position: 'absolute', top: 12, left: 0, right: 0, height: 48, justifyContent: 'center', alignItems: 'center', zIndex: 11, pointerEvents: 'none' }}>
         <Text variant="body" color={colors.textPrimary} style={{ fontWeight: '600' }}>
-          {isEdit ? 'Edit Transaction' : 'Add Transaction'}
+          {isEdit ? t('editTransaction') : t('addTransaction')}
         </Text>
       </View>
 

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Keyboard, Pressable, ScrollView, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { randomUUID } from 'expo-crypto';
@@ -42,6 +43,7 @@ function SplitRow({
   inputRef: React.RefObject<CompactCurrencyInputRef | null>;
 }) {
   const { colors, spacing } = useTheme();
+  const { t } = useTranslation('transactions');
 
   return (
     <View
@@ -65,7 +67,7 @@ function SplitRow({
           numberOfLines={1}
           style={{ flex: 1 }}
         >
-          {line.categoryName || 'Select category'}
+          {line.categoryName || t('selectCategory')}
         </Text>
         <Ionicons name="chevron-forward" size={14} color={colors.textMuted} style={{ marginRight: spacing.sm }} />
       </Pressable>
@@ -104,6 +106,7 @@ export default function SplitScreen() {
   }>();
 
   const router = useRouter();
+  const { t } = useTranslation('transactions');
   const theme = useTheme();
   const styles = useThemedStyles(createStyles);
   const { height: keyboardHeight, visible: keyboardVisible } = useKeyboardHeight();
@@ -197,15 +200,15 @@ export default function SplitScreen() {
     // If there was a preset amount, splits must match it
     if (totalCents > 0 && remaining !== 0) {
       Alert.alert(
-        'Amounts don\u2019t match',
-        `The split amounts must equal the transaction total. ${formatAmount(Math.abs(remaining))} remaining.`,
+        t('amountsDontMatchTitle'),
+        t('amountsDontMatchMessage', { amount: formatAmount(Math.abs(remaining)) }),
       );
       return;
     }
 
     const validSplits = splits.filter((s) => s.amount > 0);
     if (validSplits.length === 0) {
-      Alert.alert('No splits', 'Add at least one split with an amount.');
+      Alert.alert(t('noSplitsTitle'), t('noSplitsMessage'));
       return;
     }
 
@@ -213,7 +216,7 @@ export default function SplitScreen() {
     router.dismiss(fromCategoryPicker === '1' ? 2 : 1);
   }
 
-  const displayPayee = payeeName || 'No payee set';
+  const displayPayee = payeeName || t('noPayeeSet');
   const remainingColor = remaining === 0 ? theme.colors.positive : theme.colors.textMuted;
 
   return (
@@ -226,7 +229,7 @@ export default function SplitScreen() {
       {/* Title — centered */}
       <View style={{ position: 'absolute', top: 12, left: 0, right: 0, height: 48, justifyContent: 'center', alignItems: 'center', zIndex: 11, pointerEvents: 'none' }}>
         <Text variant="body" color={theme.colors.textPrimary} style={{ fontWeight: '600' }}>
-          Split Transaction
+          {t('splitTransaction')}
         </Text>
       </View>
 
@@ -267,12 +270,12 @@ export default function SplitScreen() {
         {/* Section header: Categories + remaining/total */}
         <View style={styles.sectionHeader}>
           <Text variant="captionSm" color={theme.colors.textMuted} style={styles.sectionText}>
-            CATEGORIES
+            {t('categories')}
           </Text>
           <Text variant="captionSm" color={remainingColor} style={styles.sectionText}>
             {totalCents > 0
-              ? `${formatAmount(Math.abs(remaining))} remaining`
-              : `${formatAmount(totalAllocated)} total`}
+              ? t('remaining', { amount: formatAmount(Math.abs(remaining)) })
+              : t('total', { amount: formatAmount(totalAllocated) })}
           </Text>
         </View>
 
@@ -310,7 +313,7 @@ export default function SplitScreen() {
           >
             <Ionicons name="add-circle" size={20} color={theme.colors.primary} />
             <Text variant="body" color={theme.colors.primary} style={{ fontWeight: '600' }}>
-              Add Another
+              {t('addAnother')}
             </Text>
           </Pressable>
         </View>
@@ -355,7 +358,7 @@ export default function SplitScreen() {
                   {formatAmount(Math.abs(remaining))}
                 </Text>
                 <Text variant="captionSm" color={theme.colors.textSecondary}>
-                  remaining
+                  {t('remainingLabel')}
                 </Text>
               </GlassView>
             ) : (
@@ -368,7 +371,7 @@ export default function SplitScreen() {
                   {formatAmount(Math.abs(remaining))}
                 </Text>
                 <Text variant="captionSm" color={theme.colors.textSecondary}>
-                  remaining
+                  {t('remainingLabel')}
                 </Text>
               </BlurView>
             )}

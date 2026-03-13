@@ -1,4 +1,5 @@
 import { View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../providers/ThemeProvider';
 import { Text } from '../atoms/Text';
 import { Amount } from '../atoms/Amount';
@@ -10,6 +11,7 @@ interface BudgetSummaryBarProps {
 }
 
 export function BudgetSummaryBar({ income, budgeted, spent }: BudgetSummaryBarProps) {
+  const { t } = useTranslation('budget');
   const { colors, spacing, borderWidth: bw } = useTheme();
 
   return (
@@ -30,7 +32,7 @@ export function BudgetSummaryBar({ income, budgeted, spent }: BudgetSummaryBarPr
           color={colors.textMuted}
           style={{ textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: '700', marginBottom: 2 }}
         >
-          Income
+          {t('summaryIncome')}
         </Text>
         <Amount value={income} variant="bodyLg" color={colors.positive} weight="700" />
       </View>
@@ -41,7 +43,7 @@ export function BudgetSummaryBar({ income, budgeted, spent }: BudgetSummaryBarPr
           color={colors.textMuted}
           style={{ textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: '700', marginBottom: 2 }}
         >
-          Budgeted
+          {t('summaryBudgeted')}
         </Text>
         <Amount value={budgeted} variant="bodyLg" colored={false} weight="700" />
       </View>
@@ -52,7 +54,7 @@ export function BudgetSummaryBar({ income, budgeted, spent }: BudgetSummaryBarPr
           color={colors.textMuted}
           style={{ textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: '700', marginBottom: 2 }}
         >
-          Spent
+          {t('summarySpent')}
         </Text>
         <Amount value={spent} variant="bodyLg" color={colors.textSecondary} weight="700" />
       </View>

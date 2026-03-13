@@ -1,5 +1,6 @@
 import { Pressable, ScrollView, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../providers/ThemeProvider';
 import { Text } from '../atoms/Text';
 import type { SearchToken, StatusFilter } from '../../../transactions/types';
@@ -10,11 +11,11 @@ import type { SearchToken, StatusFilter } from '../../../transactions/types';
 
 const ALL_STATUSES: StatusFilter[] = ['cleared', 'uncleared', 'reconciled', 'unreconciled'];
 
-const STATUS_LABELS: Record<StatusFilter, string> = {
-  cleared: 'Cleared',
-  uncleared: 'Uncleared',
-  reconciled: 'Reconciled',
-  unreconciled: 'Unreconciled',
+const STATUS_LABEL_KEYS: Record<StatusFilter, string> = {
+  cleared: 'statusCleared',
+  uncleared: 'statusUncleared',
+  reconciled: 'statusReconciled',
+  unreconciled: 'statusUnreconciled',
 };
 
 // ---------------------------------------------------------------------------
@@ -57,6 +58,7 @@ export function SearchSuggestions({
   onSelect,
 }: SearchSuggestionsProps) {
   const { colors, spacing } = useTheme();
+  const { t: tr } = useTranslation('transactions');
 
   const query = text.toLowerCase().trim();
 
@@ -93,15 +95,16 @@ export function SearchSuggestions({
   // Status suggestions
   for (const s of ALL_STATUSES) {
     if (activeKeys.has(`status:${s}`)) continue;
-    const label = STATUS_LABELS[s];
+    const label = tr(STATUS_LABEL_KEYS[s] as any) as string;
     if (query && !label.toLowerCase().includes(query)) continue;
     suggestions.push({ kind: 'status', value: s, label });
   }
 
   // Uncategorized suggestion
   if (!activeKeys.has('uncategorized')) {
-    if (!query || 'uncategorized'.includes(query)) {
-      suggestions.push({ kind: 'uncategorized', label: 'Uncategorized' });
+    const uncategorizedLabel = tr('uncategorized');
+    if (!query || uncategorizedLabel.toLowerCase().includes(query)) {
+      suggestions.push({ kind: 'uncategorized', label: uncategorizedLabel });
     }
   }
 
@@ -110,7 +113,7 @@ export function SearchSuggestions({
     for (const a of accounts) {
       if (activeKeys.has(`account:${a.id}`)) continue;
       if (!a.name.toLowerCase().includes(query)) continue;
-      suggestions.push({ kind: 'account', id: a.id, name: a.name, label: `Account Is: ${a.name}` });
+      suggestions.push({ kind: 'account', id: a.id, name: a.name, label: tr('accountIs', { name: a.name }) });
     }
   } else {
     // Show generic "Account Is..." only when no text
@@ -118,7 +121,7 @@ export function SearchSuggestions({
     if (!hasAccountToken) {
       // Show all accounts as suggestions
       for (const a of accounts) {
-        suggestions.push({ kind: 'account', id: a.id, name: a.name, label: `Account Is: ${a.name}` });
+        suggestions.push({ kind: 'account', id: a.id, name: a.name, label: tr('accountIs', { name: a.name }) });
       }
     }
   }
@@ -128,13 +131,13 @@ export function SearchSuggestions({
     for (const c of categories) {
       if (activeKeys.has(`category:${c.id}`)) continue;
       if (!c.name.toLowerCase().includes(query)) continue;
-      suggestions.push({ kind: 'category', id: c.id, name: c.name, label: `Category Is: ${c.name}` });
+      suggestions.push({ kind: 'category', id: c.id, name: c.name, label: tr('categoryIs', { name: c.name }) });
     }
   } else {
     const hasCategoryToken = tokens.some((t) => t.type === 'category');
     if (!hasCategoryToken) {
       for (const c of categories) {
-        suggestions.push({ kind: 'category', id: c.id, name: c.name, label: `Category Is: ${c.name}` });
+        suggestions.push({ kind: 'category', id: c.id, name: c.name, label: tr('categoryIs', { name: c.name }) });
       }
     }
   }
@@ -144,13 +147,13 @@ export function SearchSuggestions({
     for (const p of payees) {
       if (activeKeys.has(`payee:${p.id}`)) continue;
       if (!p.name.toLowerCase().includes(query)) continue;
-      suggestions.push({ kind: 'payee', id: p.id, name: p.name, label: `Payee Is: ${p.name}` });
+      suggestions.push({ kind: 'payee', id: p.id, name: p.name, label: tr('payeeIs', { name: p.name }) });
     }
   } else {
     const hasPayeeToken = tokens.some((t) => t.type === 'payee');
     if (!hasPayeeToken) {
       for (const p of payees) {
-        suggestions.push({ kind: 'payee', id: p.id, name: p.name, label: `Payee Is: ${p.name}` });
+        suggestions.push({ kind: 'payee', id: p.id, name: p.name, label: tr('payeeIs', { name: p.name }) });
       }
     }
   }
@@ -160,12 +163,12 @@ export function SearchSuggestions({
     for (const t of tags) {
       if (activeKeys.has(`tag:${t.tag}`)) continue;
       if (!t.tag.toLowerCase().includes(query)) continue;
-      suggestions.push({ kind: 'tag', name: t.tag, label: `Tag: #${t.tag}` });
+      suggestions.push({ kind: 'tag', name: t.tag, label: tr('tag', { name: t.tag }) });
     }
   } else {
     for (const t of tags) {
       if (activeKeys.has(`tag:${t.tag}`)) continue;
-      suggestions.push({ kind: 'tag', name: t.tag, label: `Tag: #${t.tag}` });
+      suggestions.push({ kind: 'tag', name: t.tag, label: tr('tag', { name: t.tag }) });
     }
   }
 

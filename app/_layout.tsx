@@ -1,3 +1,4 @@
+import "../src/i18n/config";
 import { useEffect, useRef, useState } from "react";
 import { AppState, Settings, useColorScheme } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -8,6 +9,7 @@ import {
 } from "@react-navigation/native";
 import { Stack, useRouter } from "expo-router";
 import * as QuickActions from "expo-quick-actions";
+import i18n from "../src/i18n/config";
 import { ThemeProvider } from "../src/presentation/providers/ThemeProvider";
 import { usePrefsStore } from "../src/stores/prefsStore";
 import { useAccountsStore } from "../src/stores/accountsStore";
@@ -106,7 +108,7 @@ export default function RootLayout() {
       QuickActions.setItems([
         {
           id: "add_transaction",
-          title: "Add Transaction",
+          title: i18n.t('common:quickAction.addTransaction'),
           icon: "symbol:plus.circle",
           params: { href: "/(auth)/transaction/new" },
         },

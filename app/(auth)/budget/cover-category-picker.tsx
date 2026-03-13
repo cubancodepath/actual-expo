@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Pressable, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useBudgetStore } from '../../../src/stores/budgetStore';
 import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
 import { Text } from '../../../src/presentation/components/atoms/Text';
@@ -10,6 +11,7 @@ import { CategoryPickerList, type GroupedCategory } from '../../../src/presentat
 export const TO_BUDGET_ID = '__to_budget__';
 
 export default function CoverCategoryPickerScreen() {
+  const { t } = useTranslation('budget');
   const router = useRouter();
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const { excludeIds, overspentCatId } = useLocalSearchParams<{
@@ -43,7 +45,7 @@ export default function CoverCategoryPickerScreen() {
   const alreadyAdded = excludeIds?.split(',').includes(TO_BUDGET_ID) ?? false;
 
   function handleSelectToBudget() {
-    setCoverTarget({ catId: TO_BUDGET_ID, catName: 'Ready to Assign', balance: toBudget });
+    setCoverTarget({ catId: TO_BUDGET_ID, catName: t('readyToAssignLabel'), balance: toBudget });
     router.back();
   }
 
@@ -65,7 +67,7 @@ export default function CoverCategoryPickerScreen() {
         })}
       >
         <Text variant="body" color={colors.textPrimary} style={{ flex: 1, fontWeight: '600' }}>
-          Ready to Assign
+          {t('readyToAssignLabel')}
         </Text>
         <Amount value={toBudget} variant="bodySm" weight="600" />
       </Pressable>
@@ -74,14 +76,14 @@ export default function CoverCategoryPickerScreen() {
 
   return (
     <CategoryPickerList
-      title="Cover overspending from"
+      title={t('coverOverspendingFrom')}
       groups={groups}
       onSelect={(cat) => {
         setCoverTarget({ catId: cat.id, catName: cat.name, balance: cat.balance });
         router.back();
       }}
       renderRight={(cat) => <Amount value={cat.balance} variant="bodySm" weight="600" />}
-      emptyMessage="No categories with positive balance"
+      emptyMessage={t('noCategoriesWithBalance')}
       listHeaderExtra={toBudgetCard}
     />
   );

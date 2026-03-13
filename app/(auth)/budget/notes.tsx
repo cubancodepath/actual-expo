@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { SectionList, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
 import { Text } from '../../../src/presentation/components/atoms/Text';
 import { RowSeparator } from '../../../src/presentation/components/atoms/RowSeparator';
@@ -32,7 +33,7 @@ function buildSections(lines: string[]): NoteSection[] {
 
   for (const line of lines) {
     const { text, date } = parseLine(line);
-    const title = date || 'Other';
+    const title = date || '__other__';
     if (!current || current.title !== title) {
       current = { title, data: [] };
       sections.push(current);
@@ -48,6 +49,7 @@ function buildSections(lines: string[]): NoteSection[] {
 // ---------------------------------------------------------------------------
 
 export default function BudgetNotesScreen() {
+  const { t } = useTranslation('budget');
   const { colors, spacing, borderRadius: br } = useTheme();
   const router = useRouter();
   const { categoryName } = useLocalSearchParams<{ categoryName?: string }>();
@@ -105,7 +107,7 @@ export default function BudgetNotesScreen() {
             color={colors.textMuted}
             style={{ textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: '700' }}
           >
-            {section.title}
+            {section.title === '__other__' ? t('other') : section.title}
           </Text>
         </View>
       )}
@@ -145,8 +147,8 @@ export default function BudgetNotesScreen() {
           <Ionicons name="document-text-outline" size={40} color={colors.textMuted} />
           <Text variant="body" color={colors.textSecondary} style={{ textAlign: 'center' }}>
             {categoryName
-              ? `No movements for ${categoryName} this month`
-              : 'No budget movements this month'}
+              ? t('noMovementsForCategory', { name: categoryName })
+              : t('noMovementsThisMonth')}
           </Text>
         </View>
       }

@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
 import { useBudgetStore } from '../../../src/stores/budgetStore';
 import { Text } from '../../../src/presentation/components/atoms/Text';
@@ -15,6 +16,7 @@ type OverspentCategory = {
 };
 
 export default function CoverOverspentScreen() {
+  const { t } = useTranslation('budget');
   const { colors, spacing, borderRadius: br } = useTheme();
   const router = useRouter();
   const data = useBudgetStore((s) => s.data);
@@ -65,7 +67,7 @@ export default function CoverOverspentScreen() {
         color={colors.textSecondary}
         style={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.lg }}
       >
-        Select category to cover overspending
+        {t('selectCategoryTocover')}
       </Text>
 
       <View
@@ -94,7 +96,7 @@ export default function CoverOverspentScreen() {
               pressed && { opacity: 0.72 },
             ]}
             accessibilityRole="button"
-            accessibilityLabel={`Cover overspending for ${cat.name}`}
+            accessibilityLabel={t('coverOverspendingAccessibility', { name: cat.name })}
           >
             <View style={{ flex: 1, marginRight: spacing.sm }}>
               <Text variant="body" color={colors.textPrimary} numberOfLines={1}>

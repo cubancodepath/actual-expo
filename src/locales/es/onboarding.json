@@ -1,0 +1,23 @@
+{
+  "heroTitle": "Actual",
+  "heroSubtitle": "Tu presupuesto. Tus datos. Tus reglas.",
+  "pillPrivate": "Privado por diseño",
+  "pillNoSub": "Sin suscripción",
+  "privacyHeading": "Tus datos nunca salen de tu servidor.",
+  "privacyBody": "Actual se sincroniza con un servidor que tú controlas — tu hogar, tu NAS o un VPS privado. Ninguna empresa lee tus finanzas.",
+  "featureEncrypted": "Cifrado de extremo a extremo",
+  "featureOpenSource": "Código abierto",
+  "featureNoTracking": "Sin rastreo, nunca",
+  "featuresHeading": "Presupuesta como realmente funciona.",
+  "featuresSubtitle": "Cada peso tiene un trabajo. Contrólalo sin culpa.",
+  "cardEnvelopeTitle": "Presupuesto por sobres",
+  "cardEnvelopeBody": "Asigna cada peso a una categoría antes de gastarlo.",
+  "cardAccountsTitle": "Todas tus cuentas",
+  "cardAccountsBody": "Cheques, ahorros, tarjetas — todo en un solo lugar con saldos en tiempo real.",
+  "cardInsightsTitle": "Análisis de gastos",
+  "cardInsightsBody": "Ve exactamente a dónde va tu dinero, mes a mes.",
+  "skip": "Omitir",
+  "getStarted": "Comenzar",
+  "letsGo": "¡Vamos!",
+  "pageOf": "Página {{current}} de {{total}}"
+}

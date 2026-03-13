@@ -8,6 +8,7 @@ import { Text } from '../../../../src/presentation/components/atoms/Text';
 import { Button } from '../../../../src/presentation/components/atoms/Button';
 import { Amount } from '../../../../src/presentation/components/atoms/Amount';
 import { IconButton } from '../../../../src/presentation/components/atoms/IconButton';
+import { useTranslation } from 'react-i18next';
 
 export default function ReconcileConfirmScreen() {
   const { colors, spacing, borderRadius: br } = useTheme();
@@ -17,6 +18,7 @@ export default function ReconcileConfirmScreen() {
     clearedBalance: string;
   }>();
 
+  const { t } = useTranslation('accounts');
   const clearedCents = Number(clearedBalance) || 0;
   const [loading, setLoading] = useState(false);
 
@@ -59,7 +61,7 @@ export default function ReconcileConfirmScreen() {
         color={colors.textSecondary}
         style={{ textAlign: 'center', marginBottom: spacing.xl }}
       >
-        Does your cleared balance match your bank statement?
+        {t('reconcile.question')}
       </Text>
 
       <View style={{ alignItems: 'center', marginBottom: spacing.xl, paddingVertical: spacing.md }}>
@@ -68,14 +70,14 @@ export default function ReconcileConfirmScreen() {
 
       <View style={{ gap: spacing.sm }}>
         <Button
-          title="Yes, it matches"
+          title={t('reconcile.yesMatches')}
           variant="primary"
           onPress={handleMatch}
           loading={loading}
           style={{ borderRadius: br.full }}
         />
         <Button
-          title="No, enter balance"
+          title={t('reconcile.noEnterBalance')}
           variant="secondary"
           onPress={handleEnterBalance}
           style={{ borderRadius: br.full }}

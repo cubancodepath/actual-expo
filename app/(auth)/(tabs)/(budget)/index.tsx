@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../../src/presentation/providers/ThemeProvider';
 import { useSharedValue } from 'react-native-reanimated';
 import { AddTransactionButton } from '../../../../src/presentation/components/molecules/AddTransactionButton';
@@ -88,6 +89,7 @@ function filterBudgetGroups(groups: BudgetGroup[], filter: BudgetFilter, showHid
 // ---------------------------------------------------------------------------
 
 export default function BudgetScreen() {
+  const { t } = useTranslation('budget');
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const router = useRouter();
   const { month, data, loading, load, setAmount, setCarryover, resetHold } = useBudgetStore();
@@ -191,14 +193,14 @@ export default function BudgetScreen() {
 
   function handleCategoryLongPress(cat: BudgetCategory) {
     // Android fallback — iOS uses zeego context menu in BudgetCategoryRow
-    const toggleLabel = cat.carryover ? 'Remove overspending rollover' : 'Rollover overspending';
+    const toggleLabel = cat.carryover ? t('removeOverspendingRollover') : t('rolloverOverspending');
     Alert.alert(cat.name, undefined, [
-      { text: 'Category Details', onPress: () => handleCategoryDetails(cat) },
-      { text: 'Move Money', onPress: () => handleMoveMoney(cat) },
+      { text: t('categoryDetails'), onPress: () => handleCategoryDetails(cat) },
+      { text: t('moveMoney'), onPress: () => handleMoveMoney(cat) },
       { text: toggleLabel, onPress: () => handleToggleCarryover(cat) },
-      { text: 'View Transactions', onPress: () => handleViewTransactions(cat) },
-      { text: 'Budget Movements', onPress: () => handleBudgetNotes(cat) },
-      { text: 'Cancel', style: 'cancel' },
+      { text: t('viewTransactions'), onPress: () => handleViewTransactions(cat) },
+      { text: t('budgetMovements'), onPress: () => handleBudgetNotes(cat) },
+      { text: t('cancel'), style: 'cancel' },
     ]);
   }
 
@@ -287,11 +289,11 @@ export default function BudgetScreen() {
             })}
             onClearHold={() =>
               Alert.alert(
-                'Release Hold',
-                `Release held funds back to "Ready to Assign"?`,
+                t('releaseHoldTitle'),
+                t('releaseHoldMessage'),
                 [
-                  { text: 'Cancel', style: 'cancel' },
-                  { text: 'Release', style: 'destructive', onPress: () => resetHold() },
+                  { text: t('cancel'), style: 'cancel' },
+                  { text: t('release'), style: 'destructive', onPress: () => resetHold() },
                 ],
               )
             }
@@ -328,7 +330,7 @@ export default function BudgetScreen() {
                 {uncategorizedCount > 0 && (
                   <UnclearedPill
                     count={uncategorizedCount}
-                    label="uncategorized"
+                    label={t('uncategorized')}
                     variant="danger"
                     onPress={() => router.push({
                       pathname: '/(auth)/(tabs)/(spending)/search',
@@ -346,13 +348,13 @@ export default function BudgetScreen() {
             filter !== 'all' ? (
               <View style={{ alignItems: 'center', marginTop: 80, gap: 8 }}>
                 <Ionicons name="funnel-outline" size={32} color={colors.textMuted} />
-                <Text variant="bodyLg" color={colors.textSecondary}>No matching categories</Text>
-                <Text variant="bodySm" color={colors.textMuted}>Try a different filter or switch to All</Text>
+                <Text variant="bodyLg" color={colors.textSecondary}>{t('noMatchingCategories')}</Text>
+                <Text variant="bodySm" color={colors.textMuted}>{t('tryDifferentFilter')}</Text>
               </View>
             ) : (
               <View style={{ alignItems: 'center', marginTop: 80, gap: 8 }}>
-                <Text variant="bodyLg" color={colors.textSecondary}>No categories yet</Text>
-                <Text variant="bodySm" color={colors.textMuted}>Sync to load budget data</Text>
+                <Text variant="bodyLg" color={colors.textSecondary}>{t('noCategoriesYet')}</Text>
+                <Text variant="bodySm" color={colors.textMuted}>{t('syncToLoad')}</Text>
               </View>
             )
           }
@@ -382,21 +384,21 @@ export default function BudgetScreen() {
       <Stack.Toolbar.Menu
         icon={filter === 'all' ? 'line.3.horizontal.decrease' : 'line.3.horizontal.decrease.circle.fill'}
         tintColor={filter !== 'all' ? colors.primary : undefined}
-        title="Filter"
+        title={t('filter')}
       >
         <Stack.Toolbar.MenuAction isOn={filter === 'all'} icon="list.bullet" onPress={() => setFilter('all')}>
-          All
+          {t('filterAll')}
         </Stack.Toolbar.MenuAction>
         {goalsEnabled && (
         <Stack.Toolbar.MenuAction isOn={filter === 'underfunded'} icon="arrow.down.circle" onPress={() => setFilter('underfunded')}>
-          Underfunded
+          {t('filterUnderfunded')}
         </Stack.Toolbar.MenuAction>
         )}
         <Stack.Toolbar.MenuAction isOn={filter === 'overfunded'} icon="arrow.up.circle" onPress={() => setFilter('overfunded')}>
-          Overfunded
+          {t('filterOverfunded')}
         </Stack.Toolbar.MenuAction>
         <Stack.Toolbar.MenuAction isOn={filter === 'has-money'} icon="banknote" onPress={() => setFilter('has-money')}>
-          Money Available
+          {t('filterMoneyAvailable')}
         </Stack.Toolbar.MenuAction>
       </Stack.Toolbar.Menu>
       <Stack.Toolbar.Menu icon="ellipsis">
@@ -405,14 +407,14 @@ export default function BudgetScreen() {
           icon={showProgressBars ? 'line.3.horizontal' : 'line.3.horizontal'}
           onPress={toggleProgressBars}
         >
-          {showProgressBars ? 'Hide Progress' : 'Show Progress'}
+          {showProgressBars ? t('hideProgress') : t('showProgress')}
         </Stack.Toolbar.MenuAction>
         )}
         <Stack.Toolbar.MenuAction
           icon={showHiddenCategories ? 'square.stack.3d.up.slash' : 'square.stack.3d.up'}
           onPress={toggleShowHiddenCategories}
         >
-          {showHiddenCategories ? 'Hide Hidden Categories' : 'Show Hidden Categories'}
+          {showHiddenCategories ? t('hideHiddenCategories') : t('showHiddenCategories')}
         </Stack.Toolbar.MenuAction>
         {commonActions}
       </Stack.Toolbar.Menu>

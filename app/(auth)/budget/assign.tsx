@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Keyboard, Pressable, SectionList, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
 import { useBudgetStore } from '../../../src/stores/budgetStore';
@@ -25,6 +26,7 @@ type CategorySection = {
 };
 
 export default function AssignBudgetScreen() {
+  const { t } = useTranslation('budget');
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const goalsEnabled = useFeatureFlag('goalTemplatesEnabled');
   const router = useRouter();
@@ -150,10 +152,10 @@ export default function AssignBudgetScreen() {
       });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       if (result.applied === 0) {
-        Alert.alert('No Changes', 'No categories with templates needed budgeting. Set goal targets on your categories first.');
+        Alert.alert(t('noChangesTitle'), t('noChangesMessage'));
       }
     } catch {
-      Alert.alert('Error', 'Could not auto-assign budgets. Check that your categories have goals configured.');
+      Alert.alert(t('errorTitle'), t('autoAssignError'));
     } finally {
       setSaving(false);
     }
@@ -190,10 +192,10 @@ export default function AssignBudgetScreen() {
       : colors.cardBackground;
 
   const statusLabel = isPositive
-    ? 'Ready to Assign'
+    ? t('readyToAssign')
     : isNegative
-      ? 'Overassigned'
-      : 'Fully Assigned';
+      ? t('overassigned')
+      : t('fullyAssigned');
 
   const labelStyle = {
     textTransform: 'uppercase' as const,
@@ -241,7 +243,7 @@ export default function AssignBudgetScreen() {
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
             <Amount value={underfunded} variant="captionSm" color={statusColor} weight="600" />
             <Text variant="captionSm" color={statusColor} style={{ opacity: 0.7 }}>
-              {' '}to fully fund all goals
+              {t('toFullyFundGoals')}
             </Text>
           </View>
         )}
@@ -258,7 +260,7 @@ export default function AssignBudgetScreen() {
       >
         <View style={{ flex: 1 }}>
           <Button
-            title="Reserve"
+            title={t('reserve')}
             icon="calendar-outline"
             variant="secondary"
             size="sm"
@@ -275,7 +277,7 @@ export default function AssignBudgetScreen() {
         {goalsEnabled && (
         <View style={{ flex: 1 }}>
           <Button
-            title="Auto-assign"
+            title={t('autoAssign')}
             icon="sparkles"
             variant="primary"
             size="sm"
@@ -356,7 +358,7 @@ export default function AssignBudgetScreen() {
           }}
         >
           <Button
-            title={saving ? 'Saving...' : 'Save Assignment'}
+            title={saving ? t('savingEllipsis') : t('saveAssignment')}
             icon="checkmark"
             variant="primary"
             size="lg"
@@ -390,6 +392,7 @@ function CategoryAmountRow({
   isLast: boolean;
   isEdited: boolean;
 }) {
+  const { t } = useTranslation('budget');
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const goalsEnabled = useFeatureFlag('goalTemplatesEnabled');
   const inputRef = useRef<CompactCurrencyInputRef>(null);
@@ -475,8 +478,8 @@ function CategoryAmountRow({
       {goalsEnabled && (
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginTop: 3 }}>
         {getGoalProgress(editedCat).map((seg, i) =>
-          'text' in seg
-            ? <Text key={i} variant="captionSm" color={colors.textMuted}>{seg.text}</Text>
+          'key' in seg
+            ? <Text key={i} variant="captionSm" color={colors.textMuted}>{t(seg.key as any)}</Text>
             : <Amount key={i} value={seg.amount} variant="captionSm" color={colors.textMuted} colored={false} />
         )}
       </View>

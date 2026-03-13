@@ -1,19 +1,21 @@
+import { useTranslation } from "react-i18next";
 import { Badge } from "./Badge";
 import type { ScheduleStatus } from "../../../schedules/types";
 
 const STATUS_CONFIG: Record<
   ScheduleStatus,
-  { label: string; variant: "info" | "success" | "warning" | "error" }
+  { labelKey: string; variant: "info" | "success" | "warning" | "error" }
 > = {
-  due: { label: "Due", variant: "error" },
-  missed: { label: "Missed", variant: "error" },
-  upcoming: { label: "Upcoming", variant: "warning" },
-  paid: { label: "Paid", variant: "success" },
-  scheduled: { label: "Scheduled", variant: "info" },
-  completed: { label: "Completed", variant: "info" },
+  due: { labelKey: "statusDue", variant: "error" },
+  missed: { labelKey: "statusMissed", variant: "error" },
+  upcoming: { labelKey: "statusUpcoming", variant: "warning" },
+  paid: { labelKey: "statusPaid", variant: "success" },
+  scheduled: { labelKey: "statusScheduled", variant: "info" },
+  completed: { labelKey: "statusCompleted", variant: "info" },
 };
 
 export function ScheduleStatusBadge({ status }: { status: ScheduleStatus }) {
+  const { t } = useTranslation('schedules');
   const config = STATUS_CONFIG[status];
-  return <Badge label={config.label} variant={config.variant} />;
+  return <Badge label={t(config.labelKey as any)} variant={config.variant} />;
 }

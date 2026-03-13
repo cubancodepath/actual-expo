@@ -16,6 +16,7 @@ import { useTheme, useThemedStyles } from '../../../src/presentation/providers/T
 import { Text } from '../../../src/presentation/components/atoms/Text';
 import { Button } from '../../../src/presentation/components/atoms/Button';
 import { Banner } from '../../../src/presentation/components/molecules/Banner';
+import { useTranslation } from 'react-i18next';
 import type { Theme } from '../../../src/theme';
 
 export default function AccountSettingsScreen() {
@@ -23,6 +24,8 @@ export default function AccountSettingsScreen() {
   const router = useRouter();
   const theme = useTheme();
   const styles = useThemedStyles(createStyles);
+  const { t } = useTranslation('accounts');
+  const { t: tc } = useTranslation('common');
   const { accounts, update, load } = useAccountsStore();
   const account = accounts.find(a => a.id === id);
 
@@ -43,7 +46,7 @@ export default function AccountSettingsScreen() {
 
   async function handleSave() {
     const trimmed = name.trim();
-    if (!trimmed) { setError('Account name is required'); return; }
+    if (!trimmed) { setError(t('settings.accountNameRequired')); return; }
 
     setError(null);
     setSaving(true);
@@ -67,12 +70,12 @@ export default function AccountSettingsScreen() {
     if (account!.closed) {
       // Reopen — simple toggle
       Alert.alert(
-        'Reopen Account',
-        'Reopen this account? It will appear in your budget again.',
+        t('settings.reopenAccountTitle'),
+        t('settings.reopenAccountMessage'),
         [
-          { text: 'Cancel', style: 'cancel' },
+          { text: tc('cancel'), style: 'cancel' },
           {
-            text: 'Reopen',
+            text: t('settings.reopen'),
             onPress: async () => {
               setSaving(true);
               try {
@@ -110,11 +113,11 @@ export default function AccountSettingsScreen() {
       >
         {/* Account name */}
         <Text variant="caption" color={theme.colors.textSecondary} style={styles.label}>
-          Account name
+          {t('settings.accountNameLabel')}
         </Text>
         <TextInput
           style={styles.input}
-          placeholder="Account name"
+          placeholder={t('settings.accountNamePlaceholder')}
           placeholderTextColor={theme.colors.textMuted}
           value={name}
           onChangeText={t => { setName(t); setError(null); }}
@@ -125,10 +128,10 @@ export default function AccountSettingsScreen() {
         <View style={styles.toggleRow}>
           <View style={styles.toggleText}>
             <Text variant="body" color={theme.colors.textPrimary}>
-              Off budget
+              {t('settings.offBudget')}
             </Text>
             <Text variant="captionSm" color={theme.colors.textMuted}>
-              Transactions won't affect your budget
+              {t('settings.offBudgetDescription')}
             </Text>
           </View>
           <Switch
@@ -147,7 +150,7 @@ export default function AccountSettingsScreen() {
 
         {/* Save button */}
         <Button
-          title="Save"
+          title={tc('save')}
           onPress={handleSave}
           size="lg"
           loading={saving}
@@ -156,7 +159,7 @@ export default function AccountSettingsScreen() {
         />
 
         <Button
-          title={account.closed ? 'Reopen Account' : 'Close Account'}
+          title={account.closed ? t('contextMenu.reopenAccount') : t('contextMenu.closeAccount')}
           onPress={handleClose}
           variant="ghost"
           icon={account.closed ? 'arrow-undo-outline' : 'trash-outline'}

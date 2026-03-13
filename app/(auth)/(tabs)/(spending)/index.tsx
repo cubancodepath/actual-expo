@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { LegendList } from '@legendapp/list';
 import { Stack, useFocusEffect, useNavigation, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import {
   getAllTransactions,
   getUnclearedCount,
@@ -46,6 +47,7 @@ export default function SpendingScreen() {
   const navigation = useNavigation();
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const { privacyMode } = usePrivacyStore();
   const canUndo = useUndoStore((s) => s.canUndo);
   const undoVersion = useUndoStore((s) => s.undoVersion);
@@ -182,10 +184,10 @@ export default function SpendingScreen() {
   }, []);
 
   const handleDeleteSchedule = useCallback((scheduleId: string) => {
-    Alert.alert('Delete Schedule', 'Delete this schedule and all future occurrences?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('spending.deleteScheduleTitle'), t('spending.deleteScheduleConfirm'), [
+      { text: t('cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('delete'),
         style: 'destructive',
         onPress: async () => {
           await deleteSchedule(scheduleId);
@@ -220,7 +222,7 @@ export default function SpendingScreen() {
     if (txnList.isSelectMode) return;
     navigation.setOptions({
       headerStyle: undefined,
-      title: 'Spending',
+      title: t('spending.title'),
       headerTitle: undefined,
       headerLeft: undefined,
       headerRight: undefined,
@@ -243,7 +245,7 @@ export default function SpendingScreen() {
         ListHeaderComponent={
           !txnList.isSelectMode ? (
             <>
-              <Stack.Screen.Title large>Spending</Stack.Screen.Title>
+              <Stack.Screen.Title large>{t('spending.title')}</Stack.Screen.Title>
               {unclearedCount > 0 && (
                 <UnclearedPill
                   count={unclearedCount}
@@ -318,8 +320,8 @@ export default function SpendingScreen() {
             ? <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
             : <EmptyState
                 icon="receipt-outline"
-                title="No transactions yet"
-                description="Add your first transaction to get started"
+                title={t('spending.noTransactionsYet')}
+                description={t('spending.noTransactionsDescription')}
               />
         }
         onEndReached={txnList.loadMore}
@@ -347,7 +349,7 @@ export default function SpendingScreen() {
 
       {!txnList.isSelectMode && (
         <Stack.Toolbar placement="right">
-          <Stack.Toolbar.Button onPress={txnList.enterSelectMode}>Select</Stack.Toolbar.Button>
+          <Stack.Toolbar.Button onPress={txnList.enterSelectMode}>{t('select')}</Stack.Toolbar.Button>
           <Stack.Toolbar.Button
             icon="magnifyingglass"
             onPress={() => router.push('/(auth)/(tabs)/(spending)/search')}

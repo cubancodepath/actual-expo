@@ -42,6 +42,7 @@ import {
 } from '../../../src/presentation/hooks/transactionList';
 import { usePickerStore } from '../../../src/stores/pickerStore';
 import { SelectModeToolbar } from '../../../src/presentation/components/transaction/SelectModeToolbar';
+import { useTranslation } from 'react-i18next';
 
 // ---------------------------------------------------------------------------
 // Types for mixed list data
@@ -122,6 +123,8 @@ export default function AccountSearchScreen() {
   const navigation = useNavigation();
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useTranslation('accounts');
+  const { t: tc } = useTranslation('common');
   const { accounts } = useAccountsStore();
   const { categories } = useCategoriesStore();
   const tags = useTagsStore((s) => s.tags);
@@ -194,12 +197,12 @@ export default function AccountSearchScreen() {
   useEffect(() => {
     if (isSelectMode) return;
     navigation.setOptions({
-      title: accountName || 'Account',
+      title: accountName || t('detail.defaultTitle'),
       headerRight: undefined,
       unstable_headerRightItems: () => [
         {
           type: 'button' as const,
-          label: 'Select',
+          label: t('detail.select'),
           disabled: !hasResults,
           onPress: enterSelectMode,
         },
@@ -317,15 +320,15 @@ export default function AccountSearchScreen() {
   }
 
   function handleDelete(txnId: string) {
-    Alert.alert('Delete Transaction', 'Delete this transaction?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('search.deleteTransactionTitle'), t('search.deleteTransactionMessage'), [
+      { text: tc('cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: tc('delete'),
         style: 'destructive',
         onPress: async () => {
-          setResults(prev => prev.filter(t => t.id !== txnId));
+          setResults(prev => prev.filter(tx => tx.id !== txnId));
           await deleteTransaction(txnId);
-          useUndoStore.getState().showUndo('Transaction deleted');
+          useUndoStore.getState().showUndo(t('search.transactionDeleted'));
         },
       },
     ]);
@@ -475,8 +478,8 @@ export default function AccountSearchScreen() {
           hasSearched
             ? <EmptyState
                 icon="search-outline"
-                title="No matching transactions"
-                description="Try different search terms or filters"
+                title={t('search.noResults.title')}
+                description={t('search.noResults.description')}
               />
             : null
         }

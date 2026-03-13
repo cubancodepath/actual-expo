@@ -15,6 +15,7 @@ import { useTheme, useThemedStyles } from '../../../src/presentation/providers/T
 import { Text } from '../../../src/presentation/components/atoms/Text';
 import { Button } from '../../../src/presentation/components/atoms/Button';
 import { Banner } from '../../../src/presentation/components/molecules/Banner';
+import { useTranslation } from 'react-i18next';
 import type { Theme } from '../../../src/theme';
 
 /** Parse a user-typed balance string like "1,234.56" or "-50" into cents */
@@ -32,6 +33,7 @@ export default function NewAccountScreen() {
   const { create, load } = useAccountsStore();
   const loadPayees = usePayeesStore((s) => s.load);
 
+  const { t } = useTranslation('accounts');
   const [name, setName] = useState('');
   const [balanceStr, setBalanceStr] = useState('');
   const [offbudget, setOffbudget] = useState(false);
@@ -40,7 +42,7 @@ export default function NewAccountScreen() {
 
   async function handleCreate() {
     const trimmed = name.trim();
-    if (!trimmed) { setError('Account name is required'); return; }
+    if (!trimmed) { setError(t('newAccount.accountNameRequired')); return; }
 
     setError(null);
     setLoading(true);
@@ -68,7 +70,7 @@ export default function NewAccountScreen() {
           headerRight: () => (
             <Pressable onPress={handleCreate} hitSlop={8} disabled={!name.trim() || loading}>
               <Text variant="body" color={name.trim() && !loading ? theme.colors.primary : theme.colors.textMuted} style={{ fontWeight: '600', fontSize: 17 }}>
-                Create
+                {t('newAccount.create')}
               </Text>
             </Pressable>
           ),
@@ -83,21 +85,21 @@ export default function NewAccountScreen() {
 
           {/* Account name */}
           <Text variant="caption" color={theme.colors.textSecondary} style={styles.label}>
-            Account name
+            {t('newAccount.accountNameLabel')}
           </Text>
           <TextInput
             style={styles.input}
-            placeholder="e.g. Checking, Savings, Cash"
+            placeholder={t('newAccount.accountNamePlaceholder')}
             placeholderTextColor={theme.colors.textMuted}
             value={name}
-            onChangeText={t => { setName(t); setError(null); }}
+            onChangeText={text => { setName(text); setError(null); }}
             autoFocus
             returnKeyType="next"
           />
 
           {/* Starting balance */}
           <Text variant="caption" color={theme.colors.textSecondary} style={styles.label}>
-            Starting balance
+            {t('newAccount.startingBalanceLabel')}
           </Text>
           <View style={styles.balanceInputRow}>
             <Text variant="body" color={theme.colors.textSecondary} style={styles.currencyPrefix}>
@@ -115,18 +117,17 @@ export default function NewAccountScreen() {
             />
           </View>
           <Text variant="captionSm" color={theme.colors.textMuted} style={styles.hint}>
-            Leave blank or 0 to start with an empty account.{'\n'}
-            Use a negative value for an account already in debt.
+            {t('newAccount.startingBalanceHint')}
           </Text>
 
           {/* Off budget toggle */}
           <View style={styles.toggleRow}>
             <View style={styles.toggleText}>
               <Text variant="body" color={theme.colors.textPrimary}>
-                Off budget
+                {t('newAccount.offBudget')}
               </Text>
               <Text variant="captionSm" color={theme.colors.textMuted}>
-                Transactions won't affect your budget
+                {t('newAccount.offBudgetDescription')}
               </Text>
             </View>
             <Switch
@@ -145,7 +146,7 @@ export default function NewAccountScreen() {
 
           {/* Create button */}
           <Button
-            title="Create Account"
+            title={t('newAccount.createAccount')}
             onPress={handleCreate}
             size="lg"
             loading={loading}

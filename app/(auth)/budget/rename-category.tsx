@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { TextInput, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
 import { useCategoriesStore } from '../../../src/stores/categoriesStore';
 import { useBudgetStore } from '../../../src/stores/budgetStore';
@@ -9,6 +10,7 @@ import { Button } from '../../../src/presentation/components/atoms/Button';
 import { IconButton } from '../../../src/presentation/components/atoms/IconButton';
 
 export default function RenameCategoryScreen() {
+  const { t } = useTranslation('budget');
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const router = useRouter();
   const { categoryId, currentName } = useLocalSearchParams<{
@@ -48,7 +50,7 @@ export default function RenameCategoryScreen() {
           ),
           headerRight: () => (
             <Button
-              title="Save"
+              title={t('save')}
               variant="ghost"
               size="sm"
               textColor={canSave ? colors.textPrimary : colors.textMuted}
@@ -60,12 +62,12 @@ export default function RenameCategoryScreen() {
       />
 
       <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.xs }}>
-        CATEGORY NAME
+        {t('categoryNameLabel')}
       </Text>
       <TextInput
         value={name}
         onChangeText={setName}
-        placeholder="Category name"
+        placeholder={t('categoryNamePlaceholder')}
         placeholderTextColor={colors.textMuted}
         autoFocus
         returnKeyType="done"

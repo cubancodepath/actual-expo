@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import { LegendList } from '@legendapp/list';
 import { Stack, useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
 import { EmptyState } from '../../../src/presentation/components';
 import { IconButton } from '../../../src/presentation/components/atoms/IconButton';
@@ -44,6 +45,7 @@ function monthToNextStartInt(month: string): number {
 // ---------------------------------------------------------------------------
 
 export default function CategoryTransactionsScreen() {
+  const { t } = useTranslation('budget');
   const { colors } = useTheme();
   const router = useRouter();
   const navigation = useNavigation();
@@ -92,7 +94,7 @@ export default function CategoryTransactionsScreen() {
   useLayoutEffect(() => {
     if (txnList.isSelectMode) return;
     navigation.setOptions({
-      title: categoryName ?? 'Transactions',
+      title: categoryName ?? t('transactions'),
       headerLeft: () => (
         <IconButton
           sfSymbol="xmark"
@@ -172,8 +174,8 @@ export default function CategoryTransactionsScreen() {
           ListEmptyComponent={
             <EmptyState
               icon="receipt-outline"
-              title="No transactions"
-              description={`No transactions for ${categoryName ?? 'this category'} this month`}
+              title={t('noTransactions')}
+              description={t('noTransactionsForCategory', { name: categoryName ?? t('category') })}
             />
           }
           onEndReached={txnList.loadMore}
@@ -198,7 +200,7 @@ export default function CategoryTransactionsScreen() {
 
       {!txnList.isSelectMode && (
         <Stack.Toolbar placement="right">
-          <Stack.Toolbar.Button onPress={txnList.enterSelectMode}>Select</Stack.Toolbar.Button>
+          <Stack.Toolbar.Button onPress={txnList.enterSelectMode}>{t('select')}</Stack.Toolbar.Button>
         </Stack.Toolbar>
       )}
     </View>

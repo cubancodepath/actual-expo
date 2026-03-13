@@ -47,6 +47,7 @@ import {
   updateSchedule,
 } from '../../../src/schedules';
 import { useSchedulesStore } from '../../../src/stores/schedulesStore';
+import { useTranslation } from 'react-i18next';
 
 export default function AccountTransactionsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -54,6 +55,8 @@ export default function AccountTransactionsScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const styles = useThemedStyles(createScreenStyles);
+  const { t } = useTranslation('accounts');
+  const { t: tc } = useTranslation('common');
   const { accounts, load: loadAccounts } = useAccountsStore();
   const account = accounts.find(a => a.id === id);
 
@@ -216,10 +219,10 @@ export default function AccountTransactionsScreen() {
   }, [id]);
 
   const handleDeleteSchedule = useCallback((scheduleId: string) => {
-    Alert.alert('Delete Schedule', 'Delete this schedule and all future occurrences?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('detail.deleteScheduleTitle'), t('detail.deleteScheduleMessage'), [
+      { text: tc('cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: tc('delete'),
         style: 'destructive',
         onPress: async () => {
           await deleteSchedule(scheduleId);
@@ -253,7 +256,7 @@ export default function AccountTransactionsScreen() {
   useLayoutEffect(() => {
     if (txnList.isSelectMode) return;
     navigation.setOptions({
-      title: account?.name ?? 'Account',
+      title: account?.name ?? t('detail.defaultTitle'),
       headerTitle: undefined,
       headerLeft: undefined,
       headerRight: undefined,
@@ -275,7 +278,7 @@ export default function AccountTransactionsScreen() {
           count={unclearedCount}
           onPress={() => router.push({
             pathname: '/(auth)/account/search',
-            params: { accountId: id, accountName: account?.name ?? 'Account', initialFilter: 'uncleared' },
+            params: { accountId: id, accountName: account?.name ?? t('detail.defaultTitle'), initialFilter: 'uncleared' },
           })}
         />
       )}
@@ -350,15 +353,15 @@ export default function AccountTransactionsScreen() {
             hideReconciled
               ? <EmptyState
                   icon="lock-closed-outline"
-                  title="All transactions reconciled"
-                  description="Reconciled transactions are hidden"
-                  actionLabel="Show All"
+                  title={t('detail.allReconciled.title')}
+                  description={t('detail.allReconciled.description')}
+                  actionLabel={t('detail.allReconciled.showAll')}
                   onAction={handleToggleHideReconciled}
                 />
               : <EmptyState
                   icon="receipt-outline"
-                  title="No transactions yet"
-                  description="Add your first transaction to get started"
+                  title={t('detail.noTransactions.title')}
+                  description={t('detail.noTransactions.description')}
                 />
           }
           onEndReached={txnList.loadMore}
@@ -387,12 +390,12 @@ export default function AccountTransactionsScreen() {
 
       {!txnList.isSelectMode && (
         <Stack.Toolbar placement="right">
-          <Stack.Toolbar.Button onPress={txnList.enterSelectMode}>Select</Stack.Toolbar.Button>
+          <Stack.Toolbar.Button onPress={txnList.enterSelectMode}>{t('detail.select')}</Stack.Toolbar.Button>
           <Stack.Toolbar.Button
             icon="magnifyingglass"
             onPress={() => router.push({
               pathname: '/(auth)/account/search',
-              params: { accountId: id, accountName: account?.name ?? 'Account' },
+              params: { accountId: id, accountName: account?.name ?? t('detail.defaultTitle') },
             })}
           />
           <Stack.Toolbar.Menu icon="ellipsis">
@@ -403,19 +406,19 @@ export default function AccountTransactionsScreen() {
                 params: { accountId: id, clearedBalance: String(clearedBalance) },
               })}
             >
-              Reconcile
+              {t('detail.reconcile')}
             </Stack.Toolbar.MenuAction>
             <Stack.Toolbar.MenuAction
               icon={hideReconciled ? 'checkmark.circle' : 'checkmark.circle.badge.xmark'}
               onPress={handleToggleHideReconciled}
             >
-              {hideReconciled ? 'Show Reconciled' : 'Hide Reconciled'}
+              {hideReconciled ? t('detail.showReconciled') : t('detail.hideReconciled')}
             </Stack.Toolbar.MenuAction>
             <Stack.Toolbar.MenuAction
               icon="pencil"
               onPress={() => router.push({ pathname: '/(auth)/account/settings', params: { id } })}
             >
-              Edit Account
+              {t('detail.editAccount')}
             </Stack.Toolbar.MenuAction>
             {commonActions}
           </Stack.Toolbar.Menu>

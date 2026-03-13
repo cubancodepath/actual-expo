@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { usePayeesStore } from '../../src/stores/payeesStore';
 import { useUndoStore } from '../../src/stores/undoStore';
 import { runQuery, run } from '../../src/db';
@@ -37,6 +38,7 @@ function MergePicker({
   onSkip: () => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const filtered = candidates.filter(p =>
     p.name.toLowerCase().includes(search.toLowerCase()),
@@ -46,14 +48,14 @@ function MergePicker({
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <Pressable style={styles.overlay} onPress={onCancel}>
         <Pressable style={styles.sheet} onPress={() => {}}>
-          <Text style={styles.sheetTitle}>Delete "{deletingName}"</Text>
+          <Text style={styles.sheetTitle}>{t('payees.deleteConfirm', { name: deletingName })}</Text>
           <Text style={styles.sheetSubtitle}>
-            This payee has transactions. Reassign them to:
+            {t('payees.reassignTransactions')}
           </Text>
           <SearchBar
             value={search}
             onChangeText={setSearch}
-            placeholder="Search payees…"
+            placeholder={t('payees.searchPayees')}
             noMargin
           />
           <ScrollView style={styles.sheetList} bounces={false}>
@@ -64,15 +66,15 @@ function MergePicker({
               </Pressable>
             ))}
             {filtered.length === 0 && (
-              <Text style={styles.sheetEmpty}>No payees found</Text>
+              <Text style={styles.sheetEmpty}>{t('payees.noPayeesFound')}</Text>
             )}
           </ScrollView>
           <View style={styles.sheetActions}>
             <Pressable style={styles.sheetActionBtn} onPress={() => { setSearch(''); onSkip(); }}>
-              <Text style={styles.sheetActionSkip}>Delete (keep transactions unassigned)</Text>
+              <Text style={styles.sheetActionSkip}>{t('payees.deleteKeepUnassigned')}</Text>
             </Pressable>
             <Pressable style={styles.sheetActionBtn} onPress={() => { setSearch(''); onCancel(); }}>
-              <Text style={styles.sheetActionCancel}>Cancel</Text>
+              <Text style={styles.sheetActionCancel}>{t('cancel')}</Text>
             </Pressable>
           </View>
         </Pressable>
@@ -100,6 +102,8 @@ function PayeeRow({
   onDelete: (id: string, name: string) => void;
   isLast?: boolean;
 }) {
+  const { t } = useTranslation();
+
   return (
     <View style={styles.row}>
       <Pressable
@@ -115,7 +119,7 @@ function PayeeRow({
       <Pressable style={styles.nameArea} onPress={() => onRename(payee.id, payee.name)}>
         <Text style={styles.payeeName}>{payee.name}</Text>
         {txnCount > 0 && (
-          <Text style={styles.txCount}>{txnCount} transaction{txnCount !== 1 ? 's' : ''}</Text>
+          <Text style={styles.txCount}>{t('payees.transaction', { count: txnCount })}</Text>
         )}
       </Pressable>
 
@@ -134,6 +138,7 @@ function PayeeRow({
 // ---------------------------------------------------------------------------
 
 export default function PayeesScreen() {
+  const { t } = useTranslation();
   const { payees, load, update, delete_ } = usePayeesStore();
   const [search, setSearch] = useState('');
   const [txnCounts, setTxnCounts] = useState<Map<string, number>>(new Map());
@@ -158,7 +163,7 @@ export default function PayeesScreen() {
 
   function handleRename(id: string, current: string) {
     Alert.prompt(
-      'Rename Payee',
+      t('payees.renamePayee'),
       undefined,
       async name => {
         if (!name?.trim() || name.trim() === current) return;
@@ -175,12 +180,12 @@ export default function PayeesScreen() {
     if (count > 0) {
       setPendingDelete({ id, name });
     } else {
-      Alert.alert('Delete Payee', `Delete "${name}"?`, [
-        { text: 'Cancel', style: 'cancel' },
+      Alert.alert(t('payees.deleteTitle'), t('payees.deleteConfirm', { name }), [
+        { text: t('cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('delete'),
           style: 'destructive',
-          onPress: async () => { await delete_(id); load(); loadCounts(); useUndoStore.getState().showUndo('Payee deleted'); },
+          onPress: async () => { await delete_(id); load(); loadCounts(); useUndoStore.getState().showUndo(t('payees.payeeDeleted')); },
         },
       ]);
     }
@@ -201,7 +206,7 @@ export default function PayeesScreen() {
     setPendingDelete(null);
     load();
     loadCounts();
-    useUndoStore.getState().showUndo('Payee deleted');
+    useUndoStore.getState().showUndo(t('payees.payeeDeleted'));
   }
 
   async function confirmDeleteNoMerge() {
@@ -210,7 +215,7 @@ export default function PayeesScreen() {
     setPendingDelete(null);
     load();
     loadCounts();
-    useUndoStore.getState().showUndo('Payee deleted');
+    useUndoStore.getState().showUndo(t('payees.payeeDeleted'));
   }
 
   // Sort: favorites first, then alphabetical
@@ -248,7 +253,7 @@ export default function PayeesScreen() {
       <SearchBar
         value={search}
         onChangeText={setSearch}
-        placeholder="Search payees…"
+        placeholder={t('payees.searchPayees')}
         returnKeyType="search"
       />
 
@@ -268,9 +273,9 @@ export default function PayeesScreen() {
         ListEmptyComponent={
           <View style={styles.empty}>
             <Text style={styles.emptyText}>
-              {search ? 'No payees match your search' : 'No payees yet'}
+              {search ? t('payees.noPayeesMatch') : t('payees.noPayeesYet')}
             </Text>
-            <Text style={styles.emptyHint}>Payees are created when you add transactions</Text>
+            <Text style={styles.emptyHint}>{t('payees.payeesCreatedHint')}</Text>
           </View>
         }
         contentContainerStyle={{ paddingBottom: 60 }}

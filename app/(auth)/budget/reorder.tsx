@@ -8,6 +8,7 @@ import {
   View,
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { useAnimatedRef } from "react-native-reanimated";
 import Sortable from "react-native-sortables";
@@ -26,6 +27,7 @@ type GroupWithCats = {
 };
 
 export default function ReorderBudgetScreen() {
+  const { t } = useTranslation('budget');
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const router = useRouter();
   const scrollableRef = useAnimatedRef<ScrollView>();
@@ -120,7 +122,7 @@ export default function ReorderBudgetScreen() {
       const options = [...otherGroups.map((g) => g.name), "Cancel"];
       ActionSheetIOS.showActionSheetWithOptions(
         {
-          title: `Move "${cat.name}" to\u2026`,
+          title: t('moveCategoryTo', { name: cat.name }),
           options,
           cancelButtonIndex: options.length - 1,
         },
@@ -132,7 +134,7 @@ export default function ReorderBudgetScreen() {
         },
       );
     } else {
-      Alert.alert(`Move "${cat.name}" to\u2026`, undefined, [
+      Alert.alert(t('moveCategoryTo', { name: cat.name }), undefined, [
         ...otherGroups.map((g) => ({
           text: g.name,
           onPress: async () => {
@@ -140,7 +142,7 @@ export default function ReorderBudgetScreen() {
             await load();
           },
         })),
-        { text: "Cancel", style: "cancel" as const },
+        { text: t('cancel'), style: "cancel" as const },
       ]);
     }
   }
@@ -260,7 +262,7 @@ export default function ReorderBudgetScreen() {
               color={colors.textMuted}
               style={{ fontStyle: "italic" }}
             >
-              No categories
+              {t('noCategories')}
             </Text>
           </View>
         )}
@@ -338,7 +340,7 @@ export default function ReorderBudgetScreen() {
                     fontWeight: "700",
                   }}
                 >
-                  Expenses
+                  {t('expenses')}
                 </Text>
               </View>
               <Sortable.Grid
@@ -381,7 +383,7 @@ export default function ReorderBudgetScreen() {
                     fontWeight: "700",
                   }}
                 >
-                  Income
+                  {t('income')}
                 </Text>
               </View>
               {incomeGroupCards.map((gwc) => (

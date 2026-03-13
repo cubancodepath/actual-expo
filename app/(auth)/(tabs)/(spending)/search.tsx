@@ -12,6 +12,7 @@ import {
 import * as Haptics from 'expo-haptics';
 import { LegendList } from '@legendapp/list';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 
 import {
   deleteTransaction,
@@ -121,6 +122,7 @@ export default function SearchScreen() {
   const router = useRouter();
   const { initialFilter } = useLocalSearchParams<{ initialFilter?: string }>();
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const { accounts, load: loadAccounts } = useAccountsStore();
   const { categories } = useCategoriesStore();
   const tags = useTagsStore((s) => s.tags);
@@ -206,7 +208,7 @@ export default function SearchScreen() {
       unstable_headerRightItems: () => [
         {
           type: 'button' as const,
-          label: 'Select',
+          label: t('select'),
           disabled: !hasResults,
           onPress: enterSelectMode,
         },
@@ -337,15 +339,15 @@ export default function SearchScreen() {
   }
 
   function handleDelete(txnId: string) {
-    Alert.alert('Delete Transaction', 'Delete this transaction?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('spending.deleteTransactionTitle'), t('spending.deleteTransactionConfirm'), [
+      { text: t('cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('delete'),
         style: 'destructive',
         onPress: async () => {
-          setResults(prev => prev.filter(t => t.id !== txnId));
+          setResults(prev => prev.filter(tx => tx.id !== txnId));
           await deleteTransaction(txnId);
-          useUndoStore.getState().showUndo('Transaction deleted');
+          useUndoStore.getState().showUndo(t('spending.transactionDeleted'));
         },
       },
     ]);
@@ -500,8 +502,8 @@ export default function SearchScreen() {
           hasSearched
             ? <EmptyState
                 icon="search-outline"
-                title="No matching transactions"
-                description="Try different search terms or filters"
+                title={t('spending.noMatchingTransactions')}
+                description={t('spending.tryDifferentSearch')}
               />
             : null
         }

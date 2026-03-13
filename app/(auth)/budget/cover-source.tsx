@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Keyboard, Pressable, ScrollView, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
 import { palette } from '../../../src/theme/colors';
 import { useBudgetStore } from '../../../src/stores/budgetStore';
@@ -96,6 +97,7 @@ function SourceRow({
 }
 
 export default function CoverSourceScreen() {
+  const { t } = useTranslation('budget');
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const router = useRouter();
   const { catId, catName, balance } = useLocalSearchParams<{
@@ -289,7 +291,7 @@ export default function CoverSourceScreen() {
           >
             <Ionicons name="add-circle" size={20} color={colors.primary} />
             <Text variant="body" color={colors.primary} style={{ fontWeight: '600' }}>
-              {sources.length === 0 ? 'Add Category' : 'Add Another'}
+              {sources.length === 0 ? t('addCategory') : t('addAnother')}
             </Text>
           </Pressable>
         </View>
@@ -298,7 +300,7 @@ export default function CoverSourceScreen() {
       {/* Cover button */}
       <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.xl }}>
         <Button
-          title={saving ? 'Covering...' : 'Cover'}
+          title={saving ? t('coveringEllipsis') : t('cover')}
           variant="primary"
           loading={saving}
           disabled={totalCovered === 0}

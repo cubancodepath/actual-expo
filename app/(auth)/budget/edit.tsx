@@ -8,6 +8,7 @@ import {
   View,
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import Animated, {
   interpolate,
   Extrapolation,
@@ -29,7 +30,8 @@ import { Button } from "../../../src/presentation/components/atoms/Button";
 import { SwipeableRow } from "../../../src/presentation/components/molecules/SwipeableRow";
 import { GlassButton } from "../../../src/presentation/components/atoms/GlassButton";
 import { parseGoalDef } from "../../../src/goals";
-import { describeTemplate } from "../../../src/goals/describe";
+import { describeTemplate, translateDescription } from "../../../src/goals/describe";
+import i18n from "../../../src/i18n/config";
 import { useFeatureFlag } from "../../../src/hooks/useFeatureFlag";
 import type { Category, CategoryGroup } from "../../../src/categories/types";
 
@@ -55,6 +57,8 @@ function ComparativeBars({
   textColor,
   subtextColor,
   monthLabel,
+  goalsLabel,
+  incomeLabel,
 }: {
   income: number;
   goals: number;
@@ -64,6 +68,8 @@ function ComparativeBars({
   textColor: string;
   subtextColor: string;
   monthLabel: string;
+  goalsLabel: string;
+  incomeLabel: string;
 }) {
   // Both bars share the same scale: max(income, goals)
   const max = Math.max(income, goals, 1);
@@ -113,7 +119,7 @@ function ComparativeBars({
             color={textColor}
             style={{ fontWeight: "600" }}
           >
-            {monthLabel} Goals
+            {goalsLabel}
           </Text>
           <Amount
             value={goals}
@@ -149,7 +155,7 @@ function ComparativeBars({
             color={textColor}
             style={{ fontWeight: "600" }}
           >
-            Monthly Income
+            {incomeLabel}
           </Text>
           <Amount
             value={income}
@@ -177,6 +183,7 @@ function ComparativeBars({
 // ---------- Main screen ----------
 
 export default function EditBudgetScreen() {
+  const { t } = useTranslation('budget');
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const goalsEnabled = useFeatureFlag('goalTemplatesEnabled');
   const router = useRouter();
@@ -187,7 +194,7 @@ export default function EditBudgetScreen() {
   const budgetMonth = useBudgetStore((s) => s.month);
   const monthName = useMemo(() => {
     const [y, m] = budgetMonth.split('-').map(Number);
-    return new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'long' });
+    return new Date(y, m - 1, 1).toLocaleDateString(i18n.language, { month: 'long' });
   }, [budgetMonth]);
 
   useEffect(() => {
@@ -297,7 +304,7 @@ export default function EditBudgetScreen() {
       ActionSheetIOS.showActionSheetWithOptions(
         {
           title: group.name,
-          options: ["Rename Group", "Delete Group", "Cancel"],
+          options: [t('renameGroup'), t('deleteGroup'), t('cancel')],
           destructiveButtonIndex: 1,
           cancelButtonIndex: 2,
         },
@@ -314,7 +321,7 @@ export default function EditBudgetScreen() {
     } else {
       Alert.alert(group.name, undefined, [
         {
-          text: "Rename Group",
+          text: t('renameGroup'),
           onPress: () =>
             router.push({
               pathname: "/(auth)/budget/edit-group",
@@ -322,11 +329,11 @@ export default function EditBudgetScreen() {
             }),
         },
         {
-          text: "Delete Group",
+          text: t('deleteGroup'),
           style: "destructive",
           onPress: () => confirmDeleteGroup(group, catCount),
         },
-        { text: "Cancel", style: "cancel" },
+        { text: t('cancel'), style: "cancel" },
       ]);
     }
   }
@@ -334,18 +341,18 @@ export default function EditBudgetScreen() {
   function confirmDeleteGroup(group: CategoryGroup, catCount: number) {
     const message =
       catCount > 0
-        ? `This will delete "${group.name}" and its ${catCount} categor${catCount === 1 ? "y" : "ies"}. This cannot be undone.`
-        : `Are you sure you want to delete "${group.name}"?`;
-    Alert.alert("Delete Group", message, [
-      { text: "Cancel", style: "cancel" },
+        ? t('deleteGroupMessageWithCategories', { name: group.name, count: catCount, suffix: catCount === 1 ? 'y' : 'ies' })
+        : t('deleteGroupMessageEmpty', { name: group.name });
+    Alert.alert(t('deleteGroupTitle'), message, [
+      { text: t('cancel'), style: "cancel" },
       {
-        text: "Delete",
+        text: t('delete'),
         style: "destructive",
         onPress: async () => {
           await useCategoriesStore.getState().deleteCategoryGroup(group.id);
           await useCategoriesStore.getState().load();
           await useBudgetStore.getState().load();
-          useUndoStore.getState().showUndo('Category group deleted');
+          useUndoStore.getState().showUndo(t('categoryGroupDeleted'));
         },
       },
     ]);
@@ -355,18 +362,18 @@ export default function EditBudgetScreen() {
 
   function handleDeleteCategory(cat: Category) {
     Alert.alert(
-      "Delete Category",
-      `Are you sure you want to delete "${cat.name}"?`,
+      t('deleteCategory'),
+      t('deleteCategoryMessage', { name: cat.name }),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t('cancel'), style: "cancel" },
         {
-          text: "Delete",
+          text: t('delete'),
           style: "destructive",
           onPress: async () => {
             await useCategoriesStore.getState().deleteCategory(cat.id);
             await useCategoriesStore.getState().load();
             await useBudgetStore.getState().load();
-            useUndoStore.getState().showUndo('Category deleted');
+            useUndoStore.getState().showUndo(t('categoryDeleted'));
           },
         },
       ],
@@ -396,7 +403,7 @@ export default function EditBudgetScreen() {
                 fontWeight: "700",
               }}
             >
-              {section.isIncome ? "Income" : "Expenses"}
+              {section.isIncome ? t('income') : t('expenses')}
             </Text>
           </View>
         );
@@ -414,7 +421,7 @@ export default function EditBudgetScreen() {
             paddingBottom: spacing.xs,
           }}
           accessibilityRole="header"
-          accessibilityLabel={`${group.name} group, ${section.data.length} categories`}
+          accessibilityLabel={`${group.name}, ${section.data.length}`}
         >
           <Pressable
             onLongPress={() => handleGroupLongPress(group)}
@@ -442,7 +449,7 @@ export default function EditBudgetScreen() {
             }
             hitSlop={12}
             accessibilityRole="button"
-            accessibilityLabel={`Add category to ${group.name}`}
+            accessibilityLabel={t('addGroupAccessibility', { name: group.name })}
           >
             <Ionicons name="add-circle" size={18} color={colors.primary} />
           </Pressable>
@@ -456,7 +463,7 @@ export default function EditBudgetScreen() {
             hitSlop={12}
             style={{ marginLeft: spacing.sm }}
             accessibilityRole="button"
-            accessibilityLabel={`Edit ${group.name}`}
+            accessibilityLabel={t('editGroupAccessibility', { name: group.name })}
           >
             <Ionicons name="ellipsis-horizontal-circle-outline" size={18} color={colors.textMuted} />
           </Pressable>
@@ -482,7 +489,8 @@ export default function EditBudgetScreen() {
       // Goal info
       const templates = goalsEnabled ? parseGoalDef(item.goal_def ?? null) : [];
       const hasGoal = templates.length > 0;
-      const goalDescription = hasGoal ? describeTemplate(templates[0]) : null;
+      const goalDesc = hasGoal ? describeTemplate(templates[0], i18n.language) : null;
+      const goalDescription = goalDesc ? translateDescription(goalDesc, t) : null;
 
       return (
         <View
@@ -524,8 +532,8 @@ export default function EditBudgetScreen() {
                 borderTopColor: colors.divider,
               })}
               accessibilityRole="button"
-              accessibilityLabel={`${item.name}${hasGoal ? `, Target: ${goalDescription}` : ""}`}
-              accessibilityHint="Edit category"
+              accessibilityLabel={hasGoal ? t('categoryTargetAccessibility', { name: item.name, target: goalDescription }) : item.name}
+              accessibilityHint={t('editCategoryHint')}
             >
               {/* Line 1: Name + Goal description or Add Target */}
               <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -543,7 +551,7 @@ export default function EditBudgetScreen() {
                   </Text>
                 ) : goalsEnabled ? (
                   <Button
-                    title="Add Target"
+                    title={t('addTarget')}
                     icon="add-circle"
                     variant="ghost"
                     size="sm"
@@ -612,7 +620,7 @@ export default function EditBudgetScreen() {
           color="rgba(255,255,255,0.7)"
           style={{ fontWeight: "600", marginTop: spacing.xl }}
         >
-          Edit Budget
+          {t('editBudget')}
         </Text>
 
         {/* Big amount: needed to fund all goals */}
@@ -626,7 +634,7 @@ export default function EditBudgetScreen() {
               colored={false}
             />
             <Text variant="captionSm" color="rgba(255,255,255,0.6)">
-              {needed > 0 ? "needed to fund all goals" : "all goals fully funded"}
+              {needed > 0 ? t('neededToFundGoals') : t('allGoalsFunded')}
             </Text>
           </>
         ) : (
@@ -635,7 +643,7 @@ export default function EditBudgetScreen() {
             color="rgba(255,255,255,0.6)"
             style={{ marginTop: spacing.sm }}
           >
-            No goals configured
+            {t('noGoalsConfigured')}
           </Text>
         )}
       </Animated.View>
@@ -667,6 +675,8 @@ export default function EditBudgetScreen() {
         textColor={colors.textSecondary}
         subtextColor={colors.textMuted}
         monthLabel={monthName}
+        goalsLabel={t('monthGoals', { month: monthName })}
+        incomeLabel={t('monthlyIncome')}
       />
     </View>
   );
@@ -711,7 +721,7 @@ export default function EditBudgetScreen() {
     >
       <View style={{ flex: 1 }}>
         <Button
-          title="Reorder"
+          title={t('reorder')}
           icon="reorder-three-outline"
           variant="secondary"
           size="sm"
@@ -737,7 +747,7 @@ export default function EditBudgetScreen() {
         >
           <SymbolView name="folder.badge.plus" size={17} tintColor={colors.buttonSecondaryText} />
           <Text variant="bodyLg" color={colors.buttonSecondaryText} style={{ fontSize: 13, fontWeight: "600" }}>
-            Add Group
+            {t('addGroup')}
           </Text>
         </Pressable>
       </View>
@@ -779,10 +789,10 @@ export default function EditBudgetScreen() {
                 size={48}
               />
               <Text variant="bodyLg" color={colors.textSecondary}>
-                No category groups yet
+                {t('noCategoryGroupsYet')}
               </Text>
               <Text variant="bodySm" color={colors.textMuted}>
-                Organize your budget by creating groups
+                {t('organizeByCreating')}
               </Text>
             </View>
           }

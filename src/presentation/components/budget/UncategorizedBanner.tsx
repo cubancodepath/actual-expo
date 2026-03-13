@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Banner } from '../molecules/Banner';
 
 interface UncategorizedBannerProps {
@@ -7,13 +8,13 @@ interface UncategorizedBannerProps {
 }
 
 export function UncategorizedBanner({ count, total, onPress }: UncategorizedBannerProps) {
+  const { t } = useTranslation('budget');
   const abs = (Math.abs(total) / 100).toFixed(2);
   const fmtTotal = total < 0 ? `-$${abs}` : `$${abs}`;
-  const label = count === 1 ? 'transaction' : 'transactions';
   return (
     <Banner
       variant="warning"
-      message={`${count} uncategorized ${label} — ${fmtTotal} needs a category`}
+      message={t('uncategorizedBanner', { count, total: fmtTotal })}
       onPress={onPress}
     />
   );

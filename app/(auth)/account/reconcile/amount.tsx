@@ -19,6 +19,7 @@ import { CalculatorToolbar } from '../../../../src/presentation/components/atoms
 import { GlassButton } from '../../../../src/presentation/components/atoms/GlassButton';
 import { KeyboardToolbar } from '../../../../src/presentation/components/molecules/KeyboardToolbar';
 import { formatAmount } from '../../../../src/lib/format';
+import { useTranslation } from 'react-i18next';
 
 // ---------------------------------------------------------------------------
 // Sign Toggle (+/−)
@@ -123,6 +124,7 @@ export default function ReconcileAmountScreen() {
     clearedBalance: string;
   }>();
 
+  const { t } = useTranslation('accounts');
   const clearedCents = Number(clearedBalance) || 0;
 
   const [isNegative, setIsNegative] = useState(false);
@@ -157,7 +159,7 @@ export default function ReconcileAmountScreen() {
           color={colors.textSecondary}
           style={{ textAlign: 'center', marginBottom: spacing.xl }}
         >
-          What is your current bank balance?
+          {t('reconcile.bankBalanceQuestion')}
         </Text>
 
         {/* Sign toggle + amount input */}
@@ -192,12 +194,12 @@ export default function ReconcileAmountScreen() {
             color={colors.textMuted}
             style={{ textAlign: 'right', marginTop: spacing.xs }}
           >
-            Diff: {formatAmount(diff)}
+            {t('reconcile.diff', { amount: formatAmount(diff) })}
           </Text>
         )}
 
         <Button
-          title="Reconcile"
+          title={t('reconcile.reconcileButton')}
           variant="primary"
           onPress={handleReconcile}
           loading={loading}

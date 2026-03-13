@@ -3,6 +3,7 @@ import { Alert, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import Animated, {
   useSharedValue,
   useAnimatedScrollHandler,
@@ -20,7 +21,8 @@ import { Amount } from "../../../src/presentation/components/atoms/Amount";
 import { GlassButton } from "../../../src/presentation/components/atoms/GlassButton";
 import { CircularProgress } from "../../../src/presentation/components/atoms/CircularProgress";
 import { parseGoalDef } from "../../../src/goals";
-import { describeTemplate } from "../../../src/goals/describe";
+import { describeTemplate, translateDescription } from "../../../src/goals/describe";
+import i18n from "../../../src/i18n/config";
 import { useFeatureFlag } from "../../../src/hooks/useFeatureFlag";
 import type { BudgetCategory } from "../../../src/budgets/types";
 import type { ThemeColors } from "../../../src/theme/colors";
@@ -37,7 +39,7 @@ const COLLAPSE_THRESHOLD = 56;
 
 function monthName(yyyymm: string): string {
   const [y, m] = yyyymm.split("-").map(Number);
-  return new Date(y, m - 1).toLocaleDateString("en-US", { month: "long" });
+  return new Date(y, m - 1).toLocaleDateString(i18n.language, { month: "long" });
 }
 
 function prevMonth(yyyymm: string): string {
@@ -210,6 +212,7 @@ function getGoalChartData(
 // ---------------------------------------------------------------------------
 
 export default function CategoryDetailsScreen() {
+  const { t } = useTranslation('budget');
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const router = useRouter();
   const { categoryId } = useLocalSearchParams<{ categoryId: string }>();
@@ -227,7 +230,7 @@ export default function CategoryDetailsScreen() {
 
   const [deleting, setDeleting] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(false);
-  const categoryName = category?.name ?? "Category";
+  const categoryName = category?.name ?? t('category');
 
   // -- Scroll-driven large title --
   const scrollY = useSharedValue(0);
@@ -277,12 +280,12 @@ export default function CategoryDetailsScreen() {
   function handleDelete() {
     if (!categoryId || deleting) return;
     Alert.alert(
-      "Delete Category",
-      `Are you sure you want to delete "${category?.name ?? "this category"}"? You'll need to select a category to move its transactions to.`,
+      t('deleteCategoryTitle'),
+      t('deleteCategoryWithTransfers', { name: category?.name ?? t('category') }),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t('cancel'), style: "cancel" },
         {
-          text: "Select Category",
+          text: t('selectCategory'),
           onPress: () => {
             setCoverTarget(null);
             setPendingDelete(true);
@@ -305,7 +308,7 @@ export default function CategoryDetailsScreen() {
         await useCategoriesStore.getState().deleteCategory(categoryId, coverTarget.catId);
         await useCategoriesStore.getState().load();
         await useBudgetStore.getState().load();
-        useUndoStore.getState().showUndo("Category deleted");
+        useUndoStore.getState().showUndo(t('categoryDeleted'));
         setCoverTarget(null);
         setPendingDelete(false);
         router.back();
@@ -313,7 +316,7 @@ export default function CategoryDetailsScreen() {
         setDeleting(false);
         setPendingDelete(false);
         setCoverTarget(null);
-        Alert.alert("Error", "Could not delete the category. Please try again.");
+        Alert.alert(t('errorTitle'), t('couldNotDeleteCategory'));
       }
     })();
   }, [pendingDelete, coverTarget, categoryId, setCoverTarget, router]);
@@ -324,7 +327,8 @@ export default function CategoryDetailsScreen() {
 
   const templates = parseGoalDef(category?.goal_def ?? null);
   const hasGoal = goalsEnabled && templates.length > 0 && budgetCat?.goal != null;
-  const goalDescription = hasGoal ? describeTemplate(templates[0]) : null;
+  const goalDesc = hasGoal ? describeTemplate(templates[0], i18n.language) : null;
+  const goalDescription = goalDesc ? translateDescription(goalDesc, t) : null;
 
   const pill = budgetCat
     ? getPillColors(budgetCat, colors)
@@ -393,7 +397,7 @@ export default function CategoryDetailsScreen() {
           <View style={[cardStyle, { marginBottom: spacing.xl }]}>
             <View style={rowStyle}>
               <Text variant="body" color={colors.textSecondary}>
-                From {previousMonth}
+                {t('fromMonth', { month: previousMonth })}
               </Text>
               <Amount
                 value={budgetCat.carryIn}
@@ -410,7 +414,7 @@ export default function CategoryDetailsScreen() {
 
             <View style={rowStyle}>
               <Text variant="body" color={colors.textSecondary}>
-                Assigned for {currentMonth}
+                {t('assignedForMonth', { month: currentMonth })}
               </Text>
               <Amount
                 value={budgetCat.budgeted}
@@ -427,7 +431,7 @@ export default function CategoryDetailsScreen() {
 
             <View style={rowStyle}>
               <Text variant="body" color={colors.textSecondary}>
-                Activity in {currentMonth}
+                {t('activityInMonth', { month: currentMonth })}
               </Text>
               <Amount
                 value={budgetCat.spent}
@@ -448,7 +452,7 @@ export default function CategoryDetailsScreen() {
             />
             <View style={[rowStyle, { paddingVertical: spacing.md }]}>
               <Text variant="body" style={{ fontWeight: "600" }}>
-                Available
+                {t('available')}
               </Text>
               <View
                 style={{
@@ -479,7 +483,7 @@ export default function CategoryDetailsScreen() {
           color={colors.textMuted}
           style={sectionLabelStyle}
         >
-          Target
+          {t('target')}
         </Text>
 
         {hasGoal && budgetCat && goalChart ? (
@@ -540,7 +544,7 @@ export default function CategoryDetailsScreen() {
                     color={colors.budgetCaution}
                     style={{ fontWeight: "600" }}
                   >
-                    Budget{" "}
+                    {t('budgetToMeetGoal')}
                   </Text>
                   <Amount
                     value={budgetCat.goal - budgetCat.budgeted}
@@ -553,12 +557,11 @@ export default function CategoryDetailsScreen() {
                     color={colors.budgetCaution}
                     style={{ fontWeight: "600" }}
                   >
-                    {" "}
-                    to meet your goal
+                    {t('toMeetGoal')}
                   </Text>
                 </View>
                 <Button
-                  title="Assign"
+                  title={t('assign')}
                   size="md"
                   variant="primary"
                   style={{
@@ -593,7 +596,7 @@ export default function CategoryDetailsScreen() {
                   color={colors.budgetHealthy}
                   style={{ fontWeight: "600" }}
                 >
-                  You reached your goal
+                  {t('youReachedGoal')}
                 </Text>
               </View>
             )}
@@ -611,7 +614,7 @@ export default function CategoryDetailsScreen() {
 
             {/* Edit Target — full width pill */}
             <Button
-              title="Edit Target"
+              title={t('editTarget')}
               variant="secondary"
               size="md"
               icon="flag-outline"
@@ -652,18 +655,17 @@ export default function CategoryDetailsScreen() {
                 marginBottom: spacing.xs,
               }}
             >
-              Want to set a savings goal?
+              {t('wantToSetGoal')}
             </Text>
             <Text
               variant="bodySm"
               color={colors.textSecondary}
               style={{ textAlign: "center", marginBottom: spacing.md }}
             >
-              Targets help you plan how much to budget each month to reach your
-              goal on time.
+              {t('targetsHelpPlan')}
             </Text>
             <Button
-              title="Create Target"
+              title={t('createTarget')}
               variant="primary"
               size="md"
               style={{ alignSelf: "stretch" }}
@@ -684,7 +686,7 @@ export default function CategoryDetailsScreen() {
         {/* ── Actions ── */}
         <View style={{ height: spacing.lg }} />
         <Button
-          title="Rename Category"
+          title={t('renameCategory')}
           variant="secondary"
           size="md"
           icon="pencil-outline"
@@ -700,7 +702,7 @@ export default function CategoryDetailsScreen() {
         />
         <View style={{ height: spacing.sm }} />
         <Button
-          title={category?.hidden ? "Show Category" : "Hide Category"}
+          title={category?.hidden ? t('showCategory') : t('hideCategory')}
           variant="secondary"
           size="md"
           icon={category?.hidden ? "eye-outline" : "eye-off-outline"}
@@ -713,7 +715,7 @@ export default function CategoryDetailsScreen() {
           }}
         />
         <Button
-          title="Delete Category"
+          title={t('deleteCategory')}
           variant="ghost"
           icon="trash-outline"
           textColor={colors.negative}

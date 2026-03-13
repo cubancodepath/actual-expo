@@ -20,6 +20,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import Constants from "expo-constants";
+import { useTranslation } from "react-i18next";
 import {
   getBootstrapInfo,
   login,
@@ -43,6 +44,7 @@ export default function LoginScreen() {
   const theme = useTheme();
   const styles = useThemedStyles(createStyles);
   const { setPrefs, saveToken } = usePrefsStore();
+  const { t } = useTranslation('auth');
   const [serverUrl, setServerUrl] = useState("");
   const [password, setPassword] = useState("");
   const [step, setStep] = useState<"idle" | "probing" | LoginMethod>("idle");
@@ -65,9 +67,6 @@ export default function LoginScreen() {
 
   // ── Step 1: Probe server ──────────────────────────────────────────────────
   async function probeWithRetry(url: string) {
-    // iOS shows a Local Network permission dialog on first access.
-    // The user may take several seconds to tap "Allow", so we retry
-    // a few times with increasing delays before giving up.
     const retryDelays = [1500, 2500, 3000];
     let lastError: unknown;
 
@@ -92,7 +91,7 @@ export default function LoginScreen() {
   async function handleProbe() {
     const url = serverUrl.trim().replace(/\/$/, "");
     if (!url) {
-      setError("Server URL is required");
+      setError(t('serverUrlRequired'));
       return;
     }
 
@@ -103,9 +102,7 @@ export default function LoginScreen() {
       urlRef.current = url;
 
       if (!info.bootstrapped) {
-        setError(
-          "This server is not set up yet. Configure it via the web app first.",
-        );
+        setError(t('serverNotSetUp'));
         setStep("idle");
         return;
       }
@@ -158,7 +155,7 @@ export default function LoginScreen() {
       const parsed = Linking.parse(result.url);
       const token = parsed.queryParams?.token as string | undefined;
       if (!token) {
-        setError("OpenID callback did not include a token");
+        setError(t('openIdNoToken'));
         setLoading(false);
         return;
       }
@@ -203,7 +200,7 @@ export default function LoginScreen() {
               {Constants.expoConfig?.name ?? "Actual"}
             </Text>
             <Text variant="bodySm" color={theme.colors.textMuted}>
-              Open-source personal finance
+              {t('tagline')}
             </Text>
           </View>
 
@@ -215,7 +212,7 @@ export default function LoginScreen() {
               color={theme.colors.textSecondary}
               style={styles.label}
             >
-              SERVER URL
+              {t('serverUrl')}
             </Text>
             <View style={styles.urlRow}>
               <View
@@ -231,7 +228,7 @@ export default function LoginScreen() {
                 />
                 <TextInput
                   style={[styles.input, { color: theme.colors.textPrimary }]}
-                  placeholder="https://budget.example.com"
+                  placeholder={t('serverUrlPlaceholder')}
                   placeholderTextColor={theme.colors.textMuted}
                   value={serverUrl}
                   onChangeText={(v) => {
@@ -258,7 +255,7 @@ export default function LoginScreen() {
                     color={theme.colors.primary}
                     style={{ fontWeight: "600" }}
                   >
-                    Change
+                    {t('change')}
                   </Text>
                 </Pressable>
               )}
@@ -269,7 +266,7 @@ export default function LoginScreen() {
               <View style={styles.probingRow}>
                 <ActivityIndicator size="small" color={theme.colors.primary} />
                 <Text variant="bodySm" color={theme.colors.textSecondary}>
-                  Connecting to server...
+                  {t('connecting')}
                 </Text>
               </View>
             )}
@@ -282,7 +279,7 @@ export default function LoginScreen() {
                   color={theme.colors.textSecondary}
                   style={styles.label}
                 >
-                  PASSWORD
+                  {t('password')}
                 </Text>
                 <View style={styles.inputContainer}>
                   <Ionicons
@@ -292,7 +289,7 @@ export default function LoginScreen() {
                   />
                   <TextInput
                     style={[styles.input, { color: theme.colors.textPrimary }]}
-                    placeholder="Server password"
+                    placeholder={t('passwordPlaceholder')}
                     placeholderTextColor={theme.colors.textMuted}
                     value={password}
                     onChangeText={setPassword}
@@ -309,7 +306,7 @@ export default function LoginScreen() {
             {/* OpenID banner */}
             {step === "openid" && (
               <Banner
-                message="You'll be redirected to your identity provider to sign in securely."
+                message={t('openIdRedirect')}
                 variant="info"
               />
             )}
@@ -326,7 +323,7 @@ export default function LoginScreen() {
             {/* Action buttons */}
             {step === "idle" && (
               <Button
-                title="Continue"
+                title={t('continue')}
                 onPress={handleProbe}
                 size="lg"
                 style={styles.actionButton}
@@ -335,7 +332,7 @@ export default function LoginScreen() {
 
             {step === "password" && (
               <Button
-                title="Sign In"
+                title={t('signIn')}
                 onPress={handlePasswordLogin}
                 size="lg"
                 loading={loading}
@@ -346,7 +343,7 @@ export default function LoginScreen() {
 
             {step === "openid" && (
               <Button
-                title="Sign in with OpenID"
+                title={t('signInWithOpenId')}
                 onPress={handleOpenIdLogin}
                 size="lg"
                 loading={loading}
@@ -367,7 +364,7 @@ export default function LoginScreen() {
               style={{ marginTop: 32, alignSelf: "center" }}
             >
               <Text variant="bodySm" color={theme.colors.textSecondary}>
-                Use without a server
+                {t('useWithoutServer')}
               </Text>
             </Pressable>
 
@@ -382,7 +379,7 @@ export default function LoginScreen() {
                 style={{ marginTop: 32, alignSelf: "center" }}
               >
                 <Text variant="caption" color={theme.colors.textMuted}>
-                  [DEV] Replay onboarding
+                  {t('devReplayOnboarding')}
                 </Text>
               </Pressable>
             )}

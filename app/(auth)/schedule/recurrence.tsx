@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
 import {
   Text,
@@ -23,15 +24,15 @@ type Preset = {
   config: RecurConfig;
 };
 
-function buildPresets(start: string): Preset[] {
+function buildPresets(start: string, t: any): Preset[] {
   return [
-    { label: "Every day", config: { frequency: "daily", start } },
-    { label: "Every week", config: { frequency: "weekly", start } },
-    { label: "Every 2 weeks", config: { frequency: "weekly", interval: 2, start } },
-    { label: "Every month", config: { frequency: "monthly", start } },
-    { label: "Every 3 months", config: { frequency: "monthly", interval: 3, start } },
-    { label: "Every 6 months", config: { frequency: "monthly", interval: 6, start } },
-    { label: "Every year", config: { frequency: "yearly", start } },
+    { label: t("everyDay"), config: { frequency: "daily", start } },
+    { label: t("everyWeek"), config: { frequency: "weekly", start } },
+    { label: t("every2Weeks"), config: { frequency: "weekly", interval: 2, start } },
+    { label: t("everyMonth"), config: { frequency: "monthly", start } },
+    { label: t("every3Months"), config: { frequency: "monthly", interval: 3, start } },
+    { label: t("every6Months"), config: { frequency: "monthly", interval: 6, start } },
+    { label: t("everyYear"), config: { frequency: "yearly", start } },
   ];
 }
 
@@ -54,13 +55,14 @@ export default function RecurrencePickerScreen() {
   const { config: configParam } = useLocalSearchParams<{ config?: string }>();
   const router = useRouter();
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
+  const { t } = useTranslation(['schedules', 'common']);
 
   const currentConfig: RecurConfig | null = configParam
     ? JSON.parse(configParam)
     : null;
 
   const start = currentConfig?.start ?? todayStr();
-  const presets = useMemo(() => buildPresets(start), [start]);
+  const presets = useMemo(() => buildPresets(start, t), [start, t]);
 
   // "Never" = no recurrence (null config)
   const isNever = currentConfig == null;
@@ -92,7 +94,7 @@ export default function RecurrencePickerScreen() {
       >
         <GlassButton icon="chevron.left" onPress={() => router.back()} />
         <Text variant="headingSm" color={colors.headerText}>
-          Repeat
+          {t('repeat')}
         </Text>
         <View style={{ width: 48 }} />
       </View>
@@ -132,7 +134,7 @@ export default function RecurrencePickerScreen() {
               color={colors.textPrimary}
               style={{ flex: 1 }}
             >
-              Never
+              {t('never')}
             </Text>
             <View style={{ width: 20, alignItems: "center" }}>
               {isNever && (
@@ -220,7 +222,7 @@ export default function RecurrencePickerScreen() {
               color={colors.textPrimary}
               style={{ flex: 1 }}
             >
-              Custom…
+              {t('custom')}
             </Text>
             {isCustom && (
               <Text

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Pressable, TextInput, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
 import { useCategoriesStore } from '../../../src/stores/categoriesStore';
 import { useBudgetStore } from '../../../src/stores/budgetStore';
@@ -9,10 +10,12 @@ import { Text } from '../../../src/presentation/components/atoms/Text';
 import { Button } from '../../../src/presentation/components/atoms/Button';
 import { IconButton } from '../../../src/presentation/components/atoms/IconButton';
 import { parseGoalDef } from '../../../src/goals';
-import { describeTemplate } from '../../../src/goals/describe';
+import { describeTemplate, translateDescription } from '../../../src/goals/describe';
+import i18n from '../../../src/i18n/config';
 import { useFeatureFlag } from '../../../src/hooks/useFeatureFlag';
 
 export default function QuickEditCategoryScreen() {
+  const { t } = useTranslation('budget');
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const goalsEnabled = useFeatureFlag('goalTemplatesEnabled');
   const router = useRouter();
@@ -38,7 +41,8 @@ export default function QuickEditCategoryScreen() {
 
   // Goal description
   const templates = parseGoalDef(category?.goal_def ?? null);
-  const goalDescription = templates.length > 0 ? describeTemplate(templates[0]) : null;
+  const goalDesc = templates.length > 0 ? describeTemplate(templates[0], i18n.language) : null;
+  const goalDescription = goalDesc ? translateDescription(goalDesc, t) : null;
 
   async function handleSaveName() {
     setEditing(false);
@@ -60,12 +64,12 @@ export default function QuickEditCategoryScreen() {
   function handleDelete() {
     if (!categoryId) return;
     Alert.alert(
-      'Delete Category',
-      `Are you sure you want to delete "${category?.name ?? 'this category'}"? You'll need to select a category to move its transactions to.`,
+      t('deleteCategoryTitle'),
+      t('deleteCategoryWithTransfers', { name: category?.name ?? t('category') }),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('cancel'), style: 'cancel' },
         {
-          text: 'Select Category',
+          text: t('selectCategory'),
           onPress: () => {
             setCoverTarget(null);
             setPendingDelete(true);
@@ -87,14 +91,14 @@ export default function QuickEditCategoryScreen() {
         await useCategoriesStore.getState().deleteCategory(categoryId, coverTarget.catId);
         await useCategoriesStore.getState().load();
         await useBudgetStore.getState().load();
-        useUndoStore.getState().showUndo('Category deleted');
+        useUndoStore.getState().showUndo(t('categoryDeleted'));
         setCoverTarget(null);
         setPendingDelete(false);
         router.back();
       } catch {
         setPendingDelete(false);
         setCoverTarget(null);
-        Alert.alert('Error', 'Could not delete the category. Please try again.');
+        Alert.alert(t('errorTitle'), t('couldNotDeleteCategory'));
       }
     })();
   }, [pendingDelete, coverTarget, categoryId, setCoverTarget, router]);
@@ -122,14 +126,14 @@ export default function QuickEditCategoryScreen() {
 
       {/* Category Name */}
       <Text variant="caption" color={colors.textMuted} style={labelStyle}>
-        Category Name
+        {t('categoryName')}
       </Text>
       {editing ? (
         <TextInput
           ref={inputRef}
           value={name}
           onChangeText={setName}
-          placeholder="Category name"
+          placeholder={t('categoryNamePlaceholder')}
           placeholderTextColor={colors.textMuted}
           autoFocus
           returnKeyType="done"
@@ -160,7 +164,7 @@ export default function QuickEditCategoryScreen() {
           }}
         >
           <Text variant="body" color={colors.textPrimary} numberOfLines={1}>
-            {name || 'Category name'}
+            {name || t('categoryNamePlaceholder')}
           </Text>
         </Pressable>
       )}
@@ -169,7 +173,7 @@ export default function QuickEditCategoryScreen() {
       {goalsEnabled && (
       <>
       <Text variant="caption" color={colors.textMuted} style={[labelStyle, { marginTop: spacing.lg }]}>
-        Target
+        {t('target')}
       </Text>
       <View
         style={{
@@ -184,10 +188,10 @@ export default function QuickEditCategoryScreen() {
         }}
       >
         <Text variant="body" color={goalDescription ? colors.textPrimary : colors.textMuted} numberOfLines={1}>
-          {goalDescription ?? 'No target set'}
+          {goalDescription ?? t('noTargetSet')}
         </Text>
         <Button
-          title={goalDescription ? 'Edit Target' : 'Set Target'}
+          title={goalDescription ? t('editTarget') : t('setTarget')}
           variant="secondary"
           size="md"
           style={{ alignSelf: 'stretch' }}
@@ -208,7 +212,7 @@ export default function QuickEditCategoryScreen() {
       {/* Hide + Delete side by side */}
       <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md }}>
         <Button
-          title={category?.hidden ? 'Show' : 'Hide'}
+          title={category?.hidden ? t('show') : t('hide')}
           variant="secondary"
           size="md"
           icon={category?.hidden ? 'eye-outline' : 'eye-off-outline'}
@@ -221,7 +225,7 @@ export default function QuickEditCategoryScreen() {
           }}
         />
         <Button
-          title="Delete"
+          title={t('delete')}
           variant="danger"
           size="md"
           icon="trash-outline"

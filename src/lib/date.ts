@@ -124,10 +124,10 @@ export function addMonths(month: string, n: number): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
-/** "YYYY-MM" → "March 2025" */
-export function formatMonth(month: string): string {
+/** "YYYY-MM" → "March 2025" (locale-aware via Intl) */
+export function formatMonth(month: string, locale?: string): string {
   const [y, m] = month.split("-").map(Number);
-  return format(new Date(y, m - 1, 1), "MMMM yyyy");
+  return new Date(y, m - 1, 1).toLocaleDateString(locale ?? 'en', { month: 'long', year: 'numeric' });
 }
 
 /** "YYYY-MM" → YYYYMM integer. */

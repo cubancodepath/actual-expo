@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 import {
-  ActivityIndicator,
   Alert,
   Keyboard,
   RefreshControl,
@@ -33,6 +32,7 @@ import { getUncategorizedStats } from '../../../../src/transactions';
 import { Text } from '../../../../src/presentation/components/atoms/Text';
 import { usePrefsStore } from '../../../../src/stores/prefsStore';
 import { useFeatureFlag } from '../../../../src/hooks/useFeatureFlag';
+import { BudgetListSkeleton } from '../../../../src/presentation/components/skeletons/BudgetListSkeleton';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -303,7 +303,7 @@ export default function BudgetScreen() {
 
       {/* Budget list */}
       {loading && !data ? (
-        <ActivityIndicator color={colors.link} style={{ marginTop: 40 }} />
+        <BudgetListSkeleton />
       ) : (
         <SectionList
           sections={sections}

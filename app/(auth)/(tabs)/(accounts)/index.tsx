@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   Platform,
   Pressable,
@@ -31,6 +30,7 @@ import { AddTransactionButton } from '../../../../src/presentation/components/mo
 import type { Theme } from '../../../../src/theme';
 import { useCommonMenuActions } from '../../../../src/presentation/hooks/useCommonMenuItems';
 import { useTranslation } from 'react-i18next';
+import { AccountListSkeleton } from '../../../../src/presentation/components/skeletons/AccountListSkeleton';
 import type { Account } from '../../../../src/accounts/types';
 
 // ---------------------------------------------------------------------------
@@ -259,8 +259,8 @@ export default function AccountsScreen() {
 
   if (loading && accounts.length === 0) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
+      <View style={styles.content}>
+        <AccountListSkeleton />
       </View>
     );
   }

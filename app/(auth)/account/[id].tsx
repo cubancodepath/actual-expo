@@ -31,6 +31,7 @@ import { usePrivacyStore } from '../../../src/stores/privacyStore';
 import { useUndoStore } from '../../../src/stores/undoStore';
 import { useCommonMenuActions } from '../../../src/presentation/hooks/useCommonMenuItems';
 import { useTagsStore } from '../../../src/stores/tagsStore';
+import { TransactionListSkeleton } from '../../../src/presentation/components/skeletons/TransactionListSkeleton';
 import {
   buildListData,
   useSelectModeHeader,
@@ -284,7 +285,7 @@ export default function AccountTransactionsScreen() {
       )}
 
       {txnList.loading ? (
-        <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
+        <TransactionListSkeleton />
       ) : (
         <LegendList
           data={mergedListData}

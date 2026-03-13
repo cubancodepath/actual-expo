@@ -19,6 +19,7 @@ import { useCommonMenuActions } from '../../../../src/presentation/hooks/useComm
 import { useTabBarStore } from '../../../../src/stores/tabBarStore';
 import { useTheme } from '../../../../src/presentation/providers/ThemeProvider';
 import { EmptyState } from '../../../../src/presentation/components';
+import { TransactionListSkeleton } from '../../../../src/presentation/components/skeletons/TransactionListSkeleton';
 import { UnclearedPill } from '../../../../src/presentation/components/transaction/UnclearedPill';
 import { TransactionRow } from '../../../../src/presentation/components/account/TransactionRow';
 import { DateSectionHeader } from '../../../../src/presentation/components/account/DateSectionHeader';
@@ -317,7 +318,7 @@ export default function SpendingScreen() {
         }
         ListEmptyComponent={
           txnList.loading
-            ? <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
+            ? <TransactionListSkeleton />
             : <EmptyState
                 icon="receipt-outline"
                 title={t('spending.noTransactionsYet')}

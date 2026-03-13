@@ -20,6 +20,7 @@ export { ScheduleStatusBadge } from "./atoms/ScheduleStatusBadge";
 export { GlassButton } from "./atoms/GlassButton";
 export { CalculatorToolbar } from "./atoms/CalculatorToolbar";
 export { CircularProgress } from "./atoms/CircularProgress";
+export { Skeleton } from "./atoms/Skeleton";
 
 // Molecules
 export { ListItem, type ListItemProps } from "./molecules/ListItem";

@@ -12,6 +12,7 @@ import {
   Card,
   ListItem,
   SectionHeader,
+  Button,
 } from "../../../src/presentation/components";
 import { usePrefsStore } from "../../../src/stores/prefsStore";
 import { resetAllStores } from "../../../src/stores/resetStores";
@@ -243,14 +244,14 @@ export default function SettingsScreen() {
               />
             )}
           </Card>
-          <Card style={{ marginTop: spacing.md }}>
-            <ListItem
-              title={t('disconnectFromServer')}
-              left={<SettingsIcon sfSymbol="rectangle.portrait.and.arrow.right" ionIcon="log-out-outline" color={colors.textMuted} />}
-              showChevron
-              onPress={handleLogout}
-            />
-          </Card>
+          <Button
+            title={t('disconnectFromServer')}
+            icon="log-out-outline"
+            variant="ghost"
+            textColor={colors.negative}
+            onPress={handleLogout}
+            style={{ marginTop: spacing.md }}
+          />
         </>
       )}
     </ScrollView>

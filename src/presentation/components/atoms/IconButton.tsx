@@ -15,6 +15,7 @@ export type IconButtonProps = IconSource & {
   disabled?: boolean;
   style?: ViewStyle;
   hitSlop?: number;
+  accessibilityLabel?: string;
 };
 
 export function IconButton({
@@ -26,6 +27,7 @@ export function IconButton({
   disabled = false,
   style,
   hitSlop = 8,
+  accessibilityLabel,
 }: IconButtonProps) {
   const { colors } = useTheme();
   const tint = color ?? colors.primary;
@@ -35,6 +37,9 @@ export function IconButton({
       onPress={onPress}
       disabled={disabled}
       hitSlop={hitSlop}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityState={{ disabled }}
       style={({ pressed }) => [
         styles.base,
         pressed && styles.pressed,

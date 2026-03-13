@@ -151,8 +151,8 @@ export default function FilesScreen() {
         <>
           {localFiles.length > 0 && (
             <>
-              <SectionHeader title={t('onThisDevice')} style={{ marginTop: spacing.lg }} />
-              <Card style={styles.listCard}>
+              <SectionHeader title={t('onThisDevice')} style={{ marginTop: spacing.lg, paddingHorizontal: 0 }} />
+              <View>
                 {localFiles.map((file, index) => (
                   <SwipeableRow
                     key={fileKey(file)}
@@ -168,17 +168,18 @@ export default function FilesScreen() {
                       isSelecting={selecting === fileKey(file)}
                       onPress={() => handleSelect(file)}
                       showSeparator={index < localFiles.length - 1}
+                      style={styles.fileRow}
                     />
                   </SwipeableRow>
                 ))}
-              </Card>
+              </View>
             </>
           )}
 
           {remoteFiles.length > 0 && (
             <>
-              <SectionHeader title={t('availableOnServer')} style={{ marginTop: spacing.lg }} />
-              <Card style={styles.listCard}>
+              <SectionHeader title={t('availableOnServer')} style={{ marginTop: spacing.lg, paddingHorizontal: 0 }} />
+              <View>
                 {remoteFiles.map((file, index) => (
                   <SwipeableRow
                     key={fileKey(file)}
@@ -191,10 +192,11 @@ export default function FilesScreen() {
                       isSelecting={selecting === fileKey(file)}
                       onPress={() => handleSelect(file)}
                       showSeparator={index < remoteFiles.length - 1}
+                      style={styles.fileRow}
                     />
                   </SwipeableRow>
                 ))}
-              </Card>
+              </View>
             </>
           )}
         </>
@@ -217,9 +219,8 @@ const createStyles = (theme: Theme) => ({
     backgroundColor: theme.colors.pageBackground,
     paddingHorizontal: theme.spacing.lg,
   },
-  listCard: {
-    padding: 0,
-    overflow: 'hidden' as const,
+  fileRow: {
+    backgroundColor: theme.colors.cardBackground,
   },
   loadingRow: {
     paddingVertical: theme.spacing.xl,

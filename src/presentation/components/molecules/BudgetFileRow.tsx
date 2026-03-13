@@ -1,4 +1,4 @@
-import { ActivityIndicator } from 'react-native';
+import { ActivityIndicator, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../providers/ThemeProvider';
 import { ListItem } from './ListItem';
@@ -10,6 +10,7 @@ export interface BudgetFileRowProps {
   isSelecting?: boolean;
   onPress?: () => void;
   showSeparator?: boolean;
+  style?: ViewStyle;
 }
 
 const STATE_ICON: Record<BudgetFileState, keyof typeof Ionicons.glyphMap> = {
@@ -28,7 +29,7 @@ const STATE_LABEL: Record<BudgetFileState, string> = {
 
 const ICON_SIZE = 22;
 
-export function BudgetFileRow({ file, isActive, isSelecting, onPress, showSeparator }: BudgetFileRowProps) {
+export function BudgetFileRow({ file, isActive, isSelecting, onPress, showSeparator, style }: BudgetFileRowProps) {
   const { colors, spacing } = useTheme();
 
   const subtitle = [
@@ -57,6 +58,7 @@ export function BudgetFileRow({ file, isActive, isSelecting, onPress, showSepara
       onPress={isActive || isSelecting ? undefined : onPress}
       showSeparator={showSeparator}
       separatorInsetLeft={spacing.lg + ICON_SIZE + spacing.md}
+      style={style}
     />
   );
 }

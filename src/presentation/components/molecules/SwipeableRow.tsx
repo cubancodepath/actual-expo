@@ -13,8 +13,8 @@ import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../providers/ThemeProvider';
 
 const ACTION_WIDTH = 80;
-const SWIPE_THRESHOLD = ACTION_WIDTH * 0.6;
-const FULL_THRESHOLD = 200;
+const SWIPE_THRESHOLD = ACTION_WIDTH * 0.8;
+const FULL_THRESHOLD = 260;
 const CIRCLE_SIZE = 44;
 
 const SPRING_CONFIG = { damping: 20, stiffness: 200 };

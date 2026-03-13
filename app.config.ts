@@ -18,14 +18,15 @@ const config = ({ config }: ConfigContext): ExpoConfig => ({
   platforms: ["ios"],
   ios: {
     supportsTablet: false,
+    appleTeamId: "8668UQNRKV",
     bundleIdentifier: IS_DEV
-      ? "com.anonymous.actual-expo.dev"
-      : "com.anonymous.actual-expo",
+      ? "com.cubancodepath.actual.dev"
+      : "com.cubancodepath.actual",
     entitlements: {
       "com.apple.security.application-groups": [
         IS_DEV
-          ? "group.com.anonymous.actual-expo.dev"
-          : "group.com.anonymous.actual-expo",
+          ? "group.com.cubancodepath.actual.dev"
+          : "group.com.cubancodepath.actual",
       ],
     },
     infoPlist: {

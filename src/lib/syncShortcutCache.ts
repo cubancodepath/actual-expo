@@ -3,7 +3,7 @@ import { ExtensionStorage } from '@bacons/apple-targets';
 import { useAccountsStore } from '../stores/accountsStore';
 import { useCategoriesStore } from '../stores/categoriesStore';
 
-const APP_GROUP = 'group.com.anonymous.actual-expo.dev';
+const APP_GROUP = 'group.com.cubancodepath.actual';
 
 let storage: ExtensionStorage | null = null;
 
@@ -37,6 +37,6 @@ export function syncShortcutCache(): void {
     s.set('categories', filteredCategories);
     s.set('categoryGroups', filteredGroups);
   } catch (e) {
-    console.warn('[syncShortcutCache] failed:', e);
+    if (__DEV__) console.warn('[syncShortcutCache] failed:', e);
   }
 }

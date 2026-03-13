@@ -22,6 +22,7 @@ import { openBudget } from "../src/services/budgetfiles";
 import { updateAppBadge } from "../src/lib/badge";
 import { syncShortcutCache } from "../src/lib/syncShortcutCache";
 import { UndoToast } from "../src/presentation/components";
+import { ErrorBoundary } from "../src/presentation/components/ErrorBoundary";
 import { useShakeUndo } from "../src/presentation/hooks/useShakeUndo";
 import { loadAllPersistedKeys } from "../src/services/encryptionService";
 
@@ -196,25 +197,27 @@ export default function RootLayout() {
   if (!ready) return null;
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <NavigationThemeProvider
-        value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
-      >
-        <ThemeProvider>
-          <Stack>
-            <Stack.Protected guard={!hasToken && !isLocalOnly}>
-              <Stack.Screen name="(public)" options={{ headerShown: false }} />
-            </Stack.Protected>
-            <Stack.Protected guard={hasToken && !isConfigured}>
-              <Stack.Screen name="(files)" options={{ headerShown: false }} />
-            </Stack.Protected>
-            <Stack.Protected guard={isConfigured}>
-              <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-            </Stack.Protected>
-          </Stack>
-          <UndoToast />
-        </ThemeProvider>
-      </NavigationThemeProvider>
-    </GestureHandlerRootView>
+    <ErrorBoundary>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <NavigationThemeProvider
+          value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+        >
+          <ThemeProvider>
+            <Stack>
+              <Stack.Protected guard={!hasToken && !isLocalOnly}>
+                <Stack.Screen name="(public)" options={{ headerShown: false }} />
+              </Stack.Protected>
+              <Stack.Protected guard={hasToken && !isConfigured}>
+                <Stack.Screen name="(files)" options={{ headerShown: false }} />
+              </Stack.Protected>
+              <Stack.Protected guard={isConfigured}>
+                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+              </Stack.Protected>
+            </Stack>
+            <UndoToast />
+          </ThemeProvider>
+        </NavigationThemeProvider>
+      </GestureHandlerRootView>
+    </ErrorBoundary>
   );
 }

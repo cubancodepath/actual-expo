@@ -15,8 +15,8 @@ export function Spacer({ size = "md", horizontal = false }: SpacerProps) {
     <View
       style={
         horizontal
-          ? { width: value, height: 1 }
-          : { height: value, width: 1 }
+          ? { width: value }
+          : { height: value }
       }
     />
   );

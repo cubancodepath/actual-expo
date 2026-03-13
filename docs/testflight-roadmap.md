@@ -76,64 +76,46 @@ Estimado: 2-3 dias
 ## FASE 2 — ACCESIBILIDAD Y PULIDO (Primera semana de TestFlight)
 Estimado: 2-3 dias
 
-### 2.1 Accessibility labels en componentes interactivos
-- **Componentes sin labels**:
-  - `Button.tsx` — agregar accessibilityLabel desde title prop
-  - `IconButton.tsx` — agregar accessibilityLabel requerido
-  - `Icon.tsx` — agregar accessibilityLabel opcional
-  - `SearchBar.tsx` — agregar accessibilityLabel al TextInput
-  - `SyncBadge.tsx` — agregar accessibilityLabel con estado
-  - `ListItem.tsx` — agregar accessibilityRole="button" cuando es pressable
-- **Donde**: `src/presentation/components/atoms/` y `molecules/`
+### ~~2.1 Accessibility labels en componentes interactivos~~ COMPLETADO
+- Button, IconButton, Icon, SearchBar, SyncBadge, ListItem, SwipeableRow
+- Labels i18n en EN/ES (`a11y.*` keys)
+- Iconos decorativos marcados como `accessible={false}`
 
-### 2.2 Reduced motion support
-- **Que**: Solo UndoToast respeta `useReducedMotion()`
-- **Agregar a**:
-  - `SwipeableRow.tsx`
-  - `ProgressBar.tsx`
-  - `CircularProgress.tsx`
-  - Animaciones de collapse en budget groups
-- **Que hacer**: Usar `useReducedMotion()` de react-native-reanimated, skip animaciones si true
+### ~~2.2 Reduced motion support~~ COMPLETADO
+- `useReducedMotion()` agregado a ProgressBar, CircularProgress, SwipeableRow
+- Animaciones se saltan cuando el usuario tiene movimiento reducido activado
 
 ### 2.3 Form validation visual
 - **Que**: TextInputs no muestran estados de error visualmente
 - **Que hacer**: Agregar prop `error` a inputs que muestre borde rojo + texto de error debajo
 - **Pantallas afectadas**: Login, new account, new transaction, budget setup wizard
 
-### 2.4 keyboardShouldPersistTaps en FlatLists
-- **Que**: Tapping fuera del keyboard en listas no funciona correctamente
-- **Donde**: CategoryPickerList, PayeePickerList, y cualquier FlatList con SearchBar
-- **Que hacer**: Agregar `keyboardShouldPersistTaps="handled"`
+### ~~2.4 keyboardShouldPersistTaps en FlatLists~~ COMPLETADO
+- CategoryPickerList ya lo tenia implementado
 
 ---
 
 ## FASE 3 — EXPERIENCIA DE USUARIO (Semana 2 de TestFlight)
 Estimado: 2-3 dias
 
-### 3.1 Loading skeletons para listas
-- **Que**: Listas muestran vacio mientras cargan datos
-- **Donde**: Accounts list, transactions list, budget screen, categories, payees
-- **Que hacer**: Crear componente `SkeletonRow` reutilizable con animated shimmer
+### ~~3.1 Loading skeletons para listas~~ COMPLETADO
+- Componente `Skeleton` atom con animación de pulso (respeta reduced motion)
+- Variantes: AccountList, BudgetList, TransactionList, PayeesList, CategoriesList
+- Integrado en accounts, budget, spending, account detail
 
-### 3.2 Crash reporting
-- **Que**: Sin telemetria de crashes en produccion
-- **Que hacer**: Integrar Sentry o Bugsnag via plugin Expo
-- **Config**: Solo para builds de produccion, no development
+### ~~3.2 Crash reporting~~ COMPLETADO
+- `@sentry/react-native` integrado con plugin Expo
+- Solo habilitado en producción (`enabled: !__DEV__`)
+- ErrorBoundary y sync errors reportan a Sentry
+- **Pendiente**: Reemplazar `__SENTRY_DSN__` en `src/services/sentry.ts`
 
-### 3.3 Resolver TODOs en pantallas
-- **12 archivos con TODOs** (no son blockers pero mejoran la experiencia):
-  - `account/settings.tsx`
-  - `settings/budget.tsx`
-  - `budget/notes.tsx`
-  - `budget/new-category.tsx`, `new-group.tsx`, `rename-category.tsx`
-  - `budget/quick-edit-category.tsx`, `edit-group.tsx`
-  - `transaction/new.tsx`, `payee-picker.tsx`
-  - `schedule/[id].tsx`, `schedule/new.tsx`
+### ~~3.3 Resolver TODOs en pantallas~~ NO NECESARIO
+- 0 TODOs encontrados en los 12 archivos — ya resueltos
 
-### 3.4 Implementar mergePayees()
-- **Que**: Infraestructura existe (payee_mapping table) pero falta la funcion
-- **Donde**: `src/payees/index.ts`
-- **Que hacer**: Implementar merge con actualizacion de transacciones asociadas
+### ~~3.4 Implementar mergePayees()~~ COMPLETADO
+- `mergePayees()` implementado via `payee_mapping` redirects (patrón Actual Budget)
+- Acción `merge()` agregada al payeesStore
+- `confirmMerge` en payees.tsx actualizado para usar el merge correcto
 
 ---
 

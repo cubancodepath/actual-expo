@@ -28,6 +28,8 @@ import {
   idFromBudgetName,
   deleteBudgetDir,
 } from './budgetMetadata';
+import * as encryption from '../encryption';
+import { loadKeyForBudget } from './encryptionService';
 
 // ---------------------------------------------------------------------------
 // Auth guard
@@ -249,19 +251,21 @@ export async function downloadBudget(
   token: string,
   file: BudgetFile,
 ): Promise<string> {
-  if (file.encryptKeyId) {
-    throw new Error(
-      'This budget file is encrypted. Encrypted files are not yet supported.',
-    );
-  }
-
-  // 1. Download ZIP
-  const res = await fetch(`${serverUrl}/sync/download-user-file`, {
-    headers: {
-      'x-actual-token': token,
-      'x-actual-file-id': file.fileId,
-    },
-  });
+  // 1. Download file and file info in parallel
+  const [res, infoRes] = await Promise.all([
+    fetch(`${serverUrl}/sync/download-user-file`, {
+      headers: {
+        'x-actual-token': token,
+        'x-actual-file-id': file.fileId,
+      },
+    }),
+    fetch(`${serverUrl}/sync/get-user-file-info`, {
+      headers: {
+        'x-actual-token': token,
+        'x-actual-file-id': file.fileId,
+      },
+    }),
+  ]);
 
   throwIfUnauthorized(res);
 
@@ -270,8 +274,25 @@ export async function downloadBudget(
     throw new Error(`Download failed (${res.status}): ${text}`);
   }
 
-  const buffer = await res.arrayBuffer();
-  const zipBytes = new Uint8Array(buffer);
+  const rawBuffer = await res.arrayBuffer();
+  let zipBytes = new Uint8Array(rawBuffer);
+
+  // If encrypted, decrypt the file before unzipping
+  const fileInfo = infoRes.ok ? await infoRes.json().catch(() => null) : null;
+  const encryptMeta = fileInfo?.data?.encryptMeta;
+  if (encryptMeta) {
+    try {
+      const decrypted = await encryption.decrypt(zipBytes, encryptMeta);
+      zipBytes = new Uint8Array(decrypted);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      throw new Error(
+        msg === 'missing-key'
+          ? 'Encryption key not loaded. Please enter your password first.'
+          : `Failed to decrypt budget file: ${msg}`,
+      );
+    }
+  }
 
   if (zipBytes[0] !== 0x50 || zipBytes[1] !== 0x4b) {
     const contentType = res.headers.get('content-type') ?? 'unknown';
@@ -365,6 +386,11 @@ export async function openBudget(budgetId: string): Promise<void> {
   });
 
   clearSwitchingFlag();
+
+  // Load encryption key into memory if needed (before sync)
+  if (meta?.encryptKeyId && meta?.cloudFileId && !encryption.hasKey(meta.encryptKeyId)) {
+    await loadKeyForBudget(meta.cloudFileId);
+  }
 
   // Sync for cloud-connected budgets
   if (meta?.cloudFileId && meta?.groupId) {

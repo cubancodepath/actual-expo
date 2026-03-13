@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { createMMKV } from 'react-native-mmkv';
 import * as SecureStore from 'expo-secure-store';
+import { clearAllKeys as clearEncryptionKeys } from '../services/encryptionKeyStorage';
+import { unloadAllKeys } from '../encryption';
 
 // ---------------------------------------------------------------------------
 // Storage adapters
@@ -137,6 +139,8 @@ export const usePrefsStore = create<PrefsState>()(
       async clearAll() {
         const { hasSeenOnboarding, themeMode, language } = get();
         await SecureStore.deleteItemAsync(SECURE_TOKEN_KEY);
+        await clearEncryptionKeys();
+        unloadAllKeys();
 
         set({
           serverUrl: '',

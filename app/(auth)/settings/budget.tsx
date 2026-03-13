@@ -8,8 +8,11 @@ import {
   Card,
   ListItem,
   SectionHeader,
+  Button,
+  promptToEnableEncryption,
 } from "../../../src/presentation/components";
 import { usePreferencesStore } from "../../../src/stores/preferencesStore";
+import { usePrefsStore } from "../../../src/stores/prefsStore";
 import { useFeatureFlagsStore } from "../../../src/stores/featureFlagsStore";
 import {
   ALL_FEATURE_FLAGS,
@@ -89,6 +92,39 @@ function PickerRow({
     );
 
   return <ListItem title={label} right={picker} showSeparator={showSeparator} />;
+}
+
+function EncryptionSection() {
+  const { t } = useTranslation('settings');
+  const { colors, spacing } = useTheme();
+  const fileId = usePrefsStore((s) => s.fileId);
+  const encryptKeyId = usePrefsStore((s) => s.encryptKeyId);
+
+  // Don't show for local-only budgets (no fileId = no server)
+  if (!fileId) return null;
+
+  const isEncrypted = !!encryptKeyId;
+
+  return (
+    <>
+      <SectionHeader title={t('encryption')} style={{ marginTop: spacing.xl }} />
+      <Card>
+        <Text
+          variant="bodySm"
+          color={colors.textMuted}
+          style={{ padding: spacing.lg }}
+        >
+          {isEncrypted ? t('encryptionEnabled') : t('encryptionNotEnabled')}
+        </Text>
+        <Button
+          title={isEncrypted ? t('generateNewKey') : t('enableEncryption')}
+          variant="ghost"
+          onPress={() => promptToEnableEncryption()}
+          style={{ marginHorizontal: spacing.lg, marginBottom: spacing.lg }}
+        />
+      </Card>
+    </>
+  );
 }
 
 export default function BudgetSettingsScreen() {
@@ -278,6 +314,9 @@ export default function BudgetSettingsScreen() {
           onPress={() => router.push("/(auth)/categories")}
         />
       </Card>
+
+      {/* Encryption */}
+      <EncryptionSection />
 
       {/* Experimental Features */}
       <SectionHeader title={t('experimentalFeatures')} style={{ marginTop: spacing.xl }} />

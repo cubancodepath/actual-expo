@@ -33,6 +33,7 @@ export { SyncBadge } from "./molecules/SyncBadge";
 export { CategoryPickerList, type CategoryPickerListProps, type GroupedCategory, type PickerCategory } from "./molecules/CategoryPickerList";
 export { UndoToast } from "./molecules/UndoToast";
 export { BudgetFileRow, type BudgetFileRowProps } from "./molecules/BudgetFileRow";
+export { EncryptionPasswordPrompt, promptForPassword, promptToEnableEncryption } from "./molecules/EncryptionPasswordPrompt";
 
 // Budget
 export { MonthSelector } from "./budget/MonthSelector";

@@ -123,6 +123,22 @@
     "unnamedBudget": "Presupuesto sin nombre"
   },
 
+  "encryption": {
+    "enterPasswordTitle": "Presupuesto Encriptado",
+    "enterPasswordDescription": "Este presupuesto tiene encriptación de extremo a extremo. Ingresa tu contraseña de encriptación para desbloquearlo.",
+    "passwordPlaceholder": "Contraseña de encriptación",
+    "confirmPasswordPlaceholder": "Confirmar contraseña",
+    "unlock": "Desbloquear",
+    "enable": "Habilitar",
+    "enableTitle": "Habilitar Encriptación",
+    "enableDescription": "Encripta de extremo a extremo todos los datos de sincronización de este presupuesto. Necesitarás esta contraseña en cada dispositivo.",
+    "enableFailed": "No se pudo habilitar la encriptación. Inténtalo de nuevo.",
+    "passwordsMismatch": "Las contraseñas no coinciden.",
+    "wrongPassword": "Contraseña incorrecta. Inténtalo de nuevo.",
+    "networkError": "No se pudo conectar al servidor. Verifica tu conexión e inténtalo de nuevo.",
+    "unsupportedKeyFormat": "Este formato de clave de encriptación no es compatible."
+  },
+
   "quickAction": {
     "addTransaction": "Agregar Transacción"
   },

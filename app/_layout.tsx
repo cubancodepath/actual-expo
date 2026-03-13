@@ -23,6 +23,7 @@ import { updateAppBadge } from "../src/lib/badge";
 import { syncShortcutCache } from "../src/lib/syncShortcutCache";
 import { UndoToast } from "../src/presentation/components";
 import { useShakeUndo } from "../src/presentation/hooks/useShakeUndo";
+import { loadAllPersistedKeys } from "../src/services/encryptionService";
 
 export default function RootLayout() {
   const systemScheme = useColorScheme();
@@ -42,6 +43,7 @@ export default function RootLayout() {
       // Token needs an explicit async load from SecureStore.
       await usePrefsStore.getState().loadToken();
       await ensureBudgetsDir();
+      await loadAllPersistedKeys();
 
       // If a budget was previously open, reopen it
       const { activeBudgetId } = usePrefsStore.getState();

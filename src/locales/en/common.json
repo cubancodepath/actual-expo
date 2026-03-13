@@ -123,6 +123,22 @@
     "unnamedBudget": "Unnamed budget"
   },
 
+  "encryption": {
+    "enterPasswordTitle": "Encrypted Budget",
+    "enterPasswordDescription": "This budget is end-to-end encrypted. Enter your encryption password to unlock it.",
+    "passwordPlaceholder": "Encryption password",
+    "confirmPasswordPlaceholder": "Confirm password",
+    "unlock": "Unlock",
+    "enable": "Enable",
+    "enableTitle": "Enable Encryption",
+    "enableDescription": "End-to-end encrypt all sync data for this budget. You will need this password on every device.",
+    "enableFailed": "Failed to enable encryption. Please try again.",
+    "passwordsMismatch": "Passwords do not match.",
+    "wrongPassword": "Incorrect password. Please try again.",
+    "networkError": "Could not reach the server. Check your connection and try again.",
+    "unsupportedKeyFormat": "This encryption key format is not supported."
+  },
+
   "quickAction": {
     "addTransaction": "Add Transaction"
   },

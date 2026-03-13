@@ -8,7 +8,7 @@
 import { getClock, merkle, Timestamp } from '../crdt';
 import { encode, decode } from './encoder';
 import { postBinary } from '../post';
-import { PostError } from '../errors';
+import { PostError, SyncError } from '../errors';
 import { applyMessages, getMessagesSince } from './apply';
 import { refreshStoresForDatasets } from '../stores/storeRegistry';
 import { getSyncGeneration, isSwitchingBudget, setActiveSyncPromise } from './lifecycle';
@@ -125,6 +125,12 @@ async function _fullSync(attempt = 0): Promise<void> {
       const { closeBudget } = await import('../services/budgetfiles');
       await closeBudget().catch(() => {});
       usePrefsStore.getState().clearAll();
+      return;
+    }
+
+    // Handle missing encryption key gracefully (don't crash, let user re-enter password)
+    if (e instanceof SyncError && (e.meta as { isMissingKey?: boolean })?.isMissingKey) {
+      useSyncStore.getState()._setError('Encryption key not available. Re-open this budget to enter your password.');
       return;
     }
 

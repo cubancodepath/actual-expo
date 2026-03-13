@@ -12,6 +12,9 @@ import {
 } from '../../services/budgetfiles';
 import { openBudget } from '../../services/budgetfiles';
 import { clearSwitchingFlag } from '../../sync';
+import * as encryption from '../../encryption';
+import { loadKeyForBudget } from '../../services/encryptionService';
+import { promptForPassword } from '../components/molecules/EncryptionPasswordPrompt';
 
 type UseBudgetFilesReturn = {
   /** Files on this device (local, synced, detached) */
@@ -82,6 +85,19 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
   }, [fetchFiles]);
 
   const selectFile = useCallback(async (file: ReconciledBudgetFile) => {
+    // If encrypted, ensure the key is available before switching
+    if (file.encryptKeyId && file.cloudFileId) {
+      if (!encryption.hasKey(file.encryptKeyId)) {
+        // Try loading from SecureStore first
+        const loaded = await loadKeyForBudget(file.cloudFileId);
+        if (!loaded) {
+          // Prompt user for password
+          const result = await promptForPassword(file.cloudFileId);
+          if (result === 'cancelled') return;
+        }
+      }
+    }
+
     setSelecting(fileKey(file));
     try {
       await switchBudget(file, serverUrl, token);

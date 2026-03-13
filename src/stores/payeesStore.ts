@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { registerStore } from './storeRegistry';
-import { getPayees, createPayee, updatePayee, deletePayee } from '../payees';
+import { getPayees, createPayee, updatePayee, deletePayee, mergePayees } from '../payees';
 import type { Payee } from '../payees/types';
 
 type PayeesState = {
@@ -10,6 +10,7 @@ type PayeesState = {
   create(name: string): Promise<string>;
   update(id: string, fields: Partial<Pick<Payee, 'name' | 'favorite'>>): Promise<void>;
   delete_(id: string): Promise<void>;
+  merge(targetId: string, ids: string[]): Promise<void>;
 };
 
 export const usePayeesStore = create<PayeesState>((set) => ({
@@ -36,6 +37,10 @@ export const usePayeesStore = create<PayeesState>((set) => ({
 
   async delete_(id) {
     return deletePayee(id);
+  },
+
+  async merge(targetId, ids) {
+    return mergePayees(targetId, ids);
   },
 }));
 

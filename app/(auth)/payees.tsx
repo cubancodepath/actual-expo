@@ -14,8 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { usePayeesStore } from '../../src/stores/payeesStore';
 import { useUndoStore } from '../../src/stores/undoStore';
-import { runQuery, run } from '../../src/db';
-import { updateTransaction } from '../../src/transactions';
+import { runQuery } from '../../src/db';
 import type { Payee } from '../../src/payees/types';
 import { SearchBar } from '../../src/presentation/components';
 
@@ -139,7 +138,7 @@ function PayeeRow({
 
 export default function PayeesScreen() {
   const { t } = useTranslation();
-  const { payees, load, update, delete_ } = usePayeesStore();
+  const { payees, load, update, delete_, merge } = usePayeesStore();
   const [search, setSearch] = useState('');
   const [txnCounts, setTxnCounts] = useState<Map<string, number>>(new Map());
   const [pendingDelete, setPendingDelete] = useState<{ id: string; name: string } | null>(null);
@@ -193,16 +192,7 @@ export default function PayeesScreen() {
 
   async function confirmMerge(targetId: string) {
     if (!pendingDelete) return;
-    const { id } = pendingDelete;
-    // Reassign all transactions from deleted payee → target payee via CRDT messages
-    const txns = await runQuery<{ id: string }>(
-      'SELECT id FROM transactions WHERE description = ? AND tombstone = 0',
-      [id],
-    );
-    for (const t of txns) {
-      await updateTransaction(t.id, { description: targetId });
-    }
-    await delete_(id);
+    await merge(targetId, [pendingDelete.id]);
     setPendingDelete(null);
     load();
     loadCounts();

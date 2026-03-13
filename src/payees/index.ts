@@ -83,6 +83,69 @@ export const deletePayee = undoable(async function deletePayee(id: string): Prom
   ]);
 });
 
+/**
+ * Merge one or more payees into a target payee via payee_mapping redirects.
+ * Transfer payees are excluded. Merged payees are tombstoned.
+ */
+export const mergePayees = undoable(async function mergePayees(
+  targetId: string,
+  ids: string[],
+): Promise<void> {
+  // Validate target is not a transfer payee
+  const target = await first<PayeeRow>(
+    'SELECT * FROM payees WHERE id = ? AND tombstone = 0',
+    [targetId],
+  );
+  if (!target || target.transfer_acct != null) return;
+
+  // Filter out transfer payees and the target itself
+  const candidates = await runQuery<PayeeRow>(
+    `SELECT * FROM payees WHERE id IN (${ids.map(() => '?').join(',')}) AND tombstone = 0`,
+    ids,
+  );
+  const mergeIds = candidates
+    .filter(p => p.transfer_acct == null && p.id !== targetId)
+    .map(p => p.id);
+  if (mergeIds.length === 0) return;
+
+  const messages: Parameters<typeof sendMessages>[0] = [];
+
+  for (const id of mergeIds) {
+    // Find all mappings currently pointing to this payee and redirect to target
+    const mappings = await runQuery<{ id: string }>(
+      'SELECT id FROM payee_mapping WHERE targetId = ?',
+      [id],
+    );
+    for (const m of mappings) {
+      messages.push({
+        timestamp: Timestamp.send()!,
+        dataset: 'payee_mapping',
+        row: m.id,
+        column: 'targetId',
+        value: targetId,
+      });
+    }
+    // Update the payee's own mapping to point to target
+    messages.push({
+      timestamp: Timestamp.send()!,
+      dataset: 'payee_mapping',
+      row: id,
+      column: 'targetId',
+      value: targetId,
+    });
+    // Tombstone the merged payee
+    messages.push({
+      timestamp: Timestamp.send()!,
+      dataset: 'payees',
+      row: id,
+      column: 'tombstone',
+      value: 1,
+    });
+  }
+
+  await sendMessages(messages);
+});
+
 /** Find an existing payee by name (case-insensitive) or create a new one. */
 export async function findOrCreatePayee(name: string): Promise<string | null> {
   const trimmed = name.trim();

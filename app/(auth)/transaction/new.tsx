@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Keyboard, useColorScheme, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import Animated, { useAnimatedScrollHandler, useAnimatedStyle, useSharedValue, interpolate } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAccountsStore } from '../../../src/stores/accountsStore';
@@ -103,45 +103,66 @@ export default function NewTransactionScreen() {
     opacity: interpolate(scrollY.value, [0, 50], [0, 1], 'clamp'),
   }));
 
-  // Clear picker on mount, load categories if needed
-  useEffect(() => {
-    clearPicker();
-    if (groups.length === 0) loadCategories();
-    if (isEdit) {
-      getTransactionById(transactionId).then(async (txn) => {
-        if (!txn) return;
-        setType(txn.amount < 0 ? 'expense' : 'income');
-        setCents(Math.abs(txn.amount));
-        setAcctId(txn.acct);
-        const txnAccount = accounts.find((a) => a.id === txn.acct);
-        setAcctName(txnAccount?.name ?? '');
-        setPayeeId(txn.description);
-        setPayeeName(txn.payeeName ?? '');
-        setCategoryId(txn.category ?? null);
-        setCategoryName(txn.categoryName ?? '');
-        setDateInt(txn.date);
-        setDateStr(intToStr(txn.date));
-        setNotes(txn.notes ?? '');
-        setCleared(txn.cleared);
-        setReconciled(txn.reconciled);
+  // Reset form state on focus (handles Expo Router screen reuse)
+  useFocusEffect(
+    useCallback(() => {
+      clearPicker();
+      if (groups.length === 0) loadCategories();
 
-        // Load split children for parent transactions
-        if (txn.isParent) {
-          const children = await getChildTransactions(transactionId);
-          if (children.length > 0) {
-            setSplitCategories(
-              children.map((c) => ({
-                id: c.id,
-                categoryId: c.category,
-                categoryName: c.categoryName ?? '',
-                amount: Math.abs(c.amount),
-              })),
-            );
+      if (isEdit) {
+        getTransactionById(transactionId).then(async (txn) => {
+          if (!txn) return;
+          setType(txn.amount < 0 ? 'expense' : 'income');
+          setCents(Math.abs(txn.amount));
+          setAcctId(txn.acct);
+          const txnAccount = accounts.find((a) => a.id === txn.acct);
+          setAcctName(txnAccount?.name ?? '');
+          setPayeeId(txn.description);
+          setPayeeName(txn.payeeName ?? '');
+          setCategoryId(txn.category ?? null);
+          setCategoryName(txn.categoryName ?? '');
+          setDateInt(txn.date);
+          setDateStr(intToStr(txn.date));
+          setNotes(txn.notes ?? '');
+          setCleared(txn.cleared);
+          setReconciled(txn.reconciled);
+
+          // Load split children for parent transactions
+          if (txn.isParent) {
+            const children = await getChildTransactions(transactionId);
+            if (children.length > 0) {
+              setSplitCategories(
+                children.map((c) => ({
+                  id: c.id,
+                  categoryId: c.category,
+                  categoryName: c.categoryName ?? '',
+                  amount: Math.abs(c.amount),
+                })),
+              );
+            }
           }
-        }
-      });
-    }
-  }, []);
+        });
+      } else {
+        // Reset to defaults for new transaction
+        setType('expense');
+        setCents(amountParam ? Number(amountParam) : 0);
+        setAcctId(accountId ?? null);
+        setAcctName(accountNameParam ?? initialAccount?.name ?? '');
+        setPayeeId(null);
+        setPayeeName(payeeNameParam ?? '');
+        setIsTransfer(false);
+        setCategoryId(categoryIdParam ?? null);
+        setCategoryName(categoryNameParam ?? '');
+        setDateInt(todayInt());
+        setDateStr(todayStr());
+        setNotes('');
+        setCleared(false);
+        setReconciled(false);
+        setRecurConfig(null);
+        setError(null);
+      }
+    }, [transactionId]),
+  );
 
   // React to picker selections
   useEffect(() => {

@@ -29,7 +29,7 @@ export async function refreshStoresForDatasets(
   const results = await Promise.allSettled(loads);
   for (const r of results) {
     if (r.status === 'rejected') {
-      console.warn('[storeRegistry] load failed:', r.reason);
+      if (__DEV__) console.warn('[storeRegistry] load failed:', r.reason);
     }
   }
 }
@@ -39,7 +39,7 @@ export async function refreshAllRegisteredStores(): Promise<void> {
   const results = await Promise.allSettled(loads);
   for (const r of results) {
     if (r.status === 'rejected') {
-      console.warn('[storeRegistry] load failed:', r.reason);
+      if (__DEV__) console.warn('[storeRegistry] load failed:', r.reason);
     }
   }
 }

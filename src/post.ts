@@ -60,7 +60,7 @@ export async function post(
   }
 
   if (responseData.status !== 'ok') {
-    console.warn('API call failed: ' + url + '\nResponse: ' + JSON.stringify(responseData));
+    if (__DEV__) console.warn('API call failed: ' + url + '\nResponse: ' + JSON.stringify(responseData));
     throw new PostError(responseData.description ?? responseData.reason ?? 'unknown');
   }
 

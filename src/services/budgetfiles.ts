@@ -158,7 +158,7 @@ export async function uploadBudget(
   budgetId: string,
 ): Promise<{ cloudFileId: string; groupId: string }> {
   const budgetDir = getBudgetDir(budgetId);
-  console.log('[upload] Starting upload for budget:', budgetId);
+  if (__DEV__) console.log('[upload] Starting upload for budget:', budgetId);
 
   // 1. Switch from WAL to DELETE journal mode so the file is self-contained.
   const db = getDb();
@@ -184,11 +184,11 @@ export async function uploadBudget(
     'db.sqlite': dbBytes,
     'metadata.json': metaBytes,
   });
-  console.log('[upload] ZIP size:', zipped.length, 'bytes');
+  if (__DEV__) console.log('[upload] ZIP size:', zipped.length, 'bytes');
 
   // 5. Reuse existing cloudFileId or generate a new one
   const cloudFileId = meta.cloudFileId || randomUUID().replace(/-/g, '');
-  console.log('[upload] cloudFileId:', cloudFileId);
+  if (__DEV__) console.log('[upload] cloudFileId:', cloudFileId);
 
   // 6. Encrypt ZIP if encryption key is available
   let uploadContent: Uint8Array = zipped;
@@ -198,7 +198,7 @@ export async function uploadBudget(
     const encrypted = await encryption.encrypt(zipped, meta.encryptKeyId);
     uploadContent = encrypted.value;
     encryptMeta = encrypted.meta;
-    console.log('[upload] Encrypted ZIP, size:', uploadContent.length);
+    if (__DEV__) console.log('[upload] Encrypted ZIP, size:', uploadContent.length);
   }
 
   // 7. Upload
@@ -213,7 +213,7 @@ export async function uploadBudget(
   };
   if (encryptMeta) {
     headers['X-ACTUAL-ENCRYPT-META'] = JSON.stringify(encryptMeta);
-    console.log('[upload] Encrypt meta:', JSON.stringify(encryptMeta));
+    if (__DEV__) console.log('[upload] Encrypt meta:', JSON.stringify(encryptMeta));
   }
   if (meta.groupId) {
     headers['X-ACTUAL-GROUP-ID'] = meta.groupId;
@@ -241,7 +241,7 @@ export async function uploadBudget(
 
   // 8. Update local metadata
   await updateMetadata(budgetId, { cloudFileId, groupId });
-  console.log('[upload] Upload complete. groupId:', groupId);
+  if (__DEV__) console.log('[upload] Upload complete. groupId:', groupId);
 
   return { cloudFileId, groupId };
 }
@@ -405,9 +405,9 @@ export async function openBudget(budgetId: string): Promise<void> {
     const needsInitialSync = isFirstOpen || !meta?.lastSyncedTimestamp;
     if (needsInitialSync) {
       // First-time open: block until sync completes so the user doesn't see empty tabs
-      await fullSync().catch(console.warn);
+      await fullSync().catch(e => { if (__DEV__) console.warn(e); });
     } else {
-      fullSync().catch(console.warn);
+      fullSync().catch(e => { if (__DEV__) console.warn(e); });
     }
   }
 }

@@ -92,7 +92,7 @@ export async function applyMessages(messages: SyncMessage[]): Promise<OldData> {
       }
 
       if (!ALLOWED_TABLES.has(dataset)) {
-        console.warn(`[applyMessages] REJECTED unknown dataset "${dataset}" row=${row} column=${column}`);
+        if (__DEV__) console.warn(`[applyMessages] REJECTED unknown dataset "${dataset}" row=${row} column=${column}`);
         continue;
       }
 

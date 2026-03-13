@@ -105,7 +105,7 @@ export async function decode(
         });
       } catch (e: unknown) {
         const errMsg = e instanceof Error ? e.message : String(e);
-        console.warn('Sync decrypt error:', errMsg);
+        if (__DEV__) console.warn('Sync decrypt error:', errMsg);
         throw new SyncError('decrypt-failure', {
           isMissingKey: errMsg === 'missing-key',
         });

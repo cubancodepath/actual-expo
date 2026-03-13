@@ -188,7 +188,7 @@ export async function enableEncryption({
     const { groupId } = await uploadBudget(serverUrl, token, budgetId);
     return { success: true, groupId };
   } catch (e) {
-    console.error('[encryption] Upload failed after enabling encryption:', e);
+    if (__DEV__) console.error('[encryption] Upload failed after enabling encryption:', e);
     return { error: 'upload-failure' };
   }
 }

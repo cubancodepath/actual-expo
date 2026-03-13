@@ -355,37 +355,37 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
     try {
       const name = budgetName.trim() || "My Budget";
       const budgetId = idFromBudgetName(name);
-      console.log('[wizard] Creating budget:', budgetId, 'mode:', mode);
+      if (__DEV__) console.log('[wizard] Creating budget:', budgetId, 'mode:', mode);
 
       await ensureBudgetsDir();
       await writeMetadata(budgetId, { id: budgetId, budgetName: name });
       await openDatabase(getBudgetDir(budgetId));
-      console.log('[wizard] DB opened, loading clock');
+      if (__DEV__) console.log('[wizard] DB opened, loading clock');
       await loadClock();
 
-      console.log('[wizard] Seeding budget data');
+      if (__DEV__) console.log('[wizard] Seeding budget data');
       await seedLocalBudget({
         accountName: accountName.trim() || "Checking",
         startingBalance,
         selectedCategories: categories,
       });
-      console.log('[wizard] Seed complete');
+      if (__DEV__) console.log('[wizard] Seed complete');
 
       budgetIdRef.current = budgetId;
 
       // In server mode, upload the budget now but defer setting prefs
       // until the user taps "Start Budgeting" (so routing doesn't switch early)
       if (mode === 'server') {
-        console.log('[wizard] Uploading to server...');
+        if (__DEV__) console.log('[wizard] Uploading to server...');
         const { serverUrl, token } = usePrefsStore.getState();
         const result = await uploadBudget(serverUrl, token, budgetId);
         uploadResultRef.current = result;
-        console.log('[wizard] Upload success:', JSON.stringify(result));
+        if (__DEV__) console.log('[wizard] Upload success:', JSON.stringify(result));
       }
 
       goTo("ready");
     } catch (e) {
-      console.error('[wizard] Error:', e);
+      if (__DEV__) console.error('[wizard] Error:', e);
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setSeeding(false);
@@ -394,7 +394,7 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
 
   function handleStart() {
     const name = budgetName.trim() || "My Budget";
-    console.log('[wizard] handleStart, mode:', mode, 'budgetId:', budgetIdRef.current);
+    if (__DEV__) console.log('[wizard] handleStart, mode:', mode, 'budgetId:', budgetIdRef.current);
     if (mode === 'local') {
       usePrefsStore.getState().setPrefs({
         isLocalOnly: true,
@@ -404,7 +404,7 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
     } else {
       // Server mode: set prefs now → triggers isConfigured → routing switches to (auth)
       const result = uploadResultRef.current;
-      console.log('[wizard] Setting server prefs:', JSON.stringify(result));
+      if (__DEV__) console.log('[wizard] Setting server prefs:', JSON.stringify(result));
       usePrefsStore.getState().setPrefs({
         activeBudgetId: budgetIdRef.current,
         budgetName: name,
@@ -413,7 +413,7 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
         isLocalOnly: false,
       });
       // Trigger initial sync in background
-      fullSync().catch(console.warn);
+      fullSync().catch(e => { if (__DEV__) console.warn(e); });
     }
     onComplete?.();
   }

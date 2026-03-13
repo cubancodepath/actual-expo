@@ -156,5 +156,13 @@
   "shakeUndo": {
     "cancel": "Cancelar",
     "undo": "Deshacer"
+  },
+
+  "a11y": {
+    "clearSearch": "Borrar búsqueda",
+    "syncing": "Sincronizando",
+    "syncFailed": "Sincronización fallida, toca para reintentar",
+    "synced": "Sincronizado",
+    "delete": "Eliminar"
   }
 }

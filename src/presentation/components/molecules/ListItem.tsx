@@ -58,6 +58,7 @@ export function ListItem({
           size={20}
           color={colors.primary}
           style={{ marginLeft: spacing.sm }}
+          accessible={false}
         />
       )}
 
@@ -67,6 +68,7 @@ export function ListItem({
           size={18}
           color={colors.textMuted}
           style={{ marginLeft: spacing.sm }}
+          accessible={false}
         />
       )}
 
@@ -78,6 +80,8 @@ export function ListItem({
     return (
       <Pressable
         onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={subtitle ? `${title}, ${subtitle}` : title}
         style={({ pressed }) => pressed && { opacity: 0.7 }}
       >
         {content}

@@ -6,6 +6,7 @@ import {
   type TextInputProps,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { useTheme } from "../../providers/ThemeProvider";
 
 export interface SearchBarProps {
@@ -25,6 +26,7 @@ export function SearchBar({
   noMargin,
   returnKeyType,
 }: SearchBarProps) {
+  const { t } = useTranslation();
   const { colors, spacing, borderRadius: br } = useTheme();
 
   return (
@@ -45,12 +47,13 @@ export function SearchBar({
         },
       ]}
     >
-      <Ionicons name="search" size={18} color={colors.textMuted} />
+      <Ionicons name="search" size={18} color={colors.textMuted} accessible={false} />
       <TextInput
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
         placeholderTextColor={colors.textMuted}
+        accessibilityLabel={placeholder}
         style={[
           styles.input,
           { color: colors.textPrimary, marginLeft: spacing.sm },
@@ -61,8 +64,13 @@ export function SearchBar({
         returnKeyType={returnKeyType}
       />
       {value.length > 0 && (
-        <Pressable onPress={() => onChangeText("")} hitSlop={8}>
-          <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+        <Pressable
+          onPress={() => onChangeText("")}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={t('a11y.clearSearch')}
+        >
+          <Ionicons name="close-circle" size={18} color={colors.textMuted} accessible={false} />
         </Pressable>
       )}
     </View>

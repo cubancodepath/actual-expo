@@ -1,201 +1,192 @@
-# Actual Expo - Analisis de Estado y Roadmap a TestFlight
+# TestFlight Roadmap — Actual Budget Expo
 
-## Contexto
+## Estado Actual (Auditoría 2026-03-13)
 
-Analisis completo del estado actual de la app movil Actual Budget (Expo/React Native) para determinar que tenemos, que falta, y que se necesita para llegar a TestFlight.
+### Lo que funciona bien
+- 80+ pantallas completamente implementadas
+- CRDT sync funcional con Merkle tree diff y retries
+- AES-256-GCM encryption completa
+- Auth flow robusto (3-tier guards: public → files → auth)
+- CRUD completo: accounts, budgets, categories, payees, transactions, schedules, tags
+- Theme system (light/dark) con design tokens
+- i18n configurado (en/es) con react-i18next
+- Split transactions, transfers, reconciliation
+- Budget goals, carryover, transfers entre categorias
+- Undo system
+- Quick actions (iOS Shortcuts)
+- Error boundary en root
+- TypeScript strict — 0 errores
 
----
-
-## 1. ESTADO ACTUAL - Lo que tenemos (COMPLETO)
-
-### Funcionalidades Core
-- **Autenticacion**: Password + OpenID + modo local offline
-- **Onboarding**: Wizard de 3 paginas con animaciones + setup local guiado
-- **Cuentas**: CRUD completo, cerrar/reabrir, off-budget, context menu
-- **Transacciones**: Crear/editar/eliminar, splits, transfers, bulk select, swipe actions
-- **Presupuesto**: Vista mensual, edicion inline con calculadora, progress bars, filtros
-- **Categorias**: CRUD, grupos, reordenar (drag), ocultar, eliminar con transferencia
-- **Payees**: CRUD, favoritos, merge, busqueda
-- **Tags**: Crear/editar, extraccion inline desde notas, colores
-- **Goals**: 10 tipos de metas (simple, balance, by-date, periodic, limit, average, copy, percentage, remainder, spend)
-- **Mover dinero**: Cover overspent, transferir entre categorias
-- **Reconciliacion**: Marcar cleared/reconciled, overlay de reconciliacion, ultima fecha
-- **Busqueda avanzada**: Token-based con sugerencias (categorias, payees, montos, fechas)
-- **Undo/Redo**: Soporte completo via CRDT message history + shake-to-undo
-- **Quick Actions**: Shortcuts de iOS para agregar transacciones con pre-fill
-- **App Intent**: Entity selectors dinamicos para shortcuts
-- **Privacidad**: Modo privacidad que oculta montos
-- **Sync CRDT**: Completo con HLC timestamps, Merkle tree, protobuf, retry logic
-- **Encriptacion**: AES-256-GCM implementado en sync (per-message)
-- **Tema**: Light/dark automatico, paleta Actual Budget
-- **Settings**: Formato fecha/numero, dia inicio semana, progress bars, sync manual
-
-### Arquitectura y Codigo
-- 0 comentarios TODO/FIXME/HACK en todo el codigo
-- TypeScript estricto
-- 46 pantallas completas y funcionales
-- Zustand stores bien organizados (13 stores)
-- Raw SQL sin ORM (matches Actual original)
-- Local-first: todo persiste en SQLite primero
+### Lo que necesita trabajo
+Ver fases abajo organizadas por prioridad.
 
 ---
 
-## 2. BLOQUEANTES PARA TESTFLIGHT (Critico)
+## FASE 0 — BLOCKERS (Sin esto no se sube a TestFlight)
+Estimado: 1-2 dias
 
-### 2.1 Crear `eas.json`
-- **No existe** - sin esto no se puede hacer build para TestFlight
-- Necesita perfiles: development, preview (TestFlight), production
-- Configurar auto-submit a TestFlight
+### 0.1 Crear eas.json
+- **Que**: Archivo de configuracion EAS Build inexistente
+- **Donde**: `/eas.json` (raiz del proyecto)
+- **Que hacer**: Crear con perfiles development, preview, production
+- **Incluir**: auto-incremento de buildNumber, iOS distribution settings
 
-### 2.2 Bundle ID
-- Actualmente: `com.anonymous.actual-expo`
-- **Cambiar "anonymous"** por un identificador real (ej: `com.actualbudget.mobile`)
-- Apple rechazara apps con "anonymous" en bundle ID
+### 0.2 Cambiar Bundle ID
+- **Que**: `com.anonymous.actual-expo` es placeholder — Apple lo rechaza
+- **Donde**: `app.config.ts` (lineas con bundleIdentifier)
+- **Que hacer**: Cambiar a identificador real (ej: `com.actualbudget.expo`)
+- **Tambien**: Actualizar app group ID en entitlements
 
-### 2.3 App Store Metadata
-- Version: `1.0.0` - OK para inicio
-- Necesita: screenshots, descripcion, keywords, categoria
-- Privacy Policy URL (requerido por Apple)
+### 0.3 Verificar iOS Signing
+- **Que**: Certificados, provisioning profiles, y entitlements deben coincidir
+- **Donde**: Apple Developer Portal + Xcode
+- **Que hacer**:
+  - Registrar App ID con bundle ID correcto
+  - Crear/verificar Distribution Certificate
+  - Crear Provisioning Profile para App Store (TestFlight)
+  - Verificar que entitlements (app groups) coincidan con capabilities del portal
 
-### 2.4 Provisioning & Signing
-- Necesita Apple Developer Account ($99/year)
-- Configurar certificates y provisioning profiles (EAS lo maneja)
-
----
-
-## 3. RECOMENDADO ANTES DE TESTFLIGHT (Alta prioridad)
-
-### 3.1 Error Boundary
-- **No hay ErrorBoundary** en la app
-- Un crash no capturado = app se cierra sin feedback
-- Agregar React Error Boundary en root layout
-
-### 3.2 Crash Reporting (Sentry o similar)
-- **No hay crash reporting** configurado
-- Sin esto, no sabras por que crashea en dispositivos de testers
-- Sentry tiene SDK para Expo: `@sentry/react-native`
-
-### 3.3 Version / Build Number Management
-- iOS requiere build number incremental para cada upload a TestFlight
-- Configurar auto-increment o usar `eas build --auto-submit`
-
-### 3.4 iOS Minimum Version
-- Actualmente: iOS 12.0
-- Subir a iOS 16.0+ (Expo 55 requiere iOS 16 minimo de todas formas)
-
-### 3.5 Archivos encriptados
-- Actualmente bloquea descarga de budgets encriptados
-- Muestra error: "Encrypted files are not yet supported"
-- No es bloqueante si testers usan budgets sin encriptar
+### 0.4 Primer build de prueba
+- **Que**: Verificar que `eas build --platform ios --profile preview` compila sin errores
+- **Que hacer**: Resolver cualquier error de build nativo
 
 ---
 
-## 4. MEJORAS POST-TESTFLIGHT (Media prioridad)
+## FASE 1 — CALIDAD DE PRODUCCION (Antes del primer TestFlight)
+Estimado: 2-3 dias
 
-### 4.1 Accesibilidad (a11y)
-- **CERO** atributos de accesibilidad en toda la app
-- No hay `accessibilityLabel`, `accessibilityRole`, `accessibilityHint`
-- Apple puede rechazar la app en review por falta de a11y
-- **Riesgo**: Esto podria ser bloqueante para App Store (no TestFlight)
+### 1.1 Limpiar console.log de produccion
+- **Que**: 38 console statements, algunos sin guard `__DEV__`
+- **Archivos principales**:
+  - `src/services/budgetfiles.ts` — logs de upload/download
+  - `src/sync/fullSync.ts` — logs de sync
+  - `src/stores/storeRegistry.ts` — console.warn
+  - `src/presentation/components/budget/BudgetSetupWizard.tsx` — 11 console.log
+- **Que hacer**: Envolver en `if (__DEV__)` o eliminar. Mantener solo ErrorBoundary console.error
 
-### 4.2 Reportes y Graficos
-- No hay graficos de gastos vs ingresos
-- No hay tendencias mensuales
-- No hay net worth tracking
-- Es la feature mas pedida en apps de presupuesto
+### 1.2 Fix Spacer component
+- **Que**: `Spacer.tsx` usa `height: 1` / `width: 1` que rompe el layout
+- **Donde**: `src/presentation/components/atoms/Spacer.tsx`
+- **Que hacer**: Cambiar a `height: 'auto'` / `width: 'auto'` o simplemente no fijar la dimension cruzada
 
-### 4.3 Reglas y Automatizacion
-- No hay auto-categorizacion de transacciones
-- No hay transacciones recurrentes/programadas
-- No hay reglas de importacion
+### 1.3 Corregir shadow opacity
+- **Que**: Todas las sombras usan `shadowOpacity: 1` — demasiado oscuras
+- **Donde**: `src/theme/shadows.ts`
+- **Que hacer**: card: 0.08, elevated: 0.12, modal: 0.16
 
-### 4.4 Import/Export
-- No hay importacion de OFX/CSV/QIF
-- No hay exportacion de datos
-- No hay bank feeds
+### 1.4 Extraer strings hardcodeados a i18n
+- **Que**: BudgetFileRow tiene 5 labels sin traduccion
+- **Donde**: `src/presentation/components/molecules/BudgetFileRow.tsx` (lineas 23-28)
+- **Strings**: "Synced", "Local only", "Detached", "Available on server", "Encrypted"
+- **Tambien**: 2 titulos "Spending" hardcodeados en `app/(auth)/(tabs)/(spending)/_layout.tsx`
+- **Que hacer**: Mover a `src/locales/en/translation.json` y `es/translation.json`
 
-### 4.5 Busqueda Global
-- Busqueda existe pero solo en spending y por cuenta
-- No hay busqueda global desde cualquier pantalla
-
----
-
-## 5. NICE TO HAVE (Baja prioridad)
-
-### 5.1 Testing
-- No hay test runner configurado (mencionado en CLAUDE.md)
-- Vitest disponible pero no integrado en CI
-- No hay E2E tests (Detox/Maestro)
-
-### 5.2 CI/CD
-- No hay GitHub Actions ni EAS Workflows
-- Builds manuales solamente
-- No hay linter configurado
-
-### 5.3 Performance
-- Algunas listas sin virtualizacion (categorias)
-- No hay query caching
-- No hay paginacion en budget queries
-
-### 5.4 Multi-Currency
-- No soportado
-- No hay tasas de cambio
-
-### 5.5 Widgets
-- No hay iOS widgets (Today, Lock Screen)
-- Podria mostrar balance total o categoria
+### 1.5 Version management
+- **Que**: CFBundleVersion hardcoded en "1"
+- **Donde**: `app.config.ts`
+- **Que hacer**: Configurar auto-incremento en eas.json (`autoIncrement: true`) o usar `expo-build-properties`
 
 ---
 
-## 6. CHECKLIST TESTFLIGHT
+## FASE 2 — ACCESIBILIDAD Y PULIDO (Primera semana de TestFlight)
+Estimado: 2-3 dias
 
-```
-INFRAESTRUCTURA BUILD
-[ ] Crear eas.json con perfiles (dev, preview, production)
-[ ] Cambiar bundle ID de "anonymous" a identificador real
-[ ] Apple Developer Account activa
-[ ] Configurar signing con EAS (eas credentials)
-[ ] Primer build: eas build --platform ios --profile preview
+### 2.1 Accessibility labels en componentes interactivos
+- **Componentes sin labels**:
+  - `Button.tsx` — agregar accessibilityLabel desde title prop
+  - `IconButton.tsx` — agregar accessibilityLabel requerido
+  - `Icon.tsx` — agregar accessibilityLabel opcional
+  - `SearchBar.tsx` — agregar accessibilityLabel al TextInput
+  - `SyncBadge.tsx` — agregar accessibilityLabel con estado
+  - `ListItem.tsx` — agregar accessibilityRole="button" cuando es pressable
+- **Donde**: `src/presentation/components/atoms/` y `molecules/`
 
-APP STORE CONNECT
-[ ] Crear app en App Store Connect
-[ ] Subir build a TestFlight
-[ ] Agregar testers (internos y/o externos)
-[ ] Privacy Policy URL
-[ ] Descripcion breve de la app
+### 2.2 Reduced motion support
+- **Que**: Solo UndoToast respeta `useReducedMotion()`
+- **Agregar a**:
+  - `SwipeableRow.tsx`
+  - `ProgressBar.tsx`
+  - `CircularProgress.tsx`
+  - Animaciones de collapse en budget groups
+- **Que hacer**: Usar `useReducedMotion()` de react-native-reanimated, skip animaciones si true
 
-CALIDAD MINIMA
-[ ] Agregar ErrorBoundary en root layout
-[ ] Integrar Sentry (o similar) para crash reporting
-[ ] Probar en dispositivo fisico (no solo simulador)
-[ ] Probar sync completo con servidor real
-[ ] Probar modo offline
-[ ] Probar login con password y OpenID
-[ ] Verificar que no hay hardcoded localhost en prod
-[ ] Verificar splash screen y app icon en dispositivo
+### 2.3 Form validation visual
+- **Que**: TextInputs no muestran estados de error visualmente
+- **Que hacer**: Agregar prop `error` a inputs que muestre borde rojo + texto de error debajo
+- **Pantallas afectadas**: Login, new account, new transaction, budget setup wizard
 
-OPCIONAL PERO RECOMENDADO
-[ ] Subir iOS minimum a 16.0
-[ ] Agregar accessibilityLabel a elementos interactivos principales
-[ ] Agregar build number auto-increment
-[ ] Crear script de build en package.json
-```
+### 2.4 keyboardShouldPersistTaps en FlatLists
+- **Que**: Tapping fuera del keyboard en listas no funciona correctamente
+- **Donde**: CategoryPickerList, PayeePickerList, y cualquier FlatList con SearchBar
+- **Que hacer**: Agregar `keyboardShouldPersistTaps="handled"`
 
 ---
 
-## 7. EVALUACION GENERAL
+## FASE 3 — EXPERIENCIA DE USUARIO (Semana 2 de TestFlight)
+Estimado: 2-3 dias
 
-| Area | Estado | Nota |
-|------|--------|------|
-| Funcionalidad core | Completo | Todas las features de presupuesto basico |
-| Sync | Completo | CRDT production-grade con 6 bug fixes |
-| UI/UX | Muy bueno | Animaciones, gestos, tema, calculadora |
-| Codigo | Excelente | 0 TODOs, TypeScript estricto, clean |
-| Infraestructura build | No existe | Falta eas.json, bundle ID, signing |
-| Error handling | Parcial | Sync si, stores no, no ErrorBoundary |
-| Crash reporting | No existe | Critico para TestFlight |
-| Accesibilidad | No existe | Riesgo App Store review |
-| Testing | No existe | Solo manual |
-| Reportes/graficos | No existe | Feature gap vs desktop |
+### 3.1 Loading skeletons para listas
+- **Que**: Listas muestran vacio mientras cargan datos
+- **Donde**: Accounts list, transactions list, budget screen, categories, payees
+- **Que hacer**: Crear componente `SkeletonRow` reutilizable con animated shimmer
 
-**Veredicto**: La app esta funcionalmente lista. El codigo es de alta calidad. Lo que falta es infraestructura de build (eas.json, bundle ID, signing) y herramientas de produccion (crash reporting, error boundaries). Con 2-3 dias de trabajo en infraestructura, se puede hacer el primer TestFlight.
+### 3.2 Crash reporting
+- **Que**: Sin telemetria de crashes en produccion
+- **Que hacer**: Integrar Sentry o Bugsnag via plugin Expo
+- **Config**: Solo para builds de produccion, no development
+
+### 3.3 Resolver TODOs en pantallas
+- **12 archivos con TODOs** (no son blockers pero mejoran la experiencia):
+  - `account/settings.tsx`
+  - `settings/budget.tsx`
+  - `budget/notes.tsx`
+  - `budget/new-category.tsx`, `new-group.tsx`, `rename-category.tsx`
+  - `budget/quick-edit-category.tsx`, `edit-group.tsx`
+  - `transaction/new.tsx`, `payee-picker.tsx`
+  - `schedule/[id].tsx`, `schedule/new.tsx`
+
+### 3.4 Implementar mergePayees()
+- **Que**: Infraestructura existe (payee_mapping table) pero falta la funcion
+- **Donde**: `src/payees/index.ts`
+- **Que hacer**: Implementar merge con actualizacion de transacciones asociadas
+
+---
+
+## FASE 4 — INFRAESTRUCTURA (Semana 3+)
+Estimado: 2-3 dias
+
+### 4.1 CI/CD Pipeline
+- **Que**: No hay GitHub Actions ni automatizacion
+- **Que hacer**:
+  - Workflow para type-check + tests en PR
+  - Workflow para EAS Build en merge a develop
+  - Workflow para TestFlight submit en merge a main
+
+### 4.2 Certificate pinning (opcional)
+- **Que**: App confia en CAs del sistema — aceptable para beta, mejorar para produccion
+- **Que hacer**: Evaluar expo-certificate-pinning o similar
+
+### 4.3 Payee locations
+- **Que**: Tabla existe pero sin funciones de query/update
+- **Cuando**: Cuando se implemente feature de auto-categorizacion por ubicacion
+
+---
+
+## Checklist Pre-Submit TestFlight
+
+- [ ] eas.json creado con perfil production
+- [ ] Bundle ID actualizado (no com.anonymous)
+- [ ] iOS signing verificado (cert + profile + entitlements)
+- [ ] Build exitoso: `eas build --platform ios --profile production`
+- [ ] Console.log limpiados de produccion
+- [ ] Spacer component corregido
+- [ ] Shadow opacity ajustada
+- [ ] Strings de BudgetFileRow en i18n
+- [ ] `npx tsc --noEmit` — 0 errores
+- [ ] App abre correctamente en dispositivo real
+- [ ] Login flow funciona
+- [ ] Sync con servidor funciona
+- [ ] Budget view carga correctamente
+- [ ] Crear/editar transaccion funciona
+- [ ] Light/dark mode funciona
+- [ ] App no crashea en cold start

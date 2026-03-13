@@ -53,5 +53,10 @@
   "payees": "Beneficiarios",
   "categories": "Categorías",
   "experimentalFeatures": "Funciones Experimentales",
-  "experimentalFeaturesWarning": "Las funciones experimentales están incompletas y pueden causar comportamiento inesperado o pérdida de datos. Se sincronizan en todos tus dispositivos. Úsalas bajo tu propio riesgo."
+  "experimentalFeaturesWarning": "Las funciones experimentales están incompletas y pueden causar comportamiento inesperado o pérdida de datos. Se sincronizan en todos tus dispositivos. Úsalas bajo tu propio riesgo.",
+  "dangerZone": "Zona de Peligro",
+  "deleteBudget": "Eliminar Presupuesto",
+  "deleteFromDevice": "Eliminar del Dispositivo",
+  "deleteFromAllDevices": "Eliminar de Todos los Dispositivos",
+  "deleteBudgetConfirm": "¿Estás seguro de que deseas eliminar \"{{name}}\"? Esta acción no se puede deshacer."
 }

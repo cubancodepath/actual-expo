@@ -12,40 +12,10 @@ import {
   Banner,
   EmptyState,
   BudgetFileRow,
-  SwipeableRow,
 } from '../../src/presentation/components';
 import { useBudgetFiles, fileKey } from '../../src/presentation/hooks/useBudgetFiles';
 import type { ReconciledBudgetFile } from '../../src/services/budgetfiles';
 import type { Theme } from '../../src/theme';
-
-function confirmDelete(
-  file: ReconciledBudgetFile,
-  activeBudgetId: string,
-  onDelete: (fromServer?: boolean) => void,
-  t: any,
-) {
-  const name = file.name || t('budget.unnamedBudget');
-  const isActive = file.localId != null && file.localId === activeBudgetId;
-  const warning = isActive ? t('budget.activeWarning') : '';
-
-  if (file.state === 'synced') {
-    Alert.alert(t('budget.deleteBudgetTitle'), t('budget.deleteSyncedMessage', { name, warning }), [
-      { text: t('cancel'), style: 'cancel' },
-      { text: t('budget.deleteLocally'), onPress: () => onDelete(false) },
-      { text: t('budget.deleteFromAllDevices'), style: 'destructive', onPress: () => onDelete(true) },
-    ]);
-  } else if (file.state === 'remote') {
-    Alert.alert(t('budget.deleteBudgetTitle'), t('budget.deleteRemoteMessage', { name }), [
-      { text: t('cancel'), style: 'cancel' },
-      { text: t('budget.deleteFromServer'), style: 'destructive', onPress: () => onDelete(true) },
-    ]);
-  } else {
-    Alert.alert(t('budget.deleteBudgetTitle'), t('budget.deleteLocalMessage', { name, warning }), [
-      { text: t('cancel'), style: 'cancel' },
-      { text: t('delete'), style: 'destructive', onPress: () => onDelete(false) },
-    ]);
-  }
-}
 
 export default function ChangeBudgetScreen() {
   const router = useRouter();
@@ -56,7 +26,7 @@ export default function ChangeBudgetScreen() {
   const { activeBudgetId } = usePrefsStore();
   const {
     localFiles, remoteFiles, loading, refreshing, error,
-    selecting, selectFile, deleteFile, uploadFile, retry, refresh, dismissError,
+    selecting, selectFile, retry, refresh, dismissError,
   } = useBudgetFiles();
 
   async function handleSelect(file: ReconciledBudgetFile) {
@@ -70,20 +40,6 @@ export default function ChangeBudgetScreen() {
     } catch {
       // Error already set in hook
     }
-  }
-
-  function handleDelete(file: ReconciledBudgetFile) {
-    confirmDelete(file, activeBudgetId, (fromServer) => {
-      deleteFile(file, fromServer).catch(() => {});
-    }, t);
-  }
-
-  function handleUpload(file: ReconciledBudgetFile) {
-    const name = file.name || t('budget.unnamedBudget');
-    Alert.alert(t('budget.uploadToServer'), t('budget.uploadConfirm', { name }), [
-      { text: t('cancel'), style: 'cancel' },
-      { text: t('upload'), onPress: () => uploadFile(file).catch(() => {}) },
-    ]);
   }
 
   const hasFiles = localFiles.length > 0 || remoteFiles.length > 0;
@@ -140,23 +96,14 @@ export default function ChangeBudgetScreen() {
               <SectionHeader title={t('budget.onThisDevice')} style={{ marginTop: spacing.lg }} />
               <Card style={styles.listCard}>
                 {localFiles.map((file, index) => (
-                  <SwipeableRow
+                  <BudgetFileRow
                     key={fileKey(file)}
-                    onDelete={() => handleDelete(file)}
-                    onSwipeRight={file.state === 'local' ? () => handleUpload(file) : undefined}
-                    swipeRightIcon="cloud-upload-outline"
-                    swipeRightColor={colors.primary}
-                    isFirst={index === 0}
-                    isLast={index === localFiles.length - 1}
-                  >
-                    <BudgetFileRow
-                      file={file}
-                      isActive={file.localId === activeBudgetId}
-                      isSelecting={selecting === fileKey(file)}
-                      onPress={() => handleSelect(file)}
-                      showSeparator={index < localFiles.length - 1}
-                    />
-                  </SwipeableRow>
+                    file={file}
+                    isActive={file.localId === activeBudgetId}
+                    isSelecting={selecting === fileKey(file)}
+                    onPress={() => handleSelect(file)}
+                    showSeparator={index < localFiles.length - 1}
+                  />
                 ))}
               </Card>
             </>
@@ -167,19 +114,13 @@ export default function ChangeBudgetScreen() {
               <SectionHeader title={t('budget.availableOnServer')} style={{ marginTop: spacing.lg }} />
               <Card style={styles.listCard}>
                 {remoteFiles.map((file, index) => (
-                  <SwipeableRow
+                  <BudgetFileRow
                     key={fileKey(file)}
-                    onDelete={() => handleDelete(file)}
-                    isFirst={index === 0}
-                    isLast={index === remoteFiles.length - 1}
-                  >
-                    <BudgetFileRow
-                      file={file}
-                      isSelecting={selecting === fileKey(file)}
-                      onPress={() => handleSelect(file)}
-                      showSeparator={index < remoteFiles.length - 1}
-                    />
-                  </SwipeableRow>
+                    file={file}
+                    isSelecting={selecting === fileKey(file)}
+                    onPress={() => handleSelect(file)}
+                    showSeparator={index < remoteFiles.length - 1}
+                  />
                 ))}
               </Card>
             </>

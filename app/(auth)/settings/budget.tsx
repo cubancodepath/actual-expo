@@ -1,5 +1,6 @@
-import { Platform, ScrollView, Switch, TextInput, View } from "react-native";
+import { ActionSheetIOS, Alert, Platform, ScrollView, Switch, TextInput, View } from "react-native";
 import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { useTheme, useThemedStyles } from "../../../src/presentation/providers/ThemeProvider";
@@ -24,6 +25,7 @@ import {
   DAY_OF_WEEK_OPTIONS,
 } from "../../../src/preferences/types";
 import { currencies, getCurrency } from "../../../src/lib/currencies";
+import { deleteBudget, deleteFromServer } from "../../../src/services/budgetfiles";
 import type { Theme } from "../../../src/theme";
 
 // Conditionally import SwiftUI Picker on iOS
@@ -133,7 +135,9 @@ export default function BudgetSettingsScreen() {
   const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const { t } = useTranslation('settings');
+  const { t: tc } = useTranslation('common');
 
+  const { activeBudgetId, budgetName, isLocalOnly, groupId, fileId, serverUrl, token } = usePrefsStore();
   const prefs = usePreferencesStore();
   const {
     dateFormat, numberFormat, firstDayOfWeekIdx, hideFraction,
@@ -142,6 +146,50 @@ export default function BudgetSettingsScreen() {
     set,
   } = prefs;
   const featureFlags = useFeatureFlagsStore();
+
+  const isSynced = !isLocalOnly && !!groupId;
+
+  async function performDelete(fromServer: boolean) {
+    if (fromServer && fileId) {
+      await deleteFromServer(serverUrl, token, fileId);
+    }
+    if (activeBudgetId) {
+      await deleteBudget(activeBudgetId);
+    }
+  }
+
+  function handleDeleteBudget() {
+    const name = budgetName || t('defaultBudgetName', { ns: 'settings' });
+
+    if (Platform.OS === 'ios') {
+      const options = isSynced
+        ? [tc('cancel'), t('deleteFromDevice'), t('deleteFromAllDevices')]
+        : [tc('cancel'), t('deleteFromDevice')];
+
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options,
+          destructiveButtonIndex: isSynced ? [1, 2] : [1],
+          cancelButtonIndex: 0,
+          title: t('deleteBudget'),
+          message: t('deleteBudgetConfirm', { name }),
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 1) performDelete(false);
+          else if (buttonIndex === 2 && isSynced) performDelete(true);
+        },
+      );
+    } else {
+      const buttons: Array<{ text: string; style?: 'cancel' | 'destructive'; onPress?: () => void }> = [
+        { text: tc('cancel'), style: 'cancel' },
+        { text: t('deleteFromDevice'), style: 'destructive', onPress: () => performDelete(false) },
+      ];
+      if (isSynced) {
+        buttons.push({ text: t('deleteFromAllDevices'), style: 'destructive', onPress: () => performDelete(true) });
+      }
+      Alert.alert(t('deleteBudget'), t('deleteBudgetConfirm', { name }), buttons);
+    }
+  }
 
   const hasCurrency = defaultCurrencyCode !== '';
 
@@ -345,6 +393,18 @@ export default function BudgetSettingsScreen() {
       >
         {t('experimentalFeaturesWarning')}
       </Text>
+
+      {/* Danger Zone */}
+      <SectionHeader title={t('dangerZone')} style={{ marginTop: spacing.xl }} />
+      <Card>
+        <ListItem
+          title={t('deleteBudget')}
+          titleColor={colors.negative}
+          left={<Ionicons name="trash-outline" size={20} color={colors.negative} />}
+          showChevron
+          onPress={handleDeleteBudget}
+        />
+      </Card>
     </ScrollView>
   );
 }

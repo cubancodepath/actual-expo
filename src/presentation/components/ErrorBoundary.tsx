@@ -2,7 +2,6 @@ import { Component, type ReactNode } from 'react';
 import { ScrollView, View, StyleSheet, Appearance } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { lightColors, darkColors } from '../../theme/colors';
-import { Sentry } from '../../services/sentry';
 
 interface Props {
   children: ReactNode;
@@ -22,9 +21,6 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     console.error('[ErrorBoundary]', error, info.componentStack);
-    Sentry.captureException(error, {
-      contexts: { react: { componentStack: info.componentStack ?? undefined } },
-    });
   }
 
   handleReset = () => {

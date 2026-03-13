@@ -1,5 +1,6 @@
 import { ActivityIndicator, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../providers/ThemeProvider';
 import { ListItem } from './ListItem';
 import type { ReconciledBudgetFile, BudgetFileState } from '../../../services/budgetfiles';
@@ -20,22 +21,23 @@ const STATE_ICON: Record<BudgetFileState, keyof typeof Ionicons.glyphMap> = {
   remote: 'cloud-download-outline',
 };
 
-const STATE_LABEL: Record<BudgetFileState, string> = {
-  synced: 'Synced',
-  local: 'Local only',
-  detached: 'Detached',
-  remote: 'Available on server',
-};
+const STATE_LABEL_KEY = {
+  synced: 'fileState.synced',
+  local: 'fileState.local',
+  detached: 'fileState.detached',
+  remote: 'fileState.remote',
+} as const satisfies Record<BudgetFileState, string>;
 
 const ICON_SIZE = 22;
 
 export function BudgetFileRow({ file, isActive, isSelecting, onPress, showSeparator, style }: BudgetFileRowProps) {
   const { colors, spacing } = useTheme();
+  const { t } = useTranslation();
 
   const subtitle = [
-    STATE_LABEL[file.state],
+    t(STATE_LABEL_KEY[file.state]),
     file.ownerName,
-    file.encryptKeyId ? 'Encrypted' : null,
+    file.encryptKeyId ? t('fileState.encrypted') : null,
   ].filter(Boolean).join(' · ');
 
   const iconName = STATE_ICON[file.state];

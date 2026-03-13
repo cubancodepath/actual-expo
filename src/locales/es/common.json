@@ -104,6 +104,14 @@
     "transactionDeleted": "Transacción eliminada"
   },
 
+  "fileState": {
+    "synced": "Sincronizado",
+    "local": "Solo local",
+    "detached": "Desconectado",
+    "remote": "Disponible en servidor",
+    "encrypted": "Encriptado"
+  },
+
   "budget": {
     "deleteBudgetTitle": "Eliminar Presupuesto",
     "deleteSyncedMessage": "\"{{name}}\" está sincronizado con el servidor.{{warning}}",

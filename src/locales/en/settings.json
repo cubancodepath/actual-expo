@@ -54,7 +54,6 @@
   "categories": "Categories",
   "experimentalFeatures": "Experimental Features",
   "experimentalFeaturesWarning": "Experimental features are incomplete and may cause unexpected behavior or data loss. They are synced across all your devices. Use at your own risk.",
-  "dangerZone": "Danger Zone",
   "deleteBudget": "Delete Budget",
   "deleteFromDevice": "Delete from Device",
   "deleteFromAllDevices": "Delete from All Devices",

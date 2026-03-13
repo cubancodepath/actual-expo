@@ -1,6 +1,5 @@
 import { ActionSheetIOS, Alert, Platform, ScrollView, Switch, TextInput, View } from "react-native";
 import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { useTheme, useThemedStyles } from "../../../src/presentation/providers/ThemeProvider";
@@ -395,16 +394,14 @@ export default function BudgetSettingsScreen() {
       </Text>
 
       {/* Danger Zone */}
-      <SectionHeader title={t('dangerZone')} style={{ marginTop: spacing.xl }} />
-      <Card>
-        <ListItem
-          title={t('deleteBudget')}
-          titleColor={colors.negative}
-          left={<Ionicons name="trash-outline" size={20} color={colors.negative} />}
-          showChevron
-          onPress={handleDeleteBudget}
-        />
-      </Card>
+      <Button
+        title={t('deleteBudget')}
+        icon="trash-outline"
+        variant="ghost"
+        textColor={colors.negative}
+        onPress={handleDeleteBudget}
+        style={{ marginTop: spacing.xl }}
+      />
     </ScrollView>
   );
 }

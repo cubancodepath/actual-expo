@@ -331,8 +331,10 @@ CREATE INDEX IF NOT EXISTS idx_payee_locations_geo_tombstone ON payee_locations(
 `;
 
 // ---------------------------------------------------------------------------
-// Migration IDs — all 51 migrations from the original Actual Budget.
+// Migration IDs — migrations from the original Actual Budget.
 // We insert these so the original app's checkDatabaseValidity() passes.
+// Must match the Docker stable release (actualbudget/actual-server:latest).
+// When a new stable release adds migrations, uncomment them here.
 // ---------------------------------------------------------------------------
 
 const MIGRATION_IDS = [
@@ -346,7 +348,8 @@ const MIGRATION_IDS = [
   1723665565000, 1730744182000, 1736640000000, 1737158400000, 1738491452000,
   1739139550000, 1740506588539, 1745425408000, 1749799110000, 1749799110001,
   1754611200000, 1759260219000, 1759842823172, 1762178745667, 1765518577215,
-  1768872504000,
+  // TODO: uncomment when Docker stable release includes these:
+  // 1768872504000, // add_payee_locations
 ];
 
 // ---------------------------------------------------------------------------

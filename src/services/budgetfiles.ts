@@ -161,77 +161,85 @@ export async function uploadBudget(
   console.log('[upload] Starting upload for budget:', budgetId);
 
   // 1. Switch from WAL to DELETE journal mode so the file is self-contained.
-  //    sql-wasm (used by the Actual web UI) doesn't support mmap/WAL.
-  //    This checkpoints any WAL data back into the main db file.
   const db = getDb();
   await db.execAsync('PRAGMA journal_mode = DELETE');
-  console.log('[upload] Switched journal_mode to DELETE');
 
   // 2. Read the SQLite file as base64 → Uint8Array
   const dbBase64 = await readAsStringAsync(`${budgetDir}db.sqlite`, {
     encoding: EncodingType.Base64,
   });
   const dbBytes = base64ToUint8(dbBase64);
-  console.log('[upload] DB file size:', dbBytes.length, 'bytes');
 
   // Restore WAL mode for continued local use
   await db.execAsync('PRAGMA journal_mode = WAL');
 
-  // 2. Read metadata and set resetClock flag
+  // 3. Read metadata and set resetClock flag
   const meta = await readMetadata(budgetId);
   if (!meta) throw new Error(`No metadata for budget ${budgetId}`);
   const metaWithReset = { ...meta, resetClock: true };
   const metaBytes = new TextEncoder().encode(JSON.stringify(metaWithReset));
-  console.log('[upload] Metadata:', JSON.stringify(metaWithReset));
 
-  // 3. Create ZIP
+  // 4. Create ZIP
   const zipped = zipSync({
     'db.sqlite': dbBytes,
     'metadata.json': metaBytes,
   });
   console.log('[upload] ZIP size:', zipped.length, 'bytes');
 
-  // 4. Generate cloudFileId (alphanumeric, no dashes — server validates /^[a-zA-Z0-9_-]+$/)
-  const cloudFileId = randomUUID().replace(/-/g, '');
+  // 5. Reuse existing cloudFileId or generate a new one
+  const cloudFileId = meta.cloudFileId || randomUUID().replace(/-/g, '');
   console.log('[upload] cloudFileId:', cloudFileId);
 
-  // 5. Upload
+  // 6. Encrypt ZIP if encryption key is available
+  let uploadContent: Uint8Array = zipped;
+  let encryptMeta: { keyId: string; algorithm: string; iv: string; authTag: string } | null = null;
+
+  if (meta.encryptKeyId && encryption.hasKey(meta.encryptKeyId)) {
+    const encrypted = await encryption.encrypt(zipped, meta.encryptKeyId);
+    uploadContent = encrypted.value;
+    encryptMeta = encrypted.meta;
+    console.log('[upload] Encrypted ZIP, size:', uploadContent.length);
+  }
+
+  // 7. Upload
   const url = `${serverUrl}/sync/upload-user-file`;
-  const headers = {
+  const headers: Record<string, string> = {
     'Content-Type': 'application/encrypted-file',
-    'Content-Length': String(zipped.length),
+    'Content-Length': String(uploadContent.length),
     'X-ACTUAL-TOKEN': token,
     'X-ACTUAL-FILE-ID': cloudFileId,
     'X-ACTUAL-NAME': encodeURIComponent(meta.budgetName),
     'X-ACTUAL-FORMAT': '2',
   };
-  console.log('[upload] POST', url, 'headers:', JSON.stringify(headers));
+  if (encryptMeta) {
+    headers['X-ACTUAL-ENCRYPT-META'] = JSON.stringify(encryptMeta);
+    console.log('[upload] Encrypt meta:', JSON.stringify(encryptMeta));
+  }
+  if (meta.groupId) {
+    headers['X-ACTUAL-GROUP-ID'] = meta.groupId;
+  }
 
   const res = await fetch(url, {
     method: 'POST',
     headers,
-    body: zipped.buffer as ArrayBuffer,
+    body: uploadContent.buffer as ArrayBuffer,
   });
 
-  console.log('[upload] Response status:', res.status);
   throwIfUnauthorized(res);
 
   if (!res.ok) {
     const text = await res.text().catch(() => '');
-    console.error('[upload] Upload failed:', res.status, text);
     throw new Error(`Upload failed (${res.status}): ${text}`);
   }
 
   const json = await res.json();
-  console.log('[upload] Response body:', JSON.stringify(json));
-
   if (json.status !== 'ok') {
     throw new Error(`Upload failed: ${JSON.stringify(json)}`);
   }
 
   const groupId = json.groupId as string;
 
-  // 6. Update local metadata
+  // 8. Update local metadata
   await updateMetadata(budgetId, { cloudFileId, groupId });
   console.log('[upload] Upload complete. groupId:', groupId);
 

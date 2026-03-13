@@ -130,6 +130,9 @@ export function EncryptionPasswordPrompt() {
     setError('');
     setLoading(true);
 
+    // Yield to let React render the loading state before heavy crypto work
+    await new Promise(resolve => setTimeout(resolve, 50));
+
     const { serverUrl, token, activeBudgetId } = usePrefsStore.getState();
     const result = await encryptionService.enableEncryption({
       serverUrl,
@@ -138,8 +141,6 @@ export function EncryptionPasswordPrompt() {
       budgetId: activeBudgetId,
       password: password.trim(),
     });
-
-    setLoading(false);
 
     if ('success' in result) {
       usePrefsStore.getState().setPrefs({
@@ -153,10 +154,11 @@ export function EncryptionPasswordPrompt() {
       }
       _resolve?.('success');
       _hide();
-    } else if (result.error === 'network') {
-      setError(t('encryption.networkError'));
     } else {
-      setError(t('encryption.enableFailed'));
+      setLoading(false);
+      setError(result.error === 'network'
+        ? t('encryption.networkError')
+        : t('encryption.enableFailed'));
     }
   }
 
@@ -263,7 +265,7 @@ export function EncryptionPasswordPrompt() {
               variant="primary"
               onPress={handleSubmit}
               loading={loading}
-              disabled={!canSubmit}
+              disabled={!canSubmit || loading}
               style={{ flex: 1 }}
             />
           </View>

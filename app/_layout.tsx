@@ -25,8 +25,11 @@ import { UndoToast } from "../src/presentation/components";
 import { ErrorBoundary } from "../src/presentation/components/ErrorBoundary";
 import { useShakeUndo } from "../src/presentation/hooks/useShakeUndo";
 import { loadAllPersistedKeys } from "../src/services/encryptionService";
+import { initSentry, Sentry } from "../src/services/sentry";
 
-export default function RootLayout() {
+initSentry();
+
+function RootLayout() {
   const systemScheme = useColorScheme();
   const themeMode = usePrefsStore((s) => s.themeMode);
   const colorScheme = themeMode === 'system' ? systemScheme : themeMode;
@@ -179,7 +182,10 @@ export default function RootLayout() {
       // Sync on foreground
       const p = usePrefsStore.getState();
       if (p.isConfigured && !p.isLocalOnly && !isSwitchingBudget()) {
-        fullSync().catch(console.warn);
+        fullSync().catch((e) => {
+          if (__DEV__) console.warn(e);
+          Sentry.captureException(e);
+        });
       }
       // Check shortcut action with debounced timer
       if (pendingTimer) clearTimeout(pendingTimer);
@@ -221,3 +227,5 @@ export default function RootLayout() {
     </ErrorBoundary>
   );
 }
+
+export default Sentry.wrap(RootLayout);

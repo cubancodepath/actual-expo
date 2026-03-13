@@ -28,18 +28,23 @@ function parseLine(line: string): { text: string; date: string } {
 type NoteSection = { title: string; data: string[] };
 
 function buildSections(lines: string[]): NoteSection[] {
-  const sections: NoteSection[] = [];
-  let current: NoteSection | null = null;
+  const map = new Map<string, string[]>();
 
   for (const line of lines) {
     const { text, date } = parseLine(line);
     const title = date || '__other__';
-    if (!current || current.title !== title) {
-      current = { title, data: [] };
-      sections.push(current);
-    }
-    current.data.push(text);
+    if (!map.has(title)) map.set(title, []);
+    map.get(title)!.push(text);
   }
+
+  const sections = Array.from(map, ([title, data]) => ({ title, data }));
+
+  // Sort date sections newest-first; push '__other__' to the end
+  sections.sort((a, b) => {
+    if (a.title === '__other__') return 1;
+    if (b.title === '__other__') return -1;
+    return new Date(b.title).getTime() - new Date(a.title).getTime();
+  });
 
   return sections;
 }

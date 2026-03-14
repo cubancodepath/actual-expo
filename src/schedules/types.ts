@@ -44,18 +44,5 @@ export type Schedule = {
   _conditions: RuleCondition[];
 };
 
-export type RuleCondition = {
-  field: string;
-  op: string;
-  value: unknown;
-  type?: string;
-  options?: Record<string, unknown>;
-};
-
-export type RuleAction = {
-  op: string;
-  field?: string;
-  value: unknown;
-  type?: string;
-  options?: Record<string, unknown>;
-};
+import type { RuleCondition, RuleAction } from '../rules/types';
+export type { RuleCondition, RuleAction };

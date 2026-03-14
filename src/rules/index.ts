@@ -1,23 +1,50 @@
 /**
- * Rules module — minimal CRUD for sync compatibility with Actual Budget.
+ * Rules module — CRUD + read-all for sync compatibility with Actual Budget.
  *
  * Rules store schedule conditions (payee, account, amount, date) and
- * link-schedule actions. Full rules engine is deferred.
+ * link-schedule actions. Full rules engine is in engine.ts.
  */
 
 import { randomUUID } from 'expo-crypto';
 import { sendMessages } from '../sync';
-import { first } from '../db';
+import { first, runQuery } from '../db';
 import { Timestamp } from '../crdt';
 import type { RuleRow } from '../db/types';
-import type { RuleCondition, RuleAction } from '../schedules/types';
+import type { ParsedRule, RuleStage, RuleCondition, RuleAction } from './types';
 
-export type ParsedRule = {
-  id: string;
-  conditions: RuleCondition[];
-  actions: RuleAction[];
-  conditionsOp: string;
-};
+export type { ParsedRule, RuleCondition, RuleAction };
+
+// ── Helpers ──
+
+function rowToRule(row: RuleRow): ParsedRule {
+  return {
+    id: row.id,
+    stage: (row.stage as RuleStage) ?? null,
+    conditions: row.conditions ? JSON.parse(row.conditions) : [],
+    actions: row.actions ? JSON.parse(row.actions) : [],
+    conditionsOp: (row.conditions_op as 'and' | 'or') ?? 'and',
+  };
+}
+
+// ── Queries ──
+
+export async function getRules(): Promise<ParsedRule[]> {
+  const rows = await runQuery<RuleRow>(
+    'SELECT * FROM rules WHERE tombstone = 0 AND conditions IS NOT NULL AND actions IS NOT NULL',
+  );
+  return rows.map(rowToRule);
+}
+
+export async function getRuleById(id: string): Promise<ParsedRule | null> {
+  const row = await first<RuleRow>(
+    'SELECT * FROM rules WHERE id = ? AND tombstone = 0',
+    [id],
+  );
+  if (!row) return null;
+  return rowToRule(row);
+}
+
+// ── Mutations ──
 
 export async function createRule(opts: {
   conditionsOp?: 'and' | 'or';
@@ -82,18 +109,4 @@ export async function deleteRule(id: string): Promise<void> {
       value: 1,
     },
   ]);
-}
-
-export async function getRuleById(id: string): Promise<ParsedRule | null> {
-  const row = await first<RuleRow>(
-    'SELECT * FROM rules WHERE id = ? AND tombstone = 0',
-    [id],
-  );
-  if (!row) return null;
-  return {
-    id: row.id,
-    conditions: row.conditions ? JSON.parse(row.conditions) : [],
-    actions: row.actions ? JSON.parse(row.actions) : [],
-    conditionsOp: row.conditions_op ?? 'and',
-  };
 }

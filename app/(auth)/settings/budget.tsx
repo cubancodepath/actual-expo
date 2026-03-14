@@ -347,18 +347,6 @@ export default function BudgetSettingsScreen() {
           title={t('schedules')}
           showChevron
           onPress={() => router.push("/(auth)/schedules")}
-          showSeparator
-        />
-        <ListItem
-          title={t('payees')}
-          showChevron
-          onPress={() => router.push("/(auth)/payees")}
-          showSeparator
-        />
-        <ListItem
-          title={t('categories')}
-          showChevron
-          onPress={() => router.push("/(auth)/categories")}
         />
       </Card>
 

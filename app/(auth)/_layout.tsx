@@ -211,14 +211,6 @@ export default function AuthLayout() {
         }}
       />
       <Stack.Screen
-        name="categories"
-        options={{ title: t('nav.manageCategories'), ...modal }}
-      />
-      <Stack.Screen
-        name="payees"
-        options={{ title: t('nav.managePayees'), ...modal }}
-      />
-      <Stack.Screen
         name="schedules"
         options={{ title: t('nav.schedules'), ...modal }}
       />

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Alert, Platform, ScrollView, Switch } from "react-native";
+import * as Sentry from "@sentry/react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SymbolView } from "expo-symbols";
@@ -252,6 +253,23 @@ export default function SettingsScreen() {
             onPress={handleLogout}
             style={{ marginTop: spacing.md }}
           />
+        </>
+      )}
+
+      {/* Debug: Sentry test */}
+      {__DEV__ && (
+        <>
+          <SectionHeader title="Debug" style={{ marginTop: spacing.xl }} />
+          <Card>
+            <ListItem
+              title="Test Sentry Error"
+              left={<SettingsIcon sfSymbol="ant" ionIcon="bug-outline" color={colors.warning} />}
+              onPress={() => {
+                Sentry.captureException(new Error("Test error from Settings"));
+                Alert.alert("Sentry", "Test error sent! Check your Sentry dashboard.");
+              }}
+            />
+          </Card>
         </>
       )}
     </ScrollView>

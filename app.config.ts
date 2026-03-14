@@ -43,6 +43,13 @@ const config = ({ config }: ConfigContext): ExpoConfig => ({
     "expo-notifications",
     "expo-localization",
     "@bacons/apple-targets",
+    [
+      "@sentry/react-native/expo",
+      {
+        organization: "cubancodepath",
+        project: "actual",
+      },
+    ],
   ],
   extra: {
     router: {},

@@ -1,4 +1,5 @@
 import "../src/i18n/config";
+import * as Sentry from "@sentry/react-native";
 import { useEffect, useRef, useState } from "react";
 import { AppState, Settings, useColorScheme } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -7,7 +8,8 @@ import {
   DarkTheme,
   DefaultTheme,
 } from "@react-navigation/native";
-import { Stack, useRouter } from "expo-router";
+import { Stack, useNavigationContainerRef, useRouter } from "expo-router";
+import { isRunningInExpoGo } from "expo";
 import * as QuickActions from "expo-quick-actions";
 import i18n from "../src/i18n/config";
 import { ThemeProvider } from "../src/presentation/providers/ThemeProvider";
@@ -26,7 +28,22 @@ import { ErrorBoundary } from "../src/presentation/components/ErrorBoundary";
 import { useShakeUndo } from "../src/presentation/hooks/useShakeUndo";
 import { loadAllPersistedKeys } from "../src/services/encryptionService";
 
-export default function RootLayout() {
+const navigationIntegration = Sentry.reactNavigationIntegration({
+  enableTimeToInitialDisplay: !isRunningInExpoGo(),
+});
+
+Sentry.init({
+  dsn: "https://1b09686fa3a236b14bed580a22f41749@o4503937990656000.ingest.us.sentry.io/4511038681645056",
+  tracesSampleRate: __DEV__ ? 1.0 : 0.2,
+  profilesSampleRate: __DEV__ ? 1.0 : 0.2,
+  environment: __DEV__ ? "development" : "production",
+  debug: __DEV__,
+  integrations: [navigationIntegration],
+  enableNativeFramesTracking: !isRunningInExpoGo(),
+});
+
+function RootLayout() {
+  const ref = useNavigationContainerRef();
   const systemScheme = useColorScheme();
   const themeMode = usePrefsStore((s) => s.themeMode);
   const colorScheme = themeMode === 'system' ? systemScheme : themeMode;
@@ -36,6 +53,12 @@ export default function RootLayout() {
   const isLocalOnly = usePrefsStore((s) => s.isLocalOnly);
   const [ready, setReady] = useState(false);
   const handledTimestamp = useRef(0);
+
+  useEffect(() => {
+    if (ref) {
+      navigationIntegration.registerNavigationContainer(ref);
+    }
+  }, [ref]);
 
   // Bootstrap: load prefs + open last budget if available
   useEffect(() => {
@@ -221,3 +244,5 @@ export default function RootLayout() {
     </ErrorBoundary>
   );
 }
+
+export default Sentry.wrap(RootLayout);

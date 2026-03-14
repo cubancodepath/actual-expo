@@ -33,13 +33,33 @@ Documento vivo para trackear features futuras y su progreso.
 
 ---
 
-## Bank Sync (GoCardless / SimpleFIN)
+## Payee Location
 
 ### Pendiente
-- [ ] Configuracion de conexion bancaria
+- [ ] Guardar ubicacion GPS al crear transaccion (opcional, con permiso del usuario)
+- [ ] Asociar ubicaciones a payees (un payee puede tener multiples ubicaciones)
+- [ ] Auto-sugerir payee basado en ubicacion actual (proximity matching)
+- [ ] Mapa de transacciones por payee (ver donde gastas)
+- [ ] Persistencia de ubicaciones en SQLite (tabla `payee_locations` o campo en `payees`)
+- [ ] Settings toggle para habilitar/deshabilitar location tracking
+- [ ] Sincronizar ubicaciones via CRDT (si el servidor lo soporta)
+
+---
+
+## Bank Sync (GoCardless / SimpleFIN)
+
+> ⚠️ **Limitacion de testing**: No hay forma facil de probar conexiones bancarias reales en desarrollo. Considerar mocks/sandbox de GoCardless o SimpleFIN para desarrollo, pero la integracion real solo se puede validar con cuentas bancarias activas.
+
+### Pendiente
+- [ ] Investigar sandbox/test mode de GoCardless y SimpleFIN
+- [ ] Configuracion de conexion bancaria (UI de seleccion de banco)
+- [ ] Flujo OAuth / link de autorizacion bancaria
 - [ ] Descarga automatica de transacciones
 - [ ] Aplicar rules engine a transacciones importadas
+- [ ] Reconciliacion automatica con transacciones manuales existentes
 - [ ] UI de estado de conexion y errores
+- [ ] Manejo de reconexion cuando expira la autorizacion
+- [ ] Soporte para multiples cuentas por conexion
 
 ---
 

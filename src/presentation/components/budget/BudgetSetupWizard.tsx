@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { scheduleOnRN } from 'react-native-worklets';
 import Animated, {
   useAnimatedStyle,
@@ -87,7 +88,7 @@ function ProgressBar({ step, total }: { step: number; total: number }) {
     <View
       accessibilityRole="progressbar"
       accessibilityValue={{ min: 0, max: total, now: step }}
-      accessibilityLabel={`Step ${step} of ${total}`}
+      accessibilityLabel={`Step ${step} of ${total}`} // a11y, intentionally not i18n
       style={{
         height: 3,
         backgroundColor: theme.colors.inputBorder,
@@ -283,6 +284,7 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
   const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion() ?? false;
+  const { t } = useTranslation('setup');
 
   const [step, setStep] = useState<Step>("budget-name");
   const [prevStep, setPrevStep] = useState<Step | null>(null);
@@ -444,14 +446,14 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
           color={theme.colors.textPrimary}
           style={styles.heading}
         >
-          What should we call your budget?
+          {t('name.heading')}
         </Text>
         <Text
           variant="bodySm"
           color={theme.colors.textSecondary}
           style={styles.subtext}
         >
-          You can always change this later.
+          {t('name.subtext')}
         </Text>
         <View style={styles.inputContainer}>
           <Ionicons
@@ -463,7 +465,7 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
             style={[styles.input, { color: theme.colors.textPrimary }]}
             value={budgetName}
             onChangeText={setBudgetName}
-            placeholder="My Budget"
+            placeholder={t('name.placeholder')}
             placeholderTextColor={theme.colors.textMuted}
             autoFocus
             returnKeyType="next"
@@ -471,13 +473,13 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
           />
         </View>
         <Button
-          title="Continue"
+          title={t('continue')}
           onPress={() => goTo("account")}
           size="lg"
           disabled={!budgetName.trim()}
           style={styles.actionButton}
         />
-        <BackLink onPress={onCancel} label="Cancel" />
+        <BackLink onPress={onCancel} label={t('cancel')} />
       </ScrollView>
     );
   }
@@ -493,21 +495,21 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
           color={theme.colors.textPrimary}
           style={styles.heading}
         >
-          Add your first account
+          {t('account.heading')}
         </Text>
         <Text
           variant="bodySm"
           color={theme.colors.textSecondary}
           style={styles.subtext}
         >
-          This is usually your main checking account.
+          {t('account.subtext')}
         </Text>
         <Text
           variant="caption"
           color={theme.colors.textSecondary}
           style={styles.label}
         >
-          ACCOUNT NAME
+          {t('account.nameLabel')}
         </Text>
         <View style={styles.inputContainer}>
           <Ionicons
@@ -519,7 +521,7 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
             style={[styles.input, { color: theme.colors.textPrimary }]}
             value={accountName}
             onChangeText={setAccountName}
-            placeholder="Checking"
+            placeholder={t('account.placeholder')}
             placeholderTextColor={theme.colors.textMuted}
             autoFocus
             returnKeyType="next"
@@ -530,7 +532,7 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
           color={theme.colors.textSecondary}
           style={styles.label}
         >
-          CURRENT BALANCE
+          {t('account.balanceLabel')}
         </Text>
         <CurrencyInput
           ref={currencyInputRef}
@@ -540,7 +542,7 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
           color={theme.colors.textPrimary}
         />
         <Button
-          title="Continue"
+          title={t('continue')}
           onPress={() => goTo("categories")}
           size="lg"
           disabled={!accountName.trim()}
@@ -553,7 +555,7 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
 
   function renderCategories() {
     const visibleGroups = DEFAULT_CATEGORY_GROUPS.filter((g) => !g.is_income);
-    const buttonTitle = mode === 'server' ? 'Create & Upload' : 'Set Up Budget';
+    const buttonTitle = mode === 'server' ? t('categories.buttonServer') : t('categories.buttonLocal');
 
     return (
       <ScrollView
@@ -565,14 +567,14 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
           color={theme.colors.textPrimary}
           style={styles.heading}
         >
-          Choose your categories
+          {t('categories.heading')}
         </Text>
         <Text
           variant="bodySm"
           color={theme.colors.textSecondary}
           style={styles.subtext}
         >
-          Uncheck any you don't need. You can add more later.
+          {t('categories.subtext')}
         </Text>
 
         {visibleGroups.map((group) => (
@@ -625,7 +627,7 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
           align="center"
           style={styles.heading}
         >
-          You're all set!
+          {t('ready.heading')}
         </Text>
         <Text
           variant="body"
@@ -634,31 +636,31 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
           style={styles.subtext}
         >
           {mode === 'server'
-            ? 'Your budget has been uploaded and is syncing.'
-            : 'Your budget is ready to go.'}
+            ? t('ready.subtextServer')
+            : t('ready.subtextLocal')}
         </Text>
         <Card style={styles.summaryCard}>
           <SummaryRow
             icon="document-text-outline"
-            label="Budget"
+            label={t('ready.budget')}
             value={budgetName}
             delay={0}
           />
           <SummaryRow
             icon="wallet-outline"
-            label="Account"
+            label={t('ready.account')}
             value={`${accountName} · ${balanceText}`}
             delay={60}
           />
           <SummaryRow
             icon="layers-outline"
-            label="Categories"
-            value={`${selectedCount} categories`}
+            label={t('ready.categories')}
+            value={t('ready.categoriesCount', { count: selectedCount })}
             delay={120}
           />
         </Card>
         <Button
-          title="Start Budgeting"
+          title={t('ready.button')}
           onPress={handleStart}
           size="lg"
           icon="arrow-forward-outline"

@@ -35,6 +35,7 @@ const config = ({ config }: ConfigContext): ExpoConfig => ({
     },
   },
   plugins: [
+    "expo-font",
     "expo-sqlite",
     "expo-router",
     "expo-secure-store",

@@ -42,3 +42,6 @@ db.sqlite
 # generated native folders
 /ios
 /android
+
+# EAS Build
+build-*

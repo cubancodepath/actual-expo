@@ -106,8 +106,9 @@ Estimado: 2-3 dias
 ### ~~3.2 Crash reporting~~ COMPLETADO
 - `@sentry/react-native` integrado con plugin Expo
 - Solo habilitado en producción (`enabled: !__DEV__`)
-- ErrorBoundary y sync errors reportan a Sentry
-- **Pendiente**: Reemplazar `__SENTRY_DSN__` en `src/services/sentry.ts`
+- ErrorBoundary reporta a Sentry con component stack
+- Expo Router navigation instrumentation para tracing
+- DSN configurado, source maps via SENTRY_AUTH_TOKEN en .env.local
 
 ### ~~3.3 Resolver TODOs en pantallas~~ NO NECESARIO
 - 0 TODOs encontrados en los 12 archivos — ya resueltos
@@ -122,20 +123,15 @@ Estimado: 2-3 dias
 ## FASE 4 — INFRAESTRUCTURA (Semana 3+)
 Estimado: 2-3 dias
 
-### 4.1 CI/CD Pipeline
-- **Que**: No hay GitHub Actions ni automatizacion
-- **Que hacer**:
-  - Workflow para type-check + tests en PR
-  - Workflow para EAS Build en merge a develop
-  - Workflow para TestFlight submit en merge a main
+### ~~4.1 CI/CD Pipeline~~ COMPLETADO
+- GitHub Actions workflow `.github/workflows/pr-check.yml`
+- Trigger: push/PR a `develop`
+- Steps: `npm ci` → `tsc --noEmit` → `vitest run`
+- Builds se hacen localmente con `eas build --local` (sin costos EAS)
 
-### 4.2 Certificate pinning (opcional)
-- **Que**: App confia en CAs del sistema — aceptable para beta, mejorar para produccion
-- **Que hacer**: Evaluar expo-certificate-pinning o similar
-
-### 4.3 Payee locations
+### 4.3 Payee locations — DIFERIDO (próxima versión)
 - **Que**: Tabla existe pero sin funciones de query/update
-- **Cuando**: Cuando se implemente feature de auto-categorizacion por ubicacion
+- **Cuando**: Siguiente release de TestFlight
 
 ---
 
@@ -150,10 +146,10 @@ Estimado: 2-3 dias
 - [x] Shadow opacity — no necesario (ya correcto)
 - [x] Strings de BudgetFileRow en i18n
 - [x] `npx tsc --noEmit` — 0 errores
-- [ ] App abre correctamente en dispositivo real
-- [ ] Login flow funciona
-- [ ] Sync con servidor funciona
-- [ ] Budget view carga correctamente
-- [ ] Crear/editar transaccion funciona
-- [ ] Light/dark mode funciona
-- [ ] App no crashea en cold start
+- [x] App abre correctamente en dispositivo real
+- [x] Login flow funciona
+- [x] Sync con servidor funciona
+- [x] Budget view carga correctamente
+- [x] Crear/editar transaccion funciona
+- [x] Light/dark mode funciona
+- [x] App no crashea en cold start

@@ -18,6 +18,8 @@ import { createSchedule, setNextDate } from '../schedules';
 import { addDays } from 'date-fns';
 import { parseDate } from '../schedules/recurrence';
 import type { RecurConfig, RuleCondition } from '../schedules/types';
+import type { ParsedRule } from '../rules/types';
+import { applyRulesToForm } from '../rules/apply';
 
 export type SplitLine = {
   id?: string;
@@ -48,22 +50,27 @@ export type SaveTransactionInput = {
 /**
  * Saves a transaction (new or edit, simple or split).
  * Returns the saved transaction ID.
+ *
+ * If `rules` is provided, they are applied to new simple transactions
+ * to auto-fill fields the user left empty (e.g. category, notes).
  */
-export async function saveTransaction(input: SaveTransactionInput): Promise<string> {
+export async function saveTransaction(
+  input: SaveTransactionInput,
+  rules?: ParsedRule[],
+): Promise<string> {
   const {
     transactionId,
-    acct,
     date,
     amount,
     type,
     payeeId,
     payeeName,
-    categoryId,
     notes,
     cleared,
     splitCategories,
     recurConfig,
   } = input;
+  let { acct, categoryId } = input;
 
   const isEdit = !!transactionId;
   const isSplit = splitCategories !== null && splitCategories.length > 1;
@@ -71,6 +78,29 @@ export async function saveTransaction(input: SaveTransactionInput): Promise<stri
   const sign = type === 'expense' ? -1 : 1;
 
   const resolvedPayeeId = payeeId ?? (await findOrCreatePayee(payeeName));
+
+  // Apply rules for new simple transactions (fill empty fields only)
+  let effectiveNotes = notes;
+  if (rules && rules.length > 0 && !isEdit && !isSplit) {
+    const result = applyRulesToForm(rules, {
+      acct,
+      payeeId: resolvedPayeeId,
+      categoryId,
+      amount: finalAmount,
+      date,
+      notes,
+      cleared,
+    });
+    if (result.acctId && result.acctId !== acct) {
+      acct = result.acctId;
+    }
+    if (!categoryId && result.categoryId) {
+      categoryId = result.categoryId;
+    }
+    if (!notes && result.notes) {
+      effectiveNotes = result.notes;
+    }
+  }
 
   if (isSplit && isEdit) {
     // Edit split: update parent, delete old children, create new children
@@ -161,7 +191,7 @@ export async function saveTransaction(input: SaveTransactionInput): Promise<stri
     amount: finalAmount,
     description: resolvedPayeeId,
     category: categoryId,
-    notes,
+    notes: effectiveNotes,
     cleared,
   });
 

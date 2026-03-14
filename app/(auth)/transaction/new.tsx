@@ -8,12 +8,14 @@ import { useAccountsStore } from '../../../src/stores/accountsStore';
 import { useTransactionsStore } from '../../../src/stores/transactionsStore';
 import { useCategoriesStore } from '../../../src/stores/categoriesStore';
 import { usePickerStore } from '../../../src/stores/pickerStore';
+import { useRulesStore } from '../../../src/stores/rulesStore';
 import { useSchedulesStore } from '../../../src/stores/schedulesStore';
 import { getTransactionById, getChildTransactions } from '../../../src/transactions';
 import { saveTransaction } from '../../../src/transactions/save';
 import { getRecurringDescription } from '../../../src/schedules';
 import type { RecurConfig } from '../../../src/schedules/types';
 import { extractTagsFromNotes } from '../../../src/tags';
+import { suggestCategoryForPayee, applyRulesToForm } from '../../../src/rules/apply';
 import { todayStr, todayInt, strToInt, intToStr } from '../../../src/lib/date';
 import { withOpacity } from '../../../src/lib/colors';
 import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
@@ -56,7 +58,8 @@ export default function NewTransactionScreen() {
   const isDark = colorScheme === 'dark';
   const { accounts, load: loadAccounts } = useAccountsStore();
   const { delete_ } = useTransactionsStore();
-  const { groups, load: loadCategories } = useCategoriesStore();
+  const { groups, categories, load: loadCategories } = useCategoriesStore();
+  const rules = useRulesStore((s) => s.rules);
 
   // Picker store subscriptions
   const selectedPayee = usePickerStore((s) => s.selectedPayee);
@@ -92,6 +95,8 @@ export default function NewTransactionScreen() {
   const [error, setError] = useState<string | null>(null);
   const currencyInputRef = useRef<CurrencyInputRef>(null);
   const isInitialMount = useRef(true);
+  // Track fields explicitly set by URL params or manual picks — rules won't override these
+  const userOverrides = useRef<Set<string>>(new Set());
   const scrollY = useSharedValue(0);
 
   const scrollHandler = useAnimatedScrollHandler({
@@ -148,6 +153,9 @@ export default function NewTransactionScreen() {
         });
       } else {
         // Reset to defaults for new transaction
+        userOverrides.current = new Set();
+        if (categoryIdParam) userOverrides.current.add('category');
+        if (accountId) userOverrides.current.add('account');
         setType('expense');
         setCents(amountParam ? Number(amountParam) : 0);
         setAcctId(accountId ?? null);
@@ -174,6 +182,18 @@ export default function NewTransactionScreen() {
       setPayeeId(selectedPayee.id);
       setPayeeName(selectedPayee.name);
       setIsTransfer(!!selectedPayee.transferAcct);
+
+      // Auto-suggest category when payee changes (skip for transfers and user overrides)
+      if (!selectedPayee.transferAcct && !userOverrides.current.has('category')) {
+        const suggestedId = suggestCategoryForPayee(rules, selectedPayee.id, acctId);
+        if (suggestedId) {
+          const cat = categories.find((c) => c.id === suggestedId);
+          if (cat) {
+            setCategoryId(suggestedId);
+            setCategoryName(cat.name);
+          }
+        }
+      }
     }
   }, [selectedPayee]);
 
@@ -181,6 +201,7 @@ export default function NewTransactionScreen() {
     if (selectedCategory) {
       setCategoryId(selectedCategory.id);
       setCategoryName(selectedCategory.name);
+      userOverrides.current.add('category');
       // If user picks a single category, clear any split
       usePickerStore.getState().setSplitCategories(null);
     }
@@ -207,6 +228,7 @@ export default function NewTransactionScreen() {
     if (selectedAccount) {
       setAcctId(selectedAccount.id);
       setAcctName(selectedAccount.name);
+      userOverrides.current.add('account');
     }
   }, [selectedAccount]);
 
@@ -223,6 +245,28 @@ export default function NewTransactionScreen() {
       setRecurConfig(selectedRecurConfig);
     }
   }, [selectedRecurConfig]);
+
+  // Apply rules when amount/type changes (e.g. account rules based on amount)
+  useEffect(() => {
+    if (isEdit || rules.length === 0 || cents === 0) return;
+    const signedAmount = type === 'expense' ? -cents : cents;
+    const result = applyRulesToForm(rules, {
+      acct: acctId,
+      payeeId,
+      categoryId,
+      amount: signedAmount,
+      date: dateInt,
+      notes,
+      cleared,
+    });
+    if (result.acctId && result.acctId !== acctId && !userOverrides.current.has('account')) {
+      const acc = accounts.find((a) => a.id === result.acctId);
+      if (acc) {
+        setAcctId(result.acctId);
+        setAcctName(acc.name);
+      }
+    }
+  }, [cents, type]);
 
   async function performSave() {
     setError(null);
@@ -241,7 +285,7 @@ export default function NewTransactionScreen() {
         cleared,
         splitCategories: isSplit ? splitCategories : null,
         recurConfig: !isEdit ? recurConfig : undefined,
-      });
+      }, rules);
       await loadAccounts();
       if (recurConfig) {
         useSchedulesStore.getState().load();

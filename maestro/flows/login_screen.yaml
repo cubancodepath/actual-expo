@@ -1,0 +1,13 @@
+appId: com.cubancodepath.actual
+tags:
+  - smoke
+  - ios
+---
+- launchApp
+
+# Verify login screen is visible
+- assertVisible: "Actual"
+- assertVisible: "Your finances. Your server. Your terms."
+- assertVisible: "Server URL"
+- assertVisible: "Continue"
+- assertVisible: "Use without a server"

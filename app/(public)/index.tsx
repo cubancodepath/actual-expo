@@ -227,6 +227,7 @@ export default function LoginScreen() {
                   color={theme.colors.textMuted}
                 />
                 <TextInput
+                  testID="server-url-input"
                   style={[styles.input, { color: theme.colors.textPrimary }]}
                   placeholder={t('serverUrlPlaceholder')}
                   placeholderTextColor={theme.colors.textMuted}
@@ -288,6 +289,7 @@ export default function LoginScreen() {
                     color={theme.colors.textMuted}
                   />
                   <TextInput
+                    testID="password-input"
                     style={[styles.input, { color: theme.colors.textPrimary }]}
                     placeholder={t('passwordPlaceholder')}
                     placeholderTextColor={theme.colors.textMuted}

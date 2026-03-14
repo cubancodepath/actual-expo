@@ -4,11 +4,14 @@
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
-    "ios": "expo run:ios",
-    "ios:dev": "APP_VARIANT=development expo run:ios",
+    "ios": "APP_VARIANT=development expo run:ios",
+    "ios:prod": "expo run:ios",
     "prebuild:dev": "APP_VARIANT=development npx expo prebuild --clean",
+    "prebuild:prod": "npx expo prebuild --clean",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "e2e": "maestro test maestro/",
+    "e2e:flow": "maestro test"
   },
   "dependencies": {
     "@bacons/apple-targets": "^4.0.6",

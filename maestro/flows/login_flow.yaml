@@ -1,0 +1,52 @@
+appId: com.cubancodepath.actual
+tags:
+  - smoke
+  - ios
+---
+- launchApp:
+    clearState: true
+
+# Wait for app to fully load
+- extendedWaitUntil:
+    visible: "Skip|Server URL"
+    timeout: 30000
+
+# Skip onboarding if visible
+- runFlow:
+    when:
+      visible: "Skip"
+    commands:
+      - tapOn: "Skip"
+
+# Wait for login screen
+- extendedWaitUntil:
+    visible: "Server URL"
+    timeout: 10000
+
+# Enter server URL
+- tapOn:
+    id: "server-url-input"
+- inputText: "http://localhost:5006"
+
+# Dismiss keyboard and tap Continue
+- hideKeyboard
+- tapOn: "Continue"
+
+# Wait for password field
+- extendedWaitUntil:
+    visible: "Password"
+    timeout: 15000
+
+# Enter password
+- tapOn:
+    id: "password-input"
+- inputText: "1234"
+
+# Tap Sign In
+- hideKeyboard
+- tapOn: "Sign In"
+
+# Verify we reach the budget selection screen
+- extendedWaitUntil:
+    visible: "Open Budget"
+    timeout: 10000

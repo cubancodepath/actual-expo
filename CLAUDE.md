@@ -5,15 +5,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm start              # Start Expo dev server
-npm run ios            # Run on iOS simulator
-npm run android        # Run on Android emulator
-npm run web            # Run in browser
+npm start              # Start Expo dev server (Metro bundler only)
+npm run ios            # Build & run dev variant on iOS simulator (APP_VARIANT=development)
+npm run ios:prod       # Build & run production variant on iOS simulator
 npx tsc --noEmit       # Type check (pre-existing errors in FlashList estimatedItemSize — ignore those)
 docker-compose up      # Local Actual Budget server on http://localhost:5006
+npm run e2e            # Run all Maestro E2E tests (requires app running in simulator)
+npm run e2e:flow       # Run a single Maestro flow (e.g. npm run e2e:flow maestro/flows/login_screen.yaml)
 ```
 
-No test runner is configured. No linter is configured.
+Unit tests use Vitest (`npm test`). E2E tests use Maestro (YAML flows in `maestro/flows/`). No linter is configured.
 
 ## Architecture
 

@@ -15,8 +15,8 @@ import type { BudgetCategory } from '../../../budgets/types';
 
 /** Shared column widths for table-style alignment across header, rows, and group headers. */
 export const BUDGET_COLUMNS = {
-  budgeted: 80,
-  available: 64,
+  budgeted: 90,
+  available: 80,
 } as const;
 
 interface BudgetCategoryRowProps {
@@ -315,6 +315,7 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
           accessibilityLabel={`${formatPrivacyAware(cat.balance)} available`}
           style={{
             width: BUDGET_COLUMNS.available,
+            flexShrink: 0,
             justifyContent: 'center',
             alignItems: 'center',
             paddingLeft: spacing.sm,
@@ -326,8 +327,9 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
               borderRadius: 100,
               paddingHorizontal: 10,
               paddingVertical: 3,
-              minWidth: 48,
               alignItems: 'center',
+              flexDirection: 'row',
+              flexWrap: 'nowrap',
             }}
           >
             <Amount value={cat.balance} variant="captionSm" color={pillText} weight="700" />

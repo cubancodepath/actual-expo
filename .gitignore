@@ -36,6 +36,9 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
+# test database
+db.sqlite
+
 # generated native folders
 /ios
 /android

@@ -121,14 +121,14 @@
     "deleteLocally": "Eliminar Localmente",
     "deleteFromAllDevices": "Eliminar de Todos los Dispositivos",
     "deleteFromServer": "Eliminar del Servidor",
-    "uploadToServer": "Subir al Servidor",
-    "uploadConfirm": "¿Subir \"{{name}}\" al servidor?",
+    "uploadToServer": "Sincronizar con Servidor",
+    "uploadConfirm": "¿Sincronizar \"{{name}}\" con el servidor?",
     "onThisDevice": "En Este Dispositivo",
     "availableOnServer": "Disponible en el Servidor",
     "noBudgetsFound": "No se encontraron presupuestos",
     "noBudgetsDescription": "No hay archivos de presupuesto en este servidor ni en este dispositivo.",
     "createNewBudget": "Crear Nuevo Presupuesto",
-    "unnamedBudget": "Presupuesto sin nombre"
+    "unnamedBudget": "Mi Presupuesto"
   },
 
   "encryption": {
@@ -139,12 +139,12 @@
     "unlock": "Desbloquear",
     "enable": "Habilitar",
     "enableTitle": "Habilitar Encriptación",
-    "enableDescription": "Encripta de extremo a extremo todos los datos de sincronización de este presupuesto. Necesitarás esta contraseña en cada dispositivo.",
-    "enableFailed": "No se pudo habilitar la encriptación. Inténtalo de nuevo.",
-    "passwordsMismatch": "Las contraseñas no coinciden.",
+    "enableDescription": "Encripta de extremo a extremo todos los datos de sincronización. Necesitarás esta contraseña en cada dispositivo que uses.",
+    "enableFailed": "No se pudo habilitar la encriptación. Verifica tu contraseña e inténtalo de nuevo.",
+    "passwordsMismatch": "Las contraseñas no coinciden. Inténtalo de nuevo.",
     "wrongPassword": "Contraseña incorrecta. Inténtalo de nuevo.",
-    "networkError": "No se pudo conectar al servidor. Verifica tu conexión e inténtalo de nuevo.",
-    "unsupportedKeyFormat": "Este formato de clave de encriptación no es compatible."
+    "networkError": "No se puede conectar al servidor. Verifica tu conexión y la URL del servidor.",
+    "unsupportedKeyFormat": "Este formato de encriptación no es compatible. Puede que necesites actualizar la app o el servidor."
   },
 
   "quickAction": {

@@ -17,7 +17,7 @@
   "selectAccount": "Seleccione una cuenta",
 
   "editReconciledTitle": "Editar Transacción Conciliada",
-  "editReconciledMessage": "Guardar los cambios en esta transacción conciliada puede desequilibrar tu conciliación.",
+  "editReconciledMessage": "Esta transacción ha sido conciliada. Editarla podría afectar tu saldo conciliado.",
   "saveAnyway": "Guardar de Todos Modos",
 
   "noCategoryTitle": "Sin Categoría",

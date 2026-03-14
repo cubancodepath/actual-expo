@@ -17,7 +17,7 @@
   "selectAccount": "Select an account",
 
   "editReconciledTitle": "Edit Reconciled Transaction",
-  "editReconciledMessage": "Saving your changes to this reconciled transaction may bring your reconciliation out of balance.",
+  "editReconciledMessage": "This transaction has been reconciled. Editing it could affect your reconciled balance.",
   "saveAnyway": "Save Anyway",
 
   "noCategoryTitle": "No Category",

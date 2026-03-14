@@ -4,7 +4,7 @@
 
   "emptyState": {
     "title": "No accounts yet",
-    "description": "Add your first account to get started."
+    "description": "Add your checking, savings, or credit card accounts to start tracking your money."
   },
 
   "contextMenu": {
@@ -41,13 +41,13 @@
     "hideReconciled": "Hide Reconciled",
     "editAccount": "Edit Account",
     "allReconciled": {
-      "title": "All transactions reconciled",
-      "description": "Reconciled transactions are hidden",
-      "showAll": "Show All"
+      "title": "You're all caught up",
+      "description": "Reconciled transactions are hidden to keep things clean.",
+      "showAll": "Show reconciled"
     },
     "noTransactions": {
       "title": "No transactions yet",
-      "description": "Add your first transaction to get started"
+      "description": "Add your first transaction or import from your bank."
     },
     "deleteScheduleTitle": "Delete Schedule",
     "deleteScheduleMessage": "Delete this schedule and all future occurrences?",

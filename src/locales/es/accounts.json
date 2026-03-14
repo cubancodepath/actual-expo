@@ -4,7 +4,7 @@
 
   "emptyState": {
     "title": "No hay cuentas aún",
-    "description": "Agrega tu primera cuenta para comenzar."
+    "description": "Agrega tus cuentas de cheques, ahorros o tarjetas de crédito para empezar a controlar tu dinero."
   },
 
   "contextMenu": {
@@ -41,13 +41,13 @@
     "hideReconciled": "Ocultar conciliadas",
     "editAccount": "Editar cuenta",
     "allReconciled": {
-      "title": "Todas las transacciones conciliadas",
-      "description": "Las transacciones conciliadas están ocultas",
-      "showAll": "Mostrar todo"
+      "title": "Todo al día",
+      "description": "Las transacciones conciliadas están ocultas para mantener el orden.",
+      "showAll": "Mostrar conciliadas"
     },
     "noTransactions": {
       "title": "No hay transacciones aún",
-      "description": "Agrega tu primera transacción para comenzar"
+      "description": "Agrega tu primera transacción o importa desde tu banco."
     },
     "deleteScheduleTitle": "Eliminar programación",
     "deleteScheduleMessage": "¿Eliminar esta programación y todas las ocurrencias futuras?",

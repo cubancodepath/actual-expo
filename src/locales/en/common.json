@@ -121,14 +121,14 @@
     "deleteLocally": "Delete Locally",
     "deleteFromAllDevices": "Delete From All Devices",
     "deleteFromServer": "Delete From Server",
-    "uploadToServer": "Upload to Server",
-    "uploadConfirm": "Upload \"{{name}}\" to the server?",
+    "uploadToServer": "Sync to Server",
+    "uploadConfirm": "Sync \"{{name}}\" to the server?",
     "onThisDevice": "On This Device",
     "availableOnServer": "Available on Server",
     "noBudgetsFound": "No budgets found",
     "noBudgetsDescription": "There are no budget files on this server or on this device.",
     "createNewBudget": "Create New Budget",
-    "unnamedBudget": "Unnamed budget"
+    "unnamedBudget": "My Budget"
   },
 
   "encryption": {
@@ -139,12 +139,12 @@
     "unlock": "Unlock",
     "enable": "Enable",
     "enableTitle": "Enable Encryption",
-    "enableDescription": "End-to-end encrypt all sync data for this budget. You will need this password on every device.",
-    "enableFailed": "Failed to enable encryption. Please try again.",
-    "passwordsMismatch": "Passwords do not match.",
+    "enableDescription": "Encrypts all sync data end-to-end. You'll need this password on every device you use.",
+    "enableFailed": "Couldn't enable encryption. Check your password and try again.",
+    "passwordsMismatch": "Passwords don't match. Please try again.",
     "wrongPassword": "Incorrect password. Please try again.",
-    "networkError": "Could not reach the server. Check your connection and try again.",
-    "unsupportedKeyFormat": "This encryption key format is not supported."
+    "networkError": "Can't reach the server. Check your connection and server URL.",
+    "unsupportedKeyFormat": "This encryption format isn't supported. You may need to update the app or server."
   },
 
   "quickAction": {

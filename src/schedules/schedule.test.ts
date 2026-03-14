@@ -1,4 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
+
+// ── Fix date to 2026-03-05 so schedule tests are deterministic ────────────
+vi.useFakeTimers();
+vi.setSystemTime(new Date(2026, 2, 5, 12, 0, 0)); // March 5, 2026
 
 // ── Define __DEV__ for test environment ───────────────────────────────────
 (globalThis as any).__DEV__ = false;
@@ -468,4 +472,8 @@ describe('buildListData', () => {
       expect(txnItems[2].isLast).toBe(true);
     }
   });
+});
+
+afterAll(() => {
+  vi.useRealTimers();
 });

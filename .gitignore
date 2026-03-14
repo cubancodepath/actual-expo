@@ -45,3 +45,7 @@ db.sqlite
 
 # EAS Build
 build-*
+
+# App Store Connect metadata (contains credentials)
+docs/app-store-connect-metadata.md
+assets/appstore-screenshots/

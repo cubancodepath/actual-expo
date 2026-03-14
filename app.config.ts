@@ -32,6 +32,7 @@ const config = ({ config }: ConfigContext): ExpoConfig => ({
     infoPlist: {
       NSLocalNetworkUsageDescription:
         "Actual Budget needs access to your local network to connect to your self-hosted budget server.",
+      ITSAppUsesNonExemptEncryption: false,
     },
   },
   plugins: [

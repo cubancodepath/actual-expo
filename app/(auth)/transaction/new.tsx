@@ -91,6 +91,7 @@ export default function NewTransactionScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const currencyInputRef = useRef<CurrencyInputRef>(null);
+  const isInitialMount = useRef(true);
   const scrollY = useSharedValue(0);
 
   const scrollHandler = useAnimatedScrollHandler({
@@ -103,9 +104,12 @@ export default function NewTransactionScreen() {
     opacity: interpolate(scrollY.value, [0, 50], [0, 1], 'clamp'),
   }));
 
-  // Reset form state on focus (handles Expo Router screen reuse)
+  // Reset form state only on initial mount (not when returning from pickers)
   useFocusEffect(
     useCallback(() => {
+      if (!isInitialMount.current) return;
+      isInitialMount.current = false;
+
       clearPicker();
       if (groups.length === 0) loadCategories();
 

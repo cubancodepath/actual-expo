@@ -1,9 +1,12 @@
 import { Platform } from 'react-native';
 import { ExtensionStorage } from '@bacons/apple-targets';
+import Constants from 'expo-constants';
 import { useAccountsStore } from '../stores/accountsStore';
 import { useCategoriesStore } from '../stores/categoriesStore';
 
-const APP_GROUP = 'group.com.cubancodepath.actual';
+const APP_GROUP =
+  Constants.expoConfig?.ios?.entitlements?.['com.apple.security.application-groups']?.[0]
+  ?? 'group.com.cubancodepath.actual';
 
 let storage: ExtensionStorage | null = null;
 

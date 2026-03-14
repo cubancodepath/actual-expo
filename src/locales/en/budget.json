@@ -1,4 +1,7 @@
 {
+  "columnBudgeted": "Budgeted",
+  "columnAvailable": "Available",
+
   "filter": "Filter",
   "filterAll": "All",
   "filterUnderfunded": "Underfunded",
@@ -40,14 +43,14 @@
   "goalTypeLimit": "Spending Limit",
 
   "goalDescSimple": "Budget a fixed amount each month, or refill to a target. E.g. $200/month for groceries.",
-  "goalDescGoal": "Track progress toward a savings target. Shows a progress bar but does not auto-budget.",
+  "goalDescGoal": "Track progress toward a savings goal. Shows a progress bar — you control the budgeting.",
   "goalDescBy": "Save a total amount by a specific date, split evenly across the remaining months.",
   "goalDescAverage": "Budget based on what you actually spent over the last few months.",
   "goalDescCopy": "Reuse the same budget you set a few months ago.",
   "goalDescPeriodic": "Budget for recurring events. E.g. $50 every 2 weeks.",
   "goalDescSpend": "Spread a target amount across a date range. E.g. save $1,200 between Jan–Dec.",
   "goalDescPercentage": "Budget a percentage of your income. E.g. save 10% of your paycheck.",
-  "goalDescRemainder": "Gets whatever is left after all other categories are budgeted.",
+  "goalDescRemainder": "Receives whatever's left after all other categories are funded.",
   "goalDescLimit": "Cap spending for this category. Optionally refill it automatically.",
 
   "refillTo": "Refill to",
@@ -113,7 +116,7 @@
   "readyToAssign": "Ready to Assign",
   "overassigned": "Overassigned",
   "fullyAssigned": "Fully Assigned",
-  "toFullyFundGoals": " to fully fund all goals",
+  "toFullyFundGoals": " needed to fund all goals",
   "reserve": "Reserve",
   "autoAssign": "Auto-assign",
   "noChangesTitle": "No Changes",
@@ -170,14 +173,14 @@
   "couldNotDeleteCategory": "Could not delete the category. Please try again.",
   "category": "Category",
 
-  "groupNameLabel": "GROUP NAME",
+  "groupNameLabel": "Group name",
   "groupNamePlaceholder": "Group name",
   "save": "Save",
   "hidden": "Hidden",
 
   "newGroupPlaceholder": "e.g. Bills, Savings, Fun",
 
-  "categoryNameLabel": "CATEGORY NAME",
+  "categoryNameLabel": "Category name",
   "categoryNamePlaceholder": "Category name",
   "newCategoryPlaceholder": "e.g. Rent, Groceries, Internet",
 

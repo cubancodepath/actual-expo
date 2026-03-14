@@ -230,6 +230,9 @@ export default function BudgetScreen() {
     router.push('/(auth)/budget/cover-overspent');
   }
 
+  // -- Column header visibility --
+  const showBudgetedColumn = !goalsEnabled || anyRowEditing || !showProgressBars;
+
   // -- Render helpers --
   function dismissEdit() {
     focusedInputRef.current?.blur();
@@ -244,6 +247,7 @@ export default function BudgetScreen() {
           group={section.group}
           isCollapsed={collapsedGroups.has(section.group.id)}
           onToggle={() => { dismissEdit(); toggleGroup(section.group.id); }}
+          showBudgetedColumn={showBudgetedColumn}
         />
       </View>
     );

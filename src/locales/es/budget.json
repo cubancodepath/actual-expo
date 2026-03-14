@@ -1,4 +1,7 @@
 {
+  "columnBudgeted": "Presupuestado",
+  "columnAvailable": "Disponible",
+
   "filter": "Filtro",
   "filterAll": "Todo",
   "filterUnderfunded": "Subfinanciado",
@@ -40,14 +43,14 @@
   "goalTypeLimit": "Límite de gasto",
 
   "goalDescSimple": "Presupuesta una cantidad fija cada mes, o rellena hasta un objetivo. Ej. $200/mes para comida.",
-  "goalDescGoal": "Sigue el progreso hacia un objetivo de ahorro. Muestra una barra de progreso pero no presupuesta automáticamente.",
+  "goalDescGoal": "Sigue el progreso hacia una meta de ahorro. Muestra una barra de progreso — tú controlas el presupuesto.",
   "goalDescBy": "Ahorra una cantidad total para una fecha específica, dividida equitativamente entre los meses restantes.",
   "goalDescAverage": "Presupuesta según lo que realmente gastaste en los últimos meses.",
   "goalDescCopy": "Reutiliza el mismo presupuesto que estableciste hace unos meses.",
   "goalDescPeriodic": "Presupuesta para eventos recurrentes. Ej. $50 cada 2 semanas.",
   "goalDescSpend": "Distribuye una cantidad objetivo en un rango de fechas. Ej. ahorrar $1,200 entre ene–dic.",
   "goalDescPercentage": "Presupuesta un porcentaje de tus ingresos. Ej. ahorrar el 10% de tu sueldo.",
-  "goalDescRemainder": "Recibe lo que queda después de que todas las demás categorías estén presupuestadas.",
+  "goalDescRemainder": "Recibe lo que queda después de que todas las demás categorías estén financiadas.",
   "goalDescLimit": "Limita el gasto en esta categoría. Opcionalmente se rellena automáticamente.",
 
   "refillTo": "Rellenar hasta",
@@ -113,7 +116,7 @@
   "readyToAssign": "Listo para asignar",
   "overassigned": "Sobreasignado",
   "fullyAssigned": "Totalmente asignado",
-  "toFullyFundGoals": " para financiar todas las metas",
+  "toFullyFundGoals": " necesario para financiar todas las metas",
   "reserve": "Reservar",
   "autoAssign": "Auto-asignar",
   "noChangesTitle": "Sin cambios",
@@ -170,14 +173,14 @@
   "couldNotDeleteCategory": "No se pudo eliminar la categoría. Por favor, inténtalo de nuevo.",
   "category": "Categoría",
 
-  "groupNameLabel": "NOMBRE DEL GRUPO",
+  "groupNameLabel": "Nombre del grupo",
   "groupNamePlaceholder": "Nombre del grupo",
   "save": "Guardar",
   "hidden": "Oculto",
 
   "newGroupPlaceholder": "ej. Facturas, Ahorros, Diversión",
 
-  "categoryNameLabel": "NOMBRE DE CATEGORÍA",
+  "categoryNameLabel": "Nombre de categoría",
   "categoryNamePlaceholder": "Nombre de categoría",
   "newCategoryPlaceholder": "ej. Alquiler, Comida, Internet",
 

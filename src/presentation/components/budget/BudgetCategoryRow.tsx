@@ -13,6 +13,12 @@ import { ProgressBar } from '../atoms/ProgressBar';
 import { useFeatureFlag } from '../../../hooks/useFeatureFlag';
 import type { BudgetCategory } from '../../../budgets/types';
 
+/** Shared column widths for table-style alignment across header, rows, and group headers. */
+export const BUDGET_COLUMNS = {
+  budgeted: 80,
+  available: 64,
+} as const;
+
 interface BudgetCategoryRowProps {
   cat: BudgetCategory;
   isIncome: boolean;
@@ -83,7 +89,9 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
         <Text variant="body" style={{ flex: 1 }} numberOfLines={1}>
           {cat.name}
         </Text>
-        <Amount value={cat.spent} variant="body" color={colors.positive} weight="500" />
+        <View style={{ width: BUDGET_COLUMNS.available, alignItems: 'flex-end' }}>
+          <Amount value={cat.spent} variant="body" color={colors.positive} weight="500" />
+        </View>
         {!isLast && (
           <View style={{ position: 'absolute', bottom: 0, left: spacing.lg, right: spacing.lg, height: bw.thin, backgroundColor: colors.divider }} />
         )}
@@ -282,27 +290,33 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
           )}
         </View>
         {isEditing ? (
-          <CompactCurrencyInput
-            ref={inputRef}
-            value={editValue}
-            onChangeValue={(cents) => setEditValue(cents)}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-            autoFocus
-          />
+          <View style={{ width: BUDGET_COLUMNS.budgeted, alignItems: 'flex-end' }}>
+            <CompactCurrencyInput
+              ref={inputRef}
+              value={editValue}
+              onChangeValue={(cents) => setEditValue(cents)}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              autoFocus
+            />
+          </View>
         ) : showBudgetedColumn ? (
-          <Amount
-            value={cat.budgeted}
-            variant="body"
-            color={cat.budgeted !== 0 ? colors.textPrimary : colors.textMuted}
-            weight="600"
-            style={{ fontVariant: ['tabular-nums'] }}
-          />
+          <View style={{ width: BUDGET_COLUMNS.budgeted, alignItems: 'flex-end' }}>
+            <Amount
+              value={cat.budgeted}
+              variant="body"
+              color={cat.budgeted !== 0 ? colors.textPrimary : colors.textMuted}
+              weight="600"
+              style={{ fontVariant: ['tabular-nums'] }}
+            />
+          </View>
         ) : null}
         <View
           accessibilityLabel={`${formatPrivacyAware(cat.balance)} available`}
           style={{
+            width: BUDGET_COLUMNS.available,
             justifyContent: 'center',
+            alignItems: 'center',
             paddingLeft: spacing.sm,
           }}
         >

@@ -37,7 +37,7 @@ Sentry.init({
   tracesSampleRate: __DEV__ ? 1.0 : 0.2,
   profilesSampleRate: __DEV__ ? 1.0 : 0.2,
   environment: __DEV__ ? "development" : "production",
-  debug: __DEV__,
+  enabled: !__DEV__,
   integrations: [navigationIntegration],
   enableNativeFramesTracking: !isRunningInExpoGo(),
 });

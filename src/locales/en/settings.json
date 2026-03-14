@@ -57,5 +57,14 @@
   "deleteBudget": "Delete Budget",
   "deleteFromDevice": "Delete from Device",
   "deleteFromAllDevices": "Delete from All Devices",
-  "deleteBudgetConfirm": "Are you sure you want to delete \"{{name}}\"? This cannot be undone."
+  "deleteBudgetConfirm": "Are you sure you want to delete \"{{name}}\"? This cannot be undone.",
+  "enableCloudSync": "Enable Cloud Sync",
+  "enableCloudSyncMessage": "Upload this budget to the server and enable syncing across devices?",
+  "stopSyncing": "Stop Syncing",
+  "stopSyncingMessage": "This will keep the budget on this device but stop syncing with the server. You can enable sync again later.",
+  "noServerConfigured": "Connect to a server to enable cloud sync.",
+  "syncing": "Syncing...",
+  "syncEnabled": "Synced to Server",
+  "connectToServer": "Connect to Server",
+  "connectToServerDescription": "Sign in to sync budgets across devices"
 }

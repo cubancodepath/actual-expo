@@ -473,6 +473,32 @@ export async function deleteBudget(budgetId: string): Promise<void> {
   await deleteBudgetDir(budgetId);
 }
 
+// ---------------------------------------------------------------------------
+// Convert / Re-register
+// ---------------------------------------------------------------------------
+
+/** Strip cloud identifiers, making the budget local-only. */
+export async function convertToLocalOnly(budgetId: string): Promise<void> {
+  await updateMetadata(budgetId, { cloudFileId: undefined, groupId: undefined });
+}
+
+/**
+ * Re-upload a detached budget as a new server file.
+ * Clears old cloud identifiers first so uploadBudget generates fresh ones.
+ */
+export async function reRegisterBudget(
+  serverUrl: string,
+  token: string,
+  budgetId: string,
+): Promise<{ cloudFileId: string; groupId: string }> {
+  await updateMetadata(budgetId, { cloudFileId: undefined, groupId: undefined });
+  return uploadBudget(serverUrl, token, budgetId);
+}
+
+// ---------------------------------------------------------------------------
+// Delete
+// ---------------------------------------------------------------------------
+
 /** Soft-delete a budget from the server (marks deleted=true). */
 export async function deleteFromServer(
   serverUrl: string,

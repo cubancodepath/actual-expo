@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { ActionSheetIOS, Alert, Platform, ScrollView, Switch, TextInput, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -24,7 +25,7 @@ import {
   DAY_OF_WEEK_OPTIONS,
 } from "../../../src/preferences/types";
 import { currencies, getCurrency } from "../../../src/lib/currencies";
-import { deleteBudget, deleteFromServer } from "../../../src/services/budgetfiles";
+import { deleteBudget, deleteFromServer, uploadBudget, convertToLocalOnly } from "../../../src/services/budgetfiles";
 import type { Theme } from "../../../src/theme";
 
 // Conditionally import SwiftUI Picker on iOS
@@ -98,11 +99,12 @@ function PickerRow({
 function EncryptionSection() {
   const { t } = useTranslation('settings');
   const { colors, spacing } = useTheme();
+  const isLocalOnly = usePrefsStore((s) => s.isLocalOnly);
   const fileId = usePrefsStore((s) => s.fileId);
   const encryptKeyId = usePrefsStore((s) => s.encryptKeyId);
 
-  // Don't show for local-only budgets (no fileId = no server)
-  if (!fileId) return null;
+  // Don't show for local-only budgets — encryption is for server sync
+  if (isLocalOnly || !fileId) return null;
 
   const isEncrypted = !!encryptKeyId;
 
@@ -147,6 +149,60 @@ export default function BudgetSettingsScreen() {
   const featureFlags = useFeatureFlagsStore();
 
   const isSynced = !isLocalOnly && !!groupId;
+  const hasServer = !!serverUrl && !!token;
+  const showEnableSync = hasServer && (isLocalOnly || (!fileId && !groupId));
+  const showStopSync = hasServer && !isLocalOnly && !!fileId && !!groupId;
+  const [syncAction, setSyncAction] = useState(false);
+
+  function handleEnableCloudSync() {
+    Alert.alert(t('enableCloudSync'), t('enableCloudSyncMessage'), [
+      { text: tc('cancel'), style: 'cancel' },
+      {
+        text: tc('confirm'),
+        onPress: async () => {
+          setSyncAction(true);
+          try {
+            const { cloudFileId, groupId: newGroupId } = await uploadBudget(serverUrl, token, activeBudgetId);
+            usePrefsStore.getState().setPrefs({
+              fileId: cloudFileId,
+              groupId: newGroupId,
+              isLocalOnly: false,
+            });
+          } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : String(e);
+            Alert.alert(tc('error'), msg);
+          } finally {
+            setSyncAction(false);
+          }
+        },
+      },
+    ]);
+  }
+
+  function handleStopSyncing() {
+    Alert.alert(t('stopSyncing'), t('stopSyncingMessage'), [
+      { text: tc('cancel'), style: 'cancel' },
+      {
+        text: tc('confirm'),
+        onPress: async () => {
+          setSyncAction(true);
+          try {
+            await convertToLocalOnly(activeBudgetId);
+            usePrefsStore.getState().setPrefs({
+              fileId: '',
+              groupId: '',
+              isLocalOnly: true,
+            });
+          } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : String(e);
+            Alert.alert(tc('error'), msg);
+          } finally {
+            setSyncAction(false);
+          }
+        },
+      },
+    ]);
+  }
 
   async function performDelete(fromServer: boolean) {
     if (fromServer && fileId) {
@@ -349,6 +405,31 @@ export default function BudgetSettingsScreen() {
           onPress={() => router.push("/(auth)/schedules")}
         />
       </Card>
+
+      {/* Cloud Sync */}
+      {(showEnableSync || showStopSync) && (
+        <>
+          <SectionHeader title={t('server')} style={{ marginTop: spacing.xl }} />
+          <Card>
+            {showEnableSync && (
+              <ListItem
+                title={t('enableCloudSync')}
+                subtitle={syncAction ? t('syncing') : t('enableCloudSyncMessage')}
+                onPress={syncAction ? undefined : handleEnableCloudSync}
+                showChevron={!syncAction}
+              />
+            )}
+            {showStopSync && (
+              <ListItem
+                title={t('stopSyncing')}
+                subtitle={t('syncEnabled')}
+                onPress={syncAction ? undefined : handleStopSyncing}
+                showChevron={!syncAction}
+              />
+            )}
+          </Card>
+        </>
+      )}
 
       {/* Encryption */}
       <EncryptionSection />

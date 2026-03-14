@@ -354,6 +354,15 @@ export default function LoginScreen() {
             {/* Local mode */}
             <Pressable
               onPress={() => {
+                // Clear any stale budget state so the user doesn't auto-open an old budget
+                usePrefsStore.getState().setPrefs({
+                  activeBudgetId: '',
+                  fileId: '',
+                  groupId: '',
+                  encryptKeyId: undefined,
+                  lastSyncedTimestamp: undefined,
+                  budgetName: undefined,
+                });
                 if (!reducedMotion) {
                   contentOpacity.value = withTiming(0, { duration: 200 });
                   setTimeout(() => router.push("/(public)/local-setup"), 180);

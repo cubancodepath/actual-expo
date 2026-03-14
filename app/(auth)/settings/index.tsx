@@ -21,6 +21,7 @@ import { useSyncStore } from "../../../src/stores/syncStore";
 import { usePrivacyStore } from "../../../src/stores/privacyStore";
 import { resetSyncState, clearSwitchingFlag, loadClock } from "../../../src/sync";
 import { clearLocalData } from "../../../src/db";
+import { closeBudget } from "../../../src/services/budgetfiles";
 import type { Theme } from "../../../src/theme";
 
 const ICON_SIZE = 20;
@@ -98,6 +99,11 @@ export default function SettingsScreen() {
         },
       ],
     );
+  }
+
+  async function handleConnectToServer() {
+    await closeBudget();
+    await clearAll();
   }
 
   function handleLogout() {
@@ -211,6 +217,15 @@ export default function SettingsScreen() {
               title={t('localOnly')}
               subtitle={t('localOnlyDescription')}
               left={<SettingsIcon sfSymbol="iphone" ionIcon="phone-portrait-outline" color={colors.textMuted} />}
+              showSeparator
+              separatorInsetLeft={spacing.lg + ICON_SIZE + spacing.md}
+            />
+            <ListItem
+              title={t('connectToServer')}
+              subtitle={t('connectToServerDescription')}
+              left={<SettingsIcon sfSymbol="server.rack" ionIcon="server-outline" color={colors.textMuted} />}
+              showChevron
+              onPress={handleConnectToServer}
               showSeparator
               separatorInsetLeft={spacing.lg + ICON_SIZE + spacing.md}
             />

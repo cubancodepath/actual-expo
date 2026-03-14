@@ -16,35 +16,9 @@ import {
   SwipeableRow,
 } from '../../src/presentation/components';
 import { useBudgetFiles, fileKey } from '../../src/presentation/hooks/useBudgetFiles';
+import { useFileActionSheet } from '../../src/presentation/hooks/useFileActionSheet';
 import type { ReconciledBudgetFile } from '../../src/services/budgetfiles';
 import type { Theme } from '../../src/theme';
-
-function confirmDelete(
-  file: ReconciledBudgetFile,
-  onDelete: (fromServer?: boolean) => void,
-  t: (key: string, opts?: Record<string, string>) => string,
-  tc: (key: string) => string,
-) {
-  const name = file.name || t('unnamedBudget');
-
-  if (file.state === 'synced') {
-    Alert.alert(t('deleteBudget'), t('deleteBudgetSynced', { name }), [
-      { text: tc('cancel'), style: 'cancel' },
-      { text: t('deleteLocally'), onPress: () => onDelete(false) },
-      { text: t('deleteFromAllDevices'), style: 'destructive', onPress: () => onDelete(true) },
-    ]);
-  } else if (file.state === 'remote') {
-    Alert.alert(t('deleteBudget'), t('deleteBudgetFromServer', { name }), [
-      { text: tc('cancel'), style: 'cancel' },
-      { text: t('deleteFromServer'), style: 'destructive', onPress: () => onDelete(true) },
-    ]);
-  } else {
-    Alert.alert(t('deleteBudget'), t('deleteBudgetLocal', { name }), [
-      { text: tc('cancel'), style: 'cancel' },
-      { text: tc('delete'), style: 'destructive', onPress: () => onDelete(false) },
-    ]);
-  }
-}
 
 export default function FilesScreen() {
   const router = useRouter();
@@ -56,8 +30,15 @@ export default function FilesScreen() {
   const { t: tc } = useTranslation('common');
   const {
     localFiles, remoteFiles, loading, refreshing, error,
-    selecting, selectFile, deleteFile, uploadFile, retry, refresh, dismissError,
+    selecting, actionInProgress, selectFile, deleteFile, uploadFile,
+    convertToLocal, reRegister, retry, refresh, dismissError,
   } = useBudgetFiles();
+
+  const { showActions } = useFileActionSheet({
+    uploadFile, deleteFile, selectFile, convertToLocal, reRegister,
+  });
+
+  const hasDetached = localFiles.some(f => f.state === 'detached');
 
   async function handleSelect(file: ReconciledBudgetFile) {
     try {
@@ -152,6 +133,11 @@ export default function FilesScreen() {
           {localFiles.length > 0 && (
             <>
               <SectionHeader title={t('onThisDevice')} style={{ marginTop: spacing.lg, paddingHorizontal: 0 }} />
+              {hasDetached && (
+                <View style={{ marginBottom: spacing.sm }}>
+                  <Banner message={t('detachedHint')} variant="warning" />
+                </View>
+              )}
               <View>
                 {localFiles.map((file, index) => (
                   <SwipeableRow
@@ -166,7 +152,9 @@ export default function FilesScreen() {
                     <BudgetFileRow
                       file={file}
                       isSelecting={selecting === fileKey(file)}
+                      isActionInProgress={actionInProgress === fileKey(file)}
                       onPress={() => handleSelect(file)}
+                      onActionPress={() => showActions(file)}
                       showSeparator={index < localFiles.length - 1}
                       style={styles.fileRow}
                     />
@@ -191,6 +179,7 @@ export default function FilesScreen() {
                       file={file}
                       isSelecting={selecting === fileKey(file)}
                       onPress={() => handleSelect(file)}
+                      onActionPress={() => showActions(file)}
                       showSeparator={index < remoteFiles.length - 1}
                       style={styles.fileRow}
                     />
@@ -211,6 +200,33 @@ export default function FilesScreen() {
       )}
     </ScrollView>
   );
+}
+
+function confirmDelete(
+  file: ReconciledBudgetFile,
+  onDelete: (fromServer?: boolean) => void,
+  t: (key: string, opts?: Record<string, string>) => string,
+  tc: (key: string) => string,
+) {
+  const name = file.name || t('unnamedBudget');
+
+  if (file.state === 'synced') {
+    Alert.alert(t('deleteBudget'), t('deleteBudgetSynced', { name }), [
+      { text: tc('cancel'), style: 'cancel' },
+      { text: t('deleteLocally'), onPress: () => onDelete(false) },
+      { text: t('deleteFromAllDevices'), style: 'destructive', onPress: () => onDelete(true) },
+    ]);
+  } else if (file.state === 'remote') {
+    Alert.alert(t('deleteBudget'), t('deleteBudgetFromServer', { name }), [
+      { text: tc('cancel'), style: 'cancel' },
+      { text: t('deleteFromServer'), style: 'destructive', onPress: () => onDelete(true) },
+    ]);
+  } else {
+    Alert.alert(t('deleteBudget'), t('deleteBudgetLocal', { name }), [
+      { text: tc('cancel'), style: 'cancel' },
+      { text: tc('delete'), style: 'destructive', onPress: () => onDelete(false) },
+    ]);
+  }
 }
 
 const createStyles = (theme: Theme) => ({

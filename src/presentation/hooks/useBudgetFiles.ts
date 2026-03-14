@@ -9,8 +9,10 @@ import {
   deleteBudget,
   deleteFromServer,
   uploadBudget,
+  openBudget,
+  convertToLocalOnly,
+  reRegisterBudget,
 } from '../../services/budgetfiles';
-import { openBudget } from '../../services/budgetfiles';
 import { clearSwitchingFlag } from '../../sync';
 import * as encryption from '../../encryption';
 import { loadKeyForBudget } from '../../services/encryptionService';
@@ -33,6 +35,12 @@ type UseBudgetFilesReturn = {
   deleteFile: (file: ReconciledBudgetFile, fromServer?: boolean) => Promise<void>;
   /** Upload a local-only file to the server */
   uploadFile: (file: ReconciledBudgetFile) => Promise<void>;
+  /** Convert a detached/synced file to local-only */
+  convertToLocal: (file: ReconciledBudgetFile) => Promise<void>;
+  /** Re-register a detached file as a new server file */
+  reRegister: (file: ReconciledBudgetFile) => Promise<void>;
+  /** Key of file currently having an action performed on it */
+  actionInProgress: string | null;
   retry: () => void;
   refresh: () => void;
   dismissError: () => void;
@@ -49,6 +57,7 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selecting, setSelecting] = useState<string | null>(null);
+  const [actionInProgress, setActionInProgress] = useState<string | null>(null);
   const isMounted = useRef(true);
 
   useEffect(() => {
@@ -139,7 +148,15 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
       if (needsOpen) {
         await openBudget(file.localId);
       }
-      await uploadBudget(serverUrl, token, file.localId);
+      const { cloudFileId, groupId } = await uploadBudget(serverUrl, token, file.localId);
+      // Update prefs if this is the active budget
+      if (usePrefsStore.getState().activeBudgetId === file.localId) {
+        usePrefsStore.getState().setPrefs({
+          fileId: cloudFileId,
+          groupId,
+          isLocalOnly: false,
+        });
+      }
       // Refresh list to show updated state
       const updated = await fetchFiles();
       if (isMounted.current) setFiles(updated);
@@ -148,6 +165,63 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
         setError(e instanceof Error ? e.message : String(e));
       }
       throw e;
+    }
+  }, [serverUrl, token, fetchFiles]);
+
+  const handleConvertToLocal = useCallback(async (file: ReconciledBudgetFile) => {
+    if (!file.localId) throw new Error('No local ID');
+    const key = fileKey(file);
+    setActionInProgress(key);
+    try {
+      await convertToLocalOnly(file.localId);
+      // Update prefs if this is the active budget
+      if (usePrefsStore.getState().activeBudgetId === file.localId) {
+        usePrefsStore.getState().setPrefs({
+          fileId: '',
+          groupId: '',
+          isLocalOnly: true,
+        });
+      }
+      const updated = await fetchFiles();
+      if (isMounted.current) setFiles(updated);
+    } catch (e: unknown) {
+      if (isMounted.current) {
+        setError(e instanceof Error ? e.message : String(e));
+      }
+      throw e;
+    } finally {
+      if (isMounted.current) setActionInProgress(null);
+    }
+  }, [fetchFiles]);
+
+  const handleReRegister = useCallback(async (file: ReconciledBudgetFile) => {
+    if (!file.localId) throw new Error('No local ID');
+    const key = fileKey(file);
+    setActionInProgress(key);
+    try {
+      const { activeBudgetId } = usePrefsStore.getState();
+      const needsOpen = activeBudgetId !== file.localId;
+      if (needsOpen) {
+        await openBudget(file.localId);
+      }
+      const { cloudFileId, groupId } = await reRegisterBudget(serverUrl, token, file.localId);
+      // Update prefs if this is the active budget
+      if (usePrefsStore.getState().activeBudgetId === file.localId) {
+        usePrefsStore.getState().setPrefs({
+          fileId: cloudFileId,
+          groupId,
+          isLocalOnly: false,
+        });
+      }
+      const updated = await fetchFiles();
+      if (isMounted.current) setFiles(updated);
+    } catch (e: unknown) {
+      if (isMounted.current) {
+        setError(e instanceof Error ? e.message : String(e));
+      }
+      throw e;
+    } finally {
+      if (isMounted.current) setActionInProgress(null);
     }
   }, [serverUrl, token, fetchFiles]);
 
@@ -161,9 +235,12 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
     refreshing,
     error,
     selecting,
+    actionInProgress,
     selectFile,
     deleteFile: handleDeleteFile,
     uploadFile: handleUploadFile,
+    convertToLocal: handleConvertToLocal,
+    reRegister: handleReRegister,
     retry: loadFiles,
     refresh: refreshFiles,
     dismissError: () => setError(null),

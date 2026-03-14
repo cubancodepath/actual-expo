@@ -23,6 +23,8 @@
   "reconnect": "Reconectar",
   "disconnect": "Desconectar",
   "upload": "Subir",
+  "download": "Descargar",
+  "confirm": "Confirmar",
   "transfer": "Transferencia",
   "new": "Nuevo",
   "select": "Seleccionar",

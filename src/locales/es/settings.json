@@ -57,5 +57,14 @@
   "deleteBudget": "Eliminar Presupuesto",
   "deleteFromDevice": "Eliminar del Dispositivo",
   "deleteFromAllDevices": "Eliminar de Todos los Dispositivos",
-  "deleteBudgetConfirm": "¿Estás seguro de que deseas eliminar \"{{name}}\"? Esta acción no se puede deshacer."
+  "deleteBudgetConfirm": "¿Estás seguro de que deseas eliminar \"{{name}}\"? Esta acción no se puede deshacer.",
+  "enableCloudSync": "Habilitar Sincronización",
+  "enableCloudSyncMessage": "¿Subir este presupuesto al servidor y habilitar la sincronización entre dispositivos?",
+  "stopSyncing": "Dejar de Sincronizar",
+  "stopSyncingMessage": "Esto mantendrá el presupuesto en este dispositivo pero dejará de sincronizar con el servidor. Puedes reactivar la sincronización después.",
+  "noServerConfigured": "Conéctate a un servidor para habilitar la sincronización.",
+  "syncing": "Sincronizando...",
+  "syncEnabled": "Sincronizado con el Servidor",
+  "connectToServer": "Conectar al Servidor",
+  "connectToServerDescription": "Inicia sesión para sincronizar entre dispositivos"
 }

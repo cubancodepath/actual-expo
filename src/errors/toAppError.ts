@@ -13,6 +13,8 @@ export function toAppError(e: unknown): AppError {
     switch (e.type) {
       case "network-failure":
         return { category: "network", message: t("errors:networkFailure"), recovery: "retry", cause: e };
+      case "invalid-password":
+        return { category: "auth", message: t("errors:invalidPassword"), recovery: "dismiss", cause: e };
       case "unauthorized":
       case "token-expired":
         return { category: "auth", message: t("errors:sessionExpired"), recovery: "login", cause: e };

@@ -1,12 +1,13 @@
 {
   "networkFailure": "Can't reach the server. Check your internet connection and try again.",
+  "invalidPassword": "Incorrect password. Please try again.",
   "sessionExpired": "Your session has expired. Please sign in again.",
   "serverError": "Something went wrong on the server. Please try again.",
   "syncFailed": "Sync failed. Your data is safe locally — we'll try again soon.",
-  "encryptionKeyMissing": "Encryption key not available. Re-open this budget to enter your password.",
-  "databaseUnavailable": "The database is temporarily unavailable. Please try again.",
-  "unexpectedError": "Something went wrong. Please try again.",
+  "encryptionKeyMissing": "This budget is password-protected. Close it and open it again to enter your password.",
+  "databaseUnavailable": "The app couldn't open your data. Restart the app and try again.",
+  "unexpectedError": "Something went wrong. Try again, or restart the app if it keeps happening.",
   "saveFailed": "Couldn't save your changes. Please try again.",
-  "deleteFailed": "Couldn't delete. Please try again.",
+  "deleteFailed": "Couldn't delete this item. Try again.",
   "loadFailed": "Couldn't load data. Pull to refresh or try again."
 }

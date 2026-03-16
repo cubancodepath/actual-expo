@@ -1,8 +1,12 @@
 import { Component, type ReactNode } from "react";
-import { ScrollView, View, StyleSheet, Appearance } from "react-native";
+import { ScrollView, View, Pressable, StyleSheet, Appearance } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import * as Sentry from "@sentry/react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { lightColors, darkColors } from "../../theme/colors";
+
+// Use raw RN Text to avoid circular deps with themed components
+import { Text as RNText } from "react-native";
 
 interface Props {
   children: ReactNode;
@@ -36,7 +40,7 @@ export class ErrorBoundary extends Component<Props, State> {
     const colors = isDark ? darkColors : lightColors;
 
     return (
-      <View style={[styles.container, { backgroundColor: colors.pageBackground }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.pageBackground }]}>
         <ScrollView contentContainerStyle={styles.content} bounces={false}>
           <View style={[styles.iconCircle, { backgroundColor: colors.errorBackground }]}>
             <Ionicons name="warning-outline" size={32} color={colors.errorText} />
@@ -44,7 +48,6 @@ export class ErrorBoundary extends Component<Props, State> {
 
           <View style={styles.textBlock}>
             <View>
-              {/* Using raw RN Text to avoid dependency on themed components */}
               <RNText style={[styles.title, { color: colors.textPrimary }]}>
                 Something went wrong
               </RNText>
@@ -56,7 +59,7 @@ export class ErrorBoundary extends Component<Props, State> {
             </View>
           </View>
 
-          {this.state.error && (
+          {__DEV__ && this.state.error && (
             <View
               style={[
                 styles.errorBox,
@@ -69,21 +72,24 @@ export class ErrorBoundary extends Component<Props, State> {
             </View>
           )}
 
-          <View
-            style={[styles.button, { backgroundColor: colors.primary }]}
-            onTouchEnd={this.handleReset}
+          <Pressable
+            onPress={this.handleReset}
+            style={({ pressed }) => [
+              styles.button,
+              { backgroundColor: colors.primary },
+              pressed && { opacity: 0.85 },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Try again"
           >
             <Ionicons name="refresh" size={18} color="#fff" />
             <RNText style={styles.buttonText}>Try Again</RNText>
-          </View>
+          </Pressable>
         </ScrollView>
-      </View>
+      </SafeAreaView>
     );
   }
 }
-
-// Use raw RN Text to avoid circular deps with themed components
-import { Text as RNText } from "react-native";
 
 const styles = StyleSheet.create({
   container: {

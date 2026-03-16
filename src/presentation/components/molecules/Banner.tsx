@@ -37,6 +37,7 @@ function getVariantStyles(colors: ThemeColors, variant: BannerVariant) {
 export function Banner({ message, variant = "info", onDismiss, onPress }: BannerProps) {
   const { colors, spacing, borderRadius: br } = useTheme();
   const v = getVariantStyles(colors, variant);
+  const isError = variant === "error";
 
   const content = (
     <View
@@ -44,19 +45,29 @@ export function Banner({ message, variant = "info", onDismiss, onPress }: Banner
         styles.container,
         {
           backgroundColor: v.bg,
-          borderRadius: br.md,
-          padding: spacing.md,
+          borderRadius: br.lg,
+          paddingVertical: spacing.md,
+          paddingHorizontal: spacing.lg,
           marginHorizontal: spacing.lg,
           marginVertical: spacing.xs,
         },
       ]}
+      accessible
+      accessibilityRole={isError ? "alert" : undefined}
+      accessibilityLiveRegion={isError ? "assertive" : "polite"}
+      accessibilityLabel={message}
     >
       <Ionicons name={v.icon} size={20} color={v.text} style={{ marginRight: spacing.sm }} />
       <Text variant="bodySm" color={v.text} style={styles.message}>
         {message}
       </Text>
       {onDismiss && (
-        <Pressable onPress={onDismiss} hitSlop={8}>
+        <Pressable
+          onPress={onDismiss}
+          style={[styles.dismissButton, { marginRight: -spacing.sm }]}
+          accessibilityLabel="Dismiss"
+          accessibilityRole="button"
+        >
           <Ionicons name="close" size={18} color={v.text} />
         </Pressable>
       )}
@@ -81,5 +92,11 @@ const styles = StyleSheet.create({
   },
   message: {
     flex: 1,
+  },
+  dismissButton: {
+    minWidth: 44,
+    minHeight: 44,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

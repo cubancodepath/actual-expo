@@ -1,3 +1,5 @@
+import { PostError } from "../errors";
+
 export type BudgetFile = {
   fileId: string;
   groupId: string;
@@ -16,9 +18,14 @@ export type BootstrapInfo = {
 
 /** Probe a server to find out if it's bootstrapped and which login method is active. */
 export async function getBootstrapInfo(serverUrl: string): Promise<BootstrapInfo> {
-  const res = await fetch(`${serverUrl}/account/needs-bootstrap`);
+  let res: Response;
+  try {
+    res = await fetch(`${serverUrl}/account/needs-bootstrap`);
+  } catch {
+    throw new PostError("network-failure");
+  }
   if (!res.ok) {
-    throw new Error(`Server unreachable (${res.status})`);
+    throw new PostError("network-failure");
   }
   const json = await res.json();
   const data = json?.data ?? json;
@@ -35,20 +42,35 @@ export async function getBootstrapInfo(serverUrl: string): Promise<BootstrapInfo
 }
 
 export async function login(serverUrl: string, password: string): Promise<string> {
-  const res = await fetch(`${serverUrl}/account/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ password }),
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${serverUrl}/account/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    });
+  } catch {
+    throw new PostError("network-failure");
+  }
 
   if (!res.ok) {
+    // Try to extract the reason from JSON response
     const text = await res.text().catch(() => "");
-    throw new Error(`Login failed (${res.status}): ${text}`);
+    try {
+      const json = JSON.parse(text);
+      if (json?.reason === "invalid-password") {
+        throw new PostError("invalid-password");
+      }
+    } catch (e) {
+      if (e instanceof PostError) throw e;
+    }
+    if (res.status === 401 || res.status === 403) throw new PostError("unauthorized");
+    throw new PostError("internal");
   }
 
   const json = await res.json();
   const token: string = json?.data?.token ?? json?.token;
-  if (!token) throw new Error("No token in response");
+  if (!token) throw new PostError("internal");
   return token;
 }
 
@@ -59,20 +81,25 @@ export async function login(serverUrl: string, password: string): Promise<string
  * Returns the provider authorization URL to open in the system browser.
  */
 export async function initiateOpenIdLogin(serverUrl: string, returnUrl: string): Promise<string> {
-  const res = await fetch(`${serverUrl}/account/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ loginMethod: "openid", returnUrl }),
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${serverUrl}/account/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ loginMethod: "openid", returnUrl }),
+    });
+  } catch {
+    throw new PostError("network-failure");
+  }
 
   if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`OpenID login failed (${res.status}): ${text}`);
+    if (res.status === 401 || res.status === 403) throw new PostError("unauthorized");
+    throw new PostError("internal");
   }
 
   const json = await res.json();
   const authUrl: string = json?.data?.redirectUrl ?? json?.data?.returnUrl ?? json?.redirectUrl;
-  if (!authUrl) throw new Error("No redirect URL returned from server");
+  if (!authUrl) throw new PostError("internal");
   return authUrl;
 }
 
@@ -86,11 +113,11 @@ export async function listFiles(serverUrl: string, token: string): Promise<Budge
   if (res.status === 401 || res.status === 403) {
     const { usePrefsStore } = await import("../stores/prefsStore");
     usePrefsStore.getState().clearAll();
-    throw new Error("Session expired. Please log in again.");
+    throw new PostError("token-expired");
   }
 
   if (!res.ok) {
-    throw new Error(`Failed to list files (${res.status})`);
+    throw new PostError("internal");
   }
 
   const json = await res.json();

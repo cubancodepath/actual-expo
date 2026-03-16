@@ -7,7 +7,8 @@ import { usePayeesStore } from "@/stores/payeesStore";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
-import { Banner } from "@/presentation/components/molecules/Banner";
+import { ErrorBanner } from "@/presentation/components/molecules/ErrorBanner";
+import { useErrorHandler } from "@/presentation/hooks/useErrorHandler";
 import { useTranslation } from "react-i18next";
 import type { Theme } from "@/theme";
 
@@ -31,27 +32,23 @@ export default function NewAccountScreen() {
   const [balanceStr, setBalanceStr] = useState("");
   const [offbudget, setOffbudget] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { error, handleError, setValidationError, dismissError } = useErrorHandler();
 
   async function handleCreate() {
     const trimmed = name.trim();
     if (!trimmed) {
-      setError(t("newAccount.accountNameRequired"));
+      setValidationError(t("newAccount.accountNameRequired"));
       return;
     }
 
-    setError(null);
     setLoading(true);
-    try {
+    await handleError(async () => {
       const startingBalance = parseToCents(balanceStr);
       await create({ name: trimmed, offbudget, closed: false }, startingBalance);
       await Promise.all([load(), loadPayees()]);
       router.back();
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setLoading(false);
-    }
+    });
+    setLoading(false);
   }
 
   return (
@@ -93,7 +90,7 @@ export default function NewAccountScreen() {
           value={name}
           onChangeText={(text) => {
             setName(text);
-            setError(null);
+            dismissError();
           }}
           autoFocus
           returnKeyType="next"
@@ -142,7 +139,7 @@ export default function NewAccountScreen() {
         </View>
 
         {/* Error */}
-        {error && <Banner message={error} variant="error" onDismiss={() => setError(null)} />}
+        <ErrorBanner error={error} onDismiss={dismissError} />
 
         {/* Create button */}
         <Button

@@ -141,12 +141,20 @@ async function _fullSync(attempt = 0): Promise<void> {
       return;
     }
 
+    // Network errors → silent (local-first: user keeps working, sync retries on foreground)
+    if (e instanceof PostError && e.type === "network-failure") {
+      useSyncStore.getState()._setStatus("idle");
+      return;
+    }
+
     const msg = e instanceof Error ? e.message : String(e);
     // Silently ignore errors from DB closing during budget switch
     if (msg.includes("closed resource") || msg.includes("not initialized")) {
       useSyncStore.getState()._setStatus("idle");
       return;
     }
+
+    // Sync integrity errors → show to user (out-of-sync, encryption, schema)
     useSyncStore.getState()._setError(toAppError(e));
     throw e;
   }

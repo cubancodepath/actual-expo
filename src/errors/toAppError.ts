@@ -3,8 +3,9 @@ import { PostError } from "./PostError";
 import { SyncError } from "./SyncError";
 import type { AppError } from "./AppError";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- i18next strict typing doesn't accept dynamic namespaced keys
 function t(key: string): string {
-  return i18n.t(key as any) as string;
+  return i18n.t(key as never) as string;
 }
 
 export function toAppError(e: unknown): AppError {
@@ -14,7 +15,7 @@ export function toAppError(e: unknown): AppError {
       case "network-failure":
         return { category: "network", message: t("errors:networkFailure"), recovery: "retry", cause: e };
       case "invalid-password":
-        return { category: "auth", message: t("errors:invalidPassword"), recovery: "dismiss", cause: e };
+        return { category: "validation", message: t("errors:invalidPassword"), recovery: "dismiss", cause: e };
       case "unauthorized":
       case "token-expired":
         return { category: "auth", message: t("errors:sessionExpired"), recovery: "login", cause: e };

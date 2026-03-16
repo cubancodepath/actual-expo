@@ -239,7 +239,14 @@ export default function LoginScreen() {
                 <Text variant="caption" color={theme.colors.textSecondary} style={styles.label}>
                   {t("password")}
                 </Text>
-                <View style={styles.inputContainer}>
+                <View
+                  style={[
+                    styles.inputContainer,
+                    error?.category === "validation" && {
+                      borderColor: theme.colors.errorText,
+                    },
+                  ]}
+                >
                   <Ionicons name="lock-closed-outline" size={18} color={theme.colors.textMuted} />
                   <TextInput
                     testID="password-input"
@@ -247,7 +254,10 @@ export default function LoginScreen() {
                     placeholder={t("passwordPlaceholder")}
                     placeholderTextColor={theme.colors.textMuted}
                     value={password}
-                    onChangeText={setPassword}
+                    onChangeText={(v) => {
+                      setPassword(v);
+                      dismissError();
+                    }}
                     secureTextEntry
                     autoCapitalize="none"
                     autoFocus
@@ -255,14 +265,21 @@ export default function LoginScreen() {
                     onSubmitEditing={handlePasswordLogin}
                   />
                 </View>
+                {error?.category === "validation" && (
+                  <Text variant="captionSm" color={theme.colors.errorText}>
+                    {error.message}
+                  </Text>
+                )}
               </>
             )}
 
             {/* OpenID banner */}
             {step === "openid" && <Banner message={t("openIdRedirect")} variant="info" />}
 
-            {/* Error */}
-            <ErrorBanner error={error} onDismiss={dismissError} />
+            {/* Error — password validation is inline; other errors show as Banner */}
+            {!(step === "password" && error?.category === "validation") && (
+              <ErrorBanner error={error} onDismiss={dismissError} />
+            )}
 
             {/* Action buttons */}
             {step === "idle" && (

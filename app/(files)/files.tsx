@@ -18,6 +18,7 @@ import {
   Card,
   SectionHeader,
   Banner,
+  ErrorBanner,
   EmptyState,
   BudgetFileRow,
   SwipeableRow,
@@ -139,11 +140,9 @@ export default function FilesScreen() {
         }}
       />
 
-      {error && (
-        <View style={{ marginTop: spacing.md }}>
-          <Banner message={error} variant="error" onDismiss={dismissError} />
-        </View>
-      )}
+      <View style={{ marginTop: spacing.md }}>
+        <ErrorBanner error={error} onDismiss={dismissError} />
+      </View>
 
       {loading ? (
         <Card style={{ marginTop: spacing.lg }}>

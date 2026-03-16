@@ -33,7 +33,8 @@ import {
 import { ScheduleStatusBadge } from "@/presentation/components/atoms/ScheduleStatusBadge";
 import { KeyboardToolbar } from "@/presentation/components/molecules/KeyboardToolbar";
 import { CalculatorToolbar } from "@/presentation/components/atoms/CalculatorToolbar";
-import { Banner } from "@/presentation/components/molecules/Banner";
+import { ErrorBanner } from "@/presentation/components/molecules/ErrorBanner";
+import { useErrorHandler } from "@/presentation/hooks/useErrorHandler";
 import { TypeToggle, type TransactionType } from "@/presentation/components/transaction/TypeToggle";
 import { DetailRow } from "@/presentation/components/transaction/DetailRow";
 import type { Schedule, RecurConfig, RuleCondition, RuleAction } from "@/schedules/types";
@@ -61,7 +62,7 @@ export default function ScheduleDetailScreen() {
   const [schedule, setSchedule] = useState<Schedule | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { error, handleError, dismissError } = useErrorHandler();
 
   // Form state
   const [type, setType] = useState<TransactionType>("expense");
@@ -245,10 +246,9 @@ export default function ScheduleDetailScreen() {
     if (!schedule || !acctId) return;
 
     Keyboard.dismiss();
-    setError(null);
     setSaving(true);
 
-    try {
+    await handleError(async () => {
       const conditions: RuleCondition[] = [];
 
       if (payeeId) {
@@ -282,11 +282,8 @@ export default function ScheduleDetailScreen() {
       });
       load();
       router.dismiss();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t("failedToUpdate"));
-    } finally {
-      setSaving(false);
-    }
+    });
+    setSaving(false);
   }
 
   function handleSkip() {
@@ -381,7 +378,7 @@ export default function ScheduleDetailScreen() {
             value={cents}
             onChangeValue={(v) => {
               setCents(v);
-              setError(null);
+              dismissError();
             }}
             type={type}
             color={headerText}
@@ -507,11 +504,9 @@ export default function ScheduleDetailScreen() {
         </View>
 
         {/* ── Error banner ── */}
-        {error && (
-          <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.md }}>
-            <Banner message={error} variant="error" onDismiss={() => setError(null)} />
-          </View>
-        )}
+        <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.md }}>
+          <ErrorBanner error={error} onDismiss={dismissError} />
+        </View>
 
         {/* ── Buttons ── */}
         <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.xl, gap: spacing.sm }}>

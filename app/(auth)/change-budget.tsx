@@ -9,7 +9,7 @@ import {
   Card,
   SectionHeader,
   IconButton,
-  Banner,
+  ErrorBanner,
   EmptyState,
   BudgetFileRow,
 } from "@/presentation/components";
@@ -84,11 +84,9 @@ export default function ChangeBudgetScreen() {
         }}
       />
 
-      {error && (
-        <View style={{ marginTop: spacing.md }}>
-          <Banner message={error} variant="error" onDismiss={dismissError} />
-        </View>
-      )}
+      <View style={{ marginTop: spacing.md }}>
+        <ErrorBanner error={error} onDismiss={dismissError} />
+      </View>
 
       {loading ? (
         <Card style={{ marginTop: spacing.lg }}>

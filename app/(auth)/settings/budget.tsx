@@ -10,8 +10,10 @@ import {
   ListItem,
   SectionHeader,
   Button,
+  ErrorBanner,
   promptToEnableEncryption,
 } from "@/presentation/components";
+import { useErrorHandler } from "@/presentation/hooks/useErrorHandler";
 import { usePreferencesStore } from "@/stores/preferencesStore";
 import { usePrefsStore } from "@/stores/prefsStore";
 import { useFeatureFlagsStore } from "@/stores/featureFlagsStore";
@@ -161,6 +163,7 @@ export default function BudgetSettingsScreen() {
   const showEnableSync = hasServer && (isLocalOnly || (!fileId && !groupId));
   const showStopSync = hasServer && !isLocalOnly && !!fileId && !!groupId;
   const [syncAction, setSyncAction] = useState(false);
+  const { error, handleError, dismissError } = useErrorHandler();
 
   function handleEnableCloudSync() {
     Alert.alert(t("enableCloudSync"), t("enableCloudSyncMessage"), [
@@ -169,7 +172,7 @@ export default function BudgetSettingsScreen() {
         text: tc("confirm"),
         onPress: async () => {
           setSyncAction(true);
-          try {
+          await handleError(async () => {
             const { cloudFileId, groupId: newGroupId } = await uploadBudget(
               serverUrl,
               token,
@@ -180,12 +183,8 @@ export default function BudgetSettingsScreen() {
               groupId: newGroupId,
               isLocalOnly: false,
             });
-          } catch (e: unknown) {
-            const msg = e instanceof Error ? e.message : String(e);
-            Alert.alert(tc("error"), msg);
-          } finally {
-            setSyncAction(false);
-          }
+          });
+          setSyncAction(false);
         },
       },
     ]);
@@ -198,19 +197,15 @@ export default function BudgetSettingsScreen() {
         text: tc("confirm"),
         onPress: async () => {
           setSyncAction(true);
-          try {
+          await handleError(async () => {
             await convertToLocalOnly(activeBudgetId);
             usePrefsStore.getState().setPrefs({
               fileId: "",
               groupId: "",
               isLocalOnly: true,
             });
-          } catch (e: unknown) {
-            const msg = e instanceof Error ? e.message : String(e);
-            Alert.alert(tc("error"), msg);
-          } finally {
-            setSyncAction(false);
-          }
+          });
+          setSyncAction(false);
         },
       },
     ]);
@@ -284,6 +279,8 @@ export default function BudgetSettingsScreen() {
       contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xl }}
       contentInsetAdjustmentBehavior="automatic"
     >
+      <ErrorBanner error={error} onDismiss={dismissError} />
+
       {/* Formatting */}
       <SectionHeader title={t("formatting")} style={{ marginTop: spacing.lg }} />
       <Card>

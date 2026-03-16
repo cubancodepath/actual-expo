@@ -28,7 +28,8 @@ import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { Button } from "@/presentation/components/atoms/Button";
 import { KeyboardToolbar } from "@/presentation/components/molecules/KeyboardToolbar";
 import { CalculatorToolbar } from "@/presentation/components/atoms/CalculatorToolbar";
-import { Banner } from "@/presentation/components/molecules/Banner";
+import { ErrorBanner } from "@/presentation/components/molecules/ErrorBanner";
+import { useErrorHandler } from "@/presentation/hooks/useErrorHandler";
 import {
   CurrencyInput,
   type CurrencyInputRef,
@@ -101,7 +102,7 @@ export default function NewTransactionScreen() {
   const [reconciled, setReconciled] = useState(false);
   const [recurConfig, setRecurConfig] = useState<RecurConfig | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { error, handleError, setValidationError, dismissError } = useErrorHandler();
   const currencyInputRef = useRef<CurrencyInputRef>(null);
   const isInitialMount = useRef(true);
   // Track fields explicitly set by URL params or manual picks — rules won't override these
@@ -180,7 +181,7 @@ export default function NewTransactionScreen() {
         setCleared(false);
         setReconciled(false);
         setRecurConfig(null);
-        setError(null);
+        dismissError();
       }
     }, [transactionId]),
   );
@@ -299,9 +300,8 @@ export default function NewTransactionScreen() {
   }, [cents, type]);
 
   async function performSave() {
-    setError(null);
     setLoading(true);
-    try {
+    await handleError(async () => {
       await saveTransaction(
         {
           transactionId: isEdit ? transactionId : undefined,
@@ -324,20 +324,17 @@ export default function NewTransactionScreen() {
         useSchedulesStore.getState().load();
       }
       router.dismiss();
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setLoading(false);
-    }
+    });
+    setLoading(false);
   }
 
   function handleSave() {
     if (cents === 0) {
-      setError(t("enterAmount"));
+      setValidationError(t("enterAmount"));
       return;
     }
     if (!isEdit && !acctId) {
-      setError(t("selectAccount"));
+      setValidationError(t("selectAccount"));
       return;
     }
 
@@ -440,7 +437,7 @@ export default function NewTransactionScreen() {
             value={cents}
             onChangeValue={(v) => {
               setCents(v);
-              setError(null);
+              dismissError();
             }}
             type={type}
             autoFocus={!isEdit}
@@ -593,11 +590,9 @@ export default function NewTransactionScreen() {
         </View>
 
         {/* ── Error banner ── */}
-        {error && (
-          <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.md }}>
-            <Banner message={error} variant="error" onDismiss={() => setError(null)} />
-          </View>
-        )}
+        <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.md }}>
+          <ErrorBanner error={error} onDismiss={dismissError} />
+        </View>
 
         {/* ── Action buttons ── */}
         <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.xl }}>

@@ -25,7 +25,8 @@ import {
 } from "@/presentation/components/atoms/CurrencyInput";
 import { KeyboardToolbar } from "@/presentation/components/molecules/KeyboardToolbar";
 import { CalculatorToolbar } from "@/presentation/components/atoms/CalculatorToolbar";
-import { Banner } from "@/presentation/components/molecules/Banner";
+import { ErrorBanner } from "@/presentation/components/molecules/ErrorBanner";
+import { useErrorHandler } from "@/presentation/hooks/useErrorHandler";
 import { TypeToggle, type TransactionType } from "@/presentation/components/transaction/TypeToggle";
 import { DetailRow } from "@/presentation/components/transaction/DetailRow";
 import type { RecurConfig, RuleCondition, RuleAction } from "@/schedules/types";
@@ -62,7 +63,7 @@ export default function NewScheduleScreen() {
     start: todayStr(),
   });
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { error, handleError, setValidationError, dismissError } = useErrorHandler();
   const currencyRef = useRef<CurrencyInputRef>(null);
   const scrollY = useSharedValue(0);
 
@@ -149,19 +150,18 @@ export default function NewScheduleScreen() {
 
   async function handleSave() {
     if (!acctId) {
-      setError("Please select an account.");
+      setValidationError("Please select an account.");
       return;
     }
     if (cents === 0) {
-      setError("Enter an amount.");
+      setValidationError("Enter an amount.");
       return;
     }
 
     Keyboard.dismiss();
-    setError(null);
     setSaving(true);
 
-    try {
+    await handleError(async () => {
       const conditions: RuleCondition[] = [];
 
       if (payeeId) {
@@ -188,11 +188,8 @@ export default function NewScheduleScreen() {
 
       load();
       router.dismiss();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to create schedule");
-    } finally {
-      setSaving(false);
-    }
+    });
+    setSaving(false);
   }
 
   const canSave = acctId && cents !== 0;
@@ -229,7 +226,7 @@ export default function NewScheduleScreen() {
             value={cents}
             onChangeValue={(v) => {
               setCents(v);
-              setError(null);
+              dismissError();
             }}
             type={type}
             autoFocus
@@ -356,11 +353,9 @@ export default function NewScheduleScreen() {
         </View>
 
         {/* ── Error banner ── */}
-        {error && (
-          <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.md }}>
-            <Banner message={error} variant="error" onDismiss={() => setError(null)} />
-          </View>
-        )}
+        <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.md }}>
+          <ErrorBanner error={error} onDismiss={dismissError} />
+        </View>
 
         {/* ── Save button ── */}
         <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.xl }}>

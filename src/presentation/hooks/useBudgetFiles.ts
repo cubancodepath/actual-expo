@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
+import { toAppError, type AppError } from "../../errors";
 import { usePrefsStore } from "../../stores/prefsStore";
 import { listFiles } from "../../services/authService";
 import { listLocalBudgets } from "../../services/budgetMetadata";
@@ -27,7 +28,7 @@ type UseBudgetFilesReturn = {
   loading: boolean;
   /** True during pull-to-refresh */
   refreshing: boolean;
-  error: string | null;
+  error: AppError | null;
   /** Key of file currently being selected/downloaded */
   selecting: string | null;
   selectFile: (file: ReconciledBudgetFile) => Promise<void>;
@@ -55,7 +56,7 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
   const [files, setFiles] = useState<ReconciledBudgetFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<AppError | null>(null);
   const [selecting, setSelecting] = useState<string | null>(null);
   const [actionInProgress, setActionInProgress] = useState<string | null>(null);
   const isMounted = useRef(true);
@@ -83,7 +84,7 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
         if (isMounted.current) setFiles(f);
       })
       .catch((e) => {
-        if (isMounted.current) setError(e instanceof Error ? e.message : String(e));
+        if (isMounted.current) setError(toAppError(e));
       })
       .finally(() => {
         if (isMounted.current) setLoading(false);
@@ -102,7 +103,7 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
         if (isMounted.current) setFiles(f);
       })
       .catch((e) => {
-        if (isMounted.current) setError(e instanceof Error ? e.message : String(e));
+        if (isMounted.current) setError(toAppError(e));
       })
       .finally(() => {
         if (isMounted.current) setRefreshing(false);
@@ -130,7 +131,7 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
       } catch (e: unknown) {
         clearSwitchingFlag();
         if (isMounted.current) {
-          setError(e instanceof Error ? e.message : String(e));
+          setError(toAppError(e));
           setSelecting(null);
         }
         throw e;
@@ -153,7 +154,7 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
         if (isMounted.current) setFiles(updated);
       } catch (e: unknown) {
         if (isMounted.current) {
-          setError(e instanceof Error ? e.message : String(e));
+          setError(toAppError(e));
         }
         throw e;
       }
@@ -185,7 +186,7 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
         if (isMounted.current) setFiles(updated);
       } catch (e: unknown) {
         if (isMounted.current) {
-          setError(e instanceof Error ? e.message : String(e));
+          setError(toAppError(e));
         }
         throw e;
       }
@@ -212,7 +213,7 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
         if (isMounted.current) setFiles(updated);
       } catch (e: unknown) {
         if (isMounted.current) {
-          setError(e instanceof Error ? e.message : String(e));
+          setError(toAppError(e));
         }
         throw e;
       } finally {
@@ -246,7 +247,7 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
         if (isMounted.current) setFiles(updated);
       } catch (e: unknown) {
         if (isMounted.current) {
-          setError(e instanceof Error ? e.message : String(e));
+          setError(toAppError(e));
         }
         throw e;
       } finally {

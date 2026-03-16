@@ -15,7 +15,8 @@ import { useAccountsStore } from "@/stores/accountsStore";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
-import { Banner } from "@/presentation/components/molecules/Banner";
+import { ErrorBanner } from "@/presentation/components/molecules/ErrorBanner";
+import { useErrorHandler } from "@/presentation/hooks/useErrorHandler";
 import { useTranslation } from "react-i18next";
 import type { Theme } from "@/theme";
 
@@ -32,7 +33,7 @@ export default function AccountSettingsScreen() {
   const [name, setName] = useState(account?.name ?? "");
   const [offbudget, setOffbudget] = useState(account?.offbudget ?? false);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { error, handleError, setValidationError, dismissError } = useErrorHandler();
 
   if (!account) {
     return (
@@ -47,13 +48,12 @@ export default function AccountSettingsScreen() {
   async function handleSave() {
     const trimmed = name.trim();
     if (!trimmed) {
-      setError(t("settings.accountNameRequired"));
+      setValidationError(t("settings.accountNameRequired"));
       return;
     }
 
-    setError(null);
     setSaving(true);
-    try {
+    await handleError(async () => {
       const changes: Record<string, unknown> = {};
       if (trimmed !== account!.name) changes.name = trimmed;
       if (offbudget !== account!.offbudget) changes.offbudget = offbudget;
@@ -62,11 +62,8 @@ export default function AccountSettingsScreen() {
         await load();
       }
       router.back();
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setSaving(false);
-    }
+    });
+    setSaving(false);
   }
 
   function handleClose() {
@@ -121,7 +118,7 @@ export default function AccountSettingsScreen() {
           value={name}
           onChangeText={(t) => {
             setName(t);
-            setError(null);
+            dismissError();
           }}
           returnKeyType="done"
         />
@@ -146,7 +143,7 @@ export default function AccountSettingsScreen() {
         </View>
 
         {/* Error */}
-        {error && <Banner message={error} variant="error" onDismiss={() => setError(null)} />}
+        <ErrorBanner error={error} onDismiss={dismissError} />
 
         {/* Save button */}
         <Button

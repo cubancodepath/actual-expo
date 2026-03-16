@@ -9,42 +9,34 @@ import Animated, {
   interpolate,
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
-import { useAccountsStore } from "../../../src/stores/accountsStore";
-import { usePayeesStore } from "../../../src/stores/payeesStore";
-import { useCategoriesStore } from "../../../src/stores/categoriesStore";
-import { useSchedulesStore } from "../../../src/stores/schedulesStore";
-import { usePickerStore } from "../../../src/stores/pickerStore";
-import { useUndoStore } from "../../../src/stores/undoStore";
+import { useAccountsStore } from "@/stores/accountsStore";
+import { usePayeesStore } from "@/stores/payeesStore";
+import { useCategoriesStore } from "@/stores/categoriesStore";
+import { useSchedulesStore } from "@/stores/schedulesStore";
+import { usePickerStore } from "@/stores/pickerStore";
+import { useUndoStore } from "@/stores/undoStore";
 import {
   getScheduleById,
   getStatus,
   getScheduledAmount,
   getRecurringDescription,
-} from "../../../src/schedules";
-import { withOpacity } from "../../../src/lib/colors";
-import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
-import { Button } from "../../../src/presentation/components/atoms/Button";
-import { Text } from "../../../src/presentation/components/atoms/Text";
-import { GlassButton } from "../../../src/presentation/components/atoms/GlassButton";
+} from "@/schedules";
+import { withOpacity } from "@/lib/colors";
+import { useTheme } from "@/presentation/providers/ThemeProvider";
+import { Button } from "@/presentation/components/atoms/Button";
+import { Text } from "@/presentation/components/atoms/Text";
+import { GlassButton } from "@/presentation/components/atoms/GlassButton";
 import {
   CurrencyInput,
   type CurrencyInputRef,
-} from "../../../src/presentation/components/atoms/CurrencyInput";
-import { ScheduleStatusBadge } from "../../../src/presentation/components/atoms/ScheduleStatusBadge";
-import { KeyboardToolbar } from "../../../src/presentation/components/molecules/KeyboardToolbar";
-import { CalculatorToolbar } from "../../../src/presentation/components/atoms/CalculatorToolbar";
-import { Banner } from "../../../src/presentation/components/molecules/Banner";
-import {
-  TypeToggle,
-  type TransactionType,
-} from "../../../src/presentation/components/transaction/TypeToggle";
-import { DetailRow } from "../../../src/presentation/components/transaction/DetailRow";
-import type {
-  Schedule,
-  RecurConfig,
-  RuleCondition,
-  RuleAction,
-} from "../../../src/schedules/types";
+} from "@/presentation/components/atoms/CurrencyInput";
+import { ScheduleStatusBadge } from "@/presentation/components/atoms/ScheduleStatusBadge";
+import { KeyboardToolbar } from "@/presentation/components/molecules/KeyboardToolbar";
+import { CalculatorToolbar } from "@/presentation/components/atoms/CalculatorToolbar";
+import { Banner } from "@/presentation/components/molecules/Banner";
+import { TypeToggle, type TransactionType } from "@/presentation/components/transaction/TypeToggle";
+import { DetailRow } from "@/presentation/components/transaction/DetailRow";
+import type { Schedule, RecurConfig, RuleCondition, RuleAction } from "@/schedules/types";
 
 export default function ScheduleDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

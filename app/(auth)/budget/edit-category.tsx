@@ -11,21 +11,21 @@ import Animated, {
   interpolate,
   Extrapolation,
 } from "react-native-reanimated";
-import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
-import { useCategoriesStore } from "../../../src/stores/categoriesStore";
-import { useBudgetStore } from "../../../src/stores/budgetStore";
-import { useUndoStore } from "../../../src/stores/undoStore";
-import { Text } from "../../../src/presentation/components/atoms/Text";
-import { Button } from "../../../src/presentation/components/atoms/Button";
-import { Amount } from "../../../src/presentation/components/atoms/Amount";
-import { GlassButton } from "../../../src/presentation/components/atoms/GlassButton";
-import { CircularProgress } from "../../../src/presentation/components/atoms/CircularProgress";
-import { parseGoalDef } from "../../../src/goals";
-import { describeTemplate, translateDescription } from "../../../src/goals/describe";
-import i18n from "../../../src/i18n/config";
-import { useFeatureFlag } from "../../../src/hooks/useFeatureFlag";
-import type { BudgetCategory } from "../../../src/budgets/types";
-import type { ThemeColors } from "../../../src/theme/colors";
+import { useTheme } from "@/presentation/providers/ThemeProvider";
+import { useCategoriesStore } from "@/stores/categoriesStore";
+import { useBudgetStore } from "@/stores/budgetStore";
+import { useUndoStore } from "@/stores/undoStore";
+import { Text } from "@/presentation/components/atoms/Text";
+import { Button } from "@/presentation/components/atoms/Button";
+import { Amount } from "@/presentation/components/atoms/Amount";
+import { GlassButton } from "@/presentation/components/atoms/GlassButton";
+import { CircularProgress } from "@/presentation/components/atoms/CircularProgress";
+import { parseGoalDef } from "@/goals";
+import { describeTemplate, translateDescription } from "@/goals/describe";
+import i18n from "@/i18n/config";
+import { useFeatureFlag } from "@/hooks/useFeatureFlag";
+import type { BudgetCategory } from "@/budgets/types";
+import type { ThemeColors } from "@/theme/colors";
 
 // ---------------------------------------------------------------------------
 // Constants

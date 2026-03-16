@@ -2,13 +2,13 @@ import { useEffect, useState } from "react";
 import { Alert, Pressable, Switch, TextInput, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
-import { useCategoriesStore } from "../../../src/stores/categoriesStore";
-import { useBudgetStore } from "../../../src/stores/budgetStore";
-import { useUndoStore } from "../../../src/stores/undoStore";
-import { Text } from "../../../src/presentation/components/atoms/Text";
-import { Button } from "../../../src/presentation/components/atoms/Button";
-import { IconButton } from "../../../src/presentation/components/atoms/IconButton";
+import { useTheme } from "@/presentation/providers/ThemeProvider";
+import { useCategoriesStore } from "@/stores/categoriesStore";
+import { useBudgetStore } from "@/stores/budgetStore";
+import { useUndoStore } from "@/stores/undoStore";
+import { Text } from "@/presentation/components/atoms/Text";
+import { Button } from "@/presentation/components/atoms/Button";
+import { IconButton } from "@/presentation/components/atoms/IconButton";
 
 export default function EditGroupScreen() {
   const { t } = useTranslation("budget");

@@ -4,29 +4,29 @@ import { Alert, Keyboard, RefreshControl, SectionList, View } from "react-native
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { useTheme } from "../../../../src/presentation/providers/ThemeProvider";
+import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { useSharedValue } from "react-native-reanimated";
-import { AddTransactionButton } from "../../../../src/presentation/components/molecules/AddTransactionButton";
-import { KeyboardToolbar } from "../../../../src/presentation/components/molecules/KeyboardToolbar";
-import { CalculatorToolbar } from "../../../../src/presentation/components/atoms/CalculatorToolbar";
-import { GlassButton } from "../../../../src/presentation/components/atoms/GlassButton";
-import type { CompactCurrencyInputRef } from "../../../../src/presentation/components/atoms/CompactCurrencyInput";
-import { useBudgetStore } from "../../../../src/stores/budgetStore";
-import { useCommonMenuActions } from "../../../../src/presentation/hooks/useCommonMenuItems";
-import { useRefreshControl } from "../../../../src/presentation/hooks/useRefreshControl";
-import { useKeyboardHeight } from "../../../../src/presentation/hooks/useKeyboardHeight";
-import type { BudgetCategory, BudgetGroup } from "../../../../src/budgets/types";
+import { AddTransactionButton } from "@/presentation/components/molecules/AddTransactionButton";
+import { KeyboardToolbar } from "@/presentation/components/molecules/KeyboardToolbar";
+import { CalculatorToolbar } from "@/presentation/components/atoms/CalculatorToolbar";
+import { GlassButton } from "@/presentation/components/atoms/GlassButton";
+import type { CompactCurrencyInputRef } from "@/presentation/components/atoms/CompactCurrencyInput";
+import { useBudgetStore } from "@/stores/budgetStore";
+import { useCommonMenuActions } from "@/presentation/hooks/useCommonMenuItems";
+import { useRefreshControl } from "@/presentation/hooks/useRefreshControl";
+import { useKeyboardHeight } from "@/presentation/hooks/useKeyboardHeight";
+import type { BudgetCategory, BudgetGroup } from "@/budgets/types";
 
-import { BudgetGroupHeader } from "../../../../src/presentation/components/budget/BudgetGroupHeader";
-import { BudgetCategoryRow } from "../../../../src/presentation/components/budget/BudgetCategoryRow";
-import { ReadyToAssignPill } from "../../../../src/presentation/components/budget/ReadyToAssignPill";
-import { OverspentPill } from "../../../../src/presentation/components/budget/OverspentPill";
-import { UnclearedPill } from "../../../../src/presentation/components/transaction/UnclearedPill";
-import { getUncategorizedStats } from "../../../../src/transactions";
-import { Text } from "../../../../src/presentation/components/atoms/Text";
-import { usePrefsStore } from "../../../../src/stores/prefsStore";
-import { useFeatureFlag } from "../../../../src/hooks/useFeatureFlag";
-import { BudgetListSkeleton } from "../../../../src/presentation/components/skeletons/BudgetListSkeleton";
+import { BudgetGroupHeader } from "@/presentation/components/budget/BudgetGroupHeader";
+import { BudgetCategoryRow } from "@/presentation/components/budget/BudgetCategoryRow";
+import { ReadyToAssignPill } from "@/presentation/components/budget/ReadyToAssignPill";
+import { OverspentPill } from "@/presentation/components/budget/OverspentPill";
+import { UnclearedPill } from "@/presentation/components/transaction/UnclearedPill";
+import { getUncategorizedStats } from "@/transactions";
+import { Text } from "@/presentation/components/atoms/Text";
+import { usePrefsStore } from "@/stores/prefsStore";
+import { useFeatureFlag } from "@/hooks/useFeatureFlag";
+import { BudgetListSkeleton } from "@/presentation/components/skeletons/BudgetListSkeleton";
 
 // ---------------------------------------------------------------------------
 // Types

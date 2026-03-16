@@ -7,21 +7,21 @@ import { randomUUID } from "expo-crypto";
 import Animated, { useAnimatedStyle } from "react-native-reanimated";
 import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
 import { BlurView } from "expo-blur";
-import { usePickerStore, type SplitLine } from "../../../src/stores/pickerStore";
-import { useTheme, useThemedStyles } from "../../../src/presentation/providers/ThemeProvider";
-import { useKeyboardHeight } from "../../../src/presentation/hooks/useKeyboardHeight";
-import { Text } from "../../../src/presentation/components/atoms/Text";
-import { Amount } from "../../../src/presentation/components/atoms/Amount";
-import { IconButton } from "../../../src/presentation/components/atoms/IconButton";
+import { usePickerStore, type SplitLine } from "@/stores/pickerStore";
+import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
+import { useKeyboardHeight } from "@/presentation/hooks/useKeyboardHeight";
+import { Text } from "@/presentation/components/atoms/Text";
+import { Amount } from "@/presentation/components/atoms/Amount";
+import { IconButton } from "@/presentation/components/atoms/IconButton";
 import {
   CompactCurrencyInput,
   type CompactCurrencyInputRef,
-} from "../../../src/presentation/components/atoms/CompactCurrencyInput";
-import { formatAmount } from "../../../src/lib/format";
-import { CalculatorToolbar } from "../../../src/presentation/components/atoms/CalculatorToolbar";
-import { GlassButton } from "../../../src/presentation/components/atoms/GlassButton";
-import { KeyboardToolbar } from "../../../src/presentation/components/molecules/KeyboardToolbar";
-import type { Theme } from "../../../src/theme";
+} from "@/presentation/components/atoms/CompactCurrencyInput";
+import { formatAmount } from "@/lib/format";
+import { CalculatorToolbar } from "@/presentation/components/atoms/CalculatorToolbar";
+import { GlassButton } from "@/presentation/components/atoms/GlassButton";
+import { KeyboardToolbar } from "@/presentation/components/molecules/KeyboardToolbar";
+import type { Theme } from "@/theme";
 
 // ---------------------------------------------------------------------------
 // Split Line Row

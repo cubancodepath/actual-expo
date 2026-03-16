@@ -11,13 +11,13 @@ import {
 
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useAccountsStore } from "../../../src/stores/accountsStore";
-import { useTheme, useThemedStyles } from "../../../src/presentation/providers/ThemeProvider";
-import { Text } from "../../../src/presentation/components/atoms/Text";
-import { Button } from "../../../src/presentation/components/atoms/Button";
-import { Banner } from "../../../src/presentation/components/molecules/Banner";
+import { useAccountsStore } from "@/stores/accountsStore";
+import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
+import { Text } from "@/presentation/components/atoms/Text";
+import { Button } from "@/presentation/components/atoms/Button";
+import { Banner } from "@/presentation/components/molecules/Banner";
 import { useTranslation } from "react-i18next";
-import type { Theme } from "../../../src/theme";
+import type { Theme } from "@/theme";
 
 export default function AccountSettingsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

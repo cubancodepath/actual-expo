@@ -3,12 +3,12 @@ import { SectionList, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
-import { Text } from "../../../src/presentation/components/atoms/Text";
-import { RowSeparator } from "../../../src/presentation/components/atoms/RowSeparator";
-import { IconButton } from "../../../src/presentation/components/atoms/IconButton";
-import { useBudgetStore } from "../../../src/stores/budgetStore";
-import { first } from "../../../src/db";
+import { useTheme } from "@/presentation/providers/ThemeProvider";
+import { Text } from "@/presentation/components/atoms/Text";
+import { RowSeparator } from "@/presentation/components/atoms/RowSeparator";
+import { IconButton } from "@/presentation/components/atoms/IconButton";
+import { useBudgetStore } from "@/stores/budgetStore";
+import { first } from "@/db";
 
 // ---------------------------------------------------------------------------
 // Parse "on <date>" from the end of a note line

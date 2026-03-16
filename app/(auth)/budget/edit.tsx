@@ -13,20 +13,20 @@ import Animated, {
 import { Ionicons } from "@expo/vector-icons";
 import { SymbolView } from "expo-symbols";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
-import { useCategoriesStore } from "../../../src/stores/categoriesStore";
-import { useBudgetStore } from "../../../src/stores/budgetStore";
-import { useUndoStore } from "../../../src/stores/undoStore";
-import { Text } from "../../../src/presentation/components/atoms/Text";
-import { Amount } from "../../../src/presentation/components/atoms/Amount";
-import { Button } from "../../../src/presentation/components/atoms/Button";
-import { SwipeableRow } from "../../../src/presentation/components/molecules/SwipeableRow";
-import { GlassButton } from "../../../src/presentation/components/atoms/GlassButton";
-import { parseGoalDef } from "../../../src/goals";
-import { describeTemplate, translateDescription } from "../../../src/goals/describe";
-import i18n from "../../../src/i18n/config";
-import { useFeatureFlag } from "../../../src/hooks/useFeatureFlag";
-import type { Category, CategoryGroup } from "../../../src/categories/types";
+import { useTheme } from "@/presentation/providers/ThemeProvider";
+import { useCategoriesStore } from "@/stores/categoriesStore";
+import { useBudgetStore } from "@/stores/budgetStore";
+import { useUndoStore } from "@/stores/undoStore";
+import { Text } from "@/presentation/components/atoms/Text";
+import { Amount } from "@/presentation/components/atoms/Amount";
+import { Button } from "@/presentation/components/atoms/Button";
+import { SwipeableRow } from "@/presentation/components/molecules/SwipeableRow";
+import { GlassButton } from "@/presentation/components/atoms/GlassButton";
+import { parseGoalDef } from "@/goals";
+import { describeTemplate, translateDescription } from "@/goals/describe";
+import i18n from "@/i18n/config";
+import { useFeatureFlag } from "@/hooks/useFeatureFlag";
+import type { Category, CategoryGroup } from "@/categories/types";
 
 // ---------- Section types ----------
 

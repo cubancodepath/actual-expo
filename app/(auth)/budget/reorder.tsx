@@ -7,11 +7,11 @@ import { useAnimatedRef } from "react-native-reanimated";
 import Sortable from "react-native-sortables";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
-import { useCategoriesStore } from "../../../src/stores/categoriesStore";
-import { Text } from "../../../src/presentation/components/atoms/Text";
-import { IconButton } from "../../../src/presentation/components/atoms/IconButton";
-import type { Category, CategoryGroup } from "../../../src/categories/types";
+import { useTheme } from "@/presentation/providers/ThemeProvider";
+import { useCategoriesStore } from "@/stores/categoriesStore";
+import { Text } from "@/presentation/components/atoms/Text";
+import { IconButton } from "@/presentation/components/atoms/IconButton";
+import type { Category, CategoryGroup } from "@/categories/types";
 
 type GroupWithCats = {
   id: string;

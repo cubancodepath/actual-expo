@@ -1,9 +1,9 @@
 import { useMemo } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { useBudgetStore } from "../../../src/stores/budgetStore";
-import { Amount } from "../../../src/presentation/components/atoms/Amount";
-import { CategoryPickerList, type GroupedCategory } from "../../../src/presentation/components";
+import { useBudgetStore } from "@/stores/budgetStore";
+import { Amount } from "@/presentation/components/atoms/Amount";
+import { CategoryPickerList, type GroupedCategory } from "@/presentation/components";
 
 export default function MoveCategoryPickerScreen() {
   const { t } = useTranslation("budget");

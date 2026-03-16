@@ -3,13 +3,13 @@ import { Pressable, ScrollView, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
-import { Text, Card, Divider } from "../../../src/presentation/components";
-import { GlassButton } from "../../../src/presentation/components/atoms/GlassButton";
-import { usePickerStore } from "../../../src/stores/pickerStore";
-import { getRecurringDescription } from "../../../src/schedules";
-import { todayStr } from "../../../src/lib/date";
-import type { RecurConfig } from "../../../src/schedules/types";
+import { useTheme } from "@/presentation/providers/ThemeProvider";
+import { Text, Card, Divider } from "@/presentation/components";
+import { GlassButton } from "@/presentation/components/atoms/GlassButton";
+import { usePickerStore } from "@/stores/pickerStore";
+import { getRecurringDescription } from "@/schedules";
+import { todayStr } from "@/lib/date";
+import type { RecurConfig } from "@/schedules/types";
 
 // ---------------------------------------------------------------------------
 // Presets

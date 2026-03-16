@@ -1,6 +1,6 @@
 import { Stack } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { useTheme } from "../../../../src/presentation/providers/ThemeProvider";
+import { useTheme } from "@/presentation/providers/ThemeProvider";
 
 export default function SpendingStack() {
   const { colors } = useTheme();

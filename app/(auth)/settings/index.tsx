@@ -7,16 +7,16 @@ import { SymbolView } from "expo-symbols";
 import type { SFSymbol } from "sf-symbols-typescript";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
-import { useTheme, useThemedStyles } from "../../../src/presentation/providers/ThemeProvider";
-import { Text, Card, ListItem, SectionHeader, Button } from "../../../src/presentation/components";
-import { usePrefsStore } from "../../../src/stores/prefsStore";
-import { resetAllStores } from "../../../src/stores/resetStores";
-import { useSyncStore } from "../../../src/stores/syncStore";
-import { usePrivacyStore } from "../../../src/stores/privacyStore";
-import { resetSyncState, clearSwitchingFlag, loadClock } from "../../../src/sync";
-import { clearLocalData } from "../../../src/db";
-import { closeBudget } from "../../../src/services/budgetfiles";
-import type { Theme } from "../../../src/theme";
+import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
+import { Text, Card, ListItem, SectionHeader, Button } from "@/presentation/components";
+import { usePrefsStore } from "@/stores/prefsStore";
+import { resetAllStores } from "@/stores/resetStores";
+import { useSyncStore } from "@/stores/syncStore";
+import { usePrivacyStore } from "@/stores/privacyStore";
+import { resetSyncState, clearSwitchingFlag, loadClock } from "@/sync";
+import { clearLocalData } from "@/db";
+import { closeBudget } from "@/services/budgetfiles";
+import type { Theme } from "@/theme";
 
 const ICON_SIZE = 20;
 

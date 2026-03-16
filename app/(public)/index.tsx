@@ -26,13 +26,13 @@ import {
   login,
   initiateOpenIdLogin,
   type LoginMethod,
-} from "../../src/services/authService";
-import { usePrefsStore } from "../../src/stores/prefsStore";
-import { useTheme, useThemedStyles } from "../../src/presentation/providers/ThemeProvider";
-import { Text } from "../../src/presentation/components/atoms/Text";
-import { Button } from "../../src/presentation/components/atoms/Button";
-import { Banner } from "../../src/presentation/components/molecules/Banner";
-import type { Theme } from "../../src/theme";
+} from "@/services/authService";
+import { usePrefsStore } from "@/stores/prefsStore";
+import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
+import { Text } from "@/presentation/components/atoms/Text";
+import { Button } from "@/presentation/components/atoms/Button";
+import { Banner } from "@/presentation/components/molecules/Banner";
+import type { Theme } from "@/theme";
 
 WebBrowser.maybeCompleteAuthSession();
 

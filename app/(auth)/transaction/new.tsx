@@ -9,39 +9,36 @@ import Animated, {
   interpolate,
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
-import { useAccountsStore } from "../../../src/stores/accountsStore";
-import { useTransactionsStore } from "../../../src/stores/transactionsStore";
-import { useCategoriesStore } from "../../../src/stores/categoriesStore";
-import { usePickerStore } from "../../../src/stores/pickerStore";
-import { useRulesStore } from "../../../src/stores/rulesStore";
-import { useSchedulesStore } from "../../../src/stores/schedulesStore";
-import { getTransactionById, getChildTransactions } from "../../../src/transactions";
-import { saveTransaction } from "../../../src/transactions/save";
-import { getRecurringDescription } from "../../../src/schedules";
-import type { RecurConfig } from "../../../src/schedules/types";
-import { extractTagsFromNotes } from "../../../src/tags";
-import { suggestCategoryForPayee, applyRulesToForm } from "../../../src/rules/apply";
-import { todayStr, todayInt, strToInt, intToStr } from "../../../src/lib/date";
-import { withOpacity } from "../../../src/lib/colors";
-import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
-import { Button } from "../../../src/presentation/components/atoms/Button";
-import { KeyboardToolbar } from "../../../src/presentation/components/molecules/KeyboardToolbar";
-import { CalculatorToolbar } from "../../../src/presentation/components/atoms/CalculatorToolbar";
-import { Banner } from "../../../src/presentation/components/molecules/Banner";
+import { useAccountsStore } from "@/stores/accountsStore";
+import { useTransactionsStore } from "@/stores/transactionsStore";
+import { useCategoriesStore } from "@/stores/categoriesStore";
+import { usePickerStore } from "@/stores/pickerStore";
+import { useRulesStore } from "@/stores/rulesStore";
+import { useSchedulesStore } from "@/stores/schedulesStore";
+import { getTransactionById, getChildTransactions } from "@/transactions";
+import { saveTransaction } from "@/transactions/save";
+import { getRecurringDescription } from "@/schedules";
+import type { RecurConfig } from "@/schedules/types";
+import { extractTagsFromNotes } from "@/tags";
+import { suggestCategoryForPayee, applyRulesToForm } from "@/rules/apply";
+import { todayStr, todayInt, strToInt, intToStr } from "@/lib/date";
+import { withOpacity } from "@/lib/colors";
+import { useTheme } from "@/presentation/providers/ThemeProvider";
+import { Button } from "@/presentation/components/atoms/Button";
+import { KeyboardToolbar } from "@/presentation/components/molecules/KeyboardToolbar";
+import { CalculatorToolbar } from "@/presentation/components/atoms/CalculatorToolbar";
+import { Banner } from "@/presentation/components/molecules/Banner";
 import {
   CurrencyInput,
   type CurrencyInputRef,
-} from "../../../src/presentation/components/atoms/CurrencyInput";
-import {
-  TypeToggle,
-  type TransactionType,
-} from "../../../src/presentation/components/transaction/TypeToggle";
-import { DetailRow } from "../../../src/presentation/components/transaction/DetailRow";
-import { DatePickerField } from "../../../src/presentation/components/transaction/DatePickerField";
-import { NotesField } from "../../../src/presentation/components/transaction/NotesField";
-import { Text } from "../../../src/presentation/components/atoms/Text";
-import { GlassButton } from "../../../src/presentation/components/atoms/GlassButton";
-import { ClearedToggle } from "../../../src/presentation/components/transaction/ClearedToggle";
+} from "@/presentation/components/atoms/CurrencyInput";
+import { TypeToggle, type TransactionType } from "@/presentation/components/transaction/TypeToggle";
+import { DetailRow } from "@/presentation/components/transaction/DetailRow";
+import { DatePickerField } from "@/presentation/components/transaction/DatePickerField";
+import { NotesField } from "@/presentation/components/transaction/NotesField";
+import { Text } from "@/presentation/components/atoms/Text";
+import { GlassButton } from "@/presentation/components/atoms/GlassButton";
+import { ClearedToggle } from "@/presentation/components/transaction/ClearedToggle";
 
 export default function NewTransactionScreen() {
   const {

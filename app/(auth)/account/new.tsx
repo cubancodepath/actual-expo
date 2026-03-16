@@ -2,14 +2,14 @@ import { useState } from "react";
 import { Platform, Pressable, ScrollView, Switch, TextInput, View } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useAccountsStore } from "../../../src/stores/accountsStore";
-import { usePayeesStore } from "../../../src/stores/payeesStore";
-import { useTheme, useThemedStyles } from "../../../src/presentation/providers/ThemeProvider";
-import { Text } from "../../../src/presentation/components/atoms/Text";
-import { Button } from "../../../src/presentation/components/atoms/Button";
-import { Banner } from "../../../src/presentation/components/molecules/Banner";
+import { useAccountsStore } from "@/stores/accountsStore";
+import { usePayeesStore } from "@/stores/payeesStore";
+import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
+import { Text } from "@/presentation/components/atoms/Text";
+import { Button } from "@/presentation/components/atoms/Button";
+import { Banner } from "@/presentation/components/molecules/Banner";
 import { useTranslation } from "react-i18next";
-import type { Theme } from "../../../src/theme";
+import type { Theme } from "@/theme";
 
 /** Parse a user-typed balance string like "1,234.56" or "-50" into cents */
 function parseToCents(raw: string): number {

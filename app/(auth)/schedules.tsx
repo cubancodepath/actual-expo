@@ -3,7 +3,7 @@ import { Alert, Pressable, SectionList, View } from "react-native";
 import { Stack, useFocusEffect, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { useTheme, useThemedStyles } from "../../src/presentation/providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
 import {
   Text,
   Amount,
@@ -11,15 +11,15 @@ import {
   SectionHeader,
   ScheduleStatusBadge,
   RowSeparator,
-} from "../../src/presentation/components";
-import { SwipeableRow } from "../../src/presentation/components";
-import { useSchedulesStore } from "../../src/stores/schedulesStore";
-import { usePayeesStore } from "../../src/stores/payeesStore";
-import { useAccountsStore } from "../../src/stores/accountsStore";
-import { useUndoStore } from "../../src/stores/undoStore";
-import { getStatus, getScheduledAmount, getRecurringDescription } from "../../src/schedules";
-import type { Schedule, ScheduleStatus, RecurConfig } from "../../src/schedules/types";
-import type { Theme } from "../../src/theme";
+} from "@/presentation/components";
+import { SwipeableRow } from "@/presentation/components";
+import { useSchedulesStore } from "@/stores/schedulesStore";
+import { usePayeesStore } from "@/stores/payeesStore";
+import { useAccountsStore } from "@/stores/accountsStore";
+import { useUndoStore } from "@/stores/undoStore";
+import { getStatus, getScheduledAmount, getRecurringDescription } from "@/schedules";
+import type { Schedule, ScheduleStatus, RecurConfig } from "@/schedules/types";
+import type { Theme } from "@/theme";
 
 type ScheduleSection = {
   title: string;

@@ -2,16 +2,16 @@ import { useCallback, useEffect, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useTheme, useThemedStyles } from "../../../src/presentation/providers/ThemeProvider";
-import { useTagsStore } from "../../../src/stores/tagsStore";
-import { usePickerStore } from "../../../src/stores/pickerStore";
-import { Text } from "../../../src/presentation/components/atoms/Text";
-import { IconButton } from "../../../src/presentation/components/atoms/IconButton";
-import { TagPill } from "../../../src/presentation/components/atoms/TagPill";
-import { SearchBar } from "../../../src/presentation/components/molecules/SearchBar";
-import { getTransactionById, updateTransaction } from "../../../src/transactions";
-import { extractTagsFromNotes } from "../../../src/tags";
-import type { Theme } from "../../../src/theme";
+import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
+import { useTagsStore } from "@/stores/tagsStore";
+import { usePickerStore } from "@/stores/pickerStore";
+import { Text } from "@/presentation/components/atoms/Text";
+import { IconButton } from "@/presentation/components/atoms/IconButton";
+import { TagPill } from "@/presentation/components/atoms/TagPill";
+import { SearchBar } from "@/presentation/components/molecules/SearchBar";
+import { getTransactionById, updateTransaction } from "@/transactions";
+import { extractTagsFromNotes } from "@/tags";
+import type { Theme } from "@/theme";
 
 const TAG_COLORS = [
   "#8719e0",

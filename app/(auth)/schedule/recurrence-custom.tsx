@@ -4,20 +4,16 @@ import { Ionicons } from "@expo/vector-icons";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Host, DatePicker, Picker, Text as SwiftText } from "@expo/ui/swift-ui";
 import { datePickerStyle, frame, pickerStyle, tag, tint } from "@expo/ui/swift-ui/modifiers";
-import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
-import { Text, Card, SectionHeader } from "../../../src/presentation/components";
-import { ListItem } from "../../../src/presentation/components/molecules/ListItem";
-import { GlassButton } from "../../../src/presentation/components/atoms/GlassButton";
-import { usePickerStore } from "../../../src/stores/pickerStore";
-import { getRecurringDescription } from "../../../src/schedules";
-import {
-  getUpcomingDates,
-  dayFromDate,
-  getDateWithSkippedWeekend,
-} from "../../../src/schedules/recurrence";
-import { todayStr } from "../../../src/lib/date";
-import { formatDateLong, strToInt } from "../../../src/lib/date";
-import type { RecurConfig } from "../../../src/schedules/types";
+import { useTheme } from "@/presentation/providers/ThemeProvider";
+import { Text, Card, SectionHeader } from "@/presentation/components";
+import { ListItem } from "@/presentation/components/molecules/ListItem";
+import { GlassButton } from "@/presentation/components/atoms/GlassButton";
+import { usePickerStore } from "@/stores/pickerStore";
+import { getRecurringDescription } from "@/schedules";
+import { getUpcomingDates, dayFromDate, getDateWithSkippedWeekend } from "@/schedules/recurrence";
+import { todayStr } from "@/lib/date";
+import { formatDateLong, strToInt } from "@/lib/date";
+import type { RecurConfig } from "@/schedules/types";
 
 // ---------------------------------------------------------------------------
 // Constants

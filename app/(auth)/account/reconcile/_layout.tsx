@@ -1,7 +1,7 @@
 import { Stack } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { useTheme } from "../../../../src/presentation/providers/ThemeProvider";
-import { themedScreenOptions } from "../../../../src/presentation/navigation/screenOptions";
+import { useTheme } from "@/presentation/providers/ThemeProvider";
+import { themedScreenOptions } from "@/presentation/navigation/screenOptions";
 
 export default function ReconcileLayout() {
   const theme = useTheme();

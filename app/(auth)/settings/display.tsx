@@ -1,10 +1,10 @@
 import { ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
-import { useTheme, useThemedStyles } from "../../../src/presentation/providers/ThemeProvider";
-import { Card, ListItem, SectionHeader } from "../../../src/presentation/components";
-import { usePrefsStore } from "../../../src/stores/prefsStore";
-import type { Theme } from "../../../src/theme";
+import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
+import { Card, ListItem, SectionHeader } from "@/presentation/components";
+import { usePrefsStore } from "@/stores/prefsStore";
+import type { Theme } from "@/theme";
 
 const THEME_OPTIONS = [
   { value: "system", labelKey: "themeSystem" },

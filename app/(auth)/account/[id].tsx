@@ -3,48 +3,41 @@ import { useSharedValue } from "react-native-reanimated";
 import { ActivityIndicator, Alert, LayoutAnimation, RefreshControl, View } from "react-native";
 import { LegendList } from "@legendapp/list";
 import { Stack, useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from "expo-router";
-import { useAccountsStore } from "../../../src/stores/accountsStore";
-import {
-  getClearedBalance,
-  getTransactionsForAccount,
-  getUnclearedCount,
-} from "../../../src/transactions";
-import { useTheme, useThemedStyles } from "../../../src/presentation/providers/ThemeProvider";
-import { EmptyState } from "../../../src/presentation/components";
-import type { Theme } from "../../../src/theme";
+import { useAccountsStore } from "@/stores/accountsStore";
+import { getClearedBalance, getTransactionsForAccount, getUnclearedCount } from "@/transactions";
+import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
+import { EmptyState } from "@/presentation/components";
+import type { Theme } from "@/theme";
 
-import { BalanceSummary } from "../../../src/presentation/components/account/BalanceSummary";
-import { TransactionRow } from "../../../src/presentation/components/account/TransactionRow";
-import { DateSectionHeader } from "../../../src/presentation/components/account/DateSectionHeader";
-import { UpcomingSectionHeader } from "../../../src/presentation/components/account/UpcomingSectionHeader";
-import { UpcomingScheduleRow } from "../../../src/presentation/components/account/UpcomingScheduleRow";
-import { AddTransactionButton } from "../../../src/presentation/components/molecules/AddTransactionButton";
-import { UnclearedPill } from "../../../src/presentation/components/transaction/UnclearedPill";
-import { usePrefsStore } from "../../../src/stores/prefsStore";
-import { usePrivacyStore } from "../../../src/stores/privacyStore";
-import { useUndoStore } from "../../../src/stores/undoStore";
-import { useCommonMenuActions } from "../../../src/presentation/hooks/useCommonMenuItems";
-import { useTagsStore } from "../../../src/stores/tagsStore";
-import { TransactionListSkeleton } from "../../../src/presentation/components/skeletons/TransactionListSkeleton";
+import { BalanceSummary } from "@/presentation/components/account/BalanceSummary";
+import { TransactionRow } from "@/presentation/components/account/TransactionRow";
+import { DateSectionHeader } from "@/presentation/components/account/DateSectionHeader";
+import { UpcomingSectionHeader } from "@/presentation/components/account/UpcomingSectionHeader";
+import { UpcomingScheduleRow } from "@/presentation/components/account/UpcomingScheduleRow";
+import { AddTransactionButton } from "@/presentation/components/molecules/AddTransactionButton";
+import { UnclearedPill } from "@/presentation/components/transaction/UnclearedPill";
+import { usePrefsStore } from "@/stores/prefsStore";
+import { usePrivacyStore } from "@/stores/privacyStore";
+import { useUndoStore } from "@/stores/undoStore";
+import { useCommonMenuActions } from "@/presentation/hooks/useCommonMenuItems";
+import { useTagsStore } from "@/stores/tagsStore";
+import { TransactionListSkeleton } from "@/presentation/components/skeletons/TransactionListSkeleton";
 import {
   buildListData,
   useSelectModeHeader,
   useTransactionList,
   type ListItem,
-} from "../../../src/presentation/hooks/transactionList";
-import { SelectModeToolbar } from "../../../src/presentation/components/transaction/SelectModeToolbar";
-import {
-  getPreviewTransactionsForAccount,
-  type PreviewTransaction,
-} from "../../../src/schedules/preview";
+} from "@/presentation/hooks/transactionList";
+import { SelectModeToolbar } from "@/presentation/components/transaction/SelectModeToolbar";
+import { getPreviewTransactionsForAccount, type PreviewTransaction } from "@/schedules/preview";
 import {
   skipNextDate,
   postTransactionForSchedule,
   postTransactionForScheduleToday,
   deleteSchedule,
   updateSchedule,
-} from "../../../src/schedules";
-import { useSchedulesStore } from "../../../src/stores/schedulesStore";
+} from "@/schedules";
+import { useSchedulesStore } from "@/stores/schedulesStore";
 import { useTranslation } from "react-i18next";
 
 export default function AccountTransactionsScreen() {

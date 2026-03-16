@@ -2,15 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import { Pressable, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useCategoriesStore } from "../../../src/stores/categoriesStore";
-import { usePickerStore } from "../../../src/stores/pickerStore";
-import { getCategoryBalancesForMonth } from "../../../src/budgets";
-import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
-import { Text } from "../../../src/presentation/components/atoms/Text";
-import { Amount } from "../../../src/presentation/components/atoms/Amount";
-import { GlassButton } from "../../../src/presentation/components/atoms/GlassButton";
-import { CategoryPickerList, type GroupedCategory } from "../../../src/presentation/components";
-import { currentMonth } from "../../../src/lib/date";
+import { useCategoriesStore } from "@/stores/categoriesStore";
+import { usePickerStore } from "@/stores/pickerStore";
+import { getCategoryBalancesForMonth } from "@/budgets";
+import { useTheme } from "@/presentation/providers/ThemeProvider";
+import { Text } from "@/presentation/components/atoms/Text";
+import { Amount } from "@/presentation/components/atoms/Amount";
+import { GlassButton } from "@/presentation/components/atoms/GlassButton";
+import { CategoryPickerList, type GroupedCategory } from "@/presentation/components";
+import { currentMonth } from "@/lib/date";
 
 export default function CategoryPickerScreen() {
   const { month, selectedId, amount, payeeId, payeeName, transactionId, hideSplit } =

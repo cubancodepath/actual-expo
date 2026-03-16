@@ -1,8 +1,8 @@
 import { Pressable } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { SymbolView } from "expo-symbols";
-import { useTheme } from "../../../../src/presentation/providers/ThemeProvider";
-import { MonthSelector } from "../../../../src/presentation/components/budget/MonthSelector";
+import { useTheme } from "@/presentation/providers/ThemeProvider";
+import { MonthSelector } from "@/presentation/components/budget/MonthSelector";
 
 export default function BudgetStack() {
   const { colors } = useTheme();

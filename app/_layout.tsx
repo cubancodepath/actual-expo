@@ -1,4 +1,4 @@
-import "../src/i18n/config";
+import "@/i18n/config";
 import * as Sentry from "@sentry/react-native";
 import { useEffect, useRef, useState } from "react";
 import { AppState, Settings, useColorScheme } from "react-native";
@@ -11,22 +11,22 @@ import {
 import { Stack, useNavigationContainerRef, useRouter } from "expo-router";
 import { isRunningInExpoGo } from "expo";
 import * as QuickActions from "expo-quick-actions";
-import i18n from "../src/i18n/config";
-import { ThemeProvider } from "../src/presentation/providers/ThemeProvider";
-import { usePrefsStore } from "../src/stores/prefsStore";
-import { useAccountsStore } from "../src/stores/accountsStore";
-import { useCategoriesStore } from "../src/stores/categoriesStore";
-import { useBudgetStore } from "../src/stores/budgetStore";
-import { useTransactionsStore } from "../src/stores/transactionsStore";
-import { fullSync, isSwitchingBudget } from "../src/sync";
-import { ensureBudgetsDir, budgetExists } from "../src/services/budgetMetadata";
-import { openBudget } from "../src/services/budgetfiles";
-import { updateAppBadge } from "../src/lib/badge";
-import { syncShortcutCache } from "../src/lib/syncShortcutCache";
-import { UndoToast } from "../src/presentation/components";
-import { ErrorBoundary } from "../src/presentation/components/ErrorBoundary";
-import { useShakeUndo } from "../src/presentation/hooks/useShakeUndo";
-import { loadAllPersistedKeys } from "../src/services/encryptionService";
+import i18n from "@/i18n/config";
+import { ThemeProvider } from "@/presentation/providers/ThemeProvider";
+import { usePrefsStore } from "@/stores/prefsStore";
+import { useAccountsStore } from "@/stores/accountsStore";
+import { useCategoriesStore } from "@/stores/categoriesStore";
+import { useBudgetStore } from "@/stores/budgetStore";
+import { useTransactionsStore } from "@/stores/transactionsStore";
+import { fullSync, isSwitchingBudget } from "@/sync";
+import { ensureBudgetsDir, budgetExists } from "@/services/budgetMetadata";
+import { openBudget } from "@/services/budgetfiles";
+import { updateAppBadge } from "@/lib/badge";
+import { syncShortcutCache } from "@/lib/syncShortcutCache";
+import { UndoToast } from "@/presentation/components";
+import { ErrorBoundary } from "@/presentation/components/ErrorBoundary";
+import { useShakeUndo } from "@/presentation/hooks/useShakeUndo";
+import { loadAllPersistedKeys } from "@/services/encryptionService";
 
 const navigationIntegration = Sentry.reactNavigationIntegration({
   enableTimeToInitialDisplay: !isRunningInExpoGo(),

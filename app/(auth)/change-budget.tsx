@@ -2,8 +2,8 @@ import { ActivityIndicator, Pressable, RefreshControl, ScrollView, View } from "
 import { Stack, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { usePrefsStore } from "../../src/stores/prefsStore";
-import { useTheme, useThemedStyles } from "../../src/presentation/providers/ThemeProvider";
+import { usePrefsStore } from "@/stores/prefsStore";
+import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
 import {
   Text,
   Card,
@@ -12,10 +12,10 @@ import {
   Banner,
   EmptyState,
   BudgetFileRow,
-} from "../../src/presentation/components";
-import { useBudgetFiles, fileKey } from "../../src/presentation/hooks/useBudgetFiles";
-import type { ReconciledBudgetFile } from "../../src/services/budgetfiles";
-import type { Theme } from "../../src/theme";
+} from "@/presentation/components";
+import { useBudgetFiles, fileKey } from "@/presentation/hooks/useBudgetFiles";
+import type { ReconciledBudgetFile } from "@/services/budgetfiles";
+import type { Theme } from "@/theme";
 
 export default function ChangeBudgetScreen() {
   const router = useRouter();

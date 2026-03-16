@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRefreshControl } from "../../../../src/presentation/hooks/useRefreshControl";
+import { useRefreshControl } from "@/presentation/hooks/useRefreshControl";
 import {
   ActivityIndicator,
   Alert,
@@ -21,30 +21,30 @@ import {
   toggleCleared,
   updateTransaction,
   type TransactionDisplay,
-} from "../../../../src/transactions";
-import { useUndoStore } from "../../../../src/stores/undoStore";
-import type { SearchToken } from "../../../../src/transactions/types";
-import { useAccountsStore } from "../../../../src/stores/accountsStore";
-import { useCategoriesStore } from "../../../../src/stores/categoriesStore";
-import { useTheme } from "../../../../src/presentation/providers/ThemeProvider";
-import { EmptyState } from "../../../../src/presentation/components";
-import { TransactionRow } from "../../../../src/presentation/components/account/TransactionRow";
-import { DateSectionHeader } from "../../../../src/presentation/components/account/DateSectionHeader";
-import { TokenSearchBar } from "../../../../src/presentation/components/transaction/TokenSearchBar";
-import { SearchSuggestions } from "../../../../src/presentation/components/transaction/SearchSuggestions";
-import { useTagsStore } from "../../../../src/stores/tagsStore";
-import { usePayeesStore } from "../../../../src/stores/payeesStore";
-import { GlassButton } from "../../../../src/presentation/components/atoms/GlassButton";
+} from "@/transactions";
+import { useUndoStore } from "@/stores/undoStore";
+import type { SearchToken } from "@/transactions/types";
+import { useAccountsStore } from "@/stores/accountsStore";
+import { useCategoriesStore } from "@/stores/categoriesStore";
+import { useTheme } from "@/presentation/providers/ThemeProvider";
+import { EmptyState } from "@/presentation/components";
+import { TransactionRow } from "@/presentation/components/account/TransactionRow";
+import { DateSectionHeader } from "@/presentation/components/account/DateSectionHeader";
+import { TokenSearchBar } from "@/presentation/components/transaction/TokenSearchBar";
+import { SearchSuggestions } from "@/presentation/components/transaction/SearchSuggestions";
+import { useTagsStore } from "@/stores/tagsStore";
+import { usePayeesStore } from "@/stores/payeesStore";
+import { GlassButton } from "@/presentation/components/atoms/GlassButton";
 import {
   useTransactionSelection,
   useTransactionBulkActions,
   useSelectModeHeader,
   useBulkCategoryPicker,
   useBulkAccountPicker,
-} from "../../../../src/presentation/hooks/transactionList";
-import { usePickerStore } from "../../../../src/stores/pickerStore";
-import { useTabBarStore } from "../../../../src/stores/tabBarStore";
-import { SelectModeToolbar } from "../../../../src/presentation/components/transaction/SelectModeToolbar";
+} from "@/presentation/hooks/transactionList";
+import { usePickerStore } from "@/stores/pickerStore";
+import { useTabBarStore } from "@/stores/tabBarStore";
+import { SelectModeToolbar } from "@/presentation/components/transaction/SelectModeToolbar";
 
 // ---------------------------------------------------------------------------
 // Types for mixed list data

@@ -9,22 +9,22 @@ import Animated, {
 import * as ContextMenu from "zeego/context-menu";
 import { Stack, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useAccountsStore } from "../../../../src/stores/accountsStore";
-import { useRefreshControl } from "../../../../src/presentation/hooks/useRefreshControl";
-import { groupAccounts, type AccountGroup } from "../../../../src/accounts";
-import { useTheme, useThemedStyles } from "../../../../src/presentation/providers/ThemeProvider";
-import { Text } from "../../../../src/presentation/components/atoms/Text";
-import { Card } from "../../../../src/presentation/components/atoms/Card";
-import { Amount } from "../../../../src/presentation/components/atoms/Amount";
-import { RowSeparator } from "../../../../src/presentation/components/atoms/RowSeparator";
-import { Button } from "../../../../src/presentation/components/atoms/Button";
-import { EmptyState } from "../../../../src/presentation/components/molecules/EmptyState";
-import { AddTransactionButton } from "../../../../src/presentation/components/molecules/AddTransactionButton";
-import type { Theme } from "../../../../src/theme";
-import { useCommonMenuActions } from "../../../../src/presentation/hooks/useCommonMenuItems";
+import { useAccountsStore } from "@/stores/accountsStore";
+import { useRefreshControl } from "@/presentation/hooks/useRefreshControl";
+import { groupAccounts, type AccountGroup } from "@/accounts";
+import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
+import { Text } from "@/presentation/components/atoms/Text";
+import { Card } from "@/presentation/components/atoms/Card";
+import { Amount } from "@/presentation/components/atoms/Amount";
+import { RowSeparator } from "@/presentation/components/atoms/RowSeparator";
+import { Button } from "@/presentation/components/atoms/Button";
+import { EmptyState } from "@/presentation/components/molecules/EmptyState";
+import { AddTransactionButton } from "@/presentation/components/molecules/AddTransactionButton";
+import type { Theme } from "@/theme";
+import { useCommonMenuActions } from "@/presentation/hooks/useCommonMenuItems";
 import { useTranslation } from "react-i18next";
-import { AccountListSkeleton } from "../../../../src/presentation/components/skeletons/AccountListSkeleton";
-import type { Account } from "../../../../src/accounts/types";
+import { AccountListSkeleton } from "@/presentation/components/skeletons/AccountListSkeleton";
+import type { Account } from "@/accounts/types";
 
 // ---------------------------------------------------------------------------
 // Collapsible section

@@ -3,7 +3,7 @@ import { ActionSheetIOS, Alert, Platform, ScrollView, Switch, TextInput, View } 
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
-import { useTheme, useThemedStyles } from "../../../src/presentation/providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
 import {
   Text,
   Card,
@@ -11,24 +11,24 @@ import {
   SectionHeader,
   Button,
   promptToEnableEncryption,
-} from "../../../src/presentation/components";
-import { usePreferencesStore } from "../../../src/stores/preferencesStore";
-import { usePrefsStore } from "../../../src/stores/prefsStore";
-import { useFeatureFlagsStore } from "../../../src/stores/featureFlagsStore";
-import { ALL_FEATURE_FLAGS, FEATURE_FLAG_LABELS } from "../../../src/preferences/featureFlags";
+} from "@/presentation/components";
+import { usePreferencesStore } from "@/stores/preferencesStore";
+import { usePrefsStore } from "@/stores/prefsStore";
+import { useFeatureFlagsStore } from "@/stores/featureFlagsStore";
+import { ALL_FEATURE_FLAGS, FEATURE_FLAG_LABELS } from "@/preferences/featureFlags";
 import {
   DATE_FORMAT_OPTIONS,
   NUMBER_FORMAT_OPTIONS,
   DAY_OF_WEEK_OPTIONS,
-} from "../../../src/preferences/types";
-import { currencies, getCurrency } from "../../../src/lib/currencies";
+} from "@/preferences/types";
+import { currencies, getCurrency } from "@/lib/currencies";
 import {
   deleteBudget,
   deleteFromServer,
   uploadBudget,
   convertToLocalOnly,
-} from "../../../src/services/budgetfiles";
-import type { Theme } from "../../../src/theme";
+} from "@/services/budgetfiles";
+import type { Theme } from "@/theme";
 
 // Conditionally import SwiftUI Picker on iOS
 let SwiftPicker: typeof import("@expo/ui/swift-ui").Picker | null = null;

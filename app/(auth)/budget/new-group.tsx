@@ -2,11 +2,11 @@ import { useState } from "react";
 import { Pressable, TextInput, View } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
-import { useCategoriesStore } from "../../../src/stores/categoriesStore";
-import { useBudgetStore } from "../../../src/stores/budgetStore";
-import { Text } from "../../../src/presentation/components/atoms/Text";
-import { IconButton } from "../../../src/presentation/components/atoms/IconButton";
+import { useTheme } from "@/presentation/providers/ThemeProvider";
+import { useCategoriesStore } from "@/stores/categoriesStore";
+import { useBudgetStore } from "@/stores/budgetStore";
+import { Text } from "@/presentation/components/atoms/Text";
+import { IconButton } from "@/presentation/components/atoms/IconButton";
 
 export default function NewGroupScreen() {
   const { t } = useTranslation("budget");

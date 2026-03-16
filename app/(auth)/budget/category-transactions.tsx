@@ -3,21 +3,21 @@ import { ActivityIndicator, RefreshControl, View } from "react-native";
 import { LegendList } from "@legendapp/list";
 import { Stack, useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
-import { EmptyState } from "../../../src/presentation/components";
-import { IconButton } from "../../../src/presentation/components/atoms/IconButton";
-import { TransactionRow } from "../../../src/presentation/components/account/TransactionRow";
-import { DateSectionHeader } from "../../../src/presentation/components/account/DateSectionHeader";
-import { SelectModeToolbar } from "../../../src/presentation/components/transaction/SelectModeToolbar";
-import { transactionQuery } from "../../../src/transactions/query";
-import { useBudgetStore } from "../../../src/stores/budgetStore";
-import { useUndoStore } from "../../../src/stores/undoStore";
-import { useTagsStore } from "../../../src/stores/tagsStore";
+import { useTheme } from "@/presentation/providers/ThemeProvider";
+import { EmptyState } from "@/presentation/components";
+import { IconButton } from "@/presentation/components/atoms/IconButton";
+import { TransactionRow } from "@/presentation/components/account/TransactionRow";
+import { DateSectionHeader } from "@/presentation/components/account/DateSectionHeader";
+import { SelectModeToolbar } from "@/presentation/components/transaction/SelectModeToolbar";
+import { transactionQuery } from "@/transactions/query";
+import { useBudgetStore } from "@/stores/budgetStore";
+import { useUndoStore } from "@/stores/undoStore";
+import { useTagsStore } from "@/stores/tagsStore";
 import {
   useSelectModeHeader,
   useTransactionList,
   type ListItem,
-} from "../../../src/presentation/hooks/transactionList";
+} from "@/presentation/hooks/transactionList";
 
 // ---------------------------------------------------------------------------
 // Helpers

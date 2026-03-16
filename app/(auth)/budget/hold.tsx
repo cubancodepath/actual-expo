@@ -2,19 +2,19 @@ import { useEffect, useRef, useState } from "react";
 import { Keyboard, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
-import { useBudgetStore } from "../../../src/stores/budgetStore";
-import { Text } from "../../../src/presentation/components/atoms/Text";
-import { Button } from "../../../src/presentation/components/atoms/Button";
-import { IconButton } from "../../../src/presentation/components/atoms/IconButton";
+import { useTheme } from "@/presentation/providers/ThemeProvider";
+import { useBudgetStore } from "@/stores/budgetStore";
+import { Text } from "@/presentation/components/atoms/Text";
+import { Button } from "@/presentation/components/atoms/Button";
+import { IconButton } from "@/presentation/components/atoms/IconButton";
 import {
   CurrencyInput,
   type CurrencyInputRef,
-} from "../../../src/presentation/components/atoms/CurrencyInput";
-import { CalculatorToolbar } from "../../../src/presentation/components/atoms/CalculatorToolbar";
-import { GlassButton } from "../../../src/presentation/components/atoms/GlassButton";
-import { KeyboardToolbar } from "../../../src/presentation/components/molecules/KeyboardToolbar";
-import { Amount } from "../../../src/presentation/components/atoms/Amount";
+} from "@/presentation/components/atoms/CurrencyInput";
+import { CalculatorToolbar } from "@/presentation/components/atoms/CalculatorToolbar";
+import { GlassButton } from "@/presentation/components/atoms/GlassButton";
+import { KeyboardToolbar } from "@/presentation/components/molecules/KeyboardToolbar";
+import { Amount } from "@/presentation/components/atoms/Amount";
 
 export default function HoldScreen() {
   const { t } = useTranslation("budget");

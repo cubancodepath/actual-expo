@@ -2,15 +2,15 @@ import { useEffect, useState } from "react";
 import { Pressable, SafeAreaView, ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useCategoriesStore } from "../../../src/stores/categoriesStore";
-import { usePickerStore } from "../../../src/stores/pickerStore";
-import { getCategoryBalancesForMonth } from "../../../src/budgets";
-import { useTheme, useThemedStyles } from "../../../src/presentation/providers/ThemeProvider";
-import { Text } from "../../../src/presentation/components/atoms/Text";
-import { Amount } from "../../../src/presentation/components/atoms/Amount";
-import { GlassButton } from "../../../src/presentation/components/atoms/GlassButton";
-import { currentMonth } from "../../../src/lib/date";
-import type { Theme } from "../../../src/theme";
+import { useCategoriesStore } from "@/stores/categoriesStore";
+import { usePickerStore } from "@/stores/pickerStore";
+import { getCategoryBalancesForMonth } from "@/budgets";
+import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
+import { Text } from "@/presentation/components/atoms/Text";
+import { Amount } from "@/presentation/components/atoms/Amount";
+import { GlassButton } from "@/presentation/components/atoms/GlassButton";
+import { currentMonth } from "@/lib/date";
+import type { Theme } from "@/theme";
 
 export default function SplitCategoryPickerScreen() {
   const { splitLineId, selectedId } = useLocalSearchParams<{

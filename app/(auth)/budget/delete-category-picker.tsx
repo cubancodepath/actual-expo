@@ -2,12 +2,12 @@ import { useMemo } from "react";
 import { Alert, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { useBudgetStore } from "../../../src/stores/budgetStore";
-import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
-import { Amount } from "../../../src/presentation/components/atoms/Amount";
-import { Text } from "../../../src/presentation/components/atoms/Text";
-import { GlassButton } from "../../../src/presentation/components/atoms/GlassButton";
-import { CategoryPickerList, type GroupedCategory } from "../../../src/presentation/components";
+import { useBudgetStore } from "@/stores/budgetStore";
+import { useTheme } from "@/presentation/providers/ThemeProvider";
+import { Amount } from "@/presentation/components/atoms/Amount";
+import { Text } from "@/presentation/components/atoms/Text";
+import { GlassButton } from "@/presentation/components/atoms/GlassButton";
+import { CategoryPickerList, type GroupedCategory } from "@/presentation/components";
 
 export default function DeleteCategoryPickerScreen() {
   const { t } = useTranslation("budget");

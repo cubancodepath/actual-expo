@@ -9,10 +9,10 @@ import {
 import { Stack, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
-import { usePrefsStore } from "../../src/stores/prefsStore";
-import { resetAllStores } from "../../src/stores/resetStores";
-import { resetSyncState, clearSwitchingFlag } from "../../src/sync";
-import { useTheme, useThemedStyles } from "../../src/presentation/providers/ThemeProvider";
+import { usePrefsStore } from "@/stores/prefsStore";
+import { resetAllStores } from "@/stores/resetStores";
+import { resetSyncState, clearSwitchingFlag } from "@/sync";
+import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
 import {
   Text,
   Card,
@@ -21,11 +21,11 @@ import {
   EmptyState,
   BudgetFileRow,
   SwipeableRow,
-} from "../../src/presentation/components";
-import { useBudgetFiles, fileKey } from "../../src/presentation/hooks/useBudgetFiles";
-import { useFileActionSheet } from "../../src/presentation/hooks/useFileActionSheet";
-import type { ReconciledBudgetFile } from "../../src/services/budgetfiles";
-import type { Theme } from "../../src/theme";
+} from "@/presentation/components";
+import { useBudgetFiles, fileKey } from "@/presentation/hooks/useBudgetFiles";
+import { useFileActionSheet } from "@/presentation/hooks/useFileActionSheet";
+import type { ReconciledBudgetFile } from "@/services/budgetfiles";
+import type { Theme } from "@/theme";
 
 export default function FilesScreen() {
   const router = useRouter();

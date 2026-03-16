@@ -2,17 +2,17 @@ import { useEffect, useRef, useState } from "react";
 import { Alert, Pressable, TextInput, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
-import { useCategoriesStore } from "../../../src/stores/categoriesStore";
-import { useBudgetStore } from "../../../src/stores/budgetStore";
-import { useUndoStore } from "../../../src/stores/undoStore";
-import { Text } from "../../../src/presentation/components/atoms/Text";
-import { Button } from "../../../src/presentation/components/atoms/Button";
-import { IconButton } from "../../../src/presentation/components/atoms/IconButton";
-import { parseGoalDef } from "../../../src/goals";
-import { describeTemplate, translateDescription } from "../../../src/goals/describe";
-import i18n from "../../../src/i18n/config";
-import { useFeatureFlag } from "../../../src/hooks/useFeatureFlag";
+import { useTheme } from "@/presentation/providers/ThemeProvider";
+import { useCategoriesStore } from "@/stores/categoriesStore";
+import { useBudgetStore } from "@/stores/budgetStore";
+import { useUndoStore } from "@/stores/undoStore";
+import { Text } from "@/presentation/components/atoms/Text";
+import { Button } from "@/presentation/components/atoms/Button";
+import { IconButton } from "@/presentation/components/atoms/IconButton";
+import { parseGoalDef } from "@/goals";
+import { describeTemplate, translateDescription } from "@/goals/describe";
+import i18n from "@/i18n/config";
+import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 
 export default function QuickEditCategoryScreen() {
   const { t } = useTranslation("budget");

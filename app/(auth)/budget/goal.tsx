@@ -5,29 +5,29 @@ import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Host, DatePicker, Picker, Text as SwiftText } from "@expo/ui/swift-ui";
 import { useTranslation } from "react-i18next";
 import { datePickerStyle, frame, pickerStyle, tag, tint } from "@expo/ui/swift-ui/modifiers";
-import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
-import { useCategoriesStore } from "../../../src/stores/categoriesStore";
-import { useBudgetStore } from "../../../src/stores/budgetStore";
-import { Text } from "../../../src/presentation/components/atoms/Text";
-import { Button } from "../../../src/presentation/components/atoms/Button";
-import { IconButton } from "../../../src/presentation/components/atoms/IconButton";
-import { Card } from "../../../src/presentation/components/atoms/Card";
-import { ListItem } from "../../../src/presentation/components/molecules/ListItem";
-import { Divider } from "../../../src/presentation/components/atoms/Divider";
+import { useTheme } from "@/presentation/providers/ThemeProvider";
+import { useCategoriesStore } from "@/stores/categoriesStore";
+import { useBudgetStore } from "@/stores/budgetStore";
+import { Text } from "@/presentation/components/atoms/Text";
+import { Button } from "@/presentation/components/atoms/Button";
+import { IconButton } from "@/presentation/components/atoms/IconButton";
+import { Card } from "@/presentation/components/atoms/Card";
+import { ListItem } from "@/presentation/components/molecules/ListItem";
+import { Divider } from "@/presentation/components/atoms/Divider";
 import {
   CurrencyInput,
   type CurrencyInputRef,
-} from "../../../src/presentation/components/atoms/CurrencyInput";
-import { CalculatorToolbar } from "../../../src/presentation/components/atoms/CalculatorToolbar";
-import { GlassButton } from "../../../src/presentation/components/atoms/GlassButton";
-import { KeyboardToolbar } from "../../../src/presentation/components/molecules/KeyboardToolbar";
-import { getGoalTemplates, setGoalTemplates } from "../../../src/goals";
-import { updateGoalIndicator } from "../../../src/goals/apply";
-import { amountToInteger, integerToAmount } from "../../../src/goals/engine";
-import { batchMessages } from "../../../src/sync";
-import { formatDateLong } from "../../../src/lib/date";
-import { formatBalance } from "../../../src/lib/format";
-import type { Template } from "../../../src/goals/types";
+} from "@/presentation/components/atoms/CurrencyInput";
+import { CalculatorToolbar } from "@/presentation/components/atoms/CalculatorToolbar";
+import { GlassButton } from "@/presentation/components/atoms/GlassButton";
+import { KeyboardToolbar } from "@/presentation/components/molecules/KeyboardToolbar";
+import { getGoalTemplates, setGoalTemplates } from "@/goals";
+import { updateGoalIndicator } from "@/goals/apply";
+import { amountToInteger, integerToAmount } from "@/goals/engine";
+import { batchMessages } from "@/sync";
+import { formatDateLong } from "@/lib/date";
+import { formatBalance } from "@/lib/format";
+import type { Template } from "@/goals/types";
 
 // ---------------------------------------------------------------------------
 // Type options
@@ -227,7 +227,7 @@ export default function GoalEditorScreen() {
       // - `simple` with `limit` but no `monthly` (#template up to X)
       // - legacy `[limit, refill]` pair from older Expo saves
       const simpleWithLimitOnly = templates.find(
-        (t): t is import("../../../src/goals/types").SimpleTemplate =>
+        (t): t is import("@/goals/types").SimpleTemplate =>
           t.type === "simple" && !!t.limit && t.monthly == null,
       );
       if (simpleWithLimitOnly?.limit) {

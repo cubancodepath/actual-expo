@@ -1,7 +1,7 @@
 import { NativeTabs } from "expo-router/unstable-native-tabs";
 import { useTranslation } from "react-i18next";
-import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
-import { useTabBarStore } from "../../../src/stores/tabBarStore";
+import { useTheme } from "@/presentation/providers/ThemeProvider";
+import { useTabBarStore } from "@/stores/tabBarStore";
 
 export const unstable_settings = {
   initialRouteName: "(budget)",

@@ -3,22 +3,22 @@ import { Keyboard, Pressable, ScrollView, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
-import { palette } from "../../../src/theme/colors";
-import { useBudgetStore } from "../../../src/stores/budgetStore";
-import { transferMultipleCategories } from "../../../src/budgets";
+import { useTheme } from "@/presentation/providers/ThemeProvider";
+import { palette } from "@/theme/colors";
+import { useBudgetStore } from "@/stores/budgetStore";
+import { transferMultipleCategories } from "@/budgets";
 import { TO_BUDGET_ID } from "./cover-category-picker";
-import { Text } from "../../../src/presentation/components/atoms/Text";
-import { Amount } from "../../../src/presentation/components/atoms/Amount";
-import { Button } from "../../../src/presentation/components/atoms/Button";
-import { IconButton } from "../../../src/presentation/components/atoms/IconButton";
+import { Text } from "@/presentation/components/atoms/Text";
+import { Amount } from "@/presentation/components/atoms/Amount";
+import { Button } from "@/presentation/components/atoms/Button";
+import { IconButton } from "@/presentation/components/atoms/IconButton";
 import {
   CompactCurrencyInput,
   type CompactCurrencyInputRef,
-} from "../../../src/presentation/components/atoms/CompactCurrencyInput";
-import { GlassButton } from "../../../src/presentation/components/atoms/GlassButton";
-import { CalculatorToolbar } from "../../../src/presentation/components/atoms/CalculatorToolbar";
-import { KeyboardToolbar } from "../../../src/presentation/components/molecules/KeyboardToolbar";
+} from "@/presentation/components/atoms/CompactCurrencyInput";
+import { GlassButton } from "@/presentation/components/atoms/GlassButton";
+import { CalculatorToolbar } from "@/presentation/components/atoms/CalculatorToolbar";
+import { KeyboardToolbar } from "@/presentation/components/molecules/KeyboardToolbar";
 
 type SourceEntry = {
   id: string;

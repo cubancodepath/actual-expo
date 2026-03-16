@@ -2,11 +2,11 @@ import { useMemo } from "react";
 import { Pressable, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { useBudgetStore } from "../../../src/stores/budgetStore";
-import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
-import { Text } from "../../../src/presentation/components/atoms/Text";
-import { Amount } from "../../../src/presentation/components/atoms/Amount";
-import { CategoryPickerList, type GroupedCategory } from "../../../src/presentation/components";
+import { useBudgetStore } from "@/stores/budgetStore";
+import { useTheme } from "@/presentation/providers/ThemeProvider";
+import { Text } from "@/presentation/components/atoms/Text";
+import { Amount } from "@/presentation/components/atoms/Amount";
+import { CategoryPickerList, type GroupedCategory } from "@/presentation/components";
 
 export const TO_BUDGET_ID = "__to_budget__";
 

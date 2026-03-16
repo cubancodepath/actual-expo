@@ -1,14 +1,14 @@
 import { Pressable, ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useAccountsStore } from "../../../src/stores/accountsStore";
-import { usePickerStore } from "../../../src/stores/pickerStore";
-import { groupAccounts } from "../../../src/accounts";
-import { useTheme, useThemedStyles } from "../../../src/presentation/providers/ThemeProvider";
-import { Text } from "../../../src/presentation/components/atoms/Text";
-import { GlassButton } from "../../../src/presentation/components/atoms/GlassButton";
-import { Amount } from "../../../src/presentation/components/atoms/Amount";
-import type { Theme } from "../../../src/theme";
+import { useAccountsStore } from "@/stores/accountsStore";
+import { usePickerStore } from "@/stores/pickerStore";
+import { groupAccounts } from "@/accounts";
+import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
+import { Text } from "@/presentation/components/atoms/Text";
+import { GlassButton } from "@/presentation/components/atoms/GlassButton";
+import { Amount } from "@/presentation/components/atoms/Amount";
+import type { Theme } from "@/theme";
 
 export default function AccountPickerScreen() {
   const { selectedId } = useLocalSearchParams<{ selectedId?: string }>();

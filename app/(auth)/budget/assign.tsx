@@ -4,23 +4,23 @@ import { Stack, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
-import { useBudgetStore } from "../../../src/stores/budgetStore";
-import { Text } from "../../../src/presentation/components/atoms/Text";
-import { IconButton } from "../../../src/presentation/components/atoms/IconButton";
-import { Button } from "../../../src/presentation/components/atoms/Button";
+import { useTheme } from "@/presentation/providers/ThemeProvider";
+import { useBudgetStore } from "@/stores/budgetStore";
+import { Text } from "@/presentation/components/atoms/Text";
+import { IconButton } from "@/presentation/components/atoms/IconButton";
+import { Button } from "@/presentation/components/atoms/Button";
 import {
   CompactCurrencyInput,
   type CompactCurrencyInputRef,
-} from "../../../src/presentation/components/atoms/CompactCurrencyInput";
-import { CalculatorToolbar } from "../../../src/presentation/components/atoms/CalculatorToolbar";
-import { KeyboardToolbar } from "../../../src/presentation/components/molecules/KeyboardToolbar";
-import { GlassButton } from "../../../src/presentation/components/atoms/GlassButton";
-import { Amount } from "../../../src/presentation/components/atoms/Amount";
+} from "@/presentation/components/atoms/CompactCurrencyInput";
+import { CalculatorToolbar } from "@/presentation/components/atoms/CalculatorToolbar";
+import { KeyboardToolbar } from "@/presentation/components/molecules/KeyboardToolbar";
+import { GlassButton } from "@/presentation/components/atoms/GlassButton";
+import { Amount } from "@/presentation/components/atoms/Amount";
 
-import { getGoalProgress } from "../../../src/goals/progress";
-import { useFeatureFlag } from "../../../src/hooks/useFeatureFlag";
-import type { BudgetCategory } from "../../../src/budgets/types";
+import { getGoalProgress } from "@/goals/progress";
+import { useFeatureFlag } from "@/hooks/useFeatureFlag";
+import type { BudgetCategory } from "@/budgets/types";
 
 type CategorySection = {
   key: string;

@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { useTheme } from "../../../../src/presentation/providers/ThemeProvider";
-import { useAccountsStore } from "../../../../src/stores/accountsStore";
-import { lockTransactions, getClearedBalance } from "../../../../src/transactions";
-import { Text } from "../../../../src/presentation/components/atoms/Text";
-import { Button } from "../../../../src/presentation/components/atoms/Button";
-import { Amount } from "../../../../src/presentation/components/atoms/Amount";
-import { IconButton } from "../../../../src/presentation/components/atoms/IconButton";
+import { useTheme } from "@/presentation/providers/ThemeProvider";
+import { useAccountsStore } from "@/stores/accountsStore";
+import { lockTransactions, getClearedBalance } from "@/transactions";
+import { Text } from "@/presentation/components/atoms/Text";
+import { Button } from "@/presentation/components/atoms/Button";
+import { Amount } from "@/presentation/components/atoms/Amount";
+import { IconButton } from "@/presentation/components/atoms/IconButton";
 import { useTranslation } from "react-i18next";
 
 export default function ReconcileConfirmScreen() {

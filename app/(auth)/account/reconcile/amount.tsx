@@ -9,19 +9,19 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
-import { useTheme } from "../../../../src/presentation/providers/ThemeProvider";
-import { useAccountsStore } from "../../../../src/stores/accountsStore";
-import { reconcileAccount } from "../../../../src/transactions";
-import { Text } from "../../../../src/presentation/components/atoms/Text";
-import { Button } from "../../../../src/presentation/components/atoms/Button";
+import { useTheme } from "@/presentation/providers/ThemeProvider";
+import { useAccountsStore } from "@/stores/accountsStore";
+import { reconcileAccount } from "@/transactions";
+import { Text } from "@/presentation/components/atoms/Text";
+import { Button } from "@/presentation/components/atoms/Button";
 import {
   CompactCurrencyInput,
   type CompactCurrencyInputRef,
-} from "../../../../src/presentation/components/atoms/CompactCurrencyInput";
-import { CalculatorToolbar } from "../../../../src/presentation/components/atoms/CalculatorToolbar";
-import { GlassButton } from "../../../../src/presentation/components/atoms/GlassButton";
-import { KeyboardToolbar } from "../../../../src/presentation/components/molecules/KeyboardToolbar";
-import { formatAmount } from "../../../../src/lib/format";
+} from "@/presentation/components/atoms/CompactCurrencyInput";
+import { CalculatorToolbar } from "@/presentation/components/atoms/CalculatorToolbar";
+import { GlassButton } from "@/presentation/components/atoms/GlassButton";
+import { KeyboardToolbar } from "@/presentation/components/molecules/KeyboardToolbar";
+import { formatAmount } from "@/lib/format";
 import { useTranslation } from "react-i18next";
 
 // ---------------------------------------------------------------------------

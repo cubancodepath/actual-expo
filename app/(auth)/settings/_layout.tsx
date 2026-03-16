@@ -1,8 +1,8 @@
 import { Stack, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
-import { themedScreenOptions } from "../../../src/presentation/navigation/screenOptions";
-import { IconButton, EncryptionPasswordPrompt } from "../../../src/presentation/components";
+import { useTheme } from "@/presentation/providers/ThemeProvider";
+import { themedScreenOptions } from "@/presentation/navigation/screenOptions";
+import { IconButton, EncryptionPasswordPrompt } from "@/presentation/components";
 
 export default function SettingsLayout() {
   const theme = useTheme();

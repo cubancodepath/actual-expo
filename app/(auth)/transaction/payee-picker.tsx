@@ -2,13 +2,13 @@ import { useEffect, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { usePayeesStore } from "../../../src/stores/payeesStore";
-import { usePickerStore } from "../../../src/stores/pickerStore";
-import { useTheme, useThemedStyles } from "../../../src/presentation/providers/ThemeProvider";
-import { Text } from "../../../src/presentation/components/atoms/Text";
-import { GlassButton } from "../../../src/presentation/components/atoms/GlassButton";
-import { SearchBar } from "../../../src/presentation/components/molecules/SearchBar";
-import type { Theme } from "../../../src/theme";
+import { usePayeesStore } from "@/stores/payeesStore";
+import { usePickerStore } from "@/stores/pickerStore";
+import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
+import { Text } from "@/presentation/components/atoms/Text";
+import { GlassButton } from "@/presentation/components/atoms/GlassButton";
+import { SearchBar } from "@/presentation/components/molecules/SearchBar";
+import type { Theme } from "@/theme";
 
 export default function PayeePickerScreen() {
   const { selectedId, selectedName, accountId } = useLocalSearchParams<{

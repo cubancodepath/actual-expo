@@ -8,30 +8,27 @@ import Animated, {
   interpolate,
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
-import { useAccountsStore } from "../../../src/stores/accountsStore";
-import { useSchedulesStore } from "../../../src/stores/schedulesStore";
-import { usePickerStore } from "../../../src/stores/pickerStore";
-import { useCategoriesStore } from "../../../src/stores/categoriesStore";
-import { getRecurringDescription } from "../../../src/schedules";
-import { todayStr } from "../../../src/lib/date";
-import { withOpacity } from "../../../src/lib/colors";
-import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
-import { Button } from "../../../src/presentation/components/atoms/Button";
-import { Text } from "../../../src/presentation/components/atoms/Text";
-import { GlassButton } from "../../../src/presentation/components/atoms/GlassButton";
+import { useAccountsStore } from "@/stores/accountsStore";
+import { useSchedulesStore } from "@/stores/schedulesStore";
+import { usePickerStore } from "@/stores/pickerStore";
+import { useCategoriesStore } from "@/stores/categoriesStore";
+import { getRecurringDescription } from "@/schedules";
+import { todayStr } from "@/lib/date";
+import { withOpacity } from "@/lib/colors";
+import { useTheme } from "@/presentation/providers/ThemeProvider";
+import { Button } from "@/presentation/components/atoms/Button";
+import { Text } from "@/presentation/components/atoms/Text";
+import { GlassButton } from "@/presentation/components/atoms/GlassButton";
 import {
   CurrencyInput,
   type CurrencyInputRef,
-} from "../../../src/presentation/components/atoms/CurrencyInput";
-import { KeyboardToolbar } from "../../../src/presentation/components/molecules/KeyboardToolbar";
-import { CalculatorToolbar } from "../../../src/presentation/components/atoms/CalculatorToolbar";
-import { Banner } from "../../../src/presentation/components/molecules/Banner";
-import {
-  TypeToggle,
-  type TransactionType,
-} from "../../../src/presentation/components/transaction/TypeToggle";
-import { DetailRow } from "../../../src/presentation/components/transaction/DetailRow";
-import type { RecurConfig, RuleCondition, RuleAction } from "../../../src/schedules/types";
+} from "@/presentation/components/atoms/CurrencyInput";
+import { KeyboardToolbar } from "@/presentation/components/molecules/KeyboardToolbar";
+import { CalculatorToolbar } from "@/presentation/components/atoms/CalculatorToolbar";
+import { Banner } from "@/presentation/components/molecules/Banner";
+import { TypeToggle, type TransactionType } from "@/presentation/components/transaction/TypeToggle";
+import { DetailRow } from "@/presentation/components/transaction/DetailRow";
+import type { RecurConfig, RuleCondition, RuleAction } from "@/schedules/types";
 
 export default function NewScheduleScreen() {
   const router = useRouter();

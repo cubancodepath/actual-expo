@@ -2,11 +2,11 @@ import { useMemo } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
-import { useBudgetStore } from "../../../src/stores/budgetStore";
-import { Text } from "../../../src/presentation/components/atoms/Text";
-import { Amount } from "../../../src/presentation/components/atoms/Amount";
-import { IconButton } from "../../../src/presentation/components/atoms/IconButton";
+import { useTheme } from "@/presentation/providers/ThemeProvider";
+import { useBudgetStore } from "@/stores/budgetStore";
+import { Text } from "@/presentation/components/atoms/Text";
+import { Amount } from "@/presentation/components/atoms/Amount";
+import { IconButton } from "@/presentation/components/atoms/IconButton";
 
 type OverspentCategory = {
   id: string;

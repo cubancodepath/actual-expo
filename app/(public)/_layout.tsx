@@ -1,5 +1,5 @@
 import { Stack } from "expo-router";
-import { usePrefsStore } from "../../src/stores/prefsStore";
+import { usePrefsStore } from "@/stores/prefsStore";
 
 export default function PublicLayout() {
   const hasSeenOnboarding = usePrefsStore((s) => s.hasSeenOnboarding);

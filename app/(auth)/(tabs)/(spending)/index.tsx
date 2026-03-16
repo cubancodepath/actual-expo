@@ -4,40 +4,37 @@ import { ActivityIndicator, Alert, LayoutAnimation, RefreshControl } from "react
 import { LegendList } from "@legendapp/list";
 import { Stack, useFocusEffect, useNavigation, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { getAllTransactions, getUnclearedCount } from "../../../../src/transactions";
-import { usePrivacyStore } from "../../../../src/stores/privacyStore";
-import { useUndoStore } from "../../../../src/stores/undoStore";
-import { useCommonMenuActions } from "../../../../src/presentation/hooks/useCommonMenuItems";
-import { useTabBarStore } from "../../../../src/stores/tabBarStore";
-import { useTheme } from "../../../../src/presentation/providers/ThemeProvider";
-import { EmptyState } from "../../../../src/presentation/components";
-import { TransactionListSkeleton } from "../../../../src/presentation/components/skeletons/TransactionListSkeleton";
-import { UnclearedPill } from "../../../../src/presentation/components/transaction/UnclearedPill";
-import { TransactionRow } from "../../../../src/presentation/components/account/TransactionRow";
-import { DateSectionHeader } from "../../../../src/presentation/components/account/DateSectionHeader";
-import { UpcomingSectionHeader } from "../../../../src/presentation/components/account/UpcomingSectionHeader";
-import { UpcomingScheduleRow } from "../../../../src/presentation/components/account/UpcomingScheduleRow";
-import { AddTransactionButton } from "../../../../src/presentation/components/molecules/AddTransactionButton";
-import { useTagsStore } from "../../../../src/stores/tagsStore";
+import { getAllTransactions, getUnclearedCount } from "@/transactions";
+import { usePrivacyStore } from "@/stores/privacyStore";
+import { useUndoStore } from "@/stores/undoStore";
+import { useCommonMenuActions } from "@/presentation/hooks/useCommonMenuItems";
+import { useTabBarStore } from "@/stores/tabBarStore";
+import { useTheme } from "@/presentation/providers/ThemeProvider";
+import { EmptyState } from "@/presentation/components";
+import { TransactionListSkeleton } from "@/presentation/components/skeletons/TransactionListSkeleton";
+import { UnclearedPill } from "@/presentation/components/transaction/UnclearedPill";
+import { TransactionRow } from "@/presentation/components/account/TransactionRow";
+import { DateSectionHeader } from "@/presentation/components/account/DateSectionHeader";
+import { UpcomingSectionHeader } from "@/presentation/components/account/UpcomingSectionHeader";
+import { UpcomingScheduleRow } from "@/presentation/components/account/UpcomingScheduleRow";
+import { AddTransactionButton } from "@/presentation/components/molecules/AddTransactionButton";
+import { useTagsStore } from "@/stores/tagsStore";
 import {
   buildListData,
   useSelectModeHeader,
   useTransactionList,
   type ListItem,
-} from "../../../../src/presentation/hooks/transactionList";
-import { SelectModeToolbar } from "../../../../src/presentation/components/transaction/SelectModeToolbar";
-import {
-  getAllPreviewTransactions,
-  type PreviewTransaction,
-} from "../../../../src/schedules/preview";
+} from "@/presentation/hooks/transactionList";
+import { SelectModeToolbar } from "@/presentation/components/transaction/SelectModeToolbar";
+import { getAllPreviewTransactions, type PreviewTransaction } from "@/schedules/preview";
 import {
   skipNextDate,
   postTransactionForSchedule,
   postTransactionForScheduleToday,
   deleteSchedule,
   updateSchedule,
-} from "../../../../src/schedules";
-import { useSchedulesStore } from "../../../../src/stores/schedulesStore";
+} from "@/schedules";
+import { useSchedulesStore } from "@/stores/schedulesStore";
 
 export default function SpendingScreen() {
   const navigation = useNavigation();

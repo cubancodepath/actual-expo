@@ -12,7 +12,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { scheduleOnRN } from 'react-native-worklets';
+import { scheduleOnRN } from "react-native-worklets";
 import Animated, {
   useAnimatedStyle,
   useReducedMotion,
@@ -20,10 +20,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from "react-native-reanimated";
-import {
-  useTheme,
-  useThemedStyles,
-} from "../../providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Text } from "../atoms/Text";
 import { Button } from "../atoms/Button";
 import { Card } from "../atoms/Card";
@@ -40,7 +37,12 @@ import {
   seedLocalBudget,
   type CategorySelection,
 } from "../../../services/seedBudget";
-import { ensureBudgetsDir, idFromBudgetName, getBudgetDir, writeMetadata } from "../../../services/budgetMetadata";
+import {
+  ensureBudgetsDir,
+  idFromBudgetName,
+  getBudgetDir,
+  writeMetadata,
+} from "../../../services/budgetMetadata";
 import { openDatabase } from "../../../db";
 import { loadClock, fullSync } from "../../../sync";
 import { uploadBudget } from "../../../services/budgetfiles";
@@ -75,9 +77,7 @@ function ProgressBar({ step, total }: { step: number; total: number }) {
 
   useEffect(() => {
     const pct = step / total;
-    width.value = reducedMotion
-      ? pct
-      : withSpring(pct, { damping: 28, stiffness: 200 });
+    width.value = reducedMotion ? pct : withSpring(pct, { damping: 28, stiffness: 200 });
   }, [step]);
 
   const fillStyle = useAnimatedStyle(() => ({
@@ -146,10 +146,7 @@ function CategoryRow({
           color={checked ? theme.colors.primary : theme.colors.textMuted}
         />
       </Animated.View>
-      <Text
-        variant="bodyLg"
-        color={checked ? theme.colors.textPrimary : theme.colors.textMuted}
-      >
+      <Text variant="bodyLg" color={checked ? theme.colors.textPrimary : theme.colors.textMuted}>
         {cat.name}
       </Text>
     </Pressable>
@@ -197,13 +194,7 @@ function ReadyCheckmark() {
 
 // ─── Back Link ─────────────────────────────────────────────────────────────
 
-function BackLink({
-  onPress,
-  label = "Back",
-}: {
-  onPress: () => void;
-  label?: string;
-}) {
+function BackLink({ onPress, label = "Back" }: { onPress: () => void; label?: string }) {
   const theme = useTheme();
   return (
     <Pressable
@@ -217,11 +208,7 @@ function BackLink({
         gap: 2,
       }}
     >
-      <Icon
-        name="chevron-back-outline"
-        size={16}
-        color={theme.colors.textSecondary}
-      />
+      <Icon name="chevron-back-outline" size={16} color={theme.colors.textSecondary} />
       <Text variant="bodySm" color={theme.colors.textSecondary}>
         {label}
       </Text>
@@ -284,16 +271,14 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
   const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion() ?? false;
-  const { t } = useTranslation('setup');
+  const { t } = useTranslation("setup");
 
   const [step, setStep] = useState<Step>("budget-name");
   const [prevStep, setPrevStep] = useState<Step | null>(null);
   const [budgetName, setBudgetName] = useState("My Budget");
   const [accountName, setAccountName] = useState("Checking");
   const [startingBalance, setStartingBalance] = useState(0);
-  const [categories, setCategories] = useState<CategorySelection>(
-    getDefaultCategorySelection,
-  );
+  const [categories, setCategories] = useState<CategorySelection>(getDefaultCategorySelection);
   const [seeding, setSeeding] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const currencyInputRef = useRef<CurrencyInputRef>(null);
@@ -319,8 +304,7 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
     if (animating.current) return;
     animating.current = true;
 
-    const dir: Direction =
-      indexOf(next) > indexOf(step) ? "forward" : "backward";
+    const dir: Direction = indexOf(next) > indexOf(step) ? "forward" : "backward";
 
     if (reducedMotion) {
       setStep(next);
@@ -334,8 +318,7 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
 
     requestAnimationFrame(() => {
       setStep(next);
-      const outEnd =
-        dir === "forward" ? -SCREEN_WIDTH * PARALLAX : SCREEN_WIDTH;
+      const outEnd = dir === "forward" ? -SCREEN_WIDTH * PARALLAX : SCREEN_WIDTH;
       inX.value = withSpring(0, SPRING, (done) => {
         if (done) scheduleOnRN(onTransitionDone);
       });
@@ -347,7 +330,7 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
     setCategories((prev) => ({ ...prev, [key]: !prev[key] }));
   }, []);
 
-  const budgetIdRef = useRef('');
+  const budgetIdRef = useRef("");
   const uploadResultRef = useRef<{ cloudFileId: string; groupId: string } | null>(null);
 
   const handleSeed = useCallback(async () => {
@@ -357,37 +340,37 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
     try {
       const name = budgetName.trim() || "My Budget";
       const budgetId = idFromBudgetName(name);
-      if (__DEV__) console.log('[wizard] Creating budget:', budgetId, 'mode:', mode);
+      if (__DEV__) console.log("[wizard] Creating budget:", budgetId, "mode:", mode);
 
       await ensureBudgetsDir();
       await writeMetadata(budgetId, { id: budgetId, budgetName: name });
       await openDatabase(getBudgetDir(budgetId));
-      if (__DEV__) console.log('[wizard] DB opened, loading clock');
+      if (__DEV__) console.log("[wizard] DB opened, loading clock");
       await loadClock();
 
-      if (__DEV__) console.log('[wizard] Seeding budget data');
+      if (__DEV__) console.log("[wizard] Seeding budget data");
       await seedLocalBudget({
         accountName: accountName.trim() || "Checking",
         startingBalance,
         selectedCategories: categories,
       });
-      if (__DEV__) console.log('[wizard] Seed complete');
+      if (__DEV__) console.log("[wizard] Seed complete");
 
       budgetIdRef.current = budgetId;
 
       // In server mode, upload the budget now but defer setting prefs
       // until the user taps "Start Budgeting" (so routing doesn't switch early)
-      if (mode === 'server') {
-        if (__DEV__) console.log('[wizard] Uploading to server...');
+      if (mode === "server") {
+        if (__DEV__) console.log("[wizard] Uploading to server...");
         const { serverUrl, token } = usePrefsStore.getState();
         const result = await uploadBudget(serverUrl, token, budgetId);
         uploadResultRef.current = result;
-        if (__DEV__) console.log('[wizard] Upload success:', JSON.stringify(result));
+        if (__DEV__) console.log("[wizard] Upload success:", JSON.stringify(result));
       }
 
       goTo("ready");
     } catch (e) {
-      if (__DEV__) console.error('[wizard] Error:', e);
+      if (__DEV__) console.error("[wizard] Error:", e);
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setSeeding(false);
@@ -396,8 +379,8 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
 
   function handleStart() {
     const name = budgetName.trim() || "My Budget";
-    if (__DEV__) console.log('[wizard] handleStart, mode:', mode, 'budgetId:', budgetIdRef.current);
-    if (mode === 'local') {
+    if (__DEV__) console.log("[wizard] handleStart, mode:", mode, "budgetId:", budgetIdRef.current);
+    if (mode === "local") {
       usePrefsStore.getState().setPrefs({
         isLocalOnly: true,
         activeBudgetId: budgetIdRef.current,
@@ -406,16 +389,18 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
     } else {
       // Server mode: set prefs now → triggers isConfigured → routing switches to (auth)
       const result = uploadResultRef.current;
-      if (__DEV__) console.log('[wizard] Setting server prefs:', JSON.stringify(result));
+      if (__DEV__) console.log("[wizard] Setting server prefs:", JSON.stringify(result));
       usePrefsStore.getState().setPrefs({
         activeBudgetId: budgetIdRef.current,
         budgetName: name,
-        fileId: result?.cloudFileId ?? '',
-        groupId: result?.groupId ?? '',
+        fileId: result?.cloudFileId ?? "",
+        groupId: result?.groupId ?? "",
         isLocalOnly: false,
       });
       // Trigger initial sync in background
-      fullSync().catch(e => { if (__DEV__) console.warn(e); });
+      fullSync().catch((e) => {
+        if (__DEV__) console.warn(e);
+      });
     }
     onComplete?.();
   }
@@ -437,35 +422,20 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
 
   function renderBudgetName() {
     return (
-      <ScrollView
-        contentContainerStyle={styles.stepContent}
-        keyboardShouldPersistTaps="handled"
-      >
-        <Text
-          variant="headingLg"
-          color={theme.colors.textPrimary}
-          style={styles.heading}
-        >
-          {t('name.heading')}
+      <ScrollView contentContainerStyle={styles.stepContent} keyboardShouldPersistTaps="handled">
+        <Text variant="headingLg" color={theme.colors.textPrimary} style={styles.heading}>
+          {t("name.heading")}
         </Text>
-        <Text
-          variant="bodySm"
-          color={theme.colors.textSecondary}
-          style={styles.subtext}
-        >
-          {t('name.subtext')}
+        <Text variant="bodySm" color={theme.colors.textSecondary} style={styles.subtext}>
+          {t("name.subtext")}
         </Text>
         <View style={styles.inputContainer}>
-          <Ionicons
-            name="document-text-outline"
-            size={18}
-            color={theme.colors.textMuted}
-          />
+          <Ionicons name="document-text-outline" size={18} color={theme.colors.textMuted} />
           <TextInput
             style={[styles.input, { color: theme.colors.textPrimary }]}
             value={budgetName}
             onChangeText={setBudgetName}
-            placeholder={t('name.placeholder')}
+            placeholder={t("name.placeholder")}
             placeholderTextColor={theme.colors.textMuted}
             autoFocus
             returnKeyType="next"
@@ -473,66 +443,43 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
           />
         </View>
         <Button
-          title={t('continue')}
+          title={t("continue")}
           onPress={() => goTo("account")}
           size="lg"
           disabled={!budgetName.trim()}
           style={styles.actionButton}
         />
-        <BackLink onPress={onCancel} label={t('cancel')} />
+        <BackLink onPress={onCancel} label={t("cancel")} />
       </ScrollView>
     );
   }
 
   function renderAccount() {
     return (
-      <ScrollView
-        contentContainerStyle={styles.stepContent}
-        keyboardShouldPersistTaps="handled"
-      >
-        <Text
-          variant="headingLg"
-          color={theme.colors.textPrimary}
-          style={styles.heading}
-        >
-          {t('account.heading')}
+      <ScrollView contentContainerStyle={styles.stepContent} keyboardShouldPersistTaps="handled">
+        <Text variant="headingLg" color={theme.colors.textPrimary} style={styles.heading}>
+          {t("account.heading")}
         </Text>
-        <Text
-          variant="bodySm"
-          color={theme.colors.textSecondary}
-          style={styles.subtext}
-        >
-          {t('account.subtext')}
+        <Text variant="bodySm" color={theme.colors.textSecondary} style={styles.subtext}>
+          {t("account.subtext")}
         </Text>
-        <Text
-          variant="caption"
-          color={theme.colors.textSecondary}
-          style={styles.label}
-        >
-          {t('account.nameLabel')}
+        <Text variant="caption" color={theme.colors.textSecondary} style={styles.label}>
+          {t("account.nameLabel")}
         </Text>
         <View style={styles.inputContainer}>
-          <Ionicons
-            name="wallet-outline"
-            size={18}
-            color={theme.colors.textMuted}
-          />
+          <Ionicons name="wallet-outline" size={18} color={theme.colors.textMuted} />
           <TextInput
             style={[styles.input, { color: theme.colors.textPrimary }]}
             value={accountName}
             onChangeText={setAccountName}
-            placeholder={t('account.placeholder')}
+            placeholder={t("account.placeholder")}
             placeholderTextColor={theme.colors.textMuted}
             autoFocus
             returnKeyType="next"
           />
         </View>
-        <Text
-          variant="caption"
-          color={theme.colors.textSecondary}
-          style={styles.label}
-        >
-          {t('account.balanceLabel')}
+        <Text variant="caption" color={theme.colors.textSecondary} style={styles.label}>
+          {t("account.balanceLabel")}
         </Text>
         <CurrencyInput
           ref={currencyInputRef}
@@ -542,7 +489,7 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
           color={theme.colors.textPrimary}
         />
         <Button
-          title={t('continue')}
+          title={t("continue")}
           onPress={() => goTo("categories")}
           size="lg"
           disabled={!accountName.trim()}
@@ -555,35 +502,21 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
 
   function renderCategories() {
     const visibleGroups = DEFAULT_CATEGORY_GROUPS.filter((g) => !g.is_income);
-    const buttonTitle = mode === 'server' ? t('categories.buttonServer') : t('categories.buttonLocal');
+    const buttonTitle =
+      mode === "server" ? t("categories.buttonServer") : t("categories.buttonLocal");
 
     return (
-      <ScrollView
-        contentContainerStyle={styles.stepContent}
-        keyboardShouldPersistTaps="handled"
-      >
-        <Text
-          variant="headingLg"
-          color={theme.colors.textPrimary}
-          style={styles.heading}
-        >
-          {t('categories.heading')}
+      <ScrollView contentContainerStyle={styles.stepContent} keyboardShouldPersistTaps="handled">
+        <Text variant="headingLg" color={theme.colors.textPrimary} style={styles.heading}>
+          {t("categories.heading")}
         </Text>
-        <Text
-          variant="bodySm"
-          color={theme.colors.textSecondary}
-          style={styles.subtext}
-        >
-          {t('categories.subtext')}
+        <Text variant="bodySm" color={theme.colors.textSecondary} style={styles.subtext}>
+          {t("categories.subtext")}
         </Text>
 
         {visibleGroups.map((group) => (
           <View key={group.key} style={styles.categoryGroup}>
-            <Text
-              variant="caption"
-              color={theme.colors.textSecondary}
-              style={styles.groupLabel}
-            >
+            <Text variant="caption" color={theme.colors.textSecondary} style={styles.groupLabel}>
               {group.name.toUpperCase()}
             </Text>
             {group.categories.map((cat) => (
@@ -627,7 +560,7 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
           align="center"
           style={styles.heading}
         >
-          {t('ready.heading')}
+          {t("ready.heading")}
         </Text>
         <Text
           variant="body"
@@ -635,32 +568,30 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
           align="center"
           style={styles.subtext}
         >
-          {mode === 'server'
-            ? t('ready.subtextServer')
-            : t('ready.subtextLocal')}
+          {mode === "server" ? t("ready.subtextServer") : t("ready.subtextLocal")}
         </Text>
         <Card style={styles.summaryCard}>
           <SummaryRow
             icon="document-text-outline"
-            label={t('ready.budget')}
+            label={t("ready.budget")}
             value={budgetName}
             delay={0}
           />
           <SummaryRow
             icon="wallet-outline"
-            label={t('ready.account')}
+            label={t("ready.account")}
             value={`${accountName} · ${balanceText}`}
             delay={60}
           />
           <SummaryRow
             icon="layers-outline"
-            label={t('ready.categories')}
-            value={t('ready.categoriesCount', { count: selectedCount })}
+            label={t("ready.categories")}
+            value={t("ready.categoriesCount", { count: selectedCount })}
             delay={120}
           />
         </Card>
         <Button
-          title={t('ready.button')}
+          title={t("ready.button")}
           onPress={handleStart}
           size="lg"
           icon="arrow-forward-outline"
@@ -674,33 +605,47 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
 
   return (
     <>
-    <KeyboardAvoidingView
-      style={styles.flex}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
-      <View style={{ paddingTop: insets.top + 12 }}>
-        <ProgressBar step={indexOf(step) + 1} total={STEPS.length} />
-      </View>
-
-      {error && (
-        <View
-          style={{
-            paddingHorizontal: theme.spacing.xl,
-            paddingTop: theme.spacing.sm,
-          }}
-        >
-          <Banner
-            message={error}
-            variant="error"
-            onDismiss={() => setError(null)}
-          />
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <View style={{ paddingTop: insets.top + 12 }}>
+          <ProgressBar step={indexOf(step) + 1} total={STEPS.length} />
         </View>
-      )}
 
-      {/* Transition container */}
-      <View style={{ flex: 1, overflow: "hidden" }}>
-        {/* Outgoing panel (previous step, visible during animation) */}
-        {prevStep !== null && (
+        {error && (
+          <View
+            style={{
+              paddingHorizontal: theme.spacing.xl,
+              paddingTop: theme.spacing.sm,
+            }}
+          >
+            <Banner message={error} variant="error" onDismiss={() => setError(null)} />
+          </View>
+        )}
+
+        {/* Transition container */}
+        <View style={{ flex: 1, overflow: "hidden" }}>
+          {/* Outgoing panel (previous step, visible during animation) */}
+          {prevStep !== null && (
+            <Animated.View
+              style={[
+                {
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  backgroundColor: theme.colors.pageBackground,
+                },
+                outStyle,
+              ]}
+              pointerEvents="none"
+            >
+              {renderStep(prevStep)}
+            </Animated.View>
+          )}
+          {/* Current panel */}
           <Animated.View
             style={[
               {
@@ -711,45 +656,27 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
                 bottom: 0,
                 backgroundColor: theme.colors.pageBackground,
               },
-              outStyle,
+              inStyle,
             ]}
-            pointerEvents="none"
           >
-            {renderStep(prevStep)}
+            {renderStep(step)}
           </Animated.View>
-        )}
-        {/* Current panel */}
-        <Animated.View
-          style={[
-            {
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: theme.colors.pageBackground,
-            },
-            inStyle,
-          ]}
-        >
-          {renderStep(step)}
-        </Animated.View>
-      </View>
-    </KeyboardAvoidingView>
-    <KeyboardToolbar>
-      <CalculatorToolbar
-        onOperator={(op) => currencyInputRef.current?.injectOperator(op)}
-        onEvaluate={() => currencyInputRef.current?.evaluate()}
-      />
-      <View style={{ flex: 1 }} />
-      <GlassButton
-        icon="checkmark"
-        iconSize={16}
-        variant="tinted"
-        tintColor={theme.colors.primary}
-        onPress={() => Keyboard.dismiss()}
-      />
-    </KeyboardToolbar>
+        </View>
+      </KeyboardAvoidingView>
+      <KeyboardToolbar>
+        <CalculatorToolbar
+          onOperator={(op) => currencyInputRef.current?.injectOperator(op)}
+          onEvaluate={() => currencyInputRef.current?.evaluate()}
+        />
+        <View style={{ flex: 1 }} />
+        <GlassButton
+          icon="checkmark"
+          iconSize={16}
+          variant="tinted"
+          tintColor={theme.colors.primary}
+          onPress={() => Keyboard.dismiss()}
+        />
+      </KeyboardToolbar>
     </>
   );
 }

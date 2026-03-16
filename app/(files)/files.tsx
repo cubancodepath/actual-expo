@@ -1,11 +1,18 @@
-import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, View } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTranslation } from 'react-i18next';
-import { usePrefsStore } from '../../src/stores/prefsStore';
-import { resetAllStores } from '../../src/stores/resetStores';
-import { resetSyncState, clearSwitchingFlag } from '../../src/sync';
-import { useTheme, useThemedStyles } from '../../src/presentation/providers/ThemeProvider';
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  View,
+} from "react-native";
+import { Stack, useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
+import { usePrefsStore } from "../../src/stores/prefsStore";
+import { resetAllStores } from "../../src/stores/resetStores";
+import { resetSyncState, clearSwitchingFlag } from "../../src/sync";
+import { useTheme, useThemedStyles } from "../../src/presentation/providers/ThemeProvider";
 import {
   Text,
   Card,
@@ -14,11 +21,11 @@ import {
   EmptyState,
   BudgetFileRow,
   SwipeableRow,
-} from '../../src/presentation/components';
-import { useBudgetFiles, fileKey } from '../../src/presentation/hooks/useBudgetFiles';
-import { useFileActionSheet } from '../../src/presentation/hooks/useFileActionSheet';
-import type { ReconciledBudgetFile } from '../../src/services/budgetfiles';
-import type { Theme } from '../../src/theme';
+} from "../../src/presentation/components";
+import { useBudgetFiles, fileKey } from "../../src/presentation/hooks/useBudgetFiles";
+import { useFileActionSheet } from "../../src/presentation/hooks/useFileActionSheet";
+import type { ReconciledBudgetFile } from "../../src/services/budgetfiles";
+import type { Theme } from "../../src/theme";
 
 export default function FilesScreen() {
   const router = useRouter();
@@ -26,62 +33,79 @@ export default function FilesScreen() {
   const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const { clearAll } = usePrefsStore();
-  const { t } = useTranslation('auth');
-  const { t: tc } = useTranslation('common');
+  const { t } = useTranslation("auth");
+  const { t: tc } = useTranslation("common");
   const {
-    localFiles, remoteFiles, loading, refreshing, error,
-    selecting, actionInProgress, selectFile, deleteFile, uploadFile,
-    convertToLocal, reRegister, retry, refresh, dismissError,
+    localFiles,
+    remoteFiles,
+    loading,
+    refreshing,
+    error,
+    selecting,
+    actionInProgress,
+    selectFile,
+    deleteFile,
+    uploadFile,
+    convertToLocal,
+    reRegister,
+    retry,
+    refresh,
+    dismissError,
   } = useBudgetFiles();
 
   const { showActions } = useFileActionSheet({
-    uploadFile, deleteFile, selectFile, convertToLocal, reRegister,
+    uploadFile,
+    deleteFile,
+    selectFile,
+    convertToLocal,
+    reRegister,
   });
 
-  const hasDetached = localFiles.some(f => f.state === 'detached');
+  const hasDetached = localFiles.some((f) => f.state === "detached");
 
   async function handleSelect(file: ReconciledBudgetFile) {
     try {
       await selectFile(file);
-      router.replace('/(auth)/(tabs)/(budget)');
+      router.replace("/(auth)/(tabs)/(budget)");
     } catch {
       // Error already set in hook
     }
   }
 
   function handleDelete(file: ReconciledBudgetFile) {
-    confirmDelete(file, (fromServer) => {
-      deleteFile(file, fromServer).catch(() => {});
-    }, t as any, tc as any);
+    confirmDelete(
+      file,
+      (fromServer) => {
+        deleteFile(file, fromServer).catch(() => {});
+      },
+      t as any,
+      tc as any,
+    );
   }
 
   function handleUpload(file: ReconciledBudgetFile) {
-    const name = file.name || t('unnamedBudget');
-    Alert.alert(t('uploadToServer'), t('uploadBudgetConfirm', { name }), [
-      { text: tc('cancel'), style: 'cancel' },
-      { text: tc('upload'), onPress: () => uploadFile(file).catch(() => {}) },
+    const name = file.name || t("unnamedBudget");
+    Alert.alert(t("uploadToServer"), t("uploadBudgetConfirm", { name }), [
+      { text: tc("cancel"), style: "cancel" },
+      { text: tc("upload"), onPress: () => uploadFile(file).catch(() => {}) },
     ]);
   }
 
   function handleLogout() {
-    Alert.alert(
-      t('logOut'),
-      t('logOutMessage'),
-      [
-        { text: tc('cancel'), style: 'cancel' },
-        {
-          text: t('logOut'),
-          style: 'destructive',
-          onPress: async () => {
-            resetSyncState();
-            resetAllStores();
-            await clearAll();
-            clearSwitchingFlag();
-            router.replace('/');
-          },
+    Alert.alert(t("logOut"), t("logOutMessage"), [
+      { text: tc("cancel"), style: "cancel" },
+      {
+        text: t("logOut"),
+        style: "destructive",
+        onPress: async () => {
+          resetSyncState();
+          resetAllStores();
+          await clearAll();
+          clearSwitchingFlag();
+          router.replace("/");
         },
-      ],
-    );
+      },
+    ]);
   }
 
   const hasFiles = localFiles.length > 0 || remoteFiles.length > 0;
@@ -98,17 +122,17 @@ export default function FilesScreen() {
         options={{
           headerLeft: () => (
             <Pressable onPress={handleLogout} hitSlop={8} style={styles.headerBtn}>
-              <Text variant="body">{t('logOut')}</Text>
+              <Text variant="body">{t("logOut")}</Text>
             </Pressable>
           ),
           headerRight: () => (
             <Pressable
-              onPress={() => router.push('/(files)/new-budget')}
+              onPress={() => router.push("/(files)/new-budget")}
               hitSlop={8}
               style={styles.headerBtn}
             >
-              <Text variant="body" style={{ fontWeight: '600' }}>
-                {t('new')}
+              <Text variant="body" style={{ fontWeight: "600" }}>
+                {t("new")}
               </Text>
             </Pressable>
           ),
@@ -125,17 +149,22 @@ export default function FilesScreen() {
         <Card style={{ marginTop: spacing.lg }}>
           <View style={styles.loadingRow}>
             <ActivityIndicator color={colors.primary} />
-            <Text variant="bodySm" color={colors.textMuted}>{tc('loading')}</Text>
+            <Text variant="bodySm" color={colors.textMuted}>
+              {tc("loading")}
+            </Text>
           </View>
         </Card>
       ) : hasFiles ? (
         <>
           {localFiles.length > 0 && (
             <>
-              <SectionHeader title={t('onThisDevice')} style={{ marginTop: spacing.lg, paddingHorizontal: 0 }} />
+              <SectionHeader
+                title={t("onThisDevice")}
+                style={{ marginTop: spacing.lg, paddingHorizontal: 0 }}
+              />
               {hasDetached && (
                 <View style={{ marginBottom: spacing.sm }}>
-                  <Banner message={t('detachedHint')} variant="warning" />
+                  <Banner message={t("detachedHint")} variant="warning" />
                 </View>
               )}
               <View>
@@ -143,7 +172,7 @@ export default function FilesScreen() {
                   <SwipeableRow
                     key={fileKey(file)}
                     onDelete={() => handleDelete(file)}
-                    onSwipeRight={file.state === 'local' ? () => handleUpload(file) : undefined}
+                    onSwipeRight={file.state === "local" ? () => handleUpload(file) : undefined}
                     swipeRightIcon="cloud-upload-outline"
                     swipeRightColor={colors.primary}
                     isFirst={index === 0}
@@ -166,7 +195,10 @@ export default function FilesScreen() {
 
           {remoteFiles.length > 0 && (
             <>
-              <SectionHeader title={t('availableOnServer')} style={{ marginTop: spacing.lg, paddingHorizontal: 0 }} />
+              <SectionHeader
+                title={t("availableOnServer")}
+                style={{ marginTop: spacing.lg, paddingHorizontal: 0 }}
+              />
               <View>
                 {remoteFiles.map((file, index) => (
                   <SwipeableRow
@@ -192,10 +224,10 @@ export default function FilesScreen() {
       ) : (
         <EmptyState
           icon="folder-open-outline"
-          title={t('noBudgetsFound')}
-          description={t('noBudgetsDescription')}
-          actionLabel={t('createNewBudget')}
-          onAction={() => router.push('/(files)/new-budget')}
+          title={t("noBudgetsFound")}
+          description={t("noBudgetsDescription")}
+          actionLabel={t("createNewBudget")}
+          onAction={() => router.push("/(files)/new-budget")}
         />
       )}
     </ScrollView>
@@ -208,23 +240,23 @@ function confirmDelete(
   t: (key: string, opts?: Record<string, string>) => string,
   tc: (key: string) => string,
 ) {
-  const name = file.name || t('unnamedBudget');
+  const name = file.name || t("unnamedBudget");
 
-  if (file.state === 'synced') {
-    Alert.alert(t('deleteBudget'), t('deleteBudgetSynced', { name }), [
-      { text: tc('cancel'), style: 'cancel' },
-      { text: t('deleteLocally'), onPress: () => onDelete(false) },
-      { text: t('deleteFromAllDevices'), style: 'destructive', onPress: () => onDelete(true) },
+  if (file.state === "synced") {
+    Alert.alert(t("deleteBudget"), t("deleteBudgetSynced", { name }), [
+      { text: tc("cancel"), style: "cancel" },
+      { text: t("deleteLocally"), onPress: () => onDelete(false) },
+      { text: t("deleteFromAllDevices"), style: "destructive", onPress: () => onDelete(true) },
     ]);
-  } else if (file.state === 'remote') {
-    Alert.alert(t('deleteBudget'), t('deleteBudgetFromServer', { name }), [
-      { text: tc('cancel'), style: 'cancel' },
-      { text: t('deleteFromServer'), style: 'destructive', onPress: () => onDelete(true) },
+  } else if (file.state === "remote") {
+    Alert.alert(t("deleteBudget"), t("deleteBudgetFromServer", { name }), [
+      { text: tc("cancel"), style: "cancel" },
+      { text: t("deleteFromServer"), style: "destructive", onPress: () => onDelete(true) },
     ]);
   } else {
-    Alert.alert(t('deleteBudget'), t('deleteBudgetLocal', { name }), [
-      { text: tc('cancel'), style: 'cancel' },
-      { text: tc('delete'), style: 'destructive', onPress: () => onDelete(false) },
+    Alert.alert(t("deleteBudget"), t("deleteBudgetLocal", { name }), [
+      { text: tc("cancel"), style: "cancel" },
+      { text: tc("delete"), style: "destructive", onPress: () => onDelete(false) },
     ]);
   }
 }
@@ -240,7 +272,7 @@ const createStyles = (theme: Theme) => ({
   },
   loadingRow: {
     paddingVertical: theme.spacing.xl,
-    alignItems: 'center' as const,
+    alignItems: "center" as const,
     gap: theme.spacing.md,
   },
   headerBtn: {

@@ -1,1 +1,1 @@
-export { default } from '../schedule/recurrence';
+export { default } from "../schedule/recurrence";

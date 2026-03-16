@@ -3,22 +3,28 @@ import {
   writeAsStringAsync,
   readAsStringAsync,
   EncodingType,
-} from 'expo-file-system/legacy';
-import { unzipSync, zipSync } from 'fflate';
-import { randomUUID } from 'expo-crypto';
-import { closeDatabase, openDatabase, run, getDb } from '../db';
-import { loadClock, resetSyncState, clearSwitchingFlag, fullSync, waitForSyncToSettle } from '../sync';
-import { resetAllStores } from '../stores/resetStores';
-import { usePrefsStore } from '../stores/prefsStore';
-import { useAccountsStore } from '../stores/accountsStore';
-import { useCategoriesStore } from '../stores/categoriesStore';
-import { useBudgetStore } from '../stores/budgetStore';
-import { usePayeesStore } from '../stores/payeesStore';
-import { usePreferencesStore } from '../stores/preferencesStore';
-import { useTagsStore } from '../stores/tagsStore';
-import { useSchedulesStore } from '../stores/schedulesStore';
-import { useFeatureFlagsStore } from '../stores/featureFlagsStore';
-import type { BudgetFile } from './authService';
+} from "expo-file-system/legacy";
+import { unzipSync, zipSync } from "fflate";
+import { randomUUID } from "expo-crypto";
+import { closeDatabase, openDatabase, run, getDb } from "../db";
+import {
+  loadClock,
+  resetSyncState,
+  clearSwitchingFlag,
+  fullSync,
+  waitForSyncToSettle,
+} from "../sync";
+import { resetAllStores } from "../stores/resetStores";
+import { usePrefsStore } from "../stores/prefsStore";
+import { useAccountsStore } from "../stores/accountsStore";
+import { useCategoriesStore } from "../stores/categoriesStore";
+import { useBudgetStore } from "../stores/budgetStore";
+import { usePayeesStore } from "../stores/payeesStore";
+import { usePreferencesStore } from "../stores/preferencesStore";
+import { useTagsStore } from "../stores/tagsStore";
+import { useSchedulesStore } from "../stores/schedulesStore";
+import { useFeatureFlagsStore } from "../stores/featureFlagsStore";
+import type { BudgetFile } from "./authService";
 import {
   type BudgetMetadata,
   getBudgetDir,
@@ -27,9 +33,9 @@ import {
   updateMetadata,
   idFromBudgetName,
   deleteBudgetDir,
-} from './budgetMetadata';
-import * as encryption from '../encryption';
-import { loadKeyForBudget } from './encryptionService';
+} from "./budgetMetadata";
+import * as encryption from "../encryption";
+import { loadKeyForBudget } from "./encryptionService";
 
 // ---------------------------------------------------------------------------
 // Auth guard
@@ -38,7 +44,7 @@ import { loadKeyForBudget } from './encryptionService';
 function throwIfUnauthorized(res: Response): void {
   if (res.status === 401 || res.status === 403) {
     usePrefsStore.getState().clearAll();
-    throw new Error('Session expired. Please log in again.');
+    throw new Error("Session expired. Please log in again.");
   }
 }
 
@@ -47,7 +53,7 @@ function throwIfUnauthorized(res: Response): void {
 // ---------------------------------------------------------------------------
 
 function uint8ToBase64(bytes: Uint8Array): string {
-  let binary = '';
+  let binary = "";
   const chunkSize = 8192;
   for (let i = 0; i < bytes.length; i += chunkSize) {
     binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
@@ -68,7 +74,7 @@ function base64ToUint8(base64: string): Uint8Array {
 // Types
 // ---------------------------------------------------------------------------
 
-export type BudgetFileState = 'local' | 'remote' | 'synced' | 'detached';
+export type BudgetFileState = "local" | "remote" | "synced" | "detached";
 
 export type ReconciledBudgetFile = {
   state: BudgetFileState;
@@ -93,13 +99,11 @@ export function reconcileFiles(
   const matchedRemoteIds = new Set<string>();
 
   for (const loc of local) {
-    const remoteMatch = remote.find(
-      (r) => !r.deleted && r.fileId === loc.cloudFileId,
-    );
+    const remoteMatch = remote.find((r) => !r.deleted && r.fileId === loc.cloudFileId);
     if (remoteMatch) {
       matchedRemoteIds.add(remoteMatch.fileId);
       result.push({
-        state: 'synced',
+        state: "synced",
         localId: loc.id,
         cloudFileId: remoteMatch.fileId,
         name: loc.budgetName,
@@ -110,7 +114,7 @@ export function reconcileFiles(
       });
     } else if (loc.cloudFileId) {
       result.push({
-        state: 'detached',
+        state: "detached",
         localId: loc.id,
         cloudFileId: loc.cloudFileId,
         name: loc.budgetName,
@@ -119,7 +123,7 @@ export function reconcileFiles(
       });
     } else {
       result.push({
-        state: 'local',
+        state: "local",
         localId: loc.id,
         name: loc.budgetName,
         lastOpened: loc.lastOpened,
@@ -130,7 +134,7 @@ export function reconcileFiles(
   for (const rem of remote) {
     if (!rem.deleted && !matchedRemoteIds.has(rem.fileId)) {
       result.push({
-        state: 'remote',
+        state: "remote",
         cloudFileId: rem.fileId,
         name: rem.name,
         groupId: rem.groupId,
@@ -158,11 +162,11 @@ export async function uploadBudget(
   budgetId: string,
 ): Promise<{ cloudFileId: string; groupId: string }> {
   const budgetDir = getBudgetDir(budgetId);
-  if (__DEV__) console.log('[upload] Starting upload for budget:', budgetId);
+  if (__DEV__) console.log("[upload] Starting upload for budget:", budgetId);
 
   // 1. Switch from WAL to DELETE journal mode so the file is self-contained.
   const db = getDb();
-  await db.execAsync('PRAGMA journal_mode = DELETE');
+  await db.execAsync("PRAGMA journal_mode = DELETE");
 
   // 2. Read the SQLite file as base64 → Uint8Array
   const dbBase64 = await readAsStringAsync(`${budgetDir}db.sqlite`, {
@@ -171,7 +175,7 @@ export async function uploadBudget(
   const dbBytes = base64ToUint8(dbBase64);
 
   // Restore WAL mode for continued local use
-  await db.execAsync('PRAGMA journal_mode = WAL');
+  await db.execAsync("PRAGMA journal_mode = WAL");
 
   // 3. Read metadata and set resetClock flag
   const meta = await readMetadata(budgetId);
@@ -181,14 +185,14 @@ export async function uploadBudget(
 
   // 4. Create ZIP
   const zipped = zipSync({
-    'db.sqlite': dbBytes,
-    'metadata.json': metaBytes,
+    "db.sqlite": dbBytes,
+    "metadata.json": metaBytes,
   });
-  if (__DEV__) console.log('[upload] ZIP size:', zipped.length, 'bytes');
+  if (__DEV__) console.log("[upload] ZIP size:", zipped.length, "bytes");
 
   // 5. Reuse existing cloudFileId or generate a new one
-  const cloudFileId = meta.cloudFileId || randomUUID().replace(/-/g, '');
-  if (__DEV__) console.log('[upload] cloudFileId:', cloudFileId);
+  const cloudFileId = meta.cloudFileId || randomUUID().replace(/-/g, "");
+  if (__DEV__) console.log("[upload] cloudFileId:", cloudFileId);
 
   // 6. Encrypt ZIP if encryption key is available
   let uploadContent: Uint8Array = zipped;
@@ -198,29 +202,29 @@ export async function uploadBudget(
     const encrypted = await encryption.encrypt(zipped, meta.encryptKeyId);
     uploadContent = encrypted.value;
     encryptMeta = encrypted.meta;
-    if (__DEV__) console.log('[upload] Encrypted ZIP, size:', uploadContent.length);
+    if (__DEV__) console.log("[upload] Encrypted ZIP, size:", uploadContent.length);
   }
 
   // 7. Upload
   const url = `${serverUrl}/sync/upload-user-file`;
   const headers: Record<string, string> = {
-    'Content-Type': 'application/encrypted-file',
-    'Content-Length': String(uploadContent.length),
-    'X-ACTUAL-TOKEN': token,
-    'X-ACTUAL-FILE-ID': cloudFileId,
-    'X-ACTUAL-NAME': encodeURIComponent(meta.budgetName),
-    'X-ACTUAL-FORMAT': '2',
+    "Content-Type": "application/encrypted-file",
+    "Content-Length": String(uploadContent.length),
+    "X-ACTUAL-TOKEN": token,
+    "X-ACTUAL-FILE-ID": cloudFileId,
+    "X-ACTUAL-NAME": encodeURIComponent(meta.budgetName),
+    "X-ACTUAL-FORMAT": "2",
   };
   if (encryptMeta) {
-    headers['X-ACTUAL-ENCRYPT-META'] = JSON.stringify(encryptMeta);
-    if (__DEV__) console.log('[upload] Encrypt meta:', JSON.stringify(encryptMeta));
+    headers["X-ACTUAL-ENCRYPT-META"] = JSON.stringify(encryptMeta);
+    if (__DEV__) console.log("[upload] Encrypt meta:", JSON.stringify(encryptMeta));
   }
   if (meta.groupId) {
-    headers['X-ACTUAL-GROUP-ID'] = meta.groupId;
+    headers["X-ACTUAL-GROUP-ID"] = meta.groupId;
   }
 
   const res = await fetch(url, {
-    method: 'POST',
+    method: "POST",
     headers,
     body: uploadContent.buffer as ArrayBuffer,
   });
@@ -228,12 +232,12 @@ export async function uploadBudget(
   throwIfUnauthorized(res);
 
   if (!res.ok) {
-    const text = await res.text().catch(() => '');
+    const text = await res.text().catch(() => "");
     throw new Error(`Upload failed (${res.status}): ${text}`);
   }
 
   const json = await res.json();
-  if (json.status !== 'ok') {
+  if (json.status !== "ok") {
     throw new Error(`Upload failed: ${JSON.stringify(json)}`);
   }
 
@@ -241,7 +245,7 @@ export async function uploadBudget(
 
   // 8. Update local metadata
   await updateMetadata(budgetId, { cloudFileId, groupId });
-  if (__DEV__) console.log('[upload] Upload complete. groupId:', groupId);
+  if (__DEV__) console.log("[upload] Upload complete. groupId:", groupId);
 
   return { cloudFileId, groupId };
 }
@@ -263,14 +267,14 @@ export async function downloadBudget(
   const [res, infoRes] = await Promise.all([
     fetch(`${serverUrl}/sync/download-user-file`, {
       headers: {
-        'x-actual-token': token,
-        'x-actual-file-id': file.fileId,
+        "x-actual-token": token,
+        "x-actual-file-id": file.fileId,
       },
     }),
     fetch(`${serverUrl}/sync/get-user-file-info`, {
       headers: {
-        'x-actual-token': token,
-        'x-actual-file-id': file.fileId,
+        "x-actual-token": token,
+        "x-actual-file-id": file.fileId,
       },
     }),
   ]);
@@ -278,7 +282,7 @@ export async function downloadBudget(
   throwIfUnauthorized(res);
 
   if (!res.ok) {
-    const text = await res.text().catch(() => '');
+    const text = await res.text().catch(() => "");
     throw new Error(`Download failed (${res.status}): ${text}`);
   }
 
@@ -295,15 +299,15 @@ export async function downloadBudget(
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       throw new Error(
-        msg === 'missing-key'
-          ? 'Encryption key not loaded. Please enter your password first.'
+        msg === "missing-key"
+          ? "Encryption key not loaded. Please enter your password first."
           : `Failed to decrypt budget file: ${msg}`,
       );
     }
   }
 
   if (zipBytes[0] !== 0x50 || zipBytes[1] !== 0x4b) {
-    const contentType = res.headers.get('content-type') ?? 'unknown';
+    const contentType = res.headers.get("content-type") ?? "unknown";
     const preview = new TextDecoder().decode(zipBytes.slice(0, 200));
     throw new Error(
       `Server did not return a ZIP file.\nContent-Type: ${contentType}\nPreview: ${preview}`,
@@ -312,13 +316,13 @@ export async function downloadBudget(
 
   // 2. Extract db.sqlite
   const unzipped = unzipSync(zipBytes);
-  const dbBytes = unzipped['db.sqlite'];
+  const dbBytes = unzipped["db.sqlite"];
   if (!dbBytes) {
-    throw new Error('Downloaded archive does not contain db.sqlite');
+    throw new Error("Downloaded archive does not contain db.sqlite");
   }
 
   // 3. Create budget directory and write files
-  const budgetId = idFromBudgetName(file.name || 'budget');
+  const budgetId = idFromBudgetName(file.name || "budget");
   const budgetDir = getBudgetDir(budgetId);
   await makeDirectoryAsync(budgetDir, { intermediates: true });
 
@@ -330,7 +334,7 @@ export async function downloadBudget(
   // 4. Write metadata
   await writeMetadata(budgetId, {
     id: budgetId,
-    budgetName: file.name || 'Unnamed budget',
+    budgetName: file.name || "Unnamed budget",
     cloudFileId: file.fileId,
     groupId: file.groupId,
     encryptKeyId: file.encryptKeyId,
@@ -360,7 +364,7 @@ export async function openBudget(budgetId: string): Promise<void> {
   const meta = await readMetadata(budgetId);
   const isFirstOpen = !!meta?.resetClock;
   if (isFirstOpen) {
-    await run('DELETE FROM messages_clock');
+    await run("DELETE FROM messages_clock");
     await updateMetadata(budgetId, { resetClock: false });
   }
 
@@ -381,10 +385,10 @@ export async function openBudget(budgetId: string): Promise<void> {
   // Update global prefs with active budget info
   usePrefsStore.getState().setPrefs({
     activeBudgetId: budgetId,
-    fileId: meta?.cloudFileId ?? '',
-    groupId: meta?.groupId ?? '',
+    fileId: meta?.cloudFileId ?? "",
+    groupId: meta?.groupId ?? "",
     encryptKeyId: meta?.encryptKeyId,
-    budgetName: meta?.budgetName ?? 'Unnamed budget',
+    budgetName: meta?.budgetName ?? "Unnamed budget",
     lastSyncedTimestamp: meta?.lastSyncedTimestamp,
   });
 
@@ -405,9 +409,13 @@ export async function openBudget(budgetId: string): Promise<void> {
     const needsInitialSync = isFirstOpen || !meta?.lastSyncedTimestamp;
     if (needsInitialSync) {
       // First-time open: block until sync completes so the user doesn't see empty tabs
-      await fullSync().catch(e => { if (__DEV__) console.warn(e); });
+      await fullSync().catch((e) => {
+        if (__DEV__) console.warn(e);
+      });
     } else {
-      fullSync().catch(e => { if (__DEV__) console.warn(e); });
+      fullSync().catch((e) => {
+        if (__DEV__) console.warn(e);
+      });
     }
   }
 }
@@ -419,9 +427,9 @@ export async function closeBudget(): Promise<void> {
   resetAllStores();
   await closeDatabase();
   usePrefsStore.getState().setPrefs({
-    activeBudgetId: '',
-    fileId: '',
-    groupId: '',
+    activeBudgetId: "",
+    fileId: "",
+    groupId: "",
     encryptKeyId: undefined,
     lastSyncedTimestamp: undefined,
     budgetName: undefined,
@@ -442,11 +450,11 @@ export async function switchBudget(
 ): Promise<void> {
   let localId = file.localId;
 
-  if (file.state === 'remote' && file.cloudFileId) {
+  if (file.state === "remote" && file.cloudFileId) {
     // Need to download first
     const budgetFile: BudgetFile = {
       fileId: file.cloudFileId,
-      groupId: file.groupId ?? '',
+      groupId: file.groupId ?? "",
       name: file.name,
       encryptKeyId: file.encryptKeyId,
     };
@@ -454,7 +462,7 @@ export async function switchBudget(
   }
 
   if (!localId) {
-    throw new Error('Cannot switch budget: no local ID available');
+    throw new Error("Cannot switch budget: no local ID available");
   }
 
   await openBudget(localId);
@@ -506,16 +514,16 @@ export async function deleteFromServer(
   cloudFileId: string,
 ): Promise<void> {
   const res = await fetch(`${serverUrl}/sync/delete-user-file`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
-      'x-actual-token': token,
+      "Content-Type": "application/json",
+      "x-actual-token": token,
     },
     body: JSON.stringify({ fileId: cloudFileId }),
   });
   throwIfUnauthorized(res);
   if (!res.ok) {
-    const text = await res.text().catch(() => '');
+    const text = await res.text().catch(() => "");
     throw new Error(`Server delete failed (${res.status}): ${text}`);
   }
 }

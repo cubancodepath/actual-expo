@@ -82,17 +82,17 @@ npm run e2e
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Framework | [Expo 55](https://expo.dev/) / [React Native 0.83](https://reactnative.dev/) |
-| Navigation | [Expo Router](https://docs.expo.dev/router/introduction/) (file-based) |
-| State | [Zustand 5](https://github.com/pmndrs/zustand) |
-| Database | [expo-sqlite](https://docs.expo.dev/versions/latest/sdk/sqlite/) (raw SQL) |
-| Sync | CRDT with Merkle tree diff (ported from Actual's loot-core) |
-| Encryption | AES-256-GCM via @noble/ciphers |
-| Crash reporting | [Sentry](https://sentry.io/) |
-| i18n | [react-i18next](https://react.i18next.com/) |
-| Testing | [Vitest](https://vitest.dev/) + [Maestro](https://maestro.mobile.dev/) |
+| Layer           | Technology                                                                   |
+| --------------- | ---------------------------------------------------------------------------- |
+| Framework       | [Expo 55](https://expo.dev/) / [React Native 0.83](https://reactnative.dev/) |
+| Navigation      | [Expo Router](https://docs.expo.dev/router/introduction/) (file-based)       |
+| State           | [Zustand 5](https://github.com/pmndrs/zustand)                               |
+| Database        | [expo-sqlite](https://docs.expo.dev/versions/latest/sdk/sqlite/) (raw SQL)   |
+| Sync            | CRDT with Merkle tree diff (ported from Actual's loot-core)                  |
+| Encryption      | AES-256-GCM via @noble/ciphers                                               |
+| Crash reporting | [Sentry](https://sentry.io/)                                                 |
+| i18n            | [react-i18next](https://react.i18next.com/)                                  |
+| Testing         | [Vitest](https://vitest.dev/) + [Maestro](https://maestro.mobile.dev/)       |
 
 ## Architecture
 

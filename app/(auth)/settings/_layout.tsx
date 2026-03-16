@@ -8,7 +8,7 @@ export default function SettingsLayout() {
   const theme = useTheme();
   const router = useRouter();
   const screen = themedScreenOptions(theme);
-  const { t } = useTranslation('settings');
+  const { t } = useTranslation("settings");
 
   return (
     <>
@@ -16,7 +16,7 @@ export default function SettingsLayout() {
         <Stack.Screen
           name="index"
           options={{
-            title: t('title'),
+            title: t("title"),
             headerLeft: () => (
               <IconButton
                 sfSymbol="xmark"
@@ -27,9 +27,9 @@ export default function SettingsLayout() {
             ),
           }}
         />
-        <Stack.Screen name="budget" options={{ title: t('budgetSettings') }} />
-        <Stack.Screen name="display" options={{ title: t('display') }} />
-        <Stack.Screen name="language" options={{ title: t('language') }} />
+        <Stack.Screen name="budget" options={{ title: t("budgetSettings") }} />
+        <Stack.Screen name="display" options={{ title: t("display") }} />
+        <Stack.Screen name="language" options={{ title: t("language") }} />
       </Stack>
       <EncryptionPasswordPrompt />
     </>

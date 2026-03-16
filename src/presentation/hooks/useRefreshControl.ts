@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useTheme } from '../providers/ThemeProvider';
-import { fullSync } from '../../sync';
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useTheme } from "../providers/ThemeProvider";
+import { fullSync } from "../../sync";
 
 type UseRefreshControlOptions = {
   /** Screen-specific data reload. Runs AFTER fullSync() completes. */
@@ -25,7 +25,9 @@ export function useRefreshControl(options?: UseRefreshControlOptions) {
 
   useEffect(() => {
     isMountedRef.current = true;
-    return () => { isMountedRef.current = false; };
+    return () => {
+      isMountedRef.current = false;
+    };
   }, []);
 
   const handleRefresh = useCallback(async () => {

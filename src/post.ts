@@ -1,13 +1,13 @@
-import { PostError } from './errors';
+import { PostError } from "./errors";
 
 function throwIfNot200(res: Response, text: string): void {
   if (res.status !== 200) {
     if (res.status === 500) {
-      throw new PostError('internal');
+      throw new PostError("internal");
     }
 
-    const contentType = res.headers.get('Content-Type') ?? '';
-    if (contentType.toLowerCase().includes('application/json')) {
+    const contentType = res.headers.get("Content-Type") ?? "";
+    if (contentType.toLowerCase().includes("application/json")) {
       try {
         const json = JSON.parse(text);
         throw new PostError(json.reason);
@@ -16,8 +16,8 @@ function throwIfNot200(res: Response, text: string): void {
       }
     }
 
-    if (res.headers.has('ngrok-error-code')) {
-      throw new PostError('network-failure');
+    if (res.headers.has("ngrok-error-code")) {
+      throw new PostError("network-failure");
     }
 
     throw new PostError(text);
@@ -35,19 +35,17 @@ export async function post(
 
   try {
     const controller = new AbortController();
-    const timeoutId = timeout
-      ? setTimeout(() => controller.abort(), timeout)
-      : null;
+    const timeoutId = timeout ? setTimeout(() => controller.abort(), timeout) : null;
     res = await fetch(url, {
-      method: 'POST',
+      method: "POST",
       body: JSON.stringify(data),
       signal: timeout ? controller.signal : undefined,
-      headers: { ...headers, 'Content-Type': 'application/json' },
+      headers: { ...headers, "Content-Type": "application/json" },
     });
     if (timeoutId != null) clearTimeout(timeoutId);
     text = await res.text();
   } catch {
-    throw new PostError('network-failure');
+    throw new PostError("network-failure");
   }
 
   throwIfNot200(res, text);
@@ -56,12 +54,13 @@ export async function post(
   try {
     responseData = JSON.parse(text);
   } catch {
-    throw new PostError('parse-json', { meta: text });
+    throw new PostError("parse-json", { meta: text });
   }
 
-  if (responseData.status !== 'ok') {
-    if (__DEV__) console.warn('API call failed: ' + url + '\nResponse: ' + JSON.stringify(responseData));
-    throw new PostError(responseData.description ?? responseData.reason ?? 'unknown');
+  if (responseData.status !== "ok") {
+    if (__DEV__)
+      console.warn("API call failed: " + url + "\nResponse: " + JSON.stringify(responseData));
+    throw new PostError(responseData.description ?? responseData.reason ?? "unknown");
   }
 
   return responseData.data;
@@ -81,21 +80,18 @@ export async function postBinary(
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
     res = await fetch(url, {
-      method: 'POST',
-      body: data.buffer.slice(
-        data.byteOffset,
-        data.byteOffset + data.byteLength,
-      ) as ArrayBuffer,
+      method: "POST",
+      body: data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer,
       signal: controller.signal,
       headers: {
-        'Content-Length': String(data.byteLength),
-        'Content-Type': 'application/actual-sync',
+        "Content-Length": String(data.byteLength),
+        "Content-Type": "application/actual-sync",
         ...headers,
       },
     });
     clearTimeout(timeoutId);
   } catch {
-    throw new PostError('network-failure');
+    throw new PostError("network-failure");
   }
 
   const arrayBuffer = await res.arrayBuffer();
@@ -107,5 +103,5 @@ export async function postBinary(
 }
 
 export function get(url: string, opts?: RequestInit): Promise<string> {
-  return fetch(url, opts).then(res => res.text());
+  return fetch(url, opts).then((res) => res.text());
 }

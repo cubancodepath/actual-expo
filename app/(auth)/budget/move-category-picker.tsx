@@ -1,12 +1,12 @@
-import { useMemo } from 'react';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useTranslation } from 'react-i18next';
-import { useBudgetStore } from '../../../src/stores/budgetStore';
-import { Amount } from '../../../src/presentation/components/atoms/Amount';
-import { CategoryPickerList, type GroupedCategory } from '../../../src/presentation/components';
+import { useMemo } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
+import { useBudgetStore } from "../../../src/stores/budgetStore";
+import { Amount } from "../../../src/presentation/components/atoms/Amount";
+import { CategoryPickerList, type GroupedCategory } from "../../../src/presentation/components";
 
 export default function MoveCategoryPickerScreen() {
-  const { t } = useTranslation('budget');
+  const { t } = useTranslation("budget");
   const router = useRouter();
   const { excludeIds, moveCatId, direction } = useLocalSearchParams<{
     excludeIds: string;
@@ -17,7 +17,7 @@ export default function MoveCategoryPickerScreen() {
   const setCoverTarget = useBudgetStore((s) => s.setCoverTarget);
 
   const excludeSet = useMemo(
-    () => new Set([...(excludeIds?.split(',') ?? []), moveCatId].filter(Boolean)),
+    () => new Set([...(excludeIds?.split(",") ?? []), moveCatId].filter(Boolean)),
     [excludeIds, moveCatId],
   );
 
@@ -37,7 +37,7 @@ export default function MoveCategoryPickerScreen() {
 
   return (
     <CategoryPickerList
-      title={direction === 'to' ? t('moveFrom') : t('moveTo')}
+      title={direction === "to" ? t("moveFrom") : t("moveTo")}
       groups={groups}
       onSelect={(cat) => {
         setCoverTarget({ catId: cat.id, catName: cat.name, balance: cat.balance });

@@ -1,12 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  ActionSheetIOS,
-  Alert,
-  Platform,
-  Pressable,
-  SectionList,
-  View,
-} from "react-native";
+import { ActionSheetIOS, Alert, Platform, Pressable, SectionList, View } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import Animated, {
@@ -45,7 +38,6 @@ type GroupSection = {
   data: Category[];
 };
 
-
 // ---------- Comparative bars: Income vs Goals (parallel) ----------
 
 function ComparativeBars({
@@ -83,10 +75,7 @@ function ComparativeBars({
     goalProgress.value = 0;
     incomeProgress.value = 0;
     goalProgress.value = withDelay(200, withTiming(goalPct, { duration: 800 }));
-    incomeProgress.value = withDelay(
-      400,
-      withTiming(incomePct, { duration: 800 }),
-    );
+    incomeProgress.value = withDelay(400, withTiming(incomePct, { duration: 800 }));
   }, [goalPct, incomePct]);
 
   const goalBarStyle = useAnimatedStyle(() => ({
@@ -114,11 +103,7 @@ function ComparativeBars({
             alignItems: "center",
           }}
         >
-          <Text
-            variant="captionSm"
-            color={textColor}
-            style={{ fontWeight: "600" }}
-          >
+          <Text variant="captionSm" color={textColor} style={{ fontWeight: "600" }}>
             {goalsLabel}
           </Text>
           <Amount
@@ -150,11 +135,7 @@ function ComparativeBars({
             alignItems: "center",
           }}
         >
-          <Text
-            variant="captionSm"
-            color={textColor}
-            style={{ fontWeight: "600" }}
-          >
+          <Text variant="captionSm" color={textColor} style={{ fontWeight: "600" }}>
             {incomeLabel}
           </Text>
           <Amount
@@ -183,18 +164,17 @@ function ComparativeBars({
 // ---------- Main screen ----------
 
 export default function EditBudgetScreen() {
-  const { t } = useTranslation('budget');
+  const { t } = useTranslation("budget");
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
-  const goalsEnabled = useFeatureFlag('goalTemplatesEnabled');
+  const goalsEnabled = useFeatureFlag("goalTemplatesEnabled");
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { groups, categories, load } =
-    useCategoriesStore();
+  const { groups, categories, load } = useCategoriesStore();
   const budgetData = useBudgetStore((s) => s.data);
   const budgetMonth = useBudgetStore((s) => s.month);
   const monthName = useMemo(() => {
-    const [y, m] = budgetMonth.split('-').map(Number);
-    return new Date(y, m - 1, 1).toLocaleDateString(i18n.language, { month: 'long' });
+    const [y, m] = budgetMonth.split("-").map(Number);
+    return new Date(y, m - 1, 1).toLocaleDateString(i18n.language, { month: "long" });
   }, [budgetMonth]);
 
   useEffect(() => {
@@ -304,7 +284,7 @@ export default function EditBudgetScreen() {
       ActionSheetIOS.showActionSheetWithOptions(
         {
           title: group.name,
-          options: [t('renameGroup'), t('deleteGroup'), t('cancel')],
+          options: [t("renameGroup"), t("deleteGroup"), t("cancel")],
           destructiveButtonIndex: 1,
           cancelButtonIndex: 2,
         },
@@ -321,7 +301,7 @@ export default function EditBudgetScreen() {
     } else {
       Alert.alert(group.name, undefined, [
         {
-          text: t('renameGroup'),
+          text: t("renameGroup"),
           onPress: () =>
             router.push({
               pathname: "/(auth)/budget/edit-group",
@@ -329,11 +309,11 @@ export default function EditBudgetScreen() {
             }),
         },
         {
-          text: t('deleteGroup'),
+          text: t("deleteGroup"),
           style: "destructive",
           onPress: () => confirmDeleteGroup(group, catCount),
         },
-        { text: t('cancel'), style: "cancel" },
+        { text: t("cancel"), style: "cancel" },
       ]);
     }
   }
@@ -341,18 +321,22 @@ export default function EditBudgetScreen() {
   function confirmDeleteGroup(group: CategoryGroup, catCount: number) {
     const message =
       catCount > 0
-        ? t('deleteGroupMessageWithCategories', { name: group.name, count: catCount, suffix: catCount === 1 ? 'y' : 'ies' })
-        : t('deleteGroupMessageEmpty', { name: group.name });
-    Alert.alert(t('deleteGroupTitle'), message, [
-      { text: t('cancel'), style: "cancel" },
+        ? t("deleteGroupMessageWithCategories", {
+            name: group.name,
+            count: catCount,
+            suffix: catCount === 1 ? "y" : "ies",
+          })
+        : t("deleteGroupMessageEmpty", { name: group.name });
+    Alert.alert(t("deleteGroupTitle"), message, [
+      { text: t("cancel"), style: "cancel" },
       {
-        text: t('delete'),
+        text: t("delete"),
         style: "destructive",
         onPress: async () => {
           await useCategoriesStore.getState().deleteCategoryGroup(group.id);
           await useCategoriesStore.getState().load();
           await useBudgetStore.getState().load();
-          useUndoStore.getState().showUndo(t('categoryGroupDeleted'));
+          useUndoStore.getState().showUndo(t("categoryGroupDeleted"));
         },
       },
     ]);
@@ -361,23 +345,19 @@ export default function EditBudgetScreen() {
   // ---------- Category delete ----------
 
   function handleDeleteCategory(cat: Category) {
-    Alert.alert(
-      t('deleteCategory'),
-      t('deleteCategoryMessage', { name: cat.name }),
-      [
-        { text: t('cancel'), style: "cancel" },
-        {
-          text: t('delete'),
-          style: "destructive",
-          onPress: async () => {
-            await useCategoriesStore.getState().deleteCategory(cat.id);
-            await useCategoriesStore.getState().load();
-            await useBudgetStore.getState().load();
-            useUndoStore.getState().showUndo(t('categoryDeleted'));
-          },
+    Alert.alert(t("deleteCategory"), t("deleteCategoryMessage", { name: cat.name }), [
+      { text: t("cancel"), style: "cancel" },
+      {
+        text: t("delete"),
+        style: "destructive",
+        onPress: async () => {
+          await useCategoriesStore.getState().deleteCategory(cat.id);
+          await useCategoriesStore.getState().load();
+          await useBudgetStore.getState().load();
+          useUndoStore.getState().showUndo(t("categoryDeleted"));
         },
-      ],
-    );
+      },
+    ]);
   }
 
   // ---------- Render: Normal mode ----------
@@ -403,7 +383,7 @@ export default function EditBudgetScreen() {
                 fontWeight: "700",
               }}
             >
-              {section.isIncome ? t('income') : t('expenses')}
+              {section.isIncome ? t("income") : t("expenses")}
             </Text>
           </View>
         );
@@ -449,7 +429,7 @@ export default function EditBudgetScreen() {
             }
             hitSlop={12}
             accessibilityRole="button"
-            accessibilityLabel={t('addGroupAccessibility', { name: group.name })}
+            accessibilityLabel={t("addGroupAccessibility", { name: group.name })}
           >
             <Ionicons name="add-circle" size={18} color={colors.primary} />
           </Pressable>
@@ -463,9 +443,13 @@ export default function EditBudgetScreen() {
             hitSlop={12}
             style={{ marginLeft: spacing.sm }}
             accessibilityRole="button"
-            accessibilityLabel={t('editGroupAccessibility', { name: group.name })}
+            accessibilityLabel={t("editGroupAccessibility", { name: group.name })}
           >
-            <Ionicons name="ellipsis-horizontal-circle-outline" size={18} color={colors.textMuted} />
+            <Ionicons
+              name="ellipsis-horizontal-circle-outline"
+              size={18}
+              color={colors.textMuted}
+            />
           </Pressable>
         </View>
       );
@@ -474,15 +458,7 @@ export default function EditBudgetScreen() {
   );
 
   const renderNormalItem = useCallback(
-    ({
-      item,
-      index,
-      section,
-    }: {
-      item: Category;
-      index: number;
-      section: GroupSection;
-    }) => {
+    ({ item, index, section }: { item: Category; index: number; section: GroupSection }) => {
       const isLast = index === section.data.length - 1;
       const isFirst = index === 0;
 
@@ -525,15 +501,17 @@ export default function EditBudgetScreen() {
                 paddingTop: 12,
                 paddingBottom: hasGoal ? 10 : 12,
                 minHeight: 44,
-                backgroundColor: pressed
-                  ? colors.elevatedBackground
-                  : colors.cardBackground,
+                backgroundColor: pressed ? colors.elevatedBackground : colors.cardBackground,
                 borderTopWidth: isFirst ? 0 : bw.thin,
                 borderTopColor: colors.divider,
               })}
               accessibilityRole="button"
-              accessibilityLabel={hasGoal ? t('categoryTargetAccessibility', { name: item.name, target: goalDescription }) : item.name}
-              accessibilityHint={t('editCategoryHint')}
+              accessibilityLabel={
+                hasGoal
+                  ? t("categoryTargetAccessibility", { name: item.name, target: goalDescription })
+                  : item.name
+              }
+              accessibilityHint={t("editCategoryHint")}
             >
               {/* Line 1: Name + Goal description or Add Target */}
               <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -551,7 +529,7 @@ export default function EditBudgetScreen() {
                   </Text>
                 ) : goalsEnabled ? (
                   <Button
-                    title={t('addTarget')}
+                    title={t("addTarget")}
                     icon="add-circle"
                     variant="ghost"
                     size="sm"
@@ -590,12 +568,7 @@ export default function EditBudgetScreen() {
     const fadeStart = headerHeight * 0.25;
     const fadeEnd = headerHeight * 0.55;
     return {
-      opacity: interpolate(
-        scrollY.value,
-        [fadeStart, fadeEnd],
-        [1, 0],
-        Extrapolation.CLAMP,
-      ),
+      opacity: interpolate(scrollY.value, [fadeStart, fadeEnd], [1, 0], Extrapolation.CLAMP),
     };
   });
 
@@ -620,7 +593,7 @@ export default function EditBudgetScreen() {
           color="rgba(255,255,255,0.7)"
           style={{ fontWeight: "600", marginTop: spacing.xl }}
         >
-          {t('editBudget')}
+          {t("editBudget")}
         </Text>
 
         {/* Big amount: needed to fund all goals */}
@@ -634,16 +607,12 @@ export default function EditBudgetScreen() {
               colored={false}
             />
             <Text variant="captionSm" color="rgba(255,255,255,0.6)">
-              {needed > 0 ? t('neededToFundGoals') : t('allGoalsFunded')}
+              {needed > 0 ? t("neededToFundGoals") : t("allGoalsFunded")}
             </Text>
           </>
         ) : (
-          <Text
-            variant="body"
-            color="rgba(255,255,255,0.6)"
-            style={{ marginTop: spacing.sm }}
-          >
-            {t('noGoalsConfigured')}
+          <Text variant="body" color="rgba(255,255,255,0.6)" style={{ marginTop: spacing.sm }}>
+            {t("noGoalsConfigured")}
           </Text>
         )}
       </Animated.View>
@@ -651,8 +620,7 @@ export default function EditBudgetScreen() {
   );
 
   // Goals bar: green when income covers all goals, primary/purple otherwise
-  const goalsBarColor =
-    income >= totalGoals && totalGoals > 0 ? colors.positive : colors.primary;
+  const goalsBarColor = income >= totalGoals && totalGoals > 0 ? colors.positive : colors.primary;
 
   // Card content (reused in both inline spacer and sticky overlay)
   const cardInner = (
@@ -675,8 +643,8 @@ export default function EditBudgetScreen() {
         textColor={colors.textSecondary}
         subtextColor={colors.textMuted}
         monthLabel={monthName}
-        goalsLabel={t('monthGoals', { month: monthName })}
-        incomeLabel={t('monthlyIncome')}
+        goalsLabel={t("monthGoals", { month: monthName })}
+        incomeLabel={t("monthlyIncome")}
       />
     </View>
   );
@@ -700,12 +668,7 @@ export default function EditBudgetScreen() {
     if (headerHeight === 0) return { opacity: 0 };
     const sp = headerHeight - 32 - stickyTop;
     return {
-      opacity: interpolate(
-        scrollY.value,
-        [sp - 30, sp],
-        [0, 1],
-        Extrapolation.CLAMP,
-      ),
+      opacity: interpolate(scrollY.value, [sp - 30, sp], [0, 1], Extrapolation.CLAMP),
     };
   });
 
@@ -721,7 +684,7 @@ export default function EditBudgetScreen() {
     >
       <View style={{ flex: 1 }}>
         <Button
-          title={t('reorder')}
+          title={t("reorder")}
           icon="reorder-three-outline"
           variant="secondary"
           size="sm"
@@ -746,8 +709,12 @@ export default function EditBudgetScreen() {
           })}
         >
           <SymbolView name="folder.badge.plus" size={17} tintColor={colors.buttonSecondaryText} />
-          <Text variant="bodyLg" color={colors.buttonSecondaryText} style={{ fontSize: 13, fontWeight: "600" }}>
-            {t('addGroup')}
+          <Text
+            variant="bodyLg"
+            color={colors.buttonSecondaryText}
+            style={{ fontSize: 13, fontWeight: "600" }}
+          >
+            {t("addGroup")}
           </Text>
         </Pressable>
       </View>
@@ -761,42 +728,40 @@ export default function EditBudgetScreen() {
       <Stack.Screen options={{ headerShown: false }} />
 
       <SectionList
-          sections={sections}
-          keyExtractor={(c) => c.id}
-          renderItem={renderNormalItem}
-          renderSectionHeader={renderSectionHeader}
-          stickySectionHeadersEnabled={false}
-          showsVerticalScrollIndicator={false}
-          onScroll={(e) => { scrollY.value = e.nativeEvent.contentOffset.y; }}
-          scrollEventThrottle={16}
-          contentContainerStyle={{ paddingBottom: 80 }}
-          ListHeaderComponent={
-            <>
-              {headerContent}
-              {goalsEnabled && totalGoals > 0 && (
-                <View style={{ marginTop: -32, paddingTop: spacing.sm, opacity: 0 }}>
-                  {cardInner}
-                </View>
-              )}
-              {actionButtons}
-            </>
-          }
-          ListEmptyComponent={
-            <View style={{ alignItems: "center", marginTop: 80, gap: 8 }}>
-              <SymbolView
-                name="folder.badge.questionmark"
-                tintColor={colors.textMuted}
-                size={48}
-              />
-              <Text variant="bodyLg" color={colors.textSecondary}>
-                {t('noCategoryGroupsYet')}
-              </Text>
-              <Text variant="bodySm" color={colors.textMuted}>
-                {t('organizeByCreating')}
-              </Text>
-            </View>
-          }
-        />
+        sections={sections}
+        keyExtractor={(c) => c.id}
+        renderItem={renderNormalItem}
+        renderSectionHeader={renderSectionHeader}
+        stickySectionHeadersEnabled={false}
+        showsVerticalScrollIndicator={false}
+        onScroll={(e) => {
+          scrollY.value = e.nativeEvent.contentOffset.y;
+        }}
+        scrollEventThrottle={16}
+        contentContainerStyle={{ paddingBottom: 80 }}
+        ListHeaderComponent={
+          <>
+            {headerContent}
+            {goalsEnabled && totalGoals > 0 && (
+              <View style={{ marginTop: -32, paddingTop: spacing.sm, opacity: 0 }}>
+                {cardInner}
+              </View>
+            )}
+            {actionButtons}
+          </>
+        }
+        ListEmptyComponent={
+          <View style={{ alignItems: "center", marginTop: 80, gap: 8 }}>
+            <SymbolView name="folder.badge.questionmark" tintColor={colors.textMuted} size={48} />
+            <Text variant="bodyLg" color={colors.textSecondary}>
+              {t("noCategoryGroupsYet")}
+            </Text>
+            <Text variant="bodySm" color={colors.textMuted}>
+              {t("organizeByCreating")}
+            </Text>
+          </View>
+        }
+      />
 
       {/* Purple bg behind sticky card — zIndex 5 */}
       {goalsEnabled && totalGoals > 0 && (
@@ -847,7 +812,12 @@ export default function EditBudgetScreen() {
           zIndex: 20,
         }}
       >
-        <GlassButton icon="chevron.left" iconSize={24} onPress={() => router.back()} color={headerText} />
+        <GlassButton
+          icon="chevron.left"
+          iconSize={24}
+          onPress={() => router.back()}
+          color={headerText}
+        />
       </View>
     </View>
   );

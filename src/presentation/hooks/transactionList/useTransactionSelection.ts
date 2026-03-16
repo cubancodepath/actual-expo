@@ -1,6 +1,6 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
-import * as Haptics from 'expo-haptics';
-import type { TransactionDisplay } from '../../../transactions';
+import { useCallback, useMemo, useRef, useState } from "react";
+import * as Haptics from "expo-haptics";
+import type { TransactionDisplay } from "../../../transactions";
 
 interface UseTransactionSelectionOptions {
   transactions: TransactionDisplay[];
@@ -25,13 +25,13 @@ export function useTransactionSelection({
   transactionsRef.current = transactions;
 
   const selectedTransactions = useMemo(
-    () => transactions.filter(t => selectedIds.has(t.id)),
+    () => transactions.filter((t) => selectedIds.has(t.id)),
     [selectedIds, transactions],
   );
 
   const allCleared = useMemo(() => {
-    const nonReconciled = selectedTransactions.filter(t => !t.reconciled);
-    return nonReconciled.length > 0 && nonReconciled.every(t => t.cleared);
+    const nonReconciled = selectedTransactions.filter((t) => !t.reconciled);
+    return nonReconciled.length > 0 && nonReconciled.every((t) => t.cleared);
   }, [selectedTransactions]);
 
   const selectedTotal = useMemo(
@@ -40,14 +40,14 @@ export function useTransactionSelection({
   );
 
   const handleLongPress = useCallback((txnId: string) => {
-    setIsSelectMode(prev => {
+    setIsSelectMode((prev) => {
       if (!prev) {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         onEnterRef.current?.();
       }
       return true;
     });
-    setSelectedIds(prev => {
+    setSelectedIds((prev) => {
       const next = new Set(prev);
       if (next.has(txnId)) next.delete(txnId);
       else next.add(txnId);
@@ -62,7 +62,7 @@ export function useTransactionSelection({
   }, []);
 
   const handleSelectAll = useCallback(() => {
-    const allIds = transactionsRef.current.map(t => t.id);
+    const allIds = transactionsRef.current.map((t) => t.id);
     setSelectedIds(new Set(allIds));
   }, []);
 

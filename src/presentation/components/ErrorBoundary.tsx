@@ -1,8 +1,8 @@
-import { Component, type ReactNode } from 'react';
-import { ScrollView, View, StyleSheet, Appearance } from 'react-native';
-import * as Sentry from '@sentry/react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { lightColors, darkColors } from '../../theme/colors';
+import { Component, type ReactNode } from "react";
+import { ScrollView, View, StyleSheet, Appearance } from "react-native";
+import * as Sentry from "@sentry/react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { lightColors, darkColors } from "../../theme/colors";
 
 interface Props {
   children: ReactNode;
@@ -21,7 +21,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    console.error('[ErrorBoundary]', error, info.componentStack);
+    console.error("[ErrorBoundary]", error, info.componentStack);
     Sentry.captureException(error, { extra: { componentStack: info.componentStack } });
   }
 
@@ -32,15 +32,12 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (!this.state.hasError) return this.props.children;
 
-    const isDark = Appearance.getColorScheme() === 'dark';
+    const isDark = Appearance.getColorScheme() === "dark";
     const colors = isDark ? darkColors : lightColors;
 
     return (
       <View style={[styles.container, { backgroundColor: colors.pageBackground }]}>
-        <ScrollView
-          contentContainerStyle={styles.content}
-          bounces={false}
-        >
+        <ScrollView contentContainerStyle={styles.content} bounces={false}>
           <View style={[styles.iconCircle, { backgroundColor: colors.errorBackground }]}>
             <Ionicons name="warning-outline" size={32} color={colors.errorText} />
           </View>
@@ -60,7 +57,12 @@ export class ErrorBoundary extends Component<Props, State> {
           </View>
 
           {this.state.error && (
-            <View style={[styles.errorBox, { backgroundColor: colors.cardBackground, borderColor: colors.cardBorder }]}>
+            <View
+              style={[
+                styles.errorBox,
+                { backgroundColor: colors.cardBackground, borderColor: colors.cardBorder },
+              ]}
+            >
               <RNText style={[styles.errorText, { color: colors.negative }]} numberOfLines={6}>
                 {this.state.error.message}
               </RNText>
@@ -81,7 +83,7 @@ export class ErrorBoundary extends Component<Props, State> {
 }
 
 // Use raw RN Text to avoid circular deps with themed components
-import { Text as RNText } from 'react-native';
+import { Text as RNText } from "react-native";
 
 const styles = StyleSheet.create({
   container: {
@@ -89,8 +91,8 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 32,
     gap: 24,
   },
@@ -98,44 +100,44 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   textBlock: {
-    alignItems: 'center',
+    alignItems: "center",
     gap: 8,
   },
   title: {
     fontSize: 20,
-    fontWeight: '700',
-    textAlign: 'center',
+    fontWeight: "700",
+    textAlign: "center",
   },
   message: {
     fontSize: 15,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 22,
   },
   errorBox: {
-    width: '100%',
+    width: "100%",
     borderRadius: 12,
     borderWidth: 0.5,
     padding: 16,
   },
   errorText: {
     fontSize: 13,
-    fontFamily: 'Menlo',
+    fontFamily: "Menlo",
   },
   button: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
     paddingVertical: 14,
     paddingHorizontal: 24,
     borderRadius: 9999,
   },
   buttonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });

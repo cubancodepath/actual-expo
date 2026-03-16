@@ -1,7 +1,7 @@
-import { create } from 'zustand';
-import { createMMKV } from 'react-native-mmkv';
+import { create } from "zustand";
+import { createMMKV } from "react-native-mmkv";
 
-const mmkv = createMMKV({ id: 'actual-privacy' });
+const mmkv = createMMKV({ id: "actual-privacy" });
 
 type PrivacyState = {
   privacyMode: boolean;
@@ -9,10 +9,10 @@ type PrivacyState = {
 };
 
 export const usePrivacyStore = create<PrivacyState>((set, get) => ({
-  privacyMode: mmkv.getBoolean('privacyMode') ?? false,
+  privacyMode: mmkv.getBoolean("privacyMode") ?? false,
   toggle() {
     const next = !get().privacyMode;
-    mmkv.set('privacyMode', next);
+    mmkv.set("privacyMode", next);
     set({ privacyMode: next });
   },
 }));

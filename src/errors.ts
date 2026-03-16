@@ -4,7 +4,7 @@ export class PostError extends Error {
 
   constructor(type: string, meta?: unknown) {
     super(type);
-    this.name = 'PostError';
+    this.name = "PostError";
     this.type = type;
     this.meta = meta;
   }
@@ -16,7 +16,7 @@ export class SyncError extends Error {
 
   constructor(type: string, meta?: unknown) {
     super(type);
-    this.name = 'SyncError';
+    this.name = "SyncError";
     this.type = type;
     this.meta = meta;
   }

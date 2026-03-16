@@ -1,1 +1,1 @@
-export { default } from '../transaction/category-picker';
+export { default } from "../transaction/category-picker";

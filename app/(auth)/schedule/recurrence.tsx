@@ -4,11 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
-import {
-  Text,
-  Card,
-  Divider,
-} from "../../../src/presentation/components";
+import { Text, Card, Divider } from "../../../src/presentation/components";
 import { GlassButton } from "../../../src/presentation/components/atoms/GlassButton";
 import { usePickerStore } from "../../../src/stores/pickerStore";
 import { getRecurringDescription } from "../../../src/schedules";
@@ -55,11 +51,9 @@ export default function RecurrencePickerScreen() {
   const { config: configParam } = useLocalSearchParams<{ config?: string }>();
   const router = useRouter();
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
-  const { t } = useTranslation(['schedules', 'common']);
+  const { t } = useTranslation(["schedules", "common"]);
 
-  const currentConfig: RecurConfig | null = configParam
-    ? JSON.parse(configParam)
-    : null;
+  const currentConfig: RecurConfig | null = configParam ? JSON.parse(configParam) : null;
 
   const start = currentConfig?.start ?? todayStr();
   const presets = useMemo(() => buildPresets(start, t), [start, t]);
@@ -69,8 +63,7 @@ export default function RecurrencePickerScreen() {
 
   // Check if current config is a custom one (doesn't match any preset)
   const isCustom =
-    currentConfig != null &&
-    !presets.some((p) => matchesPreset(currentConfig, p.config));
+    currentConfig != null && !presets.some((p) => matchesPreset(currentConfig, p.config));
 
   function select(config: RecurConfig | null) {
     usePickerStore.getState().setRecurConfig(config);
@@ -94,15 +87,12 @@ export default function RecurrencePickerScreen() {
       >
         <GlassButton icon="chevron.left" onPress={() => router.back()} />
         <Text variant="headingSm" color={colors.headerText}>
-          {t('repeat')}
+          {t("repeat")}
         </Text>
         <View style={{ width: 48 }} />
       </View>
 
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: spacing.xxxl }}
-      >
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: spacing.xxxl }}>
         {/* ── Preset options ── */}
         <View
           style={{
@@ -129,23 +119,16 @@ export default function RecurrencePickerScreen() {
             ]}
             onPress={() => select(null)}
           >
-            <Text
-              variant="body"
-              color={colors.textPrimary}
-              style={{ flex: 1 }}
-            >
-              {t('never')}
+            <Text variant="body" color={colors.textPrimary} style={{ flex: 1 }}>
+              {t("never")}
             </Text>
             <View style={{ width: 20, alignItems: "center" }}>
-              {isNever && (
-                <Ionicons name="checkmark" size={20} color={colors.primary} />
-              )}
+              {isNever && <Ionicons name="checkmark" size={20} color={colors.primary} />}
             </View>
           </Pressable>
 
           {presets.map((preset, i) => {
-            const selected =
-              currentConfig != null && matchesPreset(currentConfig, preset.config);
+            const selected = currentConfig != null && matchesPreset(currentConfig, preset.config);
 
             return (
               <View key={preset.label}>
@@ -163,21 +146,11 @@ export default function RecurrencePickerScreen() {
                   ]}
                   onPress={() => select(preset.config)}
                 >
-                  <Text
-                    variant="body"
-                    color={colors.textPrimary}
-                    style={{ flex: 1 }}
-                  >
+                  <Text variant="body" color={colors.textPrimary} style={{ flex: 1 }}>
                     {preset.label}
                   </Text>
                   <View style={{ width: 20, alignItems: "center" }}>
-                    {selected && (
-                      <Ionicons
-                        name="checkmark"
-                        size={20}
-                        color={colors.primary}
-                      />
-                    )}
+                    {selected && <Ionicons name="checkmark" size={20} color={colors.primary} />}
                   </View>
                 </Pressable>
               </View>
@@ -217,12 +190,8 @@ export default function RecurrencePickerScreen() {
               });
             }}
           >
-            <Text
-              variant="body"
-              color={colors.textPrimary}
-              style={{ flex: 1 }}
-            >
-              {t('custom')}
+            <Text variant="body" color={colors.textPrimary} style={{ flex: 1 }}>
+              {t("custom")}
             </Text>
             {isCustom && (
               <Text
@@ -234,11 +203,7 @@ export default function RecurrencePickerScreen() {
                 {getRecurringDescription(currentConfig!)}
               </Text>
             )}
-            <Ionicons
-              name="chevron-forward"
-              size={18}
-              color={colors.textMuted}
-            />
+            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
           </Pressable>
         </View>
       </ScrollView>

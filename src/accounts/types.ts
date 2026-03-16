@@ -6,7 +6,7 @@ export type Account = {
   sort_order: number | null;
   lastReconciled: string | null;
   tombstone: boolean;
-  balance?: number;           // cents, total (cleared + uncleared)
-  clearedBalance?: number;    // cents, sum of cleared transactions
-  unclearedBalance?: number;  // cents, sum of uncleared transactions
+  balance?: number; // cents, total (cleared + uncleared)
+  clearedBalance?: number; // cents, sum of cleared transactions
+  unclearedBalance?: number; // cents, sum of uncleared transactions
 };

@@ -1,10 +1,10 @@
-import { create } from 'zustand';
-import { registerStore } from './storeRegistry';
-import { getAllPreferences, setPreference } from '../preferences';
-import { PREFERENCE_DEFAULTS, type PreferenceKey } from '../preferences/types';
-import { setNumberFormat, setCurrencyConfig, type NumberFormatType } from '../lib/format';
-import { setDateFormat } from '../lib/date';
-import { getCurrency } from '../lib/currencies';
+import { create } from "zustand";
+import { registerStore } from "./storeRegistry";
+import { getAllPreferences, setPreference } from "../preferences";
+import { PREFERENCE_DEFAULTS, type PreferenceKey } from "../preferences/types";
+import { setNumberFormat, setCurrencyConfig, type NumberFormatType } from "../lib/format";
+import { setDateFormat } from "../lib/date";
+import { getCurrency } from "../lib/currencies";
 
 type PreferencesState = {
   dateFormat: string;
@@ -31,17 +31,17 @@ function applyFormatConfig(prefs: {
 }) {
   setNumberFormat({
     format: prefs.numberFormat as NumberFormatType,
-    hideFraction: prefs.hideFraction === 'true',
+    hideFraction: prefs.hideFraction === "true",
   });
   setDateFormat(prefs.dateFormat);
 
-  const currency = getCurrency(prefs.defaultCurrencyCode || '');
+  const currency = getCurrency(prefs.defaultCurrencyCode || "");
   const effectiveSymbol = prefs.defaultCurrencyCustomSymbol || currency.symbol;
   setCurrencyConfig({
     symbol: effectiveSymbol,
     svgSymbol: prefs.defaultCurrencyCustomSymbol ? undefined : currency.svgSymbol,
-    position: (prefs.currencySymbolPosition || 'before') as 'before' | 'after',
-    spaceBetween: prefs.currencySpaceBetweenAmountAndSymbol === 'true',
+    position: (prefs.currencySymbolPosition || "before") as "before" | "after",
+    spaceBetween: prefs.currencySpaceBetweenAmountAndSymbol === "true",
   });
 }
 
@@ -64,6 +64,4 @@ export const usePreferencesStore = create<PreferencesState>((set, get) => ({
   },
 }));
 
-registerStore('preferences', ['preferences', 'prefs'], () =>
-  usePreferencesStore.getState().load(),
-);
+registerStore("preferences", ["preferences", "prefs"], () => usePreferencesStore.getState().load());

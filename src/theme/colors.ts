@@ -101,26 +101,26 @@ export const palette = {
 
   // ── Modern vibrant accents (for semantic tokens) ────────────────────────────
   // Inspired by Copilot Money, Robinhood, iOS system colors, Tailwind
-  emerald600: "#059669",   // light-mode positive text (4.6:1 on white ✓)
-  emerald700: "#047857",   // positive fill bg (5.48:1 white-on ✓)
-  emerald400: "#34D399",   // dark-mode positive (vibrant mint)
-  rose600: "#E11D48",      // light-mode negative text (5.2:1 on white ✓)
-  rose700: "#9F1239",      // negative fill bg (8.0:1 white-on ✓) — matches emerald700 depth
-  rose400: "#FB7185",      // dark-mode negative (vibrant coral)
-  amber600: "#D97706",     // light-mode warning text (4.6:1 on white ✓)
-  amber700: "#B45309",     // warning fill bg (5.02:1 white-on ✓)
-  amber400: "#FBBF24",     // dark-mode warning (vibrant gold)
+  emerald600: "#059669", // light-mode positive text (4.6:1 on white ✓)
+  emerald700: "#047857", // positive fill bg (5.48:1 white-on ✓)
+  emerald400: "#34D399", // dark-mode positive (vibrant mint)
+  rose600: "#E11D48", // light-mode negative text (5.2:1 on white ✓)
+  rose700: "#9F1239", // negative fill bg (8.0:1 white-on ✓) — matches emerald700 depth
+  rose400: "#FB7185", // dark-mode negative (vibrant coral)
+  amber600: "#D97706", // light-mode warning text (4.6:1 on white ✓)
+  amber700: "#B45309", // warning fill bg (5.02:1 white-on ✓)
+  amber400: "#FBBF24", // dark-mode warning (vibrant gold)
 
   // Chart categorical (vibrant modern palette)
-  chart1: "#8719E0",   // purple (brand)
-  chart2: "#0EA5E9",   // sky blue
-  chart3: "#10B981",   // emerald
-  chart4: "#F59E0B",   // amber
-  chart5: "#EC4899",   // pink
-  chart6: "#06B6D4",   // cyan
-  chart7: "#F97316",   // orange
-  chart8: "#8B5CF6",   // violet
-  chart9: "#14B8A6",   // teal
+  chart1: "#8719E0", // purple (brand)
+  chart2: "#0EA5E9", // sky blue
+  chart3: "#10B981", // emerald
+  chart4: "#F59E0B", // amber
+  chart5: "#EC4899", // pink
+  chart6: "#06B6D4", // cyan
+  chart7: "#F97316", // orange
+  chart8: "#8B5CF6", // violet
+  chart9: "#14B8A6", // teal
 } as const;
 
 // ── Semantic theme tokens ─────────────────────────────────────────────────────
@@ -280,9 +280,15 @@ export const lightColors: ThemeColors = {
 
   // Charts (vibrant modern palette)
   chart: [
-    palette.chart1, palette.chart2, palette.chart3,
-    palette.chart4, palette.chart5, palette.chart6,
-    palette.chart7, palette.chart8, palette.chart9,
+    palette.chart1,
+    palette.chart2,
+    palette.chart3,
+    palette.chart4,
+    palette.chart5,
+    palette.chart6,
+    palette.chart7,
+    palette.chart8,
+    palette.chart9,
   ],
 
   // Toast
@@ -367,9 +373,15 @@ export const darkColors: ThemeColors = {
 
   // Charts (vibrant modern palette)
   chart: [
-    palette.chart1, palette.chart2, palette.chart3,
-    palette.chart4, palette.chart5, palette.chart6,
-    palette.chart7, palette.chart8, palette.chart9,
+    palette.chart1,
+    palette.chart2,
+    palette.chart3,
+    palette.chart4,
+    palette.chart5,
+    palette.chart6,
+    palette.chart7,
+    palette.chart8,
+    palette.chart9,
   ],
 
   // Toast

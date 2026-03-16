@@ -8,13 +8,7 @@ export interface TextProps extends RNTextProps {
   align?: "left" | "center" | "right";
 }
 
-export function Text({
-  variant = "body",
-  color,
-  align,
-  style,
-  ...props
-}: TextProps) {
+export function Text({ variant = "body", color, align, style, ...props }: TextProps) {
   const { colors, typography } = useTheme();
 
   return (

@@ -8,13 +8,7 @@ import type { SFSymbol } from "sf-symbols-typescript";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { useTheme, useThemedStyles } from "../../../src/presentation/providers/ThemeProvider";
-import {
-  Text,
-  Card,
-  ListItem,
-  SectionHeader,
-  Button,
-} from "../../../src/presentation/components";
+import { Text, Card, ListItem, SectionHeader, Button } from "../../../src/presentation/components";
 import { usePrefsStore } from "../../../src/stores/prefsStore";
 import { resetAllStores } from "../../../src/stores/resetStores";
 import { useSyncStore } from "../../../src/stores/syncStore";
@@ -26,25 +20,41 @@ import type { Theme } from "../../../src/theme";
 
 const ICON_SIZE = 20;
 
-function SettingsIcon({ sfSymbol, ionIcon, color }: { sfSymbol: SFSymbol; ionIcon: keyof typeof Ionicons.glyphMap; color: string }) {
-  if (Platform.OS === 'ios') {
+function SettingsIcon({
+  sfSymbol,
+  ionIcon,
+  color,
+}: {
+  sfSymbol: SFSymbol;
+  ionIcon: keyof typeof Ionicons.glyphMap;
+  color: string;
+}) {
+  if (Platform.OS === "ios") {
     return <SymbolView name={sfSymbol} size={ICON_SIZE} tintColor={color} />;
   }
   return <Ionicons name={ionIcon} size={ICON_SIZE} color={color} />;
 }
 
-function ServerRow({ label, value, sfSymbol, ionIcon, showSeparator }: { label: string; value: string; sfSymbol: SFSymbol; ionIcon: keyof typeof Ionicons.glyphMap; showSeparator?: boolean }) {
+function ServerRow({
+  label,
+  value,
+  sfSymbol,
+  ionIcon,
+  showSeparator,
+}: {
+  label: string;
+  value: string;
+  sfSymbol: SFSymbol;
+  ionIcon: keyof typeof Ionicons.glyphMap;
+  showSeparator?: boolean;
+}) {
   const { colors, spacing } = useTheme();
   return (
     <ListItem
       title={label}
       left={<SettingsIcon sfSymbol={sfSymbol} ionIcon={ionIcon} color={colors.textMuted} />}
       right={
-        <Text
-          variant="bodySm"
-          color={colors.textSecondary}
-          numberOfLines={1}
-        >
+        <Text variant="bodySm" color={colors.textSecondary} numberOfLines={1}>
           {value || "—"}
         </Text>
       }
@@ -59,11 +69,19 @@ export default function SettingsScreen() {
   const { colors, spacing } = useTheme();
   const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
-  const { t } = useTranslation('settings');
-  const { t: tc } = useTranslation('common');
+  const { t } = useTranslation("settings");
+  const { t: tc } = useTranslation("common");
 
-  const { serverUrl, fileId, groupId, encryptKeyId, budgetName, lastSyncedTimestamp, isLocalOnly, clearAll } =
-    usePrefsStore();
+  const {
+    serverUrl,
+    fileId,
+    groupId,
+    encryptKeyId,
+    budgetName,
+    lastSyncedTimestamp,
+    isLocalOnly,
+    clearAll,
+  } = usePrefsStore();
   const lastSync = useSyncStore((s) => s.lastSync);
   const { privacyMode, toggle: togglePrivacy } = usePrivacyStore();
   const [loggingOut, setLoggingOut] = useState(false);
@@ -72,33 +90,29 @@ export default function SettingsScreen() {
     ? lastSync.toLocaleTimeString()
     : lastSyncedTimestamp
       ? lastSyncedTimestamp.slice(0, 16)
-      : tc('never');
+      : tc("never");
 
   function handleDeleteLocal() {
-    Alert.alert(
-      t('deleteAllData'),
-      t('deleteAllDataMessage'),
-      [
-        { text: tc('cancel'), style: "cancel" },
-        {
-          text: tc('delete'),
-          style: "destructive",
-          onPress: async () => {
-            setLoggingOut(true);
-            try {
-              resetSyncState();
-              resetAllStores();
-              await clearAll();
-              await clearLocalData();
-              await loadClock();
-            } finally {
-              clearSwitchingFlag();
-              setLoggingOut(false);
-            }
-          },
+    Alert.alert(t("deleteAllData"), t("deleteAllDataMessage"), [
+      { text: tc("cancel"), style: "cancel" },
+      {
+        text: tc("delete"),
+        style: "destructive",
+        onPress: async () => {
+          setLoggingOut(true);
+          try {
+            resetSyncState();
+            resetAllStores();
+            await clearAll();
+            await clearLocalData();
+            await loadClock();
+          } finally {
+            clearSwitchingFlag();
+            setLoggingOut(false);
+          }
         },
-      ],
-    );
+      },
+    ]);
   }
 
   async function handleConnectToServer() {
@@ -107,30 +121,26 @@ export default function SettingsScreen() {
   }
 
   function handleLogout() {
-    Alert.alert(
-      t('disconnectTitle'),
-      t('disconnectMessage'),
-      [
-        { text: tc('cancel'), style: "cancel" },
-        {
-          text: tc('disconnect'),
-          style: "destructive",
-          onPress: async () => {
-            setLoggingOut(true);
-            try {
-              resetSyncState();
-              resetAllStores();
-              await clearAll();
-              await clearLocalData();
-              await loadClock();
-            } finally {
-              clearSwitchingFlag();
-              setLoggingOut(false);
-            }
-          },
+    Alert.alert(t("disconnectTitle"), t("disconnectMessage"), [
+      { text: tc("cancel"), style: "cancel" },
+      {
+        text: tc("disconnect"),
+        style: "destructive",
+        onPress: async () => {
+          setLoggingOut(true);
+          try {
+            resetSyncState();
+            resetAllStores();
+            await clearAll();
+            await clearLocalData();
+            await loadClock();
+          } finally {
+            clearSwitchingFlag();
+            setLoggingOut(false);
+          }
         },
-      ],
-    );
+      },
+    ]);
   }
 
   return (
@@ -140,52 +150,72 @@ export default function SettingsScreen() {
       contentInsetAdjustmentBehavior="automatic"
     >
       {/* Budget */}
-      <SectionHeader title={t('currentBudget')} style={{ marginTop: spacing.lg }} />
+      <SectionHeader title={t("currentBudget")} style={{ marginTop: spacing.lg }} />
       <Text
         variant="headingLg"
         color={colors.textPrimary}
         style={{ paddingHorizontal: spacing.lg, marginBottom: spacing.md }}
       >
-        {budgetName || t('defaultBudgetName')}
+        {budgetName || t("defaultBudgetName")}
       </Text>
       <Card>
         <ListItem
-          title={t('budgetSettings')}
-          left={<SettingsIcon sfSymbol="gearshape" ionIcon="settings-outline" color={colors.textMuted} />}
+          title={t("budgetSettings")}
+          left={
+            <SettingsIcon
+              sfSymbol="gearshape"
+              ionIcon="settings-outline"
+              color={colors.textMuted}
+            />
+          }
           showChevron
           onPress={() => router.push("/(auth)/settings/budget")}
           showSeparator
           separatorInsetLeft={spacing.lg + ICON_SIZE + spacing.md}
         />
         <ListItem
-          title={t('newBudget')}
-          left={<SettingsIcon sfSymbol="plus.circle" ionIcon="add-circle-outline" color={colors.textMuted} />}
+          title={t("newBudget")}
+          left={
+            <SettingsIcon
+              sfSymbol="plus.circle"
+              ionIcon="add-circle-outline"
+              color={colors.textMuted}
+            />
+          }
           showChevron
           onPress={() => router.push("/(auth)/new-budget")}
           showSeparator
           separatorInsetLeft={spacing.lg + ICON_SIZE + spacing.md}
         />
         <ListItem
-          title={t('openBudget')}
-          left={<SettingsIcon sfSymbol="folder" ionIcon="folder-outline" color={colors.textMuted} />}
+          title={t("openBudget")}
+          left={
+            <SettingsIcon sfSymbol="folder" ionIcon="folder-outline" color={colors.textMuted} />
+          }
           showChevron
           onPress={() => router.push("/(auth)/change-budget")}
         />
       </Card>
 
       {/* App */}
-      <SectionHeader title={t('app')} style={{ marginTop: spacing.xl }} />
+      <SectionHeader title={t("app")} style={{ marginTop: spacing.xl }} />
       <Card>
         <ListItem
-          title={t('display')}
-          left={<SettingsIcon sfSymbol="paintbrush" ionIcon="color-palette-outline" color={colors.textMuted} />}
+          title={t("display")}
+          left={
+            <SettingsIcon
+              sfSymbol="paintbrush"
+              ionIcon="color-palette-outline"
+              color={colors.textMuted}
+            />
+          }
           showChevron
           onPress={() => router.push("/(auth)/settings/display")}
           showSeparator
           separatorInsetLeft={spacing.lg + ICON_SIZE + spacing.md}
         />
         <ListItem
-          title={t('language')}
+          title={t("language")}
           left={<SettingsIcon sfSymbol="globe" ionIcon="globe-outline" color={colors.textMuted} />}
           showChevron
           onPress={() => router.push("/(auth)/settings/language")}
@@ -193,16 +223,18 @@ export default function SettingsScreen() {
           separatorInsetLeft={spacing.lg + ICON_SIZE + spacing.md}
         />
         <ListItem
-          title={t('hideAmounts')}
-          subtitle={t('hideAmountsDescription')}
-          left={<SettingsIcon sfSymbol="eye.slash" ionIcon="eye-off-outline" color={colors.textMuted} />}
+          title={t("hideAmounts")}
+          subtitle={t("hideAmountsDescription")}
+          left={
+            <SettingsIcon sfSymbol="eye.slash" ionIcon="eye-off-outline" color={colors.textMuted} />
+          }
           onPress={togglePrivacy}
           right={
             <Switch
               value={privacyMode}
               onValueChange={togglePrivacy}
               trackColor={{ true: colors.primary }}
-              accessibilityLabel={t('hideAmounts')}
+              accessibilityLabel={t("hideAmounts")}
             />
           }
         />
@@ -211,41 +243,73 @@ export default function SettingsScreen() {
       {/* Server / Mode */}
       {isLocalOnly ? (
         <>
-          <SectionHeader title={t('mode')} style={{ marginTop: spacing.xl }} />
+          <SectionHeader title={t("mode")} style={{ marginTop: spacing.xl }} />
           <Card>
             <ListItem
-              title={t('localOnly')}
-              subtitle={t('localOnlyDescription')}
-              left={<SettingsIcon sfSymbol="iphone" ionIcon="phone-portrait-outline" color={colors.textMuted} />}
+              title={t("localOnly")}
+              subtitle={t("localOnlyDescription")}
+              left={
+                <SettingsIcon
+                  sfSymbol="iphone"
+                  ionIcon="phone-portrait-outline"
+                  color={colors.textMuted}
+                />
+              }
               showSeparator
               separatorInsetLeft={spacing.lg + ICON_SIZE + spacing.md}
             />
             <ListItem
-              title={t('connectToServer')}
-              subtitle={t('connectToServerDescription')}
-              left={<SettingsIcon sfSymbol="server.rack" ionIcon="server-outline" color={colors.textMuted} />}
+              title={t("connectToServer")}
+              subtitle={t("connectToServerDescription")}
+              left={
+                <SettingsIcon
+                  sfSymbol="server.rack"
+                  ionIcon="server-outline"
+                  color={colors.textMuted}
+                />
+              }
               showChevron
               onPress={handleConnectToServer}
               showSeparator
               separatorInsetLeft={spacing.lg + ICON_SIZE + spacing.md}
             />
             <ListItem
-              title={t('deleteAllData')}
+              title={t("deleteAllData")}
               titleColor={colors.negative}
-              left={<SettingsIcon sfSymbol="trash" ionIcon="trash-outline" color={colors.negative} />}
+              left={
+                <SettingsIcon sfSymbol="trash" ionIcon="trash-outline" color={colors.negative} />
+              }
               onPress={handleDeleteLocal}
             />
           </Card>
         </>
       ) : (
         <>
-          <SectionHeader title={t('server')} style={{ marginTop: spacing.xl }} />
+          <SectionHeader title={t("server")} style={{ marginTop: spacing.xl }} />
           <Card>
-            <ServerRow label={t('url')} value={serverUrl} sfSymbol="link" ionIcon="link-outline" showSeparator />
-            <ServerRow label={t('lastSync')} value={lastSyncText} sfSymbol="arrow.triangle.2.circlepath" ionIcon="sync-outline" showSeparator />
-            <ServerRow label={t('fileId')} value={fileId ? `${fileId.slice(0, 8)}…` : ""} sfSymbol="doc" ionIcon="document-outline" showSeparator />
             <ServerRow
-              label={t('groupId')}
+              label={t("url")}
+              value={serverUrl}
+              sfSymbol="link"
+              ionIcon="link-outline"
+              showSeparator
+            />
+            <ServerRow
+              label={t("lastSync")}
+              value={lastSyncText}
+              sfSymbol="arrow.triangle.2.circlepath"
+              ionIcon="sync-outline"
+              showSeparator
+            />
+            <ServerRow
+              label={t("fileId")}
+              value={fileId ? `${fileId.slice(0, 8)}…` : ""}
+              sfSymbol="doc"
+              ionIcon="document-outline"
+              showSeparator
+            />
+            <ServerRow
+              label={t("groupId")}
               value={groupId ? `${groupId.slice(0, 8)}…` : ""}
               sfSymbol="person.2"
               ionIcon="people-outline"
@@ -253,7 +317,7 @@ export default function SettingsScreen() {
             />
             {encryptKeyId && (
               <ServerRow
-                label={t('encryption')}
+                label={t("encryption")}
                 value={`${encryptKeyId.slice(0, 8)}…`}
                 sfSymbol="lock.shield"
                 ionIcon="shield-checkmark-outline"
@@ -261,7 +325,7 @@ export default function SettingsScreen() {
             )}
           </Card>
           <Button
-            title={t('disconnectFromServer')}
+            title={t("disconnectFromServer")}
             icon="log-out-outline"
             variant="ghost"
             textColor={colors.negative}

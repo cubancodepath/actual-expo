@@ -1,7 +1,7 @@
-import murmurhash from 'murmurhash';
-import { randomUUID } from 'expo-crypto';
+import murmurhash from "murmurhash";
+import { randomUUID } from "expo-crypto";
 
-import type { TrieNode } from './merkle';
+import type { TrieNode } from "./merkle";
 
 /**
  * Hybrid Unique Logical Clock (HULC) timestamp generator
@@ -59,7 +59,7 @@ export function deserializeClock(clock: string): Clock {
     data = JSON.parse(clock);
   } catch {
     data = {
-      timestamp: '1970-01-01T00:00:00.000Z-0000-' + makeClientId(),
+      timestamp: "1970-01-01T00:00:00.000Z-0000-" + makeClientId(),
       merkle: {},
     };
   }
@@ -77,7 +77,7 @@ export function deserializeClock(clock: string): Clock {
 }
 
 export function makeClientId() {
-  return randomUUID().replace(/-/g, '').slice(-16);
+  return randomUUID().replace(/-/g, "").slice(-16);
 }
 
 const config = {
@@ -85,7 +85,7 @@ const config = {
   maxDrift: 5 * 60 * 1000,
 };
 
-const MAX_COUNTER = parseInt('0xFFFF');
+const MAX_COUNTER = parseInt("0xFFFF");
 const MAX_NODE_LENGTH = 16;
 
 /**
@@ -109,9 +109,9 @@ export class Timestamp {
   toString() {
     return [
       new Date(this.millis()).toISOString(),
-      ('0000' + this.counter().toString(16).toUpperCase()).slice(-4),
-      ('0000000000000000' + this.node()).slice(-16),
-    ].join('-');
+      ("0000" + this.counter().toString(16).toUpperCase()).slice(-4),
+      ("0000000000000000" + this.node()).slice(-16),
+    ].join("-");
   }
 
   millis() {
@@ -143,9 +143,7 @@ export class Timestamp {
         new Timestamp(
           0,
           0,
-          options.node
-            ? ('0000000000000000' + options.node).toString().slice(-16)
-            : '',
+          options.node ? ("0000000000000000" + options.node).toString().slice(-16) : "",
         ),
       ),
     );
@@ -155,9 +153,7 @@ export class Timestamp {
    * maximum timestamp
    */
 
-  static max = Timestamp.parse(
-    '9999-12-31T23:59:59.999Z-FFFF-FFFFFFFFFFFFFFFF',
-  )!;
+  static max = Timestamp.parse("9999-12-31T23:59:59.999Z-FFFF-FFFFFFFFFFFFFFFF")!;
 
   /**
    * timestamp parsing
@@ -167,10 +163,10 @@ export class Timestamp {
     if (timestamp instanceof Timestamp) {
       return timestamp;
     }
-    if (typeof timestamp === 'string') {
-      const parts = timestamp.split('-');
+    if (typeof timestamp === "string") {
+      const parts = timestamp.split("-");
       if (parts && parts.length === 5) {
-        const millis = Date.parse(parts.slice(0, 3).join('-')).valueOf();
+        const millis = Date.parse(parts.slice(0, 3).join("-")).valueOf();
         const counter = parseInt(parts[3], 16);
         const node = parts[4];
         if (
@@ -178,7 +174,7 @@ export class Timestamp {
           millis >= 0 &&
           !isNaN(counter) &&
           counter <= MAX_COUNTER &&
-          typeof node === 'string' &&
+          typeof node === "string" &&
           node.length <= MAX_NODE_LENGTH
         ) {
           return new Timestamp(millis, counter, node);
@@ -284,53 +280,45 @@ export class Timestamp {
    * zero/minimum timestamp
    */
 
-  static zero = Timestamp.parse(
-    '1970-01-01T00:00:00.000Z-0000-0000000000000000',
-  )!;
+  static zero = Timestamp.parse("1970-01-01T00:00:00.000Z-0000-0000000000000000")!;
 
-  static since = (isoString: string) => isoString + '-0000-0000000000000000';
+  static since = (isoString: string) => isoString + "-0000-0000000000000000";
 
   /**
    * error classes
    */
   static DuplicateNodeError = class DuplicateNodeError extends Error {
     constructor(node: string) {
-      super('duplicate node identifier ' + node);
-      this.name = 'DuplicateNodeError';
+      super("duplicate node identifier " + node);
+      this.name = "DuplicateNodeError";
     }
   };
 
   static ClockDriftError = class ClockDriftError extends Error {
     constructor(...args: unknown[]) {
-      super(
-        ['maximum clock drift exceeded'].concat(args as string[]).join(' '),
-      );
-      this.name = 'ClockDriftError';
+      super(["maximum clock drift exceeded"].concat(args as string[]).join(" "));
+      this.name = "ClockDriftError";
     }
   };
 
   static OverflowError = class OverflowError extends Error {
     constructor() {
-      super('timestamp counter overflow');
-      this.name = 'OverflowError';
+      super("timestamp counter overflow");
+      this.name = "OverflowError";
     }
   };
 
   static InvalidError = class InvalidError extends Error {
     constructor(...args: unknown[]) {
-      super(['timestamp is not valid'].concat(args.map(String)).join(' '));
-      this.name = 'InvalidError';
+      super(["timestamp is not valid"].concat(args.map(String)).join(" "));
+      this.name = "InvalidError";
     }
   };
 }
 
 class MutableTimestamp extends Timestamp {
   static from(timestamp: Timestamp) {
-    return new MutableTimestamp(
-      timestamp.millis(),
-      timestamp.counter(),
-      timestamp.node(),
-    );
+    return new MutableTimestamp(timestamp.millis(), timestamp.counter(), timestamp.node());
   }
 
   setMillis(n: number) {

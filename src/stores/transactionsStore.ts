@@ -1,20 +1,26 @@
-import { create } from 'zustand';
-import { registerStore } from './storeRegistry';
+import { create } from "zustand";
+import { registerStore } from "./storeRegistry";
 import {
   getTransactions,
   addTransaction,
   updateTransaction,
   deleteTransaction,
-} from '../transactions';
-import type { Transaction, GetTransactionsOptions } from '../transactions/types';
+} from "../transactions";
+import type { Transaction, GetTransactionsOptions } from "../transactions/types";
 
 type TransactionsState = {
   transactions: Transaction[];
   accountId: string | null;
   loading: boolean;
-  load(accountId?: string, opts?: Omit<GetTransactionsOptions, 'accountId'>): Promise<void>;
-  add(txn: Omit<Partial<Transaction>, 'id' | 'tombstone'> & { acct: string; date: number; amount: number }): Promise<string>;
-  update(id: string, fields: Omit<Partial<Transaction>, 'id' | 'tombstone'>): Promise<void>;
+  load(accountId?: string, opts?: Omit<GetTransactionsOptions, "accountId">): Promise<void>;
+  add(
+    txn: Omit<Partial<Transaction>, "id" | "tombstone"> & {
+      acct: string;
+      date: number;
+      amount: number;
+    },
+  ): Promise<string>;
+  update(id: string, fields: Omit<Partial<Transaction>, "id" | "tombstone">): Promise<void>;
   delete_(id: string): Promise<void>;
 };
 
@@ -46,7 +52,7 @@ export const useTransactionsStore = create<TransactionsState>((set, get) => ({
   },
 }));
 
-registerStore('transactions', ['transactions'], () => {
+registerStore("transactions", ["transactions"], () => {
   const s = useTransactionsStore.getState();
   return s.load(s.accountId ?? undefined);
 });

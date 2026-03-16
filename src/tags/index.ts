@@ -1,10 +1,10 @@
-import { randomUUID } from 'expo-crypto';
-import { runQuery, first } from '../db';
-import { sendMessages } from '../sync';
-import { undoable } from '../sync/undo';
-import { Timestamp } from '../crdt';
-import type { TagRow } from '../db/types';
-import type { Tag } from './types';
+import { randomUUID } from "expo-crypto";
+import { runQuery, first } from "../db";
+import { sendMessages } from "../sync";
+import { undoable } from "../sync/undo";
+import { Timestamp } from "../crdt";
+import type { TagRow } from "../db/types";
+import type { Tag } from "./types";
 
 /** Regex to extract #tags from notes — matches #word but not ##escaped */
 const TAG_REGEX = /(?<!#)#([^#\s]+)/g;
@@ -20,31 +20,48 @@ function rowToTag(r: TagRow): Tag {
 }
 
 export async function getTags(): Promise<Tag[]> {
-  const rows = await runQuery<TagRow>(
-    'SELECT * FROM tags WHERE tombstone = 0 ORDER BY tag',
-  );
+  const rows = await runQuery<TagRow>("SELECT * FROM tags WHERE tombstone = 0 ORDER BY tag");
   return rows.map(rowToTag);
 }
 
 export const createTag = undoable(async function createTag(
-  fields: Pick<Tag, 'tag'> & Partial<Pick<Tag, 'color' | 'description'>>,
+  fields: Pick<Tag, "tag"> & Partial<Pick<Tag, "color" | "description">>,
 ): Promise<string> {
   const tagName = fields.tag.trim();
 
   // If tag exists but is tombstoned, restore it
-  const existing = await first<TagRow>(
-    'SELECT * FROM tags WHERE tag = ?',
-    [tagName],
-  );
+  const existing = await first<TagRow>("SELECT * FROM tags WHERE tag = ?", [tagName]);
   if (existing) {
     if (existing.tombstone === 1) {
       await sendMessages([
-        { timestamp: Timestamp.send()!, dataset: 'tags', row: existing.id, column: 'tombstone', value: 0 },
+        {
+          timestamp: Timestamp.send()!,
+          dataset: "tags",
+          row: existing.id,
+          column: "tombstone",
+          value: 0,
+        },
         ...(fields.color !== undefined
-          ? [{ timestamp: Timestamp.send()!, dataset: 'tags', row: existing.id, column: 'color', value: fields.color ?? null }]
+          ? [
+              {
+                timestamp: Timestamp.send()!,
+                dataset: "tags",
+                row: existing.id,
+                column: "color",
+                value: fields.color ?? null,
+              },
+            ]
           : []),
         ...(fields.description !== undefined
-          ? [{ timestamp: Timestamp.send()!, dataset: 'tags', row: existing.id, column: 'description', value: fields.description ?? null }]
+          ? [
+              {
+                timestamp: Timestamp.send()!,
+                dataset: "tags",
+                row: existing.id,
+                column: "description",
+                value: fields.description ?? null,
+              },
+            ]
           : []),
       ]);
     }
@@ -53,16 +70,28 @@ export const createTag = undoable(async function createTag(
 
   const id = randomUUID();
   await sendMessages([
-    { timestamp: Timestamp.send()!, dataset: 'tags', row: id, column: 'tag', value: tagName },
-    { timestamp: Timestamp.send()!, dataset: 'tags', row: id, column: 'color', value: fields.color ?? null },
-    { timestamp: Timestamp.send()!, dataset: 'tags', row: id, column: 'description', value: fields.description ?? null },
+    { timestamp: Timestamp.send()!, dataset: "tags", row: id, column: "tag", value: tagName },
+    {
+      timestamp: Timestamp.send()!,
+      dataset: "tags",
+      row: id,
+      column: "color",
+      value: fields.color ?? null,
+    },
+    {
+      timestamp: Timestamp.send()!,
+      dataset: "tags",
+      row: id,
+      column: "description",
+      value: fields.description ?? null,
+    },
   ]);
   return id;
 });
 
 export const updateTag = undoable(async function updateTag(
   id: string,
-  fields: Partial<Pick<Tag, 'tag' | 'color' | 'description'>>,
+  fields: Partial<Pick<Tag, "tag" | "color" | "description">>,
 ): Promise<void> {
   const dbFields: Record<string, string | null> = {};
   if (fields.tag !== undefined) dbFields.tag = fields.tag.trim();
@@ -72,7 +101,10 @@ export const updateTag = undoable(async function updateTag(
 
   await sendMessages(
     Object.entries(dbFields).map(([column, value]) => ({
-      timestamp: Timestamp.send()!, dataset: 'tags', row: id, column,
+      timestamp: Timestamp.send()!,
+      dataset: "tags",
+      row: id,
+      column,
       value,
     })),
   );
@@ -80,7 +112,7 @@ export const updateTag = undoable(async function updateTag(
 
 export const deleteTag = undoable(async function deleteTag(id: string): Promise<void> {
   await sendMessages([
-    { timestamp: Timestamp.send()!, dataset: 'tags', row: id, column: 'tombstone', value: 1 },
+    { timestamp: Timestamp.send()!, dataset: "tags", row: id, column: "tombstone", value: 1 },
   ]);
 });
 
@@ -89,8 +121,8 @@ export const deleteTag = undoable(async function deleteTag(id: string): Promise<
 // ---------------------------------------------------------------------------
 
 export type NoteSegment =
-  | { type: 'text'; content: string }
-  | { type: 'tag'; content: string; tagName: string };
+  | { type: "text"; content: string }
+  | { type: "tag"; content: string; tagName: string };
 
 /** Parse a notes string into text and tag segments for rich rendering. */
 export function parseNotes(notes: string | null): NoteSegment[] {
@@ -104,16 +136,16 @@ export function parseNotes(notes: string | null): NoteSegment[] {
   while ((match = regex.exec(notes)) !== null) {
     // Text before the tag
     if (match.index > lastIndex) {
-      segments.push({ type: 'text', content: notes.slice(lastIndex, match.index) });
+      segments.push({ type: "text", content: notes.slice(lastIndex, match.index) });
     }
     // The tag itself
-    segments.push({ type: 'tag', content: match[0], tagName: match[1] });
+    segments.push({ type: "tag", content: match[0], tagName: match[1] });
     lastIndex = regex.lastIndex;
   }
 
   // Remaining text after last tag
   if (lastIndex < notes.length) {
-    segments.push({ type: 'text', content: notes.slice(lastIndex) });
+    segments.push({ type: "text", content: notes.slice(lastIndex) });
   }
 
   return segments;
@@ -145,8 +177,8 @@ export async function discoverTags(): Promise<Tag[]> {
   }
 
   // Get existing tag names
-  const existingRows = await runQuery<TagRow>('SELECT * FROM tags');
-  const existingNames = new Set(existingRows.map(r => r.tag));
+  const existingRows = await runQuery<TagRow>("SELECT * FROM tags");
+  const existingNames = new Set(existingRows.map((r) => r.tag));
 
   // Create tags that don't exist yet
   const newTags: Tag[] = [];

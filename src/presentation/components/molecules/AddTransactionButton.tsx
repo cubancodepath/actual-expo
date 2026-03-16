@@ -16,7 +16,11 @@ const SIZE = 48;
 const ICON_SIZE = 22;
 const TIMING = { duration: 200 };
 
-export function AddTransactionButton({ accountId, bottom = 100, collapsed }: AddTransactionButtonProps) {
+export function AddTransactionButton({
+  accountId,
+  bottom = 100,
+  collapsed,
+}: AddTransactionButtonProps) {
   const router = useRouter();
   const { colors, spacing, borderRadius: br } = useTheme();
 
@@ -50,13 +54,23 @@ export function AddTransactionButton({ accountId, bottom = 100, collapsed }: Add
   return (
     <View style={{ position: "absolute", bottom, right: 20 }}>
       <GlassButton
-        onPress={() => router.push({ pathname: "/(auth)/transaction/new", params: accountId ? { accountId } : undefined })}
+        onPress={() =>
+          router.push({
+            pathname: "/(auth)/transaction/new",
+            params: accountId ? { accountId } : undefined,
+          })
+        }
         animatedContainerStyle={containerStyle}
         animatedInnerStyle={innerStyle}
       >
         <Ionicons name="add" size={ICON_SIZE} color={colors.textPrimary} />
         <Animated.View style={[{ overflow: "hidden" }, labelStyle]}>
-          <Text variant="body" color={colors.textPrimary} style={{ fontWeight: "600" }} numberOfLines={1}>
+          <Text
+            variant="body"
+            color={colors.textPrimary}
+            style={{ fontWeight: "600" }}
+            numberOfLines={1}
+          >
             Transaction
           </Text>
         </Animated.View>

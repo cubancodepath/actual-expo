@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef } from 'react';
-import { useRouter } from 'expo-router';
-import { usePickerStore } from '../../../stores/pickerStore';
+import { useCallback, useEffect, useRef } from "react";
+import { useRouter } from "expo-router";
+import { usePickerStore } from "../../../stores/pickerStore";
 
 export function useBulkCategoryPicker(
   handleBulkChangeCategory: (categoryId: string | null) => void,
@@ -23,7 +23,7 @@ export function useBulkCategoryPicker(
 
   const triggerCategoryPicker = useCallback(() => {
     bulkCategoryPending.current = true;
-    router.push({ pathname: '/(auth)/transaction/category-picker', params: { hideSplit: '1' } });
+    router.push({ pathname: "/(auth)/transaction/category-picker", params: { hideSplit: "1" } });
   }, [router]);
 
   return { triggerCategoryPicker };

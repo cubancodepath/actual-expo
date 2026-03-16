@@ -3,31 +3,31 @@
  * the in-memory Merkle trie. No network, no scheduling, no store refresh.
  */
 
-import { getClock, merkle, Timestamp } from '../crdt';
-import { run, runQuery, first, transaction } from '../db';
-import type { MessagesCrdtRow } from '../db/types';
-import type { SyncMessage } from './encoder';
-import type { OldData } from './undo';
-import { serializeValue, deserializeValue } from './values';
-import { saveClock } from './clock';
+import { getClock, merkle, Timestamp } from "../crdt";
+import { run, runQuery, first, transaction } from "../db";
+import type { MessagesCrdtRow } from "../db/types";
+import type { SyncMessage } from "./encoder";
+import type { OldData } from "./undo";
+import { serializeValue, deserializeValue } from "./values";
+import { saveClock } from "./clock";
 
 // Allowed tables — guard against arbitrary SQL injection via dataset name
 const ALLOWED_TABLES = new Set([
-  'accounts',
-  'transactions',
-  'categories',
-  'category_groups',
-  'category_mapping',
-  'payees',
-  'payee_mapping',
-  'notes',
-  'zero_budgets',
-  'zero_budget_months',
-  'preferences',
-  'tags',
-  'rules',
-  'schedules',
-  'schedules_next_date',
+  "accounts",
+  "transactions",
+  "categories",
+  "category_groups",
+  "category_mapping",
+  "payees",
+  "payee_mapping",
+  "notes",
+  "zero_budgets",
+  "zero_budget_months",
+  "preferences",
+  "tags",
+  "rules",
+  "schedules",
+  "schedules_next_date",
 ]);
 
 export async function applyMessages(messages: SyncMessage[]): Promise<OldData> {
@@ -44,7 +44,7 @@ export async function applyMessages(messages: SyncMessage[]): Promise<OldData> {
   const oldData: OldData = {};
   const rowsToFetch = new Map<string, Set<string>>(); // dataset → Set<rowId>
   for (const msg of sorted) {
-    if (msg.dataset === 'prefs' || !ALLOWED_TABLES.has(msg.dataset)) continue;
+    if (msg.dataset === "prefs" || !ALLOWED_TABLES.has(msg.dataset)) continue;
     if (!rowsToFetch.has(msg.dataset)) rowsToFetch.set(msg.dataset, new Set());
     rowsToFetch.get(msg.dataset)!.add(msg.row);
   }
@@ -56,7 +56,7 @@ export async function applyMessages(messages: SyncMessage[]): Promise<OldData> {
     const CHUNK_SIZE = 500;
     for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
       const chunk = ids.slice(i, i + CHUNK_SIZE);
-      const placeholders = chunk.map(() => '?').join(',');
+      const placeholders = chunk.map(() => "?").join(",");
       const rows = await runQuery<Record<string, unknown>>(
         `SELECT * FROM ${dataset} WHERE id IN (${placeholders})`,
         chunk,
@@ -78,11 +78,11 @@ export async function applyMessages(messages: SyncMessage[]): Promise<OldData> {
 
       // 'prefs' dataset = budget metadata (e.g. budgetName).
       // Not stored in DB — collected and applied to prefsStore after the loop.
-      if (dataset === 'prefs') {
+      if (dataset === "prefs") {
         prefsToSet[row] = value;
         // Still record in CRDT log for merkle consistency
         await run(
-          'INSERT OR IGNORE INTO messages_crdt (timestamp, dataset, row, column, value) VALUES (?, ?, ?, ?, ?)',
+          "INSERT OR IGNORE INTO messages_crdt (timestamp, dataset, row, column, value) VALUES (?, ?, ?, ?, ?)",
           [msg.timestamp.toString(), dataset, row, column, serialized],
         );
         const clock = getClock();
@@ -92,7 +92,10 @@ export async function applyMessages(messages: SyncMessage[]): Promise<OldData> {
       }
 
       if (!ALLOWED_TABLES.has(dataset)) {
-        if (__DEV__) console.warn(`[applyMessages] REJECTED unknown dataset "${dataset}" row=${row} column=${column}`);
+        if (__DEV__)
+          console.warn(
+            `[applyMessages] REJECTED unknown dataset "${dataset}" row=${row} column=${column}`,
+          );
         continue;
       }
 
@@ -103,23 +106,19 @@ export async function applyMessages(messages: SyncMessage[]): Promise<OldData> {
         await run(`UPDATE ${dataset} SET ${column} = ? WHERE id = ?`, [value, row]);
       } else {
         // Row may have been created by a prior message in this batch
-        const existing = await first<{ id: string }>(
-          `SELECT id FROM ${dataset} WHERE id = ?`,
-          [row],
-        );
+        const existing = await first<{ id: string }>(`SELECT id FROM ${dataset} WHERE id = ?`, [
+          row,
+        ]);
         if (existing) {
           await run(`UPDATE ${dataset} SET ${column} = ? WHERE id = ?`, [value, row]);
         } else {
-          await run(
-            `INSERT INTO ${dataset} (id, ${column}) VALUES (?, ?)`,
-            [row, value],
-          );
+          await run(`INSERT INTO ${dataset} (id, ${column}) VALUES (?, ?)`, [row, value]);
         }
       }
 
       // Record in CRDT log
       await run(
-        'INSERT OR IGNORE INTO messages_crdt (timestamp, dataset, row, column, value) VALUES (?, ?, ?, ?, ?)',
+        "INSERT OR IGNORE INTO messages_crdt (timestamp, dataset, row, column, value) VALUES (?, ?, ?, ?, ?)",
         [msg.timestamp.toString(), dataset, row, column, serialized],
       );
 
@@ -134,8 +133,8 @@ export async function applyMessages(messages: SyncMessage[]): Promise<OldData> {
 
   // Apply synced metadata prefs (e.g. budgetName) to the prefs store
   if (Object.keys(prefsToSet).length > 0) {
-    const { usePrefsStore } = await import('../stores/prefsStore');
-    if (typeof prefsToSet.budgetName === 'string') {
+    const { usePrefsStore } = await import("../stores/prefsStore");
+    if (typeof prefsToSet.budgetName === "string") {
       usePrefsStore.getState().setPrefs({ budgetName: prefsToSet.budgetName });
     }
   }
@@ -145,10 +144,10 @@ export async function applyMessages(messages: SyncMessage[]): Promise<OldData> {
 
 export async function getMessagesSince(since: string): Promise<SyncMessage[]> {
   const rows = await runQuery<MessagesCrdtRow>(
-    'SELECT * FROM messages_crdt WHERE timestamp > ? ORDER BY timestamp',
+    "SELECT * FROM messages_crdt WHERE timestamp > ? ORDER BY timestamp",
     [since],
   );
-  return rows.map(r => ({
+  return rows.map((r) => ({
     timestamp: Timestamp.parse(r.timestamp)!,
     dataset: r.dataset,
     row: r.row,

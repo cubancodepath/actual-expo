@@ -1,13 +1,13 @@
-import { randomUUID } from 'expo-crypto';
-import * as encryption from '../encryption';
-import * as keyStorage from './encryptionKeyStorage';
-import { post } from '../post';
-import { Message, type IMessage } from '../proto';
-import { getDb } from '../db';
-import { loadClock } from '../sync';
+import { randomUUID } from "expo-crypto";
+import * as encryption from "../encryption";
+import * as keyStorage from "./encryptionKeyStorage";
+import { post } from "../post";
+import { Message, type IMessage } from "../proto";
+import { getDb } from "../db";
+import { loadClock } from "../sync";
 
 type KeyTestSuccess = { success: true };
-type KeyTestError = { error: 'network' | 'decrypt-failure' | 'old-key-style' };
+type KeyTestError = { error: "network" | "decrypt-failure" | "old-key-style" };
 export type KeyTestResult = KeyTestSuccess | KeyTestError;
 
 function base64ToUint8(base64: string): Uint8Array {
@@ -41,13 +41,13 @@ export async function testKey({
       fileId: cloudFileId,
     })) as { id: string; salt: string; test: string | null };
   } catch {
-    return { error: 'network' };
+    return { error: "network" };
   }
 
   const { id, salt, test: testStr } = res;
 
   if (!testStr) {
-    return { error: 'old-key-style' };
+    return { error: "old-key-style" };
   }
 
   const test: {
@@ -63,7 +63,7 @@ export async function testKey({
   } catch {
     // Key is invalid — unload it
     encryption.unloadKey(key);
-    return { error: 'decrypt-failure' };
+    return { error: "decrypt-failure" };
   }
 
   // Key is valid — persist for future sessions
@@ -73,7 +73,7 @@ export async function testKey({
 }
 
 function uint8ToBase64(bytes: Uint8Array): string {
-  let binary = '';
+  let binary = "";
   for (let i = 0; i < bytes.length; i++) {
     binary += String.fromCharCode(bytes[i]);
   }
@@ -98,7 +98,7 @@ async function makeTestMessage(keyId: string) {
 
 export type EnableEncryptionResult =
   | { success: true; groupId: string }
-  | { error: 'network' | 'upload-failure' };
+  | { error: "network" | "upload-failure" };
 
 /**
  * Enable E2E encryption on the currently open budget.
@@ -139,7 +139,7 @@ export async function enableEncryption({
     });
   } catch {
     encryption.unloadKey(key);
-    return { error: 'network' };
+    return { error: "network" };
   }
 
   // 4. Upload encryption key metadata to server
@@ -153,7 +153,7 @@ export async function enableEncryption({
     });
   } catch {
     encryption.unloadKey(key);
-    return { error: 'network' };
+    return { error: "network" };
   }
 
   // 5. Clean local sync state
@@ -175,7 +175,7 @@ export async function enableEncryption({
   await keyStorage.saveKey(cloudFileId, key.serialize());
 
   // 7. Update metadata
-  const { updateMetadata } = await import('./budgetMetadata');
+  const { updateMetadata } = await import("./budgetMetadata");
   await updateMetadata(budgetId, {
     encryptKeyId: key.getId(),
     groupId: undefined,
@@ -184,12 +184,12 @@ export async function enableEncryption({
 
   // 8. Re-upload budget (gets a new groupId)
   try {
-    const { uploadBudget } = await import('./budgetfiles');
+    const { uploadBudget } = await import("./budgetfiles");
     const { groupId } = await uploadBudget(serverUrl, token, budgetId);
     return { success: true, groupId };
   } catch (e) {
-    if (__DEV__) console.error('[encryption] Upload failed after enabling encryption:', e);
-    return { error: 'upload-failure' };
+    if (__DEV__) console.error("[encryption] Upload failed after enabling encryption:", e);
+    return { error: "upload-failure" };
   }
 }
 
@@ -197,9 +197,7 @@ export async function enableEncryption({
  * Try to load a persisted key for a budget into the in-memory registry.
  * Returns true if the key was found and loaded.
  */
-export async function loadKeyForBudget(
-  cloudFileId: string,
-): Promise<boolean> {
+export async function loadKeyForBudget(cloudFileId: string): Promise<boolean> {
   if (!cloudFileId) return false;
   const stored = await keyStorage.getKey(cloudFileId);
   if (!stored) return false;

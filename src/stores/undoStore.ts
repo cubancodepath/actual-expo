@@ -1,9 +1,5 @@
-import { create } from 'zustand';
-import {
-  undo as performUndo,
-  canUndo as checkCanUndo,
-  setOnStateChange,
-} from '../sync/undo';
+import { create } from "zustand";
+import { undo as performUndo, canUndo as checkCanUndo, setOnStateChange } from "../sync/undo";
 
 type UndoNotification = {
   message: string;
@@ -28,10 +24,13 @@ type UndoState = {
  * "3 transactions deleted" → "Delete Transactions"
  */
 function deriveActionLabel(message: string): string {
-  const m = message.replace(/\d+\s+/, '').trim(); // strip leading count
-  const parts = m.split(' ');
-  if (parts.length >= 2 && parts[parts.length - 1].toLowerCase() === 'deleted') {
-    const noun = parts.slice(0, -1).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  const m = message.replace(/\d+\s+/, "").trim(); // strip leading count
+  const parts = m.split(" ");
+  if (parts.length >= 2 && parts[parts.length - 1].toLowerCase() === "deleted") {
+    const noun = parts
+      .slice(0, -1)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ");
     return `Delete ${noun}`;
   }
   return message;
@@ -56,7 +55,7 @@ export const useUndoStore = create<UndoState>((set) => {
       const tables = await performUndo();
       if (tables.length > 0) {
         set((s) => ({
-          notification: { message: 'Undone', key: Date.now() },
+          notification: { message: "Undone", key: Date.now() },
           undoVersion: s.undoVersion + 1,
           lastAction: null,
         }));

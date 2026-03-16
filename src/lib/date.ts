@@ -9,14 +9,11 @@
  * only this file needs to change.
  */
 
-import {
-  format,
-  addMonths as dfnsAddMonths,
-} from "date-fns";
+import { format, addMonths as dfnsAddMonths } from "date-fns";
 
 // ── Configurable date format ─────────────────────────────────────────────────
 
-let dateFormatStr = 'MM/dd/yyyy';
+let dateFormatStr = "MM/dd/yyyy";
 
 /** Update the global date format. Called from preferencesStore. */
 export function setDateFormat(fmt: string) {
@@ -27,8 +24,8 @@ export function setDateFormat(fmt: string) {
 function getShortFormat(fmt: string): string {
   // Remove year patterns and surrounding separators
   return fmt
-    .replace(/[/.\-\s]*yyyy[/.\-\s]*/g, '')
-    .replace(/[/.\-\s]*$/, '')
+    .replace(/[/.\-\s]*yyyy[/.\-\s]*/g, "")
+    .replace(/[/.\-\s]*$/, "")
     .trim();
 }
 
@@ -127,7 +124,10 @@ export function addMonths(month: string, n: number): string {
 /** "YYYY-MM" → "March 2025" (locale-aware via Intl) */
 export function formatMonth(month: string, locale?: string): string {
   const [y, m] = month.split("-").map(Number);
-  return new Date(y, m - 1, 1).toLocaleDateString(locale ?? 'en', { month: 'long', year: 'numeric' });
+  return new Date(y, m - 1, 1).toLocaleDateString(locale ?? "en", {
+    month: "long",
+    year: "numeric",
+  });
 }
 
 /** "YYYY-MM" → YYYYMM integer. */

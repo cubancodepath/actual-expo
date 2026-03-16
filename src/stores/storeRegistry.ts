@@ -5,17 +5,11 @@ type StoreEntry = {
 
 const registry = new Map<string, StoreEntry>();
 
-export function registerStore(
-  name: string,
-  datasets: string[],
-  load: () => Promise<void>,
-) {
+export function registerStore(name: string, datasets: string[], load: () => Promise<void>) {
   registry.set(name, { datasets, load });
 }
 
-export async function refreshStoresForDatasets(
-  datasets: Set<string>,
-): Promise<void> {
+export async function refreshStoresForDatasets(datasets: Set<string>): Promise<void> {
   const loads: Promise<void>[] = [];
 
   for (const [, entry] of registry) {
@@ -28,8 +22,8 @@ export async function refreshStoresForDatasets(
 
   const results = await Promise.allSettled(loads);
   for (const r of results) {
-    if (r.status === 'rejected') {
-      if (__DEV__) console.warn('[storeRegistry] load failed:', r.reason);
+    if (r.status === "rejected") {
+      if (__DEV__) console.warn("[storeRegistry] load failed:", r.reason);
     }
   }
 }
@@ -38,8 +32,8 @@ export async function refreshAllRegisteredStores(): Promise<void> {
   const loads = [...registry.values()].map((e) => e.load());
   const results = await Promise.allSettled(loads);
   for (const r of results) {
-    if (r.status === 'rejected') {
-      if (__DEV__) console.warn('[storeRegistry] load failed:', r.reason);
+    if (r.status === "rejected") {
+      if (__DEV__) console.warn("[storeRegistry] load failed:", r.reason);
     }
   }
 }

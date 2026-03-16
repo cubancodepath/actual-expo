@@ -1,5 +1,5 @@
-import { formatPrivacyAware } from '../../../lib/format';
-import { Banner } from '../molecules/Banner';
+import { formatPrivacyAware } from "../../../lib/format";
+import { Banner } from "../molecules/Banner";
 
 interface OverspendingBannerProps {
   count: number;
@@ -7,7 +7,7 @@ interface OverspendingBannerProps {
 }
 
 export function OverspendingBanner({ count, total }: OverspendingBannerProps) {
-  const label = count === 1 ? 'category' : 'categories';
+  const label = count === 1 ? "category" : "categories";
   return (
     <Banner
       variant="error"

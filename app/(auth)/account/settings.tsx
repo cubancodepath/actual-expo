@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -7,29 +7,29 @@ import {
   Switch,
   TextInput,
   View,
-} from 'react-native';
+} from "react-native";
 
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useAccountsStore } from '../../../src/stores/accountsStore';
-import { useTheme, useThemedStyles } from '../../../src/presentation/providers/ThemeProvider';
-import { Text } from '../../../src/presentation/components/atoms/Text';
-import { Button } from '../../../src/presentation/components/atoms/Button';
-import { Banner } from '../../../src/presentation/components/molecules/Banner';
-import { useTranslation } from 'react-i18next';
-import type { Theme } from '../../../src/theme';
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { useAccountsStore } from "../../../src/stores/accountsStore";
+import { useTheme, useThemedStyles } from "../../../src/presentation/providers/ThemeProvider";
+import { Text } from "../../../src/presentation/components/atoms/Text";
+import { Button } from "../../../src/presentation/components/atoms/Button";
+import { Banner } from "../../../src/presentation/components/molecules/Banner";
+import { useTranslation } from "react-i18next";
+import type { Theme } from "../../../src/theme";
 
 export default function AccountSettingsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const theme = useTheme();
   const styles = useThemedStyles(createStyles);
-  const { t } = useTranslation('accounts');
-  const { t: tc } = useTranslation('common');
+  const { t } = useTranslation("accounts");
+  const { t: tc } = useTranslation("common");
   const { accounts, update, load } = useAccountsStore();
-  const account = accounts.find(a => a.id === id);
+  const account = accounts.find((a) => a.id === id);
 
-  const [name, setName] = useState(account?.name ?? '');
+  const [name, setName] = useState(account?.name ?? "");
   const [offbudget, setOffbudget] = useState(account?.offbudget ?? false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +46,10 @@ export default function AccountSettingsScreen() {
 
   async function handleSave() {
     const trimmed = name.trim();
-    if (!trimmed) { setError(t('settings.accountNameRequired')); return; }
+    if (!trimmed) {
+      setError(t("settings.accountNameRequired"));
+      return;
+    }
 
     setError(null);
     setSaving(true);
@@ -69,28 +72,24 @@ export default function AccountSettingsScreen() {
   function handleClose() {
     if (account!.closed) {
       // Reopen — simple toggle
-      Alert.alert(
-        t('settings.reopenAccountTitle'),
-        t('settings.reopenAccountMessage'),
-        [
-          { text: tc('cancel'), style: 'cancel' },
-          {
-            text: t('settings.reopen'),
-            onPress: async () => {
-              setSaving(true);
-              try {
-                await update(id, { closed: false });
-                await load();
-              } finally {
-                setSaving(false);
-              }
-            },
+      Alert.alert(t("settings.reopenAccountTitle"), t("settings.reopenAccountMessage"), [
+        { text: tc("cancel"), style: "cancel" },
+        {
+          text: t("settings.reopen"),
+          onPress: async () => {
+            setSaving(true);
+            try {
+              await update(id, { closed: false });
+              await load();
+            } finally {
+              setSaving(false);
+            }
           },
-        ],
-      );
+        },
+      ]);
     } else {
       // Close — open the close account modal
-      router.push({ pathname: '/(auth)/account/close', params: { id } });
+      router.push({ pathname: "/(auth)/account/close", params: { id } });
     }
   }
 
@@ -113,14 +112,17 @@ export default function AccountSettingsScreen() {
       >
         {/* Account name */}
         <Text variant="caption" color={theme.colors.textSecondary} style={styles.label}>
-          {t('settings.accountNameLabel')}
+          {t("settings.accountNameLabel")}
         </Text>
         <TextInput
           style={styles.input}
-          placeholder={t('settings.accountNamePlaceholder')}
+          placeholder={t("settings.accountNamePlaceholder")}
           placeholderTextColor={theme.colors.textMuted}
           value={name}
-          onChangeText={t => { setName(t); setError(null); }}
+          onChangeText={(t) => {
+            setName(t);
+            setError(null);
+          }}
           returnKeyType="done"
         />
 
@@ -128,10 +130,10 @@ export default function AccountSettingsScreen() {
         <View style={styles.toggleRow}>
           <View style={styles.toggleText}>
             <Text variant="body" color={theme.colors.textPrimary}>
-              {t('settings.offBudget')}
+              {t("settings.offBudget")}
             </Text>
             <Text variant="captionSm" color={theme.colors.textMuted}>
-              {t('settings.offBudgetDescription')}
+              {t("settings.offBudgetDescription")}
             </Text>
           </View>
           <Switch
@@ -144,13 +146,11 @@ export default function AccountSettingsScreen() {
         </View>
 
         {/* Error */}
-        {error && (
-          <Banner message={error} variant="error" onDismiss={() => setError(null)} />
-        )}
+        {error && <Banner message={error} variant="error" onDismiss={() => setError(null)} />}
 
         {/* Save button */}
         <Button
-          title={tc('save')}
+          title={tc("save")}
           onPress={handleSave}
           size="lg"
           loading={saving}
@@ -159,10 +159,10 @@ export default function AccountSettingsScreen() {
         />
 
         <Button
-          title={account.closed ? t('contextMenu.reopenAccount') : t('contextMenu.closeAccount')}
+          title={account.closed ? t("contextMenu.reopenAccount") : t("contextMenu.closeAccount")}
           onPress={handleClose}
           variant="ghost"
-          icon={account.closed ? 'arrow-undo-outline' : 'trash-outline'}
+          icon={account.closed ? "arrow-undo-outline" : "trash-outline"}
           textColor={account.closed ? undefined : theme.colors.negative}
           disabled={saving}
           style={styles.closeButton}
@@ -180,15 +180,15 @@ const createStyles = (theme: Theme) => ({
   center: {
     flex: 1,
     backgroundColor: theme.colors.pageBackground,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
   container: {
     padding: theme.spacing.xl,
     gap: theme.spacing.sm,
   },
   label: {
-    fontWeight: '600' as const,
+    fontWeight: "600" as const,
     marginTop: theme.spacing.lg,
     marginLeft: theme.spacing.xs,
     marginBottom: theme.spacing.xs,
@@ -204,9 +204,9 @@ const createStyles = (theme: Theme) => ({
     borderColor: theme.colors.inputBorder,
   },
   toggleRow: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'space-between' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
     backgroundColor: theme.colors.cardBackground,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.md,

@@ -37,7 +37,10 @@ export function Amount({
   const { colors } = useTheme();
   const privacyMode = usePrivacyStore((s) => s.privacyMode);
   // Subscribe to format prefs so component re-renders when they change.
-  usePreferencesStore((s) => `${s.numberFormat}:${s.hideFraction}:${s.defaultCurrencyCode}:${s.defaultCurrencyCustomSymbol}:${s.currencySymbolPosition}:${s.currencySpaceBetweenAmountAndSymbol}`);
+  usePreferencesStore(
+    (s) =>
+      `${s.numberFormat}:${s.hideFraction}:${s.defaultCurrencyCode}:${s.defaultCurrencyCustomSymbol}:${s.currencySymbolPosition}:${s.currencySpaceBetweenAmountAndSymbol}`,
+  );
 
   // Explicit color wins; otherwise auto-color when `colored` is true
   let color: string | undefined = colorProp;
@@ -47,14 +50,25 @@ export function Amount({
     else color = colors.textSecondary;
   }
 
-  const textStyle: TextStyle[] = [{ fontVariant: ["tabular-nums"], fontWeight: weight }, style as TextStyle];
+  const textStyle: TextStyle[] = [
+    { fontVariant: ["tabular-nums"], fontWeight: weight },
+    style as TextStyle,
+  ];
 
   // Privacy mode or fallback — always plain text
   if (privacyMode) {
-    return <Text variant={variant} color={color} style={textStyle} {...props}>{PRIVACY_MASK}</Text>;
+    return (
+      <Text variant={variant} color={color} style={textStyle} {...props}>
+        {PRIVACY_MASK}
+      </Text>
+    );
   }
   if (fallback && value === 0) {
-    return <Text variant={variant} color={color} style={textStyle} {...props}>{fallback}</Text>;
+    return (
+      <Text variant={variant} color={color} style={textStyle} {...props}>
+        {fallback}
+      </Text>
+    );
   }
 
   const parts = formatAmountParts(value, showSign);
@@ -62,7 +76,11 @@ export function Amount({
   // Fast path: no SVG symbol — single <Text> (unchanged behavior)
   if (!parts.svgSymbol) {
     const text = showSign ? formatAmount(value) : formatBalance(value);
-    return <Text variant={variant} color={color} style={textStyle} {...props}>{text}</Text>;
+    return (
+      <Text variant={variant} color={color} style={textStyle} {...props}>
+        {text}
+      </Text>
+    );
   }
 
   // SVG path: render sign + symbol + number as separate elements
@@ -82,15 +100,19 @@ export function Amount({
   );
 
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center' }} {...props}>
-      {parts.sign !== '' && (
-        <Text variant={variant} color={resolvedColor} style={textStyle}>{parts.sign}</Text>
+    <View style={{ flexDirection: "row", alignItems: "center" }} {...props}>
+      {parts.sign !== "" && (
+        <Text variant={variant} color={resolvedColor} style={textStyle}>
+          {parts.sign}
+        </Text>
       )}
-      {parts.position === 'before' && symbolEl}
-      {parts.position === 'before' && spacer}
-      <Text variant={variant} color={resolvedColor} style={textStyle}>{parts.number}</Text>
-      {parts.position === 'after' && spacer}
-      {parts.position === 'after' && symbolEl}
+      {parts.position === "before" && symbolEl}
+      {parts.position === "before" && spacer}
+      <Text variant={variant} color={resolvedColor} style={textStyle}>
+        {parts.number}
+      </Text>
+      {parts.position === "after" && spacer}
+      {parts.position === "after" && symbolEl}
     </View>
   );
 }

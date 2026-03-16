@@ -1,5 +1,5 @@
-import { create } from 'zustand';
-import { registerStore } from './storeRegistry';
+import { create } from "zustand";
+import { registerStore } from "./storeRegistry";
 import {
   getSchedules,
   createSchedule,
@@ -7,8 +7,8 @@ import {
   deleteSchedule,
   skipNextDate,
   postTransactionForSchedule,
-} from '../schedules';
-import type { Schedule, RuleCondition, RuleAction } from '../schedules/types';
+} from "../schedules";
+import type { Schedule, RuleCondition, RuleAction } from "../schedules/types";
 
 type SchedulesState = {
   schedules: Schedule[];
@@ -65,6 +65,6 @@ export const useSchedulesStore = create<SchedulesState>((set) => ({
   },
 }));
 
-registerStore('schedules', ['schedules', 'schedules_next_date', 'rules'], () =>
+registerStore("schedules", ["schedules", "schedules_next_date", "rules"], () =>
   useSchedulesStore.getState().load(),
 );

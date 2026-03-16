@@ -1,36 +1,47 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Keyboard, useColorScheme, View } from 'react-native';
-import { useTranslation } from 'react-i18next';
-import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
-import Animated, { useAnimatedScrollHandler, useAnimatedStyle, useSharedValue, interpolate } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useAccountsStore } from '../../../src/stores/accountsStore';
-import { useTransactionsStore } from '../../../src/stores/transactionsStore';
-import { useCategoriesStore } from '../../../src/stores/categoriesStore';
-import { usePickerStore } from '../../../src/stores/pickerStore';
-import { useRulesStore } from '../../../src/stores/rulesStore';
-import { useSchedulesStore } from '../../../src/stores/schedulesStore';
-import { getTransactionById, getChildTransactions } from '../../../src/transactions';
-import { saveTransaction } from '../../../src/transactions/save';
-import { getRecurringDescription } from '../../../src/schedules';
-import type { RecurConfig } from '../../../src/schedules/types';
-import { extractTagsFromNotes } from '../../../src/tags';
-import { suggestCategoryForPayee, applyRulesToForm } from '../../../src/rules/apply';
-import { todayStr, todayInt, strToInt, intToStr } from '../../../src/lib/date';
-import { withOpacity } from '../../../src/lib/colors';
-import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
-import { Button } from '../../../src/presentation/components/atoms/Button';
-import { KeyboardToolbar } from '../../../src/presentation/components/molecules/KeyboardToolbar';
-import { CalculatorToolbar } from '../../../src/presentation/components/atoms/CalculatorToolbar';
-import { Banner } from '../../../src/presentation/components/molecules/Banner';
-import { CurrencyInput, type CurrencyInputRef } from '../../../src/presentation/components/atoms/CurrencyInput';
-import { TypeToggle, type TransactionType } from '../../../src/presentation/components/transaction/TypeToggle';
-import { DetailRow } from '../../../src/presentation/components/transaction/DetailRow';
-import { DatePickerField } from '../../../src/presentation/components/transaction/DatePickerField';
-import { NotesField } from '../../../src/presentation/components/transaction/NotesField';
-import { Text } from '../../../src/presentation/components/atoms/Text';
-import { GlassButton } from '../../../src/presentation/components/atoms/GlassButton';
-import { ClearedToggle } from '../../../src/presentation/components/transaction/ClearedToggle';
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Alert, Keyboard, useColorScheme, View } from "react-native";
+import { useTranslation } from "react-i18next";
+import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
+import Animated, {
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+  interpolate,
+} from "react-native-reanimated";
+import { LinearGradient } from "expo-linear-gradient";
+import { useAccountsStore } from "../../../src/stores/accountsStore";
+import { useTransactionsStore } from "../../../src/stores/transactionsStore";
+import { useCategoriesStore } from "../../../src/stores/categoriesStore";
+import { usePickerStore } from "../../../src/stores/pickerStore";
+import { useRulesStore } from "../../../src/stores/rulesStore";
+import { useSchedulesStore } from "../../../src/stores/schedulesStore";
+import { getTransactionById, getChildTransactions } from "../../../src/transactions";
+import { saveTransaction } from "../../../src/transactions/save";
+import { getRecurringDescription } from "../../../src/schedules";
+import type { RecurConfig } from "../../../src/schedules/types";
+import { extractTagsFromNotes } from "../../../src/tags";
+import { suggestCategoryForPayee, applyRulesToForm } from "../../../src/rules/apply";
+import { todayStr, todayInt, strToInt, intToStr } from "../../../src/lib/date";
+import { withOpacity } from "../../../src/lib/colors";
+import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
+import { Button } from "../../../src/presentation/components/atoms/Button";
+import { KeyboardToolbar } from "../../../src/presentation/components/molecules/KeyboardToolbar";
+import { CalculatorToolbar } from "../../../src/presentation/components/atoms/CalculatorToolbar";
+import { Banner } from "../../../src/presentation/components/molecules/Banner";
+import {
+  CurrencyInput,
+  type CurrencyInputRef,
+} from "../../../src/presentation/components/atoms/CurrencyInput";
+import {
+  TypeToggle,
+  type TransactionType,
+} from "../../../src/presentation/components/transaction/TypeToggle";
+import { DetailRow } from "../../../src/presentation/components/transaction/DetailRow";
+import { DatePickerField } from "../../../src/presentation/components/transaction/DatePickerField";
+import { NotesField } from "../../../src/presentation/components/transaction/NotesField";
+import { Text } from "../../../src/presentation/components/atoms/Text";
+import { GlassButton } from "../../../src/presentation/components/atoms/GlassButton";
+import { ClearedToggle } from "../../../src/presentation/components/transaction/ClearedToggle";
 
 export default function NewTransactionScreen() {
   const {
@@ -51,11 +62,11 @@ export default function NewTransactionScreen() {
     transactionId?: string;
   }>();
   const isEdit = !!transactionId;
-  const { t } = useTranslation('transactions');
+  const { t } = useTranslation("transactions");
   const router = useRouter();
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const isDark = colorScheme === "dark";
   const { accounts, load: loadAccounts } = useAccountsStore();
   const { delete_ } = useTransactionsStore();
   const { groups, categories, load: loadCategories } = useCategoriesStore();
@@ -76,18 +87,18 @@ export default function NewTransactionScreen() {
   // Resolve initial account from param
   const initialAccount = accounts.find((a) => a.id === accountId);
 
-  const [type, setType] = useState<TransactionType>('expense');
+  const [type, setType] = useState<TransactionType>("expense");
   const [cents, setCents] = useState(amountParam ? Number(amountParam) : 0);
   const [acctId, setAcctId] = useState<string | null>(accountId ?? null);
-  const [acctName, setAcctName] = useState(accountNameParam ?? initialAccount?.name ?? '');
+  const [acctName, setAcctName] = useState(accountNameParam ?? initialAccount?.name ?? "");
   const [payeeId, setPayeeId] = useState<string | null>(null);
-  const [payeeName, setPayeeName] = useState(payeeNameParam ?? '');
+  const [payeeName, setPayeeName] = useState(payeeNameParam ?? "");
   const [isTransfer, setIsTransfer] = useState(false);
   const [categoryId, setCategoryId] = useState<string | null>(categoryIdParam ?? null);
-  const [categoryName, setCategoryName] = useState(categoryNameParam ?? '');
+  const [categoryName, setCategoryName] = useState(categoryNameParam ?? "");
   const [dateInt, setDateInt] = useState(todayInt());
   const [dateStr, setDateStr] = useState(todayStr());
-  const [notes, setNotes] = useState('');
+  const [notes, setNotes] = useState("");
   const [cleared, setCleared] = useState(false);
   const [reconciled, setReconciled] = useState(false);
   const [recurConfig, setRecurConfig] = useState<RecurConfig | null>(null);
@@ -106,7 +117,7 @@ export default function NewTransactionScreen() {
   });
 
   const blurContainerStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(scrollY.value, [0, 50], [0, 1], 'clamp'),
+    opacity: interpolate(scrollY.value, [0, 50], [0, 1], "clamp"),
   }));
 
   // Reset form state only on initial mount (not when returning from pickers)
@@ -121,18 +132,18 @@ export default function NewTransactionScreen() {
       if (isEdit) {
         getTransactionById(transactionId).then(async (txn) => {
           if (!txn) return;
-          setType(txn.amount < 0 ? 'expense' : 'income');
+          setType(txn.amount < 0 ? "expense" : "income");
           setCents(Math.abs(txn.amount));
           setAcctId(txn.acct);
           const txnAccount = accounts.find((a) => a.id === txn.acct);
-          setAcctName(txnAccount?.name ?? '');
+          setAcctName(txnAccount?.name ?? "");
           setPayeeId(txn.description);
-          setPayeeName(txn.payeeName ?? '');
+          setPayeeName(txn.payeeName ?? "");
           setCategoryId(txn.category ?? null);
-          setCategoryName(txn.categoryName ?? '');
+          setCategoryName(txn.categoryName ?? "");
           setDateInt(txn.date);
           setDateStr(intToStr(txn.date));
-          setNotes(txn.notes ?? '');
+          setNotes(txn.notes ?? "");
           setCleared(txn.cleared);
           setReconciled(txn.reconciled);
 
@@ -144,7 +155,7 @@ export default function NewTransactionScreen() {
                 children.map((c) => ({
                   id: c.id,
                   categoryId: c.category,
-                  categoryName: c.categoryName ?? '',
+                  categoryName: c.categoryName ?? "",
                   amount: Math.abs(c.amount),
                 })),
               );
@@ -154,20 +165,20 @@ export default function NewTransactionScreen() {
       } else {
         // Reset to defaults for new transaction
         userOverrides.current = new Set();
-        if (categoryIdParam) userOverrides.current.add('category');
-        if (accountId) userOverrides.current.add('account');
-        setType('expense');
+        if (categoryIdParam) userOverrides.current.add("category");
+        if (accountId) userOverrides.current.add("account");
+        setType("expense");
         setCents(amountParam ? Number(amountParam) : 0);
         setAcctId(accountId ?? null);
-        setAcctName(accountNameParam ?? initialAccount?.name ?? '');
+        setAcctName(accountNameParam ?? initialAccount?.name ?? "");
         setPayeeId(null);
-        setPayeeName(payeeNameParam ?? '');
+        setPayeeName(payeeNameParam ?? "");
         setIsTransfer(false);
         setCategoryId(categoryIdParam ?? null);
-        setCategoryName(categoryNameParam ?? '');
+        setCategoryName(categoryNameParam ?? "");
         setDateInt(todayInt());
         setDateStr(todayStr());
-        setNotes('');
+        setNotes("");
         setCleared(false);
         setReconciled(false);
         setRecurConfig(null);
@@ -184,7 +195,7 @@ export default function NewTransactionScreen() {
       setIsTransfer(!!selectedPayee.transferAcct);
 
       // Auto-suggest category when payee changes (skip for transfers and user overrides)
-      if (!selectedPayee.transferAcct && !userOverrides.current.has('category')) {
+      if (!selectedPayee.transferAcct && !userOverrides.current.has("category")) {
         const suggestedId = suggestCategoryForPayee(rules, selectedPayee.id, acctId);
         if (suggestedId) {
           const cat = categories.find((c) => c.id === suggestedId);
@@ -201,7 +212,7 @@ export default function NewTransactionScreen() {
     if (selectedCategory) {
       setCategoryId(selectedCategory.id);
       setCategoryName(selectedCategory.name);
-      userOverrides.current.add('category');
+      userOverrides.current.add("category");
       // If user picks a single category, clear any split
       usePickerStore.getState().setSplitCategories(null);
     }
@@ -228,14 +239,14 @@ export default function NewTransactionScreen() {
     if (selectedAccount) {
       setAcctId(selectedAccount.id);
       setAcctName(selectedAccount.name);
-      userOverrides.current.add('account');
+      userOverrides.current.add("account");
     }
   }, [selectedAccount]);
 
   useEffect(() => {
     if (selectedTags) {
-      const plainNotes = notes.replace(/\s?(?<!#)#([^#\s]+)/g, '').trim();
-      const tagSuffix = selectedTags.map((t) => `#${t}`).join(' ');
+      const plainNotes = notes.replace(/\s?(?<!#)#([^#\s]+)/g, "").trim();
+      const tagSuffix = selectedTags.map((t) => `#${t}`).join(" ");
       setNotes(plainNotes ? `${plainNotes} ${tagSuffix}` : tagSuffix);
     }
   }, [selectedTags]);
@@ -249,7 +260,7 @@ export default function NewTransactionScreen() {
   // Apply rules when amount/type changes (e.g. account rules based on amount)
   useEffect(() => {
     if (isEdit || rules.length === 0 || cents === 0) return;
-    const signedAmount = type === 'expense' ? -cents : cents;
+    const signedAmount = type === "expense" ? -cents : cents;
     const result = applyRulesToForm(rules, {
       acct: acctId,
       payeeId,
@@ -259,7 +270,7 @@ export default function NewTransactionScreen() {
       notes,
       cleared,
     });
-    if (result.acctId && result.acctId !== acctId && !userOverrides.current.has('account')) {
+    if (result.acctId && result.acctId !== acctId && !userOverrides.current.has("account")) {
       const acc = accounts.find((a) => a.id === result.acctId);
       if (acc) {
         setAcctId(result.acctId);
@@ -272,20 +283,23 @@ export default function NewTransactionScreen() {
     setError(null);
     setLoading(true);
     try {
-      await saveTransaction({
-        transactionId: isEdit ? transactionId : undefined,
-        acct: acctId!,
-        date: strToInt(dateStr) ?? dateInt,
-        amount: cents,
-        type,
-        payeeId,
-        payeeName,
-        categoryId,
-        notes: notes.trim() || null,
-        cleared,
-        splitCategories: isSplit ? splitCategories : null,
-        recurConfig: !isEdit ? recurConfig : undefined,
-      }, rules);
+      await saveTransaction(
+        {
+          transactionId: isEdit ? transactionId : undefined,
+          acct: acctId!,
+          date: strToInt(dateStr) ?? dateInt,
+          amount: cents,
+          type,
+          payeeId,
+          payeeName,
+          categoryId,
+          notes: notes.trim() || null,
+          cleared,
+          splitCategories: isSplit ? splitCategories : null,
+          recurConfig: !isEdit ? recurConfig : undefined,
+        },
+        rules,
+      );
       await loadAccounts();
       if (recurConfig) {
         useSchedulesStore.getState().load();
@@ -300,35 +314,27 @@ export default function NewTransactionScreen() {
 
   function handleSave() {
     if (cents === 0) {
-      setError(t('enterAmount'));
+      setError(t("enterAmount"));
       return;
     }
     if (!isEdit && !acctId) {
-      setError(t('selectAccount'));
+      setError(t("selectAccount"));
       return;
     }
 
     if (reconciled) {
-      Alert.alert(
-        t('editReconciledTitle'),
-        t('editReconciledMessage'),
-        [
-          { text: t('cancel'), style: 'cancel' },
-          { text: t('saveAnyway'), style: 'destructive', onPress: performSave },
-        ],
-      );
+      Alert.alert(t("editReconciledTitle"), t("editReconciledMessage"), [
+        { text: t("cancel"), style: "cancel" },
+        { text: t("saveAnyway"), style: "destructive", onPress: performSave },
+      ]);
       return;
     }
 
     if (!categoryId && !isSplit && !isTransfer) {
-      Alert.alert(
-        t('noCategoryTitle'),
-        t('noCategoryMessage'),
-        [
-          { text: t('cancel'), style: 'cancel' },
-          { text: t('save'), onPress: performSave },
-        ],
-      );
+      Alert.alert(t("noCategoryTitle"), t("noCategoryMessage"), [
+        { text: t("cancel"), style: "cancel" },
+        { text: t("save"), onPress: performSave },
+      ]);
       return;
     }
 
@@ -336,15 +342,13 @@ export default function NewTransactionScreen() {
   }
 
   function handleDelete() {
-    const message = reconciled
-      ? t('deleteReconciledMessage')
-      : t('deleteConfirm');
+    const message = reconciled ? t("deleteReconciledMessage") : t("deleteConfirm");
 
-    Alert.alert(t('deleteTitle'), message, [
-      { text: t('cancel'), style: 'cancel' },
+    Alert.alert(t("deleteTitle"), message, [
+      { text: t("cancel"), style: "cancel" },
       {
-        text: t('delete'),
-        style: 'destructive',
+        text: t("delete"),
+        style: "destructive",
         onPress: async () => {
           await delete_(transactionId!);
           await loadAccounts();
@@ -355,20 +359,28 @@ export default function NewTransactionScreen() {
   }
 
   // ── Header colors based on transaction type ──
-  const isExpense = type === 'expense';
+  const isExpense = type === "expense";
   const headerBg = isExpense
-    ? (isDark ? withOpacity(colors.negative, 0.18) : colors.errorBackground)
-    : (isDark ? withOpacity(colors.positive, 0.18) : colors.successBackground);
+    ? isDark
+      ? withOpacity(colors.negative, 0.18)
+      : colors.errorBackground
+    : isDark
+      ? withOpacity(colors.positive, 0.18)
+      : colors.successBackground;
   const headerText = isExpense
-    ? (isDark ? colors.negative : colors.errorText)
-    : (isDark ? colors.positive : colors.successText);
+    ? isDark
+      ? colors.negative
+      : colors.errorText
+    : isDark
+      ? colors.positive
+      : colors.successText;
 
   const cardStyle = {
     backgroundColor: colors.cardBackground,
     borderRadius: br.lg,
     borderWidth: bw.thin,
     borderColor: colors.cardBorder,
-    overflow: 'hidden' as const,
+    overflow: "hidden" as const,
   };
 
   const dividerStyle = {
@@ -396,22 +408,25 @@ export default function NewTransactionScreen() {
             paddingHorizontal: spacing.lg,
             borderBottomLeftRadius: br.lg,
             borderBottomRightRadius: br.lg,
-            alignItems: 'center',
+            alignItems: "center",
             gap: spacing.md,
           }}
         >
-          <View style={{ alignSelf: 'stretch', marginTop: spacing.lg }}>
+          <View style={{ alignSelf: "stretch", marginTop: spacing.lg }}>
             <TypeToggle type={type} onChangeType={setType} />
           </View>
 
           <CurrencyInput
             ref={currencyInputRef}
             value={cents}
-            onChangeValue={(v) => { setCents(v); setError(null); }}
+            onChangeValue={(v) => {
+              setCents(v);
+              setError(null);
+            }}
             type={type}
             autoFocus={!isEdit}
             color={headerText}
-            style={{ paddingVertical: spacing.sm, alignSelf: 'stretch' }}
+            style={{ paddingVertical: spacing.sm, alignSelf: "stretch" }}
           />
         </View>
 
@@ -421,50 +436,76 @@ export default function NewTransactionScreen() {
             <DetailRow
               icon="wallet-outline"
               label={acctName}
-              placeholder={t('account')}
-              onPress={() => router.push({ pathname: './account-picker', params: { selectedId: acctId ?? '' } })}
+              placeholder={t("account")}
+              onPress={() =>
+                router.push({ pathname: "./account-picker", params: { selectedId: acctId ?? "" } })
+              }
             />
             <View style={dividerStyle} />
 
             <DetailRow
               icon="person-outline"
               label={payeeName}
-              placeholder={t('payee')}
-              onPress={() => router.push({ pathname: './payee-picker', params: { selectedId: payeeId ?? '', selectedName: payeeName, accountId: acctId ?? '' } })}
+              placeholder={t("payee")}
+              onPress={() =>
+                router.push({
+                  pathname: "./payee-picker",
+                  params: {
+                    selectedId: payeeId ?? "",
+                    selectedName: payeeName,
+                    accountId: acctId ?? "",
+                  },
+                })
+              }
             />
             <View style={dividerStyle} />
 
             <DetailRow
-              icon={isSplit ? 'git-branch-outline' : 'folder-outline'}
-              label={isTransfer ? '' : (isSplit ? t('splitCategories', { count: splitCategories!.length }) : (categoryId ? categoryName : ''))}
-              placeholder={isTransfer ? t('noCategoryNeeded') : t('category')}
-              onClear={isEdit && categoryId && !isSplit && !isTransfer ? () => { setCategoryId(null); setCategoryName(''); } : undefined}
+              icon={isSplit ? "git-branch-outline" : "folder-outline"}
+              label={
+                isTransfer
+                  ? ""
+                  : isSplit
+                    ? t("splitCategories", { count: splitCategories!.length })
+                    : categoryId
+                      ? categoryName
+                      : ""
+              }
+              placeholder={isTransfer ? t("noCategoryNeeded") : t("category")}
+              onClear={
+                isEdit && categoryId && !isSplit && !isTransfer
+                  ? () => {
+                      setCategoryId(null);
+                      setCategoryName("");
+                    }
+                  : undefined
+              }
               onPress={() => {
                 if (isTransfer) {
-                  Alert.alert(t('transferTitle'), t('transferNoCategoryMessage'));
+                  Alert.alert(t("transferTitle"), t("transferNoCategoryMessage"));
                   return;
                 }
                 if (isSplit) {
                   router.push({
-                    pathname: './split',
+                    pathname: "./split",
                     params: {
                       amount: String(cents),
-                      payeeId: payeeId ?? '',
+                      payeeId: payeeId ?? "",
                       payeeName,
-                      transactionId: transactionId ?? '',
+                      transactionId: transactionId ?? "",
                     },
                   });
                 } else {
                   const month = dateStr.slice(0, 7);
                   router.push({
-                    pathname: './category-picker',
+                    pathname: "./category-picker",
                     params: {
                       month,
-                      selectedId: categoryId ?? '',
+                      selectedId: categoryId ?? "",
                       amount: String(cents),
-                      payeeId: payeeId ?? '',
+                      payeeId: payeeId ?? "",
                       payeeName,
-                      transactionId: transactionId ?? '',
+                      transactionId: transactionId ?? "",
                     },
                   });
                 }
@@ -475,7 +516,10 @@ export default function NewTransactionScreen() {
             <DatePickerField
               dateInt={dateInt}
               dateStr={dateStr}
-              onDateChange={(newInt, newStr) => { setDateInt(newInt); setDateStr(newStr); }}
+              onDateChange={(newInt, newStr) => {
+                setDateInt(newInt);
+                setDateStr(newStr);
+              }}
             />
           </View>
         </View>
@@ -496,12 +540,12 @@ export default function NewTransactionScreen() {
                 <View style={dividerStyle} />
                 <DetailRow
                   icon="repeat"
-                  label={recurConfig ? getRecurringDescription(recurConfig) : ''}
-                  placeholder={t('repeat')}
+                  label={recurConfig ? getRecurringDescription(recurConfig) : ""}
+                  placeholder={t("repeat")}
                   onClear={recurConfig ? () => setRecurConfig(null) : undefined}
                   onPress={() => {
                     router.push({
-                      pathname: './recurrence',
+                      pathname: "./recurrence",
                       params: recurConfig ? { config: JSON.stringify(recurConfig) } : {},
                     });
                   }}
@@ -513,14 +557,16 @@ export default function NewTransactionScreen() {
               icon="pricetags-outline"
               label={
                 extractTagsFromNotes(notes).length > 0
-                  ? extractTagsFromNotes(notes).map((t) => `#${t}`).join(', ')
-                  : ''
+                  ? extractTagsFromNotes(notes)
+                      .map((t) => `#${t}`)
+                      .join(", ")
+                  : ""
               }
-              placeholder={t('tags')}
+              placeholder={t("tags")}
               onPress={() => {
                 router.push({
-                  pathname: './tags',
-                  params: { mode: 'picker', currentNotes: notes },
+                  pathname: "./tags",
+                  params: { mode: "picker", currentNotes: notes },
                 });
               }}
             />
@@ -537,7 +583,7 @@ export default function NewTransactionScreen() {
         {/* ── Action buttons ── */}
         <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.xl }}>
           <Button
-            title={isEdit ? t('saveChanges') : t('addTransaction')}
+            title={isEdit ? t("saveChanges") : t("addTransaction")}
             onPress={handleSave}
             size="lg"
             loading={loading}
@@ -546,7 +592,7 @@ export default function NewTransactionScreen() {
 
           {isEdit && (
             <Button
-              title={t('deleteTransaction')}
+              title={t("deleteTransaction")}
               icon="trash-outline"
               variant="ghost"
               textColor={colors.negative}
@@ -561,7 +607,7 @@ export default function NewTransactionScreen() {
       <Animated.View
         style={[
           {
-            position: 'absolute',
+            position: "absolute",
             top: 0,
             left: 0,
             right: 0,
@@ -572,20 +618,32 @@ export default function NewTransactionScreen() {
         pointerEvents="none"
       >
         <LinearGradient
-          colors={[colors.pageBackground + 'B3', colors.pageBackground + '1A', 'transparent']}
+          colors={[colors.pageBackground + "B3", colors.pageBackground + "1A", "transparent"]}
           style={{ height: 70 }}
         />
       </Animated.View>
 
       {/* Close button — always visible, fixed at top-left of modal */}
-      <View style={{ position: 'absolute', top: 12, left: spacing.md, zIndex: 11 }}>
+      <View style={{ position: "absolute", top: 12, left: spacing.md, zIndex: 11 }}>
         <GlassButton icon="xmark" onPress={() => router.dismiss()} />
       </View>
 
       {/* Title — always visible, vertically centered with close button */}
-      <View style={{ position: 'absolute', top: 12, left: 0, right: 0, height: 48, justifyContent: 'center', alignItems: 'center', zIndex: 11, pointerEvents: 'none' }}>
-        <Text variant="body" color={colors.textPrimary} style={{ fontWeight: '600' }}>
-          {isEdit ? t('editTransaction') : t('addTransaction')}
+      <View
+        style={{
+          position: "absolute",
+          top: 12,
+          left: 0,
+          right: 0,
+          height: 48,
+          justifyContent: "center",
+          alignItems: "center",
+          zIndex: 11,
+          pointerEvents: "none",
+        }}
+      >
+        <Text variant="body" color={colors.textPrimary} style={{ fontWeight: "600" }}>
+          {isEdit ? t("editTransaction") : t("addTransaction")}
         </Text>
       </View>
 

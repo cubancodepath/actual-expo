@@ -1,14 +1,14 @@
-import { create } from 'zustand';
-import { registerStore } from './storeRegistry';
-import { getPayees, createPayee, updatePayee, deletePayee, mergePayees } from '../payees';
-import type { Payee } from '../payees/types';
+import { create } from "zustand";
+import { registerStore } from "./storeRegistry";
+import { getPayees, createPayee, updatePayee, deletePayee, mergePayees } from "../payees";
+import type { Payee } from "../payees/types";
 
 type PayeesState = {
   payees: Payee[];
   loading: boolean;
   load(): Promise<void>;
   create(name: string): Promise<string>;
-  update(id: string, fields: Partial<Pick<Payee, 'name' | 'favorite'>>): Promise<void>;
+  update(id: string, fields: Partial<Pick<Payee, "name" | "favorite">>): Promise<void>;
   delete_(id: string): Promise<void>;
   merge(targetId: string, ids: string[]): Promise<void>;
 };
@@ -44,4 +44,4 @@ export const usePayeesStore = create<PayeesState>((set) => ({
   },
 }));
 
-registerStore('payees', ['payees', 'payee_mapping'], () => usePayeesStore.getState().load());
+registerStore("payees", ["payees", "payee_mapping"], () => usePayeesStore.getState().load());

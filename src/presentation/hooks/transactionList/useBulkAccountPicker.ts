@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef } from 'react';
-import { useRouter } from 'expo-router';
-import { usePickerStore } from '../../../stores/pickerStore';
+import { useCallback, useEffect, useRef } from "react";
+import { useRouter } from "expo-router";
+import { usePickerStore } from "../../../stores/pickerStore";
 
 export function useBulkAccountPicker(
   handleBulkMove: (accountId: string, accountName?: string) => void,
@@ -23,7 +23,7 @@ export function useBulkAccountPicker(
 
   const triggerAccountPicker = useCallback(() => {
     bulkMovePending.current = true;
-    router.push({ pathname: '/(auth)/transaction/account-picker', params: { selectedId: '' } });
+    router.push({ pathname: "/(auth)/transaction/account-picker", params: { selectedId: "" } });
   }, [router]);
 
   return { triggerAccountPicker };

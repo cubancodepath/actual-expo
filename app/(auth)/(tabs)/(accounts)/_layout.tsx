@@ -4,7 +4,7 @@ import { useTheme } from "../../../../src/presentation/providers/ThemeProvider";
 
 export default function AccountsStack() {
   const { colors } = useTheme();
-  const { t } = useTranslation('accounts');
+  const { t } = useTranslation("accounts");
 
   return (
     <Stack
@@ -14,7 +14,7 @@ export default function AccountsStack() {
         contentStyle: { backgroundColor: colors.pageBackground },
       }}
     >
-      <Stack.Screen name="index" options={{ title: t('title') }} />
+      <Stack.Screen name="index" options={{ title: t("title") }} />
     </Stack>
   );
 }

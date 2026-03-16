@@ -1,14 +1,14 @@
-import { useEffect } from 'react';
-import { View, type ViewStyle } from 'react-native';
-import Svg, { Circle } from 'react-native-svg';
+import { useEffect } from "react";
+import { View, type ViewStyle } from "react-native";
+import Svg, { Circle } from "react-native-svg";
 import Animated, {
   useSharedValue,
   useAnimatedProps,
   withTiming,
   useReducedMotion,
   Easing,
-} from 'react-native-reanimated';
-import { useTheme } from '../../providers/ThemeProvider';
+} from "react-native-reanimated";
+import { useTheme } from "../../providers/ThemeProvider";
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -46,9 +46,7 @@ export function CircularProgress({
 
   useEffect(() => {
     const clamped = Math.max(0, Math.min(progress, 1));
-    animatedProgress.value = reducedMotion
-      ? clamped
-      : withTiming(clamped, TIMING_CONFIG);
+    animatedProgress.value = reducedMotion ? clamped : withTiming(clamped, TIMING_CONFIG);
   }, [progress, reducedMotion]);
 
   const animatedProps = useAnimatedProps(() => ({
@@ -94,13 +92,13 @@ export function CircularProgress({
       {children && (
         <View
           style={{
-            position: 'absolute',
+            position: "absolute",
             top: 0,
             left: 0,
             right: 0,
             bottom: 0,
-            justifyContent: 'center',
-            alignItems: 'center',
+            justifyContent: "center",
+            alignItems: "center",
           }}
         >
           {children}

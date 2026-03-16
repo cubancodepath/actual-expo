@@ -19,14 +19,10 @@ const config = ({ config }: ConfigContext): ExpoConfig => ({
   ios: {
     supportsTablet: false,
     appleTeamId: "8668UQNRKV",
-    bundleIdentifier: IS_DEV
-      ? "com.cubancodepath.actual.dev"
-      : "com.cubancodepath.actual",
+    bundleIdentifier: IS_DEV ? "com.cubancodepath.actual.dev" : "com.cubancodepath.actual",
     entitlements: {
       "com.apple.security.application-groups": [
-        IS_DEV
-          ? "group.com.cubancodepath.actual.dev"
-          : "group.com.cubancodepath.actual",
+        IS_DEV ? "group.com.cubancodepath.actual.dev" : "group.com.cubancodepath.actual",
       ],
     },
     infoPlist: {

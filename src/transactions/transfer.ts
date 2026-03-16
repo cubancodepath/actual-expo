@@ -6,16 +6,16 @@
  * linked via transferred_id on both sides.
  */
 
-import { randomUUID } from 'expo-crypto';
-import { first } from '../db';
-import { sendMessages } from '../sync';
-import { Timestamp } from '../crdt';
+import { randomUUID } from "expo-crypto";
+import { first } from "../db";
+import { sendMessages } from "../sync";
+import { Timestamp } from "../crdt";
 
 /** Returns the destination account ID if payeeId is a transfer payee, else null. */
 export async function getTransferAccount(payeeId: string | null): Promise<string | null> {
   if (!payeeId) return null;
   const row = await first<{ transfer_acct: string | null }>(
-    'SELECT transfer_acct FROM payees WHERE id = ? AND tombstone = 0',
+    "SELECT transfer_acct FROM payees WHERE id = ? AND tombstone = 0",
     [payeeId],
   );
   return row?.transfer_acct ?? null;
@@ -24,7 +24,7 @@ export async function getTransferAccount(payeeId: string | null): Promise<string
 /** Returns the transfer payee ID associated with an account. */
 async function getTransferPayee(accountId: string): Promise<string | null> {
   const row = await first<{ id: string }>(
-    'SELECT id FROM payees WHERE transfer_acct = ? AND tombstone = 0',
+    "SELECT id FROM payees WHERE transfer_acct = ? AND tombstone = 0",
     [accountId],
   );
   return row?.id ?? null;
@@ -40,12 +40,28 @@ async function clearCategoryIfNeeded(
   txnId: string,
   pairedId: string,
 ): Promise<void> {
-  const from = await first<{ offbudget: number }>('SELECT offbudget FROM accounts WHERE id = ?', [fromAccountId]);
-  const to   = await first<{ offbudget: number }>('SELECT offbudget FROM accounts WHERE id = ?', [toAccountId]);
+  const from = await first<{ offbudget: number }>("SELECT offbudget FROM accounts WHERE id = ?", [
+    fromAccountId,
+  ]);
+  const to = await first<{ offbudget: number }>("SELECT offbudget FROM accounts WHERE id = ?", [
+    toAccountId,
+  ]);
   if (from && to && from.offbudget === to.offbudget) {
     await sendMessages([
-      { timestamp: Timestamp.send()!, dataset: 'transactions', row: txnId,   column: 'category', value: null },
-      { timestamp: Timestamp.send()!, dataset: 'transactions', row: pairedId, column: 'category', value: null },
+      {
+        timestamp: Timestamp.send()!,
+        dataset: "transactions",
+        row: txnId,
+        column: "category",
+        value: null,
+      },
+      {
+        timestamp: Timestamp.send()!,
+        dataset: "transactions",
+        row: pairedId,
+        column: "category",
+        value: null,
+      },
     ]);
   }
 }
@@ -76,18 +92,66 @@ export async function onInsert(txn: {
 
   // Create the mirror transaction in the destination account
   await sendMessages([
-    { timestamp: Timestamp.send()!, dataset: 'transactions', row: pairedId, column: 'acct',          value: toAccountId },
-    { timestamp: Timestamp.send()!, dataset: 'transactions', row: pairedId, column: 'amount',        value: -txn.amount },
-    { timestamp: Timestamp.send()!, dataset: 'transactions', row: pairedId, column: 'date',          value: txn.date },
-    { timestamp: Timestamp.send()!, dataset: 'transactions', row: pairedId, column: 'description',   value: fromPayeeId },
-    { timestamp: Timestamp.send()!, dataset: 'transactions', row: pairedId, column: 'notes',         value: txn.notes ?? null },
-    { timestamp: Timestamp.send()!, dataset: 'transactions', row: pairedId, column: 'transferred_id',value: txn.id },
-    { timestamp: Timestamp.send()!, dataset: 'transactions', row: pairedId, column: 'cleared',       value: 0 },
+    {
+      timestamp: Timestamp.send()!,
+      dataset: "transactions",
+      row: pairedId,
+      column: "acct",
+      value: toAccountId,
+    },
+    {
+      timestamp: Timestamp.send()!,
+      dataset: "transactions",
+      row: pairedId,
+      column: "amount",
+      value: -txn.amount,
+    },
+    {
+      timestamp: Timestamp.send()!,
+      dataset: "transactions",
+      row: pairedId,
+      column: "date",
+      value: txn.date,
+    },
+    {
+      timestamp: Timestamp.send()!,
+      dataset: "transactions",
+      row: pairedId,
+      column: "description",
+      value: fromPayeeId,
+    },
+    {
+      timestamp: Timestamp.send()!,
+      dataset: "transactions",
+      row: pairedId,
+      column: "notes",
+      value: txn.notes ?? null,
+    },
+    {
+      timestamp: Timestamp.send()!,
+      dataset: "transactions",
+      row: pairedId,
+      column: "transferred_id",
+      value: txn.id,
+    },
+    {
+      timestamp: Timestamp.send()!,
+      dataset: "transactions",
+      row: pairedId,
+      column: "cleared",
+      value: 0,
+    },
   ]);
 
   // Link the original transaction to the paired one
   await sendMessages([
-    { timestamp: Timestamp.send()!, dataset: 'transactions', row: txn.id, column: 'transferred_id', value: pairedId },
+    {
+      timestamp: Timestamp.send()!,
+      dataset: "transactions",
+      row: txn.id,
+      column: "transferred_id",
+      value: pairedId,
+    },
   ]);
 
   await clearCategoryIfNeeded(txn.acct, toAccountId, txn.id, pairedId);
@@ -98,8 +162,20 @@ export async function onInsert(txn: {
  */
 export async function onDelete(transferredId: string): Promise<void> {
   await sendMessages([
-    { timestamp: Timestamp.send()!, dataset: 'transactions', row: transferredId, column: 'tombstone',     value: 1 },
-    { timestamp: Timestamp.send()!, dataset: 'transactions', row: transferredId, column: 'transferred_id', value: null },
+    {
+      timestamp: Timestamp.send()!,
+      dataset: "transactions",
+      row: transferredId,
+      column: "tombstone",
+      value: 1,
+    },
+    {
+      timestamp: Timestamp.send()!,
+      dataset: "transactions",
+      row: transferredId,
+      column: "transferred_id",
+      value: null,
+    },
   ]);
 }
 
@@ -130,11 +206,11 @@ export async function onUpdate(
 ): Promise<void> {
   // Compute the merged final state
   const merged = {
-    acct:        next.acct        ?? prev.acct,
-    amount:      next.amount      ?? prev.amount,
-    date:        next.date        ?? prev.date,
+    acct: next.acct ?? prev.acct,
+    amount: next.amount ?? prev.amount,
+    date: next.date ?? prev.date,
     description: next.description !== undefined ? next.description : prev.description,
-    notes:       next.notes       !== undefined ? next.notes       : prev.notes,
+    notes: next.notes !== undefined ? next.notes : prev.notes,
   };
 
   const prevTransferAcct = await getTransferAccount(prev.description);
@@ -153,7 +229,13 @@ export async function onUpdate(
     if (prev.transferred_id) {
       await onDelete(prev.transferred_id);
       await sendMessages([
-        { timestamp: Timestamp.send()!, dataset: 'transactions', row: prev.id, column: 'transferred_id', value: null },
+        {
+          timestamp: Timestamp.send()!,
+          dataset: "transactions",
+          row: prev.id,
+          column: "transferred_id",
+          value: null,
+        },
       ]);
     }
     return;
@@ -165,11 +247,41 @@ export async function onUpdate(
     if (!fromPayeeId) return;
 
     await sendMessages([
-      { timestamp: Timestamp.send()!, dataset: 'transactions', row: prev.transferred_id, column: 'acct',        value: nextTransferAcct },
-      { timestamp: Timestamp.send()!, dataset: 'transactions', row: prev.transferred_id, column: 'amount',      value: -merged.amount },
-      { timestamp: Timestamp.send()!, dataset: 'transactions', row: prev.transferred_id, column: 'date',        value: merged.date },
-      { timestamp: Timestamp.send()!, dataset: 'transactions', row: prev.transferred_id, column: 'description', value: fromPayeeId },
-      { timestamp: Timestamp.send()!, dataset: 'transactions', row: prev.transferred_id, column: 'notes',       value: merged.notes ?? null },
+      {
+        timestamp: Timestamp.send()!,
+        dataset: "transactions",
+        row: prev.transferred_id,
+        column: "acct",
+        value: nextTransferAcct,
+      },
+      {
+        timestamp: Timestamp.send()!,
+        dataset: "transactions",
+        row: prev.transferred_id,
+        column: "amount",
+        value: -merged.amount,
+      },
+      {
+        timestamp: Timestamp.send()!,
+        dataset: "transactions",
+        row: prev.transferred_id,
+        column: "date",
+        value: merged.date,
+      },
+      {
+        timestamp: Timestamp.send()!,
+        dataset: "transactions",
+        row: prev.transferred_id,
+        column: "description",
+        value: fromPayeeId,
+      },
+      {
+        timestamp: Timestamp.send()!,
+        dataset: "transactions",
+        row: prev.transferred_id,
+        column: "notes",
+        value: merged.notes ?? null,
+      },
     ]);
 
     await clearCategoryIfNeeded(merged.acct, nextTransferAcct, prev.id, prev.transferred_id);

@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useRefreshControl } from '../../../src/presentation/hooks/useRefreshControl';
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useRefreshControl } from "../../../src/presentation/hooks/useRefreshControl";
 import {
   ActivityIndicator,
   Alert,
@@ -8,10 +8,10 @@ import {
   RefreshControl,
   TextInput,
   View,
-} from 'react-native';
-import * as Haptics from 'expo-haptics';
-import { LegendList } from '@legendapp/list';
-import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+} from "react-native";
+import * as Haptics from "expo-haptics";
+import { LegendList } from "@legendapp/list";
+import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 
 import {
   deleteTransaction,
@@ -20,37 +20,37 @@ import {
   toggleCleared,
   updateTransaction,
   type TransactionDisplay,
-} from '../../../src/transactions';
-import { useUndoStore } from '../../../src/stores/undoStore';
-import { useAccountsStore } from '../../../src/stores/accountsStore';
-import type { SearchToken } from '../../../src/transactions/types';
-import { useCategoriesStore } from '../../../src/stores/categoriesStore';
-import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
-import { EmptyState } from '../../../src/presentation/components';
-import { TransactionRow } from '../../../src/presentation/components/account/TransactionRow';
-import { DateSectionHeader } from '../../../src/presentation/components/account/DateSectionHeader';
-import { TokenSearchBar } from '../../../src/presentation/components/transaction/TokenSearchBar';
-import { SearchSuggestions } from '../../../src/presentation/components/transaction/SearchSuggestions';
-import { useTagsStore } from '../../../src/stores/tagsStore';
-import { GlassButton } from '../../../src/presentation/components/atoms/GlassButton';
+} from "../../../src/transactions";
+import { useUndoStore } from "../../../src/stores/undoStore";
+import { useAccountsStore } from "../../../src/stores/accountsStore";
+import type { SearchToken } from "../../../src/transactions/types";
+import { useCategoriesStore } from "../../../src/stores/categoriesStore";
+import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
+import { EmptyState } from "../../../src/presentation/components";
+import { TransactionRow } from "../../../src/presentation/components/account/TransactionRow";
+import { DateSectionHeader } from "../../../src/presentation/components/account/DateSectionHeader";
+import { TokenSearchBar } from "../../../src/presentation/components/transaction/TokenSearchBar";
+import { SearchSuggestions } from "../../../src/presentation/components/transaction/SearchSuggestions";
+import { useTagsStore } from "../../../src/stores/tagsStore";
+import { GlassButton } from "../../../src/presentation/components/atoms/GlassButton";
 import {
   useTransactionSelection,
   useTransactionBulkActions,
   useSelectModeHeader,
   useBulkCategoryPicker,
   useBulkAccountPicker,
-} from '../../../src/presentation/hooks/transactionList';
-import { usePickerStore } from '../../../src/stores/pickerStore';
-import { SelectModeToolbar } from '../../../src/presentation/components/transaction/SelectModeToolbar';
-import { useTranslation } from 'react-i18next';
+} from "../../../src/presentation/hooks/transactionList";
+import { usePickerStore } from "../../../src/stores/pickerStore";
+import { SelectModeToolbar } from "../../../src/presentation/components/transaction/SelectModeToolbar";
+import { useTranslation } from "react-i18next";
 
 // ---------------------------------------------------------------------------
 // Types for mixed list data
 // ---------------------------------------------------------------------------
 
-type DateHeader = { type: 'date'; date: number; key: string };
+type DateHeader = { type: "date"; date: number; key: string };
 type TransactionItem = {
-  type: 'transaction';
+  type: "transaction";
   data: TransactionDisplay;
   key: string;
   isFirst: boolean;
@@ -68,13 +68,13 @@ function buildListData(transactions: TransactionDisplay[]): ListItem[] {
     if (isNewDate) {
       if (items.length > 0) {
         const prev = items[items.length - 1];
-        if (prev.type === 'transaction') prev.isLast = true;
+        if (prev.type === "transaction") prev.isLast = true;
       }
-      items.push({ type: 'date', date: txn.date, key: `date-${txn.date}` });
+      items.push({ type: "date", date: txn.date, key: `date-${txn.date}` });
       lastDate = txn.date;
     }
     items.push({
-      type: 'transaction',
+      type: "transaction",
       data: txn,
       key: txn.id,
       isFirst: isNewDate,
@@ -84,7 +84,7 @@ function buildListData(transactions: TransactionDisplay[]): ListItem[] {
 
   if (items.length > 0) {
     const last = items[items.length - 1];
-    if (last.type === 'transaction') last.isLast = true;
+    if (last.type === "transaction") last.isLast = true;
   }
 
   return items;
@@ -97,19 +97,19 @@ function buildListData(transactions: TransactionDisplay[]): ListItem[] {
 function buildSearchParams(tkns: SearchToken[]) {
   const params: Record<string, unknown> = {};
   for (const t of tkns) {
-    if (t.type === 'status') params[t.value] = true;
-    if (t.type === 'category') params.categoryId = t.categoryId;
-    if (t.type === 'tag') params.tagName = t.tagName;
-    if (t.type === 'uncategorized') params.uncategorized = true;
+    if (t.type === "status") params[t.value] = true;
+    if (t.type === "category") params.categoryId = t.categoryId;
+    if (t.type === "tag") params.tagName = t.tagName;
+    if (t.type === "uncategorized") params.uncategorized = true;
   }
   return params;
 }
 
 const STATUS_EXCLUSIONS: Record<string, string> = {
-  cleared: 'uncleared',
-  uncleared: 'cleared',
-  reconciled: 'unreconciled',
-  unreconciled: 'reconciled',
+  cleared: "uncleared",
+  uncleared: "cleared",
+  reconciled: "unreconciled",
+  unreconciled: "reconciled",
 };
 
 const PAGE_SIZE = 25;
@@ -119,23 +119,32 @@ const PAGE_SIZE = 25;
 // ---------------------------------------------------------------------------
 
 export default function AccountSearchScreen() {
-  const { accountId, accountName, initialFilter } = useLocalSearchParams<{ accountId: string; accountName: string; initialFilter?: string }>();
+  const { accountId, accountName, initialFilter } = useLocalSearchParams<{
+    accountId: string;
+    accountName: string;
+    initialFilter?: string;
+  }>();
   const navigation = useNavigation();
   const router = useRouter();
   const { colors } = useTheme();
-  const { t } = useTranslation('accounts');
-  const { t: tc } = useTranslation('common');
+  const { t } = useTranslation("accounts");
+  const { t: tc } = useTranslation("common");
   const { accounts } = useAccountsStore();
   const { categories } = useCategoriesStore();
   const tags = useTagsStore((s) => s.tags);
 
   // Search state
   const searchInputRef = useRef<TextInput>(null);
-  const [searchText, setSearchText] = useState('');
+  const [searchText, setSearchText] = useState("");
   const [searchFocused, setSearchFocused] = useState(!initialFilter);
   const [tokens, setTokens] = useState<SearchToken[]>(() => {
-    if (initialFilter === 'uncleared' || initialFilter === 'cleared' || initialFilter === 'reconciled' || initialFilter === 'unreconciled') {
-      return [{ type: 'status', value: initialFilter }];
+    if (
+      initialFilter === "uncleared" ||
+      initialFilter === "cleared" ||
+      initialFilter === "reconciled" ||
+      initialFilter === "unreconciled"
+    ) {
+      return [{ type: "status", value: initialFilter }];
     }
     return [];
   });
@@ -150,18 +159,26 @@ export default function AccountSearchScreen() {
 
   // ---- Selection ----
   const {
-    selectedIds, isSelectMode, allCleared, selectedTotal,
-    handleLongPress, enterSelectMode, handleSelectAll, handleDoneSelection, resetSelection,
+    selectedIds,
+    isSelectMode,
+    allCleared,
+    selectedTotal,
+    handleLongPress,
+    enterSelectMode,
+    handleSelectAll,
+    handleDoneSelection,
+    resetSelection,
   } = useTransactionSelection({ transactions: results });
 
-  const { handleBulkDelete, handleBulkMove, handleBulkToggleCleared, handleBulkChangeCategory } = useTransactionBulkActions({
-    selectedIds,
-    transactions: results,
-    setTransactions: setResults,
-    refreshIdRef,
-    resetSelection,
-    loadAccounts: () => useAccountsStore.getState().load(),
-  });
+  const { handleBulkDelete, handleBulkMove, handleBulkToggleCleared, handleBulkChangeCategory } =
+    useTransactionBulkActions({
+      selectedIds,
+      transactions: results,
+      setTransactions: setResults,
+      refreshIdRef,
+      resetSelection,
+      loadAccounts: () => useAccountsStore.getState().load(),
+    });
 
   const { triggerCategoryPicker } = useBulkCategoryPicker(handleBulkChangeCategory);
   const { triggerAccountPicker } = useBulkAccountPicker(handleBulkMove);
@@ -178,9 +195,9 @@ export default function AccountSearchScreen() {
   useEffect(() => {
     if (initialFilter) {
       const params = buildSearchParams(
-        tokens.length > 0 ? tokens : [{ type: 'status', value: initialFilter as any }],
+        tokens.length > 0 ? tokens : [{ type: "status", value: initialFilter as any }],
       );
-      searchTransactions({ accountId, ...params, limit: PAGE_SIZE, offset: 0 }).then(txns => {
+      searchTransactions({ accountId, ...params, limit: PAGE_SIZE, offset: 0 }).then((txns) => {
         setResults(txns);
         setHasSearched(true);
         setHasMore(txns.length === PAGE_SIZE);
@@ -197,12 +214,12 @@ export default function AccountSearchScreen() {
   useEffect(() => {
     if (isSelectMode) return;
     navigation.setOptions({
-      title: accountName || t('detail.defaultTitle'),
+      title: accountName || t("detail.defaultTitle"),
       headerRight: undefined,
       unstable_headerRightItems: () => [
         {
-          type: 'button' as const,
-          label: t('detail.select'),
+          type: "button" as const,
+          label: t("detail.select"),
           disabled: !hasResults,
           onPress: enterSelectMode,
         },
@@ -213,17 +230,22 @@ export default function AccountSearchScreen() {
   // ---- Token management ----
 
   function handleAddToken(token: SearchToken) {
-    setTokens(prev => {
-      const filtered = prev.filter(t => {
-        if (t.type === token.type && token.type === 'category') return false;
-        if (t.type === token.type && token.type === 'tag') return false;
-        if (t.type === 'status' && token.type === 'status' && t.value === token.value) return false;
-        if (t.type === 'status' && token.type === 'status' && STATUS_EXCLUSIONS[token.value] === t.value) return false;
+    setTokens((prev) => {
+      const filtered = prev.filter((t) => {
+        if (t.type === token.type && token.type === "category") return false;
+        if (t.type === token.type && token.type === "tag") return false;
+        if (t.type === "status" && token.type === "status" && t.value === token.value) return false;
+        if (
+          t.type === "status" &&
+          token.type === "status" &&
+          STATUS_EXCLUSIONS[token.value] === t.value
+        )
+          return false;
         return true;
       });
       return [...filtered, token];
     });
-    setSearchText('');
+    setSearchText("");
   }
 
   function handleRemoveToken(index: number) {
@@ -242,7 +264,7 @@ export default function AccountSearchScreen() {
         ...buildSearchParams(next),
         limit: PAGE_SIZE,
         offset: 0,
-      }).then(txns => {
+      }).then((txns) => {
         setResults(txns);
         setHasMore(txns.length === PAGE_SIZE);
         offsetRef.current = txns.length;
@@ -251,7 +273,7 @@ export default function AccountSearchScreen() {
   }
 
   function handleClear() {
-    setSearchText('');
+    setSearchText("");
     setTokens([]);
     setResults([]);
     setHasSearched(false);
@@ -286,8 +308,11 @@ export default function AccountSearchScreen() {
         limit: PAGE_SIZE,
         offset: offsetRef.current,
       });
-      if (txns.length === 0) { setHasMore(false); return; }
-      setResults(prev => [...prev, ...txns]);
+      if (txns.length === 0) {
+        setHasMore(false);
+        return;
+      }
+      setResults((prev) => [...prev, ...txns]);
       setHasMore(txns.length === PAGE_SIZE);
       offsetRef.current += txns.length;
     } finally {
@@ -316,39 +341,42 @@ export default function AccountSearchScreen() {
   // ---- Transaction handlers ----
 
   function handleEditTransaction(txnId: string) {
-    router.push({ pathname: '/(auth)/transaction/new', params: { transactionId: txnId } });
+    router.push({ pathname: "/(auth)/transaction/new", params: { transactionId: txnId } });
   }
 
   function handleDelete(txnId: string) {
-    Alert.alert(t('search.deleteTransactionTitle'), t('search.deleteTransactionMessage'), [
-      { text: tc('cancel'), style: 'cancel' },
+    Alert.alert(t("search.deleteTransactionTitle"), t("search.deleteTransactionMessage"), [
+      { text: tc("cancel"), style: "cancel" },
       {
-        text: tc('delete'),
-        style: 'destructive',
+        text: tc("delete"),
+        style: "destructive",
         onPress: async () => {
-          setResults(prev => prev.filter(tx => tx.id !== txnId));
+          setResults((prev) => prev.filter((tx) => tx.id !== txnId));
           await deleteTransaction(txnId);
-          useUndoStore.getState().showUndo(t('search.transactionDeleted'));
+          useUndoStore.getState().showUndo(t("search.transactionDeleted"));
         },
       },
     ]);
   }
 
   async function handleToggleCleared(txnId: string) {
-    setResults(prev => prev.map(t =>
-      t.id === txnId ? { ...t, cleared: !t.cleared } : t
-    ));
+    setResults((prev) => prev.map((t) => (t.id === txnId ? { ...t, cleared: !t.cleared } : t)));
     await toggleCleared(txnId);
   }
 
   async function handleDuplicate(txnId: string) {
-    const original = results.find(t => t.id === txnId);
+    const original = results.find((t) => t.id === txnId);
     if (!original) return;
     const newId = await duplicateTransaction(txnId);
     if (newId) {
-      const clone: TransactionDisplay = { ...original, id: newId, cleared: false, reconciled: false };
-      setResults(prev => {
-        const idx = prev.findIndex(t => t.id === txnId);
+      const clone: TransactionDisplay = {
+        ...original,
+        id: newId,
+        cleared: false,
+        reconciled: false,
+      };
+      setResults((prev) => {
+        const idx = prev.findIndex((t) => t.id === txnId);
         const next = [...prev];
         next.splice(idx + 1, 0, clone);
         return next;
@@ -367,14 +395,14 @@ export default function AccountSearchScreen() {
       const txnId = pendingMoveRef.current;
       pendingMoveRef.current = null;
       clearPicker();
-      setResults(prev => prev.filter(t => t.id !== txnId));
+      setResults((prev) => prev.filter((t) => t.id !== txnId));
       updateTransaction(txnId, { acct: selectedAccount.id });
     }
   }, [selectedAccount, clearPicker]);
 
   function handleMove(txnId: string) {
     pendingMoveRef.current = txnId;
-    router.push({ pathname: '/(auth)/transaction/account-picker', params: { selectedId: '' } });
+    router.push({ pathname: "/(auth)/transaction/account-picker", params: { selectedId: "" } });
   }
 
   // Single-item categorize via category picker
@@ -387,20 +415,21 @@ export default function AccountSearchScreen() {
       pendingCategoryRef.current = null;
       const categoryId = selectedCategory.id;
       clearPicker();
-      setResults(prev => prev.map(t =>
-        t.id === txnId ? { ...t, category: categoryId } : t
-      ));
+      setResults((prev) => prev.map((t) => (t.id === txnId ? { ...t, category: categoryId } : t)));
       updateTransaction(txnId, { category: categoryId });
     }
   }, [selectedCategory, clearPicker]);
 
   function handleSetCategory(txnId: string) {
     pendingCategoryRef.current = txnId;
-    router.push({ pathname: '/(auth)/transaction/category-picker', params: { hideSplit: '1' } });
+    router.push({ pathname: "/(auth)/transaction/category-picker", params: { hideSplit: "1" } });
   }
 
   function handleAddTag(txnId: string) {
-    router.push({ pathname: '/(auth)/transaction/tags', params: { transactionId: txnId, mode: 'direct' } });
+    router.push({
+      pathname: "/(auth)/transaction/tags",
+      params: { transactionId: txnId, mode: "direct" },
+    });
   }
 
   // ---- Render ----
@@ -409,99 +438,101 @@ export default function AccountSearchScreen() {
 
   return (
     <>
-    <View style={{ flex: 1, backgroundColor: colors.pageBackground }}>
-      <View style={{ backgroundColor: colors.pageBackground }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, gap: 8 }}>
-          <View style={{ flex: 1 }}>
-            <TokenSearchBar
-              text={searchText}
-              onChangeText={setSearchText}
-              tokens={tokens}
-              onRemoveToken={handleRemoveToken}
-              onClear={handleClear}
-              onFocusChange={setSearchFocused}
-              onSubmit={executeSearch}
-              inputRef={searchInputRef}
-              noHorizontalMargin
-            />
+      <View style={{ flex: 1, backgroundColor: colors.pageBackground }}>
+        <View style={{ backgroundColor: colors.pageBackground }}>
+          <View
+            style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 12, gap: 8 }}
+          >
+            <View style={{ flex: 1 }}>
+              <TokenSearchBar
+                text={searchText}
+                onChangeText={setSearchText}
+                tokens={tokens}
+                onRemoveToken={handleRemoveToken}
+                onClear={handleClear}
+                onFocusChange={setSearchFocused}
+                onSubmit={executeSearch}
+                inputRef={searchInputRef}
+                noHorizontalMargin
+              />
+            </View>
+            <GlassButton icon="xmark" onPress={() => router.back()} hitSlop={4} />
           </View>
-          <GlassButton icon="xmark" onPress={() => router.back()} hitSlop={4} />
+          {searchFocused && (
+            <SearchSuggestions
+              text={searchText}
+              tokens={tokens}
+              accounts={[]}
+              categories={categories
+                .filter((c) => !c.hidden && !c.is_income)
+                .map((c) => ({ id: c.id, name: c.name }))}
+              tags={tags}
+              onSelect={handleAddToken}
+            />
+          )}
         </View>
-        {searchFocused && (
-          <SearchSuggestions
-            text={searchText}
-            tokens={tokens}
-            accounts={[]}
-            categories={categories.filter(c => !c.hidden && !c.is_income).map(c => ({ id: c.id, name: c.name }))}
-            tags={tags}
-            onSelect={handleAddToken}
-          />
-        )}
+
+        <LegendList
+          data={listData}
+          keyExtractor={(item) => item.key}
+          getItemType={(item) => item.type}
+          showsVerticalScrollIndicator={false}
+          contentInsetAdjustmentBehavior="automatic"
+          renderItem={({ item }) => {
+            if (item.type === "date") {
+              return <DateSectionHeader date={item.date} />;
+            }
+            if (item.type !== "transaction") return null;
+            return (
+              <TransactionRow
+                item={item.data}
+                onPress={handleEditTransaction}
+                onDelete={handleDelete}
+                onToggleCleared={handleToggleCleared}
+                onLongPress={handleLongPress}
+                onDuplicate={handleDuplicate}
+                onMove={handleMove}
+                onSetCategory={handleSetCategory}
+                onAddTag={handleAddTag}
+                tags={tags}
+                isFirst={item.isFirst}
+                isLast={item.isLast}
+                isSelectMode={isSelectMode}
+                isSelected={selectedIds.has(item.data.id)}
+              />
+            );
+          }}
+          ListFooterComponent={
+            loadingMore ? (
+              <ActivityIndicator color={colors.primary} style={{ paddingVertical: 20 }} />
+            ) : null
+          }
+          ListEmptyComponent={
+            hasSearched ? (
+              <EmptyState
+                icon="search-outline"
+                title={t("search.noResults.title")}
+                description={t("search.noResults.description")}
+              />
+            ) : null
+          }
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.3}
+          refreshControl={<RefreshControl {...refreshControlProps} />}
+          contentContainerStyle={{ paddingBottom: 80, backgroundColor: colors.pageBackground }}
+        />
       </View>
 
-      <LegendList
-        data={listData}
-        keyExtractor={(item) => item.key}
-        getItemType={(item) => item.type}
-        showsVerticalScrollIndicator={false}
-        contentInsetAdjustmentBehavior="automatic"
-        renderItem={({ item }) => {
-          if (item.type === 'date') {
-            return <DateSectionHeader date={item.date} />;
-          }
-          if (item.type !== 'transaction') return null;
-          return (
-            <TransactionRow
-              item={item.data}
-              onPress={handleEditTransaction}
-              onDelete={handleDelete}
-              onToggleCleared={handleToggleCleared}
-              onLongPress={handleLongPress}
-              onDuplicate={handleDuplicate}
-              onMove={handleMove}
-              onSetCategory={handleSetCategory}
-              onAddTag={handleAddTag}
-              tags={tags}
-              isFirst={item.isFirst}
-              isLast={item.isLast}
-              isSelectMode={isSelectMode}
-              isSelected={selectedIds.has(item.data.id)}
-            />
-          );
-        }}
-        ListFooterComponent={
-          loadingMore
-            ? <ActivityIndicator color={colors.primary} style={{ paddingVertical: 20 }} />
-            : null
-        }
-        ListEmptyComponent={
-          hasSearched
-            ? <EmptyState
-                icon="search-outline"
-                title={t('search.noResults.title')}
-                description={t('search.noResults.description')}
-              />
-            : null
-        }
-        onEndReached={loadMore}
-        onEndReachedThreshold={0.3}
-        refreshControl={
-          <RefreshControl {...refreshControlProps} />
-        }
-        contentContainerStyle={{ paddingBottom: 80, backgroundColor: colors.pageBackground }}
-      />
-    </View>
-
-    {isSelectMode && (
-      <SelectModeToolbar
-        allCleared={allCleared}
-        selectedCount={selectedIds.size}
-        onToggleCleared={handleBulkToggleCleared}
-        onDelete={handleBulkDelete}
-        onMove={triggerAccountPicker}
-        onSetCategory={triggerCategoryPicker}
-      />
-    )}
+      {isSelectMode && (
+        <SelectModeToolbar
+          allCleared={allCleared}
+          selectedCount={selectedIds.size}
+          onToggleCleared={handleBulkToggleCleared}
+          onDelete={handleBulkDelete}
+          onMove={triggerAccountPicker}
+          onSetCategory={triggerCategoryPicker}
+        />
+      )}
     </>
   );
 }

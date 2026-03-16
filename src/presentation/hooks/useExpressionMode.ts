@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
-import { evalArithmetic } from '../../lib/arithmetic';
-import { MAX_CENTS, centsToDollars, dollarsToCents } from '../../lib/currency';
+import { useEffect, useRef, useState } from "react";
+import { evalArithmetic } from "../../lib/arithmetic";
+import { MAX_CENTS, centsToDollars, dollarsToCents } from "../../lib/currency";
 
 interface UseExpressionModeOptions {
   /** Current value in cents */
@@ -24,23 +24,29 @@ interface UseExpressionModeOptions {
 export function useExpressionMode({ value, onChangeValue }: UseExpressionModeOptions) {
   const [expressionMode, setExpressionMode] = useState(false);
   /** Left operand + operator, e.g. "4345.67+" (right operand stored separately) */
-  const [expression, setExpression] = useState('');
+  const [expression, setExpression] = useState("");
   /** Right operand in cents — banking-style (digits fill right-to-left) */
   const [operandCents, setOperandCents] = useState(0);
 
   // Refs to avoid stale closures in useImperativeHandle
   const valueRef = useRef(value);
   const expressionModeRef = useRef(false);
-  const expressionRef = useRef('');
+  const expressionRef = useRef("");
   const operandCentsRef = useRef(0);
   const onChangeValueRef = useRef(onChangeValue);
 
   // Keep refs in sync
   valueRef.current = value;
   onChangeValueRef.current = onChangeValue;
-  useEffect(() => { expressionModeRef.current = expressionMode; }, [expressionMode]);
-  useEffect(() => { expressionRef.current = expression; }, [expression]);
-  useEffect(() => { operandCentsRef.current = operandCents; }, [operandCents]);
+  useEffect(() => {
+    expressionModeRef.current = expressionMode;
+  }, [expressionMode]);
+  useEffect(() => {
+    expressionRef.current = expression;
+  }, [expression]);
+  useEffect(() => {
+    operandCentsRef.current = operandCents;
+  }, [operandCents]);
 
   /** Build the full expression string for evaluation. */
   function buildFullExpr(expr: string, cents: number): string {
@@ -50,10 +56,10 @@ export function useExpressionMode({ value, onChangeValue }: UseExpressionModeOpt
   /** Reset all expression state. */
   function resetExpression() {
     setExpressionMode(false);
-    setExpression('');
+    setExpression("");
     setOperandCents(0);
     expressionModeRef.current = false;
-    expressionRef.current = '';
+    expressionRef.current = "";
     operandCentsRef.current = 0;
   }
 
@@ -121,8 +127,8 @@ export function useExpressionMode({ value, onChangeValue }: UseExpressionModeOpt
 
   /** Handle text changes for the right operand (banking-style: digits fill right-to-left). */
   function handleChangeTextOperand(text: string) {
-    const digits = text.replace(/\D/g, '');
-    const newCents = Math.min(parseInt(digits || '0', 10), MAX_CENTS);
+    const digits = text.replace(/\D/g, "");
+    const newCents = Math.min(parseInt(digits || "0", 10), MAX_CENTS);
     setOperandCents(newCents);
     operandCentsRef.current = newCents;
 
@@ -137,7 +143,7 @@ export function useExpressionMode({ value, onChangeValue }: UseExpressionModeOpt
   /** Handle key press — detects Backspace on empty operand to remove operator. */
   function handleKeyPress(e: { nativeEvent: { key: string } }) {
     if (!expressionModeRef.current) return;
-    if (e.nativeEvent.key === 'Backspace' && operandCentsRef.current === 0) {
+    if (e.nativeEvent.key === "Backspace" && operandCentsRef.current === 0) {
       // Operand is empty — strip trailing operator and exit expression mode
       const expr = expressionRef.current;
       const leftDollars = expr.slice(0, -1); // e.g., "4345.67+" → "4345.67"
@@ -159,14 +165,10 @@ export function useExpressionMode({ value, onChangeValue }: UseExpressionModeOpt
   }
 
   // Full expression string for display (always shows 2 decimals on right operand)
-  const fullExpression = expressionMode
-    ? expression + (operandCents / 100).toFixed(2)
-    : '';
+  const fullExpression = expressionMode ? expression + (operandCents / 100).toFixed(2) : "";
 
   // Preview of expression result
-  const previewExpr = expressionMode
-    ? buildFullExpr(expression, operandCents)
-    : null;
+  const previewExpr = expressionMode ? buildFullExpr(expression, operandCents) : null;
   const preview = previewExpr ? evalArithmetic(previewExpr) : null;
   const previewCents = preview !== null && preview >= 0 ? dollarsToCents(preview) : null;
 

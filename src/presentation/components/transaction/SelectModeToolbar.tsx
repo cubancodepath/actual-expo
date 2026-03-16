@@ -1,4 +1,4 @@
-import { Stack } from 'expo-router';
+import { Stack } from "expo-router";
 
 interface SelectModeToolbarProps {
   allCleared: boolean;
@@ -22,17 +22,13 @@ export function SelectModeToolbar({
   return (
     <Stack.Toolbar>
       <Stack.Toolbar.Button
-        icon={allCleared ? 'circle' : 'checkmark.circle'}
+        icon={allCleared ? "circle" : "checkmark.circle"}
         onPress={onToggleCleared}
         disabled={!hasSelection}
       >
-        {allCleared ? 'Unclear' : 'Clear'}
+        {allCleared ? "Unclear" : "Clear"}
       </Stack.Toolbar.Button>
-      <Stack.Toolbar.Button
-        icon="folder"
-        onPress={onSetCategory}
-        disabled={!hasSelection}
-      >
+      <Stack.Toolbar.Button icon="folder" onPress={onSetCategory} disabled={!hasSelection}>
         Categorize
       </Stack.Toolbar.Button>
       <Stack.Toolbar.Spacer />

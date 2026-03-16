@@ -1,16 +1,16 @@
-import { useEffect, useState } from 'react';
-import { Pressable, SafeAreaView, ScrollView, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useCategoriesStore } from '../../../src/stores/categoriesStore';
-import { usePickerStore } from '../../../src/stores/pickerStore';
-import { getCategoryBalancesForMonth } from '../../../src/budgets';
-import { useTheme, useThemedStyles } from '../../../src/presentation/providers/ThemeProvider';
-import { Text } from '../../../src/presentation/components/atoms/Text';
-import { Amount } from '../../../src/presentation/components/atoms/Amount';
-import { GlassButton } from '../../../src/presentation/components/atoms/GlassButton';
-import { currentMonth } from '../../../src/lib/date';
-import type { Theme } from '../../../src/theme';
+import { useEffect, useState } from "react";
+import { Pressable, SafeAreaView, ScrollView, View } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { useCategoriesStore } from "../../../src/stores/categoriesStore";
+import { usePickerStore } from "../../../src/stores/pickerStore";
+import { getCategoryBalancesForMonth } from "../../../src/budgets";
+import { useTheme, useThemedStyles } from "../../../src/presentation/providers/ThemeProvider";
+import { Text } from "../../../src/presentation/components/atoms/Text";
+import { Amount } from "../../../src/presentation/components/atoms/Amount";
+import { GlassButton } from "../../../src/presentation/components/atoms/GlassButton";
+import { currentMonth } from "../../../src/lib/date";
+import type { Theme } from "../../../src/theme";
 
 export default function SplitCategoryPickerScreen() {
   const { splitLineId, selectedId } = useLocalSearchParams<{
@@ -45,101 +45,114 @@ export default function SplitCategoryPickerScreen() {
   return (
     <View style={styles.container}>
       {/* Back button — top left */}
-      <View style={{ position: 'absolute', top: 12, left: spacing.md, zIndex: 11 }}>
+      <View style={{ position: "absolute", top: 12, left: spacing.md, zIndex: 11 }}>
         <GlassButton icon="chevron.left" onPress={() => router.back()} />
       </View>
 
       {/* Title — centered */}
-      <View style={{ position: 'absolute', top: 12, left: 0, right: 0, height: 48, justifyContent: 'center', alignItems: 'center', zIndex: 11, pointerEvents: 'none' }}>
-        <Text variant="body" color={colors.textPrimary} style={{ fontWeight: '600' }}>
+      <View
+        style={{
+          position: "absolute",
+          top: 12,
+          left: 0,
+          right: 0,
+          height: 48,
+          justifyContent: "center",
+          alignItems: "center",
+          zIndex: 11,
+          pointerEvents: "none",
+        }}
+      >
+        <Text variant="body" color={colors.textPrimary} style={{ fontWeight: "600" }}>
           Category
         </Text>
       </View>
 
-    <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.list}>
-      {/* No category */}
-      <View style={styles.standaloneCard}>
-        <Pressable
-          style={({ pressed }) => [styles.item, pressed && styles.pressed]}
-          onPress={() => select(null, '')}
-        >
-          <Text variant="body" color={colors.textMuted} style={styles.catName}>
-            No category
-          </Text>
-          {noneSelected && (
-            <Ionicons name="checkmark" size={20} color={colors.primary} />
-          )}
-        </Pressable>
-      </View>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.list}>
+        {/* No category */}
+        <View style={styles.standaloneCard}>
+          <Pressable
+            style={({ pressed }) => [styles.item, pressed && styles.pressed]}
+            onPress={() => select(null, "")}
+          >
+            <Text variant="body" color={colors.textMuted} style={styles.catName}>
+              No category
+            </Text>
+            {noneSelected && <Ionicons name="checkmark" size={20} color={colors.primary} />}
+          </Pressable>
+        </View>
 
-      {groups
-        .filter((g) => !g.hidden && !g.tombstone)
-        .sort((a, b) => {
-          if (a.is_income !== b.is_income) return a.is_income ? 1 : -1;
-          return (a.sort_order ?? 0) - (b.sort_order ?? 0);
-        })
-        .map((g) => {
-          const cats = categories
-            .filter((c) => c.cat_group === g.id && !c.hidden && !c.tombstone)
-            .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
-          if (cats.length === 0) return null;
-          return (
-            <View key={g.id}>
-              <View style={styles.sectionHeader}>
-                <Text
-                  variant="captionSm"
-                  color={colors.textMuted}
-                  style={styles.sectionText}
-                >
-                  {g.name.toUpperCase()}
-                </Text>
-              </View>
-              <View style={styles.groupCard}>
-                {cats.map((c, i) => {
-                  const balance = balanceMap.get(c.id);
-                  const balanceColor =
-                    balance === undefined
-                      ? colors.textMuted
-                      : balance > 0
-                        ? colors.positive
-                        : balance < 0
-                          ? colors.negative
-                          : colors.textMuted;
-                  const isSelected = c.id === selectedId;
-                  const isLast = i === cats.length - 1;
-                  return (
-                    <Pressable
-                      key={c.id}
-                      style={({ pressed }) => [
-                        styles.item,
-                        pressed && styles.pressed,
-                      ]}
-                      onPress={() => select(c.id, c.name)}
-                    >
-                      <Text
-                        variant="body"
-                        color={colors.textPrimary}
-                        style={styles.catName}
+        {groups
+          .filter((g) => !g.hidden && !g.tombstone)
+          .sort((a, b) => {
+            if (a.is_income !== b.is_income) return a.is_income ? 1 : -1;
+            return (a.sort_order ?? 0) - (b.sort_order ?? 0);
+          })
+          .map((g) => {
+            const cats = categories
+              .filter((c) => c.cat_group === g.id && !c.hidden && !c.tombstone)
+              .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+            if (cats.length === 0) return null;
+            return (
+              <View key={g.id}>
+                <View style={styles.sectionHeader}>
+                  <Text variant="captionSm" color={colors.textMuted} style={styles.sectionText}>
+                    {g.name.toUpperCase()}
+                  </Text>
+                </View>
+                <View style={styles.groupCard}>
+                  {cats.map((c, i) => {
+                    const balance = balanceMap.get(c.id);
+                    const balanceColor =
+                      balance === undefined
+                        ? colors.textMuted
+                        : balance > 0
+                          ? colors.positive
+                          : balance < 0
+                            ? colors.negative
+                            : colors.textMuted;
+                    const isSelected = c.id === selectedId;
+                    const isLast = i === cats.length - 1;
+                    return (
+                      <Pressable
+                        key={c.id}
+                        style={({ pressed }) => [styles.item, pressed && styles.pressed]}
+                        onPress={() => select(c.id, c.name)}
                       >
-                        {c.name}
-                      </Text>
-                      {balance !== undefined && (
-                        <Amount value={balance} variant="caption" color={balanceColor} style={styles.balance} />
-                      )}
-                      {isSelected && (
-                        <Ionicons name="checkmark" size={20} color={colors.primary} />
-                      )}
-                      {!isLast && (
-                        <View style={{ position: 'absolute', bottom: 0, left: spacing.lg, right: spacing.lg, height: bw.thin, backgroundColor: colors.divider }} />
-                      )}
-                    </Pressable>
-                  );
-                })}
+                        <Text variant="body" color={colors.textPrimary} style={styles.catName}>
+                          {c.name}
+                        </Text>
+                        {balance !== undefined && (
+                          <Amount
+                            value={balance}
+                            variant="caption"
+                            color={balanceColor}
+                            style={styles.balance}
+                          />
+                        )}
+                        {isSelected && (
+                          <Ionicons name="checkmark" size={20} color={colors.primary} />
+                        )}
+                        {!isLast && (
+                          <View
+                            style={{
+                              position: "absolute",
+                              bottom: 0,
+                              left: spacing.lg,
+                              right: spacing.lg,
+                              height: bw.thin,
+                              backgroundColor: colors.divider,
+                            }}
+                          />
+                        )}
+                      </Pressable>
+                    );
+                  })}
+                </View>
               </View>
-            </View>
-          );
-        })}
-    </ScrollView>
+            );
+          })}
+      </ScrollView>
     </View>
   );
 }
@@ -159,7 +172,7 @@ const createStyles = (theme: Theme) => ({
     paddingBottom: theme.spacing.sm,
   },
   sectionText: {
-    fontWeight: '700' as const,
+    fontWeight: "700" as const,
     letterSpacing: 0.8,
   },
   standaloneCard: {
@@ -169,7 +182,7 @@ const createStyles = (theme: Theme) => ({
     borderRadius: theme.borderRadius.lg,
     borderWidth: theme.borderWidth.thin,
     borderColor: theme.colors.cardBorder,
-    overflow: 'hidden' as const,
+    overflow: "hidden" as const,
   },
   groupCard: {
     marginHorizontal: theme.spacing.lg,
@@ -177,11 +190,11 @@ const createStyles = (theme: Theme) => ({
     borderRadius: theme.borderRadius.lg,
     borderWidth: theme.borderWidth.thin,
     borderColor: theme.colors.cardBorder,
-    overflow: 'hidden' as const,
+    overflow: "hidden" as const,
   },
   item: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.md,
     minHeight: 44,

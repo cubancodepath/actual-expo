@@ -3,5 +3,5 @@ export function getRandomBytes() {
   return new Uint8Array(16);
 }
 export function randomUUID() {
-  return 'mock-uuid';
+  return "mock-uuid";
 }

@@ -1,12 +1,12 @@
-import { Alert, Pressable, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../providers/ThemeProvider';
-import { Text } from '../atoms/Text';
-import { Amount } from '../atoms/Amount';
-import { InfoPill } from '../atoms/InfoPill';
-import { withOpacity } from '../../../lib/colors';
-import { formatPrivacyAware } from '../../../lib/format';
+import { Alert, Pressable, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
+import { useTheme } from "../../providers/ThemeProvider";
+import { Text } from "../atoms/Text";
+import { Amount } from "../atoms/Amount";
+import { InfoPill } from "../atoms/InfoPill";
+import { withOpacity } from "../../../lib/colors";
+import { formatPrivacyAware } from "../../../lib/format";
 
 interface ReadyToAssignPillProps {
   /** Budget balance in cents. Positive = money available, negative = overassigned. */
@@ -28,7 +28,7 @@ export function ReadyToAssignPill({
   onEditHold,
   onClearHold,
 }: ReadyToAssignPillProps) {
-  const { t } = useTranslation('budget');
+  const { t } = useTranslation("budget");
   const { colors, spacing, borderRadius: br } = useTheme();
 
   const isZero = amount === 0;
@@ -49,16 +49,16 @@ export function ReadyToAssignPill({
       : colors.cardBackground;
 
   const icon: keyof typeof Ionicons.glyphMap = isPositive
-    ? 'wallet-outline'
+    ? "wallet-outline"
     : isNegative
-      ? 'alert-circle-outline'
-      : 'checkmark-circle-outline';
+      ? "alert-circle-outline"
+      : "checkmark-circle-outline";
 
   const label = isPositive
-    ? t('readyToAssign')
+    ? t("readyToAssign")
     : isNegative
-      ? t('overassigned')
-      : t('fullyAssigned');
+      ? t("overassigned")
+      : t("fullyAssigned");
 
   // ── Simple pill (no hold) ──
   if (!hasHold) {
@@ -68,14 +68,14 @@ export function ReadyToAssignPill({
         onPress={onPress}
         accessibilityLabel={`${formatPrivacyAware(amount)} ${label}. Tap to assign budget.`}
         left={
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs }}>
             <Ionicons name={icon} size={15} color={textColor} />
             <Amount value={amount} variant="bodySm" color={textColor} weight="700" />
           </View>
         }
         right={
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-            <Text variant="captionSm" color={textColor} style={{ fontWeight: '500' }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs }}>
+            <Text variant="captionSm" color={textColor} style={{ fontWeight: "500" }}>
               {label}
             </Text>
             {onPress && (
@@ -99,17 +99,17 @@ export function ReadyToAssignPill({
         marginHorizontal: spacing.lg,
         borderRadius: br.xl,
         backgroundColor,
-        overflow: 'hidden',
+        overflow: "hidden",
       }}
-      accessibilityLabel={`${formatPrivacyAware(amount)} ${label}. ${t('holding')}${formatPrivacyAware(holdAmount)}${t('nextMonth')}.`}
+      accessibilityLabel={`${formatPrivacyAware(amount)} ${label}. ${t("holding")}${formatPrivacyAware(holdAmount)}${t("nextMonth")}.`}
     >
       {/* Top row: Ready to Assign / Overassigned / Fully Assigned */}
       <Pressable
         onPress={onPress}
         style={({ pressed }) => ({
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
           paddingHorizontal: spacing.lg,
           paddingVertical: 11,
           minHeight: 44,
@@ -117,20 +117,18 @@ export function ReadyToAssignPill({
         })}
         disabled={!onPress}
       >
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs }}>
           <Ionicons name={icon} size={15} color={textColor} />
-          {!isZero && (
-            <Amount value={amount} variant="bodySm" color={textColor} weight="700" />
-          )}
+          {!isZero && <Amount value={amount} variant="bodySm" color={textColor} weight="700" />}
           {isZero && (
-            <Text variant="bodySm" color={textColor} style={{ fontWeight: '700' }}>
+            <Text variant="bodySm" color={textColor} style={{ fontWeight: "700" }}>
               {label}
             </Text>
           )}
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs }}>
           {!isZero && (
-            <Text variant="captionSm" color={textColor} style={{ fontWeight: '500' }}>
+            <Text variant="captionSm" color={textColor} style={{ fontWeight: "500" }}>
               {label}
             </Text>
           )}
@@ -157,15 +155,15 @@ export function ReadyToAssignPill({
       {/* Hold row */}
       <View
         style={{
-          flexDirection: 'row',
-          alignItems: 'center',
+          flexDirection: "row",
+          alignItems: "center",
           paddingHorizontal: spacing.lg,
           paddingVertical: 10,
           minHeight: 40,
         }}
       >
         {/* Hold info */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, flexWrap: 'wrap' }}>
+        <View style={{ flexDirection: "row", alignItems: "center", flex: 1, flexWrap: "wrap" }}>
           <Ionicons
             name="play-skip-forward-outline"
             size={13}
@@ -173,27 +171,27 @@ export function ReadyToAssignPill({
             style={{ opacity: 0.5, marginRight: spacing.xxs }}
           />
           <Text variant="captionSm" color={textColor} style={{ opacity: 0.7 }}>
-            {t('holding')}
+            {t("holding")}
           </Text>
           <Amount value={holdAmount} variant="captionSm" color={textColor} weight="700" />
           <Text variant="captionSm" color={textColor} style={{ opacity: 0.7 }}>
-            {t('nextMonth')}
+            {t("nextMonth")}
           </Text>
         </View>
 
         {/* Action buttons */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs }}>
           <Pressable onPress={onEditHold} hitSlop={8}>
-            <Text variant="captionSm" color={textColor} style={{ fontWeight: '600' }}>
-              {t('editAction')}
+            <Text variant="captionSm" color={textColor} style={{ fontWeight: "600" }}>
+              {t("editAction")}
             </Text>
           </Pressable>
           <Text variant="captionSm" color={textColor} style={{ opacity: 0.3 }}>
             ·
           </Text>
           <Pressable onPress={onClearHold} hitSlop={8}>
-            <Text variant="captionSm" color={textColor} style={{ fontWeight: '600', opacity: 0.7 }}>
-              {t('clearAction')}
+            <Text variant="captionSm" color={textColor} style={{ fontWeight: "600", opacity: 0.7 }}>
+              {t("clearAction")}
             </Text>
           </Pressable>
         </View>

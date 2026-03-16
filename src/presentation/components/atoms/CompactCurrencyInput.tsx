@@ -1,5 +1,5 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
-import { Keyboard, Platform, TextInput, View, type ViewStyle } from 'react-native';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { Keyboard, Platform, TextInput, View, type ViewStyle } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -7,14 +7,14 @@ import Animated, {
   withSequence,
   withTiming,
   cancelAnimation,
-} from 'react-native-reanimated';
-import { useTheme } from '../../providers/ThemeProvider';
-import { Text } from './Text';
-import { CurrencySymbol } from './CurrencySymbol';
-import { useExpressionMode } from '../../hooks/useExpressionMode';
-import { MAX_CENTS, formatCents, formatExpression } from '../../../lib/currency';
-import { formatAmountParts } from '../../../lib/format';
-import { usePreferencesStore } from '../../../stores/preferencesStore';
+} from "react-native-reanimated";
+import { useTheme } from "../../providers/ThemeProvider";
+import { Text } from "./Text";
+import { CurrencySymbol } from "./CurrencySymbol";
+import { useExpressionMode } from "../../hooks/useExpressionMode";
+import { MAX_CENTS, formatCents, formatExpression } from "../../../lib/currency";
+import { formatAmountParts } from "../../../lib/format";
+import { usePreferencesStore } from "../../../stores/preferencesStore";
 
 export interface CompactCurrencyInputRef {
   focus: () => void;
@@ -52,13 +52,27 @@ interface CompactCurrencyInputProps {
  * In expression mode, shows the expression and a live preview of the result.
  */
 export const CompactCurrencyInput = forwardRef<CompactCurrencyInputRef, CompactCurrencyInputProps>(
-  function CompactCurrencyInput({ value, onChangeValue, onFocus: onFocusProp, onBlur: onBlurProp, autoFocus = false, color: colorProp, style }, ref) {
+  function CompactCurrencyInput(
+    {
+      value,
+      onChangeValue,
+      onFocus: onFocusProp,
+      onBlur: onBlurProp,
+      autoFocus = false,
+      color: colorProp,
+      style,
+    },
+    ref,
+  ) {
     const { colors } = useTheme();
     const inputRef = useRef<TextInput>(null);
     const [focused, setFocused] = useState(autoFocus);
 
     // Subscribe to format prefs for reactivity (formatCents reads module-level config)
-    usePreferencesStore((s) => `${s.numberFormat}:${s.hideFraction}:${s.defaultCurrencyCode}:${s.defaultCurrencyCustomSymbol}:${s.currencySymbolPosition}:${s.currencySpaceBetweenAmountAndSymbol}`);
+    usePreferencesStore(
+      (s) =>
+        `${s.numberFormat}:${s.hideFraction}:${s.defaultCurrencyCode}:${s.defaultCurrencyCustomSymbol}:${s.currencySymbolPosition}:${s.currencySpaceBetweenAmountAndSymbol}`,
+    );
 
     const expr = useExpressionMode({ value, onChangeValue });
 
@@ -87,8 +101,8 @@ export const CompactCurrencyInput = forwardRef<CompactCurrencyInputRef, CompactC
 
     // ── Normal mode: banking-style digit handling ──
     function handleChangeTextNormal(text: string) {
-      const digits = text.replace(/\D/g, '');
-      const newCents = Math.min(parseInt(digits || '0', 10), MAX_CENTS);
+      const digits = text.replace(/\D/g, "");
+      const newCents = Math.min(parseInt(digits || "0", 10), MAX_CENTS);
       onChangeValue(newCents);
     }
 
@@ -120,7 +134,7 @@ export const CompactCurrencyInput = forwardRef<CompactCurrencyInputRef, CompactC
     // Catches scroll-dismiss, tab switches, and Keyboard.dismiss()
     // even when the zero-size TextInput doesn't fire onBlur reliably.
     useEffect(() => {
-      const event = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+      const event = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
       const sub = Keyboard.addListener(event, () => {
         if (focusedRef.current) {
           handleBlurRef.current();
@@ -137,44 +151,61 @@ export const CompactCurrencyInput = forwardRef<CompactCurrencyInputRef, CompactC
     const displayColor = colorProp ?? (value !== 0 ? colors.textPrimary : colors.textMuted);
 
     return (
-      <View style={[{ flexDirection: 'column', alignItems: 'flex-end' }, style]}>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          {!expr.expressionMode && (() => {
-            const parts = formatAmountParts(Math.abs(value), false);
-            const fontSize = 14; // body variant
-            return (
-              <>
-                {isNeg && (
-                  <Text variant="body" color={displayColor} style={{ marginRight: 1 }}>-</Text>
-                )}
-                {parts.svgSymbol && parts.position === 'before' && (
-                  <>
-                    <CurrencySymbol symbol={parts.symbol} svgSymbol={parts.svgSymbol} fontSize={fontSize} color={displayColor} />
-                    {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
-                  </>
-                )}
-                <Text
-                  variant="body"
-                  style={{ fontWeight: '600', fontVariant: ['tabular-nums'], color: displayColor }}
-                >
-                  {parts.svgSymbol ? parts.number : formatCents(Math.abs(value))}
-                </Text>
-                {parts.svgSymbol && parts.position === 'after' && (
-                  <>
-                    {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
-                    <CurrencySymbol symbol={parts.symbol} svgSymbol={parts.svgSymbol} fontSize={fontSize} color={displayColor} />
-                  </>
-                )}
-              </>
-            );
-          })()}
+      <View style={[{ flexDirection: "column", alignItems: "flex-end" }, style]}>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          {!expr.expressionMode &&
+            (() => {
+              const parts = formatAmountParts(Math.abs(value), false);
+              const fontSize = 14; // body variant
+              return (
+                <>
+                  {isNeg && (
+                    <Text variant="body" color={displayColor} style={{ marginRight: 1 }}>
+                      -
+                    </Text>
+                  )}
+                  {parts.svgSymbol && parts.position === "before" && (
+                    <>
+                      <CurrencySymbol
+                        symbol={parts.symbol}
+                        svgSymbol={parts.svgSymbol}
+                        fontSize={fontSize}
+                        color={displayColor}
+                      />
+                      {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
+                    </>
+                  )}
+                  <Text
+                    variant="body"
+                    style={{
+                      fontWeight: "600",
+                      fontVariant: ["tabular-nums"],
+                      color: displayColor,
+                    }}
+                  >
+                    {parts.svgSymbol ? parts.number : formatCents(Math.abs(value))}
+                  </Text>
+                  {parts.svgSymbol && parts.position === "after" && (
+                    <>
+                      {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
+                      <CurrencySymbol
+                        symbol={parts.symbol}
+                        svgSymbol={parts.svgSymbol}
+                        fontSize={fontSize}
+                        color={displayColor}
+                      />
+                    </>
+                  )}
+                </>
+              );
+            })()}
 
           {expr.expressionMode && (
             <Text
               variant="body"
               style={{
-                fontWeight: '600',
-                fontVariant: ['tabular-nums'],
+                fontWeight: "600",
+                fontVariant: ["tabular-nums"],
                 color: colors.primary,
               }}
               numberOfLines={1}
@@ -202,7 +233,7 @@ export const CompactCurrencyInput = forwardRef<CompactCurrencyInputRef, CompactC
           <Text
             variant="captionSm"
             color={colors.textMuted}
-            style={{ fontVariant: ['tabular-nums'], marginTop: 1 }}
+            style={{ fontVariant: ["tabular-nums"], marginTop: 1 }}
           >
             = {formatCents(expr.previewCents)}
           </Text>
@@ -210,7 +241,7 @@ export const CompactCurrencyInput = forwardRef<CompactCurrencyInputRef, CompactC
 
         <TextInput
           ref={inputRef}
-          style={{ position: 'absolute', opacity: 0, height: 0, width: 0 }}
+          style={{ position: "absolute", opacity: 0, height: 0, width: 0 }}
           keyboardType="number-pad"
           autoFocus={autoFocus}
           caretHidden
@@ -218,7 +249,10 @@ export const CompactCurrencyInput = forwardRef<CompactCurrencyInputRef, CompactC
           value={currentInputValue}
           onChangeText={expr.expressionMode ? expr.handleChangeTextOperand : handleChangeTextNormal}
           onKeyPress={expr.expressionMode ? expr.handleKeyPress : undefined}
-          onFocus={() => { setFocused(true); onFocusProp?.(); }}
+          onFocus={() => {
+            setFocused(true);
+            onFocusProp?.();
+          }}
           onBlur={handleBlur}
         />
       </View>

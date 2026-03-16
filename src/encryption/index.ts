@@ -1,7 +1,7 @@
-import { randomUUID } from 'expo-crypto';
+import { randomUUID } from "expo-crypto";
 
-import * as internals from './internals';
-import type { KeyValue } from './internals';
+import * as internals from "./internals";
+import type { KeyValue } from "./internals";
 
 let keys: Record<string, Key> = {};
 
@@ -13,13 +13,7 @@ class Key {
     this.id = id ?? randomUUID();
   }
 
-  async createFromPassword({
-    password,
-    salt,
-  }: {
-    password: string;
-    salt: string;
-  }) {
+  async createFromPassword({ password, salt }: { password: string; salt: string }) {
     this.value = await internals.createKey({ secret: password, salt });
   }
 
@@ -32,7 +26,7 @@ class Key {
   }
 
   getValue(): KeyValue {
-    if (!this.value) throw new Error('Key has no value — call createFrom* first');
+    if (!this.value) throw new Error("Key has no value — call createFrom* first");
     return this.value;
   }
 
@@ -46,7 +40,7 @@ class Key {
 
 export function getKey(keyId: string): Key {
   if (keyId == null || keys[keyId] == null) {
-    throw new Error('missing-key');
+    throw new Error("missing-key");
   }
   return keys[keyId];
 }
@@ -70,9 +64,7 @@ export function randomBytes(n: number): Uint8Array {
   return internals.randomBytes(n);
 }
 
-export async function loadKey(
-  key: Key | { id: string; base64: string },
-): Promise<void> {
+export async function loadKey(key: Key | { id: string; base64: string }): Promise<void> {
   let keyInstance: Key;
   if (!(key instanceof Key)) {
     keyInstance = new Key({ id: key.id });

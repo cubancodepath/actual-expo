@@ -1,9 +1,4 @@
-import {
-  createContext,
-  useContext,
-  useMemo,
-  type ReactNode,
-} from "react";
+import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { useColorScheme, StyleSheet } from "react-native";
 import { lightTheme, darkTheme, type Theme } from "../../theme";
 import { usePrefsStore } from "../../stores/prefsStore";
@@ -17,12 +12,10 @@ const ThemeContext = createContext<Theme>(lightTheme);
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const systemScheme = useColorScheme();
   const themeMode = usePrefsStore((s) => s.themeMode);
-  const resolvedScheme = themeMode === 'system' ? systemScheme : themeMode;
+  const resolvedScheme = themeMode === "system" ? systemScheme : themeMode;
   const theme = resolvedScheme === "dark" ? darkTheme : lightTheme;
 
-  return (
-    <ThemeContext.Provider value={theme}>{children}</ThemeContext.Provider>
-  );
+  return <ThemeContext.Provider value={theme}>{children}</ThemeContext.Provider>;
 }
 
 // ── Hooks ─────────────────────────────────────────────────────────────────────

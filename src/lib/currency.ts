@@ -1,4 +1,4 @@
-import { formatBalance } from './format';
+import { formatBalance } from "./format";
 
 /** Max value: $999,999.99 = 99999999 cents */
 export const MAX_CENTS = 99999999;
@@ -22,7 +22,7 @@ export function centsToDollars(cents: number): string {
   const dollars = Math.floor(abs / 100);
   const remainder = abs % 100;
   if (remainder === 0) return String(dollars);
-  return `${dollars}.${String(remainder).padStart(2, '0')}`;
+  return `${dollars}.${String(remainder).padStart(2, "0")}`;
 }
 
 /**
@@ -37,5 +37,8 @@ export function dollarsToCents(dollars: number): number {
  * "1.50+0.75" → "1.50 + 0.75"
  */
 export function formatExpression(expr: string): string {
-  return expr.replace(/([+\-*/])/g, ' $1 ').replace(/\s+/g, ' ').trim();
+  return expr
+    .replace(/([+\-*/])/g, " $1 ")
+    .replace(/\s+/g, " ")
+    .trim();
 }

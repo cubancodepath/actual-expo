@@ -5,8 +5,8 @@
  * Operates on plain transaction objects (Record<string, unknown>).
  */
 
-import type { ParsedRule, RuleCondition, RuleAction } from './types';
-import { FIELD_TYPES, INTERNAL_FIELD_MAP } from './types';
+import type { ParsedRule, RuleCondition, RuleAction } from "./types";
+import { FIELD_TYPES, INTERNAL_FIELD_MAP } from "./types";
 
 // ── Field resolution ──
 
@@ -22,7 +22,7 @@ function getFieldValue(transaction: Record<string, unknown>, field: string): unk
 // ── Value normalization ──
 
 function normalizeStringValue(value: unknown): string {
-  return typeof value === 'string' ? value.toLowerCase() : String(value ?? '');
+  return typeof value === "string" ? value.toLowerCase() : String(value ?? "");
 }
 
 // ── Number helpers ──
@@ -50,47 +50,47 @@ function parseDateInt(d: number): { year: number; month: number; day: number } {
  * Parse a string date ('YYYY-MM-DD', 'YYYY-MM', or 'YYYY') into an integer.
  * Returns { value: YYYYMMDD, precision: 'day'|'month'|'year' }.
  */
-function parseDateString(s: string): { value: number; precision: 'day' | 'month' | 'year' } {
-  const parts = s.split('-');
+function parseDateString(s: string): { value: number; precision: "day" | "month" | "year" } {
+  const parts = s.split("-");
   const year = parseInt(parts[0], 10);
-  if (parts.length === 1) return { value: year * 10000 + 101, precision: 'year' };
+  if (parts.length === 1) return { value: year * 10000 + 101, precision: "year" };
   const month = parseInt(parts[1], 10);
-  if (parts.length === 2) return { value: year * 10000 + month * 100 + 1, precision: 'month' };
+  if (parts.length === 2) return { value: year * 10000 + month * 100 + 1, precision: "month" };
   const day = parseInt(parts[2], 10);
-  return { value: year * 10000 + month * 100 + day, precision: 'day' };
+  return { value: year * 10000 + month * 100 + day, precision: "day" };
 }
 
 function evalDateIs(fieldValue: unknown, condValue: unknown): boolean {
-  if (typeof condValue !== 'string' || typeof fieldValue !== 'number') return false;
+  if (typeof condValue !== "string" || typeof fieldValue !== "number") return false;
   const parsed = parseDateString(condValue);
   const field = parseDateInt(fieldValue as number);
 
   switch (parsed.precision) {
-    case 'year':
+    case "year":
       return field.year === Math.floor(parsed.value / 10000);
-    case 'month': {
+    case "month": {
       const condParsed = parseDateInt(parsed.value);
       return field.year === condParsed.year && field.month === condParsed.month;
     }
-    case 'day':
+    case "day":
       return fieldValue === parsed.value;
   }
 }
 
 function evalDateIsApprox(fieldValue: unknown, condValue: unknown): boolean {
-  if (typeof condValue !== 'string' || typeof fieldValue !== 'number') return false;
+  if (typeof condValue !== "string" || typeof fieldValue !== "number") return false;
   const parsed = parseDateString(condValue);
   // ±2 days approximation
   return (fieldValue as number) >= parsed.value - 2 && (fieldValue as number) <= parsed.value + 2;
 }
 
 function compareDateValues(fieldValue: unknown, condValue: unknown): number | null {
-  if (typeof fieldValue !== 'number') return null;
-  if (typeof condValue === 'string') {
+  if (typeof fieldValue !== "number") return null;
+  if (typeof condValue === "string") {
     const parsed = parseDateString(condValue);
     return (fieldValue as number) - parsed.value;
   }
-  if (typeof condValue === 'number') {
+  if (typeof condValue === "number") {
     return (fieldValue as number) - condValue;
   }
   return null;
@@ -105,18 +105,18 @@ export function evalCondition(
   condition: RuleCondition,
   transaction: Record<string, unknown>,
 ): boolean {
-  const type = condition.type ?? FIELD_TYPES[condition.field] ?? 'string';
+  const type = condition.type ?? FIELD_TYPES[condition.field] ?? "string";
   let fieldValue = getFieldValue(transaction, condition.field);
 
   // Default empty strings for string fields
-  if (type === 'string' && fieldValue == null) {
-    fieldValue = '';
+  if (type === "string" && fieldValue == null) {
+    fieldValue = "";
   }
 
   if (fieldValue === undefined) return false;
 
   // Number inflow/outflow option filtering
-  if (type === 'number' && condition.options) {
+  if (type === "number" && condition.options) {
     const numValue = fieldValue as number;
     if (condition.options.outflow) {
       if (numValue > 0) return false;
@@ -130,24 +130,24 @@ export function evalCondition(
 
   switch (op) {
     // ── Equality ──
-    case 'is': {
-      if (type === 'date') return evalDateIs(fieldValue, condValue);
-      if (type === 'boolean') return fieldValue === condValue;
-      if (type === 'number') return fieldValue === condValue;
+    case "is": {
+      if (type === "date") return evalDateIs(fieldValue, condValue);
+      if (type === "boolean") return fieldValue === condValue;
+      if (type === "number") return fieldValue === condValue;
       // string / id: case-insensitive
       return normalizeStringValue(fieldValue) === normalizeStringValue(condValue);
     }
 
-    case 'isNot': {
-      if (type === 'boolean') return fieldValue !== condValue;
-      if (type === 'number') return fieldValue !== condValue;
+    case "isNot": {
+      if (type === "boolean") return fieldValue !== condValue;
+      if (type === "number") return fieldValue !== condValue;
       return normalizeStringValue(fieldValue) !== normalizeStringValue(condValue);
     }
 
     // ── Approximate ──
-    case 'isapprox': {
-      if (type === 'date') return evalDateIsApprox(fieldValue, condValue);
-      if (type === 'number') {
+    case "isapprox": {
+      if (type === "date") return evalDateIsApprox(fieldValue, condValue);
+      if (type === "number") {
         const threshold = getApproxThreshold(condValue as number);
         const fv = fieldValue as number;
         const cv = condValue as number;
@@ -157,70 +157,82 @@ export function evalCondition(
     }
 
     // ── Range ──
-    case 'isbetween': {
+    case "isbetween": {
       const range = condValue as { num1: number; num2: number };
       if (!range || range.num1 == null || range.num2 == null) return false;
-      const [low, high] = range.num1 < range.num2
-        ? [range.num1, range.num2]
-        : [range.num2, range.num1];
+      const [low, high] =
+        range.num1 < range.num2 ? [range.num1, range.num2] : [range.num2, range.num1];
       return (fieldValue as number) >= low && (fieldValue as number) <= high;
     }
 
     // ── String search ──
-    case 'contains':
+    case "contains":
       return normalizeStringValue(fieldValue).includes(normalizeStringValue(condValue));
 
-    case 'doesNotContain':
+    case "doesNotContain":
       return !normalizeStringValue(fieldValue).includes(normalizeStringValue(condValue));
 
-    case 'matches': {
+    case "matches": {
       try {
-        const pattern = typeof condValue === 'string' ? condValue : String(condValue);
-        return new RegExp(pattern, 'i').test(String(fieldValue ?? ''));
+        const pattern = typeof condValue === "string" ? condValue : String(condValue);
+        return new RegExp(pattern, "i").test(String(fieldValue ?? ""));
       } catch {
         return false;
       }
     }
 
     // ── Set membership ──
-    case 'oneOf': {
+    case "oneOf": {
       if (fieldValue == null) return false;
       const normalized = normalizeStringValue(fieldValue);
-      return Array.isArray(condValue) && condValue.some(
-        v => normalizeStringValue(v) === normalized,
+      return (
+        Array.isArray(condValue) && condValue.some((v) => normalizeStringValue(v) === normalized)
       );
     }
 
-    case 'notOneOf': {
+    case "notOneOf": {
       if (fieldValue == null) return false;
       const normalized = normalizeStringValue(fieldValue);
-      return Array.isArray(condValue) && !condValue.some(
-        v => normalizeStringValue(v) === normalized,
+      return (
+        Array.isArray(condValue) && !condValue.some((v) => normalizeStringValue(v) === normalized)
       );
     }
 
     // ── Comparison ──
-    case 'gt': {
-      if (type === 'date') { const d = compareDateValues(fieldValue, condValue); return d !== null && d > 0; }
+    case "gt": {
+      if (type === "date") {
+        const d = compareDateValues(fieldValue, condValue);
+        return d !== null && d > 0;
+      }
       return fieldValue != null && (fieldValue as number) > (condValue as number);
     }
-    case 'gte': {
-      if (type === 'date') { const d = compareDateValues(fieldValue, condValue); return d !== null && d >= 0; }
+    case "gte": {
+      if (type === "date") {
+        const d = compareDateValues(fieldValue, condValue);
+        return d !== null && d >= 0;
+      }
       return fieldValue != null && (fieldValue as number) >= (condValue as number);
     }
-    case 'lt': {
-      if (type === 'date') { const d = compareDateValues(fieldValue, condValue); return d !== null && d < 0; }
+    case "lt": {
+      if (type === "date") {
+        const d = compareDateValues(fieldValue, condValue);
+        return d !== null && d < 0;
+      }
       return fieldValue != null && (fieldValue as number) < (condValue as number);
     }
-    case 'lte': {
-      if (type === 'date') { const d = compareDateValues(fieldValue, condValue); return d !== null && d <= 0; }
+    case "lte": {
+      if (type === "date") {
+        const d = compareDateValues(fieldValue, condValue);
+        return d !== null && d <= 0;
+      }
       return fieldValue != null && (fieldValue as number) <= (condValue as number);
     }
 
     // ── Tags ──
-    case 'hasTags':
-      return fieldValue != null && normalizeStringValue(fieldValue).includes(
-        normalizeStringValue(condValue),
+    case "hasTags":
+      return (
+        fieldValue != null &&
+        normalizeStringValue(fieldValue).includes(normalizeStringValue(condValue))
       );
 
     default:
@@ -233,37 +245,30 @@ export function evalCondition(
 /**
  * Execute a single action on a transaction object (mutates in place).
  */
-export function execAction(
-  action: RuleAction,
-  transaction: Record<string, unknown>,
-): void {
+export function execAction(action: RuleAction, transaction: Record<string, unknown>): void {
   switch (action.op) {
-    case 'set': {
+    case "set": {
       if (!action.field) break;
       const internalField = INTERNAL_FIELD_MAP[action.field] ?? action.field;
       transaction[internalField] = action.value;
       break;
     }
-    case 'set-split-amount': {
-      if (action.options?.method === 'fixed-amount') {
+    case "set-split-amount": {
+      if (action.options?.method === "fixed-amount") {
         transaction.amount = action.value;
       }
       break;
     }
-    case 'link-schedule':
+    case "link-schedule":
       transaction.schedule = action.value;
       break;
-    case 'prepend-notes':
-      transaction.notes = transaction.notes
-        ? `${action.value}${transaction.notes}`
-        : action.value;
+    case "prepend-notes":
+      transaction.notes = transaction.notes ? `${action.value}${transaction.notes}` : action.value;
       break;
-    case 'append-notes':
-      transaction.notes = transaction.notes
-        ? `${transaction.notes}${action.value}`
-        : action.value;
+    case "append-notes":
+      transaction.notes = transaction.notes ? `${transaction.notes}${action.value}` : action.value;
       break;
-    case 'delete-transaction':
+    case "delete-transaction":
       transaction.tombstone = 1;
       break;
   }
@@ -274,13 +279,10 @@ export function execAction(
 /**
  * Evaluate all conditions of a rule against a transaction.
  */
-export function evalConditions(
-  rule: ParsedRule,
-  transaction: Record<string, unknown>,
-): boolean {
+export function evalConditions(rule: ParsedRule, transaction: Record<string, unknown>): boolean {
   if (rule.conditions.length === 0) return false;
-  const fn = rule.conditionsOp === 'or' ? 'some' : 'every';
-  return rule.conditions[fn](c => evalCondition(c, transaction));
+  const fn = rule.conditionsOp === "or" ? "some" : "every";
+  return rule.conditions[fn]((c) => evalCondition(c, transaction));
 }
 
 /**
@@ -318,22 +320,19 @@ const OP_SCORES: Record<string, number> = {
   hasTags: 0,
 };
 
-const HIGH_PRIORITY_OPS = new Set(['is', 'isNot', 'isapprox', 'oneOf', 'notOneOf']);
+const HIGH_PRIORITY_OPS = new Set(["is", "isNot", "isapprox", "oneOf", "notOneOf"]);
 
 function computeScore(rule: ParsedRule): number {
-  const base = rule.conditions.reduce(
-    (score, c) => score + (OP_SCORES[c.op] ?? 0),
-    0,
-  );
-  const allHighPriority = rule.conditions.length > 0 &&
-    rule.conditions.every(c => HIGH_PRIORITY_OPS.has(c.op));
+  const base = rule.conditions.reduce((score, c) => score + (OP_SCORES[c.op] ?? 0), 0);
+  const allHighPriority =
+    rule.conditions.length > 0 && rule.conditions.every((c) => HIGH_PRIORITY_OPS.has(c.op));
   return allHighPriority ? base * 2 : base;
 }
 
 const STAGE_ORDER: Record<string, number> = { pre: 0, post: 2 };
 
 function stageOf(rule: ParsedRule): number {
-  return STAGE_ORDER[rule.stage ?? ''] ?? 1;
+  return STAGE_ORDER[rule.stage ?? ""] ?? 1;
 }
 
 /**

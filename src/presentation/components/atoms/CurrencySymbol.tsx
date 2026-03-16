@@ -1,7 +1,7 @@
-import { View } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
-import { Text } from './Text';
-import type { SvgSymbolData } from '../../../lib/currencies';
+import { View } from "react-native";
+import Svg, { Path } from "react-native-svg";
+import { Text } from "./Text";
+import type { SvgSymbolData } from "../../../lib/currencies";
 
 interface CurrencySymbolProps {
   symbol: string;
@@ -17,11 +17,7 @@ interface CurrencySymbolProps {
  */
 export function CurrencySymbol({ symbol, svgSymbol, fontSize, color }: CurrencySymbolProps) {
   if (!svgSymbol) {
-    return (
-      <Text style={{ fontSize, color, lineHeight: fontSize * 1.2 }}>
-        {symbol}
-      </Text>
-    );
+    return <Text style={{ fontSize, color, lineHeight: fontSize * 1.2 }}>{symbol}</Text>;
   }
 
   const [, , vbWidth, vbHeight] = svgSymbol.viewBox;
@@ -32,8 +28,8 @@ export function CurrencySymbol({ symbol, svgSymbol, fontSize, color }: CurrencyS
   const width = Math.round(height * aspectRatio);
 
   return (
-    <View style={{ width, height, justifyContent: 'center' }}>
-      <Svg width={width} height={height} viewBox={svgSymbol.viewBox.join(' ')}>
+    <View style={{ width, height, justifyContent: "center" }}>
+      <Svg width={width} height={height} viewBox={svgSymbol.viewBox.join(" ")}>
         {svgSymbol.paths.map((d, i) => (
           <Path key={i} d={d} fill={color} />
         ))}

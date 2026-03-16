@@ -1,5 +1,5 @@
-import { create } from 'zustand';
-import type { RecurConfig } from '../schedules/types';
+import { create } from "zustand";
+import type { RecurConfig } from "../schedules/types";
 
 type PayeeSelection = { id: string | null; name: string; transferAcct?: string | null };
 type CategorySelection = { id: string | null; name: string };
@@ -51,13 +51,14 @@ export const usePickerStore = create<PickerState>((set) => ({
   setRecurConfig: (c) => set({ selectedRecurConfig: c }),
   setSplitCategories: (lines) => set({ splitCategories: lines }),
   setSplitCategorySelection: (s) => set({ splitCategorySelection: s }),
-  clear: () => set({
-    selectedPayee: null,
-    selectedCategory: null,
-    selectedAccount: null,
-    selectedTags: null,
-    selectedRecurConfig: null,
-    splitCategories: null,
-    splitCategorySelection: null,
-  }),
+  clear: () =>
+    set({
+      selectedPayee: null,
+      selectedCategory: null,
+      selectedAccount: null,
+      selectedTags: null,
+      selectedRecurConfig: null,
+      splitCategories: null,
+      splitCategorySelection: null,
+    }),
 }));

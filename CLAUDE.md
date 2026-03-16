@@ -10,11 +10,15 @@ npm run ios            # Build & run dev variant on iOS simulator (APP_VARIANT=d
 npm run ios:prod       # Build & run production variant on iOS simulator
 npx tsc --noEmit       # Type check (pre-existing errors in FlashList estimatedItemSize — ignore those)
 docker-compose up      # Local Actual Budget server on http://localhost:5006
+npm run lint           # Lint with oxlint
+npm run lint:fix       # Lint and auto-fix with oxlint
+npm run fmt            # Format with oxfmt
+npm run fmt:check      # Check formatting without writing
 npm run e2e            # Run all Maestro E2E tests (requires app running in simulator)
 npm run e2e:flow       # Run a single Maestro flow (e.g. npm run e2e:flow maestro/flows/login_screen.yaml)
 ```
 
-Unit tests use Vitest (`npm test`). E2E tests use Maestro (YAML flows in `maestro/flows/`). No linter is configured.
+Unit tests use Vitest (`npm test`). E2E tests use Maestro (YAML flows in `maestro/flows/`). Linting uses oxlint (`.oxlintrc.json`). Formatting uses oxfmt (`.oxfmtrc.json`).
 
 ## Architecture
 
@@ -37,6 +41,7 @@ Mobile client for [Actual Budget](https://actualbudget.com/) — local-first bud
 ### Routes (`app/`)
 
 File-based routing with Expo Router. Two protected groups:
+
 - `(public)/`: Login (`index.tsx`), file selection (`files.tsx`)
 - `(auth)/`: Main app — tabs (accounts, budget, spending, settings), plus modal screens (account/new, account/[id], transaction/new, categories, payees)
 

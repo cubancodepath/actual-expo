@@ -1,6 +1,6 @@
-import { View } from 'react-native';
-import { useTheme } from '../../providers/ThemeProvider';
-import { Text } from './Text';
+import { View } from "react-native";
+import { useTheme } from "../../providers/ThemeProvider";
+import { Text } from "./Text";
 
 export interface TagPillProps {
   tagName: string;
@@ -14,7 +14,7 @@ function contrastText(hex: string): string {
   const b = parseInt(hex.slice(5, 7), 16);
   // AERT brightness formula (same as Actual desktop)
   const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-  return brightness >= 125 ? '#000000' : '#ffffff';
+  return brightness >= 125 ? "#000000" : "#ffffff";
 }
 
 export function TagPill({ tagName, color }: TagPillProps) {
@@ -31,10 +31,10 @@ export function TagPill({ tagName, color }: TagPillProps) {
         paddingHorizontal: spacing.sm,
         paddingVertical: 1,
         borderRadius: borderRadius.full,
-        alignSelf: 'center',
+        alignSelf: "center",
       }}
     >
-      <Text variant="captionSm" color={textColor} style={{ fontWeight: '600' }}>
+      <Text variant="captionSm" color={textColor} style={{ fontWeight: "600" }}>
         #{tagName}
       </Text>
     </View>

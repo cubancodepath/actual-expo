@@ -3,10 +3,7 @@ import { Alert, Pressable, SectionList, View } from "react-native";
 import { Stack, useFocusEffect, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import {
-  useTheme,
-  useThemedStyles,
-} from "../../src/presentation/providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "../../src/presentation/providers/ThemeProvider";
 import {
   Text,
   Amount,
@@ -85,15 +82,13 @@ function ScheduleRow({
 }) {
   const { colors, spacing } = useTheme();
   const styles = useThemedStyles(createStyles);
-  const { t } = useTranslation(['schedules', 'common']);
+  const { t } = useTranslation(["schedules", "common"]);
 
   const status = getStatus(schedule.next_date, schedule.completed, false);
   const amount = getScheduledAmount(schedule._amount);
   const isRecurring =
     schedule._date && typeof schedule._date === "object" && "frequency" in schedule._date;
-  const recurDesc = isRecurring
-    ? getRecurringDescription(schedule._date as RecurConfig)
-    : null;
+  const recurDesc = isRecurring ? getRecurringDescription(schedule._date as RecurConfig) : null;
 
   return (
     <SwipeableRow onDelete={onDelete}>
@@ -139,7 +134,7 @@ export default function SchedulesScreen() {
   const router = useRouter();
   const { colors, spacing } = useTheme();
   const styles = useThemedStyles(createStyles);
-  const { t } = useTranslation(['schedules', 'common']);
+  const { t } = useTranslation(["schedules", "common"]);
 
   const { schedules, load, delete_ } = useSchedulesStore();
   const payees = usePayeesStore((s) => s.payees);
@@ -151,35 +146,25 @@ export default function SchedulesScreen() {
     }, []),
   );
 
-  const payeeMap = useMemo(
-    () => new Map(payees.map((p) => [p.id, p.name])),
-    [payees],
-  );
-  const accountMap = useMemo(
-    () => new Map(accounts.map((a) => [a.id, a.name])),
-    [accounts],
-  );
+  const payeeMap = useMemo(() => new Map(payees.map((p) => [p.id, p.name])), [payees]);
+  const accountMap = useMemo(() => new Map(accounts.map((a) => [a.id, a.name])), [accounts]);
 
   const sections = useScheduleSections(schedules, t);
 
   function handleDelete(schedule: Schedule) {
     const name = schedule.name || payeeMap.get(schedule._payee ?? "") || t("title").toLowerCase();
-    Alert.alert(
-      t("deleteSchedule"),
-      t("deleteConfirm", { name }),
-      [
-        { text: t("common:cancel"), style: "cancel" },
-        {
-          text: t("common:delete"),
-          style: "destructive",
-          onPress: async () => {
-            await delete_(schedule.id);
-            load();
-            useUndoStore.getState().showUndo(t("scheduleDeleted"));
-          },
+    Alert.alert(t("deleteSchedule"), t("deleteConfirm", { name }), [
+      { text: t("common:cancel"), style: "cancel" },
+      {
+        text: t("common:delete"),
+        style: "destructive",
+        onPress: async () => {
+          await delete_(schedule.id);
+          load();
+          useUndoStore.getState().showUndo(t("scheduleDeleted"));
         },
-      ],
-    );
+      },
+    ]);
   }
 
   return (
@@ -192,10 +177,7 @@ export default function SchedulesScreen() {
             </Pressable>
           ),
           headerRight: () => (
-            <Pressable
-              onPress={() => router.push("/(auth)/schedule/new")}
-              hitSlop={8}
-            >
+            <Pressable onPress={() => router.push("/(auth)/schedule/new")} hitSlop={8}>
               <Ionicons name="add" size={24} color={colors.primary} />
             </Pressable>
           ),

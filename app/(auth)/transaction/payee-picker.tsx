@@ -1,35 +1,39 @@
-import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { usePayeesStore } from '../../../src/stores/payeesStore';
-import { usePickerStore } from '../../../src/stores/pickerStore';
-import { useTheme, useThemedStyles } from '../../../src/presentation/providers/ThemeProvider';
-import { Text } from '../../../src/presentation/components/atoms/Text';
-import { GlassButton } from '../../../src/presentation/components/atoms/GlassButton';
-import { SearchBar } from '../../../src/presentation/components/molecules/SearchBar';
-import type { Theme } from '../../../src/theme';
+import { useEffect, useState } from "react";
+import { Pressable, ScrollView, View } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { usePayeesStore } from "../../../src/stores/payeesStore";
+import { usePickerStore } from "../../../src/stores/pickerStore";
+import { useTheme, useThemedStyles } from "../../../src/presentation/providers/ThemeProvider";
+import { Text } from "../../../src/presentation/components/atoms/Text";
+import { GlassButton } from "../../../src/presentation/components/atoms/GlassButton";
+import { SearchBar } from "../../../src/presentation/components/molecules/SearchBar";
+import type { Theme } from "../../../src/theme";
 
 export default function PayeePickerScreen() {
-  const { selectedId, selectedName, accountId } = useLocalSearchParams<{ selectedId?: string; selectedName?: string; accountId?: string }>();
+  const { selectedId, selectedName, accountId } = useLocalSearchParams<{
+    selectedId?: string;
+    selectedName?: string;
+    accountId?: string;
+  }>();
   const router = useRouter();
   const { colors, spacing, borderWidth: bw } = useTheme();
   const styles = useThemedStyles(createStyles);
   const { payees, load } = usePayeesStore();
   const setPayee = usePickerStore((s) => s.setPayee);
-  const [search, setSearch] = useState(selectedName ?? '');
+  const [search, setSearch] = useState(selectedName ?? "");
 
   useEffect(() => {
     if (payees.length === 0) load();
   }, []);
 
   const transfers = payees.filter((p) => p.transfer_acct != null && p.transfer_acct !== accountId);
-  const regular = [...payees.filter((p) => p.transfer_acct == null)].sort(
-    (a, b) => {
+  const regular = payees
+    .filter((p) => p.transfer_acct == null)
+    .sort((a, b) => {
       if (a.favorite !== b.favorite) return a.favorite ? -1 : 1;
       return a.name.localeCompare(b.name);
-    },
-  );
+    });
 
   const query = search.toLowerCase();
   const filteredTransfers = query
@@ -39,39 +43,35 @@ export default function PayeePickerScreen() {
     ? regular.filter((p) => p.name.toLowerCase().includes(query))
     : regular;
 
-  const exactMatch = payees.some(
-    (p) => p.name.toLowerCase() === search.trim().toLowerCase(),
-  );
+  const exactMatch = payees.some((p) => p.name.toLowerCase() === search.trim().toLowerCase());
 
   function select(id: string | null, name: string, transferAcct?: string | null) {
     setPayee({ id, name, transferAcct });
     router.back();
   }
 
-  const showCreateRow = search.trim() !== '' && !exactMatch;
+  const showCreateRow = search.trim() !== "" && !exactMatch;
   const noneSelected = !selectedId;
 
   // Build top card items: No payee + Create row
   const topItems: Array<{ key: string; node: React.ReactNode }> = [];
   topItems.push({
-    key: 'none',
+    key: "none",
     node: (
       <Pressable
         style={({ pressed }) => [styles.item, pressed && styles.pressed]}
-        onPress={() => select(null, '')}
+        onPress={() => select(null, "")}
       >
         <Text variant="body" color={colors.textMuted} style={styles.itemText}>
           No payee
         </Text>
-        {noneSelected && (
-          <Ionicons name="checkmark" size={20} color={colors.primary} />
-        )}
+        {noneSelected && <Ionicons name="checkmark" size={20} color={colors.primary} />}
       </Pressable>
     ),
   });
   if (showCreateRow) {
     topItems.push({
-      key: 'create',
+      key: "create",
       node: (
         <Pressable
           style={({ pressed }) => [styles.item, pressed && styles.pressed]}
@@ -89,9 +89,9 @@ export default function PayeePickerScreen() {
     <View style={styles.container}>
       <View
         style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
           paddingHorizontal: spacing.lg,
           paddingTop: spacing.lg,
           paddingBottom: spacing.sm,
@@ -115,8 +115,19 @@ export default function PayeePickerScreen() {
         {/* Top card: No payee + Create */}
         <View style={styles.topCard}>
           {topItems.map((item, i) => (
-            <View key={item.key} style={{ position: 'relative' }}>
-              {i > 0 && <View style={{ position: 'absolute', top: 0, left: spacing.lg, right: spacing.lg, height: bw.thin, backgroundColor: colors.divider }} />}
+            <View key={item.key} style={{ position: "relative" }}>
+              {i > 0 && (
+                <View
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: spacing.lg,
+                    right: spacing.lg,
+                    height: bw.thin,
+                    backgroundColor: colors.divider,
+                  }}
+                />
+              )}
               {item.node}
             </View>
           ))}
@@ -126,11 +137,7 @@ export default function PayeePickerScreen() {
         {filteredTransfers.length > 0 && (
           <>
             <View style={styles.sectionHeader}>
-              <Text
-                variant="captionSm"
-                color={colors.textMuted}
-                style={styles.sectionText}
-              >
+              <Text variant="captionSm" color={colors.textMuted} style={styles.sectionText}>
                 TRANSFER TO ACCOUNT
               </Text>
             </View>
@@ -141,10 +148,7 @@ export default function PayeePickerScreen() {
                 return (
                   <Pressable
                     key={p.id}
-                    style={({ pressed }) => [
-                      styles.item,
-                      pressed && styles.pressed,
-                    ]}
+                    style={({ pressed }) => [styles.item, pressed && styles.pressed]}
                     onPress={() => select(p.id, p.name, p.transfer_acct)}
                   >
                     <Ionicons
@@ -156,11 +160,18 @@ export default function PayeePickerScreen() {
                     <Text variant="body" color={colors.textPrimary} style={styles.itemText}>
                       {p.name}
                     </Text>
-                    {isSelected && (
-                      <Ionicons name="checkmark" size={20} color={colors.primary} />
-                    )}
+                    {isSelected && <Ionicons name="checkmark" size={20} color={colors.primary} />}
                     {!isLast && (
-                      <View style={{ position: 'absolute', bottom: 0, left: spacing.lg, right: spacing.lg, height: bw.thin, backgroundColor: colors.divider }} />
+                      <View
+                        style={{
+                          position: "absolute",
+                          bottom: 0,
+                          left: spacing.lg,
+                          right: spacing.lg,
+                          height: bw.thin,
+                          backgroundColor: colors.divider,
+                        }}
+                      />
                     )}
                   </Pressable>
                 );
@@ -173,11 +184,7 @@ export default function PayeePickerScreen() {
         {filteredRegular.length > 0 && (
           <>
             <View style={styles.sectionHeader}>
-              <Text
-                variant="captionSm"
-                color={colors.textMuted}
-                style={styles.sectionText}
-              >
+              <Text variant="captionSm" color={colors.textMuted} style={styles.sectionText}>
                 PAYEES
               </Text>
             </View>
@@ -188,10 +195,7 @@ export default function PayeePickerScreen() {
                 return (
                   <Pressable
                     key={p.id}
-                    style={({ pressed }) => [
-                      styles.item,
-                      pressed && styles.pressed,
-                    ]}
+                    style={({ pressed }) => [styles.item, pressed && styles.pressed]}
                     onPress={() => select(p.id, p.name)}
                   >
                     {p.favorite && (
@@ -205,11 +209,18 @@ export default function PayeePickerScreen() {
                     <Text variant="body" color={colors.textPrimary} style={styles.itemText}>
                       {p.name}
                     </Text>
-                    {isSelected && (
-                      <Ionicons name="checkmark" size={20} color={colors.primary} />
-                    )}
+                    {isSelected && <Ionicons name="checkmark" size={20} color={colors.primary} />}
                     {!isLast && (
-                      <View style={{ position: 'absolute', bottom: 0, left: spacing.lg, right: spacing.lg, height: bw.thin, backgroundColor: colors.divider }} />
+                      <View
+                        style={{
+                          position: "absolute",
+                          bottom: 0,
+                          left: spacing.lg,
+                          right: spacing.lg,
+                          height: bw.thin,
+                          backgroundColor: colors.divider,
+                        }}
+                      />
                     )}
                   </Pressable>
                 );
@@ -236,7 +247,7 @@ const createStyles = (theme: Theme) => ({
     paddingBottom: theme.spacing.sm,
   },
   sectionText: {
-    fontWeight: '700' as const,
+    fontWeight: "700" as const,
     letterSpacing: 0.8,
   },
   topCard: {
@@ -246,7 +257,7 @@ const createStyles = (theme: Theme) => ({
     borderRadius: theme.borderRadius.lg,
     borderWidth: theme.borderWidth.thin,
     borderColor: theme.colors.cardBorder,
-    overflow: 'hidden' as const,
+    overflow: "hidden" as const,
   },
   groupCard: {
     marginHorizontal: theme.spacing.lg,
@@ -254,14 +265,14 @@ const createStyles = (theme: Theme) => ({
     borderRadius: theme.borderRadius.lg,
     borderWidth: theme.borderWidth.thin,
     borderColor: theme.colors.cardBorder,
-    overflow: 'hidden' as const,
+    overflow: "hidden" as const,
   },
   divider: {
     height: theme.borderWidth.thin,
   },
   item: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.md,
     minHeight: 44,

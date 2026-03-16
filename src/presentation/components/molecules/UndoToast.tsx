@@ -1,6 +1,6 @@
-import { useEffect, useCallback, useRef } from 'react';
-import { Pressable, View } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { useEffect, useCallback, useRef } from "react";
+import { Pressable, View } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -8,14 +8,14 @@ import Animated, {
   withTiming,
   useReducedMotion,
   Easing,
-} from 'react-native-reanimated';
-import { scheduleOnRN } from 'react-native-worklets';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTranslation } from 'react-i18next';
-import { useUndoStore } from '../../../stores/undoStore';
-import { useTheme } from '../../providers/ThemeProvider';
-import { palette } from '../../../theme/colors';
-import { Text } from '../atoms/Text';
+} from "react-native-reanimated";
+import { scheduleOnRN } from "react-native-worklets";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
+import { useUndoStore } from "../../../stores/undoStore";
+import { useTheme } from "../../providers/ThemeProvider";
+import { palette } from "../../../theme/colors";
+import { Text } from "../atoms/Text";
 
 const SPRING_CONFIG = { damping: 18, stiffness: 200, mass: 0.8 } as const;
 const TRANSLATE_OUT = 80;
@@ -100,8 +100,8 @@ export function UndoToast() {
   const innerContent = (
     <View
       style={{
-        flexDirection: 'row',
-        alignItems: 'center',
+        flexDirection: "row",
+        alignItems: "center",
         minHeight: 44,
         paddingHorizontal: 20,
         gap: spacing.md,
@@ -123,16 +123,10 @@ export function UndoToast() {
           hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel={`Undo: ${notification.message}`}
-          style={({ pressed }) => [
-            { paddingVertical: spacing.sm, opacity: pressed ? 0.6 : 1 },
-          ]}
+          style={({ pressed }) => [{ paddingVertical: spacing.sm, opacity: pressed ? 0.6 : 1 }]}
         >
-          <Text
-            variant="bodyLg"
-            color={colors.primary}
-            style={{ fontWeight: '600' }}
-          >
-            {t('undo')}
+          <Text variant="bodyLg" color={colors.primary} style={{ fontWeight: "600" }}>
+            {t("undo")}
           </Text>
         </Pressable>
       )}
@@ -144,7 +138,7 @@ export function UndoToast() {
       <Animated.View
         style={[
           {
-            position: 'absolute',
+            position: "absolute",
             left: spacing.lg,
             right: spacing.lg,
             bottom: insets.bottom + spacing.lg,

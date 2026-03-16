@@ -5,16 +5,16 @@ import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Host, DatePicker, Picker, Text as SwiftText } from "@expo/ui/swift-ui";
 import { datePickerStyle, frame, pickerStyle, tag, tint } from "@expo/ui/swift-ui/modifiers";
 import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
-import {
-  Text,
-  Card,
-  SectionHeader,
-} from "../../../src/presentation/components";
+import { Text, Card, SectionHeader } from "../../../src/presentation/components";
 import { ListItem } from "../../../src/presentation/components/molecules/ListItem";
 import { GlassButton } from "../../../src/presentation/components/atoms/GlassButton";
 import { usePickerStore } from "../../../src/stores/pickerStore";
 import { getRecurringDescription } from "../../../src/schedules";
-import { getUpcomingDates, dayFromDate, getDateWithSkippedWeekend } from "../../../src/schedules/recurrence";
+import {
+  getUpcomingDates,
+  dayFromDate,
+  getDateWithSkippedWeekend,
+} from "../../../src/schedules/recurrence";
 import { todayStr } from "../../../src/lib/date";
 import { formatDateLong, strToInt } from "../../../src/lib/date";
 import type { RecurConfig } from "../../../src/schedules/types";
@@ -42,11 +42,16 @@ const DAY_OPTIONS = Array.from({ length: 31 }, (_, i) => ({
 
 function frequencyLabel(f: string): string {
   switch (f) {
-    case "daily": return "days";
-    case "weekly": return "weeks";
-    case "monthly": return "months";
-    case "yearly": return "years";
-    default: return "days";
+    case "daily":
+      return "days";
+    case "weekly":
+      return "weeks";
+    case "monthly":
+      return "months";
+    case "yearly":
+      return "years";
+    default:
+      return "days";
   }
 }
 
@@ -160,11 +165,7 @@ export default function RecurrenceCustomScreen() {
       >
         {/* Summary */}
         <View style={{ paddingVertical: spacing.md }}>
-          <Text
-            variant="bodyLg"
-            color={colors.textSecondary}
-            style={{ textAlign: "center" }}
-          >
+          <Text variant="bodyLg" color={colors.textSecondary} style={{ textAlign: "center" }}>
             {description}
           </Text>
         </View>
@@ -174,9 +175,7 @@ export default function RecurrenceCustomScreen() {
         <Host matchContents>
           <Picker
             selection={frequency}
-            onSelectionChange={(val) =>
-              setFrequency(val as RecurConfig["frequency"])
-            }
+            onSelectionChange={(val) => setFrequency(val as RecurConfig["frequency"])}
             modifiers={[pickerStyle("segmented"), tint(colors.primary)]}
           >
             {FREQUENCIES.map((f) => (
@@ -188,10 +187,7 @@ export default function RecurrenceCustomScreen() {
         </Host>
 
         {/* Interval — menu picker */}
-        <SectionHeader
-          title="Interval"
-          style={{ marginTop: spacing.lg, paddingHorizontal: 0 }}
-        />
+        <SectionHeader title="Interval" style={{ marginTop: spacing.lg, paddingHorizontal: 0 }} />
         <Card>
           <ListItem
             title={`Every`}
@@ -255,10 +251,7 @@ export default function RecurrenceCustomScreen() {
         )}
 
         {/* End date (optional) */}
-        <SectionHeader
-          title="Ends"
-          style={{ marginTop: spacing.lg, paddingHorizontal: 0 }}
-        />
+        <SectionHeader title="Ends" style={{ marginTop: spacing.lg, paddingHorizontal: 0 }} />
         <Card>
           <ListItem
             title="End date"
@@ -335,11 +328,7 @@ export default function RecurrenceCustomScreen() {
             />
             <Card>
               {previewDates.map((date, i) => (
-                <ListItem
-                  key={date}
-                  title={date}
-                  showSeparator={i < previewDates.length - 1}
-                />
+                <ListItem key={date} title={date} showSeparator={i < previewDates.length - 1} />
               ))}
             </Card>
           </>

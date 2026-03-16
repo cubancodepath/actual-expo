@@ -1,25 +1,28 @@
-import { useEffect, useRef, useState } from 'react';
-import { Keyboard, Pressable, View } from 'react-native';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useRef, useState } from "react";
+import { Keyboard, Pressable, View } from "react-native";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import Animated, {
   interpolate,
   interpolateColor,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
-} from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
-import { useTheme } from '../../../../src/presentation/providers/ThemeProvider';
-import { useAccountsStore } from '../../../../src/stores/accountsStore';
-import { reconcileAccount } from '../../../../src/transactions';
-import { Text } from '../../../../src/presentation/components/atoms/Text';
-import { Button } from '../../../../src/presentation/components/atoms/Button';
-import { CompactCurrencyInput, type CompactCurrencyInputRef } from '../../../../src/presentation/components/atoms/CompactCurrencyInput';
-import { CalculatorToolbar } from '../../../../src/presentation/components/atoms/CalculatorToolbar';
-import { GlassButton } from '../../../../src/presentation/components/atoms/GlassButton';
-import { KeyboardToolbar } from '../../../../src/presentation/components/molecules/KeyboardToolbar';
-import { formatAmount } from '../../../../src/lib/format';
-import { useTranslation } from 'react-i18next';
+} from "react-native-reanimated";
+import * as Haptics from "expo-haptics";
+import { useTheme } from "../../../../src/presentation/providers/ThemeProvider";
+import { useAccountsStore } from "../../../../src/stores/accountsStore";
+import { reconcileAccount } from "../../../../src/transactions";
+import { Text } from "../../../../src/presentation/components/atoms/Text";
+import { Button } from "../../../../src/presentation/components/atoms/Button";
+import {
+  CompactCurrencyInput,
+  type CompactCurrencyInputRef,
+} from "../../../../src/presentation/components/atoms/CompactCurrencyInput";
+import { CalculatorToolbar } from "../../../../src/presentation/components/atoms/CalculatorToolbar";
+import { GlassButton } from "../../../../src/presentation/components/atoms/GlassButton";
+import { KeyboardToolbar } from "../../../../src/presentation/components/molecules/KeyboardToolbar";
+import { formatAmount } from "../../../../src/lib/format";
+import { useTranslation } from "react-i18next";
 
 // ---------------------------------------------------------------------------
 // Sign Toggle (+/−)
@@ -30,13 +33,7 @@ const TRACK_H = 28;
 const THUMB = 22;
 const TRAVEL = TRACK_W - THUMB - 6;
 
-function SignToggle({
-  isNegative,
-  onToggle,
-}: {
-  isNegative: boolean;
-  onToggle: () => void;
-}) {
+function SignToggle({ isNegative, onToggle }: { isNegative: boolean; onToggle: () => void }) {
   const { colors } = useTheme();
   const progress = useSharedValue(isNegative ? 1 : 0);
   const toggleCount = useRef(0);
@@ -67,7 +64,10 @@ function SignToggle({
 
   return (
     <Pressable
-      onPress={() => { Haptics.selectionAsync(); onToggle(); }}
+      onPress={() => {
+        Haptics.selectionAsync();
+        onToggle();
+      }}
       hitSlop={8}
     >
       <Animated.View
@@ -76,7 +76,7 @@ function SignToggle({
             width: TRACK_W,
             height: TRACK_H,
             borderRadius: TRACK_H / 2,
-            justifyContent: 'center',
+            justifyContent: "center",
             paddingLeft: 3,
           },
           trackStyle,
@@ -88,10 +88,10 @@ function SignToggle({
               width: THUMB,
               height: THUMB,
               borderRadius: THUMB / 2,
-              backgroundColor: '#ffffff',
-              alignItems: 'center',
-              justifyContent: 'center',
-              shadowColor: '#000',
+              backgroundColor: "#ffffff",
+              alignItems: "center",
+              justifyContent: "center",
+              shadowColor: "#000",
               shadowOpacity: 0.15,
               shadowRadius: 3,
               shadowOffset: { width: 0, height: 1 },
@@ -102,9 +102,9 @@ function SignToggle({
           <Text
             variant="body"
             color={symbolColor}
-            style={{ fontWeight: '700', fontSize: 16, lineHeight: 18 }}
+            style={{ fontWeight: "700", fontSize: 16, lineHeight: 18 }}
           >
-            {isNegative ? '−' : '+'}
+            {isNegative ? "−" : "+"}
           </Text>
         </Animated.View>
       </Animated.View>
@@ -124,7 +124,7 @@ export default function ReconcileAmountScreen() {
     clearedBalance: string;
   }>();
 
-  const { t } = useTranslation('accounts');
+  const { t } = useTranslation("accounts");
   const clearedCents = Number(clearedBalance) || 0;
 
   const [isNegative, setIsNegative] = useState(false);
@@ -157,17 +157,17 @@ export default function ReconcileAmountScreen() {
         <Text
           variant="body"
           color={colors.textSecondary}
-          style={{ textAlign: 'center', marginBottom: spacing.xl }}
+          style={{ textAlign: "center", marginBottom: spacing.xl }}
         >
-          {t('reconcile.bankBalanceQuestion')}
+          {t("reconcile.bankBalanceQuestion")}
         </Text>
 
         {/* Sign toggle + amount input */}
         <Pressable
           onPress={() => inputRef.current?.focus()}
           style={{
-            flexDirection: 'row',
-            alignItems: 'center',
+            flexDirection: "row",
+            alignItems: "center",
             backgroundColor: colors.cardBackground,
             borderRadius: br.lg,
             paddingHorizontal: spacing.md,
@@ -175,16 +175,13 @@ export default function ReconcileAmountScreen() {
             gap: spacing.sm,
           }}
         >
-          <SignToggle
-            isNegative={isNegative}
-            onToggle={() => setIsNegative(prev => !prev)}
-          />
+          <SignToggle isNegative={isNegative} onToggle={() => setIsNegative((prev) => !prev)} />
           <CompactCurrencyInput
             ref={inputRef}
             value={amountCents}
             onChangeValue={setAmountCents}
             color={amountCents > 0 ? (isNegative ? colors.negative : colors.positive) : undefined}
-            style={{ flex: 1, justifyContent: 'center' }}
+            style={{ flex: 1, justifyContent: "center" }}
           />
         </Pressable>
 
@@ -192,14 +189,14 @@ export default function ReconcileAmountScreen() {
           <Text
             variant="captionSm"
             color={colors.textMuted}
-            style={{ textAlign: 'right', marginTop: spacing.xs }}
+            style={{ textAlign: "right", marginTop: spacing.xs }}
           >
-            {t('reconcile.diff', { amount: formatAmount(diff) })}
+            {t("reconcile.diff", { amount: formatAmount(diff) })}
           </Text>
         )}
 
         <Button
-          title={t('reconcile.reconcileButton')}
+          title={t("reconcile.reconcileButton")}
           variant="primary"
           onPress={handleReconcile}
           loading={loading}

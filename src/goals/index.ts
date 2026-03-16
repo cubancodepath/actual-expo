@@ -6,5 +6,5 @@
  * This barrel re-exports both for backward compatibility.
  */
 
-export { parseGoalDef, inferGoalFromDef, templateToNoteLine, templatesToNoteText } from './parse';
-export { getGoalTemplates, setGoalTemplates, setGoalResult } from './persist';
+export { parseGoalDef, inferGoalFromDef, templateToNoteLine, templatesToNoteText } from "./parse";
+export { getGoalTemplates, setGoalTemplates, setGoalResult } from "./persist";

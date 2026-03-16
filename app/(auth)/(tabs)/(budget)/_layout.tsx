@@ -1,8 +1,8 @@
-import { Pressable } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
-import { useTheme } from '../../../../src/presentation/providers/ThemeProvider';
-import { MonthSelector } from '../../../../src/presentation/components/budget/MonthSelector';
+import { Pressable } from "react-native";
+import { Stack, useRouter } from "expo-router";
+import { SymbolView } from "expo-symbols";
+import { useTheme } from "../../../../src/presentation/providers/ThemeProvider";
+import { MonthSelector } from "../../../../src/presentation/components/budget/MonthSelector";
 
 export default function BudgetStack() {
   const { colors } = useTheme();
@@ -23,11 +23,15 @@ export default function BudgetStack() {
           headerTitle: () => <MonthSelector />,
           headerLeft: () => (
             <Pressable
-              onPress={() => router.push('/(auth)/budget/edit')}
+              onPress={() => router.push("/(auth)/budget/edit")}
               hitSlop={8}
               style={{ paddingLeft: 4 }}
             >
-              <SymbolView name="long.text.page.and.pencil" tintColor={colors.headerText} size={22} />
+              <SymbolView
+                name="long.text.page.and.pencil"
+                tintColor={colors.headerText}
+                size={22}
+              />
             </Pressable>
           ),
         }}

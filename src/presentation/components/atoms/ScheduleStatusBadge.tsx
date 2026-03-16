@@ -15,7 +15,7 @@ const STATUS_CONFIG: Record<
 };
 
 export function ScheduleStatusBadge({ status }: { status: ScheduleStatus }) {
-  const { t } = useTranslation('schedules');
+  const { t } = useTranslation("schedules");
   const config = STATUS_CONFIG[status];
   return <Badge label={t(config.labelKey as any)} variant={config.variant} />;
 }

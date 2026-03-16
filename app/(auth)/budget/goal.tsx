@@ -1,80 +1,90 @@
-import { useEffect, useRef, useState } from 'react';
-import { Alert, Keyboard, Pressable, ScrollView, Switch, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { Host, DatePicker, Picker, Text as SwiftText } from '@expo/ui/swift-ui';
-import { useTranslation } from 'react-i18next';
-import { datePickerStyle, frame, pickerStyle, tag, tint } from '@expo/ui/swift-ui/modifiers';
-import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
-import { useCategoriesStore } from '../../../src/stores/categoriesStore';
-import { useBudgetStore } from '../../../src/stores/budgetStore';
-import { Text } from '../../../src/presentation/components/atoms/Text';
-import { Button } from '../../../src/presentation/components/atoms/Button';
-import { IconButton } from '../../../src/presentation/components/atoms/IconButton';
-import { Card } from '../../../src/presentation/components/atoms/Card';
-import { ListItem } from '../../../src/presentation/components/molecules/ListItem';
-import { Divider } from '../../../src/presentation/components/atoms/Divider';
-import { CurrencyInput, type CurrencyInputRef } from '../../../src/presentation/components/atoms/CurrencyInput';
-import { CalculatorToolbar } from '../../../src/presentation/components/atoms/CalculatorToolbar';
-import { GlassButton } from '../../../src/presentation/components/atoms/GlassButton';
-import { KeyboardToolbar } from '../../../src/presentation/components/molecules/KeyboardToolbar';
-import { getGoalTemplates, setGoalTemplates } from '../../../src/goals';
-import { updateGoalIndicator } from '../../../src/goals/apply';
-import { amountToInteger, integerToAmount } from '../../../src/goals/engine';
-import { batchMessages } from '../../../src/sync';
-import { formatDateLong } from '../../../src/lib/date';
-import { formatBalance } from '../../../src/lib/format';
-import type { Template } from '../../../src/goals/types';
+import { useEffect, useRef, useState } from "react";
+import { Alert, Keyboard, Pressable, ScrollView, Switch, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { Host, DatePicker, Picker, Text as SwiftText } from "@expo/ui/swift-ui";
+import { useTranslation } from "react-i18next";
+import { datePickerStyle, frame, pickerStyle, tag, tint } from "@expo/ui/swift-ui/modifiers";
+import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
+import { useCategoriesStore } from "../../../src/stores/categoriesStore";
+import { useBudgetStore } from "../../../src/stores/budgetStore";
+import { Text } from "../../../src/presentation/components/atoms/Text";
+import { Button } from "../../../src/presentation/components/atoms/Button";
+import { IconButton } from "../../../src/presentation/components/atoms/IconButton";
+import { Card } from "../../../src/presentation/components/atoms/Card";
+import { ListItem } from "../../../src/presentation/components/molecules/ListItem";
+import { Divider } from "../../../src/presentation/components/atoms/Divider";
+import {
+  CurrencyInput,
+  type CurrencyInputRef,
+} from "../../../src/presentation/components/atoms/CurrencyInput";
+import { CalculatorToolbar } from "../../../src/presentation/components/atoms/CalculatorToolbar";
+import { GlassButton } from "../../../src/presentation/components/atoms/GlassButton";
+import { KeyboardToolbar } from "../../../src/presentation/components/molecules/KeyboardToolbar";
+import { getGoalTemplates, setGoalTemplates } from "../../../src/goals";
+import { updateGoalIndicator } from "../../../src/goals/apply";
+import { amountToInteger, integerToAmount } from "../../../src/goals/engine";
+import { batchMessages } from "../../../src/sync";
+import { formatDateLong } from "../../../src/lib/date";
+import { formatBalance } from "../../../src/lib/format";
+import type { Template } from "../../../src/goals/types";
 
 // ---------------------------------------------------------------------------
 // Type options
 // ---------------------------------------------------------------------------
 
 type GoalType =
-  | 'simple' | 'goal' | 'by' | 'average'
-  | 'copy' | 'periodic' | 'spend' | 'percentage'
-  | 'remainder' | 'limit';
+  | "simple"
+  | "goal"
+  | "by"
+  | "average"
+  | "copy"
+  | "periodic"
+  | "spend"
+  | "percentage"
+  | "remainder"
+  | "limit";
 
 const TYPE_OPTION_KEYS: { value: GoalType; key: string }[] = [
-  { value: 'simple', key: 'goalTypeSimple' },
-  { value: 'goal', key: 'goalTypeGoal' },
-  { value: 'by', key: 'goalTypeBy' },
-  { value: 'average', key: 'goalTypeAverage' },
-  { value: 'copy', key: 'goalTypeCopy' },
-  { value: 'periodic', key: 'goalTypePeriodic' },
-  { value: 'spend', key: 'goalTypeSpend' },
-  { value: 'percentage', key: 'goalTypePercentage' },
-  { value: 'remainder', key: 'goalTypeRemainder' },
-  { value: 'limit', key: 'goalTypeLimit' },
+  { value: "simple", key: "goalTypeSimple" },
+  { value: "goal", key: "goalTypeGoal" },
+  { value: "by", key: "goalTypeBy" },
+  { value: "average", key: "goalTypeAverage" },
+  { value: "copy", key: "goalTypeCopy" },
+  { value: "periodic", key: "goalTypePeriodic" },
+  { value: "spend", key: "goalTypeSpend" },
+  { value: "percentage", key: "goalTypePercentage" },
+  { value: "remainder", key: "goalTypeRemainder" },
+  { value: "limit", key: "goalTypeLimit" },
 ];
 
 const TYPE_DESCRIPTION_KEYS: Record<GoalType, string> = {
-  simple: 'goalDescSimple',
-  goal: 'goalDescGoal',
-  by: 'goalDescBy',
-  average: 'goalDescAverage',
-  copy: 'goalDescCopy',
-  periodic: 'goalDescPeriodic',
-  spend: 'goalDescSpend',
-  percentage: 'goalDescPercentage',
-  remainder: 'goalDescRemainder',
-  limit: 'goalDescLimit',
+  simple: "goalDescSimple",
+  goal: "goalDescGoal",
+  by: "goalDescBy",
+  average: "goalDescAverage",
+  copy: "goalDescCopy",
+  periodic: "goalDescPeriodic",
+  spend: "goalDescSpend",
+  percentage: "goalDescPercentage",
+  remainder: "goalDescRemainder",
+  limit: "goalDescLimit",
 };
 
-const AVG_OPTION_KEYS = ['3months', '6months', '12months'];
+const AVG_OPTION_KEYS = ["3months", "6months", "12months"];
 const AVG_VALUES = [3, 6, 12];
 
 const PERIOD_OPTION_KEYS = [
-  { value: 'day', key: 'daily' },
-  { value: 'week', key: 'weekly' },
-  { value: 'month', key: 'monthly' },
-  { value: 'year', key: 'yearly' },
+  { value: "day", key: "daily" },
+  { value: "week", key: "weekly" },
+  { value: "month", key: "monthly" },
+  { value: "year", key: "yearly" },
 ];
 
 const LIMIT_PERIOD_OPTION_KEYS = [
-  { value: 'daily', key: 'daily' },
-  { value: 'weekly', key: 'weekly' },
-  { value: 'monthly', key: 'monthly' },
+  { value: "daily", key: "daily" },
+  { value: "weekly", key: "weekly" },
+  { value: "monthly", key: "monthly" },
 ];
 
 function getDefaultTargetDate(): Date {
@@ -83,13 +93,13 @@ function getDefaultTargetDate(): Date {
 }
 
 function dateToMonth(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
 function dateToInt(d: Date): number {
   const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
   return parseInt(`${y}${m}${day}`, 10);
 }
 
@@ -119,7 +129,11 @@ function MenuPickerRow<T extends string | number>({
           <Picker
             selection={selection}
             onSelectionChange={(val) => onSelectionChange(val as T)}
-            modifiers={[pickerStyle('menu'), tint(colors.primary), frame({ minWidth: pickerWidth, alignment: 'trailing' })]}
+            modifiers={[
+              pickerStyle("menu"),
+              tint(colors.primary),
+              frame({ minWidth: pickerWidth, alignment: "trailing" }),
+            ]}
           >
             {options.map((opt) => (
               <SwiftText key={String(opt.value)} modifiers={[tag(opt.value)]}>
@@ -138,7 +152,7 @@ function MenuPickerRow<T extends string | number>({
 // ---------------------------------------------------------------------------
 
 export default function GoalEditorScreen() {
-  const { t } = useTranslation('budget');
+  const { t } = useTranslation("budget");
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const router = useRouter();
   const { categoryId } = useLocalSearchParams<{ categoryId: string }>();
@@ -148,7 +162,7 @@ export default function GoalEditorScreen() {
   const currencyInputRef = useRef<CurrencyInputRef>(null);
 
   // Common state
-  const [goalType, setGoalType] = useState<GoalType>('simple');
+  const [goalType, setGoalType] = useState<GoalType>("simple");
   const [amountCents, setAmountCents] = useState(0);
 
   // Simple-specific: "set aside" (false) vs "refill to" (true)
@@ -168,7 +182,7 @@ export default function GoalEditorScreen() {
   const [lookBack, setLookBack] = useState(1);
 
   // Periodic-specific
-  const [periodicPeriod, setPeriodicPeriod] = useState<'day' | 'week' | 'month' | 'year'>('month');
+  const [periodicPeriod, setPeriodicPeriod] = useState<"day" | "week" | "month" | "year">("month");
   const [periodicInterval, setPeriodicInterval] = useState(1);
   const [periodicStart, setPeriodicStart] = useState<Date | null>(null);
   const [showPeriodicStartPicker, setShowPeriodicStartPicker] = useState(false);
@@ -182,14 +196,14 @@ export default function GoalEditorScreen() {
 
   // Percentage-specific
   const [percent, setPercent] = useState(10);
-  const [percentCategory, setPercentCategory] = useState('all-income');
+  const [percentCategory, setPercentCategory] = useState("all-income");
   const [percentPrevious, setPercentPrevious] = useState(false);
 
   // Remainder-specific
   const [weight, setWeight] = useState(1);
 
   // Limit-specific
-  const [limitPeriod, setLimitPeriod] = useState<'daily' | 'weekly' | 'monthly'>('monthly');
+  const [limitPeriod, setLimitPeriod] = useState<"daily" | "weekly" | "monthly">("monthly");
   const [limitHold, setLimitHold] = useState(false);
   const [limitRefill, setLimitRefill] = useState(false);
 
@@ -213,75 +227,75 @@ export default function GoalEditorScreen() {
       // - `simple` with `limit` but no `monthly` (#template up to X)
       // - legacy `[limit, refill]` pair from older Expo saves
       const simpleWithLimitOnly = templates.find(
-        (t): t is import('../../../src/goals/types').SimpleTemplate =>
-          t.type === 'simple' && !!t.limit && t.monthly == null,
+        (t): t is import("../../../src/goals/types").SimpleTemplate =>
+          t.type === "simple" && !!t.limit && t.monthly == null,
       );
       if (simpleWithLimitOnly?.limit) {
-        setGoalType('simple');
+        setGoalType("simple");
         setAmountCents(amountToInteger(simpleWithLimitOnly.limit.amount));
         setSimpleRefill(true);
         return;
       }
 
       // Legacy: [limit, refill] pair → convert to Monthly+refill
-      const hasRefill = templates.some(t => t.type === 'refill');
-      const limitT = templates.find(t => t.type === 'limit');
+      const hasRefill = templates.some((t) => t.type === "refill");
+      const limitT = templates.find((t) => t.type === "limit");
       if (hasRefill && limitT) {
-        setGoalType('simple');
+        setGoalType("simple");
         setAmountCents(amountToInteger(limitT.amount));
         setSimpleRefill(true);
         return;
       }
 
       const t = templates[0];
-      if (t.type === 'refill' || t.type === 'limit') return;
+      if (t.type === "refill" || t.type === "limit") return;
       setGoalType(t.type);
 
       switch (t.type) {
-        case 'simple':
+        case "simple":
           setAmountCents(t.monthly != null ? amountToInteger(t.monthly) : 0);
           if (t.limit) {
             setCapEnabled(true);
             setCapCents(amountToInteger(t.limit.amount));
           }
           break;
-        case 'goal':
+        case "goal":
           setAmountCents(amountToInteger(t.amount));
           break;
-        case 'by': {
+        case "by": {
           setAmountCents(amountToInteger(t.amount));
-          const [y, m] = t.month.split('-').map(Number);
+          const [y, m] = t.month.split("-").map(Number);
           setTargetDate(new Date(y, m - 1, 1));
           if (t.repeat) setByRepeat(true);
           break;
         }
-        case 'average':
+        case "average":
           setAvgIndex(AVG_VALUES.indexOf(t.numMonths));
           break;
-        case 'copy':
+        case "copy":
           setLookBack(t.lookBack);
           break;
-        case 'periodic':
+        case "periodic":
           setAmountCents(amountToInteger(t.amount));
           setPeriodicPeriod(t.period.period);
           setPeriodicInterval(t.period.amount);
           if (t.starting) setPeriodicStart(new Date(t.starting));
           break;
-        case 'spend': {
+        case "spend": {
           setAmountCents(amountToInteger(t.amount));
-          const [ty, tm] = t.month.split('-').map(Number);
+          const [ty, tm] = t.month.split("-").map(Number);
           setSpendToDate(new Date(ty, tm - 1, 1));
-          const [fy, fm] = t.from.split('-').map(Number);
+          const [fy, fm] = t.from.split("-").map(Number);
           setSpendFromDate(new Date(fy, fm - 1, 1));
           if (t.repeat) setSpendRepeat(true);
           break;
         }
-        case 'percentage':
+        case "percentage":
           setPercent(t.percent);
           setPercentCategory(t.category);
           setPercentPrevious(t.previous);
           break;
-        case 'remainder':
+        case "remainder":
           setWeight(t.weight);
           break;
       }
@@ -292,79 +306,117 @@ export default function GoalEditorScreen() {
     const displayAmount = integerToAmount(amountCents);
 
     switch (goalType) {
-      case 'simple':
+      case "simple":
         if (simpleRefill) {
           // "#template up to X" — refill to amount
-          return [{
-            type: 'simple', limit: { amount: displayAmount, hold: false, period: 'monthly' as const },
-            priority: 0, directive: 'template' as const,
-          }];
+          return [
+            {
+              type: "simple",
+              limit: { amount: displayAmount, hold: false, period: "monthly" as const },
+              priority: 0,
+              directive: "template" as const,
+            },
+          ];
         }
         // "#template X" or "#template X up to Y" — fixed monthly with optional balance cap
         if (capEnabled && capCents > 0) {
-          return [{
-            type: 'simple', monthly: displayAmount,
-            limit: { amount: integerToAmount(capCents), hold: false, period: 'monthly' as const },
-            priority: 0, directive: 'template' as const,
-          }];
+          return [
+            {
+              type: "simple",
+              monthly: displayAmount,
+              limit: { amount: integerToAmount(capCents), hold: false, period: "monthly" as const },
+              priority: 0,
+              directive: "template" as const,
+            },
+          ];
         }
-        return [{ type: 'simple', monthly: displayAmount, priority: 0, directive: 'template' }];
-      case 'goal':
-        return [{ type: 'goal', amount: displayAmount, directive: 'goal' }];
-      case 'by':
-        return [{
-          type: 'by', amount: displayAmount, month: dateToMonth(targetDate),
-          ...(byRepeat ? { repeat: 12, annual: true } : {}),
-          priority: 0, directive: 'template',
-        }];
-      case 'average':
-        return [{ type: 'average', numMonths: AVG_VALUES[avgIndex], priority: 0, directive: 'template' }];
-      case 'copy':
-        return [{ type: 'copy', lookBack, priority: 0, directive: 'template' }];
-      case 'periodic':
-        return [{
-          type: 'periodic', amount: displayAmount,
-          period: { period: periodicPeriod, amount: periodicInterval },
-          ...(periodicStart ? { starting: periodicStart.toISOString().slice(0, 10) } : {}),
-          priority: 0, directive: 'template',
-        }];
-      case 'spend':
-        return [{
-          type: 'spend', amount: displayAmount,
-          month: dateToMonth(spendToDate), from: dateToMonth(spendFromDate),
-          ...(spendRepeat ? { repeat: 12, annual: true } : {}),
-          priority: 0, directive: 'template',
-        }];
-      case 'percentage':
-        return [{
-          type: 'percentage', percent, previous: percentPrevious,
-          category: percentCategory, priority: 0, directive: 'template',
-        }];
-      case 'remainder':
-        return [{ type: 'remainder', weight, directive: 'template' }];
-      case 'limit': {
+        return [{ type: "simple", monthly: displayAmount, priority: 0, directive: "template" }];
+      case "goal":
+        return [{ type: "goal", amount: displayAmount, directive: "goal" }];
+      case "by":
+        return [
+          {
+            type: "by",
+            amount: displayAmount,
+            month: dateToMonth(targetDate),
+            ...(byRepeat ? { repeat: 12, annual: true } : {}),
+            priority: 0,
+            directive: "template",
+          },
+        ];
+      case "average":
+        return [
+          { type: "average", numMonths: AVG_VALUES[avgIndex], priority: 0, directive: "template" },
+        ];
+      case "copy":
+        return [{ type: "copy", lookBack, priority: 0, directive: "template" }];
+      case "periodic":
+        return [
+          {
+            type: "periodic",
+            amount: displayAmount,
+            period: { period: periodicPeriod, amount: periodicInterval },
+            ...(periodicStart ? { starting: periodicStart.toISOString().slice(0, 10) } : {}),
+            priority: 0,
+            directive: "template",
+          },
+        ];
+      case "spend":
+        return [
+          {
+            type: "spend",
+            amount: displayAmount,
+            month: dateToMonth(spendToDate),
+            from: dateToMonth(spendFromDate),
+            ...(spendRepeat ? { repeat: 12, annual: true } : {}),
+            priority: 0,
+            directive: "template",
+          },
+        ];
+      case "percentage":
+        return [
+          {
+            type: "percentage",
+            percent,
+            previous: percentPrevious,
+            category: percentCategory,
+            priority: 0,
+            directive: "template",
+          },
+        ];
+      case "remainder":
+        return [{ type: "remainder", weight, directive: "template" }];
+      case "limit": {
         // Pure spending cap: "#template 0 up to X" — no auto-budgeting
-        return [{
-          type: 'simple' as const,
-          monthly: 0,
-          limit: { amount: displayAmount, hold: limitHold, period: limitPeriod },
-          priority: 0,
-          directive: 'template' as const,
-        }];
+        return [
+          {
+            type: "simple" as const,
+            monthly: 0,
+            limit: { amount: displayAmount, hold: limitHold, period: limitPeriod },
+            priority: 0,
+            directive: "template" as const,
+          },
+        ];
       }
     }
   }
 
   const canSave = (() => {
     switch (goalType) {
-      case 'simple':
+      case "simple":
         if (capEnabled) return amountCents > 0 && capCents > amountCents;
         return amountCents > 0;
-      case 'goal': case 'by': case 'periodic': case 'spend': case 'limit':
+      case "goal":
+      case "by":
+      case "periodic":
+      case "spend":
+      case "limit":
         return amountCents > 0;
-      case 'percentage':
+      case "percentage":
         return percent > 0;
-      case 'average': case 'copy': case 'remainder':
+      case "average":
+      case "copy":
+      case "remainder":
         return true;
     }
   })();
@@ -373,7 +425,7 @@ export default function GoalEditorScreen() {
     if (!categoryId || saving) return;
     setSaving(true);
     try {
-      const catNames = new Map(categories.map(c => [c.id, c.name]));
+      const catNames = new Map(categories.map((c) => [c.id, c.name]));
       await batchMessages(async () => {
         await setGoalTemplates(categoryId, buildTemplates(), catNames);
       });
@@ -382,7 +434,7 @@ export default function GoalEditorScreen() {
       await useBudgetStore.getState().load();
       router.back();
     } catch {
-      Alert.alert(t('couldNotSaveTitle'), t('couldNotSaveMessage'));
+      Alert.alert(t("couldNotSaveTitle"), t("couldNotSaveMessage"));
     } finally {
       setSaving(false);
     }
@@ -390,10 +442,11 @@ export default function GoalEditorScreen() {
 
   function handleDelete() {
     if (!categoryId) return;
-    Alert.alert(t('removeTargetTitle'), t('removeTargetMessage'), [
-      { text: t('cancel'), style: 'cancel' },
+    Alert.alert(t("removeTargetTitle"), t("removeTargetMessage"), [
+      { text: t("cancel"), style: "cancel" },
       {
-        text: t('remove'), style: 'destructive',
+        text: t("remove"),
+        style: "destructive",
         onPress: async () => {
           try {
             await setGoalTemplates(categoryId, []);
@@ -401,7 +454,7 @@ export default function GoalEditorScreen() {
             await useBudgetStore.getState().load();
             router.back();
           } catch {
-            Alert.alert(t('errorTitle'), t('couldNotRemoveTarget'));
+            Alert.alert(t("errorTitle"), t("couldNotRemoveTarget"));
           }
         },
       },
@@ -413,22 +466,29 @@ export default function GoalEditorScreen() {
   // ---------------------------------------------------------------------------
 
   function DateRow({
-    label, date, show, onToggle, onDateChange,
+    label,
+    date,
+    show,
+    onToggle,
+    onDateChange,
   }: {
-    label: string; date: Date; show: boolean;
-    onToggle: () => void; onDateChange: (d: Date) => void;
+    label: string;
+    date: Date;
+    show: boolean;
+    onToggle: () => void;
+    onDateChange: (d: Date) => void;
   }) {
     return (
       <>
         <ListItem
           title={label}
           right={
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
               <Text variant="body" color={colors.primary}>
                 {formatDateLong(dateToInt(date))}
               </Text>
               <Ionicons
-                name={show ? 'chevron-up' : 'chevron-down'}
+                name={show ? "chevron-up" : "chevron-down"}
                 size={16}
                 color={colors.textMuted}
               />
@@ -441,9 +501,12 @@ export default function GoalEditorScreen() {
             <Host matchContents={{ vertical: true }}>
               <DatePicker
                 selection={date}
-                displayedComponents={['date']}
-                modifiers={[datePickerStyle('graphical'), tint(colors.primary)]}
-                onDateChange={(d) => { onDateChange(d); onToggle(); }}
+                displayedComponents={["date"]}
+                modifiers={[datePickerStyle("graphical"), tint(colors.primary)]}
+                onDateChange={(d) => {
+                  onDateChange(d);
+                  onToggle();
+                }}
               />
             </Host>
           </View>
@@ -452,8 +515,14 @@ export default function GoalEditorScreen() {
     );
   }
 
-  function ToggleRow({ label, value, onValueChange }: {
-    label: string; value: boolean; onValueChange: (v: boolean) => void;
+  function ToggleRow({
+    label,
+    value,
+    onValueChange,
+  }: {
+    label: string;
+    value: boolean;
+    onValueChange: (v: boolean) => void;
   }) {
     return (
       <ListItem
@@ -475,372 +544,486 @@ export default function GoalEditorScreen() {
 
   return (
     <>
-    <ScrollView
-      style={{ backgroundColor: colors.pageBackground }}
-      contentContainerStyle={{ padding: spacing.lg, paddingTop: 72 }}
-      keyboardShouldPersistTaps="handled"
-    >
-      <Stack.Screen
-        options={{
-          headerLeft: () => (
-            <IconButton sfSymbol="xmark" size={22} color={colors.headerText} onPress={() => router.back()} />
-          ),
-        }}
-      />
-
-      {/* ── Type selector ──────────────────────────────────────── */}
-      <Card style={{ padding: 0, overflow: 'hidden' as const, marginBottom: spacing.sm }}>
-        <MenuPickerRow
-          label={t('goalType')}
-          selection={goalType}
-          options={TYPE_OPTION_KEYS.map((o) => ({ value: o.value, label: t(o.key as any) }))}
-          onSelectionChange={setGoalType}
-          pickerWidth={220}
-        />
-      </Card>
-      <Text
-        variant="captionSm"
-        color={colors.textMuted}
-        style={{ marginBottom: spacing.lg, paddingHorizontal: spacing.xs }}
+      <ScrollView
+        style={{ backgroundColor: colors.pageBackground }}
+        contentContainerStyle={{ padding: spacing.lg, paddingTop: 72 }}
+        keyboardShouldPersistTaps="handled"
       >
-        {t(TYPE_DESCRIPTION_KEYS[goalType] as any)}
-      </Text>
+        <Stack.Screen
+          options={{
+            headerLeft: () => (
+              <IconButton
+                sfSymbol="xmark"
+                size={22}
+                color={colors.headerText}
+                onPress={() => router.back()}
+              />
+            ),
+          }}
+        />
 
-      {/* ── Type-specific fields ───────────────────────────────── */}
-      <Card style={{ padding: 0, overflow: 'hidden' as const }}>
-        {/* Simple */}
-        {goalType === 'simple' && (
-          <View>
-            <View style={{ padding: spacing.md }}>
-              <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.xs }}>
-                {simpleRefill ? t('refillTo') : t('monthlyAmount')}
-              </Text>
-              <CurrencyInput ref={currencyInputRef} value={amountCents} onChangeValue={setAmountCents} type="income" autoFocus />
-            </View>
-            <Divider />
-            <ToggleRow
-              label={t('refillMode')}
-              value={simpleRefill}
-              onValueChange={(v) => {
-                setSimpleRefill(v);
-                if (v) { setCapEnabled(false); setCapCents(0); }
-              }}
-            />
-            {!simpleRefill && (
-              <>
-                <Divider />
-                <ToggleRow
-                  label={t('balanceCap')}
-                  value={capEnabled}
-                  onValueChange={setCapEnabled}
-                />
-                {capEnabled && (
-                  <>
-                    <Divider />
-                    <ListItem
-                      title={t('maximumBalance')}
-                      right={
-                        <CurrencyInput value={capCents} onChangeValue={setCapCents} type="income" compact style={{ paddingVertical: 0 }} />
-                      }
-                    />
-                  </>
-                )}
-              </>
-            )}
-          </View>
-        )}
-
-        {/* Goal */}
-        {goalType === 'goal' && (
-          <View style={{ padding: spacing.md }}>
-            <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.xs }}>
-              {t('targetBalance')}
-            </Text>
-            <CurrencyInput value={amountCents} onChangeValue={setAmountCents} type="income" autoFocus />
-          </View>
-        )}
-
-        {/* By */}
-        {goalType === 'by' && (
-          <View>
-            <View style={{ padding: spacing.md }}>
-              <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.xs }}>
-                {t('targetAmount')}
-              </Text>
-              <CurrencyInput ref={currencyInputRef} value={amountCents} onChangeValue={setAmountCents} type="income" autoFocus />
-            </View>
-            <Divider />
-            <DateRow
-              label={t('targetDate')}
-              date={targetDate}
-              show={showDatePicker}
-              onToggle={() => setShowDatePicker(!showDatePicker)}
-              onDateChange={setTargetDate}
-            />
-            <Divider />
-            <ToggleRow label={t('repeatAnnually')} value={byRepeat} onValueChange={setByRepeat} />
-          </View>
-        )}
-
-        {/* Average */}
-        {goalType === 'average' && (
-          <View style={{ padding: spacing.md }}>
-            <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.sm }}>
-              {t('lookBackPeriod')}
-            </Text>
-            <Host matchContents>
-              <Picker
-                selection={AVG_VALUES[avgIndex]}
-                onSelectionChange={(val) => setAvgIndex(AVG_VALUES.indexOf(val as number))}
-                modifiers={[pickerStyle('segmented'), tint(colors.primary)]}
-              >
-                {AVG_VALUES.map((v, i) => (
-                  <SwiftText key={v} modifiers={[tag(v)]}>{t(AVG_OPTION_KEYS[i] as any)}</SwiftText>
-                ))}
-              </Picker>
-            </Host>
-          </View>
-        )}
-
-        {/* Copy */}
-        {goalType === 'copy' && (
+        {/* ── Type selector ──────────────────────────────────────── */}
+        <Card style={{ padding: 0, overflow: "hidden" as const, marginBottom: spacing.sm }}>
           <MenuPickerRow
-            label={t('copyFrom')}
-            selection={lookBack}
-            options={Array.from({ length: 12 }, (_, i) => ({
-              value: i + 1,
-              label: t('monthsAgo', { count: i + 1 }),
-            }))}
-            onSelectionChange={setLookBack}
+            label={t("goalType")}
+            selection={goalType}
+            options={TYPE_OPTION_KEYS.map((o) => ({ value: o.value, label: t(o.key as any) }))}
+            onSelectionChange={setGoalType}
+            pickerWidth={220}
           />
-        )}
+        </Card>
+        <Text
+          variant="captionSm"
+          color={colors.textMuted}
+          style={{ marginBottom: spacing.lg, paddingHorizontal: spacing.xs }}
+        >
+          {t(TYPE_DESCRIPTION_KEYS[goalType] as any)}
+        </Text>
 
-        {/* Periodic */}
-        {goalType === 'periodic' && (
-          <View>
+        {/* ── Type-specific fields ───────────────────────────────── */}
+        <Card style={{ padding: 0, overflow: "hidden" as const }}>
+          {/* Simple */}
+          {goalType === "simple" && (
+            <View>
+              <View style={{ padding: spacing.md }}>
+                <Text
+                  variant="caption"
+                  color={colors.textMuted}
+                  style={{ marginBottom: spacing.xs }}
+                >
+                  {simpleRefill ? t("refillTo") : t("monthlyAmount")}
+                </Text>
+                <CurrencyInput
+                  ref={currencyInputRef}
+                  value={amountCents}
+                  onChangeValue={setAmountCents}
+                  type="income"
+                  autoFocus
+                />
+              </View>
+              <Divider />
+              <ToggleRow
+                label={t("refillMode")}
+                value={simpleRefill}
+                onValueChange={(v) => {
+                  setSimpleRefill(v);
+                  if (v) {
+                    setCapEnabled(false);
+                    setCapCents(0);
+                  }
+                }}
+              />
+              {!simpleRefill && (
+                <>
+                  <Divider />
+                  <ToggleRow
+                    label={t("balanceCap")}
+                    value={capEnabled}
+                    onValueChange={setCapEnabled}
+                  />
+                  {capEnabled && (
+                    <>
+                      <Divider />
+                      <ListItem
+                        title={t("maximumBalance")}
+                        right={
+                          <CurrencyInput
+                            value={capCents}
+                            onChangeValue={setCapCents}
+                            type="income"
+                            compact
+                            style={{ paddingVertical: 0 }}
+                          />
+                        }
+                      />
+                    </>
+                  )}
+                </>
+              )}
+            </View>
+          )}
+
+          {/* Goal */}
+          {goalType === "goal" && (
             <View style={{ padding: spacing.md }}>
               <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.xs }}>
-                {t('amountPerOccurrence')}
+                {t("targetBalance")}
               </Text>
-              <CurrencyInput ref={currencyInputRef} value={amountCents} onChangeValue={setAmountCents} type="income" autoFocus />
+              <CurrencyInput
+                value={amountCents}
+                onChangeValue={setAmountCents}
+                type="income"
+                autoFocus
+              />
             </View>
-            <Divider />
-            <MenuPickerRow
-              label={t('frequency')}
-              selection={periodicPeriod}
-              options={PERIOD_OPTION_KEYS.map((o) => ({ value: o.value as typeof periodicPeriod, label: t(o.key as any) }))}
-              onSelectionChange={setPeriodicPeriod}
-            />
-            <Divider />
-            <MenuPickerRow
-              label={t('every')}
-              selection={periodicInterval}
-              options={Array.from({ length: 12 }, (_, i) => ({ value: i + 1, label: `${i + 1}` }))}
-              onSelectionChange={setPeriodicInterval}
-            />
-            <Divider />
-            <DateRow
-              label={t('startingDate')}
-              date={periodicStart ?? new Date()}
-              show={showPeriodicStartPicker}
-              onToggle={() => setShowPeriodicStartPicker(!showPeriodicStartPicker)}
-              onDateChange={setPeriodicStart}
-            />
-            {periodicStart && (
-              <Pressable
-                onPress={() => setPeriodicStart(null)}
-                style={{ padding: spacing.md, paddingTop: 0 }}
-              >
-                <Text variant="captionSm" color={colors.primary}>{t('clearStartDate')}</Text>
-              </Pressable>
-            )}
-          </View>
-        )}
+          )}
 
-        {/* Spend */}
-        {goalType === 'spend' && (
-          <View>
-            <View style={{ padding: spacing.md }}>
-              <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.xs }}>
-                {t('targetAmount')}
-              </Text>
-              <CurrencyInput ref={currencyInputRef} value={amountCents} onChangeValue={setAmountCents} type="income" autoFocus />
+          {/* By */}
+          {goalType === "by" && (
+            <View>
+              <View style={{ padding: spacing.md }}>
+                <Text
+                  variant="caption"
+                  color={colors.textMuted}
+                  style={{ marginBottom: spacing.xs }}
+                >
+                  {t("targetAmount")}
+                </Text>
+                <CurrencyInput
+                  ref={currencyInputRef}
+                  value={amountCents}
+                  onChangeValue={setAmountCents}
+                  type="income"
+                  autoFocus
+                />
+              </View>
+              <Divider />
+              <DateRow
+                label={t("targetDate")}
+                date={targetDate}
+                show={showDatePicker}
+                onToggle={() => setShowDatePicker(!showDatePicker)}
+                onDateChange={setTargetDate}
+              />
+              <Divider />
+              <ToggleRow label={t("repeatAnnually")} value={byRepeat} onValueChange={setByRepeat} />
             </View>
-            <Divider />
-            <DateRow
-              label={t('startingFrom')}
-              date={spendFromDate}
-              show={showSpendFromPicker}
-              onToggle={() => setShowSpendFromPicker(!showSpendFromPicker)}
-              onDateChange={setSpendFromDate}
-            />
-            <Divider />
-            <DateRow
-              label={t('spendBy')}
-              date={spendToDate}
-              show={showSpendToPicker}
-              onToggle={() => setShowSpendToPicker(!showSpendToPicker)}
-              onDateChange={setSpendToDate}
-            />
-            <Divider />
-            <ToggleRow label={t('repeatAnnually')} value={spendRepeat} onValueChange={setSpendRepeat} />
-          </View>
-        )}
+          )}
 
-        {/* Percentage */}
-        {goalType === 'percentage' && (
-          <View>
-            <MenuPickerRow
-              label={t('percentage')}
-              selection={percent}
-              options={[5, 10, 15, 20, 25, 30, 40, 50, 75, 100].map((v) => ({
-                value: v, label: `${v}%`,
-              }))}
-              onSelectionChange={setPercent}
-            />
-            <Divider />
-            <MenuPickerRow
-              label={t('ofIncomeFrom')}
-              selection={percentCategory}
-              options={[
-                { value: 'all-income', label: t('allIncome') },
-                ...incomeCategories.map((c) => ({ value: c.id, label: c.name })),
-              ]}
-              onSelectionChange={setPercentCategory}
-            />
-            <Divider />
-            <ToggleRow
-              label={t('useLastMonth')}
-              value={percentPrevious}
-              onValueChange={setPercentPrevious}
-            />
-          </View>
-        )}
-
-        {/* Remainder */}
-        {goalType === 'remainder' && (
-          <View>
-            <MenuPickerRow
-              label={t('weight')}
-              selection={weight}
-              options={Array.from({ length: 10 }, (_, i) => ({ value: i + 1, label: `${i + 1}` }))}
-              onSelectionChange={setWeight}
-            />
-          </View>
-        )}
-
-        {/* Limit */}
-        {goalType === 'limit' && (
-          <View>
-            <View style={{ padding: spacing.md }}>
-              <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.xs }}>
-                {t('maximumSpending')}
-              </Text>
-              <CurrencyInput ref={currencyInputRef} value={amountCents} onChangeValue={setAmountCents} type="income" autoFocus />
-            </View>
-            <Divider />
+          {/* Average */}
+          {goalType === "average" && (
             <View style={{ padding: spacing.md }}>
               <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.sm }}>
-                {t('resetPeriod')}
+                {t("lookBackPeriod")}
               </Text>
               <Host matchContents>
                 <Picker
-                  selection={limitPeriod}
-                  onSelectionChange={(val) => setLimitPeriod(val as typeof limitPeriod)}
-                  modifiers={[pickerStyle('segmented'), tint(colors.primary)]}
+                  selection={AVG_VALUES[avgIndex]}
+                  onSelectionChange={(val) => setAvgIndex(AVG_VALUES.indexOf(val as number))}
+                  modifiers={[pickerStyle("segmented"), tint(colors.primary)]}
                 >
-                  {LIMIT_PERIOD_OPTION_KEYS.map((opt) => (
-                    <SwiftText key={opt.value} modifiers={[tag(opt.value)]}>{t(opt.key as any)}</SwiftText>
+                  {AVG_VALUES.map((v, i) => (
+                    <SwiftText key={v} modifiers={[tag(v)]}>
+                      {t(AVG_OPTION_KEYS[i] as any)}
+                    </SwiftText>
                   ))}
                 </Picker>
               </Host>
             </View>
-            <Divider />
-            <ToggleRow
-              label={t('keepSurplus')}
-              value={limitHold}
-              onValueChange={setLimitHold}
+          )}
+
+          {/* Copy */}
+          {goalType === "copy" && (
+            <MenuPickerRow
+              label={t("copyFrom")}
+              selection={lookBack}
+              options={Array.from({ length: 12 }, (_, i) => ({
+                value: i + 1,
+                label: t("monthsAgo", { count: i + 1 }),
+              }))}
+              onSelectionChange={setLookBack}
+            />
+          )}
+
+          {/* Periodic */}
+          {goalType === "periodic" && (
+            <View>
+              <View style={{ padding: spacing.md }}>
+                <Text
+                  variant="caption"
+                  color={colors.textMuted}
+                  style={{ marginBottom: spacing.xs }}
+                >
+                  {t("amountPerOccurrence")}
+                </Text>
+                <CurrencyInput
+                  ref={currencyInputRef}
+                  value={amountCents}
+                  onChangeValue={setAmountCents}
+                  type="income"
+                  autoFocus
+                />
+              </View>
+              <Divider />
+              <MenuPickerRow
+                label={t("frequency")}
+                selection={periodicPeriod}
+                options={PERIOD_OPTION_KEYS.map((o) => ({
+                  value: o.value as typeof periodicPeriod,
+                  label: t(o.key as any),
+                }))}
+                onSelectionChange={setPeriodicPeriod}
+              />
+              <Divider />
+              <MenuPickerRow
+                label={t("every")}
+                selection={periodicInterval}
+                options={Array.from({ length: 12 }, (_, i) => ({
+                  value: i + 1,
+                  label: `${i + 1}`,
+                }))}
+                onSelectionChange={setPeriodicInterval}
+              />
+              <Divider />
+              <DateRow
+                label={t("startingDate")}
+                date={periodicStart ?? new Date()}
+                show={showPeriodicStartPicker}
+                onToggle={() => setShowPeriodicStartPicker(!showPeriodicStartPicker)}
+                onDateChange={setPeriodicStart}
+              />
+              {periodicStart && (
+                <Pressable
+                  onPress={() => setPeriodicStart(null)}
+                  style={{ padding: spacing.md, paddingTop: 0 }}
+                >
+                  <Text variant="captionSm" color={colors.primary}>
+                    {t("clearStartDate")}
+                  </Text>
+                </Pressable>
+              )}
+            </View>
+          )}
+
+          {/* Spend */}
+          {goalType === "spend" && (
+            <View>
+              <View style={{ padding: spacing.md }}>
+                <Text
+                  variant="caption"
+                  color={colors.textMuted}
+                  style={{ marginBottom: spacing.xs }}
+                >
+                  {t("targetAmount")}
+                </Text>
+                <CurrencyInput
+                  ref={currencyInputRef}
+                  value={amountCents}
+                  onChangeValue={setAmountCents}
+                  type="income"
+                  autoFocus
+                />
+              </View>
+              <Divider />
+              <DateRow
+                label={t("startingFrom")}
+                date={spendFromDate}
+                show={showSpendFromPicker}
+                onToggle={() => setShowSpendFromPicker(!showSpendFromPicker)}
+                onDateChange={setSpendFromDate}
+              />
+              <Divider />
+              <DateRow
+                label={t("spendBy")}
+                date={spendToDate}
+                show={showSpendToPicker}
+                onToggle={() => setShowSpendToPicker(!showSpendToPicker)}
+                onDateChange={setSpendToDate}
+              />
+              <Divider />
+              <ToggleRow
+                label={t("repeatAnnually")}
+                value={spendRepeat}
+                onValueChange={setSpendRepeat}
+              />
+            </View>
+          )}
+
+          {/* Percentage */}
+          {goalType === "percentage" && (
+            <View>
+              <MenuPickerRow
+                label={t("percentage")}
+                selection={percent}
+                options={[5, 10, 15, 20, 25, 30, 40, 50, 75, 100].map((v) => ({
+                  value: v,
+                  label: `${v}%`,
+                }))}
+                onSelectionChange={setPercent}
+              />
+              <Divider />
+              <MenuPickerRow
+                label={t("ofIncomeFrom")}
+                selection={percentCategory}
+                options={[
+                  { value: "all-income", label: t("allIncome") },
+                  ...incomeCategories.map((c) => ({ value: c.id, label: c.name })),
+                ]}
+                onSelectionChange={setPercentCategory}
+              />
+              <Divider />
+              <ToggleRow
+                label={t("useLastMonth")}
+                value={percentPrevious}
+                onValueChange={setPercentPrevious}
+              />
+            </View>
+          )}
+
+          {/* Remainder */}
+          {goalType === "remainder" && (
+            <View>
+              <MenuPickerRow
+                label={t("weight")}
+                selection={weight}
+                options={Array.from({ length: 10 }, (_, i) => ({
+                  value: i + 1,
+                  label: `${i + 1}`,
+                }))}
+                onSelectionChange={setWeight}
+              />
+            </View>
+          )}
+
+          {/* Limit */}
+          {goalType === "limit" && (
+            <View>
+              <View style={{ padding: spacing.md }}>
+                <Text
+                  variant="caption"
+                  color={colors.textMuted}
+                  style={{ marginBottom: spacing.xs }}
+                >
+                  {t("maximumSpending")}
+                </Text>
+                <CurrencyInput
+                  ref={currencyInputRef}
+                  value={amountCents}
+                  onChangeValue={setAmountCents}
+                  type="income"
+                  autoFocus
+                />
+              </View>
+              <Divider />
+              <View style={{ padding: spacing.md }}>
+                <Text
+                  variant="caption"
+                  color={colors.textMuted}
+                  style={{ marginBottom: spacing.sm }}
+                >
+                  {t("resetPeriod")}
+                </Text>
+                <Host matchContents>
+                  <Picker
+                    selection={limitPeriod}
+                    onSelectionChange={(val) => setLimitPeriod(val as typeof limitPeriod)}
+                    modifiers={[pickerStyle("segmented"), tint(colors.primary)]}
+                  >
+                    {LIMIT_PERIOD_OPTION_KEYS.map((opt) => (
+                      <SwiftText key={opt.value} modifiers={[tag(opt.value)]}>
+                        {t(opt.key as any)}
+                      </SwiftText>
+                    ))}
+                  </Picker>
+                </Host>
+              </View>
+              <Divider />
+              <ToggleRow label={t("keepSurplus")} value={limitHold} onValueChange={setLimitHold} />
+            </View>
+          )}
+        </Card>
+
+        {/* ── Section footers (outside card per Apple HIG) ────── */}
+        {goalType === "simple" && (
+          <Text
+            variant="captionSm"
+            color={
+              capEnabled && capCents > 0 && capCents <= amountCents
+                ? colors.negative
+                : colors.textMuted
+            }
+            style={{ paddingHorizontal: spacing.xs, marginTop: spacing.xs }}
+          >
+            {capEnabled
+              ? capCents > 0 && amountCents > 0
+                ? capCents <= amountCents
+                  ? t("balanceCapMustBeGreater")
+                  : t("budgetedUntilReaches", {
+                      budgeted: formatBalance(amountCents),
+                      cap: formatBalance(capCents),
+                    })
+                : t("onceBalanceHits")
+              : simpleRefill
+                ? t("refillDescription")
+                : t("fixedMonthlyDescription")}
+          </Text>
+        )}
+        {goalType === "remainder" && (
+          <Text
+            variant="captionSm"
+            color={colors.textMuted}
+            style={{ paddingHorizontal: spacing.xs, marginTop: spacing.xs }}
+          >
+            {t("higherWeightDescription")}
+          </Text>
+        )}
+        {goalType === "limit" && (
+          <Text
+            variant="captionSm"
+            color={colors.textMuted}
+            style={{ paddingHorizontal: spacing.xs, marginTop: spacing.xs }}
+          >
+            {limitHold
+              ? t("limitHoldDescription", {
+                  limit:
+                    amountCents > 0
+                      ? "$" + integerToAmount(amountCents)
+                      : t("goalTypeLimit").toLowerCase(),
+                  period:
+                    limitPeriod === "daily"
+                      ? t("periodDay")
+                      : limitPeriod === "weekly"
+                        ? t("periodWeek")
+                        : t("periodMonth"),
+                })
+              : t("limitNoHoldDescription", {
+                  period:
+                    limitPeriod === "daily"
+                      ? t("periodDay")
+                      : limitPeriod === "weekly"
+                        ? t("periodWeek")
+                        : t("periodMonth"),
+                })}{" "}
+            {t("limitUseMonthlyNote")}
+          </Text>
+        )}
+
+        {/* ── Save / Delete ──────────────────────────────────────── */}
+        <Button
+          title={isEditing ? t("saveTarget") : t("addTarget")}
+          variant="primary"
+          onPress={handleSave}
+          disabled={!canSave}
+          loading={saving}
+          style={{ marginTop: spacing.xl, borderRadius: 999 }}
+        />
+
+        {isEditing && (
+          <View style={{ marginTop: spacing.xl }}>
+            <Button
+              title={t("removeTarget")}
+              variant="ghost"
+              icon="trash-outline"
+              textColor={colors.negative}
+              onPress={handleDelete}
             />
           </View>
         )}
-      </Card>
-
-      {/* ── Section footers (outside card per Apple HIG) ────── */}
-      {goalType === 'simple' && (
-        <Text
-          variant="captionSm"
-          color={capEnabled && capCents > 0 && capCents <= amountCents ? colors.negative : colors.textMuted}
-          style={{ paddingHorizontal: spacing.xs, marginTop: spacing.xs }}
-        >
-          {capEnabled
-            ? capCents > 0 && amountCents > 0
-              ? capCents <= amountCents
-                ? t('balanceCapMustBeGreater')
-                : t('budgetedUntilReaches', { budgeted: formatBalance(amountCents), cap: formatBalance(capCents) })
-              : t('onceBalanceHits')
-            : simpleRefill
-              ? t('refillDescription')
-              : t('fixedMonthlyDescription')}
-        </Text>
-      )}
-      {goalType === 'remainder' && (
-        <Text
-          variant="captionSm"
-          color={colors.textMuted}
-          style={{ paddingHorizontal: spacing.xs, marginTop: spacing.xs }}
-        >
-          {t('higherWeightDescription')}
-        </Text>
-      )}
-      {goalType === 'limit' && (
-        <Text
-          variant="captionSm"
-          color={colors.textMuted}
-          style={{ paddingHorizontal: spacing.xs, marginTop: spacing.xs }}
-        >
-          {limitHold
-            ? t('limitHoldDescription', { limit: amountCents > 0 ? '$' + integerToAmount(amountCents) : t('goalTypeLimit').toLowerCase(), period: limitPeriod === 'daily' ? t('periodDay') : limitPeriod === 'weekly' ? t('periodWeek') : t('periodMonth') })
-            : t('limitNoHoldDescription', { period: limitPeriod === 'daily' ? t('periodDay') : limitPeriod === 'weekly' ? t('periodWeek') : t('periodMonth') })}
-          {' '}{t('limitUseMonthlyNote')}
-        </Text>
-      )}
-
-      {/* ── Save / Delete ──────────────────────────────────────── */}
-      <Button
-        title={isEditing ? t('saveTarget') : t('addTarget')}
-        variant="primary"
-        onPress={handleSave}
-        disabled={!canSave}
-        loading={saving}
-        style={{ marginTop: spacing.xl, borderRadius: 999 }}
-      />
-
-      {isEditing && (
-        <View style={{ marginTop: spacing.xl }}>
-          <Button
-            title={t('removeTarget')}
-            variant="ghost"
-            icon="trash-outline"
-            textColor={colors.negative}
-            onPress={handleDelete}
-          />
-        </View>
-      )}
-    </ScrollView>
-    <KeyboardToolbar>
-      <CalculatorToolbar
-        onOperator={(op) => currencyInputRef.current?.injectOperator(op)}
-        onEvaluate={() => currencyInputRef.current?.evaluate()}
-      />
-      <View style={{ flex: 1 }} />
-      <GlassButton
-        icon="checkmark"
-        iconSize={16}
-        variant="tinted"
-        tintColor={colors.primary}
-        onPress={() => Keyboard.dismiss()}
-      />
-    </KeyboardToolbar>
+      </ScrollView>
+      <KeyboardToolbar>
+        <CalculatorToolbar
+          onOperator={(op) => currencyInputRef.current?.injectOperator(op)}
+          onEvaluate={() => currencyInputRef.current?.evaluate()}
+        />
+        <View style={{ flex: 1 }} />
+        <GlassButton
+          icon="checkmark"
+          iconSize={16}
+          variant="tinted"
+          tintColor={colors.primary}
+          onPress={() => Keyboard.dismiss()}
+        />
+      </KeyboardToolbar>
     </>
   );
 }

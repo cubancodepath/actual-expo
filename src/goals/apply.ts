@@ -9,13 +9,13 @@
  *   Pass 2: Distribute leftover budget to remainder categories by weight
  */
 
-import { runQuery, first } from '../db';
-import { monthToInt } from '../lib/date';
-import { setBudgetAmount, computeToBudget, computeCarryoverChain } from '../budgets';
-import type { CategoryRow, ZeroBudgetRow } from '../db/types';
-import { calculateGoal, type GoalContext } from './engine';
-import { parseGoalDef } from './parse';
-import { setGoalResult } from './persist';
+import { runQuery, first } from "../db";
+import { monthToInt } from "../lib/date";
+import { setBudgetAmount, computeToBudget, computeCarryoverChain } from "../budgets";
+import type { CategoryRow, ZeroBudgetRow } from "../db/types";
+import { calculateGoal, type GoalContext } from "./engine";
+import { parseGoalDef } from "./parse";
+import { setGoalResult } from "./persist";
 
 // ---------------------------------------------------------------------------
 // Result types
@@ -70,11 +70,10 @@ export async function computeGoalAllocations(
   );
 
   // Get current month's budget rows for previouslyBudgeted
-  const budgetRows = await runQuery<ZeroBudgetRow>(
-    'SELECT * FROM zero_budgets WHERE month = ?',
-    [monthInt],
-  );
-  const budgetMap = new Map(budgetRows.map(r => [r.category, r.amount]));
+  const budgetRows = await runQuery<ZeroBudgetRow>("SELECT * FROM zero_budgets WHERE month = ?", [
+    monthInt,
+  ]);
+  const budgetMap = new Map(budgetRows.map((r) => [r.category, r.amount]));
 
   // Compute carryover chain once for all categories (accurate fromLastMonth)
   const allExpenseCatIds = await getAllExpenseCategoryIds();
@@ -89,7 +88,7 @@ export async function computeGoalAllocations(
   // Track remainder categories for pass 2
   const remainderCategories: Array<{
     cat: CategoryRow;
-    templates: import('./types').Template[];
+    templates: import("./types").Template[];
     fromLastMonth: number;
     previouslyBudgeted: number;
     weight: number;
@@ -184,7 +183,7 @@ export async function computeGoalAllocations(
       }
     } catch (e) {
       result.errors.push({
-        category: '(remainder)',
+        category: "(remainder)",
         error: `Failed to compute available budget: ${e instanceof Error ? e.message : String(e)}`,
       });
     }
@@ -221,16 +220,12 @@ export async function persistGoalAllocations(
  * Compute and write only the goal indicator (goal + longGoal) for a category.
  * Does NOT change the budgeted amount — that's only done via the assign screen.
  */
-export async function updateGoalIndicator(
-  month: string,
-  categoryId: string,
-): Promise<void> {
+export async function updateGoalIndicator(month: string, categoryId: string): Promise<void> {
   const monthInt = monthToInt(month);
 
-  const cat = await first<CategoryRow>(
-    'SELECT * FROM categories WHERE id = ? AND tombstone = 0',
-    [categoryId],
-  );
+  const cat = await first<CategoryRow>("SELECT * FROM categories WHERE id = ? AND tombstone = 0", [
+    categoryId,
+  ]);
   if (!cat || !cat.goal_def) {
     // Goal was removed — clear the indicator
     await setGoalResult(month, categoryId, null, null);
@@ -244,7 +239,7 @@ export async function updateGoalIndicator(
   }
 
   const budgetRow = await first<ZeroBudgetRow>(
-    'SELECT * FROM zero_budgets WHERE month = ? AND category = ?',
+    "SELECT * FROM zero_budgets WHERE month = ? AND category = ?",
     [monthInt, categoryId],
   );
   const previouslyBudgeted = budgetRow?.amount ?? 0;
@@ -276,5 +271,5 @@ async function getAllExpenseCategoryIds(): Promise<string[]> {
      JOIN category_groups g ON g.id = c.cat_group AND g.is_income = 0
      WHERE c.tombstone = 0`,
   );
-  return rows.map(r => r.id);
+  return rows.map((r) => r.id);
 }

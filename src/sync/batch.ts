@@ -6,17 +6,12 @@
  * schedules a debounced fullSync.
  */
 
-import type { SyncMessage } from './encoder';
-import type { OldData } from './undo';
-import { appendMessages as undoAppendMessages } from './undo';
-import { applyMessages } from './apply';
-import { refreshStoresForDatasets } from '../stores/storeRegistry';
-import {
-  isSwitchingBudget,
-  clearSyncTimeout,
-  setSyncTimeout,
-  getSyncTimeout,
-} from './lifecycle';
+import type { SyncMessage } from "./encoder";
+import type { OldData } from "./undo";
+import { appendMessages as undoAppendMessages } from "./undo";
+import { applyMessages } from "./apply";
+import { refreshStoresForDatasets } from "../stores/storeRegistry";
+import { isSwitchingBudget, clearSyncTimeout, setSyncTimeout, getSyncTimeout } from "./lifecycle";
 
 const FULL_SYNC_DELAY = 1000; // ms
 
@@ -30,32 +25,40 @@ export function resetBatchState(): void {
 
 function scheduleFullSync(): void {
   if (getSyncTimeout()) clearSyncTimeout();
-  setSyncTimeout(setTimeout(async () => {
-    if (isSwitchingBudget()) return;
-    try {
-      const { usePrefsStore } = await import('../stores/prefsStore');
-      const prefs = usePrefsStore.getState();
-      if (prefs.isLocalOnly || !prefs.isConfigured) return;
-      // Lazy import to avoid circular dependency
-      const { fullSync } = await import('./fullSync');
-      await fullSync();
-    } catch {
-      // fullSync already writes the error into syncStore — nothing to do here
-    }
-  }, FULL_SYNC_DELAY));
+  setSyncTimeout(
+    setTimeout(async () => {
+      if (isSwitchingBudget()) return;
+      try {
+        const { usePrefsStore } = await import("../stores/prefsStore");
+        const prefs = usePrefsStore.getState();
+        if (prefs.isLocalOnly || !prefs.isConfigured) return;
+        // Lazy import to avoid circular dependency
+        const { fullSync } = await import("./fullSync");
+        await fullSync();
+      } catch {
+        // fullSync already writes the error into syncStore — nothing to do here
+      }
+    }, FULL_SYNC_DELAY),
+  );
 }
 
 export async function sendMessages(messages: SyncMessage[]): Promise<void> {
   if (__DEV__) {
-    const scheduleTables = new Set(['rules', 'schedules', 'schedules_next_date']);
-    const relevant = messages.filter(m => scheduleTables.has(m.dataset));
+    const scheduleTables = new Set(["rules", "schedules", "schedules_next_date"]);
+    const relevant = messages.filter((m) => scheduleTables.has(m.dataset));
     if (relevant.length > 0) {
-      console.log('[sendMessages] schedule-related messages:', relevant.map(m => ({
-        dataset: m.dataset,
-        row: m.row,
-        column: m.column,
-        value: typeof m.value === 'string' && m.value.length > 80 ? m.value.slice(0, 80) + '…' : m.value,
-      })));
+      console.log(
+        "[sendMessages] schedule-related messages:",
+        relevant.map((m) => ({
+          dataset: m.dataset,
+          row: m.row,
+          column: m.column,
+          value:
+            typeof m.value === "string" && m.value.length > 80
+              ? m.value.slice(0, 80) + "…"
+              : m.value,
+        })),
+      );
     }
   }
   if (_isBatching) {

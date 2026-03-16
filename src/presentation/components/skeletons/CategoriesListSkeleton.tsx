@@ -1,6 +1,6 @@
-import { View } from 'react-native';
-import { useTheme } from '../../providers/ThemeProvider';
-import { Skeleton } from '../atoms/Skeleton';
+import { View } from "react-native";
+import { useTheme } from "../../providers/ThemeProvider";
+import { Skeleton } from "../atoms/Skeleton";
 
 const GROUPS = 2;
 const CATS_PER_GROUP = 3;
@@ -15,15 +15,15 @@ function GroupSkeleton() {
         marginHorizontal: 16,
         borderRadius: 16,
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.06)',
-        overflow: 'hidden',
+        borderColor: "rgba(255,255,255,0.06)",
+        overflow: "hidden",
       }}
     >
       {/* Group header */}
       <View
         style={{
-          flexDirection: 'row',
-          alignItems: 'center',
+          flexDirection: "row",
+          alignItems: "center",
           paddingHorizontal: 14,
           paddingVertical: 12,
         }}
@@ -35,12 +35,12 @@ function GroupSkeleton() {
         <View
           key={i}
           style={{
-            flexDirection: 'row',
-            alignItems: 'center',
+            flexDirection: "row",
+            alignItems: "center",
             paddingHorizontal: 14,
             paddingVertical: 11,
             borderTopWidth: 1,
-            borderTopColor: 'rgba(255,255,255,0.06)',
+            borderTopColor: "rgba(255,255,255,0.06)",
           }}
         >
           <Skeleton width="55%" height={14} />

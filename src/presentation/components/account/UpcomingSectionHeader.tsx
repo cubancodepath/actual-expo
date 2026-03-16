@@ -1,8 +1,8 @@
-import { Pressable, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
-import { useTheme } from '../../providers/ThemeProvider';
-import { Text } from '..';
+import { Pressable, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import Animated, { useAnimatedStyle, withTiming } from "react-native-reanimated";
+import { useTheme } from "../../providers/ThemeProvider";
+import { Text } from "..";
 
 interface UpcomingSectionHeaderProps {
   count: number;
@@ -10,23 +10,19 @@ interface UpcomingSectionHeaderProps {
   onToggle: () => void;
 }
 
-export function UpcomingSectionHeader({
-  count,
-  expanded,
-  onToggle,
-}: UpcomingSectionHeaderProps) {
+export function UpcomingSectionHeader({ count, expanded, onToggle }: UpcomingSectionHeaderProps) {
   const { colors, spacing } = useTheme();
 
   const chevronStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: withTiming(expanded ? '0deg' : '-90deg', { duration: 200 }) }],
+    transform: [{ rotate: withTiming(expanded ? "0deg" : "-90deg", { duration: 200 }) }],
   }));
 
   return (
     <Pressable
       onPress={onToggle}
       style={({ pressed }) => ({
-        flexDirection: 'row',
-        alignItems: 'center',
+        flexDirection: "row",
+        alignItems: "center",
         paddingHorizontal: spacing.lg,
         paddingTop: spacing.sm,
         paddingBottom: spacing.sm,
@@ -45,7 +41,7 @@ export function UpcomingSectionHeader({
       <Text
         variant="captionSm"
         color={colors.textSecondary}
-        style={{ textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: '700' }}
+        style={{ textTransform: "uppercase", letterSpacing: 0.8, fontWeight: "700" }}
       >
         Upcoming
       </Text>
@@ -58,7 +54,7 @@ export function UpcomingSectionHeader({
           marginLeft: spacing.xs,
         }}
       >
-        <Text variant="captionSm" color={colors.textSecondary} style={{ fontWeight: '600' }}>
+        <Text variant="captionSm" color={colors.textSecondary} style={{ fontWeight: "600" }}>
           {count}
         </Text>
       </View>

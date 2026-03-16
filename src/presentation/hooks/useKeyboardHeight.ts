@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { Keyboard, Platform } from 'react-native';
-import { useSharedValue, withTiming } from 'react-native-reanimated';
+import { useEffect, useState } from "react";
+import { Keyboard, Platform } from "react-native";
+import { useSharedValue, withTiming } from "react-native-reanimated";
 
 /**
  * Tracks the keyboard height as both a shared value (for animations)
@@ -11,8 +11,8 @@ export function useKeyboardHeight() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
-    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
 
     const showSub = Keyboard.addListener(showEvent, (e) => {
       setVisible(true);

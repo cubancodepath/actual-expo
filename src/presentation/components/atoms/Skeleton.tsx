@@ -1,4 +1,4 @@
-import { type DimensionValue, type ViewStyle } from 'react-native';
+import { type DimensionValue, type ViewStyle } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useReducedMotion,
@@ -6,9 +6,9 @@ import Animated, {
   withRepeat,
   withTiming,
   Easing,
-} from 'react-native-reanimated';
-import { useEffect } from 'react';
-import { useTheme } from '../../providers/ThemeProvider';
+} from "react-native-reanimated";
+import { useEffect } from "react";
+import { useTheme } from "../../providers/ThemeProvider";
 
 interface SkeletonProps {
   width?: DimensionValue;
@@ -17,12 +17,7 @@ interface SkeletonProps {
   style?: ViewStyle;
 }
 
-export function Skeleton({
-  width = '100%',
-  height = 16,
-  borderRadius,
-  style,
-}: SkeletonProps) {
+export function Skeleton({ width = "100%", height = 16, borderRadius, style }: SkeletonProps) {
   const { colors, borderRadius: br } = useTheme();
   const reducedMotion = useReducedMotion();
   const opacity = useSharedValue(0.3);

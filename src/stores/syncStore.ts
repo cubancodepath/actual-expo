@@ -1,7 +1,7 @@
-import { create } from 'zustand';
-import { fullSync } from '../sync';
+import { create } from "zustand";
+import { fullSync } from "../sync";
 
-type SyncStatus = 'idle' | 'syncing' | 'error' | 'success';
+type SyncStatus = "idle" | "syncing" | "error" | "success";
 
 type SyncState = {
   status: SyncStatus;
@@ -13,27 +13,27 @@ type SyncState = {
 };
 
 export const useSyncStore = create<SyncState>((set) => ({
-  status: 'idle',
+  status: "idle",
   error: null,
   lastSync: null,
 
   async sync() {
-    set({ status: 'syncing', error: null });
+    set({ status: "syncing", error: null });
     try {
       await fullSync();
-      set({ status: 'success', lastSync: new Date() });
+      set({ status: "success", lastSync: new Date() });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
-      set({ status: 'error', error: msg });
+      set({ status: "error", error: msg });
     }
   },
 
   _setStatus(status) {
     set({ status });
-    if (status === 'success') set({ lastSync: new Date() });
+    if (status === "success") set({ lastSync: new Date() });
   },
 
   _setError(error) {
-    set({ status: 'error', error });
+    set({ status: "error", error });
   },
 }));

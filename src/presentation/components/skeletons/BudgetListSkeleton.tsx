@@ -1,7 +1,7 @@
-import { View } from 'react-native';
-import { useTheme } from '../../providers/ThemeProvider';
-import { Skeleton } from '../atoms/Skeleton';
-import { Card } from '../atoms/Card';
+import { View } from "react-native";
+import { useTheme } from "../../providers/ThemeProvider";
+import { Skeleton } from "../atoms/Skeleton";
+import { Card } from "../atoms/Card";
 
 const GROUPS = 2;
 const CATS_PER_GROUP = 3;
@@ -14,8 +14,8 @@ function GroupSkeleton() {
       {/* Group header */}
       <View
         style={{
-          flexDirection: 'row',
-          alignItems: 'center',
+          flexDirection: "row",
+          alignItems: "center",
           paddingHorizontal: spacing.lg + spacing.lg,
           paddingTop: spacing.lg + spacing.md,
           paddingBottom: spacing.md,
@@ -33,14 +33,14 @@ function GroupSkeleton() {
           <View
             key={i}
             style={{
-              flexDirection: 'row',
-              alignItems: 'center',
+              flexDirection: "row",
+              alignItems: "center",
               paddingHorizontal: spacing.lg,
               paddingVertical: 12,
               minHeight: 44,
               gap: spacing.sm,
               borderBottomWidth: i < CATS_PER_GROUP - 1 ? 0.5 : 0,
-              borderBottomColor: 'rgba(255,255,255,0.06)',
+              borderBottomColor: "rgba(255,255,255,0.06)",
             }}
           >
             <Skeleton width="45%" height={14} />

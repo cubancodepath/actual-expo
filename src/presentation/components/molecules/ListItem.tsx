@@ -38,11 +38,19 @@ export function ListItem({
   const { colors, spacing } = useTheme();
 
   const content = (
-    <View style={[styles.container, { paddingVertical: spacing.md, paddingHorizontal: spacing.lg }, style]}>
+    <View
+      style={[
+        styles.container,
+        { paddingVertical: spacing.md, paddingHorizontal: spacing.lg },
+        style,
+      ]}
+    >
       {left && <View style={[styles.left, { marginRight: spacing.md }]}>{left}</View>}
 
       <View style={styles.content}>
-        <Text variant="bodyLg" color={titleColor}>{title}</Text>
+        <Text variant="bodyLg" color={titleColor}>
+          {title}
+        </Text>
         {subtitle && (
           <Text variant="bodySm" color={colors.textSecondary}>
             {subtitle}

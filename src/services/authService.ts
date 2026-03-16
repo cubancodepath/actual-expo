@@ -7,7 +7,7 @@ export type BudgetFile = {
   ownerName?: string;
 };
 
-export type LoginMethod = 'password' | 'openid' | 'header';
+export type LoginMethod = "password" | "openid" | "header";
 
 export type BootstrapInfo = {
   bootstrapped: boolean;
@@ -26,7 +26,7 @@ export async function getBootstrapInfo(serverUrl: string): Promise<BootstrapInfo
 
   // availableLoginMethods is the modern shape; loginMethod is the legacy scalar
   const methods: { method: string; active: boolean }[] = data?.availableLoginMethods ?? [];
-  const activeMethod = methods.find(m => m.active)?.method ?? data?.loginMethod ?? 'password';
+  const activeMethod = methods.find((m) => m.active)?.method ?? data?.loginMethod ?? "password";
 
   return {
     bootstrapped,
@@ -36,19 +36,19 @@ export async function getBootstrapInfo(serverUrl: string): Promise<BootstrapInfo
 
 export async function login(serverUrl: string, password: string): Promise<string> {
   const res = await fetch(`${serverUrl}/account/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ password }),
   });
 
   if (!res.ok) {
-    const text = await res.text().catch(() => '');
+    const text = await res.text().catch(() => "");
     throw new Error(`Login failed (${res.status}): ${text}`);
   }
 
   const json = await res.json();
   const token: string = json?.data?.token ?? json?.token;
-  if (!token) throw new Error('No token in response');
+  if (!token) throw new Error("No token in response");
   return token;
 }
 
@@ -58,38 +58,35 @@ export async function login(serverUrl: string, password: string): Promise<string
  *
  * Returns the provider authorization URL to open in the system browser.
  */
-export async function initiateOpenIdLogin(
-  serverUrl: string,
-  returnUrl: string,
-): Promise<string> {
+export async function initiateOpenIdLogin(serverUrl: string, returnUrl: string): Promise<string> {
   const res = await fetch(`${serverUrl}/account/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ loginMethod: 'openid', returnUrl }),
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ loginMethod: "openid", returnUrl }),
   });
 
   if (!res.ok) {
-    const text = await res.text().catch(() => '');
+    const text = await res.text().catch(() => "");
     throw new Error(`OpenID login failed (${res.status}): ${text}`);
   }
 
   const json = await res.json();
   const authUrl: string = json?.data?.redirectUrl ?? json?.data?.returnUrl ?? json?.redirectUrl;
-  if (!authUrl) throw new Error('No redirect URL returned from server');
+  if (!authUrl) throw new Error("No redirect URL returned from server");
   return authUrl;
 }
 
 export async function listFiles(serverUrl: string, token: string): Promise<BudgetFile[]> {
   const res = await fetch(`${serverUrl}/sync/list-user-files`, {
     headers: {
-      'x-actual-token': token,
+      "x-actual-token": token,
     },
   });
 
   if (res.status === 401 || res.status === 403) {
-    const { usePrefsStore } = await import('../stores/prefsStore');
+    const { usePrefsStore } = await import("../stores/prefsStore");
     usePrefsStore.getState().clearAll();
-    throw new Error('Session expired. Please log in again.');
+    throw new Error("Session expired. Please log in again.");
   }
 
   if (!res.ok) {
@@ -97,14 +94,16 @@ export async function listFiles(serverUrl: string, token: string): Promise<Budge
   }
 
   const json = await res.json();
-  const files: BudgetFile[] = (Array.isArray(json?.data) ? json.data : (json?.data?.files ?? json?.files ?? [])).map((f: Record<string, unknown>) => ({
+  const files: BudgetFile[] = (
+    Array.isArray(json?.data) ? json.data : (json?.data?.files ?? json?.files ?? [])
+  ).map((f: Record<string, unknown>) => ({
     fileId: f.fileId ?? f.id,
     groupId: f.groupId,
     name: f.name,
     encryptKeyId: f.encryptKeyId ?? undefined,
     deleted: f.deleted === 1 || f.deleted === true,
     ownerName: Array.isArray(f.usersWithAccess)
-      ? (f.usersWithAccess as any[]).find(u => u.owner)?.displayName
+      ? (f.usersWithAccess as any[]).find((u) => u.owner)?.displayName
       : undefined,
   }));
   return files;

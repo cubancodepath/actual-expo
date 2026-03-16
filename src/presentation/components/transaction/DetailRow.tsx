@@ -1,8 +1,8 @@
-import { Pressable, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useTheme, useThemedStyles } from '../../providers/ThemeProvider';
-import { Text } from '../atoms/Text';
-import type { Theme } from '../../../theme';
+import { Pressable, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
+import { Text } from "../atoms/Text";
+import type { Theme } from "../../../theme";
 
 interface DetailRowProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -43,16 +43,16 @@ export function DetailRow({ icon, label, placeholder, onPress, onClear }: Detail
 
 const createStyles = (theme: Theme) => ({
   row: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'space-between' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.md,
     minHeight: 44,
   },
   left: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
     flex: 1,
   },
   label: {

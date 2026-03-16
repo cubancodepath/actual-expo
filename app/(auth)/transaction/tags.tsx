@@ -1,21 +1,29 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useTheme, useThemedStyles } from '../../../src/presentation/providers/ThemeProvider';
-import { useTagsStore } from '../../../src/stores/tagsStore';
-import { usePickerStore } from '../../../src/stores/pickerStore';
-import { Text } from '../../../src/presentation/components/atoms/Text';
-import { IconButton } from '../../../src/presentation/components/atoms/IconButton';
-import { TagPill } from '../../../src/presentation/components/atoms/TagPill';
-import { SearchBar } from '../../../src/presentation/components/molecules/SearchBar';
-import { getTransactionById, updateTransaction } from '../../../src/transactions';
-import { extractTagsFromNotes } from '../../../src/tags';
-import type { Theme } from '../../../src/theme';
+import { useCallback, useEffect, useState } from "react";
+import { Pressable, ScrollView, View } from "react-native";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { useTheme, useThemedStyles } from "../../../src/presentation/providers/ThemeProvider";
+import { useTagsStore } from "../../../src/stores/tagsStore";
+import { usePickerStore } from "../../../src/stores/pickerStore";
+import { Text } from "../../../src/presentation/components/atoms/Text";
+import { IconButton } from "../../../src/presentation/components/atoms/IconButton";
+import { TagPill } from "../../../src/presentation/components/atoms/TagPill";
+import { SearchBar } from "../../../src/presentation/components/molecules/SearchBar";
+import { getTransactionById, updateTransaction } from "../../../src/transactions";
+import { extractTagsFromNotes } from "../../../src/tags";
+import type { Theme } from "../../../src/theme";
 
 const TAG_COLORS = [
-  '#8719e0', '#2186eb', '#27ab83', '#f59b42', '#e12d39',
-  '#b57bee', '#0b69d4', '#3ebd93', '#de7818', '#9446ed',
+  "#8719e0",
+  "#2186eb",
+  "#27ab83",
+  "#f59b42",
+  "#e12d39",
+  "#b57bee",
+  "#0b69d4",
+  "#3ebd93",
+  "#de7818",
+  "#9446ed",
 ];
 
 function pickDefaultColor(existingCount: number): string {
@@ -28,30 +36,30 @@ export default function TransactionTagsScreen() {
   const router = useRouter();
   const { transactionId, mode, currentNotes } = useLocalSearchParams<{
     transactionId?: string;
-    mode?: 'direct' | 'picker';
+    mode?: "direct" | "picker";
     currentNotes?: string;
   }>();
 
-  const isPickerMode = mode === 'picker';
+  const isPickerMode = mode === "picker";
   const { tags, create: createTag, load: loadTags } = useTagsStore();
   const setPickerTags = usePickerStore((s) => s.setTags);
 
-  const [notes, setNotes] = useState('');
+  const [notes, setNotes] = useState("");
   const [activeTags, setActiveTags] = useState<Set<string>>(new Set());
-  const [searchText, setSearchText] = useState('');
+  const [searchText, setSearchText] = useState("");
   const [loaded, setLoaded] = useState(false);
 
   // Load initial state
   useEffect(() => {
     if (isPickerMode) {
-      const n = currentNotes ?? '';
+      const n = currentNotes ?? "";
       setNotes(n);
       setActiveTags(new Set(extractTagsFromNotes(n)));
       setLoaded(true);
     } else if (transactionId) {
       getTransactionById(transactionId).then((txn) => {
         if (txn) {
-          setNotes(txn.notes ?? '');
+          setNotes(txn.notes ?? "");
           setActiveTags(new Set(extractTagsFromNotes(txn.notes)));
         }
         setLoaded(true);
@@ -60,9 +68,7 @@ export default function TransactionTagsScreen() {
   }, [transactionId, isPickerMode, currentNotes]);
 
   const query = searchText.toLowerCase().trim();
-  const filteredTags = query
-    ? tags.filter((t) => t.tag.toLowerCase().includes(query))
-    : tags;
+  const filteredTags = query ? tags.filter((t) => t.tag.toLowerCase().includes(query)) : tags;
 
   const exactMatch = tags.some((t) => t.tag.toLowerCase() === query);
   const showCreate = query.length > 0 && !exactMatch;
@@ -92,10 +98,7 @@ export default function TransactionTagsScreen() {
     if (next.has(tagName)) {
       next.delete(tagName);
       newNotes = notes
-        .replace(
-          new RegExp(`\\s?#${tagName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g'),
-          '',
-        )
+        .replace(new RegExp(`\\s?#${tagName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "g"), "")
         .trim();
     } else {
       next.add(tagName);
@@ -105,13 +108,13 @@ export default function TransactionTagsScreen() {
   }
 
   async function handleCreate() {
-    const tagName = searchText.trim().replace(/^#/, '').replace(/\s/g, '');
+    const tagName = searchText.trim().replace(/^#/, "").replace(/\s/g, "");
     if (!tagName) return;
 
     const color = pickDefaultColor(tags.length);
     await createTag({ tag: tagName, color });
     await loadTags();
-    setSearchText('');
+    setSearchText("");
 
     const next = new Set(activeTags);
     next.add(tagName);
@@ -130,7 +133,7 @@ export default function TransactionTagsScreen() {
     >
       <Stack.Screen
         options={{
-          title: 'Tags',
+          title: "Tags",
           headerLeft: () => (
             <IconButton
               sfSymbol="xmark"
@@ -159,7 +162,7 @@ export default function TransactionTagsScreen() {
             <Text
               variant="body"
               color={colors.primary}
-              style={{ fontWeight: '600', marginLeft: spacing.sm }}
+              style={{ fontWeight: "600", marginLeft: spacing.sm }}
             >
               Create &quot;{searchText.trim()}&quot;
             </Text>
@@ -170,12 +173,8 @@ export default function TransactionTagsScreen() {
       {filteredTags.length > 0 && (
         <>
           <View style={styles.sectionHeader}>
-            <Text
-              variant="captionSm"
-              color={colors.textMuted}
-              style={styles.sectionText}
-            >
-              {query ? 'RESULTS' : 'ALL TAGS'}
+            <Text variant="captionSm" color={colors.textMuted} style={styles.sectionText}>
+              {query ? "RESULTS" : "ALL TAGS"}
             </Text>
           </View>
           <View style={styles.groupCard}>
@@ -190,13 +189,9 @@ export default function TransactionTagsScreen() {
                 >
                   <TagPill tagName={tag.tag} color={tag.color} />
                   <View style={{ flex: 1 }} />
-                  {isActive && (
-                    <Ionicons name="checkmark" size={20} color={colors.primary} />
-                  )}
+                  {isActive && <Ionicons name="checkmark" size={20} color={colors.primary} />}
                   {!isLast && (
-                    <View
-                      style={[styles.divider, { backgroundColor: colors.divider }]}
-                    />
+                    <View style={[styles.divider, { backgroundColor: colors.divider }]} />
                   )}
                 </Pressable>
               );
@@ -231,7 +226,7 @@ const createStyles = (theme: Theme) => ({
     paddingBottom: theme.spacing.sm,
   },
   sectionText: {
-    fontWeight: '700' as const,
+    fontWeight: "700" as const,
     letterSpacing: 0.8,
   },
   createCard: {
@@ -241,7 +236,7 @@ const createStyles = (theme: Theme) => ({
     borderRadius: theme.borderRadius.lg,
     borderWidth: theme.borderWidth.thin,
     borderColor: theme.colors.cardBorder,
-    overflow: 'hidden' as const,
+    overflow: "hidden" as const,
   },
   groupCard: {
     marginHorizontal: theme.spacing.lg,
@@ -249,11 +244,11 @@ const createStyles = (theme: Theme) => ({
     borderRadius: theme.borderRadius.lg,
     borderWidth: theme.borderWidth.thin,
     borderColor: theme.colors.cardBorder,
-    overflow: 'hidden' as const,
+    overflow: "hidden" as const,
   },
   item: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.md,
     minHeight: 44,
@@ -262,14 +257,14 @@ const createStyles = (theme: Theme) => ({
     opacity: 0.7,
   },
   divider: {
-    position: 'absolute' as const,
+    position: "absolute" as const,
     bottom: 0,
     left: theme.spacing.lg,
     right: theme.spacing.lg,
     height: theme.borderWidth.thin,
   },
   empty: {
-    alignItems: 'center' as const,
+    alignItems: "center" as const,
     paddingTop: theme.spacing.xl,
   },
 });

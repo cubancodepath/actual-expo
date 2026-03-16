@@ -1,22 +1,22 @@
-import { useState } from 'react';
-import { Platform, Pressable, TextInput, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useTheme, useThemedStyles } from '../../providers/ThemeProvider';
-import { Text } from '../atoms/Text';
-import { formatDateLong, formatInputDate, intToStr, strToInt } from '../../../lib/date';
-import type { Theme } from '../../../theme';
+import { useState } from "react";
+import { Platform, Pressable, TextInput, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
+import { Text } from "../atoms/Text";
+import { formatDateLong, formatInputDate, intToStr, strToInt } from "../../../lib/date";
+import type { Theme } from "../../../theme";
 
 // Conditionally import SwiftUI DatePicker on iOS
-let SwiftDatePicker: typeof import('@expo/ui/swift-ui').DatePicker | null = null;
-let Host: typeof import('@expo/ui/swift-ui').Host | null = null;
-let datePickerStyleMod: typeof import('@expo/ui/swift-ui/modifiers').datePickerStyle | null = null;
-let tintMod: typeof import('@expo/ui/swift-ui/modifiers').tint | null = null;
-if (Platform.OS === 'ios') {
+let SwiftDatePicker: typeof import("@expo/ui/swift-ui").DatePicker | null = null;
+let Host: typeof import("@expo/ui/swift-ui").Host | null = null;
+let datePickerStyleMod: typeof import("@expo/ui/swift-ui/modifiers").datePickerStyle | null = null;
+let tintMod: typeof import("@expo/ui/swift-ui/modifiers").tint | null = null;
+if (Platform.OS === "ios") {
   try {
-    const swiftUI = require('@expo/ui/swift-ui');
+    const swiftUI = require("@expo/ui/swift-ui");
     SwiftDatePicker = swiftUI.DatePicker;
     Host = swiftUI.Host;
-    const mods = require('@expo/ui/swift-ui/modifiers');
+    const mods = require("@expo/ui/swift-ui/modifiers");
     datePickerStyleMod = mods.datePickerStyle;
     tintMod = mods.tint;
   } catch {
@@ -27,8 +27,8 @@ if (Platform.OS === 'ios') {
 /** Convert a Date object to YYYYMMDD integer */
 function dateToInt(d: Date): number {
   const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
   return parseInt(`${y}${m}${day}`, 10);
 }
 
@@ -55,30 +55,26 @@ export function DatePickerField({ dateInt, dateStr, onDateChange }: DatePickerFi
 
   return (
     <>
-      <Pressable
-        style={styles.row}
-        onPress={() => setShowPicker(!showPicker)}
-      >
+      <Pressable style={styles.row} onPress={() => setShowPicker(!showPicker)}>
         <View style={styles.left}>
           <Ionicons name="calendar-outline" size={18} color={theme.colors.textMuted} />
           <Text variant="body" color={theme.colors.textPrimary} style={styles.label}>
             {formatDateLong(dateInt)}
           </Text>
         </View>
-        <Ionicons
-          name="chevron-forward"
-          size={18}
-          color={theme.colors.textMuted}
-        />
+        <Ionicons name="chevron-forward" size={18} color={theme.colors.textMuted} />
       </Pressable>
-      {showPicker && (
-        Platform.OS === 'ios' && SwiftDatePicker && Host && datePickerStyleMod ? (
+      {showPicker &&
+        (Platform.OS === "ios" && SwiftDatePicker && Host && datePickerStyleMod ? (
           <View style={styles.pickerContainer}>
             <Host matchContents={{ vertical: true }}>
               <SwiftDatePicker
                 selection={intToDate(dateInt)}
-                displayedComponents={['date']}
-                modifiers={[datePickerStyleMod('graphical'), ...(tintMod ? [tintMod(theme.colors.primary)] : [])]}
+                displayedComponents={["date"]}
+                modifiers={[
+                  datePickerStyleMod("graphical"),
+                  ...(tintMod ? [tintMod(theme.colors.primary)] : []),
+                ]}
                 onDateChange={(d) => {
                   const newInt = dateToInt(d);
                   onDateChange(newInt, intToStr(newInt));
@@ -104,24 +100,23 @@ export function DatePickerField({ dateInt, dateStr, onDateChange }: DatePickerFi
               autoFocus
             />
           </View>
-        )
-      )}
+        ))}
     </>
   );
 }
 
 const createStyles = (theme: Theme) => ({
   row: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'space-between' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.md,
     minHeight: 44,
   },
   left: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
     flex: 1,
   },
   label: {

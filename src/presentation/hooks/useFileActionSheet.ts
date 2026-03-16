@@ -1,6 +1,6 @@
-import { ActionSheetIOS, Alert, Platform } from 'react-native';
-import { useTranslation } from 'react-i18next';
-import type { ReconciledBudgetFile } from '../../services/budgetfiles';
+import { ActionSheetIOS, Alert, Platform } from "react-native";
+import { useTranslation } from "react-i18next";
+import type { ReconciledBudgetFile } from "../../services/budgetfiles";
 
 type FileActions = {
   uploadFile: (file: ReconciledBudgetFile) => Promise<void>;
@@ -11,40 +11,44 @@ type FileActions = {
 };
 
 export function useFileActionSheet(actions: FileActions) {
-  const { t } = useTranslation('auth');
-  const { t: tc } = useTranslation('common');
-  const { t: ts } = useTranslation('settings');
+  const { t } = useTranslation("auth");
+  const { t: tc } = useTranslation("common");
+  const { t: ts } = useTranslation("settings");
 
   function showActions(file: ReconciledBudgetFile) {
-    const name = file.name || t('unnamedBudget');
+    const name = file.name || t("unnamedBudget");
 
     switch (file.state) {
-      case 'local':
+      case "local":
         return showLocalActions(file, name);
-      case 'synced':
+      case "synced":
         return showSyncedActions(file, name);
-      case 'detached':
+      case "detached":
         return showDetachedActions(file, name);
-      case 'remote':
+      case "remote":
         return showRemoteActions(file, name);
     }
   }
 
   function showLocalActions(file: ReconciledBudgetFile, name: string) {
-    const options = [t('uploadToServer'), ts('deleteFromDevice'), tc('cancel')];
+    const options = [t("uploadToServer"), ts("deleteFromDevice"), tc("cancel")];
     const destructiveIndex = 1;
     const cancelIndex = 2;
 
     const handler = (index: number) => {
       if (index === 0) {
-        Alert.alert(t('uploadToServer'), t('uploadBudgetConfirm', { name }), [
-          { text: tc('cancel'), style: 'cancel' },
-          { text: tc('upload'), onPress: () => actions.uploadFile(file).catch(() => {}) },
+        Alert.alert(t("uploadToServer"), t("uploadBudgetConfirm", { name }), [
+          { text: tc("cancel"), style: "cancel" },
+          { text: tc("upload"), onPress: () => actions.uploadFile(file).catch(() => {}) },
         ]);
       } else if (index === 1) {
-        Alert.alert(t('deleteBudget'), t('deleteBudgetLocal', { name }), [
-          { text: tc('cancel'), style: 'cancel' },
-          { text: tc('delete'), style: 'destructive', onPress: () => actions.deleteFile(file, false).catch(() => {}) },
+        Alert.alert(t("deleteBudget"), t("deleteBudgetLocal", { name }), [
+          { text: tc("cancel"), style: "cancel" },
+          {
+            text: tc("delete"),
+            style: "destructive",
+            onPress: () => actions.deleteFile(file, false).catch(() => {}),
+          },
         ]);
       }
     };
@@ -53,20 +57,28 @@ export function useFileActionSheet(actions: FileActions) {
   }
 
   function showSyncedActions(file: ReconciledBudgetFile, name: string) {
-    const options = [ts('deleteFromDevice'), ts('deleteFromAllDevices'), tc('cancel')];
+    const options = [ts("deleteFromDevice"), ts("deleteFromAllDevices"), tc("cancel")];
     const destructiveIndex = 1;
     const cancelIndex = 2;
 
     const handler = (index: number) => {
       if (index === 0) {
-        Alert.alert(t('deleteBudget'), t('deleteBudgetLocal', { name }), [
-          { text: tc('cancel'), style: 'cancel' },
-          { text: tc('delete'), style: 'destructive', onPress: () => actions.deleteFile(file, false).catch(() => {}) },
+        Alert.alert(t("deleteBudget"), t("deleteBudgetLocal", { name }), [
+          { text: tc("cancel"), style: "cancel" },
+          {
+            text: tc("delete"),
+            style: "destructive",
+            onPress: () => actions.deleteFile(file, false).catch(() => {}),
+          },
         ]);
       } else if (index === 1) {
-        Alert.alert(t('deleteBudget'), t('deleteBudgetSynced', { name }), [
-          { text: tc('cancel'), style: 'cancel' },
-          { text: t('deleteFromAllDevices'), style: 'destructive', onPress: () => actions.deleteFile(file, true).catch(() => {}) },
+        Alert.alert(t("deleteBudget"), t("deleteBudgetSynced", { name }), [
+          { text: tc("cancel"), style: "cancel" },
+          {
+            text: t("deleteFromAllDevices"),
+            style: "destructive",
+            onPress: () => actions.deleteFile(file, true).catch(() => {}),
+          },
         ]);
       }
     };
@@ -75,25 +87,34 @@ export function useFileActionSheet(actions: FileActions) {
   }
 
   function showDetachedActions(file: ReconciledBudgetFile, name: string) {
-    const options = [t('reUploadToServer'), t('keepLocalOnly'), ts('deleteFromDevice'), tc('cancel')];
+    const options = [
+      t("reUploadToServer"),
+      t("keepLocalOnly"),
+      ts("deleteFromDevice"),
+      tc("cancel"),
+    ];
     const destructiveIndex = 2;
     const cancelIndex = 3;
 
     const handler = (index: number) => {
       if (index === 0) {
-        Alert.alert(t('reUploadToServer'), t('reUploadConfirm', { name }), [
-          { text: tc('cancel'), style: 'cancel' },
-          { text: tc('upload'), onPress: () => actions.reRegister(file).catch(() => {}) },
+        Alert.alert(t("reUploadToServer"), t("reUploadConfirm", { name }), [
+          { text: tc("cancel"), style: "cancel" },
+          { text: tc("upload"), onPress: () => actions.reRegister(file).catch(() => {}) },
         ]);
       } else if (index === 1) {
-        Alert.alert(t('keepLocalOnly'), t('keepLocalConfirm', { name }), [
-          { text: tc('cancel'), style: 'cancel' },
-          { text: tc('confirm'), onPress: () => actions.convertToLocal(file).catch(() => {}) },
+        Alert.alert(t("keepLocalOnly"), t("keepLocalConfirm", { name }), [
+          { text: tc("cancel"), style: "cancel" },
+          { text: tc("confirm"), onPress: () => actions.convertToLocal(file).catch(() => {}) },
         ]);
       } else if (index === 2) {
-        Alert.alert(t('deleteBudget'), t('deleteBudgetLocal', { name }), [
-          { text: tc('cancel'), style: 'cancel' },
-          { text: tc('delete'), style: 'destructive', onPress: () => actions.deleteFile(file, false).catch(() => {}) },
+        Alert.alert(t("deleteBudget"), t("deleteBudgetLocal", { name }), [
+          { text: tc("cancel"), style: "cancel" },
+          {
+            text: tc("delete"),
+            style: "destructive",
+            onPress: () => actions.deleteFile(file, false).catch(() => {}),
+          },
         ]);
       }
     };
@@ -102,7 +123,7 @@ export function useFileActionSheet(actions: FileActions) {
   }
 
   function showRemoteActions(file: ReconciledBudgetFile, name: string) {
-    const options = [tc('download'), t('deleteFromServer'), tc('cancel')];
+    const options = [tc("download"), t("deleteFromServer"), tc("cancel")];
     const destructiveIndex = 1;
     const cancelIndex = 2;
 
@@ -110,9 +131,13 @@ export function useFileActionSheet(actions: FileActions) {
       if (index === 0) {
         actions.selectFile(file).catch(() => {});
       } else if (index === 1) {
-        Alert.alert(t('deleteBudget'), t('deleteBudgetFromServer', { name }), [
-          { text: tc('cancel'), style: 'cancel' },
-          { text: t('deleteFromServer'), style: 'destructive', onPress: () => actions.deleteFile(file, true).catch(() => {}) },
+        Alert.alert(t("deleteBudget"), t("deleteBudgetFromServer", { name }), [
+          { text: tc("cancel"), style: "cancel" },
+          {
+            text: t("deleteFromServer"),
+            style: "destructive",
+            onPress: () => actions.deleteFile(file, true).catch(() => {}),
+          },
         ]);
       }
     };
@@ -129,7 +154,7 @@ function showSheet(
   destructiveIndex: number,
   handler: (index: number) => void,
 ) {
-  if (Platform.OS === 'ios') {
+  if (Platform.OS === "ios") {
     ActionSheetIOS.showActionSheetWithOptions(
       { options, cancelButtonIndex: cancelIndex, destructiveButtonIndex: destructiveIndex },
       handler,
@@ -140,10 +165,10 @@ function showSheet(
       .filter((_, i) => i !== cancelIndex)
       .map((label, i) => ({
         text: label,
-        style: (i === destructiveIndex ? 'destructive' : 'default') as 'destructive' | 'default',
+        style: (i === destructiveIndex ? "destructive" : "default") as "destructive" | "default",
         onPress: () => handler(i),
       }));
-    buttons.push({ text: options[cancelIndex], style: 'default' as const, onPress: () => {} });
-    Alert.alert('', '', buttons);
+    buttons.push({ text: options[cancelIndex], style: "default" as const, onPress: () => {} });
+    Alert.alert("", "", buttons);
   }
 }

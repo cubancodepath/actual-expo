@@ -6,9 +6,9 @@
  * noted otherwise (template definition amounts are in display units).
  */
 
-import { first, runQuery } from '../db';
-import { addMonths, monthToInt } from '../lib/date';
-import { ALIVE_TX_FILTER } from '../db/filters';
+import { first, runQuery } from "../db";
+import { addMonths, monthToInt } from "../lib/date";
+import { ALIVE_TX_FILTER } from "../db/filters";
 import type {
   AverageTemplate,
   ByTemplate,
@@ -23,7 +23,7 @@ import type {
   SimpleTemplate,
   SpendTemplate,
   Template,
-} from './types';
+} from "./types";
 
 // ---------------------------------------------------------------------------
 // Amount conversion helpers (display units ↔ integer cents)
@@ -49,10 +49,7 @@ export function integerToAmount(amount: number): number {
  * Get total spent for a category in a given month (returns negative cents
  * for expenses, positive for income — same as transaction amounts).
  */
-export async function getSpentForMonth(
-  categoryId: string,
-  month: string,
-): Promise<number> {
+export async function getSpentForMonth(categoryId: string, month: string): Promise<number> {
   const monthInt = monthToInt(month);
   const startDate = monthInt * 100 + 1;
   const endDate = monthInt * 100 + 31;
@@ -74,13 +71,10 @@ export async function getSpentForMonth(
  * Get the budgeted amount for a category in a given month (integer cents).
  * Used by Copy and Spend templates.
  */
-async function getBudgetedForMonth(
-  categoryId: string,
-  month: string,
-): Promise<number> {
+async function getBudgetedForMonth(categoryId: string, month: string): Promise<number> {
   const monthInt = monthToInt(month);
   const row = await first<{ amount: number }>(
-    'SELECT COALESCE(amount, 0) AS amount FROM zero_budgets WHERE month = ? AND category = ?',
+    "SELECT COALESCE(amount, 0) AS amount FROM zero_budgets WHERE month = ? AND category = ?",
     [monthInt, categoryId],
   );
   return row?.amount ?? 0;
@@ -90,15 +84,12 @@ async function getBudgetedForMonth(
  * Get total income for a month, optionally for a specific category.
  * Used by Percentage template.
  */
-async function getIncomeForMonth(
-  month: string,
-  categoryId?: string,
-): Promise<number> {
+async function getIncomeForMonth(month: string, categoryId?: string): Promise<number> {
   const monthInt = monthToInt(month);
   const startDate = monthInt * 100 + 1;
   const endDate = monthInt * 100 + 31;
 
-  if (categoryId && categoryId !== 'all-income') {
+  if (categoryId && categoryId !== "all-income") {
     return getSpentForMonth(categoryId, month);
   }
 
@@ -122,8 +113,8 @@ async function getIncomeForMonth(
 // ---------------------------------------------------------------------------
 
 function diffMonths(to: string, from: string): number {
-  const [toY, toM] = to.split('-').map(Number);
-  const [fromY, fromM] = from.split('-').map(Number);
+  const [toY, toM] = to.split("-").map(Number);
+  const [fromY, fromM] = from.split("-").map(Number);
   return (toY - fromY) * 12 + (toM - fromM);
 }
 
@@ -132,20 +123,20 @@ function diffMonths(to: string, from: string): number {
 // ---------------------------------------------------------------------------
 
 function calculateLimit(limit: LimitDef, month: string): number {
-  if (limit.period === 'monthly') {
+  if (limit.period === "monthly") {
     return amountToInteger(limit.amount);
   }
 
-  if (limit.period === 'daily') {
+  if (limit.period === "daily") {
     // Days in this month
-    const [y, m] = month.split('-').map(Number);
+    const [y, m] = month.split("-").map(Number);
     const numDays = new Date(y, m, 0).getDate();
     return amountToInteger(limit.amount) * numDays;
   }
 
-  if (limit.period === 'weekly') {
+  if (limit.period === "weekly") {
     if (!limit.start) {
-      throw new Error('Weekly limit requires a start date (YYYY-MM-DD)');
+      throw new Error("Weekly limit requires a start date (YYYY-MM-DD)");
     }
     const nextMonth = addMonths(month, 1);
     const baseLimit = amountToInteger(limit.amount);
@@ -190,11 +181,7 @@ function limitTemplateToLimitDef(t: LimitTemplate): LimitDef {
 // Individual template runners
 // ---------------------------------------------------------------------------
 
-function runSimple(
-  template: SimpleTemplate,
-  fromLastMonth: number,
-  limitAmount: number,
-): number {
+function runSimple(template: SimpleTemplate, fromLastMonth: number, limitAmount: number): number {
   if (template.monthly != null) {
     return amountToInteger(template.monthly);
   }
@@ -206,11 +193,7 @@ function runRefill(fromLastMonth: number, limitAmount: number): number {
   return Math.max(0, limitAmount - fromLastMonth);
 }
 
-async function runCopy(
-  template: CopyTemplate,
-  categoryId: string,
-  month: string,
-): Promise<number> {
+async function runCopy(template: CopyTemplate, categoryId: string, month: string): Promise<number> {
   const pastMonth = addMonths(month, -template.lookBack);
   return getBudgetedForMonth(categoryId, pastMonth);
 }
@@ -220,10 +203,8 @@ function runPeriodic(template: PeriodicTemplate, month: string): number {
   const { period, amount: interval } = template.period;
 
   // Starting date defaults to 1st of current month
-  const [monthY, monthM] = month.split('-').map(Number);
-  let current = template.starting
-    ? new Date(template.starting)
-    : new Date(monthY, monthM - 1, 1);
+  const [monthY, monthM] = month.split("-").map(Number);
+  let current = template.starting ? new Date(template.starting) : new Date(monthY, monthM - 1, 1);
 
   const monthStart = new Date(monthY, monthM - 1, 1);
   const monthEnd = new Date(monthY, monthM, 0); // Last day of month
@@ -246,23 +227,19 @@ function runPeriodic(template: PeriodicTemplate, month: string): number {
   return total;
 }
 
-function shiftDate(
-  date: Date,
-  period: 'day' | 'week' | 'month' | 'year',
-  amount: number,
-): Date {
+function shiftDate(date: Date, period: "day" | "week" | "month" | "year", amount: number): Date {
   const d = new Date(date);
   switch (period) {
-    case 'day':
+    case "day":
       d.setDate(d.getDate() + amount);
       break;
-    case 'week':
+    case "week":
       d.setDate(d.getDate() + amount * 7);
       break;
-    case 'month':
+    case "month":
       d.setMonth(d.getMonth() + amount);
       break;
-    case 'year':
+    case "year":
       d.setFullYear(d.getFullYear() + amount);
       break;
   }
@@ -275,9 +252,7 @@ async function runSpend(
   month: string,
 ): Promise<number> {
   let targetMonth = template.month;
-  const period = template.annual
-    ? (template.repeat || 1) * 12
-    : template.repeat ?? null;
+  const period = template.annual ? (template.repeat || 1) * 12 : (template.repeat ?? null);
 
   // Advance target if it's in the past
   let numMonths = diffMonths(targetMonth, month);
@@ -304,23 +279,16 @@ async function runSpend(
   return Math.round(remaining / (numMonths + 1));
 }
 
-async function runPercentage(
-  template: PercentageTemplate,
-  month: string,
-): Promise<number> {
+async function runPercentage(template: PercentageTemplate, month: string): Promise<number> {
   const incomeMonth = template.previous ? addMonths(month, -1) : month;
-  const categoryId = template.category === 'all-income' ? undefined : template.category;
+  const categoryId = template.category === "all-income" ? undefined : template.category;
   const income = await getIncomeForMonth(incomeMonth, categoryId);
 
   // Income is positive for income categories
-  return Math.max(0, Math.round(Math.abs(income) * template.percent / 100));
+  return Math.max(0, Math.round((Math.abs(income) * template.percent) / 100));
 }
 
-function runBy(
-  templates: ByTemplate[],
-  month: string,
-  fromLastMonth: number,
-): number {
+function runBy(templates: ByTemplate[], month: string, fromLastMonth: number): number {
   if (templates.length === 0) return 0;
 
   const savedInfo: { numMonths: number; period: number | null }[] = [];
@@ -330,9 +298,7 @@ function runBy(
   // Find shortest time period across all By templates
   for (const template of templates) {
     let targetMonth = template.month;
-    const period = template.annual
-      ? (template.repeat || 1) * 12
-      : template.repeat ?? null;
+    const period = template.annual ? (template.repeat || 1) * 12 : (template.repeat ?? null);
 
     let numMonths = diffMonths(targetMonth, month);
     while (numMonths < 0 && period) {
@@ -360,13 +326,10 @@ function runBy(
     if (numMonths > shortNum && period) {
       // Back-interpolate what's needed in the short window
       amount = Math.round(
-        (amountToInteger(template.amount) / period) *
-          (period - numMonths + shortNum),
+        (amountToInteger(template.amount) / period) * (period - numMonths + shortNum),
       );
     } else if (numMonths > shortNum) {
-      amount = Math.round(
-        (amountToInteger(template.amount) / (numMonths + 1)) * (shortNum + 1),
-      );
+      amount = Math.round((amountToInteger(template.amount) / (numMonths + 1)) * (shortNum + 1));
     } else {
       amount = amountToInteger(template.amount);
     }
@@ -391,9 +354,9 @@ async function runAverage(
   let average = -(sum / template.numMonths);
 
   if (template.adjustment !== undefined && template.adjustmentType) {
-    if (template.adjustmentType === 'percent') {
+    if (template.adjustmentType === "percent") {
       average = average * (1 + template.adjustment / 100);
-    } else if (template.adjustmentType === 'fixed') {
+    } else if (template.adjustmentType === "fixed") {
       average += amountToInteger(template.adjustment);
     }
   }
@@ -421,8 +384,9 @@ export type GoalContext = {
  * This means the category uses balance-based goal tracking (longGoal: true).
  */
 function isRefillOnly(templates: PriorityTemplate[]): boolean {
-  return templates.length > 0 && templates.every(
-    t => (t.type === 'simple' && t.monthly == null) || t.type === 'refill',
+  return (
+    templates.length > 0 &&
+    templates.every((t) => (t.type === "simple" && t.monthly == null) || t.type === "refill")
   );
 }
 
@@ -458,19 +422,15 @@ export async function calculateGoal(
 ): Promise<GoalResult> {
   // Separate templates by type
   const goalTemplates = templates.filter(
-    (t): t is import('./types').GoalTemplate => t.directive === 'goal',
+    (t): t is import("./types").GoalTemplate => t.directive === "goal",
   );
   const remainderTemplates = templates.filter(
-    (t): t is RemainderTemplate => t.type === 'remainder',
+    (t): t is RemainderTemplate => t.type === "remainder",
   );
-  const limitTemplates = templates.filter(
-    (t): t is LimitTemplate => t.type === 'limit',
-  );
+  const limitTemplates = templates.filter((t): t is LimitTemplate => t.type === "limit");
   const priorityTemplates = templates.filter(
     (t): t is PriorityTemplate =>
-      t.directive === 'template' &&
-      t.type !== 'remainder' &&
-      t.type !== 'limit',
+      t.directive === "template" && t.type !== "remainder" && t.type !== "limit",
   );
 
   // If only a goal directive (no budget templates), preserve existing budget
@@ -492,12 +452,12 @@ export async function calculateGoal(
 
     // If remainderBudget is set, we're in pass 2 — calculate the allocation
     if (ctx.remainderBudget !== undefined && ctx.totalWeight !== undefined && ctx.totalWeight > 0) {
-      let toBudget = Math.round(
-        (remainder.weight / ctx.totalWeight) * ctx.remainderBudget,
-      );
+      let toBudget = Math.round((remainder.weight / ctx.totalWeight) * ctx.remainderBudget);
 
       // Apply limit if present
-      const limitDef = remainder.limit ?? (limitTemplates.length > 0 ? limitTemplateToLimitDef(limitTemplates[0]) : null);
+      const limitDef =
+        remainder.limit ??
+        (limitTemplates.length > 0 ? limitTemplateToLimitDef(limitTemplates[0]) : null);
       if (limitDef) {
         const limitAmt = calculateLimit(limitDef, month);
         if (toBudget + ctx.fromLastMonth > limitAmt) {
@@ -536,12 +496,12 @@ export async function calculateGoal(
   }
   if (!limitCheck) {
     for (const t of priorityTemplates) {
-      if (t.type === 'simple' && t.limit) {
+      if (t.type === "simple" && t.limit) {
         limitAmount = calculateLimit(t.limit, month);
         limitCheck = true;
         break;
       }
-      if (t.type === 'periodic' && t.limit) {
+      if (t.type === "periodic" && t.limit) {
         limitAmount = calculateLimit(t.limit, month);
         limitCheck = true;
         break;
@@ -569,9 +529,7 @@ export async function calculateGoal(
     for (const priority of sortedPriorities) {
       if (limitMet) break;
 
-      const atPriority = priorityTemplates.filter(
-        t => t.priority === priority,
-      );
+      const atPriority = priorityTemplates.filter((t) => t.priority === priority);
       let priorityBudget = 0;
 
       // Track which grouped types we've already processed at this priority
@@ -581,34 +539,32 @@ export async function calculateGoal(
         if (processed.has(template.type)) continue;
 
         switch (template.type) {
-          case 'simple':
+          case "simple":
             priorityBudget += runSimple(template, ctx.fromLastMonth, limitAmount);
             break;
-          case 'refill':
+          case "refill":
             priorityBudget += runRefill(ctx.fromLastMonth, limitAmount);
             break;
-          case 'copy':
+          case "copy":
             priorityBudget += await runCopy(template, categoryId, month);
             break;
-          case 'periodic':
+          case "periodic":
             priorityBudget += runPeriodic(template, month);
             break;
-          case 'spend':
+          case "spend":
             priorityBudget += await runSpend(template, categoryId, month);
             break;
-          case 'percentage':
+          case "percentage":
             priorityBudget += await runPercentage(template, month);
             break;
-          case 'by': {
+          case "by": {
             // Collect all By templates at this priority and run together
-            const byTemplates = atPriority.filter(
-              (t): t is ByTemplate => t.type === 'by',
-            );
+            const byTemplates = atPriority.filter((t): t is ByTemplate => t.type === "by");
             priorityBudget += runBy(byTemplates, month, ctx.fromLastMonth);
-            processed.add('by');
+            processed.add("by");
             break;
           }
-          case 'average':
+          case "average":
             priorityBudget += await runAverage(template, categoryId, month);
             break;
         }

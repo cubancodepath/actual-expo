@@ -6,8 +6,8 @@
  * then extracts results back into form-friendly shape.
  */
 
-import type { ParsedRule } from './types';
-import { runRules } from './engine';
+import type { ParsedRule } from "./types";
+import { runRules } from "./engine";
 
 export type TransactionFormData = {
   acct: string | null;
@@ -28,17 +28,14 @@ export type RuleResult = {
 /**
  * Run rules against form data and return the resulting field values.
  */
-export function applyRulesToForm(
-  rules: ParsedRule[],
-  form: TransactionFormData,
-): RuleResult {
+export function applyRulesToForm(rules: ParsedRule[], form: TransactionFormData): RuleResult {
   const txn: Record<string, unknown> = {
     acct: form.acct,
     description: form.payeeId,
     category: form.categoryId,
     amount: form.amount,
     date: form.date,
-    notes: form.notes ?? '',
+    notes: form.notes ?? "",
     cleared: form.cleared,
   };
 
@@ -69,7 +66,7 @@ export function suggestCategoryForPayee(
     category: null,
     amount: 0,
     date: 0,
-    notes: '',
+    notes: "",
     cleared: false,
   };
 

@@ -1,10 +1,10 @@
-import { ActivityIndicator, type ViewStyle } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../providers/ThemeProvider';
-import { ListItem } from './ListItem';
-import { IconButton } from '../atoms/IconButton';
-import type { ReconciledBudgetFile, BudgetFileState } from '../../../services/budgetfiles';
+import { ActivityIndicator, type ViewStyle } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
+import { useTheme } from "../../providers/ThemeProvider";
+import { ListItem } from "./ListItem";
+import { IconButton } from "../atoms/IconButton";
+import type { ReconciledBudgetFile, BudgetFileState } from "../../../services/budgetfiles";
 
 export interface BudgetFileRowProps {
   file: ReconciledBudgetFile;
@@ -18,23 +18,30 @@ export interface BudgetFileRowProps {
 }
 
 const STATE_ICON: Record<BudgetFileState, keyof typeof Ionicons.glyphMap> = {
-  synced: 'document-text',
-  local: 'document',
-  detached: 'alert-circle-outline',
-  remote: 'cloud-download-outline',
+  synced: "document-text",
+  local: "document",
+  detached: "alert-circle-outline",
+  remote: "cloud-download-outline",
 };
 
 const STATE_LABEL_KEY = {
-  synced: 'fileState.synced',
-  local: 'fileState.local',
-  detached: 'fileState.detached',
-  remote: 'fileState.remote',
+  synced: "fileState.synced",
+  local: "fileState.local",
+  detached: "fileState.detached",
+  remote: "fileState.remote",
 } as const satisfies Record<BudgetFileState, string>;
 
 const ICON_SIZE = 22;
 
 export function BudgetFileRow({
-  file, isActive, isSelecting, isActionInProgress, onPress, onActionPress, showSeparator, style,
+  file,
+  isActive,
+  isSelecting,
+  isActionInProgress,
+  onPress,
+  onActionPress,
+  showSeparator,
+  style,
 }: BudgetFileRowProps) {
   const { colors, spacing } = useTheme();
   const { t } = useTranslation();
@@ -42,15 +49,18 @@ export function BudgetFileRow({
   const subtitle = [
     t(STATE_LABEL_KEY[file.state]),
     file.ownerName,
-    file.encryptKeyId ? t('fileState.encrypted') : null,
-  ].filter(Boolean).join(' · ');
+    file.encryptKeyId ? t("fileState.encrypted") : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   const iconName = STATE_ICON[file.state];
-  const iconColor = file.state === 'detached'
-    ? colors.warning
-    : file.state === 'remote'
-      ? colors.textMuted
-      : colors.primary;
+  const iconColor =
+    file.state === "detached"
+      ? colors.warning
+      : file.state === "remote"
+        ? colors.textMuted
+        : colors.primary;
   const icon = <Ionicons name={iconName} size={ICON_SIZE} color={iconColor} />;
 
   let right: React.ReactNode = undefined;
@@ -86,7 +96,7 @@ export function BudgetFileRow({
   return (
     <ListItem
       left={icon}
-      title={file.name || 'Unnamed budget'}
+      title={file.name || "Unnamed budget"}
       subtitle={subtitle}
       right={right}
       onPress={isActive || isSelecting || isActionInProgress ? undefined : onPress}

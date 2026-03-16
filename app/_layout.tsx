@@ -46,7 +46,7 @@ function RootLayout() {
   const ref = useNavigationContainerRef();
   const systemScheme = useColorScheme();
   const themeMode = usePrefsStore((s) => s.themeMode);
-  const colorScheme = themeMode === 'system' ? systemScheme : themeMode;
+  const colorScheme = themeMode === "system" ? systemScheme : themeMode;
   const router = useRouter();
   const hasToken = usePrefsStore((s) => s.hasToken);
   const isConfigured = usePrefsStore((s) => s.isConfigured);
@@ -86,9 +86,7 @@ function RootLayout() {
   useEffect(() => {
     if (!ready) return;
     const unsubAccounts = useAccountsStore.subscribe(() => syncShortcutCache());
-    const unsubCategories = useCategoriesStore.subscribe(() =>
-      syncShortcutCache(),
-    );
+    const unsubCategories = useCategoriesStore.subscribe(() => syncShortcutCache());
     return () => {
       unsubAccounts();
       unsubCategories();
@@ -134,7 +132,7 @@ function RootLayout() {
       QuickActions.setItems([
         {
           id: "add_transaction",
-          title: i18n.t('common:quickAction.addTransaction'),
+          title: i18n.t("common:quickAction.addTransaction"),
           icon: "symbol:plus.circle",
           params: { href: "/(auth)/transaction/new" },
         },
@@ -161,9 +159,7 @@ function RootLayout() {
       const accountId = Settings.get("shortcutAccountId") as string | null;
       const accountName = Settings.get("shortcutAccountName") as string | null;
       const categoryId = Settings.get("shortcutCategoryId") as string | null;
-      const categoryName = Settings.get("shortcutCategoryName") as
-        | string
-        | null;
+      const categoryName = Settings.get("shortcutCategoryName") as string | null;
       const amount = Settings.get("shortcutAmount") as number | null;
       const payeeName = Settings.get("shortcutPayeeName") as string | null;
 
@@ -191,10 +187,7 @@ function RootLayout() {
     }
 
     // Check once after bootstrap (cold launch from shortcut)
-    let pendingTimer: ReturnType<typeof setTimeout> | null = setTimeout(
-      checkShortcutAction,
-      300,
-    );
+    let pendingTimer: ReturnType<typeof setTimeout> | null = setTimeout(checkShortcutAction, 300);
 
     // Single AppState listener for both sync and shortcut check
     const sub = AppState.addEventListener("change", (nextState) => {
@@ -222,9 +215,7 @@ function RootLayout() {
   return (
     <ErrorBoundary>
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <NavigationThemeProvider
-          value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
-        >
+        <NavigationThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
           <ThemeProvider>
             <Stack>
               <Stack.Protected guard={!hasToken && !isLocalOnly}>

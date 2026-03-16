@@ -1,5 +1,5 @@
-import { create } from 'zustand';
-import { registerStore } from './storeRegistry';
+import { create } from "zustand";
+import { registerStore } from "./storeRegistry";
 import {
   getCategories,
   getCategoryGroups,
@@ -12,10 +12,10 @@ import {
   moveCategoryGroup,
   deleteCategory,
   deleteCategoryGroup,
-} from '../categories';
-import type { Category, CategoryGroup } from '../categories/types';
-import { setGoalTemplates } from '../goals';
-import type { Template } from '../goals/types';
+} from "../categories";
+import type { Category, CategoryGroup } from "../categories/types";
+import { setGoalTemplates } from "../goals";
+import type { Template } from "../goals/types";
 
 type CategoriesState = {
   groups: CategoryGroup[];
@@ -24,8 +24,14 @@ type CategoriesState = {
   load(): Promise<void>;
   createGroup(name: string, is_income?: boolean): Promise<string>;
   createCategory(name: string, groupId: string): Promise<string>;
-  updateCategory(id: string, fields: Partial<Pick<Category, 'name' | 'hidden' | 'sort_order' | 'goal_def'>>): Promise<void>;
-  updateCategoryGroup(id: string, fields: Partial<Pick<CategoryGroup, 'name' | 'hidden' | 'sort_order'>>): Promise<void>;
+  updateCategory(
+    id: string,
+    fields: Partial<Pick<Category, "name" | "hidden" | "sort_order" | "goal_def">>,
+  ): Promise<void>;
+  updateCategoryGroup(
+    id: string,
+    fields: Partial<Pick<CategoryGroup, "name" | "hidden" | "sort_order">>,
+  ): Promise<void>;
   moveCategory(id: string, groupId: string, targetId?: string | null): Promise<void>;
   moveCategoryGroup(id: string, targetId?: string | null): Promise<void>;
   deleteCategory(id: string, transferId?: string): Promise<void>;
@@ -41,10 +47,7 @@ export const useCategoriesStore = create<CategoriesState>((set) => ({
   async load() {
     set({ loading: true });
     try {
-      const [categories, groups] = await Promise.all([
-        getCategories(),
-        getCategoryGroups(),
-      ]);
+      const [categories, groups] = await Promise.all([getCategories(), getCategoryGroups()]);
       set({ categories, groups });
     } finally {
       set({ loading: false });
@@ -88,6 +91,6 @@ export const useCategoriesStore = create<CategoriesState>((set) => ({
   },
 }));
 
-registerStore('categories', ['categories', 'category_groups', 'category_mapping'], () =>
+registerStore("categories", ["categories", "category_groups", "category_mapping"], () =>
   useCategoriesStore.getState().load(),
 );

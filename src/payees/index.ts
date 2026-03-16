@@ -1,10 +1,10 @@
-import { randomUUID } from 'expo-crypto';
-import { runQuery, first } from '../db';
-import { sendMessages } from '../sync';
-import { undoable } from '../sync/undo';
-import { Timestamp } from '../crdt';
-import type { PayeeRow } from '../db/types';
-import type { Payee } from './types';
+import { randomUUID } from "expo-crypto";
+import { runQuery, first } from "../db";
+import { sendMessages } from "../sync";
+import { undoable } from "../sync/undo";
+import { Timestamp } from "../crdt";
+import type { PayeeRow } from "../db/types";
+import type { Payee } from "./types";
 
 function rowToPayee(r: PayeeRow): Payee {
   return {
@@ -31,7 +31,7 @@ export async function getPayees(): Promise<Payee[]> {
        AND (p.transfer_acct IS NULL OR a.id IS NOT NULL)
      ORDER BY p.transfer_acct IS NULL, COALESCE(a.name, p.name) COLLATE NOCASE`,
   );
-  return rows.map(r => ({
+  return rows.map((r) => ({
     id: r.id,
     name: r.display_name,
     transfer_acct: r.transfer_acct,
@@ -41,7 +41,7 @@ export async function getPayees(): Promise<Payee[]> {
 }
 
 export const createPayee = undoable(async function createPayee(
-  fields: Pick<Payee, 'name'> & Partial<Pick<Payee, 'transfer_acct' | 'favorite'>>,
+  fields: Pick<Payee, "name"> & Partial<Pick<Payee, "transfer_acct" | "favorite">>,
 ): Promise<string> {
   const id = randomUUID();
   const dbFields: Record<string, unknown> = {
@@ -51,19 +51,28 @@ export const createPayee = undoable(async function createPayee(
   };
   await sendMessages([
     ...Object.entries(dbFields).map(([column, value]) => ({
-      timestamp: Timestamp.send()!, dataset: 'payees', row: id, column,
+      timestamp: Timestamp.send()!,
+      dataset: "payees",
+      row: id,
+      column,
       value: value as string | number | null,
     })),
     // loot-core inserts a self-referencing mapping on every payee creation
     // so that payee_mapping can later be updated when payees are merged
-    { timestamp: Timestamp.send()!, dataset: 'payee_mapping', row: id, column: 'targetId', value: id },
+    {
+      timestamp: Timestamp.send()!,
+      dataset: "payee_mapping",
+      row: id,
+      column: "targetId",
+      value: id,
+    },
   ]);
   return id;
 });
 
 export const updatePayee = undoable(async function updatePayee(
   id: string,
-  fields: Partial<Pick<Payee, 'name' | 'favorite'>>,
+  fields: Partial<Pick<Payee, "name" | "favorite">>,
 ): Promise<void> {
   const dbFields: Record<string, unknown> = {};
   if (fields.name !== undefined) dbFields.name = fields.name;
@@ -71,7 +80,10 @@ export const updatePayee = undoable(async function updatePayee(
   if (Object.keys(dbFields).length === 0) return;
   await sendMessages(
     Object.entries(dbFields).map(([column, value]) => ({
-      timestamp: Timestamp.send()!, dataset: 'payees', row: id, column,
+      timestamp: Timestamp.send()!,
+      dataset: "payees",
+      row: id,
+      column,
       value: value as string | number | null,
     })),
   );
@@ -79,7 +91,7 @@ export const updatePayee = undoable(async function updatePayee(
 
 export const deletePayee = undoable(async function deletePayee(id: string): Promise<void> {
   await sendMessages([
-    { timestamp: Timestamp.send()!, dataset: 'payees', row: id, column: 'tombstone', value: 1 },
+    { timestamp: Timestamp.send()!, dataset: "payees", row: id, column: "tombstone", value: 1 },
   ]);
 });
 
@@ -92,20 +104,19 @@ export const mergePayees = undoable(async function mergePayees(
   ids: string[],
 ): Promise<void> {
   // Validate target is not a transfer payee
-  const target = await first<PayeeRow>(
-    'SELECT * FROM payees WHERE id = ? AND tombstone = 0',
-    [targetId],
-  );
+  const target = await first<PayeeRow>("SELECT * FROM payees WHERE id = ? AND tombstone = 0", [
+    targetId,
+  ]);
   if (!target || target.transfer_acct != null) return;
 
   // Filter out transfer payees and the target itself
   const candidates = await runQuery<PayeeRow>(
-    `SELECT * FROM payees WHERE id IN (${ids.map(() => '?').join(',')}) AND tombstone = 0`,
+    `SELECT * FROM payees WHERE id IN (${ids.map(() => "?").join(",")}) AND tombstone = 0`,
     ids,
   );
   const mergeIds = candidates
-    .filter(p => p.transfer_acct == null && p.id !== targetId)
-    .map(p => p.id);
+    .filter((p) => p.transfer_acct == null && p.id !== targetId)
+    .map((p) => p.id);
   if (mergeIds.length === 0) return;
 
   const messages: Parameters<typeof sendMessages>[0] = [];
@@ -113,32 +124,32 @@ export const mergePayees = undoable(async function mergePayees(
   for (const id of mergeIds) {
     // Find all mappings currently pointing to this payee and redirect to target
     const mappings = await runQuery<{ id: string }>(
-      'SELECT id FROM payee_mapping WHERE targetId = ?',
+      "SELECT id FROM payee_mapping WHERE targetId = ?",
       [id],
     );
     for (const m of mappings) {
       messages.push({
         timestamp: Timestamp.send()!,
-        dataset: 'payee_mapping',
+        dataset: "payee_mapping",
         row: m.id,
-        column: 'targetId',
+        column: "targetId",
         value: targetId,
       });
     }
     // Update the payee's own mapping to point to target
     messages.push({
       timestamp: Timestamp.send()!,
-      dataset: 'payee_mapping',
+      dataset: "payee_mapping",
       row: id,
-      column: 'targetId',
+      column: "targetId",
       value: targetId,
     });
     // Tombstone the merged payee
     messages.push({
       timestamp: Timestamp.send()!,
-      dataset: 'payees',
+      dataset: "payees",
       row: id,
-      column: 'tombstone',
+      column: "tombstone",
       value: 1,
     });
   }
@@ -159,11 +170,23 @@ export async function findOrCreatePayee(name: string): Promise<string | null> {
 
   const id = randomUUID();
   await sendMessages([
-    { timestamp: Timestamp.send()!, dataset: 'payees',         row: id, column: 'name',         value: trimmed },
-    { timestamp: Timestamp.send()!, dataset: 'payees',         row: id, column: 'transfer_acct', value: null },
-    { timestamp: Timestamp.send()!, dataset: 'payees',         row: id, column: 'favorite',      value: 0 },
+    { timestamp: Timestamp.send()!, dataset: "payees", row: id, column: "name", value: trimmed },
+    {
+      timestamp: Timestamp.send()!,
+      dataset: "payees",
+      row: id,
+      column: "transfer_acct",
+      value: null,
+    },
+    { timestamp: Timestamp.send()!, dataset: "payees", row: id, column: "favorite", value: 0 },
     // Self-referencing mapping — same as loot-core's insertPayee()
-    { timestamp: Timestamp.send()!, dataset: 'payee_mapping',  row: id, column: 'targetId',      value: id },
+    {
+      timestamp: Timestamp.send()!,
+      dataset: "payee_mapping",
+      row: id,
+      column: "targetId",
+      value: id,
+    },
   ]);
   return id;
 }

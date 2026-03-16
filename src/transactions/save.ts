@@ -6,20 +6,20 @@
  * split child management, and CRDT batching.
  */
 
-import { findOrCreatePayee } from '../payees';
-import { batchMessages } from '../sync';
+import { findOrCreatePayee } from "../payees";
+import { batchMessages } from "../sync";
 import {
   addTransaction,
   updateTransaction,
   getChildTransactions,
   deleteTransaction,
-} from './index';
-import { createSchedule, setNextDate } from '../schedules';
-import { addDays } from 'date-fns';
-import { parseDate } from '../schedules/recurrence';
-import type { RecurConfig, RuleCondition } from '../schedules/types';
-import type { ParsedRule } from '../rules/types';
-import { applyRulesToForm } from '../rules/apply';
+} from "./index";
+import { createSchedule, setNextDate } from "../schedules";
+import { addDays } from "date-fns";
+import { parseDate } from "../schedules/recurrence";
+import type { RecurConfig, RuleCondition } from "../schedules/types";
+import type { ParsedRule } from "../rules/types";
+import { applyRulesToForm } from "../rules/apply";
 
 export type SplitLine = {
   id?: string;
@@ -35,7 +35,7 @@ export type SaveTransactionInput = {
   date: number;
   /** Always positive cents. Sign is determined by `type`. */
   amount: number;
-  type: 'expense' | 'income';
+  type: "expense" | "income";
   payeeId: string | null;
   payeeName: string;
   categoryId: string | null;
@@ -74,8 +74,8 @@ export async function saveTransaction(
 
   const isEdit = !!transactionId;
   const isSplit = splitCategories !== null && splitCategories.length > 1;
-  const finalAmount = type === 'expense' ? -amount : amount;
-  const sign = type === 'expense' ? -1 : 1;
+  const finalAmount = type === "expense" ? -amount : amount;
+  const sign = type === "expense" ? -1 : 1;
 
   const resolvedPayeeId = payeeId ?? (await findOrCreatePayee(payeeName));
 
@@ -140,7 +140,7 @@ export async function saveTransaction(
 
   if (isSplit) {
     // New split: create parent + children in a single batch
-    let parentId = '';
+    let parentId = "";
     await batchMessages(async () => {
       parentId = await addTransaction({
         acct,
@@ -214,10 +214,10 @@ async function linkSchedule(
   amount: number,
 ): Promise<void> {
   const conditions: RuleCondition[] = [
-    { field: 'payee', op: 'is', value: payeeId },
-    { field: 'account', op: 'is', value: acct },
-    { field: 'amount', op: 'isapprox', value: amount },
-    { field: 'date', op: 'isapprox', value: recurConfig },
+    { field: "payee", op: "is", value: payeeId },
+    { field: "account", op: "is", value: acct },
+    { field: "amount", op: "isapprox", value: amount },
+    { field: "date", op: "isapprox", value: recurConfig },
   ];
 
   const scheduleId = await createSchedule({

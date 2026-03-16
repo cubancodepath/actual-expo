@@ -1,20 +1,20 @@
-import * as Notifications from 'expo-notifications';
-import { Platform } from 'react-native';
-import { useBudgetStore } from '../stores/budgetStore';
-import { getUncategorizedStats } from '../transactions';
+import * as Notifications from "expo-notifications";
+import { Platform } from "react-native";
+import { useBudgetStore } from "../stores/budgetStore";
+import { getUncategorizedStats } from "../transactions";
 
 let permissionGranted = false;
 
 async function ensureBadgePermission(): Promise<boolean> {
   if (permissionGranted) return true;
-  if (Platform.OS === 'android') {
+  if (Platform.OS === "android") {
     permissionGranted = true;
     return true;
   }
   const { status } = await Notifications.requestPermissionsAsync({
     ios: { allowBadge: true },
   });
-  permissionGranted = status === 'granted';
+  permissionGranted = status === "granted";
   return permissionGranted;
 }
 

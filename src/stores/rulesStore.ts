@@ -1,7 +1,7 @@
-import { create } from 'zustand';
-import { registerStore } from './storeRegistry';
-import { getRules } from '../rules';
-import type { ParsedRule } from '../rules/types';
+import { create } from "zustand";
+import { registerStore } from "./storeRegistry";
+import { getRules } from "../rules";
+import type { ParsedRule } from "../rules/types";
 
 type RulesState = {
   rules: ParsedRule[];
@@ -24,4 +24,4 @@ export const useRulesStore = create<RulesState>((set) => ({
   },
 }));
 
-registerStore('rules', ['rules'], () => useRulesStore.getState().load());
+registerStore("rules", ["rules"], () => useRulesStore.getState().load());

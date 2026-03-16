@@ -1,9 +1,9 @@
-import { useLayoutEffect, useRef } from 'react';
-import { Pressable, View } from 'react-native';
-import { useNavigation } from 'expo-router';
-import { useTheme } from '../../providers/ThemeProvider';
-import { Text } from '../../components';
-import { formatBalance } from '../../../lib/format';
+import { useLayoutEffect, useRef } from "react";
+import { Pressable, View } from "react-native";
+import { useNavigation } from "expo-router";
+import { useTheme } from "../../providers/ThemeProvider";
+import { Text } from "../../components";
+import { formatBalance } from "../../../lib/format";
 
 interface UseSelectModeHeaderOptions {
   isSelectMode: boolean;
@@ -38,28 +38,35 @@ export function useSelectModeHeader({
 
     navigation.setOptions({
       headerStyle: { backgroundColor: colors.pageBackground },
-      title: selectedCount > 0
-        ? `${selectedCount} Selected`
-        : 'Select Items',
-      headerTitle: selectedCount > 0
-        ? () => (
-            <View style={{ alignItems: 'center' }}>
-              <Text variant="body" style={{ fontWeight: '600' }}>{selectedCount} Selected</Text>
-              <Text variant="captionSm" color={colors.textMuted}>{formatBalance(selectedTotal)}</Text>
-            </View>
-          )
-        : undefined,
+      title: selectedCount > 0 ? `${selectedCount} Selected` : "Select Items",
+      headerTitle:
+        selectedCount > 0
+          ? () => (
+              <View style={{ alignItems: "center" }}>
+                <Text variant="body" style={{ fontWeight: "600" }}>
+                  {selectedCount} Selected
+                </Text>
+                <Text variant="captionSm" color={colors.textMuted}>
+                  {formatBalance(selectedTotal)}
+                </Text>
+              </View>
+            )
+          : undefined,
       headerRight: undefined,
       unstable_headerRightItems: () => [
         {
-          type: 'button' as const,
-          icon: { type: 'sfSymbol' as const, name: 'xmark' },
+          type: "button" as const,
+          icon: { type: "sfSymbol" as const, name: "xmark" },
           onPress: () => onDoneRef.current(),
         },
       ],
       headerLeft: () => (
-        <Pressable onPress={() => onSelectAllRef.current()} hitSlop={8} style={{ paddingHorizontal: 8 }}>
-          <Text variant="body" color={colors.headerText} style={{ fontWeight: '600' }}>
+        <Pressable
+          onPress={() => onSelectAllRef.current()}
+          hitSlop={8}
+          style={{ paddingHorizontal: 8 }}
+        >
+          <Text variant="body" color={colors.headerText} style={{ fontWeight: "600" }}>
             Select All
           </Text>
         </Pressable>

@@ -17,15 +17,15 @@ export default function TabsLayout() {
     <NativeTabs tintColor={colors.primary} hidden={tabBarHidden}>
       <NativeTabs.Trigger name="(accounts)">
         <NativeTabs.Trigger.Icon sf="building.columns" md="account_balance" />
-        <NativeTabs.Trigger.Label>{t('tabs.accounts')}</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>{t("tabs.accounts")}</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="(budget)">
         <NativeTabs.Trigger.Icon sf="wallet.bifold.fill" md="account_balance_wallet" />
-        <NativeTabs.Trigger.Label>{t('tabs.budget')}</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>{t("tabs.budget")}</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="(spending)">
         <NativeTabs.Trigger.Icon sf="chart.line.uptrend.xyaxis" md="trending_up" />
-        <NativeTabs.Trigger.Label>{t('tabs.spending')}</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>{t("tabs.spending")}</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
     </NativeTabs>
   );

@@ -1,37 +1,30 @@
-import { useEffect } from 'react';
-import {
-  Alert,
-  Platform,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  View,
-} from 'react-native';
+import { useEffect } from "react";
+import { Alert, Platform, Pressable, RefreshControl, ScrollView, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useDerivedValue,
   useSharedValue,
   withTiming,
-} from 'react-native-reanimated';
-import * as ContextMenu from 'zeego/context-menu';
-import { Stack, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useAccountsStore } from '../../../../src/stores/accountsStore';
-import { useRefreshControl } from '../../../../src/presentation/hooks/useRefreshControl';
-import { groupAccounts, type AccountGroup } from '../../../../src/accounts';
-import { useTheme, useThemedStyles } from '../../../../src/presentation/providers/ThemeProvider';
-import { Text } from '../../../../src/presentation/components/atoms/Text';
-import { Card } from '../../../../src/presentation/components/atoms/Card';
-import { Amount } from '../../../../src/presentation/components/atoms/Amount';
-import { RowSeparator } from '../../../../src/presentation/components/atoms/RowSeparator';
-import { Button } from '../../../../src/presentation/components/atoms/Button';
-import { EmptyState } from '../../../../src/presentation/components/molecules/EmptyState';
-import { AddTransactionButton } from '../../../../src/presentation/components/molecules/AddTransactionButton';
-import type { Theme } from '../../../../src/theme';
-import { useCommonMenuActions } from '../../../../src/presentation/hooks/useCommonMenuItems';
-import { useTranslation } from 'react-i18next';
-import { AccountListSkeleton } from '../../../../src/presentation/components/skeletons/AccountListSkeleton';
-import type { Account } from '../../../../src/accounts/types';
+} from "react-native-reanimated";
+import * as ContextMenu from "zeego/context-menu";
+import { Stack, useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { useAccountsStore } from "../../../../src/stores/accountsStore";
+import { useRefreshControl } from "../../../../src/presentation/hooks/useRefreshControl";
+import { groupAccounts, type AccountGroup } from "../../../../src/accounts";
+import { useTheme, useThemedStyles } from "../../../../src/presentation/providers/ThemeProvider";
+import { Text } from "../../../../src/presentation/components/atoms/Text";
+import { Card } from "../../../../src/presentation/components/atoms/Card";
+import { Amount } from "../../../../src/presentation/components/atoms/Amount";
+import { RowSeparator } from "../../../../src/presentation/components/atoms/RowSeparator";
+import { Button } from "../../../../src/presentation/components/atoms/Button";
+import { EmptyState } from "../../../../src/presentation/components/molecules/EmptyState";
+import { AddTransactionButton } from "../../../../src/presentation/components/molecules/AddTransactionButton";
+import type { Theme } from "../../../../src/theme";
+import { useCommonMenuActions } from "../../../../src/presentation/hooks/useCommonMenuItems";
+import { useTranslation } from "react-i18next";
+import { AccountListSkeleton } from "../../../../src/presentation/components/skeletons/AccountListSkeleton";
+import type { Account } from "../../../../src/accounts/types";
 
 // ---------------------------------------------------------------------------
 // Collapsible section
@@ -55,26 +48,32 @@ function AccountRow({
   styles: ReturnType<typeof createStyles>;
 }) {
   const theme = useTheme();
-  const { t } = useTranslation('accounts');
-  const { t: tc } = useTranslation('common');
+  const { t } = useTranslation("accounts");
+  const { t: tc } = useTranslation("common");
 
   const row = (
     <Pressable
       style={styles.accountRow}
       onPress={onPress}
-      onLongPress={Platform.OS === 'android'
-        ? () => {
-            const items = [
-              { text: t('contextMenu.viewTransactions'), onPress },
-              { text: t('contextMenu.editAccount'), onPress: onEdit },
-              account.closed
-                ? { text: t('contextMenu.reopenAccount'), onPress: onReopen }
-                : { text: t('contextMenu.closeAccount'), style: 'destructive' as const, onPress: onClose },
-              { text: tc('cancel'), style: 'cancel' as const },
-            ];
-            Alert.alert(account.name, undefined, items);
-          }
-        : undefined}
+      onLongPress={
+        Platform.OS === "android"
+          ? () => {
+              const items = [
+                { text: t("contextMenu.viewTransactions"), onPress },
+                { text: t("contextMenu.editAccount"), onPress: onEdit },
+                account.closed
+                  ? { text: t("contextMenu.reopenAccount"), onPress: onReopen }
+                  : {
+                      text: t("contextMenu.closeAccount"),
+                      style: "destructive" as const,
+                      onPress: onClose,
+                    },
+                { text: tc("cancel"), style: "cancel" as const },
+              ];
+              Alert.alert(account.name, undefined, items);
+            }
+          : undefined
+      }
     >
       <Text variant="body" color={theme.colors.textPrimary} style={styles.accountName}>
         {account.name}
@@ -85,28 +84,28 @@ function AccountRow({
     </Pressable>
   );
 
-  if (Platform.OS === 'ios') {
+  if (Platform.OS === "ios") {
     return (
       <ContextMenu.Root>
         <ContextMenu.Trigger>{row}</ContextMenu.Trigger>
         <ContextMenu.Content>
           <ContextMenu.Item key="view" onSelect={onPress}>
-            <ContextMenu.ItemTitle>{t('contextMenu.viewTransactions')}</ContextMenu.ItemTitle>
-            <ContextMenu.ItemIcon ios={{ name: 'list.bullet' }} />
+            <ContextMenu.ItemTitle>{t("contextMenu.viewTransactions")}</ContextMenu.ItemTitle>
+            <ContextMenu.ItemIcon ios={{ name: "list.bullet" }} />
           </ContextMenu.Item>
           <ContextMenu.Item key="edit" onSelect={onEdit}>
-            <ContextMenu.ItemTitle>{t('contextMenu.editAccount')}</ContextMenu.ItemTitle>
-            <ContextMenu.ItemIcon ios={{ name: 'pencil' }} />
+            <ContextMenu.ItemTitle>{t("contextMenu.editAccount")}</ContextMenu.ItemTitle>
+            <ContextMenu.ItemIcon ios={{ name: "pencil" }} />
           </ContextMenu.Item>
           {account.closed ? (
             <ContextMenu.Item key="reopen" onSelect={onReopen}>
-              <ContextMenu.ItemTitle>{t('contextMenu.reopenAccount')}</ContextMenu.ItemTitle>
-              <ContextMenu.ItemIcon ios={{ name: 'arrow.counterclockwise' }} />
+              <ContextMenu.ItemTitle>{t("contextMenu.reopenAccount")}</ContextMenu.ItemTitle>
+              <ContextMenu.ItemIcon ios={{ name: "arrow.counterclockwise" }} />
             </ContextMenu.Item>
           ) : (
             <ContextMenu.Item key="close" destructive onSelect={onClose}>
-              <ContextMenu.ItemTitle>{t('contextMenu.closeAccount')}</ContextMenu.ItemTitle>
-              <ContextMenu.ItemIcon ios={{ name: 'trash' }} />
+              <ContextMenu.ItemTitle>{t("contextMenu.closeAccount")}</ContextMenu.ItemTitle>
+              <ContextMenu.ItemIcon ios={{ name: "trash" }} />
             </ContextMenu.Item>
           )}
         </ContextMenu.Content>
@@ -166,23 +165,21 @@ function AccountSection({
 }) {
   const theme = useTheme();
   const styles = useThemedStyles(createStyles);
-  const { t } = useTranslation('accounts');
+  const { t } = useTranslation("accounts");
 
-  const groupLabel = group.type === 'budget'
-    ? t('groups.budgetAccounts')
-    : t('groups.offBudget');
+  const groupLabel = group.type === "budget" ? t("groups.budgetAccounts") : t("groups.offBudget");
 
   const isExpanded = useSharedValue(true);
   const height = useSharedValue(0);
   const rotation = useSharedValue(0);
 
   const derivedHeight = useDerivedValue(() =>
-    withTiming(height.value * (isExpanded.value ? 1 : 0), { duration: 250 })
+    withTiming(height.value * (isExpanded.value ? 1 : 0), { duration: 250 }),
   );
 
   const bodyStyle = useAnimatedStyle(() => ({
     height: derivedHeight.value,
-    overflow: 'hidden' as const,
+    overflow: "hidden" as const,
   }));
 
   const chevronStyle = useAnimatedStyle(() => ({
@@ -209,16 +206,32 @@ function AccountSection({
 
       {/* Hidden measurer — always keeps natural height */}
       <View
-        style={{ position: 'absolute', opacity: 0, zIndex: -1 }}
-        onLayout={e => { height.value = e.nativeEvent.layout.height; }}
+        style={{ position: "absolute", opacity: 0, zIndex: -1 }}
+        onLayout={(e) => {
+          height.value = e.nativeEvent.layout.height;
+        }}
         pointerEvents="none"
       >
-        <AccountContent group={group} onPressAccount={onPressAccount} onEditAccount={onEditAccount} onCloseAccount={onCloseAccount} onReopenAccount={onReopenAccount} styles={styles} />
+        <AccountContent
+          group={group}
+          onPressAccount={onPressAccount}
+          onEditAccount={onEditAccount}
+          onCloseAccount={onCloseAccount}
+          onReopenAccount={onReopenAccount}
+          styles={styles}
+        />
       </View>
 
       {/* Animated collapsible body */}
       <Animated.View style={bodyStyle}>
-        <AccountContent group={group} onPressAccount={onPressAccount} onEditAccount={onEditAccount} onCloseAccount={onCloseAccount} onReopenAccount={onReopenAccount} styles={styles} />
+        <AccountContent
+          group={group}
+          onPressAccount={onPressAccount}
+          onEditAccount={onEditAccount}
+          onCloseAccount={onCloseAccount}
+          onReopenAccount={onReopenAccount}
+          styles={styles}
+        />
       </Animated.View>
     </View>
   );
@@ -235,9 +248,11 @@ export default function AccountsScreen() {
   const { accounts, loading, load, update } = useAccountsStore();
   const { refreshControlProps } = useRefreshControl();
   const commonActions = useCommonMenuActions();
-  const { t } = useTranslation('accounts');
+  const { t } = useTranslation("accounts");
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   const groups = groupAccounts(accounts);
 
@@ -246,11 +261,11 @@ export default function AccountsScreen() {
   }
 
   function handleEditAccount(account: Account) {
-    router.push({ pathname: '/(auth)/account/settings', params: { id: account.id } });
+    router.push({ pathname: "/(auth)/account/settings", params: { id: account.id } });
   }
 
   function handleCloseAccount(account: Account) {
-    router.push({ pathname: '/(auth)/account/close', params: { id: account.id } });
+    router.push({ pathname: "/(auth)/account/close", params: { id: account.id } });
   }
 
   function handleReopenAccount(account: Account) {
@@ -270,15 +285,13 @@ export default function AccountsScreen() {
       <ScrollView
         contentContainerStyle={styles.content}
         contentInsetAdjustmentBehavior="automatic"
-        refreshControl={
-          <RefreshControl {...refreshControlProps} />
-        }
+        refreshControl={<RefreshControl {...refreshControlProps} />}
       >
-        <Stack.Screen.Title large>{t('title')}</Stack.Screen.Title>
+        <Stack.Screen.Title large>{t("title")}</Stack.Screen.Title>
 
         {groups.length > 0 ? (
           <>
-            {groups.map(group => (
+            {groups.map((group) => (
               <AccountSection
                 key={group.type}
                 group={group}
@@ -290,32 +303,27 @@ export default function AccountsScreen() {
             ))}
 
             <Button
-              title={t('addAccount')}
+              title={t("addAccount")}
               variant="ghost"
               icon="add-circle-outline"
-              onPress={() => router.push('/(auth)/account/new')}
+              onPress={() => router.push("/(auth)/account/new")}
               style={styles.addButton}
             />
           </>
         ) : (
           <EmptyState
             icon="wallet-outline"
-            title={t('emptyState.title')}
-            description={t('emptyState.description')}
-            actionLabel={t('addAccount')}
-            onAction={() => router.push('/(auth)/account/new')}
+            title={t("emptyState.title")}
+            description={t("emptyState.description")}
+            actionLabel={t("addAccount")}
+            onAction={() => router.push("/(auth)/account/new")}
           />
         )}
       </ScrollView>
       <AddTransactionButton />
       <Stack.Toolbar placement="right">
-        <Stack.Toolbar.Button
-          icon="plus"
-          onPress={() => router.push('/(auth)/account/new')}
-        />
-        <Stack.Toolbar.Menu icon="ellipsis">
-          {commonActions}
-        </Stack.Toolbar.Menu>
+        <Stack.Toolbar.Button icon="plus" onPress={() => router.push("/(auth)/account/new")} />
+        <Stack.Toolbar.Menu icon="ellipsis">{commonActions}</Stack.Toolbar.Menu>
       </Stack.Toolbar>
     </>
   );
@@ -332,8 +340,8 @@ const createStyles = (theme: Theme) => ({
   },
   center: {
     flex: 1,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
 
   // Section
@@ -341,27 +349,27 @@ const createStyles = (theme: Theme) => ({
     marginBottom: theme.spacing.lg,
   },
   sectionHeader: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
     paddingVertical: theme.spacing.sm,
     gap: theme.spacing.sm,
   },
   sectionLabel: {
     flex: 1,
-    fontWeight: '600' as const,
+    fontWeight: "600" as const,
   },
   sectionTotal: {
-    fontWeight: '600' as const,
+    fontWeight: "600" as const,
   },
 
   // Account list card
   listCard: {
     padding: 0,
-    overflow: 'hidden' as const,
+    overflow: "hidden" as const,
   },
   accountRow: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.lg,
     minHeight: 44,

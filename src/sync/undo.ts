@@ -15,16 +15,16 @@
  * 4. Because undo generates normal CRDT messages, undo actions sync to other devices
  */
 
-import { Timestamp } from '../crdt';
-import type { SyncMessage } from './encoder';
+import { Timestamp } from "../crdt";
+import type { SyncMessage } from "./encoder";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-type MarkerEntry = { type: 'marker' };
+type MarkerEntry = { type: "marker" };
 type MessagesEntry = {
-  type: 'messages';
+  type: "messages";
   messages: SyncMessage[];
   oldData: OldData;
 };
@@ -37,7 +37,7 @@ export type OldData = Record<string, Record<string, Record<string, unknown>>>;
 // State
 // ---------------------------------------------------------------------------
 
-let HISTORY: HistoryEntry[] = [{ type: 'marker' }];
+let HISTORY: HistoryEntry[] = [{ type: "marker" }];
 let CURSOR = 0;
 const HISTORY_SIZE = 20;
 
@@ -64,7 +64,7 @@ export function canUndo(): boolean {
 }
 
 export function clearUndo(): void {
-  HISTORY = [{ type: 'marker' }];
+  HISTORY = [{ type: "marker" }];
   CURSOR = 0;
   _onStateChange?.(false);
 }
@@ -78,7 +78,7 @@ export function appendMessages(messages: SyncMessage[], oldData: OldData): void 
 
   trimHistory();
 
-  HISTORY.push({ type: 'messages', messages, oldData });
+  HISTORY.push({ type: "messages", messages, oldData });
   CURSOR++;
 
   _onStateChange?.(canUndo());
@@ -100,11 +100,11 @@ export function undoable<T extends (...args: any[]) => Promise<any>>(fn: T): T {
 
     // Place a marker at the current position
     const lastEntry = HISTORY[HISTORY.length - 1];
-    if (lastEntry.type === 'marker') {
+    if (lastEntry.type === "marker") {
       // Reuse empty marker (no messages were recorded since last undoable call)
       // This is fine — it just means the previous undoable was a no-op
     } else {
-      HISTORY.push({ type: 'marker' });
+      HISTORY.push({ type: "marker" });
       CURSOR++;
     }
 
@@ -125,19 +125,19 @@ export async function undo(): Promise<string[]> {
   if (!canUndo()) return [];
 
   // Lazy import to avoid circular dependency
-  const { sendMessages } = await import('./index');
+  const { sendMessages } = await import("./index");
 
   const end = CURSOR;
   CURSOR = Math.max(CURSOR - 1, 0);
 
   // Walk back to the nearest marker
-  while (CURSOR > 0 && HISTORY[CURSOR].type !== 'marker') {
+  while (CURSOR > 0 && HISTORY[CURSOR].type !== "marker") {
     CURSOR--;
   }
 
   const start = Math.max(CURSOR, 0);
   const entries = HISTORY.slice(start, end + 1).filter(
-    (entry): entry is MessagesEntry => entry.type === 'messages',
+    (entry): entry is MessagesEntry => entry.type === "messages",
   );
 
   if (entries.length === 0) {
@@ -149,7 +149,7 @@ export async function undo(): Promise<string[]> {
   const reversed: SyncMessage[] = entries
     .reduce<SyncMessage[]>((acc, entry) => {
       const undone = entry.messages
-        .map(msg => undoMessage(msg, entry.oldData))
+        .map((msg) => undoMessage(msg, entry.oldData))
         .filter((m): m is SyncMessage => m !== null);
       return acc.concat(undone);
     }, [])
@@ -158,19 +158,17 @@ export async function undo(): Promise<string[]> {
   // Apply with fresh timestamps — disable undo recording to prevent circular undo
   _undoDisabled = true;
   try {
-    await sendMessages(
-      reversed.map(msg => ({ ...msg, timestamp: Timestamp.send()! })),
-    );
+    await sendMessages(reversed.map((msg) => ({ ...msg, timestamp: Timestamp.send()! })));
   } finally {
     _undoDisabled = false;
   }
 
   // Refresh stores so the UI reflects the reverted state
-  const { refreshAllStores } = await import('./index');
+  const { refreshAllStores } = await import("./index");
   await refreshAllStores();
 
   // Collect affected tables for the UI notification
-  const tables = [...new Set(reversed.map(m => m.dataset))];
+  const tables = [...new Set(reversed.map((m) => m.dataset))];
 
   _onStateChange?.(canUndo());
   return tables;
@@ -183,7 +181,7 @@ export async function undo(): Promise<string[]> {
 function trimHistory(): void {
   HISTORY = HISTORY.slice(0, CURSOR + 1);
 
-  const markers = HISTORY.filter(item => item.type === 'marker');
+  const markers = HISTORY.filter((item) => item.type === "marker");
   if (markers.length > HISTORY_SIZE) {
     const slice = markers.slice(-HISTORY_SIZE);
     const cutoff = HISTORY.indexOf(slice[0]);
@@ -208,27 +206,24 @@ function undoMessage(message: SyncMessage, oldData: OldData): SyncMessage | null
   // Row didn't exist before — this was a creation. Handle special datasets:
 
   // Mapping tables are never deleted (harmless meta-info)
-  if (message.dataset === 'category_mapping' || message.dataset === 'payee_mapping') {
+  if (message.dataset === "category_mapping" || message.dataset === "payee_mapping") {
     return null;
   }
 
   // Budget rows: only certain columns are reversible
-  if (
-    message.dataset === 'zero_budget_months' ||
-    message.dataset === 'zero_budgets'
-  ) {
-    if (['buffered', 'amount', 'carryover'].includes(message.column)) {
+  if (message.dataset === "zero_budget_months" || message.dataset === "zero_budgets") {
+    if (["buffered", "amount", "carryover"].includes(message.column)) {
       return { ...message, value: 0 };
     }
     return null;
   }
 
   // Notes: revert to null
-  if (message.dataset === 'notes') {
+  if (message.dataset === "notes") {
     return { ...message, value: null };
   }
 
   // Everything else (accounts, transactions, categories, payees, etc.):
   // tombstone the newly created row
-  return { ...message, column: 'tombstone', value: 1 };
+  return { ...message, column: "tombstone", value: 1 };
 }

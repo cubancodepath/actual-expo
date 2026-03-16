@@ -1,12 +1,12 @@
-import { randomUUID } from 'expo-crypto';
-import { runQuery, run, first } from '../db';
-import { sendMessages, batchMessages } from '../sync';
-import { undoable } from '../sync/undo';
-import { Timestamp } from '../crdt';
-import { todayInt } from '../lib/date';
-import { addTransaction } from '../transactions';
-import type { AccountRow } from '../db/types';
-import type { Account } from './types';
+import { randomUUID } from "expo-crypto";
+import { runQuery, run, first } from "../db";
+import { sendMessages, batchMessages } from "../sync";
+import { undoable } from "../sync/undo";
+import { Timestamp } from "../crdt";
+import { todayInt } from "../lib/date";
+import { addTransaction } from "../transactions";
+import type { AccountRow } from "../db/types";
+import type { Account } from "./types";
 
 type AccountWithBalance = AccountRow & {
   balance: number | null;
@@ -34,28 +34,28 @@ function rowToAccount(r: AccountWithBalance): Account {
 // ---------------------------------------------------------------------------
 
 export type AccountGroup = {
-  type: 'budget' | 'offbudget';
+  type: "budget" | "offbudget";
   label: string;
   total: number;
   accounts: Account[];
 };
 
 export function groupAccounts(accounts: Account[]): AccountGroup[] {
-  const budget = accounts.filter(a => !a.offbudget && !a.closed);
-  const offBudget = accounts.filter(a => a.offbudget && !a.closed);
+  const budget = accounts.filter((a) => !a.offbudget && !a.closed);
+  const offBudget = accounts.filter((a) => a.offbudget && !a.closed);
   const groups: AccountGroup[] = [];
   if (budget.length > 0) {
     groups.push({
-      type: 'budget',
-      label: 'Budget Accounts',
+      type: "budget",
+      label: "Budget Accounts",
       total: budget.reduce((sum, a) => sum + (a.balance ?? 0), 0),
       accounts: budget,
     });
   }
   if (offBudget.length > 0) {
     groups.push({
-      type: 'offbudget',
-      label: 'Off Budget',
+      type: "offbudget",
+      label: "Off Budget",
       total: offBudget.reduce((sum, a) => sum + (a.balance ?? 0), 0),
       accounts: offBudget,
     });
@@ -99,9 +99,27 @@ async function getStartingBalancePayee(): Promise<{ id: string; categoryId: stri
   } else {
     payeeId = randomUUID();
     await sendMessages([
-      { timestamp: Timestamp.send()!, dataset: 'payees', row: payeeId, column: 'name', value: 'Starting Balance' },
-      { timestamp: Timestamp.send()!, dataset: 'payees', row: payeeId, column: 'transfer_acct', value: null },
-      { timestamp: Timestamp.send()!, dataset: 'payees', row: payeeId, column: 'favorite', value: 0 },
+      {
+        timestamp: Timestamp.send()!,
+        dataset: "payees",
+        row: payeeId,
+        column: "name",
+        value: "Starting Balance",
+      },
+      {
+        timestamp: Timestamp.send()!,
+        dataset: "payees",
+        row: payeeId,
+        column: "transfer_acct",
+        value: null,
+      },
+      {
+        timestamp: Timestamp.send()!,
+        dataset: "payees",
+        row: payeeId,
+        column: "favorite",
+        value: 0,
+      },
     ]);
   }
 
@@ -120,7 +138,7 @@ async function getStartingBalancePayee(): Promise<{ id: string; categoryId: stri
 }
 
 export const createAccount = undoable(async function createAccount(
-  fields: Omit<Partial<Account>, 'id' | 'tombstone'>,
+  fields: Omit<Partial<Account>, "id" | "tombstone">,
   startingBalance = 0,
 ): Promise<string> {
   const id = randomUUID();
@@ -128,7 +146,7 @@ export const createAccount = undoable(async function createAccount(
   await batchMessages(async () => {
     // 1. Create the account
     const dbFields: Record<string, unknown> = {
-      name: fields.name ?? 'New Account',
+      name: fields.name ?? "New Account",
       offbudget: fields.offbudget ? 1 : 0,
       closed: fields.closed ? 1 : 0,
       sort_order: fields.sort_order ?? Date.now(),
@@ -136,7 +154,7 @@ export const createAccount = undoable(async function createAccount(
     await sendMessages(
       Object.entries(dbFields).map(([column, value]) => ({
         timestamp: Timestamp.send()!,
-        dataset: 'accounts',
+        dataset: "accounts",
         row: id,
         column,
         value: value as string | number | null,
@@ -146,9 +164,27 @@ export const createAccount = undoable(async function createAccount(
     // 2. Create the transfer payee for this account (used in transfers between accounts)
     const transferPayeeId = randomUUID();
     await sendMessages([
-      { timestamp: Timestamp.send()!, dataset: 'payees', row: transferPayeeId, column: 'name', value: '' },
-      { timestamp: Timestamp.send()!, dataset: 'payees', row: transferPayeeId, column: 'transfer_acct', value: id },
-      { timestamp: Timestamp.send()!, dataset: 'payees', row: transferPayeeId, column: 'favorite', value: 0 },
+      {
+        timestamp: Timestamp.send()!,
+        dataset: "payees",
+        row: transferPayeeId,
+        column: "name",
+        value: "",
+      },
+      {
+        timestamp: Timestamp.send()!,
+        dataset: "payees",
+        row: transferPayeeId,
+        column: "transfer_acct",
+        value: id,
+      },
+      {
+        timestamp: Timestamp.send()!,
+        dataset: "payees",
+        row: transferPayeeId,
+        column: "favorite",
+        value: 0,
+      },
     ]);
 
     // 3. Create starting balance transaction if balance is non-zero
@@ -156,16 +192,55 @@ export const createAccount = undoable(async function createAccount(
       const { id: payeeId, categoryId } = await getStartingBalancePayee();
       const txId = randomUUID();
       await sendMessages([
-        { timestamp: Timestamp.send()!, dataset: 'transactions', row: txId, column: 'acct', value: id },
-        { timestamp: Timestamp.send()!, dataset: 'transactions', row: txId, column: 'amount', value: startingBalance },
-        { timestamp: Timestamp.send()!, dataset: 'transactions', row: txId, column: 'date', value: todayInt() },
-        { timestamp: Timestamp.send()!, dataset: 'transactions', row: txId, column: 'description', value: payeeId },
         {
-          timestamp: Timestamp.send()!, dataset: 'transactions', row: txId, column: 'category',
+          timestamp: Timestamp.send()!,
+          dataset: "transactions",
+          row: txId,
+          column: "acct",
+          value: id,
+        },
+        {
+          timestamp: Timestamp.send()!,
+          dataset: "transactions",
+          row: txId,
+          column: "amount",
+          value: startingBalance,
+        },
+        {
+          timestamp: Timestamp.send()!,
+          dataset: "transactions",
+          row: txId,
+          column: "date",
+          value: todayInt(),
+        },
+        {
+          timestamp: Timestamp.send()!,
+          dataset: "transactions",
+          row: txId,
+          column: "description",
+          value: payeeId,
+        },
+        {
+          timestamp: Timestamp.send()!,
+          dataset: "transactions",
+          row: txId,
+          column: "category",
           value: fields.offbudget ? null : categoryId,
         },
-        { timestamp: Timestamp.send()!, dataset: 'transactions', row: txId, column: 'cleared', value: 1 },
-        { timestamp: Timestamp.send()!, dataset: 'transactions', row: txId, column: 'starting_balance_flag', value: 1 },
+        {
+          timestamp: Timestamp.send()!,
+          dataset: "transactions",
+          row: txId,
+          column: "cleared",
+          value: 1,
+        },
+        {
+          timestamp: Timestamp.send()!,
+          dataset: "transactions",
+          row: txId,
+          column: "starting_balance_flag",
+          value: 1,
+        },
       ]);
     }
   });
@@ -175,7 +250,7 @@ export const createAccount = undoable(async function createAccount(
 
 export const updateAccount = undoable(async function updateAccount(
   id: string,
-  fields: Omit<Partial<Account>, 'id' | 'tombstone'>,
+  fields: Omit<Partial<Account>, "id" | "tombstone">,
 ): Promise<void> {
   const dbFields: Record<string, unknown> = {};
   if (fields.name !== undefined) dbFields.name = fields.name;
@@ -189,7 +264,7 @@ export const updateAccount = undoable(async function updateAccount(
   await sendMessages(
     Object.entries(dbFields).map(([column, value]) => ({
       timestamp: Timestamp.send()!,
-      dataset: 'accounts',
+      dataset: "accounts",
       row: id,
       column,
       value: value as string | number | null,
@@ -201,13 +276,15 @@ export const updateAccount = undoable(async function updateAccount(
 // Account properties (balance + transaction count)
 // ---------------------------------------------------------------------------
 
-export async function getAccountProperties(id: string): Promise<{ balance: number; numTransactions: number }> {
+export async function getAccountProperties(
+  id: string,
+): Promise<{ balance: number; numTransactions: number }> {
   const balanceResult = await first<{ balance: number }>(
-    'SELECT COALESCE(SUM(amount), 0) AS balance FROM transactions WHERE acct = ? AND isParent = 0 AND tombstone = 0',
+    "SELECT COALESCE(SUM(amount), 0) AS balance FROM transactions WHERE acct = ? AND isParent = 0 AND tombstone = 0",
     [id],
   );
   const countResult = await first<{ count: number }>(
-    'SELECT COUNT(*) AS count FROM transactions WHERE acct = ? AND tombstone = 0',
+    "SELECT COUNT(*) AS count FROM transactions WHERE acct = ? AND tombstone = 0",
     [id],
   );
   return {
@@ -222,7 +299,7 @@ export async function getAccountProperties(id: string): Promise<{ balance: numbe
 
 async function tombstoneAccount(id: string): Promise<void> {
   await sendMessages([
-    { timestamp: Timestamp.send()!, dataset: 'accounts', row: id, column: 'tombstone', value: 1 },
+    { timestamp: Timestamp.send()!, dataset: "accounts", row: id, column: "tombstone", value: 1 },
   ]);
 }
 
@@ -233,7 +310,9 @@ export type CloseAccountOpts = {
   forced?: boolean;
 };
 
-export const closeAccount = undoable(async function closeAccount(opts: CloseAccountOpts): Promise<void> {
+export const closeAccount = undoable(async function closeAccount(
+  opts: CloseAccountOpts,
+): Promise<void> {
   const { id, transferAccountId, categoryId, forced = false } = opts;
 
   const { balance, numTransactions } = await getAccountProperties(id);
@@ -247,12 +326,12 @@ export const closeAccount = undoable(async function closeAccount(opts: CloseAcco
   // Case 2: Force close — delete all transactions + account
   if (forced) {
     const rows = await runQuery<{ id: string; transferred_id: string | null }>(
-      'SELECT id, transferred_id FROM transactions WHERE acct = ? AND tombstone = 0',
+      "SELECT id, transferred_id FROM transactions WHERE acct = ? AND tombstone = 0",
       [id],
     );
 
     const transferPayee = await first<{ id: string }>(
-      'SELECT id FROM payees WHERE transfer_acct = ? AND tombstone = 0',
+      "SELECT id FROM payees WHERE transfer_acct = ? AND tombstone = 0",
       [id],
     );
 
@@ -261,13 +340,31 @@ export const closeAccount = undoable(async function closeAccount(opts: CloseAcco
         // Unlink transfer pair before tombstoning
         if (row.transferred_id) {
           await sendMessages([
-            { timestamp: Timestamp.send()!, dataset: 'transactions', row: row.transferred_id, column: 'description', value: null },
-            { timestamp: Timestamp.send()!, dataset: 'transactions', row: row.transferred_id, column: 'transferred_id', value: null },
+            {
+              timestamp: Timestamp.send()!,
+              dataset: "transactions",
+              row: row.transferred_id,
+              column: "description",
+              value: null,
+            },
+            {
+              timestamp: Timestamp.send()!,
+              dataset: "transactions",
+              row: row.transferred_id,
+              column: "transferred_id",
+              value: null,
+            },
           ]);
         }
         // Tombstone the transaction
         await sendMessages([
-          { timestamp: Timestamp.send()!, dataset: 'transactions', row: row.id, column: 'tombstone', value: 1 },
+          {
+            timestamp: Timestamp.send()!,
+            dataset: "transactions",
+            row: row.id,
+            column: "tombstone",
+            value: 1,
+          },
         ]);
       }
 
@@ -277,7 +374,13 @@ export const closeAccount = undoable(async function closeAccount(opts: CloseAcco
       // Tombstone transfer payee
       if (transferPayee) {
         await sendMessages([
-          { timestamp: Timestamp.send()!, dataset: 'payees', row: transferPayee.id, column: 'tombstone', value: 1 },
+          {
+            timestamp: Timestamp.send()!,
+            dataset: "payees",
+            row: transferPayee.id,
+            column: "tombstone",
+            value: 1,
+          },
         ]);
       }
     });
@@ -286,16 +389,16 @@ export const closeAccount = undoable(async function closeAccount(opts: CloseAcco
 
   // Case 3: Normal close — mark closed + optional balance transfer
   if (balance !== 0 && !transferAccountId) {
-    throw new Error('Balance is non-zero: transferAccountId is required');
+    throw new Error("Balance is non-zero: transferAccountId is required");
   }
 
   await sendMessages([
-    { timestamp: Timestamp.send()!, dataset: 'accounts', row: id, column: 'closed', value: 1 },
+    { timestamp: Timestamp.send()!, dataset: "accounts", row: id, column: "closed", value: 1 },
   ]);
 
   if (balance !== 0 && transferAccountId) {
     const transferPayee = await first<{ id: string }>(
-      'SELECT id FROM payees WHERE transfer_acct = ? AND tombstone = 0',
+      "SELECT id FROM payees WHERE transfer_acct = ? AND tombstone = 0",
       [transferAccountId],
     );
 
@@ -308,7 +411,7 @@ export const closeAccount = undoable(async function closeAccount(opts: CloseAcco
       amount: -balance,
       date: todayInt(),
       description: transferPayee.id,
-      notes: 'Closing account',
+      notes: "Closing account",
       category: categoryId ?? undefined,
     });
   }

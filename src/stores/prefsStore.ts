@@ -1,15 +1,15 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import { createMMKV } from 'react-native-mmkv';
-import * as SecureStore from 'expo-secure-store';
-import { clearAllKeys as clearEncryptionKeys } from '../services/encryptionKeyStorage';
-import { unloadAllKeys } from '../encryption';
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import { createMMKV } from "react-native-mmkv";
+import * as SecureStore from "expo-secure-store";
+import { clearAllKeys as clearEncryptionKeys } from "../services/encryptionKeyStorage";
+import { unloadAllKeys } from "../encryption";
 
 // ---------------------------------------------------------------------------
 // Storage adapters
 // ---------------------------------------------------------------------------
 
-const mmkv = createMMKV({ id: 'actual-prefs' });
+const mmkv = createMMKV({ id: "actual-prefs" });
 
 // Synchronous MMKV adapter — Zustand persist hydrates immediately on startup
 const mmkvStorage = createJSONStorage(() => ({
@@ -18,7 +18,7 @@ const mmkvStorage = createJSONStorage(() => ({
   removeItem: (name: string) => mmkv.remove(name),
 }));
 
-const SECURE_TOKEN_KEY = 'actual-token';
+const SECURE_TOKEN_KEY = "actual-token";
 
 // ---------------------------------------------------------------------------
 // Store type
@@ -38,8 +38,8 @@ type PrefsState = {
   showHiddenCategories: boolean;
   hasSeenOnboarding: boolean;
   isLocalOnly: boolean;
-  themeMode: 'system' | 'light' | 'dark';
-  language: 'system' | 'en' | 'es';
+  themeMode: "system" | "light" | "dark";
+  language: "system" | "en" | "es";
 
   // Token — in-memory only; persisted in iOS Keychain / Android Keystore
   token: string;
@@ -49,12 +49,16 @@ type PrefsState = {
   isConfigured: boolean;
 
   // Actions
-  setPrefs(prefs: Partial<Omit<PrefsState, 'isConfigured' | 'setPrefs' | 'loadToken' | 'saveToken' | 'clearAll'>>): void;
+  setPrefs(
+    prefs: Partial<
+      Omit<PrefsState, "isConfigured" | "setPrefs" | "loadToken" | "saveToken" | "clearAll">
+    >,
+  ): void;
   /** Load token from SecureStore into state. Call once during app bootstrap. */
   loadToken(): Promise<void>;
   /** Save token to SecureStore and update state. */
   saveToken(token: string): Promise<void>;
-  setLanguage(lang: 'system' | 'en' | 'es'): void;
+  setLanguage(lang: "system" | "en" | "es"): void;
   toggleProgressBars(): void;
   toggleHideReconciled(): void;
   toggleShowHiddenCategories(): void;
@@ -63,7 +67,9 @@ type PrefsState = {
   clearAll(): Promise<void>;
 };
 
-function computeIsConfigured(s: Pick<PrefsState, 'serverUrl' | 'token' | 'activeBudgetId' | 'isLocalOnly'>): boolean {
+function computeIsConfigured(
+  s: Pick<PrefsState, "serverUrl" | "token" | "activeBudgetId" | "isLocalOnly">,
+): boolean {
   if (s.isLocalOnly) return true;
   return !!(s.serverUrl && s.token && s.activeBudgetId);
 }
@@ -75,11 +81,11 @@ function computeIsConfigured(s: Pick<PrefsState, 'serverUrl' | 'token' | 'active
 export const usePrefsStore = create<PrefsState>()(
   persist(
     (set, get) => ({
-      serverUrl: '',
-      token: '',
-      activeBudgetId: '',
-      fileId: '',
-      groupId: '',
+      serverUrl: "",
+      token: "",
+      activeBudgetId: "",
+      fileId: "",
+      groupId: "",
       encryptKeyId: undefined,
       lastSyncedTimestamp: undefined,
       showProgressBars: true,
@@ -87,19 +93,23 @@ export const usePrefsStore = create<PrefsState>()(
       showHiddenCategories: false,
       hasSeenOnboarding: false,
       isLocalOnly: false,
-      themeMode: 'system',
-      language: 'system',
+      themeMode: "system",
+      language: "system",
       hasToken: false,
       isConfigured: false,
 
       setPrefs(prefs) {
-        set(state => {
+        set((state) => {
           const next = { ...state, ...prefs };
-          return { ...next, hasToken: !!(next.serverUrl && next.token), isConfigured: computeIsConfigured(next) };
+          return {
+            ...next,
+            hasToken: !!(next.serverUrl && next.token),
+            isConfigured: computeIsConfigured(next),
+          };
         });
       },
 
-      setLanguage(lang: 'system' | 'en' | 'es') {
+      setLanguage(lang: "system" | "en" | "es") {
         set({ language: lang });
         // i18n language change is handled by the caller (settings screen)
         // to avoid circular imports between prefsStore and i18n/config
@@ -122,9 +132,13 @@ export const usePrefsStore = create<PrefsState>()(
       },
 
       async loadToken() {
-        const token = (await SecureStore.getItemAsync(SECURE_TOKEN_KEY)) ?? '';
+        const token = (await SecureStore.getItemAsync(SECURE_TOKEN_KEY)) ?? "";
         const s = get();
-        set({ token, hasToken: !!(s.serverUrl && token), isConfigured: computeIsConfigured({ ...s, token }) });
+        set({
+          token,
+          hasToken: !!(s.serverUrl && token),
+          isConfigured: computeIsConfigured({ ...s, token }),
+        });
       },
 
       async saveToken(token: string) {
@@ -143,11 +157,11 @@ export const usePrefsStore = create<PrefsState>()(
         unloadAllKeys();
 
         set({
-          serverUrl: '',
-          token: '',
-          activeBudgetId: '',
-          fileId: '',
-          groupId: '',
+          serverUrl: "",
+          token: "",
+          activeBudgetId: "",
+          fileId: "",
+          groupId: "",
           encryptKeyId: undefined,
           lastSyncedTimestamp: undefined,
           budgetName: undefined,
@@ -164,7 +178,7 @@ export const usePrefsStore = create<PrefsState>()(
       },
     }),
     {
-      name: 'actual-prefs',
+      name: "actual-prefs",
       storage: mmkvStorage,
       // Only persist non-sensitive config to MMKV. Token stays in SecureStore.
       partialize: (state) => ({

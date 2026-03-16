@@ -1,8 +1,8 @@
-import type { ReactNode } from 'react';
-import type { ViewStyle, StyleProp } from 'react-native';
-import Animated, { useAnimatedStyle } from 'react-native-reanimated';
-import { useTheme } from '../../providers/ThemeProvider';
-import { useKeyboardHeight } from '../../hooks/useKeyboardHeight';
+import type { ReactNode } from "react";
+import type { ViewStyle, StyleProp } from "react-native";
+import Animated, { useAnimatedStyle } from "react-native-reanimated";
+import { useTheme } from "../../providers/ThemeProvider";
+import { useKeyboardHeight } from "../../hooks/useKeyboardHeight";
 
 type KeyboardToolbarProps = {
   children: ReactNode;
@@ -30,11 +30,11 @@ export function KeyboardToolbar({ children, visible, style }: KeyboardToolbarPro
     <Animated.View
       style={[
         {
-          position: 'absolute',
+          position: "absolute",
           left: 0,
           right: 0,
           zIndex: 10,
-          flexDirection: 'row',
+          flexDirection: "row",
           gap: spacing.sm,
           paddingHorizontal: spacing.lg,
           paddingTop: spacing.sm,

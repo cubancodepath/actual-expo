@@ -1,7 +1,7 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
-import { usePrefsStore } from '../../stores/prefsStore';
-import { listFiles } from '../../services/authService';
-import { listLocalBudgets } from '../../services/budgetMetadata';
+import { useEffect, useState, useCallback, useRef } from "react";
+import { usePrefsStore } from "../../stores/prefsStore";
+import { listFiles } from "../../services/authService";
+import { listLocalBudgets } from "../../services/budgetMetadata";
 import {
   type ReconciledBudgetFile,
   reconcileFiles,
@@ -12,11 +12,11 @@ import {
   openBudget,
   convertToLocalOnly,
   reRegisterBudget,
-} from '../../services/budgetfiles';
-import { clearSwitchingFlag } from '../../sync';
-import * as encryption from '../../encryption';
-import { loadKeyForBudget } from '../../services/encryptionService';
-import { promptForPassword } from '../components/molecules/EncryptionPasswordPrompt';
+} from "../../services/budgetfiles";
+import { clearSwitchingFlag } from "../../sync";
+import * as encryption from "../../encryption";
+import { loadKeyForBudget } from "../../services/encryptionService";
+import { promptForPassword } from "../components/molecules/EncryptionPasswordPrompt";
 
 type UseBudgetFilesReturn = {
   /** Files on this device (local, synced, detached) */
@@ -62,7 +62,9 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
 
   useEffect(() => {
     isMounted.current = true;
-    return () => { isMounted.current = false; };
+    return () => {
+      isMounted.current = false;
+    };
   }, []);
 
   const fetchFiles = useCallback(async () => {
@@ -77,156 +79,185 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
     setLoading(true);
     setError(null);
     fetchFiles()
-      .then(f => { if (isMounted.current) setFiles(f); })
-      .catch(e => { if (isMounted.current) setError(e instanceof Error ? e.message : String(e)); })
-      .finally(() => { if (isMounted.current) setLoading(false); });
+      .then((f) => {
+        if (isMounted.current) setFiles(f);
+      })
+      .catch((e) => {
+        if (isMounted.current) setError(e instanceof Error ? e.message : String(e));
+      })
+      .finally(() => {
+        if (isMounted.current) setLoading(false);
+      });
   }, [fetchFiles]);
 
-  useEffect(() => { loadFiles(); }, [loadFiles]);
+  useEffect(() => {
+    loadFiles();
+  }, [loadFiles]);
 
   const refreshFiles = useCallback(() => {
     setRefreshing(true);
     setError(null);
     fetchFiles()
-      .then(f => { if (isMounted.current) setFiles(f); })
-      .catch(e => { if (isMounted.current) setError(e instanceof Error ? e.message : String(e)); })
-      .finally(() => { if (isMounted.current) setRefreshing(false); });
+      .then((f) => {
+        if (isMounted.current) setFiles(f);
+      })
+      .catch((e) => {
+        if (isMounted.current) setError(e instanceof Error ? e.message : String(e));
+      })
+      .finally(() => {
+        if (isMounted.current) setRefreshing(false);
+      });
   }, [fetchFiles]);
 
-  const selectFile = useCallback(async (file: ReconciledBudgetFile) => {
-    // If encrypted, ensure the key is available before switching
-    if (file.encryptKeyId && file.cloudFileId) {
-      if (!encryption.hasKey(file.encryptKeyId)) {
-        // Try loading from SecureStore first
-        const loaded = await loadKeyForBudget(file.cloudFileId);
-        if (!loaded) {
-          // Prompt user for password
-          const result = await promptForPassword(file.cloudFileId);
-          if (result === 'cancelled') return;
+  const selectFile = useCallback(
+    async (file: ReconciledBudgetFile) => {
+      // If encrypted, ensure the key is available before switching
+      if (file.encryptKeyId && file.cloudFileId) {
+        if (!encryption.hasKey(file.encryptKeyId)) {
+          // Try loading from SecureStore first
+          const loaded = await loadKeyForBudget(file.cloudFileId);
+          if (!loaded) {
+            // Prompt user for password
+            const result = await promptForPassword(file.cloudFileId);
+            if (result === "cancelled") return;
+          }
         }
       }
-    }
 
-    setSelecting(fileKey(file));
-    try {
-      await switchBudget(file, serverUrl, token);
-    } catch (e: unknown) {
-      clearSwitchingFlag();
-      if (isMounted.current) {
-        setError(e instanceof Error ? e.message : String(e));
-        setSelecting(null);
+      setSelecting(fileKey(file));
+      try {
+        await switchBudget(file, serverUrl, token);
+      } catch (e: unknown) {
+        clearSwitchingFlag();
+        if (isMounted.current) {
+          setError(e instanceof Error ? e.message : String(e));
+          setSelecting(null);
+        }
+        throw e;
       }
-      throw e;
-    }
-  }, [serverUrl, token]);
+    },
+    [serverUrl, token],
+  );
 
-  const handleDeleteFile = useCallback(async (file: ReconciledBudgetFile, fromServer?: boolean) => {
-    try {
-      if (fromServer && file.cloudFileId) {
-        await deleteFromServer(serverUrl, token, file.cloudFileId);
+  const handleDeleteFile = useCallback(
+    async (file: ReconciledBudgetFile, fromServer?: boolean) => {
+      try {
+        if (fromServer && file.cloudFileId) {
+          await deleteFromServer(serverUrl, token, file.cloudFileId);
+        }
+        if (file.localId) {
+          await deleteBudget(file.localId);
+        }
+        // Refresh list after delete
+        const updated = await fetchFiles();
+        if (isMounted.current) setFiles(updated);
+      } catch (e: unknown) {
+        if (isMounted.current) {
+          setError(e instanceof Error ? e.message : String(e));
+        }
+        throw e;
       }
-      if (file.localId) {
-        await deleteBudget(file.localId);
-      }
-      // Refresh list after delete
-      const updated = await fetchFiles();
-      if (isMounted.current) setFiles(updated);
-    } catch (e: unknown) {
-      if (isMounted.current) {
-        setError(e instanceof Error ? e.message : String(e));
-      }
-      throw e;
-    }
-  }, [serverUrl, token, fetchFiles]);
+    },
+    [serverUrl, token, fetchFiles],
+  );
 
-  const handleUploadFile = useCallback(async (file: ReconciledBudgetFile) => {
-    if (!file.localId) throw new Error('No local ID to upload');
-    try {
-      // Need the budget DB open to read the file
-      const { activeBudgetId } = usePrefsStore.getState();
-      const needsOpen = activeBudgetId !== file.localId;
-      if (needsOpen) {
-        await openBudget(file.localId);
+  const handleUploadFile = useCallback(
+    async (file: ReconciledBudgetFile) => {
+      if (!file.localId) throw new Error("No local ID to upload");
+      try {
+        // Need the budget DB open to read the file
+        const { activeBudgetId } = usePrefsStore.getState();
+        const needsOpen = activeBudgetId !== file.localId;
+        if (needsOpen) {
+          await openBudget(file.localId);
+        }
+        const { cloudFileId, groupId } = await uploadBudget(serverUrl, token, file.localId);
+        // Update prefs if this is the active budget
+        if (usePrefsStore.getState().activeBudgetId === file.localId) {
+          usePrefsStore.getState().setPrefs({
+            fileId: cloudFileId,
+            groupId,
+            isLocalOnly: false,
+          });
+        }
+        // Refresh list to show updated state
+        const updated = await fetchFiles();
+        if (isMounted.current) setFiles(updated);
+      } catch (e: unknown) {
+        if (isMounted.current) {
+          setError(e instanceof Error ? e.message : String(e));
+        }
+        throw e;
       }
-      const { cloudFileId, groupId } = await uploadBudget(serverUrl, token, file.localId);
-      // Update prefs if this is the active budget
-      if (usePrefsStore.getState().activeBudgetId === file.localId) {
-        usePrefsStore.getState().setPrefs({
-          fileId: cloudFileId,
-          groupId,
-          isLocalOnly: false,
-        });
-      }
-      // Refresh list to show updated state
-      const updated = await fetchFiles();
-      if (isMounted.current) setFiles(updated);
-    } catch (e: unknown) {
-      if (isMounted.current) {
-        setError(e instanceof Error ? e.message : String(e));
-      }
-      throw e;
-    }
-  }, [serverUrl, token, fetchFiles]);
+    },
+    [serverUrl, token, fetchFiles],
+  );
 
-  const handleConvertToLocal = useCallback(async (file: ReconciledBudgetFile) => {
-    if (!file.localId) throw new Error('No local ID');
-    const key = fileKey(file);
-    setActionInProgress(key);
-    try {
-      await convertToLocalOnly(file.localId);
-      // Update prefs if this is the active budget
-      if (usePrefsStore.getState().activeBudgetId === file.localId) {
-        usePrefsStore.getState().setPrefs({
-          fileId: '',
-          groupId: '',
-          isLocalOnly: true,
-        });
+  const handleConvertToLocal = useCallback(
+    async (file: ReconciledBudgetFile) => {
+      if (!file.localId) throw new Error("No local ID");
+      const key = fileKey(file);
+      setActionInProgress(key);
+      try {
+        await convertToLocalOnly(file.localId);
+        // Update prefs if this is the active budget
+        if (usePrefsStore.getState().activeBudgetId === file.localId) {
+          usePrefsStore.getState().setPrefs({
+            fileId: "",
+            groupId: "",
+            isLocalOnly: true,
+          });
+        }
+        const updated = await fetchFiles();
+        if (isMounted.current) setFiles(updated);
+      } catch (e: unknown) {
+        if (isMounted.current) {
+          setError(e instanceof Error ? e.message : String(e));
+        }
+        throw e;
+      } finally {
+        if (isMounted.current) setActionInProgress(null);
       }
-      const updated = await fetchFiles();
-      if (isMounted.current) setFiles(updated);
-    } catch (e: unknown) {
-      if (isMounted.current) {
-        setError(e instanceof Error ? e.message : String(e));
-      }
-      throw e;
-    } finally {
-      if (isMounted.current) setActionInProgress(null);
-    }
-  }, [fetchFiles]);
+    },
+    [fetchFiles],
+  );
 
-  const handleReRegister = useCallback(async (file: ReconciledBudgetFile) => {
-    if (!file.localId) throw new Error('No local ID');
-    const key = fileKey(file);
-    setActionInProgress(key);
-    try {
-      const { activeBudgetId } = usePrefsStore.getState();
-      const needsOpen = activeBudgetId !== file.localId;
-      if (needsOpen) {
-        await openBudget(file.localId);
+  const handleReRegister = useCallback(
+    async (file: ReconciledBudgetFile) => {
+      if (!file.localId) throw new Error("No local ID");
+      const key = fileKey(file);
+      setActionInProgress(key);
+      try {
+        const { activeBudgetId } = usePrefsStore.getState();
+        const needsOpen = activeBudgetId !== file.localId;
+        if (needsOpen) {
+          await openBudget(file.localId);
+        }
+        const { cloudFileId, groupId } = await reRegisterBudget(serverUrl, token, file.localId);
+        // Update prefs if this is the active budget
+        if (usePrefsStore.getState().activeBudgetId === file.localId) {
+          usePrefsStore.getState().setPrefs({
+            fileId: cloudFileId,
+            groupId,
+            isLocalOnly: false,
+          });
+        }
+        const updated = await fetchFiles();
+        if (isMounted.current) setFiles(updated);
+      } catch (e: unknown) {
+        if (isMounted.current) {
+          setError(e instanceof Error ? e.message : String(e));
+        }
+        throw e;
+      } finally {
+        if (isMounted.current) setActionInProgress(null);
       }
-      const { cloudFileId, groupId } = await reRegisterBudget(serverUrl, token, file.localId);
-      // Update prefs if this is the active budget
-      if (usePrefsStore.getState().activeBudgetId === file.localId) {
-        usePrefsStore.getState().setPrefs({
-          fileId: cloudFileId,
-          groupId,
-          isLocalOnly: false,
-        });
-      }
-      const updated = await fetchFiles();
-      if (isMounted.current) setFiles(updated);
-    } catch (e: unknown) {
-      if (isMounted.current) {
-        setError(e instanceof Error ? e.message : String(e));
-      }
-      throw e;
-    } finally {
-      if (isMounted.current) setActionInProgress(null);
-    }
-  }, [serverUrl, token, fetchFiles]);
+    },
+    [serverUrl, token, fetchFiles],
+  );
 
-  const localFiles = files.filter(f => f.state !== 'remote');
-  const remoteFiles = files.filter(f => f.state === 'remote');
+  const localFiles = files.filter((f) => f.state !== "remote");
+  const remoteFiles = files.filter((f) => f.state === "remote");
 
   return {
     localFiles,

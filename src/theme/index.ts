@@ -1,8 +1,4 @@
-import {
-  lightColors,
-  darkColors,
-  type ThemeColors,
-} from "./colors";
+import { lightColors, darkColors, type ThemeColors } from "./colors";
 import { spacing, type Spacing } from "./spacing";
 import { typography, type Typography, type TypographyVariant } from "./typography";
 import { borderRadius, borderWidth, type BorderRadius, type BorderWidth } from "./borders";
@@ -42,4 +38,12 @@ export { palette } from "./colors";
 export { spacing } from "./spacing";
 export { typography } from "./typography";
 export { borderRadius, borderWidth } from "./borders";
-export type { ThemeColors, Spacing, Typography, TypographyVariant, BorderRadius, BorderWidth, Shadows };
+export type {
+  ThemeColors,
+  Spacing,
+  Typography,
+  TypographyVariant,
+  BorderRadius,
+  BorderWidth,
+  Shadows,
+};

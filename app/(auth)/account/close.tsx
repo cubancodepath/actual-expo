@@ -1,28 +1,24 @@
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, View } from 'react-native';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useAccountsStore } from '../../../src/stores/accountsStore';
-import { useCategoriesStore } from '../../../src/stores/categoriesStore';
-import { useUndoStore } from '../../../src/stores/undoStore';
-import { getAccountProperties, groupAccounts } from '../../../src/accounts';
-import { useTheme, useThemedStyles } from '../../../src/presentation/providers/ThemeProvider';
-import { Text } from '../../../src/presentation/components/atoms/Text';
-import { Button } from '../../../src/presentation/components/atoms/Button';
-import { IconButton } from '../../../src/presentation/components/atoms/IconButton';
-import { formatBalance } from '../../../src/lib/format';
-import { Divider } from '../../../src/presentation/components/atoms/Divider';
-import type { Account } from '../../../src/accounts/types';
-import type { Category, CategoryGroup } from '../../../src/categories/types';
-import { useTranslation } from 'react-i18next';
-import type { Theme } from '../../../src/theme';
+import { useEffect, useState } from "react";
+import { ActivityIndicator, Alert, Pressable, ScrollView, View } from "react-native";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { useAccountsStore } from "../../../src/stores/accountsStore";
+import { useCategoriesStore } from "../../../src/stores/categoriesStore";
+import { useUndoStore } from "../../../src/stores/undoStore";
+import { getAccountProperties, groupAccounts } from "../../../src/accounts";
+import { useTheme, useThemedStyles } from "../../../src/presentation/providers/ThemeProvider";
+import { Text } from "../../../src/presentation/components/atoms/Text";
+import { Button } from "../../../src/presentation/components/atoms/Button";
+import { IconButton } from "../../../src/presentation/components/atoms/IconButton";
+import { formatBalance } from "../../../src/lib/format";
+import { Divider } from "../../../src/presentation/components/atoms/Divider";
+import type { Account } from "../../../src/accounts/types";
+import type { Category, CategoryGroup } from "../../../src/categories/types";
+import { useTranslation } from "react-i18next";
+import type { Theme } from "../../../src/theme";
 
-function needsCategory(
-  account: Account,
-  transferAccountId: string,
-  accounts: Account[],
-): boolean {
-  const transferAcct = accounts.find(a => a.id === transferAccountId);
+function needsCategory(account: Account, transferAccountId: string, accounts: Account[]): boolean {
+  const transferAcct = accounts.find((a) => a.id === transferAccountId);
   return !account.offbudget && !!transferAcct?.offbudget;
 }
 
@@ -32,11 +28,11 @@ export default function CloseAccountScreen() {
   const theme = useTheme();
   const styles = useThemedStyles(createStyles);
 
-  const { t } = useTranslation('accounts');
-  const { t: tc } = useTranslation('common');
+  const { t } = useTranslation("accounts");
+  const { t: tc } = useTranslation("common");
   const { accounts, close, load } = useAccountsStore();
   const { categories, groups } = useCategoriesStore();
-  const account = accounts.find(a => a.id === id);
+  const account = accounts.find((a) => a.id === id);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -64,15 +60,16 @@ export default function CloseAccountScreen() {
     );
   }
 
-  const openAccounts = accounts.filter(a => !a.closed && !a.tombstone && a.id !== id);
+  const openAccounts = accounts.filter((a) => !a.closed && !a.tombstone && a.id !== id);
   const showTransfer = balance !== 0;
   const showCategory =
     transferAccountId != null && needsCategory(account, transferAccountId, accounts);
 
   // Filter to expense categories only (not income groups)
-  const expenseGroups = groups.filter(g => !g.is_income && !g.tombstone);
+  const expenseGroups = groups.filter((g) => !g.is_income && !g.tombstone);
   const expenseCategories = categories.filter(
-    c => !c.is_income && !c.tombstone && !c.hidden && expenseGroups.some(g => g.id === c.cat_group),
+    (c) =>
+      !c.is_income && !c.tombstone && !c.hidden && expenseGroups.some((g) => g.id === c.cat_group),
   );
 
   async function handleSubmit() {
@@ -95,9 +92,9 @@ export default function CloseAccountScreen() {
         categoryId: categoryId ?? undefined,
       });
       await load();
-      useUndoStore.getState().showUndo(
-        canDelete ? t('close.accountDeleted') : t('close.accountClosed'),
-      );
+      useUndoStore
+        .getState()
+        .showUndo(canDelete ? t("close.accountDeleted") : t("close.accountClosed"));
       router.dismiss();
     } finally {
       setSaving(false);
@@ -105,28 +102,24 @@ export default function CloseAccountScreen() {
   }
 
   function handleForceClose() {
-    Alert.alert(
-      t('close.forceCloseTitle'),
-      t('close.forceCloseMessage', { name: account!.name }),
-      [
-        { text: tc('cancel'), style: 'cancel' },
-        {
-          text: t('close.forceClose'),
-          style: 'destructive',
-          onPress: async () => {
-            setSaving(true);
-            try {
-              await close({ id, forced: true });
-              await load();
-              useUndoStore.getState().showUndo(t('close.accountDeleted'));
-              router.dismiss();
-            } finally {
-              setSaving(false);
-            }
-          },
+    Alert.alert(t("close.forceCloseTitle"), t("close.forceCloseMessage", { name: account!.name }), [
+      { text: tc("cancel"), style: "cancel" },
+      {
+        text: t("close.forceClose"),
+        style: "destructive",
+        onPress: async () => {
+          setSaving(true);
+          try {
+            await close({ id, forced: true });
+            await load();
+            useUndoStore.getState().showUndo(t("close.accountDeleted"));
+            router.dismiss();
+          } finally {
+            setSaving(false);
+          }
         },
-      ],
-    );
+      },
+    ]);
   }
 
   return (
@@ -151,17 +144,15 @@ export default function CloseAccountScreen() {
 
       {/* Confirmation text */}
       <Text variant="body" color={theme.colors.textPrimary} style={styles.paragraph}>
-        {t('close.confirmMessage')}
-        <Text variant="body" color={theme.colors.textPrimary} style={{ fontWeight: '700' }}>
+        {t("close.confirmMessage")}
+        <Text variant="body" color={theme.colors.textPrimary} style={{ fontWeight: "700" }}>
           {account.name}
         </Text>
         ?
       </Text>
 
       <Text variant="bodySm" color={theme.colors.textSecondary} style={styles.paragraph}>
-        {canDelete
-          ? t('close.noTransactions')
-          : t('close.hasTransactions')}
+        {canDelete ? t("close.noTransactions") : t("close.hasTransactions")}
       </Text>
 
       {/* Balance transfer section */}
@@ -170,12 +161,12 @@ export default function CloseAccountScreen() {
           <Divider style={styles.divider} />
 
           <Text variant="bodySm" color={theme.colors.textSecondary} style={styles.paragraph}>
-            {t('close.balanceTransferMessage', { balance: formatBalance(balance) })}
+            {t("close.balanceTransferMessage", { balance: formatBalance(balance) })}
           </Text>
 
           {transferError && (
             <Text variant="captionSm" color={theme.colors.errorText} style={styles.errorText}>
-              {t('close.transferRequired')}
+              {t("close.transferRequired")}
             </Text>
           )}
 
@@ -200,12 +191,12 @@ export default function CloseAccountScreen() {
           <Divider style={styles.divider} />
 
           <Text variant="bodySm" color={theme.colors.textSecondary} style={styles.paragraph}>
-            {t('close.categoryTransferMessage')}
+            {t("close.categoryTransferMessage")}
           </Text>
 
           {categoryError && (
             <Text variant="captionSm" color={theme.colors.errorText} style={styles.errorText}>
-              {t('close.categoryRequired')}
+              {t("close.categoryRequired")}
             </Text>
           )}
 
@@ -227,16 +218,16 @@ export default function CloseAccountScreen() {
         <>
           <Divider style={styles.divider} />
           <Text variant="captionSm" color={theme.colors.textMuted} style={styles.paragraph}>
-            {t('close.forceCloseHint')}
+            {t("close.forceCloseHint")}
             <Text
               variant="captionSm"
               color={theme.colors.errorText}
-              style={{ fontWeight: '600' }}
+              style={{ fontWeight: "600" }}
               onPress={handleForceClose}
             >
-              {t('close.forceCloseLink')}
+              {t("close.forceCloseLink")}
             </Text>
-            {t('close.forceCloseDescription')}
+            {t("close.forceCloseDescription")}
           </Text>
         </>
       )}
@@ -244,13 +235,13 @@ export default function CloseAccountScreen() {
       {/* Action buttons */}
       <View style={styles.buttonRow}>
         <Button
-          title={tc('cancel')}
+          title={tc("cancel")}
           variant="secondary"
           onPress={() => router.back()}
           style={styles.buttonFlex}
         />
         <Button
-          title={t('close.title')}
+          title={t("close.title")}
           variant="danger"
           onPress={handleSubmit}
           loading={saving}
@@ -285,7 +276,7 @@ function AccountPickerList({
         <View key={group.type}>
           {gi > 0 && <Divider />}
           <View style={styles.pickerGroupHeader}>
-            <Text variant="captionSm" color={theme.colors.textMuted} style={{ fontWeight: '600' }}>
+            <Text variant="captionSm" color={theme.colors.textMuted} style={{ fontWeight: "600" }}>
               {group.label}
             </Text>
           </View>
@@ -300,13 +291,11 @@ function AccountPickerList({
                 <Text
                   variant="body"
                   color={selected ? theme.colors.primary : theme.colors.textPrimary}
-                  style={[styles.pickerRowText, selected && { fontWeight: '600' as const }]}
+                  style={[styles.pickerRowText, selected && { fontWeight: "600" as const }]}
                 >
                   {acct.name}
                 </Text>
-                {selected && (
-                  <Ionicons name="checkmark" size={20} color={theme.colors.primary} />
-                )}
+                {selected && <Ionicons name="checkmark" size={20} color={theme.colors.primary} />}
               </Pressable>
             );
           })}
@@ -338,13 +327,17 @@ function CategoryPickerList({
   return (
     <View style={styles.pickerCard}>
       {groups.map((group, gi) => {
-        const groupCats = categories.filter(c => c.cat_group === group.id);
+        const groupCats = categories.filter((c) => c.cat_group === group.id);
         if (groupCats.length === 0) return null;
         return (
           <View key={group.id}>
             {gi > 0 && <Divider />}
             <View style={styles.pickerGroupHeader}>
-              <Text variant="captionSm" color={theme.colors.textMuted} style={{ fontWeight: '600' }}>
+              <Text
+                variant="captionSm"
+                color={theme.colors.textMuted}
+                style={{ fontWeight: "600" }}
+              >
                 {group.name}
               </Text>
             </View>
@@ -359,13 +352,11 @@ function CategoryPickerList({
                   <Text
                     variant="body"
                     color={selected ? theme.colors.primary : theme.colors.textPrimary}
-                    style={[styles.pickerRowText, selected && { fontWeight: '600' as const }]}
+                    style={[styles.pickerRowText, selected && { fontWeight: "600" as const }]}
                   >
                     {cat.name}
                   </Text>
-                  {selected && (
-                    <Ionicons name="checkmark" size={20} color={theme.colors.primary} />
-                  )}
+                  {selected && <Ionicons name="checkmark" size={20} color={theme.colors.primary} />}
                 </Pressable>
               );
             })}
@@ -388,8 +379,8 @@ const createStyles = (theme: Theme) => ({
   center: {
     flex: 1,
     backgroundColor: theme.colors.pageBackground,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
   container: {
     padding: theme.spacing.lg,
@@ -411,7 +402,7 @@ const createStyles = (theme: Theme) => ({
     borderRadius: theme.borderRadius.lg,
     borderWidth: theme.borderWidth.default,
     borderColor: theme.colors.cardBorder,
-    overflow: 'hidden' as const,
+    overflow: "hidden" as const,
   },
   pickerGroupHeader: {
     paddingHorizontal: theme.spacing.md,
@@ -419,8 +410,8 @@ const createStyles = (theme: Theme) => ({
     backgroundColor: theme.colors.pageBackground,
   },
   pickerRow: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.md,
     minHeight: 44,
@@ -434,7 +425,7 @@ const createStyles = (theme: Theme) => ({
 
   // Buttons
   buttonRow: {
-    flexDirection: 'row' as const,
+    flexDirection: "row" as const,
     gap: theme.spacing.md,
     marginTop: theme.spacing.xl,
   },

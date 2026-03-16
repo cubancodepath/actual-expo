@@ -85,7 +85,10 @@ export function Button({
       style={({ pressed }) => [
         styles.base,
         variantStyles.container,
-        { paddingVertical: sizeStyles.paddingVertical, paddingHorizontal: sizeStyles.paddingHorizontal },
+        {
+          paddingVertical: sizeStyles.paddingVertical,
+          paddingHorizontal: sizeStyles.paddingHorizontal,
+        },
         pressed && styles.pressed,
         style,
       ]}
@@ -94,7 +97,14 @@ export function Button({
         <ActivityIndicator size="small" color={color} style={{ opacity: contentOpacity }} />
       ) : (
         <>
-          {icon && <Ionicons name={icon} size={sizeStyles.fontSize + 4} color={color} style={{ marginRight: 6, opacity: contentOpacity }} />}
+          {icon && (
+            <Ionicons
+              name={icon}
+              size={sizeStyles.fontSize + 4}
+              color={color}
+              style={{ marginRight: 6, opacity: contentOpacity }}
+            />
+          )}
           <Text
             variant="bodyLg"
             color={color}

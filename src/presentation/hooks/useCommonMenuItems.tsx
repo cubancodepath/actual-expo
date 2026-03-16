@@ -1,8 +1,8 @@
-import { Stack, useRouter } from 'expo-router';
-import { useUndoStore } from '../../stores/undoStore';
-import { usePrivacyStore } from '../../stores/privacyStore';
+import { Stack, useRouter } from "expo-router";
+import { useUndoStore } from "../../stores/undoStore";
+import { usePrivacyStore } from "../../stores/privacyStore";
 
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
 
 // ---------------------------------------------------------------------------
 // JSX API — for Stack.Toolbar.Menu
@@ -37,18 +37,17 @@ export function useCommonMenuActions(): ReactNode[] {
     </Stack.Toolbar.MenuAction>,
     <Stack.Toolbar.MenuAction
       key="privacy"
-      icon={privacyMode ? 'eye' : 'eye.slash'}
+      icon={privacyMode ? "eye" : "eye.slash"}
       onPress={togglePrivacy}
     >
-      {privacyMode ? 'Show Amounts' : 'Hide Amounts'}
+      {privacyMode ? "Show Amounts" : "Hide Amounts"}
     </Stack.Toolbar.MenuAction>,
     <Stack.Toolbar.MenuAction
       key="settings"
       icon="gearshape"
-      onPress={() => router.push('/(auth)/settings')}
+      onPress={() => router.push("/(auth)/settings")}
     >
       Settings
     </Stack.Toolbar.MenuAction>,
   ];
 }
-

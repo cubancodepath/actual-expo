@@ -1,15 +1,15 @@
-import { randomUUID } from 'expo-crypto';
-import { runQuery, first } from '../db';
-import { sendMessages, batchMessages } from '../sync';
-import { undoable } from '../sync/undo';
-import { Timestamp } from '../crdt';
-import type { TransactionRow } from '../db/types';
-import type { Transaction, GetTransactionsOptions, TransactionDisplay } from './types';
-import { onInsert, onUpdate, onDelete as onDeleteTransfer } from './transfer';
-import { todayInt, startOfMonthInt, endOfMonthInt } from '../lib/date';
-import { transactionQuery } from './query';
+import { randomUUID } from "expo-crypto";
+import { runQuery, first } from "../db";
+import { sendMessages, batchMessages } from "../sync";
+import { undoable } from "../sync/undo";
+import { Timestamp } from "../crdt";
+import type { TransactionRow } from "../db/types";
+import type { Transaction, GetTransactionsOptions, TransactionDisplay } from "./types";
+import { onInsert, onUpdate, onDelete as onDeleteTransfer } from "./transfer";
+import { todayInt, startOfMonthInt, endOfMonthInt } from "../lib/date";
+import { transactionQuery } from "./query";
 
-export type { TransactionDisplay } from './types';
+export type { TransactionDisplay } from "./types";
 
 function rowToTransaction(r: TransactionRow): Transaction {
   return {
@@ -33,28 +33,26 @@ function rowToTransaction(r: TransactionRow): Transaction {
   };
 }
 
-export async function getTransactions(
-  opts: GetTransactionsOptions = {},
-): Promise<Transaction[]> {
-  const conditions: string[] = ['tombstone = 0'];
+export async function getTransactions(opts: GetTransactionsOptions = {}): Promise<Transaction[]> {
+  const conditions: string[] = ["tombstone = 0"];
   const params: (string | number)[] = [];
 
   if (opts.accountId) {
-    conditions.push('acct = ?');
+    conditions.push("acct = ?");
     params.push(opts.accountId);
   }
   if (opts.startDate !== undefined) {
-    conditions.push('date >= ?');
+    conditions.push("date >= ?");
     params.push(opts.startDate);
   }
   if (opts.endDate !== undefined) {
-    conditions.push('date <= ?');
+    conditions.push("date <= ?");
     params.push(opts.endDate);
   }
 
-  const where = conditions.join(' AND ');
-  const limit = opts.limit ? `LIMIT ${opts.limit}` : '';
-  const offset = opts.offset ? `OFFSET ${opts.offset}` : '';
+  const where = conditions.join(" AND ");
+  const limit = opts.limit ? `LIMIT ${opts.limit}` : "";
+  const offset = opts.offset ? `OFFSET ${opts.offset}` : "";
 
   const rows = await runQuery<TransactionRow>(
     `SELECT * FROM transactions WHERE ${where} ORDER BY date DESC, sort_order DESC ${limit} ${offset}`,
@@ -64,7 +62,11 @@ export async function getTransactions(
 }
 
 export const addTransaction = undoable(async function addTransaction(
-  fields: Omit<Partial<Transaction>, 'id' | 'tombstone'> & { acct: string; date: number; amount: number },
+  fields: Omit<Partial<Transaction>, "id" | "tombstone"> & {
+    acct: string;
+    date: number;
+    amount: number;
+  },
 ): Promise<string> {
   const id = randomUUID();
 
@@ -89,7 +91,7 @@ export const addTransaction = undoable(async function addTransaction(
   await sendMessages(
     Object.entries(dbFields).map(([column, value]) => ({
       timestamp: Timestamp.send()!,
-      dataset: 'transactions',
+      dataset: "transactions",
       row: id,
       column,
       value: value as string | number | null,
@@ -110,7 +112,9 @@ export const addTransaction = undoable(async function addTransaction(
 });
 
 /** Duplicate a transaction — copies all fields except cleared/reconciled (reset to false). */
-export const duplicateTransaction = undoable(async function duplicateTransaction(id: string): Promise<string | null> {
+export const duplicateTransaction = undoable(async function duplicateTransaction(
+  id: string,
+): Promise<string | null> {
   const original = await getTransactionById(id);
   if (!original) return null;
 
@@ -128,14 +132,34 @@ export const duplicateTransaction = undoable(async function duplicateTransaction
 
 export const updateTransaction = undoable(async function updateTransaction(
   id: string,
-  fields: Omit<Partial<Transaction>, 'id' | 'tombstone'>,
+  fields: Omit<Partial<Transaction>, "id" | "tombstone">,
 ): Promise<void> {
   // Fetch current state before updating (needed for transfer hook)
-  const prev = await first<TransactionRow>('SELECT * FROM transactions WHERE id = ? AND tombstone = 0', [id]);
+  const prev = await first<TransactionRow>(
+    "SELECT * FROM transactions WHERE id = ? AND tombstone = 0",
+    [id],
+  );
 
   const dbFields: Record<string, unknown> = {};
-  const boolFields = ['isParent', 'isChild', 'cleared', 'reconciled', 'starting_balance_flag'] as const;
-  const directFields = ['acct', 'date', 'amount', 'category', 'description', 'notes', 'parent_id', 'transferred_id', 'sort_order', 'schedule'] as const;
+  const boolFields = [
+    "isParent",
+    "isChild",
+    "cleared",
+    "reconciled",
+    "starting_balance_flag",
+  ] as const;
+  const directFields = [
+    "acct",
+    "date",
+    "amount",
+    "category",
+    "description",
+    "notes",
+    "parent_id",
+    "transferred_id",
+    "sort_order",
+    "schedule",
+  ] as const;
 
   for (const f of boolFields) {
     if (fields[f] !== undefined) dbFields[f] = fields[f] ? 1 : 0;
@@ -149,7 +173,7 @@ export const updateTransaction = undoable(async function updateTransaction(
   await sendMessages(
     Object.entries(dbFields).map(([column, value]) => ({
       timestamp: Timestamp.send()!,
-      dataset: 'transactions',
+      dataset: "transactions",
       row: id,
       column,
       value: value as string | number | null,
@@ -161,19 +185,19 @@ export const updateTransaction = undoable(async function updateTransaction(
     await onUpdate(
       {
         id,
-        acct:          prev.acct,
-        amount:        prev.amount,
-        date:          prev.date,
-        description:   prev.description,
-        notes:         prev.notes,
+        acct: prev.acct,
+        amount: prev.amount,
+        date: prev.date,
+        description: prev.description,
+        notes: prev.notes,
         transferred_id: prev.transferred_id,
       },
       {
-        acct:        fields.acct,
-        amount:      fields.amount,
-        date:        fields.date,
+        acct: fields.acct,
+        amount: fields.amount,
+        date: fields.date,
         description: fields.description,
-        notes:       fields.notes,
+        notes: fields.notes,
       },
     );
   }
@@ -182,11 +206,18 @@ export const updateTransaction = undoable(async function updateTransaction(
 /** Toggle the cleared flag on a transaction (skips reconciled transactions). */
 export const toggleCleared = undoable(async function toggleCleared(id: string): Promise<void> {
   const row = await first<{ cleared: number; reconciled: number }>(
-    'SELECT cleared, reconciled FROM transactions WHERE id = ? AND tombstone = 0', [id],
+    "SELECT cleared, reconciled FROM transactions WHERE id = ? AND tombstone = 0",
+    [id],
   );
   if (!row || row.reconciled === 1) return;
   await sendMessages([
-    { timestamp: Timestamp.send()!, dataset: 'transactions', row: id, column: 'cleared', value: row.cleared === 1 ? 0 : 1 },
+    {
+      timestamp: Timestamp.send()!,
+      dataset: "transactions",
+      row: id,
+      column: "cleared",
+      value: row.cleared === 1 ? 0 : 1,
+    },
   ]);
 });
 
@@ -195,23 +226,32 @@ export const toggleCleared = undoable(async function toggleCleared(id: string): 
  * Skips reconciled transactions and those already in the target state.
  * Uses batchMessages for sync efficiency.
  */
-export const setClearedBulk = undoable(async function setClearedBulk(ids: string[], cleared: boolean): Promise<number> {
+export const setClearedBulk = undoable(async function setClearedBulk(
+  ids: string[],
+  cleared: boolean,
+): Promise<number> {
   if (ids.length === 0) return 0;
 
-  const placeholders = ids.map(() => '?').join(',');
+  const placeholders = ids.map(() => "?").join(",");
   const rows = await runQuery<{ id: string; cleared: number; reconciled: number }>(
     `SELECT id, cleared, reconciled FROM transactions WHERE id IN (${placeholders}) AND tombstone = 0`,
     ids,
   );
 
   const targetVal = cleared ? 1 : 0;
-  const toUpdate = rows.filter(r => r.reconciled !== 1 && r.cleared !== targetVal);
+  const toUpdate = rows.filter((r) => r.reconciled !== 1 && r.cleared !== targetVal);
   if (toUpdate.length === 0) return 0;
 
   await batchMessages(async () => {
     for (const row of toUpdate) {
       await sendMessages([
-        { timestamp: Timestamp.send()!, dataset: 'transactions', row: row.id, column: 'cleared', value: targetVal },
+        {
+          timestamp: Timestamp.send()!,
+          dataset: "transactions",
+          row: row.id,
+          column: "cleared",
+          value: targetVal,
+        },
       ]);
     }
   });
@@ -245,18 +285,18 @@ export async function lockTransactions(accountId: string): Promise<void> {
   );
   if (rows.length === 0) return;
   await sendMessages([
-    ...rows.map(r => ({
+    ...rows.map((r) => ({
       timestamp: Timestamp.send()!,
-      dataset: 'transactions',
+      dataset: "transactions",
       row: r.id,
-      column: 'reconciled',
+      column: "reconciled",
       value: 1 as string | number | null,
     })),
     {
       timestamp: Timestamp.send()!,
-      dataset: 'accounts',
+      dataset: "accounts",
       row: accountId,
-      column: 'last_reconciled',
+      column: "last_reconciled",
       value: new Date().getTime().toString(),
     },
   ]);
@@ -280,7 +320,7 @@ export const reconcileAccount = undoable(async function reconcileAccount(
         date: todayInt(),
         amount: diff,
         cleared: true,
-        notes: 'Reconciliation balance adjustment',
+        notes: "Reconciliation balance adjustment",
       });
     }
 
@@ -290,26 +330,40 @@ export const reconcileAccount = undoable(async function reconcileAccount(
   return { adjusted: diff !== 0, diff };
 });
 
-export const deleteTransaction = undoable(async function deleteTransaction(id: string): Promise<void> {
+export const deleteTransaction = undoable(async function deleteTransaction(
+  id: string,
+): Promise<void> {
   // Fetch row info before tombstoning
   const row = await first<{ transferred_id: string | null; isParent: 0 | 1 }>(
-    'SELECT transferred_id, isParent FROM transactions WHERE id = ? AND tombstone = 0',
+    "SELECT transferred_id, isParent FROM transactions WHERE id = ? AND tombstone = 0",
     [id],
   );
 
   await sendMessages([
-    { timestamp: Timestamp.send()!, dataset: 'transactions', row: id, column: 'tombstone', value: 1 },
+    {
+      timestamp: Timestamp.send()!,
+      dataset: "transactions",
+      row: id,
+      column: "tombstone",
+      value: 1,
+    },
   ]);
 
   // If this is a parent split, also tombstone all children
   if (row?.isParent === 1) {
     const children = await runQuery<{ id: string; transferred_id: string | null }>(
-      'SELECT id, transferred_id FROM transactions WHERE parent_id = ? AND tombstone = 0',
+      "SELECT id, transferred_id FROM transactions WHERE parent_id = ? AND tombstone = 0",
       [id],
     );
     for (const child of children) {
       await sendMessages([
-        { timestamp: Timestamp.send()!, dataset: 'transactions', row: child.id, column: 'tombstone', value: 1 },
+        {
+          timestamp: Timestamp.send()!,
+          dataset: "transactions",
+          row: child.id,
+          column: "tombstone",
+          value: 1,
+        },
       ]);
       if (child.transferred_id) {
         await onDeleteTransfer(child.transferred_id);
@@ -329,8 +383,8 @@ export const deleteTransaction = undoable(async function deleteTransaction(id: s
 
 export async function getTransactionById(id: string): Promise<TransactionDisplay | null> {
   const rows = await transactionQuery()
-    .filter('t.id = ?', [id])
-    .filter('t.tombstone = 0')
+    .filter("t.id = ?", [id])
+    .filter("t.tombstone = 0")
     .execute();
   return rows[0] ?? null;
 }
@@ -344,7 +398,7 @@ export async function getTransactionsForAccount(
   return transactionQuery()
     .forAccount(accountId)
     .alive()
-    .when(opts?.hideReconciled, q => q.hideReconciled())
+    .when(opts?.hideReconciled, (q) => q.hideReconciled())
     .includeSplitDetails()
     .limit(opts?.limit ?? PAGE_SIZE)
     .offset(opts?.offset ?? 0)
@@ -361,7 +415,7 @@ export async function getAllTransactions(opts?: {
     .alive()
     .includeAccountName()
     .includeSplitDetails()
-    .when(opts?.hideReconciled, q => q.hideReconciled())
+    .when(opts?.hideReconciled, (q) => q.hideReconciled())
     .limit(opts?.limit ?? PAGE_SIZE)
     .offset(opts?.offset ?? 0)
     .execute();
@@ -388,12 +442,12 @@ export async function searchTransactions(opts: {
     .alive()
     .includeAccountName()
     .includeSplitDetails()
-    .when(opts.hideReconciled, q => q.hideReconciled())
-    .when(!!opts.accountId, q => q.forAccount(opts.accountId!))
-    .when(!!opts.categoryId, q => q.withCategory(opts.categoryId!))
-    .when(!!opts.payeeId, q => q.withPayee(opts.payeeId!))
-    .when(opts.uncategorized, q => q.uncategorized())
-    .when(!!opts.text, q => q.textSearch(opts.text!));
+    .when(opts.hideReconciled, (q) => q.hideReconciled())
+    .when(!!opts.accountId, (q) => q.forAccount(opts.accountId!))
+    .when(!!opts.categoryId, (q) => q.withCategory(opts.categoryId!))
+    .when(!!opts.payeeId, (q) => q.withPayee(opts.payeeId!))
+    .when(opts.uncategorized, (q) => q.uncategorized())
+    .when(!!opts.text, (q) => q.textSearch(opts.text!));
 
   // Tag filters
   if (opts.tagNames && opts.tagNames.length > 0) {
@@ -423,16 +477,13 @@ export async function searchTransactions(opts: {
 // ---------------------------------------------------------------------------
 
 export interface SpendingSummary {
-  totalSpent: number;       // cents, negative or zero
-  totalIncome: number;      // cents, positive or zero
+  totalSpent: number; // cents, negative or zero
+  totalIncome: number; // cents, positive or zero
   transactionCount: number;
   topCategories: Array<{ categoryName: string; total: number; count: number }>;
 }
 
-export async function getSpendingSummary(
-  start?: number,
-  end?: number,
-): Promise<SpendingSummary> {
+export async function getSpendingSummary(start?: number, end?: number): Promise<SpendingSummary> {
   const startDate = start ?? startOfMonthInt();
   const endDate = end ?? endOfMonthInt();
 
@@ -501,17 +552,17 @@ export async function getUncategorizedStats(): Promise<{ count: number; total: n
 
 /** Count of uncleared (and non-reconciled) transactions across all accounts, or for a specific account. */
 export async function getUnclearedCount(accountId?: string): Promise<number> {
-  const conditions = ['t.tombstone = 0', 't.isChild = 0', 't.cleared = 0', 't.reconciled = 0'];
+  const conditions = ["t.tombstone = 0", "t.isChild = 0", "t.cleared = 0", "t.reconciled = 0"];
   const params: string[] = [];
   if (accountId) {
-    conditions.push('t.acct = ?');
+    conditions.push("t.acct = ?");
     params.push(accountId);
   }
   const row = await first<{ count: number }>(
     `SELECT COUNT(*) AS count
      FROM transactions t
      JOIN accounts a ON a.id = t.acct AND a.tombstone = 0
-     WHERE ${conditions.join(' AND ')}`,
+     WHERE ${conditions.join(" AND ")}`,
     params,
   );
   return row?.count ?? 0;
@@ -524,9 +575,9 @@ export async function getUnclearedCount(accountId?: string): Promise<number> {
 /** Fetch all child transactions for a parent split transaction. */
 export async function getChildTransactions(parentId: string): Promise<TransactionDisplay[]> {
   return transactionQuery()
-    .filter('t.parent_id = ?', [parentId])
-    .filter('t.tombstone = 0')
-    .orderBy('t.sort_order ASC')
+    .filter("t.parent_id = ?", [parentId])
+    .filter("t.tombstone = 0")
+    .orderBy("t.sort_order ASC")
     .execute();
 }
 

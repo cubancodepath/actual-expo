@@ -1,10 +1,17 @@
-import { create } from 'zustand';
-import { registerStore } from './storeRegistry';
-import { getBudgetMonth, setBudgetAmount, holdForNextMonth, resetHold, setCategoryCarryover, transferBetweenCategories } from '../budgets';
-import { currentMonth } from '../lib/date';
-import { computeGoalAllocations } from '../goals/apply';
-import type { ComputeGoalsResult } from '../goals/apply';
-import type { BudgetMonth } from '../budgets/types';
+import { create } from "zustand";
+import { registerStore } from "./storeRegistry";
+import {
+  getBudgetMonth,
+  setBudgetAmount,
+  holdForNextMonth,
+  resetHold,
+  setCategoryCarryover,
+  transferBetweenCategories,
+} from "../budgets";
+import { currentMonth } from "../lib/date";
+import { computeGoalAllocations } from "../goals/apply";
+import type { ComputeGoalsResult } from "../goals/apply";
+import type { BudgetMonth } from "../budgets/types";
 
 type CoverTarget = { catId: string; catName: string; balance: number };
 
@@ -86,7 +93,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
 }));
 
 registerStore(
-  'budget',
-  ['zero_budgets', 'zero_budget_months', 'transactions', 'categories', 'category_groups'],
+  "budget",
+  ["zero_budgets", "zero_budget_months", "transactions", "categories", "category_groups"],
   () => useBudgetStore.getState().load(),
 );

@@ -4,9 +4,9 @@
  * The UI layer is responsible for translating via i18next.
  */
 
-import { formatBalance } from '../lib/format';
-import { amountToInteger } from './engine';
-import type { Template } from './types';
+import { formatBalance } from "../lib/format";
+import { amountToInteger } from "./engine";
+import type { Template } from "./types";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -31,21 +31,21 @@ function formatDisplayAmount(displayUnits: number): string {
 }
 
 function formatMonth(yyyyMm: string, locale: string): string {
-  const [year, month] = yyyyMm.split('-').map(Number);
-  return new Date(year, month - 1).toLocaleDateString(locale, { month: 'short', year: 'numeric' });
+  const [year, month] = yyyyMm.split("-").map(Number);
+  return new Date(year, month - 1).toLocaleDateString(locale, { month: "short", year: "numeric" });
 }
 
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
 
-export function describeTemplate(tmpl: Template, locale: string = 'en'): TemplateDescription {
+export function describeTemplate(tmpl: Template, locale: string = "en"): TemplateDescription {
   switch (tmpl.type) {
-    case 'simple': {
+    case "simple": {
       if (tmpl.monthly != null) {
         if (tmpl.limit?.amount) {
           return {
-            key: 'budget:describe.budgetMonthlyWithLimit',
+            key: "budget:describe.budgetMonthlyWithLimit",
             params: {
               amount: formatDisplayAmount(tmpl.monthly),
               limit: formatDisplayAmount(tmpl.limit.amount),
@@ -53,18 +53,18 @@ export function describeTemplate(tmpl: Template, locale: string = 'en'): Templat
           };
         }
         return {
-          key: 'budget:describe.budgetMonthly',
+          key: "budget:describe.budgetMonthly",
           params: { amount: formatDisplayAmount(tmpl.monthly) },
         };
       }
-      return { key: 'budget:describe.budgetMonthlyBase' };
+      return { key: "budget:describe.budgetMonthlyBase" };
     }
-    case 'goal':
+    case "goal":
       return {
-        key: 'budget:describe.reachBalance',
+        key: "budget:describe.reachBalance",
         params: { amount: formatDisplayAmount(tmpl.amount) },
       };
-    case 'by': {
+    case "by": {
       const baseParams = {
         amount: formatDisplayAmount(tmpl.amount),
         date: formatMonth(tmpl.month, locale),
@@ -72,69 +72,69 @@ export function describeTemplate(tmpl: Template, locale: string = 'en'): Templat
       if (tmpl.repeat) {
         if (tmpl.annual) {
           return {
-            key: 'budget:describe.saveByRepeatsAnnually',
+            key: "budget:describe.saveByRepeatsAnnually",
             params: baseParams,
           };
         }
         return {
-          key: 'budget:describe.saveByEveryNMonths',
+          key: "budget:describe.saveByEveryNMonths",
           params: { ...baseParams, count: tmpl.repeat },
         };
       }
-      return { key: 'budget:describe.saveBy', params: baseParams };
+      return { key: "budget:describe.saveBy", params: baseParams };
     }
-    case 'average': {
+    case "average": {
       if (tmpl.adjustment) {
-        const sign = tmpl.adjustment > 0 ? '+' : '';
-        const suffix = tmpl.adjustmentType === 'percent' ? '%' : '';
+        const sign = tmpl.adjustment > 0 ? "+" : "";
+        const suffix = tmpl.adjustmentType === "percent" ? "%" : "";
         return {
-          key: 'budget:describe.averageOfLastWithAdjustment',
+          key: "budget:describe.averageOfLastWithAdjustment",
           params: { count: tmpl.numMonths, sign, value: tmpl.adjustment, suffix },
         };
       }
       return {
-        key: 'budget:describe.averageOfLast',
+        key: "budget:describe.averageOfLast",
         params: { count: tmpl.numMonths },
       };
     }
-    case 'copy':
+    case "copy":
       return {
-        key: 'budget:describe.copyFrom',
+        key: "budget:describe.copyFrom",
         params: { count: tmpl.lookBack },
       };
-    case 'periodic': {
+    case "periodic": {
       const p = tmpl.period.period;
       const plural = tmpl.period.amount > 1 ? `${p}s` : p;
       return {
-        key: 'budget:describe.budgetEvery',
+        key: "budget:describe.budgetEvery",
         params: { amount: formatDisplayAmount(tmpl.amount), periodAmount: tmpl.period.amount },
         periodKey: plural,
       };
     }
-    case 'spend':
+    case "spend":
       return {
-        key: 'budget:describe.spendBy',
+        key: "budget:describe.spendBy",
         params: { amount: formatDisplayAmount(tmpl.amount), date: formatMonth(tmpl.month, locale) },
       };
-    case 'percentage': {
+    case "percentage": {
       const key = tmpl.previous
-        ? 'budget:describe.percentOfLastIncome'
-        : 'budget:describe.percentOfIncome';
+        ? "budget:describe.percentOfLastIncome"
+        : "budget:describe.percentOfIncome";
       return { key, params: { percent: tmpl.percent } };
     }
-    case 'remainder': {
+    case "remainder": {
       if (tmpl.weight !== 1) {
         return {
-          key: 'budget:describe.fillRemainingWeight',
+          key: "budget:describe.fillRemainingWeight",
           params: { weight: tmpl.weight },
         };
       }
-      return { key: 'budget:describe.fillRemaining' };
+      return { key: "budget:describe.fillRemaining" };
     }
-    case 'refill':
-      return { key: 'budget:describe.refillToLimit' };
-    case 'limit': {
-      const key = tmpl.hold ? 'budget:describe.limitPeriodHold' : 'budget:describe.limitPeriod';
+    case "refill":
+      return { key: "budget:describe.refillToLimit" };
+    case "limit": {
+      const key = tmpl.hold ? "budget:describe.limitPeriodHold" : "budget:describe.limitPeriod";
       return {
         key,
         params: { amount: formatDisplayAmount(tmpl.amount) },

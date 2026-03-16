@@ -1,12 +1,12 @@
-import type { ReactNode } from 'react';
-import { Pressable, View, type ViewStyle } from 'react-native';
-import Animated, { type AnimatedStyle } from 'react-native-reanimated';
-import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
-import { BlurView } from 'expo-blur';
-import { SymbolView } from 'expo-symbols';
-import type { SFSymbol } from 'sf-symbols-typescript';
-import { useTheme } from '../../providers/ThemeProvider';
-import { Text } from './Text';
+import type { ReactNode } from "react";
+import { Pressable, View, type ViewStyle } from "react-native";
+import Animated, { type AnimatedStyle } from "react-native-reanimated";
+import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
+import { BlurView } from "expo-blur";
+import { SymbolView } from "expo-symbols";
+import type { SFSymbol } from "sf-symbols-typescript";
+import { useTheme } from "../../providers/ThemeProvider";
+import { Text } from "./Text";
 
 const glass = isLiquidGlassAvailable();
 
@@ -24,7 +24,7 @@ type GlassButtonProps = {
   /** Icon/text color — defaults to textPrimary */
   color?: string;
   /** Render style: 'glass' (default) or 'tinted' (solid fill, no glass) */
-  variant?: 'glass' | 'tinted';
+  variant?: "glass" | "tinted";
   /** Tinted fill color — defaults to theme primary */
   tintColor?: string;
   /** Additional style on outer wrapper */
@@ -46,7 +46,7 @@ export function GlassButton({
   iconSize = 22,
   label,
   color: colorProp,
-  variant = 'glass',
+  variant = "glass",
   tintColor,
   style,
   children,
@@ -62,14 +62,22 @@ export function GlassButton({
   const hasChildren = !!children;
 
   // Build inner content
-  const content = hasChildren ? children : (
+  const content = hasChildren ? (
+    children
+  ) : (
     <>
-      {icon && <SymbolView name={icon} size={iconSize} tintColor={variant === 'tinted' ? colors.primaryText : iconColor} />}
+      {icon && (
+        <SymbolView
+          name={icon}
+          size={iconSize}
+          tintColor={variant === "tinted" ? colors.primaryText : iconColor}
+        />
+      )}
       {hasLabel && (
         <Text
           variant="body"
-          color={variant === 'tinted' ? colors.primaryText : iconColor}
-          style={{ fontWeight: '600' }}
+          color={variant === "tinted" ? colors.primaryText : iconColor}
+          style={{ fontWeight: "600" }}
           numberOfLines={1}
         >
           {label}
@@ -83,8 +91,8 @@ export function GlassButton({
 
   const innerStyle: ViewStyle = isPill
     ? {
-        flexDirection: 'row',
-        alignItems: 'center',
+        flexDirection: "row",
+        alignItems: "center",
         height: SIZE,
         paddingHorizontal: spacing.lg,
         gap: spacing.xs,
@@ -92,15 +100,15 @@ export function GlassButton({
     : {
         width: SIZE,
         height: SIZE,
-        alignItems: 'center',
-        justifyContent: 'center',
+        alignItems: "center",
+        justifyContent: "center",
       };
 
   const hasAnimatedStyles = animatedContainerStyle || animatedInnerStyle;
 
-  if (variant === 'tinted') {
+  if (variant === "tinted") {
     return (
-      <View style={[{ borderRadius: isPill ? br.full : SIZE / 2, overflow: 'hidden' }, style]}>
+      <View style={[{ borderRadius: isPill ? br.full : SIZE / 2, overflow: "hidden" }, style]}>
         <Pressable
           onPress={onPress}
           hitSlop={hitSlop}
@@ -121,14 +129,23 @@ export function GlassButton({
 
   if (hasAnimatedStyles) {
     return (
-      <Animated.View style={[{ borderRadius: radius, overflow: 'hidden' }, style, animatedContainerStyle]}>
+      <Animated.View
+        style={[{ borderRadius: radius, overflow: "hidden" }, style, animatedContainerStyle]}
+      >
         <Pressable onPress={onPress} hitSlop={hitSlop}>
           {glass ? (
-            <AnimatedGlassView isInteractive style={[{ borderRadius: radius, ...innerStyle }, animatedInnerStyle]}>
+            <AnimatedGlassView
+              isInteractive
+              style={[{ borderRadius: radius, ...innerStyle }, animatedInnerStyle]}
+            >
               {content}
             </AnimatedGlassView>
           ) : (
-            <AnimatedBlurView tint="systemChromeMaterial" intensity={100} style={[innerStyle, animatedInnerStyle]}>
+            <AnimatedBlurView
+              tint="systemChromeMaterial"
+              intensity={100}
+              style={[innerStyle, animatedInnerStyle]}
+            >
               {content}
             </AnimatedBlurView>
           )}
@@ -138,7 +155,7 @@ export function GlassButton({
   }
 
   return (
-    <View style={[{ borderRadius: radius, overflow: 'hidden' }, style]}>
+    <View style={[{ borderRadius: radius, overflow: "hidden" }, style]}>
       <Pressable onPress={onPress} hitSlop={hitSlop}>
         {glass ? (
           <GlassView isInteractive style={{ borderRadius: radius, ...innerStyle }}>

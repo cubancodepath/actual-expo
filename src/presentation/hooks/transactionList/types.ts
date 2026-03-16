@@ -1,22 +1,22 @@
-import type { TransactionDisplay } from '../../../transactions';
-import type { PreviewTransaction } from '../../../schedules/preview';
+import type { TransactionDisplay } from "../../../transactions";
+import type { PreviewTransaction } from "../../../schedules/preview";
 
-export type DateHeader = { type: 'date'; date: number; key: string };
+export type DateHeader = { type: "date"; date: number; key: string };
 export type TransactionItem = {
-  type: 'transaction';
+  type: "transaction";
   data: TransactionDisplay;
   key: string;
   isFirst: boolean;
   isLast: boolean;
 };
 export type UpcomingHeader = {
-  type: 'upcoming-header';
+  type: "upcoming-header";
   key: string;
   count: number;
   expanded: boolean;
 };
 export type UpcomingItem = {
-  type: 'upcoming';
+  type: "upcoming";
   data: PreviewTransaction;
   key: string;
   isFirst: boolean;
@@ -39,8 +39,8 @@ export function buildListData(
   if (previews.length > 0) {
     const expanded = opts?.upcomingExpanded ?? false;
     items.push({
-      type: 'upcoming-header',
-      key: 'upcoming-header',
+      type: "upcoming-header",
+      key: "upcoming-header",
       count: previews.length,
       expanded,
     });
@@ -48,7 +48,7 @@ export function buildListData(
     if (expanded) {
       for (let i = 0; i < previews.length; i++) {
         items.push({
-          type: 'upcoming',
+          type: "upcoming",
           data: previews[i],
           key: previews[i].id,
           isFirst: i === 0,
@@ -67,13 +67,13 @@ export function buildListData(
     if (isNewDate) {
       if (items.length > 0) {
         const prev = items[items.length - 1];
-        if (prev.type === 'transaction') prev.isLast = true;
+        if (prev.type === "transaction") prev.isLast = true;
       }
-      items.push({ type: 'date', date: txn.date, key: `date-${txn.date}` });
+      items.push({ type: "date", date: txn.date, key: `date-${txn.date}` });
       lastDate = txn.date;
     }
     items.push({
-      type: 'transaction',
+      type: "transaction",
       data: txn,
       key: txn.id,
       isFirst: isNewDate,
@@ -83,7 +83,7 @@ export function buildListData(
 
   if (items.length > 0) {
     const last = items[items.length - 1];
-    if (last.type === 'transaction') last.isLast = true;
+    if (last.type === "transaction") last.isLast = true;
   }
 
   return items;

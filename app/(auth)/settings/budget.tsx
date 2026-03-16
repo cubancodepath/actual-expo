@@ -15,35 +15,37 @@ import {
 import { usePreferencesStore } from "../../../src/stores/preferencesStore";
 import { usePrefsStore } from "../../../src/stores/prefsStore";
 import { useFeatureFlagsStore } from "../../../src/stores/featureFlagsStore";
-import {
-  ALL_FEATURE_FLAGS,
-  FEATURE_FLAG_LABELS,
-} from "../../../src/preferences/featureFlags";
+import { ALL_FEATURE_FLAGS, FEATURE_FLAG_LABELS } from "../../../src/preferences/featureFlags";
 import {
   DATE_FORMAT_OPTIONS,
   NUMBER_FORMAT_OPTIONS,
   DAY_OF_WEEK_OPTIONS,
 } from "../../../src/preferences/types";
 import { currencies, getCurrency } from "../../../src/lib/currencies";
-import { deleteBudget, deleteFromServer, uploadBudget, convertToLocalOnly } from "../../../src/services/budgetfiles";
+import {
+  deleteBudget,
+  deleteFromServer,
+  uploadBudget,
+  convertToLocalOnly,
+} from "../../../src/services/budgetfiles";
 import type { Theme } from "../../../src/theme";
 
 // Conditionally import SwiftUI Picker on iOS
-let SwiftPicker: typeof import('@expo/ui/swift-ui').Picker | null = null;
-let SwiftText: typeof import('@expo/ui/swift-ui').Text | null = null;
-let Host: typeof import('@expo/ui/swift-ui').Host | null = null;
-let tagMod: typeof import('@expo/ui/swift-ui/modifiers').tag | null = null;
-let pickerStyleMod: typeof import('@expo/ui/swift-ui/modifiers').pickerStyle | null = null;
-let tintMod: typeof import('@expo/ui/swift-ui/modifiers').tint | null = null;
-let frameMod: typeof import('@expo/ui/swift-ui/modifiers').frame | null = null;
+let SwiftPicker: typeof import("@expo/ui/swift-ui").Picker | null = null;
+let SwiftText: typeof import("@expo/ui/swift-ui").Text | null = null;
+let Host: typeof import("@expo/ui/swift-ui").Host | null = null;
+let tagMod: typeof import("@expo/ui/swift-ui/modifiers").tag | null = null;
+let pickerStyleMod: typeof import("@expo/ui/swift-ui/modifiers").pickerStyle | null = null;
+let tintMod: typeof import("@expo/ui/swift-ui/modifiers").tint | null = null;
+let frameMod: typeof import("@expo/ui/swift-ui/modifiers").frame | null = null;
 
-if (Platform.OS === 'ios') {
+if (Platform.OS === "ios") {
   try {
-    const swiftUI = require('@expo/ui/swift-ui');
+    const swiftUI = require("@expo/ui/swift-ui");
     SwiftPicker = swiftUI.Picker;
     SwiftText = swiftUI.Text;
     Host = swiftUI.Host;
-    const mods = require('@expo/ui/swift-ui/modifiers');
+    const mods = require("@expo/ui/swift-ui/modifiers");
     tagMod = mods.tag;
     pickerStyleMod = mods.pickerStyle;
     tintMod = mods.tint;
@@ -72,12 +74,16 @@ function PickerRow({
 
   const picker =
     SwiftPicker && SwiftText && Host && tagMod && pickerStyleMod ? (
-      <View style={{ alignItems: 'flex-end' }}>
+      <View style={{ alignItems: "flex-end" }}>
         <Host matchContents>
           <SwiftPicker
             selection={selection}
             onSelectionChange={(val) => onSelectionChange(val as string)}
-            modifiers={[pickerStyleMod('menu'), ...(tintMod ? [tintMod(colors.primary)] : []), ...(frameMod ? [frameMod({ minWidth: 170, alignment: 'trailing' })] : [])]}
+            modifiers={[
+              pickerStyleMod("menu"),
+              ...(tintMod ? [tintMod(colors.primary)] : []),
+              ...(frameMod ? [frameMod({ minWidth: 170, alignment: "trailing" })] : []),
+            ]}
           >
             {options.map((opt) => (
               <SwiftText key={opt.value} modifiers={[tagMod(opt.value)]}>
@@ -97,7 +103,7 @@ function PickerRow({
 }
 
 function EncryptionSection() {
-  const { t } = useTranslation('settings');
+  const { t } = useTranslation("settings");
   const { colors, spacing } = useTheme();
   const isLocalOnly = usePrefsStore((s) => s.isLocalOnly);
   const fileId = usePrefsStore((s) => s.fileId);
@@ -110,17 +116,13 @@ function EncryptionSection() {
 
   return (
     <>
-      <SectionHeader title={t('encryption')} style={{ marginTop: spacing.xl }} />
+      <SectionHeader title={t("encryption")} style={{ marginTop: spacing.xl }} />
       <Card>
-        <Text
-          variant="bodySm"
-          color={colors.textMuted}
-          style={{ padding: spacing.lg }}
-        >
-          {isEncrypted ? t('encryptionEnabled') : t('encryptionNotEnabled')}
+        <Text variant="bodySm" color={colors.textMuted} style={{ padding: spacing.lg }}>
+          {isEncrypted ? t("encryptionEnabled") : t("encryptionNotEnabled")}
         </Text>
         <Button
-          title={isEncrypted ? t('generateNewKey') : t('enableEncryption')}
+          title={isEncrypted ? t("generateNewKey") : t("enableEncryption")}
           variant="ghost"
           onPress={() => promptToEnableEncryption()}
           style={{ marginHorizontal: spacing.lg, marginBottom: spacing.lg }}
@@ -135,15 +137,21 @@ export default function BudgetSettingsScreen() {
   const { colors, spacing } = useTheme();
   const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
-  const { t } = useTranslation('settings');
-  const { t: tc } = useTranslation('common');
+  const { t } = useTranslation("settings");
+  const { t: tc } = useTranslation("common");
 
-  const { activeBudgetId, budgetName, isLocalOnly, groupId, fileId, serverUrl, token } = usePrefsStore();
+  const { activeBudgetId, budgetName, isLocalOnly, groupId, fileId, serverUrl, token } =
+    usePrefsStore();
   const prefs = usePreferencesStore();
   const {
-    dateFormat, numberFormat, firstDayOfWeekIdx, hideFraction,
-    defaultCurrencyCode, currencySymbolPosition,
-    currencySpaceBetweenAmountAndSymbol, defaultCurrencyCustomSymbol,
+    dateFormat,
+    numberFormat,
+    firstDayOfWeekIdx,
+    hideFraction,
+    defaultCurrencyCode,
+    currencySymbolPosition,
+    currencySpaceBetweenAmountAndSymbol,
+    defaultCurrencyCustomSymbol,
     set,
   } = prefs;
   const featureFlags = useFeatureFlagsStore();
@@ -155,14 +163,18 @@ export default function BudgetSettingsScreen() {
   const [syncAction, setSyncAction] = useState(false);
 
   function handleEnableCloudSync() {
-    Alert.alert(t('enableCloudSync'), t('enableCloudSyncMessage'), [
-      { text: tc('cancel'), style: 'cancel' },
+    Alert.alert(t("enableCloudSync"), t("enableCloudSyncMessage"), [
+      { text: tc("cancel"), style: "cancel" },
       {
-        text: tc('confirm'),
+        text: tc("confirm"),
         onPress: async () => {
           setSyncAction(true);
           try {
-            const { cloudFileId, groupId: newGroupId } = await uploadBudget(serverUrl, token, activeBudgetId);
+            const { cloudFileId, groupId: newGroupId } = await uploadBudget(
+              serverUrl,
+              token,
+              activeBudgetId,
+            );
             usePrefsStore.getState().setPrefs({
               fileId: cloudFileId,
               groupId: newGroupId,
@@ -170,7 +182,7 @@ export default function BudgetSettingsScreen() {
             });
           } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : String(e);
-            Alert.alert(tc('error'), msg);
+            Alert.alert(tc("error"), msg);
           } finally {
             setSyncAction(false);
           }
@@ -180,22 +192,22 @@ export default function BudgetSettingsScreen() {
   }
 
   function handleStopSyncing() {
-    Alert.alert(t('stopSyncing'), t('stopSyncingMessage'), [
-      { text: tc('cancel'), style: 'cancel' },
+    Alert.alert(t("stopSyncing"), t("stopSyncingMessage"), [
+      { text: tc("cancel"), style: "cancel" },
       {
-        text: tc('confirm'),
+        text: tc("confirm"),
         onPress: async () => {
           setSyncAction(true);
           try {
             await convertToLocalOnly(activeBudgetId);
             usePrefsStore.getState().setPrefs({
-              fileId: '',
-              groupId: '',
+              fileId: "",
+              groupId: "",
               isLocalOnly: true,
             });
           } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : String(e);
-            Alert.alert(tc('error'), msg);
+            Alert.alert(tc("error"), msg);
           } finally {
             setSyncAction(false);
           }
@@ -214,20 +226,20 @@ export default function BudgetSettingsScreen() {
   }
 
   function handleDeleteBudget() {
-    const name = budgetName || t('defaultBudgetName', { ns: 'settings' });
+    const name = budgetName || t("defaultBudgetName", { ns: "settings" });
 
-    if (Platform.OS === 'ios') {
+    if (Platform.OS === "ios") {
       const options = isSynced
-        ? [tc('cancel'), t('deleteFromDevice'), t('deleteFromAllDevices')]
-        : [tc('cancel'), t('deleteFromDevice')];
+        ? [tc("cancel"), t("deleteFromDevice"), t("deleteFromAllDevices")]
+        : [tc("cancel"), t("deleteFromDevice")];
 
       ActionSheetIOS.showActionSheetWithOptions(
         {
           options,
           destructiveButtonIndex: isSynced ? [1, 2] : [1],
           cancelButtonIndex: 0,
-          title: t('deleteBudget'),
-          message: t('deleteBudgetConfirm', { name }),
+          title: t("deleteBudget"),
+          message: t("deleteBudgetConfirm", { name }),
         },
         (buttonIndex) => {
           if (buttonIndex === 1) performDelete(false);
@@ -235,18 +247,26 @@ export default function BudgetSettingsScreen() {
         },
       );
     } else {
-      const buttons: Array<{ text: string; style?: 'cancel' | 'destructive'; onPress?: () => void }> = [
-        { text: tc('cancel'), style: 'cancel' },
-        { text: t('deleteFromDevice'), style: 'destructive', onPress: () => performDelete(false) },
+      const buttons: Array<{
+        text: string;
+        style?: "cancel" | "destructive";
+        onPress?: () => void;
+      }> = [
+        { text: tc("cancel"), style: "cancel" },
+        { text: t("deleteFromDevice"), style: "destructive", onPress: () => performDelete(false) },
       ];
       if (isSynced) {
-        buttons.push({ text: t('deleteFromAllDevices'), style: 'destructive', onPress: () => performDelete(true) });
+        buttons.push({
+          text: t("deleteFromAllDevices"),
+          style: "destructive",
+          onPress: () => performDelete(true),
+        });
       }
-      Alert.alert(t('deleteBudget'), t('deleteBudgetConfirm', { name }), buttons);
+      Alert.alert(t("deleteBudget"), t("deleteBudgetConfirm", { name }), buttons);
     }
   }
 
-  const hasCurrency = defaultCurrencyCode !== '';
+  const hasCurrency = defaultCurrencyCode !== "";
 
   const dateOptions = DATE_FORMAT_OPTIONS.map((o) => ({
     value: o.value,
@@ -265,31 +285,31 @@ export default function BudgetSettingsScreen() {
       contentInsetAdjustmentBehavior="automatic"
     >
       {/* Formatting */}
-      <SectionHeader title={t('formatting')} style={{ marginTop: spacing.lg }} />
+      <SectionHeader title={t("formatting")} style={{ marginTop: spacing.lg }} />
       <Card>
         <PickerRow
-          label={t('dateFormat')}
+          label={t("dateFormat")}
           selection={dateFormat}
           options={dateOptions}
-          onSelectionChange={(v) => set('dateFormat', v)}
+          onSelectionChange={(v) => set("dateFormat", v)}
           showSeparator
         />
         <PickerRow
-          label={t('numberFormat')}
+          label={t("numberFormat")}
           selection={numberFormat}
           options={numberOptions}
-          onSelectionChange={(v) => set('numberFormat', v)}
+          onSelectionChange={(v) => set("numberFormat", v)}
           showSeparator
         />
         <ListItem
-          title={t('hideDecimalPlaces')}
-          onPress={() => set('hideFraction', hideFraction === 'true' ? 'false' : 'true')}
+          title={t("hideDecimalPlaces")}
+          onPress={() => set("hideFraction", hideFraction === "true" ? "false" : "true")}
           right={
             <Switch
-              value={hideFraction === 'true'}
-              onValueChange={(v) => set('hideFraction', v ? 'true' : 'false')}
+              value={hideFraction === "true"}
+              onValueChange={(v) => set("hideFraction", v ? "true" : "false")}
               trackColor={{ true: colors.primary }}
-              accessibilityLabel={t('hideDecimalPlaces')}
+              accessibilityLabel={t("hideDecimalPlaces")}
             />
           }
         />
@@ -298,24 +318,24 @@ export default function BudgetSettingsScreen() {
       {/* Currency — gated by feature flag */}
       {featureFlags.currency && (
         <>
-          <SectionHeader title={t('currency')} style={{ marginTop: spacing.xl }} />
+          <SectionHeader title={t("currency")} style={{ marginTop: spacing.xl }} />
           <Card>
             <PickerRow
-              label={t('currency')}
+              label={t("currency")}
               selection={defaultCurrencyCode}
               options={currencies.map((c) => ({
                 value: c.code,
-                label: c.code ? `${c.code} (${c.symbol})` : t('none', { ns: 'common' }),
+                label: c.code ? `${c.code} (${c.symbol})` : t("none", { ns: "common" }),
               }))}
               onSelectionChange={(code) => {
                 const cur = getCurrency(code);
-                set('defaultCurrencyCode', code);
+                set("defaultCurrencyCode", code);
                 if (code) {
-                  set('numberFormat', cur.numberFormat);
-                  set('hideFraction', cur.decimalPlaces === 0 ? 'true' : 'false');
-                  set('currencySymbolPosition', cur.symbolFirst ? 'before' : 'after');
-                  set('currencySpaceBetweenAmountAndSymbol', cur.symbolFirst ? 'false' : 'true');
-                  set('defaultCurrencyCustomSymbol', '');
+                  set("numberFormat", cur.numberFormat);
+                  set("hideFraction", cur.decimalPlaces === 0 ? "true" : "false");
+                  set("currencySymbolPosition", cur.symbolFirst ? "before" : "after");
+                  set("currencySpaceBetweenAmountAndSymbol", cur.symbolFirst ? "false" : "true");
+                  set("defaultCurrencyCustomSymbol", "");
                 }
               }}
               showSeparator={hasCurrency}
@@ -323,26 +343,28 @@ export default function BudgetSettingsScreen() {
             {hasCurrency && (
               <>
                 <PickerRow
-                  label={t('symbolPosition')}
-                  selection={currencySymbolPosition || 'before'}
+                  label={t("symbolPosition")}
+                  selection={currencySymbolPosition || "before"}
                   options={[
-                    { value: 'before', label: t('symbolBefore') },
-                    { value: 'after', label: t('symbolAfter') },
+                    { value: "before", label: t("symbolBefore") },
+                    { value: "after", label: t("symbolAfter") },
                   ]}
-                  onSelectionChange={(v) => set('currencySymbolPosition', v)}
+                  onSelectionChange={(v) => set("currencySymbolPosition", v)}
                   showSeparator
                 />
                 <ListItem
-                  title={t('spaceBetween')}
+                  title={t("spaceBetween")}
                   onPress={() =>
-                    set('currencySpaceBetweenAmountAndSymbol',
-                      currencySpaceBetweenAmountAndSymbol === 'true' ? 'false' : 'true')
+                    set(
+                      "currencySpaceBetweenAmountAndSymbol",
+                      currencySpaceBetweenAmountAndSymbol === "true" ? "false" : "true",
+                    )
                   }
                   right={
                     <Switch
-                      value={currencySpaceBetweenAmountAndSymbol === 'true'}
+                      value={currencySpaceBetweenAmountAndSymbol === "true"}
                       onValueChange={(v) =>
-                        set('currencySpaceBetweenAmountAndSymbol', v ? 'true' : 'false')
+                        set("currencySpaceBetweenAmountAndSymbol", v ? "true" : "false")
                       }
                       trackColor={{ true: colors.primary }}
                     />
@@ -350,18 +372,18 @@ export default function BudgetSettingsScreen() {
                   showSeparator
                 />
                 <ListItem
-                  title={t('customSymbol')}
+                  title={t("customSymbol")}
                   right={
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <View style={{ flexDirection: "row", alignItems: "center" }}>
                       <TextInput
                         value={defaultCurrencyCustomSymbol}
-                        onChangeText={(v) => set('defaultCurrencyCustomSymbol', v)}
+                        onChangeText={(v) => set("defaultCurrencyCustomSymbol", v)}
                         placeholder={getCurrency(defaultCurrencyCode).symbol}
                         placeholderTextColor={colors.textMuted}
                         style={{
                           color: colors.textPrimary,
                           fontSize: 15,
-                          textAlign: 'right',
+                          textAlign: "right",
                           minWidth: 60,
                           padding: 0,
                         }}
@@ -379,28 +401,28 @@ export default function BudgetSettingsScreen() {
               color={colors.textMuted}
               style={{ paddingHorizontal: spacing.lg, marginTop: spacing.sm }}
             >
-              {t('customSymbolHint')}
+              {t("customSymbolHint")}
             </Text>
           )}
         </>
       )}
 
       {/* Calendar */}
-      <SectionHeader title={t('calendar')} style={{ marginTop: spacing.xl }} />
+      <SectionHeader title={t("calendar")} style={{ marginTop: spacing.xl }} />
       <Card>
         <PickerRow
-          label={t('firstDayOfWeek')}
+          label={t("firstDayOfWeek")}
           selection={firstDayOfWeekIdx}
           options={DAY_OF_WEEK_OPTIONS}
-          onSelectionChange={(v) => set('firstDayOfWeekIdx', v)}
+          onSelectionChange={(v) => set("firstDayOfWeekIdx", v)}
         />
       </Card>
 
       {/* Manage */}
-      <SectionHeader title={t('manage')} style={{ marginTop: spacing.xl }} />
+      <SectionHeader title={t("manage")} style={{ marginTop: spacing.xl }} />
       <Card>
         <ListItem
-          title={t('schedules')}
+          title={t("schedules")}
           showChevron
           onPress={() => router.push("/(auth)/schedules")}
         />
@@ -409,20 +431,20 @@ export default function BudgetSettingsScreen() {
       {/* Cloud Sync */}
       {(showEnableSync || showStopSync) && (
         <>
-          <SectionHeader title={t('server')} style={{ marginTop: spacing.xl }} />
+          <SectionHeader title={t("server")} style={{ marginTop: spacing.xl }} />
           <Card>
             {showEnableSync && (
               <ListItem
-                title={t('enableCloudSync')}
-                subtitle={syncAction ? t('syncing') : t('enableCloudSyncMessage')}
+                title={t("enableCloudSync")}
+                subtitle={syncAction ? t("syncing") : t("enableCloudSyncMessage")}
                 onPress={syncAction ? undefined : handleEnableCloudSync}
                 showChevron={!syncAction}
               />
             )}
             {showStopSync && (
               <ListItem
-                title={t('stopSyncing')}
-                subtitle={t('syncEnabled')}
+                title={t("stopSyncing")}
+                subtitle={t("syncEnabled")}
                 onPress={syncAction ? undefined : handleStopSyncing}
                 showChevron={!syncAction}
               />
@@ -435,7 +457,7 @@ export default function BudgetSettingsScreen() {
       <EncryptionSection />
 
       {/* Experimental Features */}
-      <SectionHeader title={t('experimentalFeatures')} style={{ marginTop: spacing.xl }} />
+      <SectionHeader title={t("experimentalFeatures")} style={{ marginTop: spacing.xl }} />
       <Card>
         {ALL_FEATURE_FLAGS.map((flag, index) => (
           <ListItem
@@ -459,12 +481,12 @@ export default function BudgetSettingsScreen() {
         color={colors.textMuted}
         style={{ paddingHorizontal: spacing.lg, marginTop: spacing.sm }}
       >
-        {t('experimentalFeaturesWarning')}
+        {t("experimentalFeaturesWarning")}
       </Text>
 
       {/* Danger Zone */}
       <Button
-        title={t('deleteBudget')}
+        title={t("deleteBudget")}
         icon="trash-outline"
         variant="ghost"
         textColor={colors.negative}

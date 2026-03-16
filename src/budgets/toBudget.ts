@@ -4,10 +4,10 @@
  * toBudget = cumulativeIncome - cumulativeBudgeted - bufferedSelected + overspendingPenalty
  */
 
-import { runQuery, first } from '../db';
-import type { ZeroBudgetRow, CategoryGroupRow, CategoryRow } from '../db/types';
-import { ALIVE_TX_FILTER } from '../db/filters';
-import { computeCarryoverChain } from './index';
+import { runQuery, first } from "../db";
+import type { ZeroBudgetRow, CategoryGroupRow, CategoryRow } from "../db/types";
+import { ALIVE_TX_FILTER } from "../db/filters";
+import { computeCarryoverChain } from "./index";
 
 export type ToBudgetInputs = {
   month: string;
@@ -35,22 +35,22 @@ export async function computeToBudgetFull(inputs: ToBudgetInputs): Promise<ToBud
   const endDate = monthInt * 100 + 31;
 
   // Load groups/categories if not provided
-  const groups = inputs.groups ?? await runQuery<CategoryGroupRow>(
-    'SELECT * FROM category_groups WHERE tombstone = 0',
-  );
-  const categories = inputs.categories ?? await runQuery<CategoryRow>(
-    'SELECT * FROM categories WHERE tombstone = 0',
-  );
+  const groups =
+    inputs.groups ??
+    (await runQuery<CategoryGroupRow>("SELECT * FROM category_groups WHERE tombstone = 0"));
+  const categories =
+    inputs.categories ??
+    (await runQuery<CategoryRow>("SELECT * FROM categories WHERE tombstone = 0"));
 
-  const groupMap = new Map(groups.map(g => [g.id, g]));
+  const groupMap = new Map(groups.map((g) => [g.id, g]));
 
   // Expense category IDs
   const expenseCatIds = categories
-    .filter(c => {
+    .filter((c) => {
       const g = groupMap.get(c.cat_group);
       return g && g.is_income === 0;
     })
-    .map(c => c.id);
+    .map((c) => c.id);
 
   // Cumulative income through end of month
   const cumulativeIncomeRow = await first<{ total: number }>(
@@ -80,7 +80,7 @@ export async function computeToBudgetFull(inputs: ToBudgetInputs): Promise<ToBud
 
   // Buffered: manual hold or auto (income cats with carryover)
   const bufferedRow = await first<{ buffered: number }>(
-    'SELECT buffered FROM zero_budget_months WHERE id = ?',
+    "SELECT buffered FROM zero_budget_months WHERE id = ?",
     [month],
   );
   const manualBuffered = bufferedRow?.buffered ?? 0;
@@ -88,11 +88,10 @@ export async function computeToBudgetFull(inputs: ToBudgetInputs): Promise<ToBud
   let bufferedAuto = 0;
   if (manualBuffered === 0) {
     // Load budget rows + spending map if not provided
-    const budgetRows = inputs.budgetRows ?? await runQuery<ZeroBudgetRow>(
-      'SELECT * FROM zero_budgets WHERE month = ?',
-      [monthInt],
-    );
-    const carryoverMap = new Map(budgetRows.map(r => [r.category, r.carryover === 1]));
+    const budgetRows =
+      inputs.budgetRows ??
+      (await runQuery<ZeroBudgetRow>("SELECT * FROM zero_budgets WHERE month = ?", [monthInt]));
+    const carryoverMap = new Map(budgetRows.map((r) => [r.category, r.carryover === 1]));
 
     let currentMap: Map<string, number>;
     if (inputs.currentSpendingMap) {
@@ -110,15 +109,15 @@ export async function computeToBudgetFull(inputs: ToBudgetInputs): Promise<ToBud
          GROUP BY COALESCE(cm.transferId, t.category)`,
         [startDate, endDate],
       );
-      currentMap = new Map(currentMonthRows.map(r => [r.category, r.amount]));
+      currentMap = new Map(currentMonthRows.map((r) => [r.category, r.amount]));
     }
 
     const incomeCatIds = categories
-      .filter(c => {
+      .filter((c) => {
         const g = groupMap.get(c.cat_group);
         return g && g.is_income === 1;
       })
-      .map(c => c.id);
+      .map((c) => c.id);
 
     for (const catId of incomeCatIds) {
       const coFlag = carryoverMap.get(catId) ?? false;

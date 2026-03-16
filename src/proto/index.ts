@@ -13,7 +13,7 @@
  *
  * Field tag = (field_number << 3) | wire_type
  */
-import { Reader, Writer } from 'protobufjs/minimal';
+import { Reader, Writer } from "protobufjs/minimal";
 
 // ---------------------------------------------------------------------------
 // Interfaces
@@ -57,12 +57,10 @@ export interface ISyncResponse {
 
 export const EncryptedData = {
   encode(message: IEncryptedData, writer = Writer.create()): Writer {
-    if (message.iv != null && message.iv.length > 0)
-      writer.uint32(10).bytes(message.iv);
+    if (message.iv != null && message.iv.length > 0) writer.uint32(10).bytes(message.iv);
     if (message.authTag != null && message.authTag.length > 0)
       writer.uint32(18).bytes(message.authTag);
-    if (message.data != null && message.data.length > 0)
-      writer.uint32(26).bytes(message.data);
+    if (message.data != null && message.data.length > 0) writer.uint32(26).bytes(message.data);
     return writer;
   },
 
@@ -104,14 +102,11 @@ export const EncryptedData = {
 
 export const Message = {
   encode(message: IMessage, writer = Writer.create()): Writer {
-    if (message.dataset != null && message.dataset !== '')
+    if (message.dataset != null && message.dataset !== "")
       writer.uint32(10).string(message.dataset);
-    if (message.row != null && message.row !== '')
-      writer.uint32(18).string(message.row);
-    if (message.column != null && message.column !== '')
-      writer.uint32(26).string(message.column);
-    if (message.value != null && message.value !== '')
-      writer.uint32(34).string(message.value);
+    if (message.row != null && message.row !== "") writer.uint32(18).string(message.row);
+    if (message.column != null && message.column !== "") writer.uint32(26).string(message.column);
+    if (message.value != null && message.value !== "") writer.uint32(34).string(message.value);
     return writer;
   },
 
@@ -156,7 +151,7 @@ export const Message = {
 
 export const MessageEnvelope = {
   encode(message: IMessageEnvelope, writer = Writer.create()): Writer {
-    if (message.timestamp != null && message.timestamp !== '')
+    if (message.timestamp != null && message.timestamp !== "")
       writer.uint32(10).string(message.timestamp);
     if (message.isEncrypted === true) writer.uint32(16).bool(true);
     if (message.content != null && message.content.length > 0)
@@ -206,14 +201,11 @@ export const SyncRequest = {
     for (const env of message.messages ?? []) {
       MessageEnvelope.encode(env, writer.uint32(10).fork()).ldelim();
     }
-    if (message.fileId != null && message.fileId !== '')
-      writer.uint32(18).string(message.fileId);
-    if (message.groupId != null && message.groupId !== '')
+    if (message.fileId != null && message.fileId !== "") writer.uint32(18).string(message.fileId);
+    if (message.groupId != null && message.groupId !== "")
       writer.uint32(26).string(message.groupId);
-    if (message.keyId != null && message.keyId !== '')
-      writer.uint32(42).string(message.keyId);
-    if (message.since != null && message.since !== '')
-      writer.uint32(50).string(message.since);
+    if (message.keyId != null && message.keyId !== "") writer.uint32(42).string(message.keyId);
+    if (message.since != null && message.since !== "") writer.uint32(50).string(message.since);
     return writer;
   },
 
@@ -228,9 +220,7 @@ export const SyncRequest = {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
-          message.messages!.push(
-            MessageEnvelope.decode(reader, reader.uint32()),
-          );
+          message.messages!.push(MessageEnvelope.decode(reader, reader.uint32()));
           break;
         case 2:
           message.fileId = reader.string();
@@ -265,8 +255,7 @@ export const SyncResponse = {
     for (const env of message.messages ?? []) {
       MessageEnvelope.encode(env, writer.uint32(10).fork()).ldelim();
     }
-    if (message.merkle != null && message.merkle !== '')
-      writer.uint32(18).string(message.merkle);
+    if (message.merkle != null && message.merkle !== "") writer.uint32(18).string(message.merkle);
     return writer;
   },
 
@@ -281,9 +270,7 @@ export const SyncResponse = {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
-          message.messages!.push(
-            MessageEnvelope.decode(reader, reader.uint32()),
-          );
+          message.messages!.push(MessageEnvelope.decode(reader, reader.uint32()));
           break;
         case 2:
           message.merkle = reader.string();

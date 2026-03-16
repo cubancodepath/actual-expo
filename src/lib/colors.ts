@@ -18,15 +18,15 @@
  */
 export function withOpacity(hex: string, alpha: number): string {
   // Strip leading '#' if present
-  const clean = hex.replace('#', '');
+  const clean = hex.replace("#", "");
 
   // Support 3-char shorthand by expanding: "f0a" → "ff00aa"
   const full =
     clean.length === 3
       ? clean
-          .split('')
+          .split("")
           .map((c) => c + c)
-          .join('')
+          .join("")
       : clean;
 
   const r = parseInt(full.slice(0, 2), 16);

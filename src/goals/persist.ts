@@ -7,13 +7,13 @@
  * compatibility with the desktop Actual Budget app.
  */
 
-import { first } from '../db';
-import { sendMessages } from '../sync';
-import { Timestamp } from '../crdt';
-import { monthToInt } from '../lib/date';
-import { updateCategory } from '../categories';
-import type { Template } from './types';
-import { parseGoalDef, templatesToNoteText } from './parse';
+import { first } from "../db";
+import { sendMessages } from "../sync";
+import { Timestamp } from "../crdt";
+import { monthToInt } from "../lib/date";
+import { updateCategory } from "../categories";
+import type { Template } from "./types";
+import { parseGoalDef, templatesToNoteText } from "./parse";
 
 // ---------------------------------------------------------------------------
 // Read templates from DB
@@ -22,11 +22,9 @@ import { parseGoalDef, templatesToNoteText } from './parse';
 /**
  * Get goal templates for a category by reading its goal_def column.
  */
-export async function getGoalTemplates(
-  categoryId: string,
-): Promise<Template[]> {
+export async function getGoalTemplates(categoryId: string): Promise<Template[]> {
   const row = await first<{ goal_def: string | null }>(
-    'SELECT goal_def FROM categories WHERE id = ?',
+    "SELECT goal_def FROM categories WHERE id = ?",
     [categoryId],
   );
   return parseGoalDef(row?.goal_def ?? null);
@@ -40,9 +38,9 @@ async function setNote(entityId: string, note: string | null): Promise<void> {
   await sendMessages([
     {
       timestamp: Timestamp.send()!,
-      dataset: 'notes',
+      dataset: "notes",
       row: entityId,
-      column: 'note',
+      column: "note",
       value: note,
     },
   ]);
@@ -66,13 +64,11 @@ export async function setGoalTemplates(
   const goalDef = templates.length > 0 ? JSON.stringify(templates) : null;
   await updateCategory(categoryId, {
     goal_def: goalDef,
-    template_settings: JSON.stringify({ source: 'ui' }),
+    template_settings: JSON.stringify({ source: "ui" }),
   });
 
   // Write note text for desktop compatibility
-  const noteText = templates.length > 0
-    ? templatesToNoteText(templates, categoryNames)
-    : null;
+  const noteText = templates.length > 0 ? templatesToNoteText(templates, categoryNames) : null;
   await setNote(categoryId, noteText);
 }
 
@@ -96,30 +92,30 @@ export async function setGoalResult(
   const messages = [
     {
       timestamp: Timestamp.send()!,
-      dataset: 'zero_budgets',
+      dataset: "zero_budgets",
       row: id,
-      column: 'month',
+      column: "month",
       value: monthInt,
     },
     {
       timestamp: Timestamp.send()!,
-      dataset: 'zero_budgets',
+      dataset: "zero_budgets",
       row: id,
-      column: 'category',
+      column: "category",
       value: categoryId,
     },
     {
       timestamp: Timestamp.send()!,
-      dataset: 'zero_budgets',
+      dataset: "zero_budgets",
       row: id,
-      column: 'goal',
+      column: "goal",
       value: goal,
     },
     {
       timestamp: Timestamp.send()!,
-      dataset: 'zero_budgets',
+      dataset: "zero_budgets",
       row: id,
-      column: 'long_goal',
+      column: "long_goal",
       value: longGoal === true ? 1 : longGoal === false ? 0 : null,
     },
   ];

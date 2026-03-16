@@ -23,11 +23,7 @@ export function EmptyState({
   return (
     <View style={styles.container}>
       <Ionicons name={icon} size={48} color={colors.textMuted} />
-      <Text
-        variant="headingSm"
-        color={colors.textSecondary}
-        style={{ marginTop: spacing.lg }}
-      >
+      <Text variant="headingSm" color={colors.textSecondary} style={{ marginTop: spacing.lg }}>
         {title}
       </Text>
       {description && (
@@ -48,7 +44,7 @@ export function EmptyState({
             pressed && { opacity: 0.6 },
           ]}
         >
-          <Text variant="bodySm" color={colors.primary} style={{ fontWeight: '600' }}>
+          <Text variant="bodySm" color={colors.primary} style={{ fontWeight: "600" }}>
             {actionLabel}
           </Text>
         </Pressable>

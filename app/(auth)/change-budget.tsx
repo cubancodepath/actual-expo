@@ -1,9 +1,9 @@
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, View } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
-import { useTranslation } from 'react-i18next';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { usePrefsStore } from '../../src/stores/prefsStore';
-import { useTheme, useThemedStyles } from '../../src/presentation/providers/ThemeProvider';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, View } from "react-native";
+import { Stack, useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { usePrefsStore } from "../../src/stores/prefsStore";
+import { useTheme, useThemedStyles } from "../../src/presentation/providers/ThemeProvider";
 import {
   Text,
   Card,
@@ -12,10 +12,10 @@ import {
   Banner,
   EmptyState,
   BudgetFileRow,
-} from '../../src/presentation/components';
-import { useBudgetFiles, fileKey } from '../../src/presentation/hooks/useBudgetFiles';
-import type { ReconciledBudgetFile } from '../../src/services/budgetfiles';
-import type { Theme } from '../../src/theme';
+} from "../../src/presentation/components";
+import { useBudgetFiles, fileKey } from "../../src/presentation/hooks/useBudgetFiles";
+import type { ReconciledBudgetFile } from "../../src/services/budgetfiles";
+import type { Theme } from "../../src/theme";
 
 export default function ChangeBudgetScreen() {
   const router = useRouter();
@@ -25,8 +25,16 @@ export default function ChangeBudgetScreen() {
   const insets = useSafeAreaInsets();
   const { activeBudgetId } = usePrefsStore();
   const {
-    localFiles, remoteFiles, loading, refreshing, error,
-    selecting, selectFile, retry, refresh, dismissError,
+    localFiles,
+    remoteFiles,
+    loading,
+    refreshing,
+    error,
+    selecting,
+    selectFile,
+    retry,
+    refresh,
+    dismissError,
   } = useBudgetFiles();
 
   async function handleSelect(file: ReconciledBudgetFile) {
@@ -64,12 +72,12 @@ export default function ChangeBudgetScreen() {
           ),
           headerRight: () => (
             <Pressable
-              onPress={() => router.push('/(auth)/new-budget')}
+              onPress={() => router.push("/(auth)/new-budget")}
               hitSlop={8}
               style={styles.headerBtn}
             >
-              <Text variant="body" style={{ fontWeight: '600' }}>
-                {t('new')}
+              <Text variant="body" style={{ fontWeight: "600" }}>
+                {t("new")}
               </Text>
             </Pressable>
           ),
@@ -86,14 +94,16 @@ export default function ChangeBudgetScreen() {
         <Card style={{ marginTop: spacing.lg }}>
           <View style={styles.loadingRow}>
             <ActivityIndicator color={colors.primary} />
-            <Text variant="bodySm" color={colors.textMuted}>{t('loading')}</Text>
+            <Text variant="bodySm" color={colors.textMuted}>
+              {t("loading")}
+            </Text>
           </View>
         </Card>
       ) : hasFiles ? (
         <>
           {localFiles.length > 0 && (
             <>
-              <SectionHeader title={t('budget.onThisDevice')} style={{ marginTop: spacing.lg }} />
+              <SectionHeader title={t("budget.onThisDevice")} style={{ marginTop: spacing.lg }} />
               <Card style={styles.listCard}>
                 {localFiles.map((file, index) => (
                   <BudgetFileRow
@@ -111,7 +121,10 @@ export default function ChangeBudgetScreen() {
 
           {remoteFiles.length > 0 && (
             <>
-              <SectionHeader title={t('budget.availableOnServer')} style={{ marginTop: spacing.lg }} />
+              <SectionHeader
+                title={t("budget.availableOnServer")}
+                style={{ marginTop: spacing.lg }}
+              />
               <Card style={styles.listCard}>
                 {remoteFiles.map((file, index) => (
                   <BudgetFileRow
@@ -129,10 +142,10 @@ export default function ChangeBudgetScreen() {
       ) : (
         <EmptyState
           icon="folder-open-outline"
-          title={t('budget.noBudgetsFound')}
-          description={t('budget.noBudgetsDescription')}
-          actionLabel={t('budget.createNewBudget')}
-          onAction={() => router.push('/(auth)/new-budget')}
+          title={t("budget.noBudgetsFound")}
+          description={t("budget.noBudgetsDescription")}
+          actionLabel={t("budget.createNewBudget")}
+          onAction={() => router.push("/(auth)/new-budget")}
         />
       )}
     </ScrollView>
@@ -147,11 +160,11 @@ const createStyles = (theme: Theme) => ({
   },
   listCard: {
     padding: 0,
-    overflow: 'hidden' as const,
+    overflow: "hidden" as const,
   },
   loadingRow: {
     paddingVertical: theme.spacing.xl,
-    alignItems: 'center' as const,
+    alignItems: "center" as const,
     gap: theme.spacing.md,
   },
   headerBtn: {

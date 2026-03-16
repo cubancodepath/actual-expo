@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useRefreshControl } from '../../../../src/presentation/hooks/useRefreshControl';
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useRefreshControl } from "../../../../src/presentation/hooks/useRefreshControl";
 import {
   ActivityIndicator,
   Alert,
@@ -8,11 +8,11 @@ import {
   RefreshControl,
   TextInput,
   View,
-} from 'react-native';
-import * as Haptics from 'expo-haptics';
-import { LegendList } from '@legendapp/list';
-import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
-import { useTranslation } from 'react-i18next';
+} from "react-native";
+import * as Haptics from "expo-haptics";
+import { LegendList } from "@legendapp/list";
+import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 
 import {
   deleteTransaction,
@@ -21,38 +21,38 @@ import {
   toggleCleared,
   updateTransaction,
   type TransactionDisplay,
-} from '../../../../src/transactions';
-import { useUndoStore } from '../../../../src/stores/undoStore';
-import type { SearchToken } from '../../../../src/transactions/types';
-import { useAccountsStore } from '../../../../src/stores/accountsStore';
-import { useCategoriesStore } from '../../../../src/stores/categoriesStore';
-import { useTheme } from '../../../../src/presentation/providers/ThemeProvider';
-import { EmptyState } from '../../../../src/presentation/components';
-import { TransactionRow } from '../../../../src/presentation/components/account/TransactionRow';
-import { DateSectionHeader } from '../../../../src/presentation/components/account/DateSectionHeader';
-import { TokenSearchBar } from '../../../../src/presentation/components/transaction/TokenSearchBar';
-import { SearchSuggestions } from '../../../../src/presentation/components/transaction/SearchSuggestions';
-import { useTagsStore } from '../../../../src/stores/tagsStore';
-import { usePayeesStore } from '../../../../src/stores/payeesStore';
-import { GlassButton } from '../../../../src/presentation/components/atoms/GlassButton';
+} from "../../../../src/transactions";
+import { useUndoStore } from "../../../../src/stores/undoStore";
+import type { SearchToken } from "../../../../src/transactions/types";
+import { useAccountsStore } from "../../../../src/stores/accountsStore";
+import { useCategoriesStore } from "../../../../src/stores/categoriesStore";
+import { useTheme } from "../../../../src/presentation/providers/ThemeProvider";
+import { EmptyState } from "../../../../src/presentation/components";
+import { TransactionRow } from "../../../../src/presentation/components/account/TransactionRow";
+import { DateSectionHeader } from "../../../../src/presentation/components/account/DateSectionHeader";
+import { TokenSearchBar } from "../../../../src/presentation/components/transaction/TokenSearchBar";
+import { SearchSuggestions } from "../../../../src/presentation/components/transaction/SearchSuggestions";
+import { useTagsStore } from "../../../../src/stores/tagsStore";
+import { usePayeesStore } from "../../../../src/stores/payeesStore";
+import { GlassButton } from "../../../../src/presentation/components/atoms/GlassButton";
 import {
   useTransactionSelection,
   useTransactionBulkActions,
   useSelectModeHeader,
   useBulkCategoryPicker,
   useBulkAccountPicker,
-} from '../../../../src/presentation/hooks/transactionList';
-import { usePickerStore } from '../../../../src/stores/pickerStore';
-import { useTabBarStore } from '../../../../src/stores/tabBarStore';
-import { SelectModeToolbar } from '../../../../src/presentation/components/transaction/SelectModeToolbar';
+} from "../../../../src/presentation/hooks/transactionList";
+import { usePickerStore } from "../../../../src/stores/pickerStore";
+import { useTabBarStore } from "../../../../src/stores/tabBarStore";
+import { SelectModeToolbar } from "../../../../src/presentation/components/transaction/SelectModeToolbar";
 
 // ---------------------------------------------------------------------------
 // Types for mixed list data
 // ---------------------------------------------------------------------------
 
-type DateHeader = { type: 'date'; date: number; key: string };
+type DateHeader = { type: "date"; date: number; key: string };
 type TransactionItem = {
-  type: 'transaction';
+  type: "transaction";
   data: TransactionDisplay;
   key: string;
   isFirst: boolean;
@@ -70,13 +70,13 @@ function buildListData(transactions: TransactionDisplay[]): ListItem[] {
     if (isNewDate) {
       if (items.length > 0) {
         const prev = items[items.length - 1];
-        if (prev.type === 'transaction') prev.isLast = true;
+        if (prev.type === "transaction") prev.isLast = true;
       }
-      items.push({ type: 'date', date: txn.date, key: `date-${txn.date}` });
+      items.push({ type: "date", date: txn.date, key: `date-${txn.date}` });
       lastDate = txn.date;
     }
     items.push({
-      type: 'transaction',
+      type: "transaction",
       data: txn,
       key: txn.id,
       isFirst: isNewDate,
@@ -86,7 +86,7 @@ function buildListData(transactions: TransactionDisplay[]): ListItem[] {
 
   if (items.length > 0) {
     const last = items[items.length - 1];
-    if (last.type === 'transaction') last.isLast = true;
+    if (last.type === "transaction") last.isLast = true;
   }
 
   return items;
@@ -100,12 +100,12 @@ function buildSearchParams(tkns: SearchToken[]) {
   const params: Record<string, unknown> = {};
   const tagNames: string[] = [];
   for (const t of tkns) {
-    if (t.type === 'status') params[t.value] = true;
-    if (t.type === 'account') params.accountId = t.accountId;
-    if (t.type === 'category') params.categoryId = t.categoryId;
-    if (t.type === 'payee') params.payeeId = t.payeeId;
-    if (t.type === 'tag') tagNames.push(t.tagName);
-    if (t.type === 'uncategorized') params.uncategorized = true;
+    if (t.type === "status") params[t.value] = true;
+    if (t.type === "account") params.accountId = t.accountId;
+    if (t.type === "category") params.categoryId = t.categoryId;
+    if (t.type === "payee") params.payeeId = t.payeeId;
+    if (t.type === "tag") tagNames.push(t.tagName);
+    if (t.type === "uncategorized") params.uncategorized = true;
   }
   if (tagNames.length > 0) params.tagNames = tagNames;
   return params;
@@ -130,14 +130,19 @@ export default function SearchScreen() {
   const payees = usePayeesStore((s) => s.payees);
   // Search state
   const searchInputRef = useRef<TextInput>(null);
-  const [searchText, setSearchText] = useState('');
+  const [searchText, setSearchText] = useState("");
   const [searchFocused, setSearchFocused] = useState(!initialFilter);
   const [tokens, setTokens] = useState<SearchToken[]>(() => {
-    if (initialFilter === 'uncategorized') {
-      return [{ type: 'uncategorized' }];
+    if (initialFilter === "uncategorized") {
+      return [{ type: "uncategorized" }];
     }
-    if (initialFilter === 'uncleared' || initialFilter === 'cleared' || initialFilter === 'reconciled' || initialFilter === 'unreconciled') {
-      return [{ type: 'status', value: initialFilter }];
+    if (
+      initialFilter === "uncleared" ||
+      initialFilter === "cleared" ||
+      initialFilter === "reconciled" ||
+      initialFilter === "unreconciled"
+    ) {
+      return [{ type: "status", value: initialFilter }];
     }
     return [];
   });
@@ -152,24 +157,34 @@ export default function SearchScreen() {
 
   // ---- Selection ----
   const {
-    selectedIds, isSelectMode, allCleared, selectedTotal,
-    handleLongPress, enterSelectMode, handleSelectAll, handleDoneSelection, resetSelection,
+    selectedIds,
+    isSelectMode,
+    allCleared,
+    selectedTotal,
+    handleLongPress,
+    enterSelectMode,
+    handleSelectAll,
+    handleDoneSelection,
+    resetSelection,
   } = useTransactionSelection({
     transactions: results,
     onEnterSelectMode: () => setTabBarHidden(true),
     onExitSelectMode: () => setTabBarHidden(false),
   });
 
-  const { handleBulkDelete, handleBulkMove, handleBulkToggleCleared, handleBulkChangeCategory } = useTransactionBulkActions({
-    selectedIds,
-    transactions: results,
-    setTransactions: setResults,
-    refreshIdRef,
-    resetSelection,
-    loadAccounts,
-    optimisticBulkMove: (prev, ids, targetAccountId, targetAccountName) =>
-      prev.map(t => ids.has(t.id) ? { ...t, acct: targetAccountId, accountName: targetAccountName } : t),
-  });
+  const { handleBulkDelete, handleBulkMove, handleBulkToggleCleared, handleBulkChangeCategory } =
+    useTransactionBulkActions({
+      selectedIds,
+      transactions: results,
+      setTransactions: setResults,
+      refreshIdRef,
+      resetSelection,
+      loadAccounts,
+      optimisticBulkMove: (prev, ids, targetAccountId, targetAccountName) =>
+        prev.map((t) =>
+          ids.has(t.id) ? { ...t, acct: targetAccountId, accountName: targetAccountName } : t,
+        ),
+    });
 
   const { triggerCategoryPicker } = useBulkCategoryPicker(handleBulkChangeCategory);
   const { triggerAccountPicker } = useBulkAccountPicker(handleBulkMove);
@@ -187,7 +202,7 @@ export default function SearchScreen() {
     if (initialFilter) {
       // Auto-execute search with the initial filter
       const params = buildSearchParams(tokens);
-      searchTransactions({ ...params, limit: PAGE_SIZE, offset: 0 }).then(txns => {
+      searchTransactions({ ...params, limit: PAGE_SIZE, offset: 0 }).then((txns) => {
         setResults(txns);
         setHasSearched(true);
         setHasMore(txns.length === PAGE_SIZE);
@@ -207,8 +222,8 @@ export default function SearchScreen() {
       headerRight: undefined,
       unstable_headerRightItems: () => [
         {
-          type: 'button' as const,
-          label: t('select'),
+          type: "button" as const,
+          label: t("select"),
           disabled: !hasResults,
           onPress: enterSelectMode,
         },
@@ -219,34 +234,39 @@ export default function SearchScreen() {
   // ---- Token management ----
 
   const STATUS_EXCLUSIONS: Record<string, string> = {
-    cleared: 'uncleared',
-    uncleared: 'cleared',
-    reconciled: 'unreconciled',
-    unreconciled: 'reconciled',
+    cleared: "uncleared",
+    uncleared: "cleared",
+    reconciled: "unreconciled",
+    unreconciled: "reconciled",
   };
 
   function handleAddToken(token: SearchToken) {
-    setTokens(prev => {
-      const filtered = prev.filter(t => {
+    setTokens((prev) => {
+      const filtered = prev.filter((t) => {
         // Replace same-type account/category/payee (single-value filters)
-        if (t.type === token.type && token.type === 'account') return false;
-        if (t.type === token.type && token.type === 'category') return false;
-        if (t.type === token.type && token.type === 'payee') return false;
+        if (t.type === token.type && token.type === "account") return false;
+        if (t.type === token.type && token.type === "category") return false;
+        if (t.type === token.type && token.type === "payee") return false;
         // Tags: remove duplicate tag, but allow multiple different tags
-        if (t.type === 'tag' && token.type === 'tag' && t.tagName === token.tagName) return false;
+        if (t.type === "tag" && token.type === "tag" && t.tagName === token.tagName) return false;
         // Uncategorized is mutually exclusive with category
-        if (t.type === 'uncategorized' && token.type === 'category') return false;
-        if (t.type === 'category' && token.type === 'uncategorized') return false;
-        if (t.type === 'uncategorized' && token.type === 'uncategorized') return false;
+        if (t.type === "uncategorized" && token.type === "category") return false;
+        if (t.type === "category" && token.type === "uncategorized") return false;
+        if (t.type === "uncategorized" && token.type === "uncategorized") return false;
         // Remove duplicate status
-        if (t.type === 'status' && token.type === 'status' && t.value === token.value) return false;
+        if (t.type === "status" && token.type === "status" && t.value === token.value) return false;
         // Remove mutually exclusive status (cleared/uncleared, reconciled/unreconciled)
-        if (t.type === 'status' && token.type === 'status' && STATUS_EXCLUSIONS[token.value] === t.value) return false;
+        if (
+          t.type === "status" &&
+          token.type === "status" &&
+          STATUS_EXCLUSIONS[token.value] === t.value
+        )
+          return false;
         return true;
       });
       return [...filtered, token];
     });
-    setSearchText('');
+    setSearchText("");
   }
 
   function handleRemoveToken(index: number) {
@@ -264,7 +284,7 @@ export default function SearchScreen() {
         ...buildSearchParams(next),
         limit: PAGE_SIZE,
         offset: 0,
-      }).then(txns => {
+      }).then((txns) => {
         setResults(txns);
         setHasMore(txns.length === PAGE_SIZE);
         offsetRef.current = txns.length;
@@ -273,7 +293,7 @@ export default function SearchScreen() {
   }
 
   function handleClear() {
-    setSearchText('');
+    setSearchText("");
     setTokens([]);
     setResults([]);
     setHasSearched(false);
@@ -306,8 +326,11 @@ export default function SearchScreen() {
         limit: PAGE_SIZE,
         offset: offsetRef.current,
       });
-      if (txns.length === 0) { setHasMore(false); return; }
-      setResults(prev => [...prev, ...txns]);
+      if (txns.length === 0) {
+        setHasMore(false);
+        return;
+      }
+      setResults((prev) => [...prev, ...txns]);
       setHasMore(txns.length === PAGE_SIZE);
       offsetRef.current += txns.length;
     } finally {
@@ -335,39 +358,42 @@ export default function SearchScreen() {
   // ---- Transaction handlers ----
 
   function handleEditTransaction(txnId: string) {
-    router.push({ pathname: '/(auth)/transaction/new', params: { transactionId: txnId } });
+    router.push({ pathname: "/(auth)/transaction/new", params: { transactionId: txnId } });
   }
 
   function handleDelete(txnId: string) {
-    Alert.alert(t('spending.deleteTransactionTitle'), t('spending.deleteTransactionConfirm'), [
-      { text: t('cancel'), style: 'cancel' },
+    Alert.alert(t("spending.deleteTransactionTitle"), t("spending.deleteTransactionConfirm"), [
+      { text: t("cancel"), style: "cancel" },
       {
-        text: t('delete'),
-        style: 'destructive',
+        text: t("delete"),
+        style: "destructive",
         onPress: async () => {
-          setResults(prev => prev.filter(tx => tx.id !== txnId));
+          setResults((prev) => prev.filter((tx) => tx.id !== txnId));
           await deleteTransaction(txnId);
-          useUndoStore.getState().showUndo(t('spending.transactionDeleted'));
+          useUndoStore.getState().showUndo(t("spending.transactionDeleted"));
         },
       },
     ]);
   }
 
   async function handleToggleCleared(txnId: string) {
-    setResults(prev => prev.map(t =>
-      t.id === txnId ? { ...t, cleared: !t.cleared } : t
-    ));
+    setResults((prev) => prev.map((t) => (t.id === txnId ? { ...t, cleared: !t.cleared } : t)));
     await toggleCleared(txnId);
   }
 
   async function handleDuplicate(txnId: string) {
-    const original = results.find(t => t.id === txnId);
+    const original = results.find((t) => t.id === txnId);
     if (!original) return;
     const newId = await duplicateTransaction(txnId);
     if (newId) {
-      const clone: TransactionDisplay = { ...original, id: newId, cleared: false, reconciled: false };
-      setResults(prev => {
-        const idx = prev.findIndex(t => t.id === txnId);
+      const clone: TransactionDisplay = {
+        ...original,
+        id: newId,
+        cleared: false,
+        reconciled: false,
+      };
+      setResults((prev) => {
+        const idx = prev.findIndex((t) => t.id === txnId);
         const next = [...prev];
         next.splice(idx + 1, 0, clone);
         return next;
@@ -388,16 +414,18 @@ export default function SearchScreen() {
       const targetAccountId = selectedAccount.id;
       const targetName = selectedAccount.name;
       clearPicker();
-      setResults(prev => prev.map(t =>
-        t.id === txnId ? { ...t, acct: targetAccountId, accountName: targetName } : t
-      ));
+      setResults((prev) =>
+        prev.map((t) =>
+          t.id === txnId ? { ...t, acct: targetAccountId, accountName: targetName } : t,
+        ),
+      );
       updateTransaction(txnId, { acct: targetAccountId });
     }
   }, [selectedAccount, clearPicker]);
 
   function handleMove(txnId: string) {
     pendingMoveRef.current = txnId;
-    router.push({ pathname: '/(auth)/transaction/account-picker', params: { selectedId: '' } });
+    router.push({ pathname: "/(auth)/transaction/account-picker", params: { selectedId: "" } });
   }
 
   // Single-item categorize via category picker
@@ -410,20 +438,21 @@ export default function SearchScreen() {
       pendingCategoryRef.current = null;
       const categoryId = selectedCategory.id;
       clearPicker();
-      setResults(prev => prev.map(t =>
-        t.id === txnId ? { ...t, category: categoryId } : t
-      ));
+      setResults((prev) => prev.map((t) => (t.id === txnId ? { ...t, category: categoryId } : t)));
       updateTransaction(txnId, { category: categoryId });
     }
   }, [selectedCategory, clearPicker]);
 
   function handleSetCategory(txnId: string) {
     pendingCategoryRef.current = txnId;
-    router.push({ pathname: '/(auth)/transaction/category-picker', params: { hideSplit: '1' } });
+    router.push({ pathname: "/(auth)/transaction/category-picker", params: { hideSplit: "1" } });
   }
 
   function handleAddTag(txnId: string) {
-    router.push({ pathname: '/(auth)/transaction/tags', params: { transactionId: txnId, mode: 'direct' } });
+    router.push({
+      pathname: "/(auth)/transaction/tags",
+      params: { transactionId: txnId, mode: "direct" },
+    });
   }
 
   // ---- Render ----
@@ -433,7 +462,7 @@ export default function SearchScreen() {
   return (
     <>
       <View style={{ backgroundColor: colors.pageBackground }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, gap: 8 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 12, gap: 8 }}>
           <View style={{ flex: 1 }}>
             <TokenSearchBar
               text={searchText}
@@ -453,9 +482,11 @@ export default function SearchScreen() {
           <SearchSuggestions
             text={searchText}
             tokens={tokens}
-            accounts={accounts.filter(a => !a.closed).map(a => ({ id: a.id, name: a.name }))}
-            categories={categories.filter(c => !c.hidden && !c.is_income).map(c => ({ id: c.id, name: c.name }))}
-            payees={payees.filter(p => !p.transfer_acct).map(p => ({ id: p.id, name: p.name }))}
+            accounts={accounts.filter((a) => !a.closed).map((a) => ({ id: a.id, name: a.name }))}
+            categories={categories
+              .filter((c) => !c.hidden && !c.is_income)
+              .map((c) => ({ id: c.id, name: c.name }))}
+            payees={payees.filter((p) => !p.transfer_acct).map((p) => ({ id: p.id, name: p.name }))}
             tags={tags}
             onSelect={handleAddToken}
           />
@@ -469,10 +500,10 @@ export default function SearchScreen() {
         showsVerticalScrollIndicator={false}
         contentInsetAdjustmentBehavior="automatic"
         renderItem={({ item }) => {
-          if (item.type === 'date') {
+          if (item.type === "date") {
             return <DateSectionHeader date={item.date} />;
           }
-          if (item.type !== 'transaction') return null;
+          if (item.type !== "transaction") return null;
           return (
             <TransactionRow
               item={item.data}
@@ -494,24 +525,22 @@ export default function SearchScreen() {
           );
         }}
         ListFooterComponent={
-          loadingMore
-            ? <ActivityIndicator color={colors.primary} style={{ paddingVertical: 20 }} />
-            : null
+          loadingMore ? (
+            <ActivityIndicator color={colors.primary} style={{ paddingVertical: 20 }} />
+          ) : null
         }
         ListEmptyComponent={
-          hasSearched
-            ? <EmptyState
-                icon="search-outline"
-                title={t('spending.noMatchingTransactions')}
-                description={t('spending.tryDifferentSearch')}
-              />
-            : null
+          hasSearched ? (
+            <EmptyState
+              icon="search-outline"
+              title={t("spending.noMatchingTransactions")}
+              description={t("spending.tryDifferentSearch")}
+            />
+          ) : null
         }
         onEndReached={loadMore}
         onEndReachedThreshold={0.3}
-        refreshControl={
-          <RefreshControl {...refreshControlProps} />
-        }
+        refreshControl={<RefreshControl {...refreshControlProps} />}
         contentContainerStyle={{ paddingBottom: 80, backgroundColor: colors.pageBackground }}
       />
 

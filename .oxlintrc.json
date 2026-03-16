@@ -1,0 +1,13 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "categories": {
+    "correctness": "warn"
+  },
+  "plugins": ["typescript", "react", "unicorn"],
+  "rules": {
+    "no-unused-vars": "warn",
+    "no-console": "warn",
+    "typescript/no-explicit-any": "warn"
+  },
+  "ignorePatterns": ["node_modules", "ios", "android", ".expo"]
+}

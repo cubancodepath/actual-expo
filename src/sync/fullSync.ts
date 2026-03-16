@@ -5,13 +5,13 @@
  * server messages → checks Merkle divergence → retries if needed.
  */
 
-import { getClock, merkle, Timestamp } from '../crdt';
-import { encode, decode } from './encoder';
-import { postBinary } from '../post';
-import { PostError, SyncError } from '../errors';
-import { applyMessages, getMessagesSince } from './apply';
-import { refreshStoresForDatasets } from '../stores/storeRegistry';
-import { getSyncGeneration, isSwitchingBudget, setActiveSyncPromise } from './lifecycle';
+import { getClock, merkle, Timestamp } from "../crdt";
+import { encode, decode } from "./encoder";
+import { postBinary } from "../post";
+import { PostError, SyncError } from "../errors";
+import { applyMessages, getMessagesSince } from "./apply";
+import { refreshStoresForDatasets } from "../stores/storeRegistry";
+import { getSyncGeneration, isSwitchingBudget, setActiveSyncPromise } from "./lifecycle";
 
 async function _fullSync(attempt = 0): Promise<void> {
   if (isSwitchingBudget()) return;
@@ -19,31 +19,38 @@ async function _fullSync(attempt = 0): Promise<void> {
   const gen = getSyncGeneration();
 
   // Avoid circular import — import store lazily
-  const { usePrefsStore } = await import('../stores/prefsStore');
-  const { useSyncStore } = await import('../stores/syncStore');
+  const { usePrefsStore } = await import("../stores/prefsStore");
+  const { useSyncStore } = await import("../stores/syncStore");
 
   const prefs = usePrefsStore.getState();
   if (prefs.isLocalOnly) return;
   if (!prefs.isConfigured) {
-    throw new Error('Server not configured — set serverUrl, token, fileId, groupId first');
+    throw new Error("Server not configured — set serverUrl, token, fileId, groupId first");
   }
 
-  useSyncStore.getState()._setStatus('syncing');
+  useSyncStore.getState()._setStatus("syncing");
 
   try {
-    const sinceStr = prefs.lastSyncedTimestamp ?? '1970-01-01T00:00:00.000Z';
+    const sinceStr = prefs.lastSyncedTimestamp ?? "1970-01-01T00:00:00.000Z";
     const since = Timestamp.since(sinceStr);
 
     const localMessages = await getMessagesSince(since);
 
     if (__DEV__) {
-      const scheduleTables = new Set(['rules', 'schedules', 'schedules_next_date']);
-      const relevant = localMessages.filter(m => scheduleTables.has(m.dataset));
-      console.log(`[fullSync] sending ${localMessages.length} local messages (${relevant.length} schedule-related)`);
+      const scheduleTables = new Set(["rules", "schedules", "schedules_next_date"]);
+      const relevant = localMessages.filter((m) => scheduleTables.has(m.dataset));
+      console.log(
+        `[fullSync] sending ${localMessages.length} local messages (${relevant.length} schedule-related)`,
+      );
       if (relevant.length > 0) {
-        console.log('[fullSync] schedule messages to sync:', relevant.map(m => ({
-          dataset: m.dataset, row: m.row.slice(0, 8), column: m.column,
-        })));
+        console.log(
+          "[fullSync] schedule messages to sync:",
+          relevant.map((m) => ({
+            dataset: m.dataset,
+            row: m.row.slice(0, 8),
+            column: m.column,
+          })),
+        );
       }
     }
 
@@ -57,18 +64,15 @@ async function _fullSync(attempt = 0): Promise<void> {
       prefs.encryptKeyId,
     );
 
-    const responseBytes = await postBinary(
-      `${prefs.serverUrl}/sync/sync`,
-      requestBytes,
-      {
-        'x-actual-token': prefs.token,
-        'x-actual-file-id': prefs.fileId,
-      },
-    );
+    const responseBytes = await postBinary(`${prefs.serverUrl}/sync/sync`, requestBytes, {
+      "x-actual-token": prefs.token,
+      "x-actual-file-id": prefs.fileId,
+    });
 
     // Critical guard: discard results if budget changed during network request
     if (gen !== getSyncGeneration()) {
-      if (__DEV__) console.log('[fullSync] generation changed during network request — discarding results');
+      if (__DEV__)
+        console.log("[fullSync] generation changed during network request — discarding results");
       return;
     }
 
@@ -77,13 +81,16 @@ async function _fullSync(attempt = 0): Promise<void> {
       prefs.encryptKeyId,
     );
 
-    if (__DEV__) console.log(`[fullSync] received ${serverMessages.length} messages from server (attempt ${attempt})`);
+    if (__DEV__)
+      console.log(
+        `[fullSync] received ${serverMessages.length} messages from server (attempt ${attempt})`,
+      );
 
     if (serverMessages.length > 0) {
       if (gen !== getSyncGeneration()) return;
       await applyMessages(serverMessages);
       if (gen !== getSyncGeneration()) return;
-      const affectedDatasets = new Set(serverMessages.map(m => m.dataset));
+      const affectedDatasets = new Set(serverMessages.map((m) => m.dataset));
       await refreshStoresForDatasets(affectedDatasets);
     }
 
@@ -96,7 +103,7 @@ async function _fullSync(attempt = 0): Promise<void> {
     // Also persist to budget's metadata.json for offline access
     const activeBudgetId = prefs.activeBudgetId;
     if (activeBudgetId) {
-      import('../services/budgetMetadata').then(({ updateMetadata }) =>
+      import("../services/budgetMetadata").then(({ updateMetadata }) =>
         updateMetadata(activeBudgetId, { lastSyncedTimestamp: syncTimestamp }).catch(() => {}),
       );
     }
@@ -108,21 +115,21 @@ async function _fullSync(attempt = 0): Promise<void> {
       return fullSync(attempt + 1);
     }
 
-    useSyncStore.getState()._setStatus('success');
+    useSyncStore.getState()._setStatus("success");
 
     // Advance schedules after successful sync (auto-post due transactions)
     try {
-      const { advanceSchedules } = await import('../schedules');
+      const { advanceSchedules } = await import("../schedules");
       await advanceSchedules(true);
     } catch (e) {
-      if (__DEV__) console.warn('[fullSync] advanceSchedules failed:', e);
+      if (__DEV__) console.warn("[fullSync] advanceSchedules failed:", e);
     }
   } catch (e: unknown) {
     if (gen !== getSyncGeneration()) return;
 
     // Auth error — clear everything and let router redirect to login
-    if (e instanceof PostError && (e.type === 'unauthorized' || e.type === 'token-expired')) {
-      const { closeBudget } = await import('../services/budgetfiles');
+    if (e instanceof PostError && (e.type === "unauthorized" || e.type === "token-expired")) {
+      const { closeBudget } = await import("../services/budgetfiles");
       await closeBudget().catch(() => {});
       usePrefsStore.getState().clearAll();
       return;
@@ -130,14 +137,16 @@ async function _fullSync(attempt = 0): Promise<void> {
 
     // Handle missing encryption key gracefully (don't crash, let user re-enter password)
     if (e instanceof SyncError && (e.meta as { isMissingKey?: boolean })?.isMissingKey) {
-      useSyncStore.getState()._setError('Encryption key not available. Re-open this budget to enter your password.');
+      useSyncStore
+        .getState()
+        ._setError("Encryption key not available. Re-open this budget to enter your password.");
       return;
     }
 
     const msg = e instanceof Error ? e.message : String(e);
     // Silently ignore errors from DB closing during budget switch
-    if (msg.includes('closed resource') || msg.includes('not initialized')) {
-      useSyncStore.getState()._setStatus('idle');
+    if (msg.includes("closed resource") || msg.includes("not initialized")) {
+      useSyncStore.getState()._setStatus("idle");
       return;
     }
     useSyncStore.getState()._setError(msg);

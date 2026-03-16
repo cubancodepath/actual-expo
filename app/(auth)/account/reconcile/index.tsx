@@ -1,14 +1,14 @@
-import { useState } from 'react';
-import { View } from 'react-native';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useTheme } from '../../../../src/presentation/providers/ThemeProvider';
-import { useAccountsStore } from '../../../../src/stores/accountsStore';
-import { lockTransactions, getClearedBalance } from '../../../../src/transactions';
-import { Text } from '../../../../src/presentation/components/atoms/Text';
-import { Button } from '../../../../src/presentation/components/atoms/Button';
-import { Amount } from '../../../../src/presentation/components/atoms/Amount';
-import { IconButton } from '../../../../src/presentation/components/atoms/IconButton';
-import { useTranslation } from 'react-i18next';
+import { useState } from "react";
+import { View } from "react-native";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { useTheme } from "../../../../src/presentation/providers/ThemeProvider";
+import { useAccountsStore } from "../../../../src/stores/accountsStore";
+import { lockTransactions, getClearedBalance } from "../../../../src/transactions";
+import { Text } from "../../../../src/presentation/components/atoms/Text";
+import { Button } from "../../../../src/presentation/components/atoms/Button";
+import { Amount } from "../../../../src/presentation/components/atoms/Amount";
+import { IconButton } from "../../../../src/presentation/components/atoms/IconButton";
+import { useTranslation } from "react-i18next";
 
 export default function ReconcileConfirmScreen() {
   const { colors, spacing, borderRadius: br } = useTheme();
@@ -18,7 +18,7 @@ export default function ReconcileConfirmScreen() {
     clearedBalance: string;
   }>();
 
-  const { t } = useTranslation('accounts');
+  const { t } = useTranslation("accounts");
   const clearedCents = Number(clearedBalance) || 0;
   const [loading, setLoading] = useState(false);
 
@@ -36,7 +36,7 @@ export default function ReconcileConfirmScreen() {
 
   function handleEnterBalance() {
     router.push({
-      pathname: '/(auth)/account/reconcile/amount',
+      pathname: "/(auth)/account/reconcile/amount",
       params: { accountId, clearedBalance },
     });
   }
@@ -59,25 +59,25 @@ export default function ReconcileConfirmScreen() {
       <Text
         variant="body"
         color={colors.textSecondary}
-        style={{ textAlign: 'center', marginBottom: spacing.xl }}
+        style={{ textAlign: "center", marginBottom: spacing.xl }}
       >
-        {t('reconcile.question')}
+        {t("reconcile.question")}
       </Text>
 
-      <View style={{ alignItems: 'center', marginBottom: spacing.xl, paddingVertical: spacing.md }}>
+      <View style={{ alignItems: "center", marginBottom: spacing.xl, paddingVertical: spacing.md }}>
         <Amount value={clearedCents} variant="displayLg" colored />
       </View>
 
       <View style={{ gap: spacing.sm }}>
         <Button
-          title={t('reconcile.yesMatches')}
+          title={t("reconcile.yesMatches")}
           variant="primary"
           onPress={handleMatch}
           loading={loading}
           style={{ borderRadius: br.full }}
         />
         <Button
-          title={t('reconcile.noEnterBalance')}
+          title={t("reconcile.noEnterBalance")}
           variant="secondary"
           onPress={handleEnterBalance}
           style={{ borderRadius: br.full }}

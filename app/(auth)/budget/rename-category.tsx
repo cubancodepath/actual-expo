@@ -1,23 +1,23 @@
-import { useState } from 'react';
-import { TextInput, View } from 'react-native';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
-import { useCategoriesStore } from '../../../src/stores/categoriesStore';
-import { useBudgetStore } from '../../../src/stores/budgetStore';
-import { Text } from '../../../src/presentation/components/atoms/Text';
-import { Button } from '../../../src/presentation/components/atoms/Button';
-import { IconButton } from '../../../src/presentation/components/atoms/IconButton';
+import { useState } from "react";
+import { TextInput, View } from "react-native";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
+import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
+import { useCategoriesStore } from "../../../src/stores/categoriesStore";
+import { useBudgetStore } from "../../../src/stores/budgetStore";
+import { Text } from "../../../src/presentation/components/atoms/Text";
+import { Button } from "../../../src/presentation/components/atoms/Button";
+import { IconButton } from "../../../src/presentation/components/atoms/IconButton";
 
 export default function RenameCategoryScreen() {
-  const { t } = useTranslation('budget');
+  const { t } = useTranslation("budget");
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const router = useRouter();
   const { categoryId, currentName } = useLocalSearchParams<{
     categoryId: string;
     currentName: string;
   }>();
-  const [name, setName] = useState(currentName ?? '');
+  const [name, setName] = useState(currentName ?? "");
   const [saving, setSaving] = useState(false);
 
   const trimmed = name.trim();
@@ -50,7 +50,7 @@ export default function RenameCategoryScreen() {
           ),
           headerRight: () => (
             <Button
-              title={t('save')}
+              title={t("save")}
               variant="ghost"
               size="sm"
               textColor={canSave ? colors.textPrimary : colors.textMuted}
@@ -62,12 +62,12 @@ export default function RenameCategoryScreen() {
       />
 
       <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.xs }}>
-        {t('categoryNameLabel')}
+        {t("categoryNameLabel")}
       </Text>
       <TextInput
         value={name}
         onChangeText={setName}
-        placeholder={t('categoryNamePlaceholder')}
+        placeholder={t("categoryNamePlaceholder")}
         placeholderTextColor={colors.textMuted}
         autoFocus
         returnKeyType="done"

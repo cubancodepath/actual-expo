@@ -7,6 +7,7 @@ Documento vivo para trackear features futuras y su progreso.
 ## Rules Engine
 
 ### Completado
+
 - [x] Tipos mejorados (`ConditionOp`, `ActionOp`, `RuleStage`, `FIELD_TYPES`, `INTERNAL_FIELD_MAP`)
 - [x] Motor de evaluacion puro (`evalCondition`, `execAction`, `rankRules`, `runRules`) — 74 tests
 - [x] Store read-only (`useRulesStore`) con auto-refresh en sync
@@ -16,6 +17,7 @@ Documento vivo para trackear features futuras y su progreso.
 - [x] `userOverrides` ref para no pisar valores de URL params / Apple Intents / picks manuales
 
 ### Pendiente
+
 - [ ] Pantalla de rules (read-only en Settings) — mostrar condiciones y acciones en formato legible
 - [ ] Aplicar rules en sync — cuando llegan transacciones del servidor (bank sync), pasarlas por el engine
 - [ ] Soporte para condiciones `onBudget`/`offBudget` (requiere enrichment de account)
@@ -27,6 +29,7 @@ Documento vivo para trackear features futuras y su progreso.
 ## Importacion de Transacciones
 
 ### Pendiente
+
 - [ ] Importar archivos OFX/QFX/CSV
 - [ ] Aplicar rules de `imported_payee` durante importacion (pre-stage rules)
 - [ ] Reconciliacion con transacciones existentes (matching por fecha/monto)
@@ -36,6 +39,7 @@ Documento vivo para trackear features futuras y su progreso.
 ## Payee Location
 
 ### Pendiente
+
 - [ ] Guardar ubicacion GPS al crear transaccion (opcional, con permiso del usuario)
 - [ ] Asociar ubicaciones a payees (un payee puede tener multiples ubicaciones)
 - [ ] Auto-sugerir payee basado en ubicacion actual (proximity matching)
@@ -51,6 +55,7 @@ Documento vivo para trackear features futuras y su progreso.
 > ⚠️ **Limitacion de testing**: No hay forma facil de probar conexiones bancarias reales en desarrollo. Considerar mocks/sandbox de GoCardless o SimpleFIN para desarrollo, pero la integracion real solo se puede validar con cuentas bancarias activas.
 
 ### Pendiente
+
 - [ ] Investigar sandbox/test mode de GoCardless y SimpleFIN
 - [ ] Configuracion de conexion bancaria (UI de seleccion de banco)
 - [ ] Flujo OAuth / link de autorizacion bancaria
@@ -66,6 +71,7 @@ Documento vivo para trackear features futuras y su progreso.
 ## Reportes y Graficos
 
 ### Pendiente
+
 - [ ] Spending by category (grafico de torta/barras)
 - [ ] Net worth over time
 - [ ] Cash flow mensual
@@ -76,6 +82,7 @@ Documento vivo para trackear features futuras y su progreso.
 ## Notificaciones
 
 ### Pendiente
+
 - [ ] Recordatorios de presupuesto (cuando una categoria esta cerca del limite)
 - [ ] Recordatorios de schedules proximos
 - [ ] Alertas de sync fallido
@@ -85,6 +92,7 @@ Documento vivo para trackear features futuras y su progreso.
 ## Widgets (iOS)
 
 ### Pendiente
+
 - [ ] Widget de balance por cuenta
 - [ ] Widget de presupuesto del mes
 - [ ] Widget de transaccion rapida

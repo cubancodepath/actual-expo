@@ -1,18 +1,18 @@
-import { useState } from 'react';
-import { Pressable, TextInput, View } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
-import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
-import { useCategoriesStore } from '../../../src/stores/categoriesStore';
-import { useBudgetStore } from '../../../src/stores/budgetStore';
-import { Text } from '../../../src/presentation/components/atoms/Text';
-import { IconButton } from '../../../src/presentation/components/atoms/IconButton';
+import { useState } from "react";
+import { Pressable, TextInput, View } from "react-native";
+import { Stack, useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
+import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
+import { useCategoriesStore } from "../../../src/stores/categoriesStore";
+import { useBudgetStore } from "../../../src/stores/budgetStore";
+import { Text } from "../../../src/presentation/components/atoms/Text";
+import { IconButton } from "../../../src/presentation/components/atoms/IconButton";
 
 export default function NewGroupScreen() {
-  const { t } = useTranslation('budget');
+  const { t } = useTranslation("budget");
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const router = useRouter();
-  const [name, setName] = useState('');
+  const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
 
   async function handleSave() {
@@ -43,8 +43,12 @@ export default function NewGroupScreen() {
           ),
           headerRight: () => (
             <Pressable onPress={handleSave} hitSlop={8} disabled={!name.trim() || saving}>
-              <Text variant="body" color={name.trim() && !saving ? colors.primary : colors.textMuted} style={{ fontWeight: '600', fontSize: 17 }}>
-                {t('save')}
+              <Text
+                variant="body"
+                color={name.trim() && !saving ? colors.primary : colors.textMuted}
+                style={{ fontWeight: "600", fontSize: 17 }}
+              >
+                {t("save")}
               </Text>
             </Pressable>
           ),
@@ -52,12 +56,12 @@ export default function NewGroupScreen() {
       />
 
       <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.xs }}>
-        {t('groupNameLabel')}
+        {t("groupNameLabel")}
       </Text>
       <TextInput
         value={name}
         onChangeText={setName}
-        placeholder={t('newGroupPlaceholder')}
+        placeholder={t("newGroupPlaceholder")}
         placeholderTextColor={colors.textMuted}
         autoFocus
         returnKeyType="done"

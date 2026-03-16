@@ -1,5 +1,5 @@
-import { parseGoalDef } from './parse';
-import type { BudgetCategory } from '../budgets/types';
+import { parseGoalDef } from "./parse";
+import type { BudgetCategory } from "../budgets/types";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -16,15 +16,15 @@ function fundedSegments(cat: BudgetCategory): ProgressSegment[] {
   const absSpent = Math.abs(cat.spent);
   if (absSpent === 0) {
     return [
-      { key: 'budget:progress.budgeted' },
+      { key: "budget:progress.budgeted" },
       { amount: cat.balance },
-      { key: 'budget:progress.available' },
+      { key: "budget:progress.available" },
     ];
   }
   return [
-    { key: 'budget:progress.spent' },
+    { key: "budget:progress.spent" },
     { amount: absSpent },
-    { key: 'budget:progress.of' },
+    { key: "budget:progress.of" },
     { amount: cat.budgeted },
   ];
 }
@@ -68,12 +68,9 @@ export function getGoalProgress(cat: BudgetCategory): ProgressSegment[] {
   // No goal — just show spent
   if (!primary || cat.goal == null) {
     if (absSpent === 0) {
-      return [{ key: 'budget:progress.noSpending' }];
+      return [{ key: "budget:progress.noSpending" }];
     }
-    return [
-      { key: 'budget:progress.spent' },
-      { amount: absSpent },
-    ];
+    return [{ key: "budget:progress.spent" }, { amount: absSpent }];
   }
 
   // Determine if funded:
@@ -83,72 +80,94 @@ export function getGoalProgress(cat: BudgetCategory): ProgressSegment[] {
     ? cat.balance >= cat.goal && cat.goal > 0
     : cat.budgeted >= cat.goal && cat.goal > 0;
 
-  const remaining = cat.longGoal
-    ? cat.goal - cat.balance
-    : cat.goal - cat.budgeted;
+  const remaining = cat.longGoal ? cat.goal - cat.balance : cat.goal - cat.budgeted;
 
   switch (primary.type) {
     // #goal — balance target (savings goal, no date)
-    case 'goal':
+    case "goal":
       if (funded) {
-        return [{ key: 'budget:progress.funded' }];
+        return [{ key: "budget:progress.funded" }];
       }
       return [
         { amount: Math.max(cat.balance, 0) },
-        { key: 'budget:progress.of' },
+        { key: "budget:progress.of" },
         { amount: cat.goal },
-        { key: 'budget:progress.saved' },
+        { key: "budget:progress.saved" },
       ];
 
     // #template N — fixed monthly amount, refill, or pure cap
-    case 'simple': {
+    case "simple": {
       // Pure spending cap: monthly: 0 + limit → show limit-style text
       if (primary.monthly === 0 && primary.limit) {
-        if (absSpent === 0) return [{ key: 'budget:progress.funded' }];
-        if (absSpent === cat.goal!) return [{ key: 'budget:progress.fullySpent' }];
-        if (absSpent > cat.goal!) return [{ key: 'budget:progress.overspent' }, { amount: absSpent }, { key: 'budget:progress.of' }, { amount: cat.goal! }];
-        return [{ key: 'budget:progress.fundedSpent' }, { amount: absSpent }, { key: 'budget:progress.of' }, { amount: cat.goal! }];
+        if (absSpent === 0) return [{ key: "budget:progress.funded" }];
+        if (absSpent === cat.goal!) return [{ key: "budget:progress.fullySpent" }];
+        if (absSpent > cat.goal!)
+          return [
+            { key: "budget:progress.overspent" },
+            { amount: absSpent },
+            { key: "budget:progress.of" },
+            { amount: cat.goal! },
+          ];
+        return [
+          { key: "budget:progress.fundedSpent" },
+          { amount: absSpent },
+          { key: "budget:progress.of" },
+          { amount: cat.goal! },
+        ];
       }
       // Refill or fixed monthly: funded/needed
       if (funded) {
-        if (absSpent === 0) return [{ key: 'budget:progress.funded' }];
-        if (absSpent === cat.budgeted) return [{ key: 'budget:progress.fullySpent' }];
-        if (absSpent > cat.budgeted) return [{ key: 'budget:progress.overspent' }, { amount: absSpent }, { key: 'budget:progress.of' }, { amount: cat.budgeted }];
-        return [{ key: 'budget:progress.fundedSpent' }, { amount: absSpent }, { key: 'budget:progress.of' }, { amount: cat.budgeted }];
+        if (absSpent === 0) return [{ key: "budget:progress.funded" }];
+        if (absSpent === cat.budgeted) return [{ key: "budget:progress.fullySpent" }];
+        if (absSpent > cat.budgeted)
+          return [
+            { key: "budget:progress.overspent" },
+            { amount: absSpent },
+            { key: "budget:progress.of" },
+            { amount: cat.budgeted },
+          ];
+        return [
+          { key: "budget:progress.fundedSpent" },
+          { amount: absSpent },
+          { key: "budget:progress.of" },
+          { amount: cat.budgeted },
+        ];
       }
-      return [
-        { amount: remaining },
-        { key: 'budget:progress.moreNeededThisMonth' },
-      ];
+      return [{ amount: remaining }, { key: "budget:progress.moreNeededThisMonth" }];
     }
 
     // #template N by YYYY-MM — sinking fund
-    case 'by':
+    case "by":
       if (funded) {
-        return [{ key: 'budget:progress.onTrack' }];
+        return [{ key: "budget:progress.onTrack" }];
       }
-      return [
-        { amount: remaining },
-        { key: 'budget:progress.moreNeededThisMonth' },
-      ];
+      return [{ amount: remaining }, { key: "budget:progress.moreNeededThisMonth" }];
 
     // #template N by YYYY-MM spend from YYYY-MM
-    case 'spend':
+    case "spend":
       if (funded) {
-        return [{ key: 'budget:progress.onTrack' }];
+        return [{ key: "budget:progress.onTrack" }];
       }
-      return [
-        { amount: remaining },
-        { key: 'budget:progress.moreNeededThisMonth' },
-      ];
+      return [{ amount: remaining }, { key: "budget:progress.moreNeededThisMonth" }];
 
     // Spending limit types
-    case 'limit':
-    case 'refill': {
-      if (absSpent === 0) return [{ key: 'budget:progress.funded' }];
-      if (absSpent === cat.goal!) return [{ key: 'budget:progress.fullySpent' }];
-      if (absSpent > cat.goal!) return [{ key: 'budget:progress.overspent' }, { amount: absSpent }, { key: 'budget:progress.of' }, { amount: cat.goal! }];
-      return [{ key: 'budget:progress.fundedSpent' }, { amount: absSpent }, { key: 'budget:progress.of' }, { amount: cat.goal! }];
+    case "limit":
+    case "refill": {
+      if (absSpent === 0) return [{ key: "budget:progress.funded" }];
+      if (absSpent === cat.goal!) return [{ key: "budget:progress.fullySpent" }];
+      if (absSpent > cat.goal!)
+        return [
+          { key: "budget:progress.overspent" },
+          { amount: absSpent },
+          { key: "budget:progress.of" },
+          { amount: cat.goal! },
+        ];
+      return [
+        { key: "budget:progress.fundedSpent" },
+        { amount: absSpent },
+        { key: "budget:progress.of" },
+        { amount: cat.goal! },
+      ];
     }
 
     // average, copy, periodic, percentage, remainder
@@ -156,10 +175,7 @@ export function getGoalProgress(cat: BudgetCategory): ProgressSegment[] {
       if (funded) {
         return fundedSegments(cat);
       }
-      return [
-        { amount: remaining },
-        { key: 'budget:progress.moreNeededThisMonth' },
-      ];
+      return [{ amount: remaining }, { key: "budget:progress.moreNeededThisMonth" }];
   }
 }
 
@@ -168,13 +184,8 @@ export function getGoalProgress(cat: BudgetCategory): ProgressSegment[] {
  * Formats amounts as dollar values (e.g. "$50.00").
  * Requires a translation function to resolve keys.
  */
-export function getGoalProgressLabel(
-  cat: BudgetCategory,
-  t: (key: string) => string,
-): string {
+export function getGoalProgressLabel(cat: BudgetCategory, t: (key: string) => string): string {
   return getGoalProgress(cat)
-    .map(seg =>
-      'key' in seg ? t(seg.key) : `$${(Math.abs(seg.amount) / 100).toFixed(2)}`,
-    )
-    .join('');
+    .map((seg) => ("key" in seg ? t(seg.key) : `$${(Math.abs(seg.amount) / 100).toFixed(2)}`))
+    .join("");
 }

@@ -11,23 +11,23 @@
  */
 
 export type NumberFormatType =
-  | 'comma-dot'
-  | 'dot-comma'
-  | 'space-comma'
-  | 'apostrophe-dot'
-  | 'comma-dot-in';
+  | "comma-dot"
+  | "dot-comma"
+  | "space-comma"
+  | "apostrophe-dot"
+  | "comma-dot-in";
 
 const FORMAT_TO_LOCALE: Record<NumberFormatType, string> = {
-  'comma-dot': 'en-US',
-  'dot-comma': 'de-DE',
-  'space-comma': 'fr-FR',
-  'apostrophe-dot': 'de-CH',
-  'comma-dot-in': 'en-IN',
+  "comma-dot": "en-US",
+  "dot-comma": "de-DE",
+  "space-comma": "fr-FR",
+  "apostrophe-dot": "de-CH",
+  "comma-dot-in": "en-IN",
 };
 
 // Module-level config — updated via setNumberFormat()
 let numberConfig: { format: NumberFormatType; hideFraction: boolean } = {
-  format: 'comma-dot',
+  format: "comma-dot",
   hideFraction: false,
 };
 
@@ -36,10 +36,7 @@ let cachedFormatter: Intl.NumberFormat | null = null;
 let cachedFormatterShort: Intl.NumberFormat | null = null;
 
 /** Update the global number format config. Called from preferencesStore. */
-export function setNumberFormat(config: {
-  format: NumberFormatType;
-  hideFraction: boolean;
-}) {
+export function setNumberFormat(config: { format: NumberFormatType; hideFraction: boolean }) {
   numberConfig = config;
   cachedFormatter = null;
   cachedFormatterShort = null;
@@ -47,7 +44,7 @@ export function setNumberFormat(config: {
 
 function getFormatter(): Intl.NumberFormat {
   if (!cachedFormatter) {
-    const locale = FORMAT_TO_LOCALE[numberConfig.format] ?? 'en-US';
+    const locale = FORMAT_TO_LOCALE[numberConfig.format] ?? "en-US";
     cachedFormatter = new Intl.NumberFormat(locale, {
       minimumFractionDigits: numberConfig.hideFraction ? 0 : 2,
       maximumFractionDigits: numberConfig.hideFraction ? 0 : 2,
@@ -58,7 +55,7 @@ function getFormatter(): Intl.NumberFormat {
 
 function getFormatterShort(): Intl.NumberFormat {
   if (!cachedFormatterShort) {
-    const locale = FORMAT_TO_LOCALE[numberConfig.format] ?? 'en-US';
+    const locale = FORMAT_TO_LOCALE[numberConfig.format] ?? "en-US";
     cachedFormatterShort = new Intl.NumberFormat(locale, {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
@@ -69,20 +66,20 @@ function getFormatterShort(): Intl.NumberFormat {
 
 // ── Currency symbol config ────────────────────────────────────────────────────
 
-import type { SvgSymbolData } from './currencies';
+import type { SvgSymbolData } from "./currencies";
 
 let currencyConfig: {
   symbol: string;
   svgSymbol?: SvgSymbolData;
-  position: 'before' | 'after';
+  position: "before" | "after";
   spaceBetween: boolean;
-} = { symbol: '', position: 'before', spaceBetween: false };
+} = { symbol: "", position: "before", spaceBetween: false };
 
 /** Update the global currency symbol config. Called from preferencesStore. */
 export function setCurrencyConfig(config: {
   symbol: string;
   svgSymbol?: SvgSymbolData;
-  position: 'before' | 'after';
+  position: "before" | "after";
   spaceBetween: boolean;
 }) {
   currencyConfig = config;
@@ -98,21 +95,21 @@ export function setCurrencyConfig(config: {
 function applyCurrencyStyling(formatted: string): string {
   if (!currencyConfig.symbol) return formatted;
 
-  let sign = '';
+  let sign = "";
   let value = formatted;
-  if (formatted.startsWith('-')) {
-    sign = '-';
+  if (formatted.startsWith("-")) {
+    sign = "-";
     value = formatted.slice(1);
-  } else if (formatted.startsWith('+')) {
-    sign = '+';
+  } else if (formatted.startsWith("+")) {
+    sign = "+";
     value = formatted.slice(1);
   }
 
-  const space = currencyConfig.spaceBetween ? '\u202F' : '';
+  const space = currencyConfig.spaceBetween ? "\u202F" : "";
   const sym = currencyConfig.symbol;
 
   const styled =
-    currencyConfig.position === 'after'
+    currencyConfig.position === "after"
       ? `${value}${space}${sym}`
       : `\u202A${sym}\u202C${space}${value}`;
 
@@ -120,7 +117,7 @@ function applyCurrencyStyling(formatted: string): string {
 }
 
 /** Replacement text shown when privacy mode is active. */
-export const PRIVACY_MASK = '•••••';
+export const PRIVACY_MASK = "•••••";
 
 // ── Formatting ────────────────────────────────────────────────────────────────
 
@@ -160,11 +157,11 @@ export function formatAmountShort(cents: number): string {
 // ── Structured formatting (for component-based rendering with SVG symbols) ────
 
 export type FormattedAmountParts = {
-  sign: '' | '+' | '-';
+  sign: "" | "+" | "-";
   number: string;
   symbol: string;
   svgSymbol?: SvgSymbolData;
-  position: 'before' | 'after';
+  position: "before" | "after";
   spaceBetween: boolean;
 };
 
@@ -174,9 +171,9 @@ export type FormattedAmountParts = {
  */
 export function formatAmountParts(cents: number, showSign = false): FormattedAmountParts {
   const formatted = getFormatter().format(Math.abs(cents) / 100);
-  let sign: '' | '+' | '-' = '';
-  if (showSign && cents > 0) sign = '+';
-  else if (cents < 0) sign = '-';
+  let sign: "" | "+" | "-" = "";
+  if (showSign && cents > 0) sign = "+";
+  else if (cents < 0) sign = "-";
 
   return {
     sign,
@@ -197,7 +194,7 @@ export function formatAmountParts(cents: number, showSign = false): FormattedAmo
  */
 export function formatPrivacyAware(cents: number, showSign = false): string {
   // Lazy require to avoid circular dependency at module load
-  const { usePrivacyStore } = require('../stores/privacyStore');
+  const { usePrivacyStore } = require("../stores/privacyStore");
   if (usePrivacyStore.getState().privacyMode) return PRIVACY_MASK;
   return showSign ? formatAmount(cents) : formatBalance(cents);
 }
@@ -208,9 +205,9 @@ export function formatPrivacyAware(cents: number, showSign = false): string {
  * Get the decimal separator for the current number format.
  */
 function getDecimalSeparator(): string {
-  const locale = FORMAT_TO_LOCALE[numberConfig.format] ?? 'en-US';
+  const locale = FORMAT_TO_LOCALE[numberConfig.format] ?? "en-US";
   const parts = new Intl.NumberFormat(locale).formatToParts(1.1);
-  return parts.find((p) => p.type === 'decimal')?.value ?? '.';
+  return parts.find((p) => p.type === "decimal")?.value ?? ".";
 }
 
 /**
@@ -224,10 +221,10 @@ function getDecimalSeparator(): string {
 export function parseCents(input: string): number {
   const decSep = getDecimalSeparator();
   // Remove everything except digits and decimal separator
-  let cleaned = '';
+  let cleaned = "";
   for (const ch of input) {
-    if (ch >= '0' && ch <= '9') cleaned += ch;
-    else if (ch === decSep) cleaned += '.';
+    if (ch >= "0" && ch <= "9") cleaned += ch;
+    else if (ch === decSep) cleaned += ".";
   }
   const num = parseFloat(cleaned);
   if (isNaN(num)) return 0;

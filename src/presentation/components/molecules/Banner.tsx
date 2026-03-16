@@ -16,9 +16,17 @@ export interface BannerProps {
 function getVariantStyles(colors: ThemeColors, variant: BannerVariant) {
   switch (variant) {
     case "info":
-      return { bg: colors.primarySubtle, text: colors.primary, icon: "information-circle" as const };
+      return {
+        bg: colors.primarySubtle,
+        text: colors.primary,
+        icon: "information-circle" as const,
+      };
     case "success":
-      return { bg: colors.successBackground, text: colors.successText, icon: "checkmark-circle" as const };
+      return {
+        bg: colors.successBackground,
+        text: colors.successText,
+        icon: "checkmark-circle" as const,
+      };
     case "warning":
       return { bg: colors.warningBackground, text: colors.warningText, icon: "warning" as const };
     case "error":
@@ -26,12 +34,7 @@ function getVariantStyles(colors: ThemeColors, variant: BannerVariant) {
   }
 }
 
-export function Banner({
-  message,
-  variant = "info",
-  onDismiss,
-  onPress,
-}: BannerProps) {
+export function Banner({ message, variant = "info", onDismiss, onPress }: BannerProps) {
   const { colors, spacing, borderRadius: br } = useTheme();
   const v = getVariantStyles(colors, variant);
 

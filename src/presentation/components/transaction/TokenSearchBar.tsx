@@ -1,35 +1,35 @@
-import { useRef } from 'react';
-import { Pressable, TextInput, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../providers/ThemeProvider';
-import { Text } from '../atoms/Text';
-import type { SearchToken, StatusFilter } from '../../../transactions/types';
+import { useRef } from "react";
+import { Pressable, TextInput, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from "../../providers/ThemeProvider";
+import { Text } from "../atoms/Text";
+import type { SearchToken, StatusFilter } from "../../../transactions/types";
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
 const STATUS_LABELS: Record<StatusFilter, string> = {
-  cleared: 'Cleared',
-  uncleared: 'Uncleared',
-  reconciled: 'Reconciled',
-  unreconciled: 'Unreconciled',
+  cleared: "Cleared",
+  uncleared: "Uncleared",
+  reconciled: "Reconciled",
+  unreconciled: "Unreconciled",
 };
 
 function tokenLabel(t: SearchToken): string {
   switch (t.type) {
-    case 'status':
+    case "status":
       return STATUS_LABELS[t.value];
-    case 'account':
+    case "account":
       return `Account: ${t.accountName}`;
-    case 'category':
+    case "category":
       return `Category: ${t.categoryName}`;
-    case 'payee':
+    case "payee":
       return `Payee: ${t.payeeName}`;
-    case 'tag':
+    case "tag":
       return `Tag: #${t.tagName}`;
-    case 'uncategorized':
-      return 'Uncategorized';
+    case "uncategorized":
+      return "Uncategorized";
   }
 }
 
@@ -71,7 +71,7 @@ export function TokenSearchBar({
   const hasContent = text.length > 0 || tokens.length > 0;
 
   function handleKeyPress(e: { nativeEvent: { key: string } }) {
-    if (e.nativeEvent.key === 'Backspace' && text === '' && tokens.length > 0) {
+    if (e.nativeEvent.key === "Backspace" && text === "" && tokens.length > 0) {
       onRemoveToken(tokens.length - 1);
     }
   }
@@ -80,8 +80,8 @@ export function TokenSearchBar({
     <Pressable
       onPress={() => ref.current?.focus()}
       style={{
-        flexDirection: 'row',
-        alignItems: 'center',
+        flexDirection: "row",
+        alignItems: "center",
         backgroundColor: colors.inputBackground,
         borderRadius: br.full,
         marginHorizontal: noHorizontalMargin ? 0 : spacing.md,
@@ -100,8 +100,8 @@ export function TokenSearchBar({
           key={`${t.type}-${i}`}
           onPress={() => onRemoveToken(i)}
           style={{
-            flexDirection: 'row',
-            alignItems: 'center',
+            flexDirection: "row",
+            alignItems: "center",
             flexShrink: 1,
             backgroundColor: colors.primary,
             borderRadius: br.full,
@@ -111,7 +111,12 @@ export function TokenSearchBar({
             gap: 2,
           }}
         >
-          <Text variant="captionSm" color="#fff" style={{ fontWeight: '600', flexShrink: 1 }} numberOfLines={1}>
+          <Text
+            variant="captionSm"
+            color="#fff"
+            style={{ fontWeight: "600", flexShrink: 1 }}
+            numberOfLines={1}
+          >
             {tokenLabel(t)}
           </Text>
           <Ionicons name="close-circle" size={14} color="rgba(255,255,255,0.7)" />
@@ -126,7 +131,7 @@ export function TokenSearchBar({
         onBlur={() => onFocusChange(false)}
         onKeyPress={handleKeyPress}
         onSubmitEditing={onSubmit}
-        placeholder={tokens.length > 0 ? '' : 'Search transactions'}
+        placeholder={tokens.length > 0 ? "" : "Search transactions"}
         placeholderTextColor={colors.textMuted}
         style={{
           flex: 1,

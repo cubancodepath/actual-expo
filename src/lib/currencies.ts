@@ -9,7 +9,7 @@
  * https://www.localeplanet.com/api/auto/currencymap.html
  */
 
-import type { NumberFormatType } from './format';
+import type { NumberFormatType } from "./format";
 
 export type SvgSymbolData = {
   viewBox: [number, number, number, number];

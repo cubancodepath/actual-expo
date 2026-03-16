@@ -28,10 +28,7 @@ import {
   type LoginMethod,
 } from "../../src/services/authService";
 import { usePrefsStore } from "../../src/stores/prefsStore";
-import {
-  useTheme,
-  useThemedStyles,
-} from "../../src/presentation/providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "../../src/presentation/providers/ThemeProvider";
 import { Text } from "../../src/presentation/components/atoms/Text";
 import { Button } from "../../src/presentation/components/atoms/Button";
 import { Banner } from "../../src/presentation/components/molecules/Banner";
@@ -44,7 +41,7 @@ export default function LoginScreen() {
   const theme = useTheme();
   const styles = useThemedStyles(createStyles);
   const { setPrefs, saveToken } = usePrefsStore();
-  const { t } = useTranslation('auth');
+  const { t } = useTranslation("auth");
   const [serverUrl, setServerUrl] = useState("");
   const [password, setPassword] = useState("");
   const [step, setStep] = useState<"idle" | "probing" | LoginMethod>("idle");
@@ -91,7 +88,7 @@ export default function LoginScreen() {
   async function handleProbe() {
     const url = serverUrl.trim().replace(/\/$/, "");
     if (!url) {
-      setError(t('serverUrlRequired'));
+      setError(t("serverUrlRequired"));
       return;
     }
 
@@ -102,7 +99,7 @@ export default function LoginScreen() {
       urlRef.current = url;
 
       if (!info.bootstrapped) {
-        setError(t('serverNotSetUp'));
+        setError(t("serverNotSetUp"));
         setStep("idle");
         return;
       }
@@ -142,10 +139,7 @@ export default function LoginScreen() {
       const callbackUrl = `${returnUrl}/openid-cb`;
 
       const authUrl = await initiateOpenIdLogin(serverUrl, returnUrl);
-      const result = await WebBrowser.openAuthSessionAsync(
-        authUrl,
-        callbackUrl,
-      );
+      const result = await WebBrowser.openAuthSessionAsync(authUrl, callbackUrl);
 
       if (result.type !== "success") {
         setLoading(false);
@@ -155,7 +149,7 @@ export default function LoginScreen() {
       const parsed = Linking.parse(result.url);
       const token = parsed.queryParams?.token as string | undefined;
       if (!token) {
-        setError(t('openIdNoToken'));
+        setError(t("openIdNoToken"));
         setLoading(false);
         return;
       }
@@ -181,38 +175,24 @@ export default function LoginScreen() {
       style={styles.flex}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <ScrollView
-        contentContainerStyle={styles.container}
-        keyboardShouldPersistTaps="handled"
-      >
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <Animated.View style={contentAnimStyle}>
           {/* Header */}
           <View style={styles.header}>
-            <Image
-              source={require("../../assets/splash-icon.png")}
-              style={styles.logoImage}
-            />
-            <Text
-              variant="displayLg"
-              color={theme.colors.primary}
-              style={styles.logoText}
-            >
+            <Image source={require("../../assets/splash-icon.png")} style={styles.logoImage} />
+            <Text variant="displayLg" color={theme.colors.primary} style={styles.logoText}>
               {Constants.expoConfig?.name ?? "Actual"}
             </Text>
             <Text variant="bodySm" color={theme.colors.textMuted}>
-              {t('tagline')}
+              {t("tagline")}
             </Text>
           </View>
 
           {/* Form */}
           <View style={styles.form}>
             {/* Server URL */}
-            <Text
-              variant="caption"
-              color={theme.colors.textSecondary}
-              style={styles.label}
-            >
-              {t('serverUrl')}
+            <Text variant="caption" color={theme.colors.textSecondary} style={styles.label}>
+              {t("serverUrl")}
             </Text>
             <View style={styles.urlRow}>
               <View
@@ -221,15 +201,11 @@ export default function LoginScreen() {
                   step !== "idle" && step !== "probing" && styles.inputLocked,
                 ]}
               >
-                <Ionicons
-                  name="server-outline"
-                  size={18}
-                  color={theme.colors.textMuted}
-                />
+                <Ionicons name="server-outline" size={18} color={theme.colors.textMuted} />
                 <TextInput
                   testID="server-url-input"
                   style={[styles.input, { color: theme.colors.textPrimary }]}
-                  placeholder={t('serverUrlPlaceholder')}
+                  placeholder={t("serverUrlPlaceholder")}
                   placeholderTextColor={theme.colors.textMuted}
                   value={serverUrl}
                   onChangeText={(v) => {
@@ -246,17 +222,9 @@ export default function LoginScreen() {
                 />
               </View>
               {step !== "idle" && step !== "probing" && (
-                <Pressable
-                  style={styles.changeBtn}
-                  onPress={handleChangeServer}
-                  hitSlop={8}
-                >
-                  <Text
-                    variant="bodySm"
-                    color={theme.colors.primary}
-                    style={{ fontWeight: "600" }}
-                  >
-                    {t('change')}
+                <Pressable style={styles.changeBtn} onPress={handleChangeServer} hitSlop={8}>
+                  <Text variant="bodySm" color={theme.colors.primary} style={{ fontWeight: "600" }}>
+                    {t("change")}
                   </Text>
                 </Pressable>
               )}
@@ -267,7 +235,7 @@ export default function LoginScreen() {
               <View style={styles.probingRow}>
                 <ActivityIndicator size="small" color={theme.colors.primary} />
                 <Text variant="bodySm" color={theme.colors.textSecondary}>
-                  {t('connecting')}
+                  {t("connecting")}
                 </Text>
               </View>
             )}
@@ -275,23 +243,15 @@ export default function LoginScreen() {
             {/* Password form */}
             {step === "password" && (
               <>
-                <Text
-                  variant="caption"
-                  color={theme.colors.textSecondary}
-                  style={styles.label}
-                >
-                  {t('password')}
+                <Text variant="caption" color={theme.colors.textSecondary} style={styles.label}>
+                  {t("password")}
                 </Text>
                 <View style={styles.inputContainer}>
-                  <Ionicons
-                    name="lock-closed-outline"
-                    size={18}
-                    color={theme.colors.textMuted}
-                  />
+                  <Ionicons name="lock-closed-outline" size={18} color={theme.colors.textMuted} />
                   <TextInput
                     testID="password-input"
                     style={[styles.input, { color: theme.colors.textPrimary }]}
-                    placeholder={t('passwordPlaceholder')}
+                    placeholder={t("passwordPlaceholder")}
                     placeholderTextColor={theme.colors.textMuted}
                     value={password}
                     onChangeText={setPassword}
@@ -306,26 +266,15 @@ export default function LoginScreen() {
             )}
 
             {/* OpenID banner */}
-            {step === "openid" && (
-              <Banner
-                message={t('openIdRedirect')}
-                variant="info"
-              />
-            )}
+            {step === "openid" && <Banner message={t("openIdRedirect")} variant="info" />}
 
             {/* Error */}
-            {error && (
-              <Banner
-                message={error}
-                variant="error"
-                onDismiss={() => setError(null)}
-              />
-            )}
+            {error && <Banner message={error} variant="error" onDismiss={() => setError(null)} />}
 
             {/* Action buttons */}
             {step === "idle" && (
               <Button
-                title={t('continue')}
+                title={t("continue")}
                 onPress={handleProbe}
                 size="lg"
                 style={styles.actionButton}
@@ -334,7 +283,7 @@ export default function LoginScreen() {
 
             {step === "password" && (
               <Button
-                title={t('signIn')}
+                title={t("signIn")}
                 onPress={handlePasswordLogin}
                 size="lg"
                 loading={loading}
@@ -345,7 +294,7 @@ export default function LoginScreen() {
 
             {step === "openid" && (
               <Button
-                title={t('signInWithOpenId')}
+                title={t("signInWithOpenId")}
                 onPress={handleOpenIdLogin}
                 size="lg"
                 loading={loading}
@@ -358,9 +307,9 @@ export default function LoginScreen() {
               onPress={() => {
                 // Clear any stale budget state so the user doesn't auto-open an old budget
                 usePrefsStore.getState().setPrefs({
-                  activeBudgetId: '',
-                  fileId: '',
-                  groupId: '',
+                  activeBudgetId: "",
+                  fileId: "",
+                  groupId: "",
                   encryptKeyId: undefined,
                   lastSyncedTimestamp: undefined,
                   budgetName: undefined,
@@ -375,7 +324,7 @@ export default function LoginScreen() {
               style={{ marginTop: 32, alignSelf: "center" }}
             >
               <Text variant="bodySm" color={theme.colors.textSecondary}>
-                {t('useWithoutServer')}
+                {t("useWithoutServer")}
               </Text>
             </Pressable>
 
@@ -383,14 +332,12 @@ export default function LoginScreen() {
             {__DEV__ && (
               <Pressable
                 onPress={() => {
-                  usePrefsStore
-                    .getState()
-                    .setPrefs({ hasSeenOnboarding: false });
+                  usePrefsStore.getState().setPrefs({ hasSeenOnboarding: false });
                 }}
                 style={{ marginTop: 32, alignSelf: "center" }}
               >
                 <Text variant="caption" color={theme.colors.textMuted}>
-                  {t('devReplayOnboarding')}
+                  {t("devReplayOnboarding")}
                 </Text>
               </Pressable>
             )}

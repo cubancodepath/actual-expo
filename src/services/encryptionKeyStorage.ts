@@ -1,7 +1,7 @@
-import * as SecureStore from 'expo-secure-store';
+import * as SecureStore from "expo-secure-store";
 
-const INDEX_KEY = 'encrypt-key-index';
-const KEY_PREFIX = 'encrypt-key-';
+const INDEX_KEY = "encrypt-key-index";
+const KEY_PREFIX = "encrypt-key-";
 
 export type SerializedKey = { id: string; base64: string };
 
@@ -19,14 +19,8 @@ async function setIndex(ids: string[]): Promise<void> {
   await SecureStore.setItemAsync(INDEX_KEY, JSON.stringify(ids));
 }
 
-export async function saveKey(
-  cloudFileId: string,
-  key: SerializedKey,
-): Promise<void> {
-  await SecureStore.setItemAsync(
-    KEY_PREFIX + cloudFileId,
-    JSON.stringify(key),
-  );
+export async function saveKey(cloudFileId: string, key: SerializedKey): Promise<void> {
+  await SecureStore.setItemAsync(KEY_PREFIX + cloudFileId, JSON.stringify(key));
   const index = await getIndex();
   if (!index.includes(cloudFileId)) {
     index.push(cloudFileId);
@@ -34,9 +28,7 @@ export async function saveKey(
   }
 }
 
-export async function getKey(
-  cloudFileId: string,
-): Promise<SerializedKey | null> {
+export async function getKey(cloudFileId: string): Promise<SerializedKey | null> {
   const raw = await SecureStore.getItemAsync(KEY_PREFIX + cloudFileId);
   if (!raw) return null;
   try {
@@ -46,9 +38,7 @@ export async function getKey(
   }
 }
 
-export async function getAllKeys(): Promise<
-  Record<string, SerializedKey>
-> {
+export async function getAllKeys(): Promise<Record<string, SerializedKey>> {
   const index = await getIndex();
   const result: Record<string, SerializedKey> = {};
   for (const fileId of index) {

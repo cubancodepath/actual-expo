@@ -1,23 +1,26 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Keyboard, Pressable, SectionList, View } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
-import * as Haptics from 'expo-haptics';
-import { useTranslation } from 'react-i18next';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
-import { useBudgetStore } from '../../../src/stores/budgetStore';
-import { Text } from '../../../src/presentation/components/atoms/Text';
-import { IconButton } from '../../../src/presentation/components/atoms/IconButton';
-import { Button } from '../../../src/presentation/components/atoms/Button';
-import { CompactCurrencyInput, type CompactCurrencyInputRef } from '../../../src/presentation/components/atoms/CompactCurrencyInput';
-import { CalculatorToolbar } from '../../../src/presentation/components/atoms/CalculatorToolbar';
-import { KeyboardToolbar } from '../../../src/presentation/components/molecules/KeyboardToolbar';
-import { GlassButton } from '../../../src/presentation/components/atoms/GlassButton';
-import { Amount } from '../../../src/presentation/components/atoms/Amount';
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Alert, Keyboard, Pressable, SectionList, View } from "react-native";
+import { Stack, useRouter } from "expo-router";
+import * as Haptics from "expo-haptics";
+import { useTranslation } from "react-i18next";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
+import { useBudgetStore } from "../../../src/stores/budgetStore";
+import { Text } from "../../../src/presentation/components/atoms/Text";
+import { IconButton } from "../../../src/presentation/components/atoms/IconButton";
+import { Button } from "../../../src/presentation/components/atoms/Button";
+import {
+  CompactCurrencyInput,
+  type CompactCurrencyInputRef,
+} from "../../../src/presentation/components/atoms/CompactCurrencyInput";
+import { CalculatorToolbar } from "../../../src/presentation/components/atoms/CalculatorToolbar";
+import { KeyboardToolbar } from "../../../src/presentation/components/molecules/KeyboardToolbar";
+import { GlassButton } from "../../../src/presentation/components/atoms/GlassButton";
+import { Amount } from "../../../src/presentation/components/atoms/Amount";
 
-import { getGoalProgress } from '../../../src/goals/progress';
-import { useFeatureFlag } from '../../../src/hooks/useFeatureFlag';
-import type { BudgetCategory } from '../../../src/budgets/types';
+import { getGoalProgress } from "../../../src/goals/progress";
+import { useFeatureFlag } from "../../../src/hooks/useFeatureFlag";
+import type { BudgetCategory } from "../../../src/budgets/types";
 
 type CategorySection = {
   key: string;
@@ -26,9 +29,9 @@ type CategorySection = {
 };
 
 export default function AssignBudgetScreen() {
-  const { t } = useTranslation('budget');
+  const { t } = useTranslation("budget");
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
-  const goalsEnabled = useFeatureFlag('goalTemplatesEnabled');
+  const goalsEnabled = useFeatureFlag("goalTemplatesEnabled");
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { data, setAmount } = useBudgetStore();
@@ -102,7 +105,9 @@ export default function AssignBudgetScreen() {
         if (cat.goal == null || cat.goal <= 0) continue;
         if (cat.longGoal) continue;
         const editedBudgeted = edits[cat.id] ?? cat.budgeted;
-        const funded = cat.longGoal ? cat.balance + (editedBudgeted - cat.budgeted) : editedBudgeted;
+        const funded = cat.longGoal
+          ? cat.balance + (editedBudgeted - cat.budgeted)
+          : editedBudgeted;
         const needed = cat.goal - funded;
         if (needed > 0) sum += needed;
       }
@@ -152,10 +157,10 @@ export default function AssignBudgetScreen() {
       });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       if (result.applied === 0) {
-        Alert.alert(t('noChangesTitle'), t('noChangesMessage'));
+        Alert.alert(t("noChangesTitle"), t("noChangesMessage"));
       }
     } catch {
-      Alert.alert(t('errorTitle'), t('autoAssignError'));
+      Alert.alert(t("errorTitle"), t("autoAssignError"));
     } finally {
       setSaving(false);
     }
@@ -192,15 +197,15 @@ export default function AssignBudgetScreen() {
       : colors.cardBackground;
 
   const statusLabel = isPositive
-    ? t('readyToAssign')
+    ? t("readyToAssign")
     : isNegative
-      ? t('overassigned')
-      : t('fullyAssigned');
+      ? t("overassigned")
+      : t("fullyAssigned");
 
   const labelStyle = {
-    textTransform: 'uppercase' as const,
+    textTransform: "uppercase" as const,
     letterSpacing: 0.8,
-    fontWeight: '700' as const,
+    fontWeight: "700" as const,
   };
 
   return (
@@ -228,22 +233,18 @@ export default function AssignBudgetScreen() {
           borderRadius: br.lg,
           paddingHorizontal: spacing.lg,
           paddingVertical: spacing.md,
-          alignItems: 'center',
+          alignItems: "center",
         }}
       >
         <Amount value={remaining} variant="headingLg" color={statusColor} weight="700" />
-        <Text
-          variant="captionSm"
-          color={statusColor}
-          style={{ fontWeight: '500', marginTop: 2 }}
-        >
+        <Text variant="captionSm" color={statusColor} style={{ fontWeight: "500", marginTop: 2 }}>
           {statusLabel}
         </Text>
         {underfunded > 0 && (
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", marginTop: 4 }}>
             <Amount value={underfunded} variant="captionSm" color={statusColor} weight="600" />
             <Text variant="captionSm" color={statusColor} style={{ opacity: 0.7 }}>
-              {t('toFullyFundGoals')}
+              {t("toFullyFundGoals")}
             </Text>
           </View>
         )}
@@ -252,7 +253,7 @@ export default function AssignBudgetScreen() {
       {/* Quick Actions — fixed */}
       <View
         style={{
-          flexDirection: 'row',
+          flexDirection: "row",
           paddingHorizontal: spacing.lg,
           paddingBottom: spacing.sm,
           gap: spacing.sm,
@@ -260,14 +261,14 @@ export default function AssignBudgetScreen() {
       >
         <View style={{ flex: 1 }}>
           <Button
-            title={t('reserve')}
+            title={t("reserve")}
             icon="calendar-outline"
             variant="secondary"
             size="sm"
             onPress={() => {
               Keyboard.dismiss();
               router.push({
-                pathname: '/(auth)/budget/hold',
+                pathname: "/(auth)/budget/hold",
                 params: { current: String(buffered), maxAmount: String(remaining + buffered) },
               });
             }}
@@ -275,16 +276,16 @@ export default function AssignBudgetScreen() {
           />
         </View>
         {goalsEnabled && (
-        <View style={{ flex: 1 }}>
-          <Button
-            title={t('autoAssign')}
-            icon="sparkles"
-            variant="primary"
-            size="sm"
-            onPress={() => handleAutoAssign()}
-            style={{ borderRadius: br.full }}
-          />
-        </View>
+          <View style={{ flex: 1 }}>
+            <Button
+              title={t("autoAssign")}
+              icon="sparkles"
+              variant="primary"
+              size="sm"
+              onPress={() => handleAutoAssign()}
+              style={{ borderRadius: br.full }}
+            />
+          </View>
         )}
       </View>
 
@@ -320,7 +321,9 @@ export default function AssignBudgetScreen() {
               cat={cat}
               value={editedValue}
               onChange={updateEdit}
-              onInputFocus={(ref) => { focusedInputRef.current = ref; }}
+              onInputFocus={(ref) => {
+                focusedInputRef.current = ref;
+              }}
               isFirst={isFirst}
               isLast={isLast}
               isEdited={isEdited}
@@ -344,7 +347,7 @@ export default function AssignBudgetScreen() {
       {hasChanges && (
         <View
           style={{
-            position: 'absolute',
+            position: "absolute",
             bottom: 0,
             left: 0,
             right: 0,
@@ -358,7 +361,7 @@ export default function AssignBudgetScreen() {
           }}
         >
           <Button
-            title={saving ? t('savingEllipsis') : t('saveAssignment')}
+            title={saving ? t("savingEllipsis") : t("saveAssignment")}
             icon="checkmark"
             variant="primary"
             size="lg"
@@ -368,7 +371,6 @@ export default function AssignBudgetScreen() {
           />
         </View>
       )}
-
     </View>
   );
 }
@@ -392,9 +394,9 @@ function CategoryAmountRow({
   isLast: boolean;
   isEdited: boolean;
 }) {
-  const { t } = useTranslation('budget');
+  const { t } = useTranslation("budget");
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
-  const goalsEnabled = useFeatureFlag('goalTemplatesEnabled');
+  const goalsEnabled = useFeatureFlag("goalTemplatesEnabled");
   const inputRef = useRef<CompactCurrencyInputRef>(null);
 
   const hasGoal = goalsEnabled && cat.goal != null && cat.goal > 0;
@@ -438,7 +440,7 @@ function CategoryAmountRow({
       }}
     >
       {/* Line 1: Name + Input */}
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
         <Text variant="body" style={{ flex: 1 }} numberOfLines={1}>
           {cat.name}
         </Text>
@@ -446,50 +448,64 @@ function CategoryAmountRow({
           ref={inputRef}
           value={value}
           onChangeValue={(cents) => onChange(cat.id, cents)}
-          onFocus={() => { if (inputRef.current) onInputFocus?.(inputRef.current); }}
+          onFocus={() => {
+            if (inputRef.current) onInputFocus?.(inputRef.current);
+          }}
         />
       </View>
 
       {/* Line 2: Progress bar */}
       {goalsEnabled && (
-      <View
-        style={{
-          height: 8,
-          borderRadius: 4,
-          backgroundColor: colors.divider,
-          marginTop: 6,
-          overflow: 'hidden',
-        }}
-      >
-        {progressPct > 0 && (
-          <View
-            style={{
-              width: `${Math.round(progressPct * 100)}%`,
-              height: '100%',
-              borderRadius: 4,
-              backgroundColor: barColor,
-            }}
-          />
-        )}
-      </View>
+        <View
+          style={{
+            height: 8,
+            borderRadius: 4,
+            backgroundColor: colors.divider,
+            marginTop: 6,
+            overflow: "hidden",
+          }}
+        >
+          {progressPct > 0 && (
+            <View
+              style={{
+                width: `${Math.round(progressPct * 100)}%`,
+                height: "100%",
+                borderRadius: 4,
+                backgroundColor: barColor,
+              }}
+            />
+          )}
+        </View>
       )}
 
       {/* Line 3: Goal progress text */}
       {goalsEnabled && (
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginTop: 3 }}>
-        {getGoalProgress(editedCat).map((seg, i) =>
-          'key' in seg
-            ? <Text key={i} variant="captionSm" color={colors.textMuted}>{t(seg.key as any)}</Text>
-            : <Amount key={i} value={seg.amount} variant="captionSm" color={colors.textMuted} colored={false} />
-        )}
-      </View>
+        <View
+          style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", marginTop: 3 }}
+        >
+          {getGoalProgress(editedCat).map((seg, i) =>
+            "key" in seg ? (
+              <Text key={i} variant="captionSm" color={colors.textMuted}>
+                {t(seg.key as any)}
+              </Text>
+            ) : (
+              <Amount
+                key={i}
+                value={seg.amount}
+                variant="captionSm"
+                color={colors.textMuted}
+                colored={false}
+              />
+            ),
+          )}
+        </View>
       )}
 
       {/* Inset divider */}
       {!isLast && (
         <View
           style={{
-            position: 'absolute',
+            position: "absolute",
             bottom: 0,
             left: spacing.lg,
             right: spacing.lg,

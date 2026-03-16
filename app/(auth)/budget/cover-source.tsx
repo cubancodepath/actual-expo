@@ -1,21 +1,24 @@
-import { useEffect, useRef, useState } from 'react';
-import { Keyboard, Pressable, ScrollView, View } from 'react-native';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
-import { palette } from '../../../src/theme/colors';
-import { useBudgetStore } from '../../../src/stores/budgetStore';
-import { transferMultipleCategories } from '../../../src/budgets';
-import { TO_BUDGET_ID } from './cover-category-picker';
-import { Text } from '../../../src/presentation/components/atoms/Text';
-import { Amount } from '../../../src/presentation/components/atoms/Amount';
-import { Button } from '../../../src/presentation/components/atoms/Button';
-import { IconButton } from '../../../src/presentation/components/atoms/IconButton';
-import { CompactCurrencyInput, type CompactCurrencyInputRef } from '../../../src/presentation/components/atoms/CompactCurrencyInput';
-import { GlassButton } from '../../../src/presentation/components/atoms/GlassButton';
-import { CalculatorToolbar } from '../../../src/presentation/components/atoms/CalculatorToolbar';
-import { KeyboardToolbar } from '../../../src/presentation/components/molecules/KeyboardToolbar';
+import { useEffect, useRef, useState } from "react";
+import { Keyboard, Pressable, ScrollView, View } from "react-native";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
+import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
+import { palette } from "../../../src/theme/colors";
+import { useBudgetStore } from "../../../src/stores/budgetStore";
+import { transferMultipleCategories } from "../../../src/budgets";
+import { TO_BUDGET_ID } from "./cover-category-picker";
+import { Text } from "../../../src/presentation/components/atoms/Text";
+import { Amount } from "../../../src/presentation/components/atoms/Amount";
+import { Button } from "../../../src/presentation/components/atoms/Button";
+import { IconButton } from "../../../src/presentation/components/atoms/IconButton";
+import {
+  CompactCurrencyInput,
+  type CompactCurrencyInputRef,
+} from "../../../src/presentation/components/atoms/CompactCurrencyInput";
+import { GlassButton } from "../../../src/presentation/components/atoms/GlassButton";
+import { CalculatorToolbar } from "../../../src/presentation/components/atoms/CalculatorToolbar";
+import { KeyboardToolbar } from "../../../src/presentation/components/molecules/KeyboardToolbar";
 
 type SourceEntry = {
   id: string;
@@ -44,8 +47,8 @@ function SourceRow({
     <Pressable
       onPress={() => inputRef.current?.focus()}
       style={{
-        flexDirection: 'row',
-        alignItems: 'center',
+        flexDirection: "row",
+        alignItems: "center",
         paddingLeft: spacing.md,
         paddingRight: spacing.xs,
         paddingVertical: spacing.sm,
@@ -62,7 +65,9 @@ function SourceRow({
         ref={inputRef}
         value={source.amount}
         onChangeValue={(cents) => onAmountChange(source.id, cents)}
-        onFocus={() => { if (inputRef.current) onInputFocus?.(inputRef.current); }}
+        onFocus={() => {
+          if (inputRef.current) onInputFocus?.(inputRef.current);
+        }}
       />
 
       {/* Remaining pill */}
@@ -73,7 +78,7 @@ function SourceRow({
           paddingHorizontal: 8,
           paddingVertical: 2,
           marginLeft: spacing.sm,
-          alignItems: 'center',
+          alignItems: "center",
         }}
       >
         <Amount
@@ -97,7 +102,7 @@ function SourceRow({
 }
 
 export default function CoverSourceScreen() {
-  const { t } = useTranslation('budget');
+  const { t } = useTranslation("budget");
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const router = useRouter();
   const { catId, catName, balance } = useLocalSearchParams<{
@@ -138,7 +143,7 @@ export default function CoverSourceScreen() {
       const defaultAmount = Math.min(Math.abs(srcBalance), Math.max(remaining, 0));
       setSources((prev) => [
         ...prev,
-        { id: srcId, name: srcName, balance: srcBalance, groupName: '', amount: defaultAmount },
+        { id: srcId, name: srcName, balance: srcBalance, groupName: "", amount: defaultAmount },
       ]);
     }
   }, [coverTarget]);
@@ -148,15 +153,13 @@ export default function CoverSourceScreen() {
   }
 
   function handleAmountChange(id: string, cents: number) {
-    setSources((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, amount: cents } : s)),
-    );
+    setSources((prev) => prev.map((s) => (s.id === id ? { ...s, amount: cents } : s)));
   }
 
   function handleAddCategory() {
-    const excludeIds = sources.map((s) => s.id).join(',');
+    const excludeIds = sources.map((s) => s.id).join(",");
     router.push({
-      pathname: '/(auth)/budget/cover-category-picker',
+      pathname: "/(auth)/budget/cover-category-picker",
       params: { excludeIds, overspentCatId: catId },
     });
   }
@@ -171,9 +174,7 @@ export default function CoverSourceScreen() {
       // Transfer from "To Budget": increase the target category's budget
       if (toBudgetSource) {
         const data = useBudgetStore.getState().data;
-        const targetCat = data?.groups
-          .flatMap((g) => g.categories)
-          .find((c) => c.id === catId);
+        const targetCat = data?.groups.flatMap((g) => g.categories).find((c) => c.id === catId);
         const currentBudgeted = targetCat?.budgeted ?? 0;
         await useBudgetStore.getState().setAmount(catId, currentBudgeted + toBudgetSource.amount);
       }
@@ -184,7 +185,7 @@ export default function CoverSourceScreen() {
           month,
           catId,
           categorySources.map((s) => ({ categoryId: s.id, amountCents: s.amount, name: s.name })),
-          'to',
+          "to",
           catName,
         );
       }
@@ -200,129 +201,132 @@ export default function CoverSourceScreen() {
   const isCovered = remaining <= 0 && sources.length > 0;
   const headerBg = isCovered ? colors.positiveFill : colors.warningFill;
   const headerText = palette.white;
-  const amountBadgeBg = 'rgba(255,255,255,0.2)';
+  const amountBadgeBg = "rgba(255,255,255,0.2)";
   const amountBadgeColor = palette.white;
 
   return (
     <>
-    <ScrollView
-      style={{ backgroundColor: colors.pageBackground }}
-      contentContainerStyle={{ paddingBottom: spacing.xl }}
-      keyboardShouldPersistTaps="handled"
-    >
-      <Stack.Screen options={{ headerShown: false }} />
-
-      {/* Health-colored header with rounded bottom corners */}
-      <View
-        style={{
-          backgroundColor: headerBg,
-          paddingTop: 56,
-          paddingBottom: spacing.xxxl,
-          paddingHorizontal: spacing.lg,
-          borderBottomLeftRadius: br.lg,
-          borderBottomRightRadius: br.lg,
-          alignItems: 'center',
-          gap: spacing.sm,
-        }}
+      <ScrollView
+        style={{ backgroundColor: colors.pageBackground }}
+        contentContainerStyle={{ paddingBottom: spacing.xl }}
+        keyboardShouldPersistTaps="handled"
       >
-        {/* Close button — top left */}
-        <View style={{ position: 'absolute', top: 16, left: spacing.md }}>
-          <GlassButton icon="xmark" onPress={() => router.back()} color={headerText} />
-        </View>
+        <Stack.Screen options={{ headerShown: false }} />
 
-        <Text variant="headingSm" color={headerText} align="center">
-          {catName}
-        </Text>
+        {/* Health-colored header with rounded bottom corners */}
         <View
           style={{
-            backgroundColor: amountBadgeBg,
-            borderRadius: br.full,
-            paddingHorizontal: 12,
-            paddingVertical: 4,
+            backgroundColor: headerBg,
+            paddingTop: 56,
+            paddingBottom: spacing.xxxl,
+            paddingHorizontal: spacing.lg,
+            borderBottomLeftRadius: br.lg,
+            borderBottomRightRadius: br.lg,
+            alignItems: "center",
+            gap: spacing.sm,
           }}
         >
-          <Amount
-            value={-remaining}
-            variant="body"
-            color={amountBadgeColor}
-            weight="700"
+          {/* Close button — top left */}
+          <View style={{ position: "absolute", top: 16, left: spacing.md }}>
+            <GlassButton icon="xmark" onPress={() => router.back()} color={headerText} />
+          </View>
+
+          <Text variant="headingSm" color={headerText} align="center">
+            {catName}
+          </Text>
+          <View
+            style={{
+              backgroundColor: amountBadgeBg,
+              borderRadius: br.full,
+              paddingHorizontal: 12,
+              paddingVertical: 4,
+            }}
+          >
+            <Amount value={-remaining} variant="body" color={amountBadgeColor} weight="700" />
+          </View>
+        </View>
+
+        {/* Source card — overlaps header bottom edge */}
+        <View style={{ marginTop: -20, zIndex: 1, paddingHorizontal: spacing.lg }}>
+          <View
+            style={{
+              backgroundColor: colors.cardBackground,
+              borderRadius: br.lg,
+              borderWidth: bw.thin,
+              borderColor: colors.cardBorder,
+              overflow: "hidden",
+            }}
+          >
+            {sources.map((source, index) => (
+              <View key={source.id}>
+                <SourceRow
+                  source={source}
+                  onAmountChange={handleAmountChange}
+                  onRemove={handleRemoveSource}
+                  onInputFocus={(ref) => {
+                    focusedInputRef.current = ref;
+                  }}
+                />
+                {(index < sources.length - 1 || true) && (
+                  <View
+                    style={{
+                      height: bw.thin,
+                      backgroundColor: colors.divider,
+                      marginHorizontal: spacing.md,
+                    }}
+                  />
+                )}
+              </View>
+            ))}
+
+            {/* Add another */}
+            <Pressable
+              onPress={handleAddCategory}
+              style={({ pressed }) => [
+                {
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  paddingVertical: spacing.md,
+                  gap: spacing.xs,
+                },
+                pressed && { opacity: 0.6 },
+              ]}
+            >
+              <Ionicons name="add-circle" size={20} color={colors.primary} />
+              <Text variant="body" color={colors.primary} style={{ fontWeight: "600" }}>
+                {sources.length === 0 ? t("addCategory") : t("addAnother")}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+
+        {/* Cover button */}
+        <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.xl }}>
+          <Button
+            title={saving ? t("coveringEllipsis") : t("cover")}
+            variant="primary"
+            loading={saving}
+            disabled={totalCovered === 0}
+            onPress={handleCover}
+            style={{ borderRadius: br.lg }}
           />
         </View>
-      </View>
-
-      {/* Source card — overlaps header bottom edge */}
-      <View style={{ marginTop: -20, zIndex: 1, paddingHorizontal: spacing.lg }}>
-        <View
-          style={{
-            backgroundColor: colors.cardBackground,
-            borderRadius: br.lg,
-            borderWidth: bw.thin,
-            borderColor: colors.cardBorder,
-            overflow: 'hidden',
-          }}
-        >
-          {sources.map((source, index) => (
-            <View key={source.id}>
-              <SourceRow
-                source={source}
-                onAmountChange={handleAmountChange}
-                onRemove={handleRemoveSource}
-                onInputFocus={(ref) => { focusedInputRef.current = ref; }}
-              />
-              {(index < sources.length - 1 || true) && (
-                <View style={{ height: bw.thin, backgroundColor: colors.divider, marginHorizontal: spacing.md }} />
-              )}
-            </View>
-          ))}
-
-          {/* Add another */}
-          <Pressable
-            onPress={handleAddCategory}
-            style={({ pressed }) => [
-              {
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'center',
-                paddingVertical: spacing.md,
-                gap: spacing.xs,
-              },
-              pressed && { opacity: 0.6 },
-            ]}
-          >
-            <Ionicons name="add-circle" size={20} color={colors.primary} />
-            <Text variant="body" color={colors.primary} style={{ fontWeight: '600' }}>
-              {sources.length === 0 ? t('addCategory') : t('addAnother')}
-            </Text>
-          </Pressable>
-        </View>
-      </View>
-
-      {/* Cover button */}
-      <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.xl }}>
-        <Button
-          title={saving ? t('coveringEllipsis') : t('cover')}
-          variant="primary"
-          loading={saving}
-          disabled={totalCovered === 0}
-          onPress={handleCover}
-          style={{ borderRadius: br.lg }}
+      </ScrollView>
+      <KeyboardToolbar>
+        <CalculatorToolbar
+          onOperator={(op) => focusedInputRef.current?.injectOperator(op)}
+          onEvaluate={() => focusedInputRef.current?.evaluate()}
         />
-      </View>
-    </ScrollView>
-    <KeyboardToolbar>
-      <CalculatorToolbar
-        onOperator={(op) => focusedInputRef.current?.injectOperator(op)}
-        onEvaluate={() => focusedInputRef.current?.evaluate()}
-      />
-      <View style={{ flex: 1 }} />
-      <GlassButton
-        icon="checkmark"
-        iconSize={16}
-        variant="tinted"
-        tintColor={colors.primary}
-        onPress={() => Keyboard.dismiss()}
-      />
-    </KeyboardToolbar>
+        <View style={{ flex: 1 }} />
+        <GlassButton
+          icon="checkmark"
+          iconSize={16}
+          variant="tinted"
+          tintColor={colors.primary}
+          onPress={() => Keyboard.dismiss()}
+        />
+      </KeyboardToolbar>
     </>
   );
 }

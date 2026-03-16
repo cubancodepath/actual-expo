@@ -1,5 +1,5 @@
-import { Pressable, View, type ViewStyle } from 'react-native';
-import { useTheme } from '../../providers/ThemeProvider';
+import { Pressable, View, type ViewStyle } from "react-native";
+import { useTheme } from "../../providers/ThemeProvider";
 
 interface InfoPillProps {
   /** Left-side content (icon + amount, badge + text, etc.) */
@@ -30,9 +30,9 @@ export function InfoPill({
   const { spacing, borderRadius: br } = useTheme();
 
   const pillStyle: ViewStyle = {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     backgroundColor,
     marginHorizontal: spacing.lg,
     paddingHorizontal: spacing.lg,
@@ -62,9 +62,5 @@ export function InfoPill({
     );
   }
 
-  return (
-    <View accessibilityLabel={accessibilityLabel}>
-      {content}
-    </View>
-  );
+  return <View accessibilityLabel={accessibilityLabel}>{content}</View>;
 }

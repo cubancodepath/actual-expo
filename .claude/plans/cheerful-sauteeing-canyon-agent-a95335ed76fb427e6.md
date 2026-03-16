@@ -25,8 +25,8 @@
 - **Risk**: Circular dependency -- `encoder.ts` is imported by `sync/index.ts` via the `encode`/`decode` functions. The fix is to extract `serializeValue`/`deserializeValue` into a new file `src/sync/values.ts` that both can import.
 - **Extracted module**: `src/sync/values.ts`
   ```ts
-  export function serializeValue(value: string | number | null): string
-  export function deserializeValue(value: string): string | number | null
+  export function serializeValue(value: string | number | null): string;
+  export function deserializeValue(value: string): string | number | null;
   ```
 - **Files modified**: `src/sync/values.ts` (new), `src/sync/index.ts` (re-export from values), `src/sync/encoder.ts` (import from values)
 - **Verification**: `npx tsc --noEmit`. Existing sync smoke test (`bun scripts/smoke-test.ts`).
@@ -77,56 +77,67 @@ src/sync/
 ### Module Signatures
 
 **`src/sync/clock.ts`**
+
 ```ts
-export async function loadClock(): Promise<void>
-export async function saveClock(): Promise<void>
+export async function loadClock(): Promise<void>;
+export async function saveClock(): Promise<void>;
 ```
 
 **`src/sync/lifecycle.ts`**
+
 ```ts
-export function resetSyncState(): void
-export function clearSwitchingFlag(): void
-export function isSwitchingBudget(): boolean
-export function clearSyncTimeout(): void
+export function resetSyncState(): void;
+export function clearSwitchingFlag(): void;
+export function isSwitchingBudget(): boolean;
+export function clearSyncTimeout(): void;
 // Module state: _syncGeneration, _switchingBudget, _syncTimeout
 // Also exports getSyncGeneration() for fullSync guard checks
-export function getSyncGeneration(): number
+export function getSyncGeneration(): number;
 ```
 
 **`src/sync/apply.ts`**
-```ts
-import type { SyncMessage } from './encoder'
-import type { OldData } from './undo'
 
-export async function applyMessages(messages: SyncMessage[]): Promise<OldData>
+```ts
+import type { SyncMessage } from "./encoder";
+import type { OldData } from "./undo";
+
+export async function applyMessages(messages: SyncMessage[]): Promise<OldData>;
 // Contains: ALLOWED_TABLES, sorted apply loop, prefs handling, merkle updates
 ```
 
 **`src/sync/batch.ts`**
-```ts
-import type { SyncMessage } from './encoder'
 
-export async function sendMessages(messages: SyncMessage[]): Promise<void>
-export async function batchMessages(fn: () => Promise<void>): Promise<void>
+```ts
+import type { SyncMessage } from "./encoder";
+
+export async function sendMessages(messages: SyncMessage[]): Promise<void>;
+export async function batchMessages(fn: () => Promise<void>): Promise<void>;
 // Contains: _isBatching, _batched, _applyAndRecord (private), scheduleFullSync (private)
 ```
 
 **`src/sync/fullSync.ts`**
+
 ```ts
-export async function fullSync(attempt?: number): Promise<void>
-export async function getMessagesSince(since: string): Promise<SyncMessage[]>
+export async function fullSync(attempt?: number): Promise<void>;
+export async function getMessagesSince(since: string): Promise<SyncMessage[]>;
 ```
 
 **`src/sync/index.ts`** (barrel)
+
 ```ts
 // Re-exports from all sub-modules for backward compatibility
-export { serializeValue, deserializeValue } from './values'
-export { loadClock, saveClock } from './clock'
-export { sendMessages, batchMessages } from './batch'
-export { applyMessages } from './apply'
-export { fullSync, getMessagesSince } from './fullSync'
-export { resetSyncState, clearSwitchingFlag, isSwitchingBudget, clearSyncTimeout } from './lifecycle'
-export { refreshAllStores } from '../stores/storeRegistry'
+export { serializeValue, deserializeValue } from "./values";
+export { loadClock, saveClock } from "./clock";
+export { sendMessages, batchMessages } from "./batch";
+export { applyMessages } from "./apply";
+export { fullSync, getMessagesSince } from "./fullSync";
+export {
+  resetSyncState,
+  clearSwitchingFlag,
+  isSwitchingBudget,
+  clearSyncTimeout,
+} from "./lifecycle";
+export { refreshAllStores } from "../stores/storeRegistry";
 ```
 
 ### Dependency Graph (must respect)
@@ -169,30 +180,31 @@ batch.ts      <-- fullSync.ts (not directly, but scheduleFullSync is internal to
 ### Extracted Function
 
 **`src/transactions/save.ts`**
+
 ```ts
 export type SaveTransactionInput = {
   /** If provided, this is an edit. Otherwise, a new transaction. */
-  transactionId?: string
-  acct: string
-  date: number
+  transactionId?: string;
+  acct: string;
+  date: number;
   /** Always positive cents. Sign is determined by `type`. */
-  amount: number
-  type: 'expense' | 'income'
-  payeeId: string | null
-  payeeName: string
-  categoryId: string | null
-  notes: string | null
-  cleared: boolean
+  amount: number;
+  type: "expense" | "income";
+  payeeId: string | null;
+  payeeName: string;
+  categoryId: string | null;
+  notes: string | null;
+  cleared: boolean;
   /** Non-null = split transaction with these lines */
-  splitCategories: SplitLine[] | null
-}
+  splitCategories: SplitLine[] | null;
+};
 
 export type SplitLine = {
-  id?: string           // existing child ID (for edits)
-  categoryId: string | null
-  categoryName: string
-  amount: number        // positive cents
-}
+  id?: string; // existing child ID (for edits)
+  categoryId: string | null;
+  categoryName: string;
+  amount: number; // positive cents
+};
 
 /**
  * Saves a transaction (new or edit, simple or split).
@@ -206,7 +218,7 @@ export type SplitLine = {
  *
  * Returns the saved transaction ID.
  */
-export async function saveTransaction(input: SaveTransactionInput): Promise<string>
+export async function saveTransaction(input: SaveTransactionInput): Promise<string>;
 ```
 
 ### What Changes in the Screen
@@ -227,9 +239,9 @@ async function performSave() {
     notes: notes.trim() || null,
     cleared,
     splitCategories: splitCategories,
-  })
-  await loadAccounts()
-  router.dismiss()
+  });
+  await loadAccounts();
+  router.dismiss();
 }
 ```
 
@@ -258,6 +270,7 @@ The screen currently encodes tags into notes inline (lines 153-157). This should
 **Goal**: Eliminate the diverging implementations. The monolith `useTransactionList.ts` should compose the sub-hooks, not reimplement them.
 
 **Rationale**: Currently there are two complete, diverging implementations:
+
 - **Sub-hooks** (used by 4 screens: spending/index, account/[id], account/search, spending/search): `useTransactionPagination` + `useTransactionActions` + `useTransactionBulkActions` + etc.
 - **Monolith** (used by 2 screens: spending/index, account/[id]): `useTransactionList.ts` which reimplements ALL of the above using useReducer.
 
@@ -320,27 +333,27 @@ These search screens likely use a subset of the monolith's features. The monolit
 // src/budgets/toBudget.ts
 
 export type ToBudgetInputs = {
-  monthInt: number
-  groups: CategoryGroupRow[]
-  categories: CategoryRow[]
+  monthInt: number;
+  groups: CategoryGroupRow[];
+  categories: CategoryRow[];
   /** Pre-loaded budget rows for current month (optional optimization) */
-  currentBudgetRows?: ZeroBudgetRow[]
+  currentBudgetRows?: ZeroBudgetRow[];
   /** Pre-loaded current month spending map (optional optimization) */
-  currentSpendingMap?: Map<string, number>
-}
+  currentSpendingMap?: Map<string, number>;
+};
 
 export type ToBudgetResult = {
-  toBudget: number
-  buffered: number
-  cumulativeIncome: number
-  cumulativeBudgeted: number
-  overspendingPenalty: number
-  carryIns: Map<string, number>
-  prevCoFlags: Map<string, boolean>
-  currentCoFlags: Map<string, boolean>
-}
+  toBudget: number;
+  buffered: number;
+  cumulativeIncome: number;
+  cumulativeBudgeted: number;
+  overspendingPenalty: number;
+  carryIns: Map<string, number>;
+  prevCoFlags: Map<string, boolean>;
+  currentCoFlags: Map<string, boolean>;
+};
 
-export async function computeToBudgetFull(inputs: ToBudgetInputs): Promise<ToBudgetResult>
+export async function computeToBudgetFull(inputs: ToBudgetInputs): Promise<ToBudgetResult>;
 ```
 
 ### How It's Used
@@ -348,6 +361,7 @@ export async function computeToBudgetFull(inputs: ToBudgetInputs): Promise<ToBud
 **`getBudgetMonth()`** calls `computeToBudgetFull()` with the data it already loaded (groups, categories, budgetRows, currentMap), then uses the result to build per-category display data.
 
 **`computeToBudget()`** becomes a thin wrapper:
+
 ```ts
 export async function computeToBudget(month: string, opts?: { ... }): Promise<number> {
   const result = await computeToBudgetFull({ monthInt, groups, categories })
@@ -380,7 +394,7 @@ export async function computeToBudget(month: string, opts?: { ... }): Promise<nu
 ```ts
 // src/db/filters.ts
 /** Alive-transaction filter: excludes parents, tombstoned children, null dates/accounts */
-export const ALIVE_TX_FILTER = `...`
+export const ALIVE_TX_FILTER = `...`;
 ```
 
 **Files modified**: `src/db/filters.ts` (new), `src/transactions/query.ts` (re-export for backward compat), `src/budgets/index.ts`, `src/goals/engine.ts`
@@ -388,6 +402,7 @@ export const ALIVE_TX_FILTER = `...`
 ### 5B. Document budgets-goals bidirectional dependency (no code change)
 
 **Current state**:
+
 - `budgets/index.ts` imports `inferGoalFromDef` from `goals/`
 - `goals/apply.ts` imports `setBudgetAmount`, `computeToBudget`, `computeCarryoverChain` from `budgets/`
 - `goals/progress.ts` imports `BudgetCategory` type from `budgets/types`
@@ -405,14 +420,14 @@ This is a natural bidirectional dependency between closely-related domains. `inf
 
 ## Phase Summary
 
-| Phase | Files Changed | Risk | Impact |
-|-------|--------------|------|--------|
-| 0: Dead code + trivial fixes | 4 modified, 1 deleted | Minimal | Low noise reduction |
-| 1: Decompose sync/index.ts | 6 new, 1 rewritten | Low (barrel preserves API) | High -- testable sync layer |
-| 2: Extract saveTransaction | 2 new, 1 simplified | Low (pure extraction) | Medium -- screen becomes declarative |
-| 3: Resolve hook duplication | 2 migrated, 7 deleted | Medium (screen behavior) | High -- single source of truth |
-| 4: Deduplicate budget computation | 1 new, 1 simplified | Low (pure extraction) | Medium -- single calculation path |
-| 5: Cross-domain coupling | 1 new, 3 modified | Minimal | Low -- cleaner imports |
+| Phase                             | Files Changed         | Risk                       | Impact                               |
+| --------------------------------- | --------------------- | -------------------------- | ------------------------------------ |
+| 0: Dead code + trivial fixes      | 4 modified, 1 deleted | Minimal                    | Low noise reduction                  |
+| 1: Decompose sync/index.ts        | 6 new, 1 rewritten    | Low (barrel preserves API) | High -- testable sync layer          |
+| 2: Extract saveTransaction        | 2 new, 1 simplified   | Low (pure extraction)      | Medium -- screen becomes declarative |
+| 3: Resolve hook duplication       | 2 migrated, 7 deleted | Medium (screen behavior)   | High -- single source of truth       |
+| 4: Deduplicate budget computation | 1 new, 1 simplified   | Low (pure extraction)      | Medium -- single calculation path    |
+| 5: Cross-domain coupling          | 1 new, 3 modified     | Minimal                    | Low -- cleaner imports               |
 
 ### Recommended Execution Order
 

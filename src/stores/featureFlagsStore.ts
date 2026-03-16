@@ -1,10 +1,7 @@
-import { create } from 'zustand';
-import { registerStore } from './storeRegistry';
-import { getAllFeatureFlags, setFeatureFlag } from '../preferences';
-import {
-  FEATURE_FLAG_DEFAULTS,
-  type FeatureFlag,
-} from '../preferences/featureFlags';
+import { create } from "zustand";
+import { registerStore } from "./storeRegistry";
+import { getAllFeatureFlags, setFeatureFlag } from "../preferences";
+import { FEATURE_FLAG_DEFAULTS, type FeatureFlag } from "../preferences/featureFlags";
 
 type FeatureFlagsState = Record<FeatureFlag, boolean> & {
   load(): Promise<void>;
@@ -25,6 +22,4 @@ export const useFeatureFlagsStore = create<FeatureFlagsState>((set) => ({
   },
 }));
 
-registerStore('featureFlags', ['preferences'], () =>
-  useFeatureFlagsStore.getState().load(),
-);
+registerStore("featureFlags", ["preferences"], () => useFeatureFlagsStore.getState().load());

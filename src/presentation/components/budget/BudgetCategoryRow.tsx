@@ -1,17 +1,17 @@
-import { memo, useRef, useState } from 'react';
-import { Keyboard, Platform, Pressable, View } from 'react-native';
-import * as ContextMenu from 'zeego/context-menu';
-import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../providers/ThemeProvider';
-import { Text } from '../atoms/Text';
-import { Amount } from '../atoms/Amount';
-import { CompactCurrencyInput, type CompactCurrencyInputRef } from '../atoms/CompactCurrencyInput';
-import { formatPrivacyAware } from '../../../lib/format';
-import { getGoalProgress, getGoalProgressLabel } from '../../../goals/progress';
-import { parseGoalDef } from '../../../goals';
-import { ProgressBar } from '../atoms/ProgressBar';
-import { useFeatureFlag } from '../../../hooks/useFeatureFlag';
-import type { BudgetCategory } from '../../../budgets/types';
+import { memo, useRef, useState } from "react";
+import { Keyboard, Platform, Pressable, View } from "react-native";
+import * as ContextMenu from "zeego/context-menu";
+import { useTranslation } from "react-i18next";
+import { useTheme } from "../../providers/ThemeProvider";
+import { Text } from "../atoms/Text";
+import { Amount } from "../atoms/Amount";
+import { CompactCurrencyInput, type CompactCurrencyInputRef } from "../atoms/CompactCurrencyInput";
+import { formatPrivacyAware } from "../../../lib/format";
+import { getGoalProgress, getGoalProgressLabel } from "../../../goals/progress";
+import { parseGoalDef } from "../../../goals";
+import { ProgressBar } from "../atoms/ProgressBar";
+import { useFeatureFlag } from "../../../hooks/useFeatureFlag";
+import type { BudgetCategory } from "../../../budgets/types";
 
 /** Shared column widths for table-style alignment across header, rows, and group headers. */
 export const BUDGET_COLUMNS = {
@@ -59,9 +59,9 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
   showProgressBar = true,
   showBudgetedColumn = true,
 }: BudgetCategoryRowProps) {
-  const { t } = useTranslation('budget');
+  const { t } = useTranslation("budget");
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
-  const goalsEnabled = useFeatureFlag('goalTemplatesEnabled');
+  const goalsEnabled = useFeatureFlag("goalTemplatesEnabled");
   const inputRef = useRef<CompactCurrencyInputRef>(null);
 
   const insetStyle = {
@@ -78,8 +78,8 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
     return (
       <View
         style={{
-          flexDirection: 'row',
-          alignItems: 'center',
+          flexDirection: "row",
+          alignItems: "center",
           paddingHorizontal: spacing.lg,
           paddingVertical: 13,
           minHeight: 44,
@@ -89,11 +89,20 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
         <Text variant="body" style={{ flex: 1 }} numberOfLines={1}>
           {cat.name}
         </Text>
-        <View style={{ width: BUDGET_COLUMNS.available, alignItems: 'flex-end' }}>
+        <View style={{ width: BUDGET_COLUMNS.available, alignItems: "flex-end" }}>
           <Amount value={cat.spent} variant="body" color={colors.positive} weight="500" />
         </View>
         {!isLast && (
-          <View style={{ position: 'absolute', bottom: 0, left: spacing.lg, right: spacing.lg, height: bw.thin, backgroundColor: colors.divider }} />
+          <View
+            style={{
+              position: "absolute",
+              bottom: 0,
+              left: spacing.lg,
+              right: spacing.lg,
+              height: bw.thin,
+              backgroundColor: colors.divider,
+            }}
+          />
         )}
       </View>
     );
@@ -106,16 +115,24 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
   const primaryTemplate = templates[0];
 
   // Detect limit-type goals (spending cap semantics)
-  const isLimitGoal = hasGoal && !!primaryTemplate && (
-    primaryTemplate.type === 'limit' || primaryTemplate.type === 'refill' ||
-    (primaryTemplate.type === 'simple' && primaryTemplate.monthly === 0 && !!primaryTemplate.limit)
-  );
+  const isLimitGoal =
+    hasGoal &&
+    !!primaryTemplate &&
+    (primaryTemplate.type === "limit" ||
+      primaryTemplate.type === "refill" ||
+      (primaryTemplate.type === "simple" &&
+        primaryTemplate.monthly === 0 &&
+        !!primaryTemplate.limit));
 
   // Detect sinking funds (by/spend) — need total target for cumulative bar
-  const sinkingFundTotal = hasGoal && !isLimitGoal && !cat.longGoal && primaryTemplate &&
-    (primaryTemplate.type === 'by' || primaryTemplate.type === 'spend')
-    ? Math.round(primaryTemplate.amount * 100)
-    : 0;
+  const sinkingFundTotal =
+    hasGoal &&
+    !isLimitGoal &&
+    !cat.longGoal &&
+    primaryTemplate &&
+    (primaryTemplate.type === "by" || primaryTemplate.type === "spend")
+      ? Math.round(primaryTemplate.amount * 100)
+      : 0;
 
   // Progress bar values (computed early for pill coloring)
   const spentAbs = Math.abs(cat.spent);
@@ -128,41 +145,45 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
   if (isLimitGoal) {
     // Limit goals: green = under limit, yellow = approaching, red = over
     const ratio = spentAbs / cat.goal!;
-    pillBg = ratio >= 1
-      ? colors.budgetOverspentBg
-      : ratio >= 0.8
-        ? colors.budgetCautionBg
-        : colors.budgetHealthyBg;
-    pillText = ratio >= 1
-      ? colors.budgetOverspent
-      : ratio >= 0.8
-        ? colors.budgetCaution
-        : colors.budgetHealthy;
-  } else if (hasGoal) {
-    const funded = cat.longGoal
-      ? cat.balance >= cat.goal!
-      : cat.budgeted >= cat.goal!;
-    pillBg = cat.balance < 0
-      ? colors.budgetOverspentBg
-      : funded
-        ? colors.budgetHealthyBg
-        : colors.budgetCautionBg;
-    pillText = cat.balance < 0
-      ? colors.budgetOverspent
-      : funded
-        ? colors.budgetHealthy
-        : colors.budgetCaution;
-  } else {
-    pillBg = cat.balance > 0
-      ? colors.budgetHealthyBg
-      : cat.balance < 0
+    pillBg =
+      ratio >= 1
         ? colors.budgetOverspentBg
-        : colors.cardBackground;
-    pillText = cat.balance > 0
-      ? colors.budgetHealthy
-      : cat.balance < 0
+        : ratio >= 0.8
+          ? colors.budgetCautionBg
+          : colors.budgetHealthyBg;
+    pillText =
+      ratio >= 1
         ? colors.budgetOverspent
-        : colors.textMuted;
+        : ratio >= 0.8
+          ? colors.budgetCaution
+          : colors.budgetHealthy;
+  } else if (hasGoal) {
+    const funded = cat.longGoal ? cat.balance >= cat.goal! : cat.budgeted >= cat.goal!;
+    pillBg =
+      cat.balance < 0
+        ? colors.budgetOverspentBg
+        : funded
+          ? colors.budgetHealthyBg
+          : colors.budgetCautionBg;
+    pillText =
+      cat.balance < 0
+        ? colors.budgetOverspent
+        : funded
+          ? colors.budgetHealthy
+          : colors.budgetCaution;
+  } else {
+    pillBg =
+      cat.balance > 0
+        ? colors.budgetHealthyBg
+        : cat.balance < 0
+          ? colors.budgetOverspentBg
+          : colors.cardBackground;
+    pillText =
+      cat.balance > 0
+        ? colors.budgetHealthy
+        : cat.balance < 0
+          ? colors.budgetOverspent
+          : colors.textMuted;
   }
 
   // ── Progress bar values (YNAB-style) ──
@@ -176,7 +197,7 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
   //   available = total filled portion (spent + remaining)
   //   overspent = full bar red with pulse
 
-  let barSpent = 0;     // darker layer width 0–1
+  let barSpent = 0; // darker layer width 0–1
   let barAvailable = 0; // total filled width 0–1 (includes barSpent)
   let barColor = colors.positive;
   let barOverspent = false;
@@ -188,11 +209,7 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
     barSpent = Math.min(ratio, 1);
     barAvailable = 1; // full bar = the limit budget
     barOverspent = ratio >= 1;
-    barColor = ratio >= 1
-      ? colors.negative
-      : ratio >= 0.8
-        ? colors.warning
-        : colors.positive;
+    barColor = ratio >= 1 ? colors.negative : ratio >= 0.8 ? colors.warning : colors.positive;
   } else if (hasGoal && cat.longGoal) {
     // Long-term savings goal (#goal, refill): balance / goal
     // Single solid bar showing savings progress — no spent/available split
@@ -201,9 +218,7 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
     barSpent = savedPct; // "spent" layer = saved amount (solid bar)
     barAvailable = savedPct; // same width — no lighter portion behind it
     barOverspent = cat.balance < 0;
-    barColor = barOverspent
-      ? colors.negative
-      : colors.positive;
+    barColor = barOverspent ? colors.negative : colors.positive;
   } else if (hasGoal && sinkingFundTotal > 0) {
     // Sinking fund (by/spend): bar = cumulative balance / total target, color = on track status
     const savedPct = Math.min(Math.max(cat.balance / sinkingFundTotal, 0), 1);
@@ -211,11 +226,7 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
     barAvailable = savedPct;
     barOverspent = cat.balance < 0;
     const funded = cat.budgeted >= cat.goal!;
-    barColor = barOverspent
-      ? colors.negative
-      : funded
-        ? colors.positive
-        : colors.warning;
+    barColor = barOverspent ? colors.negative : funded ? colors.positive : colors.warning;
   } else if (hasGoal) {
     // Monthly goal (simple, periodic): spending progress vs goal
     const base = cat.goal!;
@@ -223,11 +234,7 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
     barAvailable = Math.min(Math.max((spentAbs + cat.balance) / base, 0), 1);
     barOverspent = cat.balance < 0;
     const funded = cat.budgeted >= base;
-    barColor = barOverspent
-      ? colors.negative
-      : funded
-        ? colors.positive
-        : colors.warning;
+    barColor = barOverspent ? colors.negative : funded ? colors.positive : colors.warning;
   } else if (budgetedAbs > 0 || cat.balance !== 0) {
     // No goal: spending progress vs budgeted (or balance from carryover)
     const base = budgetedAbs > 0 ? budgetedAbs : Math.abs(cat.balance);
@@ -274,23 +281,31 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
           setEditValue(cat.budgeted);
         }
       }}
-      onLongPress={Platform.OS === 'android' ? () => onLongPress(cat) : undefined}
+      onLongPress={Platform.OS === "android" ? () => onLongPress(cat) : undefined}
       delayLongPress={400}
     >
       {/* Line 1: Name + Budget input + Available pill */}
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4, overflow: 'hidden' }}>
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        <View
+          style={{
+            flex: 1,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 4,
+            overflow: "hidden",
+          }}
+        >
           <Text variant="body" numberOfLines={1} style={{ flexShrink: 1 }}>
             {cat.name}
           </Text>
           {cat.carryover && (
-            <Text variant="caption" color={colors.primary} style={{ fontWeight: '700' }}>
+            <Text variant="caption" color={colors.primary} style={{ fontWeight: "700" }}>
               ↻
             </Text>
           )}
         </View>
         {isEditing ? (
-          <View style={{ width: BUDGET_COLUMNS.budgeted, alignItems: 'flex-end' }}>
+          <View style={{ width: BUDGET_COLUMNS.budgeted, alignItems: "flex-end" }}>
             <CompactCurrencyInput
               ref={inputRef}
               value={editValue}
@@ -301,13 +316,13 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
             />
           </View>
         ) : showBudgetedColumn ? (
-          <View style={{ width: BUDGET_COLUMNS.budgeted, alignItems: 'flex-end' }}>
+          <View style={{ width: BUDGET_COLUMNS.budgeted, alignItems: "flex-end" }}>
             <Amount
               value={cat.budgeted}
               variant="body"
               color={cat.budgeted !== 0 ? colors.textPrimary : colors.textMuted}
               weight="600"
-              style={{ fontVariant: ['tabular-nums'] }}
+              style={{ fontVariant: ["tabular-nums"] }}
             />
           </View>
         ) : null}
@@ -316,8 +331,8 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
           style={{
             width: BUDGET_COLUMNS.available,
             flexShrink: 0,
-            justifyContent: 'center',
-            alignItems: 'center',
+            justifyContent: "center",
+            alignItems: "center",
             paddingLeft: spacing.sm,
           }}
         >
@@ -327,9 +342,9 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
               borderRadius: 100,
               paddingHorizontal: 10,
               paddingVertical: 3,
-              alignItems: 'center',
-              flexDirection: 'row',
-              flexWrap: 'nowrap',
+              alignItems: "center",
+              flexDirection: "row",
+              flexWrap: "nowrap",
             }}
           >
             <Amount value={cat.balance} variant="captionSm" color={pillText} weight="700" />
@@ -354,63 +369,71 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
         <View
           accessible
           accessibilityLabel={getGoalProgressLabel(cat, t as (key: string) => string)}
-          style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginTop: 3 }}
+          style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", marginTop: 3 }}
         >
           {getGoalProgress(cat).map((seg, i) =>
-            'key' in seg
-              ? <Text key={i} variant="captionSm" color={colors.textMuted}>{t(seg.key as any)}</Text>
-              : <Amount key={i} value={seg.amount} variant="captionSm" color={colors.textMuted} colored={false} />
+            "key" in seg ? (
+              <Text key={i} variant="captionSm" color={colors.textMuted}>
+                {t(seg.key as any)}
+              </Text>
+            ) : (
+              <Amount
+                key={i}
+                value={seg.amount}
+                variant="captionSm"
+                color={colors.textMuted}
+                colored={false}
+              />
+            ),
           )}
         </View>
       )}
       {!isLast && (
-        <View style={{ position: 'absolute', bottom: 0, left: spacing.lg, right: spacing.lg, height: bw.thin, backgroundColor: colors.divider }} />
+        <View
+          style={{
+            position: "absolute",
+            bottom: 0,
+            left: spacing.lg,
+            right: spacing.lg,
+            height: bw.thin,
+            backgroundColor: colors.divider,
+          }}
+        />
       )}
     </Pressable>
   );
 
-  if (Platform.OS === 'ios') {
-    const carryoverLabel = cat.carryover ? t('removeOverspendingRollover') : t('rolloverOverspending');
+  if (Platform.OS === "ios") {
+    const carryoverLabel = cat.carryover
+      ? t("removeOverspendingRollover")
+      : t("rolloverOverspending");
     return (
       <ContextMenu.Root>
         <ContextMenu.Trigger>{pressableContent}</ContextMenu.Trigger>
         <ContextMenu.Content>
-          <ContextMenu.Item
-            key="category-details"
-            onSelect={() => onCategoryDetails?.(cat)}
-          >
-            <ContextMenu.ItemTitle>{t('categoryDetails')}</ContextMenu.ItemTitle>
-            <ContextMenu.ItemIcon ios={{ name: 'info.circle' }} />
+          <ContextMenu.Item key="category-details" onSelect={() => onCategoryDetails?.(cat)}>
+            <ContextMenu.ItemTitle>{t("categoryDetails")}</ContextMenu.ItemTitle>
+            <ContextMenu.ItemIcon ios={{ name: "info.circle" }} />
           </ContextMenu.Item>
-          <ContextMenu.Item
-            key="move-money"
-            onSelect={() => onMoveMoney?.(cat)}
-          >
-            <ContextMenu.ItemTitle>{t('moveMoney')}</ContextMenu.ItemTitle>
-            <ContextMenu.ItemIcon ios={{ name: 'arrow.left.arrow.right' }} />
+          <ContextMenu.Item key="move-money" onSelect={() => onMoveMoney?.(cat)}>
+            <ContextMenu.ItemTitle>{t("moveMoney")}</ContextMenu.ItemTitle>
+            <ContextMenu.ItemIcon ios={{ name: "arrow.left.arrow.right" }} />
           </ContextMenu.Item>
-          <ContextMenu.Item
-            key="toggle-carryover"
-            onSelect={() => onToggleCarryover?.(cat)}
-          >
+          <ContextMenu.Item key="toggle-carryover" onSelect={() => onToggleCarryover?.(cat)}>
             <ContextMenu.ItemTitle>{carryoverLabel}</ContextMenu.ItemTitle>
             <ContextMenu.ItemIcon
-              ios={{ name: cat.carryover ? 'arrow.uturn.backward' : 'arrow.clockwise' }}
+              ios={{ name: cat.carryover ? "arrow.uturn.backward" : "arrow.clockwise" }}
             />
           </ContextMenu.Item>
-          <ContextMenu.Item
-            key="view-transactions"
-            onSelect={() => onViewTransactions?.(cat)}
-          >
-            <ContextMenu.ItemTitle>{t('viewTransactions')}</ContextMenu.ItemTitle>
-            <ContextMenu.ItemIcon ios={{ name: 'chart.line.uptrend.xyaxis' }} />
+          <ContextMenu.Item key="view-transactions" onSelect={() => onViewTransactions?.(cat)}>
+            <ContextMenu.ItemTitle>{t("viewTransactions")}</ContextMenu.ItemTitle>
+            <ContextMenu.ItemIcon ios={{ name: "chart.line.uptrend.xyaxis" }} />
           </ContextMenu.Item>
-          <ContextMenu.Item
-            key="budget-notes"
-            onSelect={() => onBudgetNotes?.(cat)}
-          >
-            <ContextMenu.ItemTitle>{t('budgetMovements')}</ContextMenu.ItemTitle>
-            <ContextMenu.ItemIcon ios={{ name: 'clock.arrow.trianglehead.counterclockwise.rotate.90' }} />
+          <ContextMenu.Item key="budget-notes" onSelect={() => onBudgetNotes?.(cat)}>
+            <ContextMenu.ItemTitle>{t("budgetMovements")}</ContextMenu.ItemTitle>
+            <ContextMenu.ItemIcon
+              ios={{ name: "clock.arrow.trianglehead.counterclockwise.rotate.90" }}
+            />
           </ContextMenu.Item>
         </ContextMenu.Content>
       </ContextMenu.Root>

@@ -13,7 +13,13 @@ export function SectionHeader({ title, right, style }: SectionHeaderProps) {
   const { colors, spacing } = useTheme();
 
   return (
-    <View style={[styles.container, { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm }, style]}>
+    <View
+      style={[
+        styles.container,
+        { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },
+        style,
+      ]}
+    >
       <Text
         variant="caption"
         color={colors.textMuted}

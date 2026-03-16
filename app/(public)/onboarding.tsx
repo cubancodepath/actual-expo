@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from "react";
 import {
   Dimensions,
   Image,
@@ -9,9 +9,9 @@ import {
   StatusBar,
   Text as RNText,
   View,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 import Animated, {
   interpolateColor,
   useAnimatedStyle,
@@ -20,42 +20,34 @@ import Animated, {
   withDelay,
   withSpring,
   withTiming,
-} from 'react-native-reanimated';
-import { useTranslation } from 'react-i18next';
-import { useTheme, useThemedStyles } from '../../src/presentation/providers/ThemeProvider';
-import { Text } from '../../src/presentation/components/atoms/Text';
-import { Icon } from '../../src/presentation/components/atoms/Icon';
-import { usePrefsStore } from '../../src/stores/prefsStore';
-import { palette } from '../../src/theme';
-import type { Theme } from '../../src/theme';
+} from "react-native-reanimated";
+import { useTranslation } from "react-i18next";
+import { useTheme, useThemedStyles } from "../../src/presentation/providers/ThemeProvider";
+import { Text } from "../../src/presentation/components/atoms/Text";
+import { Icon } from "../../src/presentation/components/atoms/Icon";
+import { usePrefsStore } from "../../src/stores/prefsStore";
+import { palette } from "../../src/theme";
+import type { Theme } from "../../src/theme";
 
 const AnimatedText = Animated.createAnimatedComponent(RNText);
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const TOTAL_PAGES = 3;
 
 // ─── Page Dots ───────────────────────────────────────────────────────────────
 
-function PageDots({
-  currentPage,
-  isHeroScreen,
-}: {
-  currentPage: number;
-  isHeroScreen: boolean;
-}) {
+function PageDots({ currentPage, isHeroScreen }: { currentPage: number; isHeroScreen: boolean }) {
   const theme = useTheme();
   const reducedMotion = useReducedMotion();
-  const { t } = useTranslation('onboarding');
+  const { t } = useTranslation("onboarding");
 
-  const activeColor = isHeroScreen ? '#ffffff' : theme.colors.primary;
-  const inactiveColor = isHeroScreen
-    ? 'rgba(255,255,255,0.30)'
-    : 'rgba(135,25,224,0.25)';
+  const activeColor = isHeroScreen ? "#ffffff" : theme.colors.primary;
+  const inactiveColor = isHeroScreen ? "rgba(255,255,255,0.30)" : "rgba(135,25,224,0.25)";
 
   return (
     <View
-      style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
-      accessibilityLabel={t('pageOf', { current: currentPage + 1, total: TOTAL_PAGES })}
+      style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
+      accessibilityLabel={t("pageOf", { current: currentPage + 1, total: TOTAL_PAGES })}
       accessibilityRole="adjustable"
     >
       {Array.from({ length: TOTAL_PAGES }).map((_, i) => (
@@ -86,9 +78,7 @@ function Dot({
 
   useEffect(() => {
     const target = isActive ? 20 : 8;
-    dotWidth.value = reducedMotion
-      ? target
-      : withSpring(target, { damping: 18, stiffness: 260 });
+    dotWidth.value = reducedMotion ? target : withSpring(target, { damping: 18, stiffness: 260 });
   }, [isActive]);
 
   const animStyle = useAnimatedStyle(() => ({
@@ -111,13 +101,7 @@ function Dot({
 
 // ─── Feature Row (Screen 1) ─────────────────────────────────────────────────
 
-function FeatureRow({
-  label,
-  delay: delayMs = 0,
-}: {
-  label: string;
-  delay?: number;
-}) {
+function FeatureRow({ label, delay: delayMs = 0 }: { label: string; delay?: number }) {
   const theme = useTheme();
   const reducedMotion = useReducedMotion();
   const opacity = useSharedValue(reducedMotion ? 1 : 0);
@@ -135,8 +119,8 @@ function FeatureRow({
     <Animated.View
       style={[
         {
-          flexDirection: 'row',
-          alignItems: 'center',
+          flexDirection: "row",
+          alignItems: "center",
           gap: theme.spacing.sm,
           paddingVertical: theme.spacing.sm,
         },
@@ -159,7 +143,7 @@ function FeatureCard({
   body,
   delay: delayMs = 0,
 }: {
-  iconName: keyof typeof import('@expo/vector-icons').Ionicons.glyphMap;
+  iconName: keyof typeof import("@expo/vector-icons").Ionicons.glyphMap;
   title: string;
   body: string;
   delay?: number;
@@ -172,10 +156,7 @@ function FeatureCard({
   useEffect(() => {
     if (reducedMotion) return;
     opacity.value = withDelay(delayMs, withTiming(1, { duration: 350 }));
-    translateX.value = withDelay(
-      delayMs,
-      withSpring(0, { damping: 20, stiffness: 200 }),
-    );
+    translateX.value = withDelay(delayMs, withSpring(0, { damping: 20, stiffness: 200 }));
   }, []);
 
   const animStyle = useAnimatedStyle(() => ({
@@ -187,7 +168,7 @@ function FeatureCard({
     <Animated.View
       style={[
         {
-          flexDirection: 'row',
+          flexDirection: "row",
           gap: theme.spacing.md,
           backgroundColor: theme.colors.primarySubtle,
           borderRadius: theme.borderRadius.lg,
@@ -202,8 +183,8 @@ function FeatureCard({
           height: 40,
           borderRadius: theme.borderRadius.md,
           backgroundColor: theme.colors.primarySubtle,
-          alignItems: 'center',
-          justifyContent: 'center',
+          alignItems: "center",
+          justifyContent: "center",
           flexShrink: 0,
         }}
       >
@@ -226,7 +207,7 @@ function FeatureCard({
 function HeroScreen() {
   const theme = useTheme();
   const reducedMotion = useReducedMotion();
-  const { t } = useTranslation('onboarding');
+  const { t } = useTranslation("onboarding");
 
   const heroOpacity = useSharedValue(reducedMotion ? 1 : 0);
   const heroTranslateY = useSharedValue(reducedMotion ? 0 : 24);
@@ -252,42 +233,37 @@ function HeroScreen() {
     <View
       style={{
         flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
+        alignItems: "center",
+        justifyContent: "center",
         paddingHorizontal: theme.spacing.xl,
       }}
     >
-      <Animated.View style={[{ alignItems: 'center', gap: theme.spacing.sm }, heroStyle]}>
+      <Animated.View style={[{ alignItems: "center", gap: theme.spacing.sm }, heroStyle]}>
         <Image
-          source={require('../../assets/splash-icon.png')}
-          style={{ width: 96, height: 96, resizeMode: 'contain', tintColor: '#ffffff' }}
+          source={require("../../assets/splash-icon.png")}
+          style={{ width: 96, height: 96, resizeMode: "contain", tintColor: "#ffffff" }}
           accessibilityIgnoresInvertColors
         />
-        <Text
-          variant="displayLg"
-          color="#ffffff"
-          align="center"
-          style={{ letterSpacing: -1 }}
-        >
-          {t('heroTitle')}
+        <Text variant="displayLg" color="#ffffff" align="center" style={{ letterSpacing: -1 }}>
+          {t("heroTitle")}
         </Text>
         <Text variant="headingSm" color="rgba(255,255,255,0.80)" align="center">
-          {t('heroSubtitle')}
+          {t("heroSubtitle")}
         </Text>
       </Animated.View>
 
       <View
         style={{
-          width: '60%',
+          width: "60%",
           height: 1,
-          backgroundColor: 'rgba(255,255,255,0.15)',
+          backgroundColor: "rgba(255,255,255,0.15)",
           marginVertical: theme.spacing.xl,
         }}
       />
 
-      <Animated.View style={[{ flexDirection: 'row', gap: theme.spacing.sm }, pillsStyle]}>
-        <FeaturePill icon="lock-closed-outline" label={t('pillPrivate')} />
-        <FeaturePill icon="server-outline" label={t('pillNoSub')} />
+      <Animated.View style={[{ flexDirection: "row", gap: theme.spacing.sm }, pillsStyle]}>
+        <FeaturePill icon="lock-closed-outline" label={t("pillPrivate")} />
+        <FeaturePill icon="server-outline" label={t("pillNoSub")} />
       </Animated.View>
     </View>
   );
@@ -297,24 +273,24 @@ function FeaturePill({
   icon,
   label,
 }: {
-  icon: keyof typeof import('@expo/vector-icons').Ionicons.glyphMap;
+  icon: keyof typeof import("@expo/vector-icons").Ionicons.glyphMap;
   label: string;
 }) {
   const theme = useTheme();
   return (
     <View
       style={{
-        flexDirection: 'row',
-        alignItems: 'center',
+        flexDirection: "row",
+        alignItems: "center",
         gap: theme.spacing.xs,
         paddingVertical: 6,
         paddingHorizontal: theme.spacing.md,
-        backgroundColor: 'rgba(255,255,255,0.14)',
+        backgroundColor: "rgba(255,255,255,0.14)",
         borderRadius: theme.borderRadius.full,
       }}
     >
       <Icon name={icon} size={14} color="rgba(255,255,255,0.8)" />
-      <Text variant="captionSm" color="rgba(255,255,255,0.8)" style={{ fontWeight: '500' }}>
+      <Text variant="captionSm" color="rgba(255,255,255,0.8)" style={{ fontWeight: "500" }}>
         {label}
       </Text>
     </View>
@@ -326,7 +302,7 @@ function FeaturePill({
 function PrivacyScreen() {
   const theme = useTheme();
   const reducedMotion = useReducedMotion();
-  const { t } = useTranslation('onboarding');
+  const { t } = useTranslation("onboarding");
 
   const cardTranslateY = useSharedValue(reducedMotion ? 0 : 32);
   const cardOpacity = useSharedValue(reducedMotion ? 1 : 0);
@@ -347,7 +323,7 @@ function PrivacyScreen() {
       style={{
         flex: 1,
         paddingHorizontal: theme.spacing.xl,
-        justifyContent: 'center',
+        justifyContent: "center",
         gap: theme.spacing.xl,
       }}
     >
@@ -357,7 +333,7 @@ function PrivacyScreen() {
             backgroundColor: theme.colors.cardBackground,
             borderRadius: theme.borderRadius.lg,
             padding: theme.spacing.xl,
-            alignItems: 'center',
+            alignItems: "center",
             gap: theme.spacing.md,
             ...theme.shadows.elevated,
           },
@@ -370,8 +346,8 @@ function PrivacyScreen() {
             height: 64,
             borderRadius: theme.borderRadius.lg,
             backgroundColor: theme.colors.primarySubtle,
-            alignItems: 'center',
-            justifyContent: 'center',
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
           <Icon name="server-outline" size={32} color={theme.colors.primary} />
@@ -382,7 +358,7 @@ function PrivacyScreen() {
           align="center"
           accessibilityRole="header"
         >
-          {t('privacyHeading')}
+          {t("privacyHeading")}
         </Text>
         <Text
           variant="body"
@@ -390,14 +366,14 @@ function PrivacyScreen() {
           align="center"
           style={{ lineHeight: 22 }}
         >
-          {t('privacyBody')}
+          {t("privacyBody")}
         </Text>
       </Animated.View>
 
       <View style={{ gap: 0 }}>
-        <FeatureRow label={t('featureEncrypted')} delay={200} />
-        <FeatureRow label={t('featureOpenSource')} delay={280} />
-        <FeatureRow label={t('featureNoTracking')} delay={360} />
+        <FeatureRow label={t("featureEncrypted")} delay={200} />
+        <FeatureRow label={t("featureOpenSource")} delay={280} />
+        <FeatureRow label={t("featureNoTracking")} delay={360} />
       </View>
     </View>
   );
@@ -407,14 +383,14 @@ function PrivacyScreen() {
 
 function FeaturesScreen() {
   const theme = useTheme();
-  const { t } = useTranslation('onboarding');
+  const { t } = useTranslation("onboarding");
 
   return (
     <View
       style={{
         flex: 1,
         paddingHorizontal: theme.spacing.xl,
-        justifyContent: 'center',
+        justifyContent: "center",
         gap: theme.spacing.xl,
       }}
     >
@@ -425,30 +401,30 @@ function FeaturesScreen() {
           style={{ letterSpacing: -0.5 }}
           accessibilityRole="header"
         >
-          {t('featuresHeading')}
+          {t("featuresHeading")}
         </Text>
         <Text variant="body" color={theme.colors.textSecondary}>
-          {t('featuresSubtitle')}
+          {t("featuresSubtitle")}
         </Text>
       </View>
 
       <View style={{ gap: theme.spacing.md }}>
         <FeatureCard
           iconName="layers-outline"
-          title={t('cardEnvelopeTitle')}
-          body={t('cardEnvelopeBody')}
+          title={t("cardEnvelopeTitle")}
+          body={t("cardEnvelopeBody")}
           delay={0}
         />
         <FeatureCard
           iconName="wallet-outline"
-          title={t('cardAccountsTitle')}
-          body={t('cardAccountsBody')}
+          title={t("cardAccountsTitle")}
+          body={t("cardAccountsBody")}
           delay={60}
         />
         <FeatureCard
           iconName="bar-chart-outline"
-          title={t('cardInsightsTitle')}
-          body={t('cardInsightsBody')}
+          title={t("cardInsightsTitle")}
+          body={t("cardInsightsBody")}
           delay={120}
         />
       </View>
@@ -464,8 +440,8 @@ export default function OnboardingScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const markOnboardingSeen = usePrefsStore((s) => s.markOnboardingSeen);
-  const { t } = useTranslation('onboarding');
-  const { t: tc } = useTranslation('common');
+  const { t } = useTranslation("onboarding");
+  const { t: tc } = useTranslation("common");
 
   const scrollRef = useRef<ScrollView>(null);
   const [page, setPage] = useState(0);
@@ -486,26 +462,18 @@ export default function OnboardingScreen() {
   }));
 
   const ctaStyle = useAnimatedStyle(() => ({
-    backgroundColor: interpolateColor(
-      scrollX.value,
-      [0, SCREEN_WIDTH],
-      ['#ffffff', primaryColor],
-    ),
+    backgroundColor: interpolateColor(scrollX.value, [0, SCREEN_WIDTH], ["#ffffff", primaryColor]),
   }));
 
   const ctaTextStyle = useAnimatedStyle(() => ({
-    color: interpolateColor(
-      scrollX.value,
-      [0, SCREEN_WIDTH],
-      [palette.purple500, '#ffffff'],
-    ),
+    color: interpolateColor(scrollX.value, [0, SCREEN_WIDTH], [palette.purple500, "#ffffff"]),
   }));
 
   const skipTextStyle = useAnimatedStyle(() => ({
     color: interpolateColor(
       scrollX.value,
       [0, SCREEN_WIDTH],
-      ['rgba(255,255,255,0.70)', primaryColor],
+      ["rgba(255,255,255,0.70)", primaryColor],
     ),
   }));
 
@@ -526,7 +494,7 @@ export default function OnboardingScreen() {
 
   function finish() {
     markOnboardingSeen();
-    router.replace('/(public)/');
+    router.replace("/(public)/");
   }
 
   return (
@@ -555,24 +523,19 @@ export default function OnboardingScreen() {
         </View>
       </ScrollView>
 
-      <View
-        style={[
-          styles.footer,
-          { paddingBottom: Math.max(insets.bottom, theme.spacing.xl) },
-        ]}
-      >
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, theme.spacing.xl) }]}>
         <View style={styles.dotsRow}>
           <PageDots currentPage={page} isHeroScreen={isHeroScreen} />
           <Pressable
             onPress={finish}
             hitSlop={12}
-            accessibilityLabel={t('skip')}
+            accessibilityLabel={t("skip")}
             accessibilityRole="button"
           >
             <AnimatedText
-              style={[{ fontSize: 15, lineHeight: 21, fontWeight: '600' }, skipTextStyle]}
+              style={[{ fontSize: 15, lineHeight: 21, fontWeight: "600" }, skipTextStyle]}
             >
-              {t('skip')}
+              {t("skip")}
             </AnimatedText>
           </Pressable>
         </View>
@@ -582,10 +545,8 @@ export default function OnboardingScreen() {
           style={({ pressed }) => [pressed && { opacity: 0.8 }]}
         >
           <Animated.View style={[styles.ctaButton, ctaStyle]}>
-            <AnimatedText
-              style={[{ fontSize: 16, fontWeight: '600' }, ctaTextStyle]}
-            >
-              {isLastPage ? t('letsGo') : page === 0 ? t('getStarted') : tc('continue')}
+            <AnimatedText style={[{ fontSize: 16, fontWeight: "600" }, ctaTextStyle]}>
+              {isLastPage ? t("letsGo") : page === 0 ? t("getStarted") : tc("continue")}
             </AnimatedText>
           </Animated.View>
         </Pressable>
@@ -606,13 +567,13 @@ const createStyles = (theme: Theme) => ({
     gap: theme.spacing.md,
   },
   dotsRow: {
-    flexDirection: 'row' as const,
-    justifyContent: 'space-between' as const,
-    alignItems: 'center' as const,
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
   },
   ctaButton: {
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     minHeight: 44,
     paddingVertical: 14,
     paddingHorizontal: 24,

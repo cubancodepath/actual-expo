@@ -1,23 +1,23 @@
-import type { Timestamp } from './timestamp';
+import type { Timestamp } from "./timestamp";
 
 /**
  * Represents a node within a trinary radix trie.
  */
 export type TrieNode = {
-  '0'?: TrieNode;
-  '1'?: TrieNode;
-  '2'?: TrieNode;
+  "0"?: TrieNode;
+  "1"?: TrieNode;
+  "2"?: TrieNode;
   hash?: number;
 };
 
-type NumberTrieNodeKey = keyof Omit<TrieNode, 'hash'>;
+type NumberTrieNodeKey = keyof Omit<TrieNode, "hash">;
 
 export function emptyTrie(): TrieNode {
   return { hash: 0 };
 }
 
 function isNumberTrieNodeKey(input: string): input is NumberTrieNodeKey {
-  return ['0', '1', '2'].includes(input);
+  return ["0", "1", "2"].includes(input);
 }
 
 export function getKeys(trie: TrieNode): NumberTrieNodeKey[] {
@@ -25,7 +25,7 @@ export function getKeys(trie: TrieNode): NumberTrieNodeKey[] {
 }
 
 export function keyToTimestamp(key: string): number {
-  const fullkey = key + '0'.repeat(16 - key.length);
+  const fullkey = key + "0".repeat(16 - key.length);
   return parseInt(fullkey, 3) * 1000 * 60;
 }
 
@@ -66,14 +66,14 @@ export function diff(trie1: TrieNode, trie2: TrieNode): number | null {
 
   let node1 = trie1;
   let node2 = trie2;
-  let k = '';
+  let k = "";
 
   while (true) {
     const keyset = new Set([...getKeys(node1), ...getKeys(node2)]);
     const keys = [...keyset.values()];
     keys.sort();
 
-    let diffkey: null | '0' | '1' | '2' = null;
+    let diffkey: null | "0" | "1" | "2" = null;
 
     for (let i = 0; i < keys.length; i++) {
       const key = keys[i];
@@ -126,19 +126,17 @@ export function prune(trie: TrieNode, n = 2): TrieNode {
   return next;
 }
 
-export function debug(trie: TrieNode, k = '', indent = 0): string {
+export function debug(trie: TrieNode, k = "", indent = 0): string {
   const str =
-    ' '.repeat(indent) +
-    (k !== '' ? `k: ${k} ` : '') +
-    `hash: ${trie.hash || '(empty)'}\n`;
+    " ".repeat(indent) + (k !== "" ? `k: ${k} ` : "") + `hash: ${trie.hash || "(empty)"}\n`;
   return (
     str +
     getKeys(trie)
-      .map(key => {
+      .map((key) => {
         const node = trie[key];
-        if (!node) return '';
+        if (!node) return "";
         return debug(node, key, indent + 2);
       })
-      .join('')
+      .join("")
   );
 }

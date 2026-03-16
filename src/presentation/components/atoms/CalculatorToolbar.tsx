@@ -1,15 +1,15 @@
-import { View } from 'react-native';
-import { useTheme } from '../../providers/ThemeProvider';
-import { GlassButton } from './GlassButton';
-import type { SFSymbol } from 'sf-symbols-typescript';
+import { View } from "react-native";
+import { useTheme } from "../../providers/ThemeProvider";
+import { GlassButton } from "./GlassButton";
+import type { SFSymbol } from "sf-symbols-typescript";
 
-type Operator = '+' | '-' | '*' | '/';
+type Operator = "+" | "-" | "*" | "/";
 
 const OPERATORS: { icon: SFSymbol; value: Operator }[] = [
-  { icon: 'plus', value: '+' },
-  { icon: 'minus', value: '-' },
-  { icon: 'multiply', value: '*' },
-  { icon: 'divide', value: '/' },
+  { icon: "plus", value: "+" },
+  { icon: "minus", value: "-" },
+  { icon: "multiply", value: "*" },
+  { icon: "divide", value: "/" },
 ];
 
 interface CalculatorToolbarProps {
@@ -27,7 +27,7 @@ export function CalculatorToolbar({ onOperator, onEvaluate }: CalculatorToolbarP
   const { spacing, colors } = useTheme();
 
   return (
-    <View style={{ flexDirection: 'row', gap: spacing.xs }}>
+    <View style={{ flexDirection: "row", gap: spacing.xs }}>
       {OPERATORS.map(({ icon, value }) => (
         <GlassButton
           key={value}

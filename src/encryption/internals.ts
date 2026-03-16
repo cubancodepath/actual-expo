@@ -1,12 +1,12 @@
-import { gcm } from '@noble/ciphers/aes.js';
-import { pbkdf2Async } from '@noble/hashes/pbkdf2.js';
-import { sha512 } from '@noble/hashes/sha2.js';
-import { getRandomBytes } from 'expo-crypto';
+import { gcm } from "@noble/ciphers/aes.js";
+import { pbkdf2Async } from "@noble/hashes/pbkdf2.js";
+import { sha512 } from "@noble/hashes/sha2.js";
+import { getRandomBytes } from "expo-crypto";
 
-const ENCRYPTION_ALGORITHM = 'aes-256-gcm';
+const ENCRYPTION_ALGORITHM = "aes-256-gcm";
 
 function uint8ToBase64(bytes: Uint8Array): string {
-  let binary = '';
+  let binary = "";
   for (let i = 0; i < bytes.length; i++) {
     binary += String.fromCharCode(bytes[i]);
   }
@@ -74,7 +74,7 @@ export async function decrypt(
   meta: { algorithm: string; iv: string; authTag: string },
 ): Promise<Uint8Array> {
   if (meta.algorithm !== ENCRYPTION_ALGORITHM) {
-    throw new Error('unsupported crypto algorithm: ' + meta.algorithm);
+    throw new Error("unsupported crypto algorithm: " + meta.algorithm);
   }
 
   const keyBytes = masterKey.getValue().raw;

@@ -1,6 +1,6 @@
-import { View } from 'react-native';
-import { useTheme } from '../../providers/ThemeProvider';
-import { Skeleton } from '../atoms/Skeleton';
+import { View } from "react-native";
+import { useTheme } from "../../providers/ThemeProvider";
+import { Skeleton } from "../atoms/Skeleton";
 
 const ROWS = 6;
 
@@ -13,8 +13,8 @@ export function PayeesListSkeleton() {
         <View
           key={i}
           style={{
-            flexDirection: 'row',
-            alignItems: 'center',
+            flexDirection: "row",
+            alignItems: "center",
             paddingHorizontal: 16,
             paddingVertical: 12,
             gap: 12,

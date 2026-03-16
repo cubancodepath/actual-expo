@@ -1,42 +1,58 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Keyboard, Pressable, Switch, useColorScheme, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useTranslation } from 'react-i18next';
-import Animated, { useAnimatedScrollHandler, useAnimatedStyle, useSharedValue, interpolate } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useAccountsStore } from '../../../src/stores/accountsStore';
-import { usePayeesStore } from '../../../src/stores/payeesStore';
-import { useCategoriesStore } from '../../../src/stores/categoriesStore';
-import { useSchedulesStore } from '../../../src/stores/schedulesStore';
-import { usePickerStore } from '../../../src/stores/pickerStore';
-import { useUndoStore } from '../../../src/stores/undoStore';
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Alert, Keyboard, Pressable, Switch, useColorScheme, View } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
+import Animated, {
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+  interpolate,
+} from "react-native-reanimated";
+import { LinearGradient } from "expo-linear-gradient";
+import { useAccountsStore } from "../../../src/stores/accountsStore";
+import { usePayeesStore } from "../../../src/stores/payeesStore";
+import { useCategoriesStore } from "../../../src/stores/categoriesStore";
+import { useSchedulesStore } from "../../../src/stores/schedulesStore";
+import { usePickerStore } from "../../../src/stores/pickerStore";
+import { useUndoStore } from "../../../src/stores/undoStore";
 import {
   getScheduleById,
   getStatus,
   getScheduledAmount,
   getRecurringDescription,
-} from '../../../src/schedules';
-import { withOpacity } from '../../../src/lib/colors';
-import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
-import { Button } from '../../../src/presentation/components/atoms/Button';
-import { Text } from '../../../src/presentation/components/atoms/Text';
-import { GlassButton } from '../../../src/presentation/components/atoms/GlassButton';
-import { CurrencyInput, type CurrencyInputRef } from '../../../src/presentation/components/atoms/CurrencyInput';
-import { ScheduleStatusBadge } from '../../../src/presentation/components/atoms/ScheduleStatusBadge';
-import { KeyboardToolbar } from '../../../src/presentation/components/molecules/KeyboardToolbar';
-import { CalculatorToolbar } from '../../../src/presentation/components/atoms/CalculatorToolbar';
-import { Banner } from '../../../src/presentation/components/molecules/Banner';
-import { TypeToggle, type TransactionType } from '../../../src/presentation/components/transaction/TypeToggle';
-import { DetailRow } from '../../../src/presentation/components/transaction/DetailRow';
-import type { Schedule, RecurConfig, RuleCondition, RuleAction } from '../../../src/schedules/types';
+} from "../../../src/schedules";
+import { withOpacity } from "../../../src/lib/colors";
+import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
+import { Button } from "../../../src/presentation/components/atoms/Button";
+import { Text } from "../../../src/presentation/components/atoms/Text";
+import { GlassButton } from "../../../src/presentation/components/atoms/GlassButton";
+import {
+  CurrencyInput,
+  type CurrencyInputRef,
+} from "../../../src/presentation/components/atoms/CurrencyInput";
+import { ScheduleStatusBadge } from "../../../src/presentation/components/atoms/ScheduleStatusBadge";
+import { KeyboardToolbar } from "../../../src/presentation/components/molecules/KeyboardToolbar";
+import { CalculatorToolbar } from "../../../src/presentation/components/atoms/CalculatorToolbar";
+import { Banner } from "../../../src/presentation/components/molecules/Banner";
+import {
+  TypeToggle,
+  type TransactionType,
+} from "../../../src/presentation/components/transaction/TypeToggle";
+import { DetailRow } from "../../../src/presentation/components/transaction/DetailRow";
+import type {
+  Schedule,
+  RecurConfig,
+  RuleCondition,
+  RuleAction,
+} from "../../../src/schedules/types";
 
 export default function ScheduleDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-  const { t } = useTranslation(['schedules', 'common']);
+  const isDark = colorScheme === "dark";
+  const { t } = useTranslation(["schedules", "common"]);
 
   const { update, delete_, skip, postTransaction, load } = useSchedulesStore();
   const payees = usePayeesStore((s) => s.payees);
@@ -56,15 +72,15 @@ export default function ScheduleDetailScreen() {
   const [error, setError] = useState<string | null>(null);
 
   // Form state
-  const [type, setType] = useState<TransactionType>('expense');
+  const [type, setType] = useState<TransactionType>("expense");
   const [cents, setCents] = useState(0);
-  const [name, setName] = useState('');
+  const [name, setName] = useState("");
   const [payeeId, setPayeeId] = useState<string | null>(null);
-  const [payeeName, setPayeeName] = useState('');
+  const [payeeName, setPayeeName] = useState("");
   const [acctId, setAcctId] = useState<string | null>(null);
-  const [acctName, setAcctName] = useState('');
+  const [acctName, setAcctName] = useState("");
   const [categoryId, setCategoryId] = useState<string | null>(null);
-  const [categoryName, setCategoryName] = useState('');
+  const [categoryName, setCategoryName] = useState("");
   const [postsTransaction, setPostsTransaction] = useState(false);
   const [recurConfig, setRecurConfig] = useState<RecurConfig | null>(null);
   const currencyRef = useRef<CurrencyInputRef>(null);
@@ -77,7 +93,7 @@ export default function ScheduleDetailScreen() {
   });
 
   const blurContainerStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(scrollY.value, [0, 50], [0, 1], 'clamp'),
+    opacity: interpolate(scrollY.value, [0, 50], [0, 1], "clamp"),
   }));
 
   // Initial values for change detection
@@ -92,26 +108,17 @@ export default function ScheduleDetailScreen() {
     recurConfig: RecurConfig | null;
   } | null>(null);
 
-  const payeeMap = useMemo(
-    () => new Map(payees.map((p) => [p.id, p.name])),
-    [payees],
-  );
-  const accountMap = useMemo(
-    () => new Map(accounts.map((a) => [a.id, a.name])),
-    [accounts],
-  );
-  const categoryMap = useMemo(
-    () => {
-      const m = new Map<string, string>();
-      for (const g of categoryGroups) {
-        for (const c of g.categories ?? []) {
-          m.set(c.id, c.name);
-        }
+  const payeeMap = useMemo(() => new Map(payees.map((p) => [p.id, p.name])), [payees]);
+  const accountMap = useMemo(() => new Map(accounts.map((a) => [a.id, a.name])), [accounts]);
+  const categoryMap = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const g of categoryGroups) {
+      for (const c of g.categories ?? []) {
+        m.set(c.id, c.name);
       }
-      return m;
-    },
-    [categoryGroups],
-  );
+    }
+    return m;
+  }, [categoryGroups]);
 
   // Load schedule once on mount (not on focus — avoids overwriting picker selections)
   useEffect(() => {
@@ -124,33 +131,34 @@ export default function ScheduleDetailScreen() {
         const s = await getScheduleById(id);
         if (s) {
           setSchedule(s);
-          setName(s.name ?? '');
+          setName(s.name ?? "");
           setPostsTransaction(s.posts_transaction);
 
           const amt = getScheduledAmount(s._amount);
           const isIncome = amt > 0;
-          setType(isIncome ? 'income' : 'expense');
+          setType(isIncome ? "income" : "expense");
           setCents(Math.abs(amt));
 
           const pId = s._payee ?? null;
           setPayeeId(pId);
-          setPayeeName(pId ? (payeeMap.get(pId) ?? '') : '');
+          setPayeeName(pId ? (payeeMap.get(pId) ?? "") : "");
 
           const aId = s._account ?? null;
           setAcctId(aId);
-          setAcctName(aId ? (accountMap.get(aId) ?? '') : '');
+          setAcctName(aId ? (accountMap.get(aId) ?? "") : "");
 
           const cId = s._category ?? null;
           setCategoryId(cId);
-          setCategoryName(cId ? (categoryMap.get(cId) ?? '') : '');
+          setCategoryName(cId ? (categoryMap.get(cId) ?? "") : "");
 
-          const rc = s._date && typeof s._date === 'object' && 'frequency' in s._date
-            ? (s._date as RecurConfig)
-            : null;
+          const rc =
+            s._date && typeof s._date === "object" && "frequency" in s._date
+              ? (s._date as RecurConfig)
+              : null;
           setRecurConfig(rc);
 
           setInitial({
-            type: isIncome ? 'income' : 'expense',
+            type: isIncome ? "income" : "expense",
             cents: Math.abs(amt),
             name: s.name ?? null,
             payeeId: pId,
@@ -196,35 +204,43 @@ export default function ScheduleDetailScreen() {
 
   const status = schedule ? getStatus(schedule.next_date, schedule.completed, false) : null;
   const isRecurring = recurConfig != null;
-  const recurDesc = isRecurring ? getRecurringDescription(recurConfig) : '';
+  const recurDesc = isRecurring ? getRecurringDescription(recurConfig) : "";
 
   // Change detection
-  const hasChanges = initial != null && (
-    type !== initial.type ||
-    cents !== initial.cents ||
-    (name.trim() || null) !== initial.name ||
-    payeeId !== initial.payeeId ||
-    acctId !== initial.acctId ||
-    categoryId !== initial.categoryId ||
-    postsTransaction !== initial.postsTransaction ||
-    JSON.stringify(recurConfig) !== JSON.stringify(initial.recurConfig)
-  );
+  const hasChanges =
+    initial != null &&
+    (type !== initial.type ||
+      cents !== initial.cents ||
+      (name.trim() || null) !== initial.name ||
+      payeeId !== initial.payeeId ||
+      acctId !== initial.acctId ||
+      categoryId !== initial.categoryId ||
+      postsTransaction !== initial.postsTransaction ||
+      JSON.stringify(recurConfig) !== JSON.stringify(initial.recurConfig));
 
   // ── Header colors based on type ──
-  const isExpense = type === 'expense';
+  const isExpense = type === "expense";
   const headerBg = isExpense
-    ? (isDark ? withOpacity(colors.negative, 0.18) : colors.errorBackground)
-    : (isDark ? withOpacity(colors.positive, 0.18) : colors.successBackground);
+    ? isDark
+      ? withOpacity(colors.negative, 0.18)
+      : colors.errorBackground
+    : isDark
+      ? withOpacity(colors.positive, 0.18)
+      : colors.successBackground;
   const headerText = isExpense
-    ? (isDark ? colors.negative : colors.errorText)
-    : (isDark ? colors.positive : colors.successText);
+    ? isDark
+      ? colors.negative
+      : colors.errorText
+    : isDark
+      ? colors.positive
+      : colors.successText;
 
   const cardStyle = {
     backgroundColor: colors.cardBackground,
     borderRadius: br.lg,
     borderWidth: bw.thin,
     borderColor: colors.cardBorder,
-    overflow: 'hidden' as const,
+    overflow: "hidden" as const,
   };
 
   const dividerStyle = {
@@ -244,22 +260,22 @@ export default function ScheduleDetailScreen() {
       const conditions: RuleCondition[] = [];
 
       if (payeeId) {
-        conditions.push({ field: 'payee', op: 'is', value: payeeId });
+        conditions.push({ field: "payee", op: "is", value: payeeId });
       }
-      conditions.push({ field: 'account', op: 'is', value: acctId });
+      conditions.push({ field: "account", op: "is", value: acctId });
 
-      const signedAmount = type === 'expense' ? -Math.abs(cents) : Math.abs(cents);
-      conditions.push({ field: 'amount', op: 'is', value: signedAmount });
+      const signedAmount = type === "expense" ? -Math.abs(cents) : Math.abs(cents);
+      conditions.push({ field: "amount", op: "is", value: signedAmount });
 
       if (recurConfig) {
-        conditions.push({ field: 'date', op: 'isapprox', value: recurConfig });
+        conditions.push({ field: "date", op: "isapprox", value: recurConfig });
       }
 
       const recurrenceChanged =
         JSON.stringify(recurConfig) !== JSON.stringify(initial?.recurConfig);
 
       const actions: RuleAction[] = categoryId
-        ? [{ op: 'set', field: 'category', value: categoryId }]
+        ? [{ op: "set", field: "category", value: categoryId }]
         : [];
 
       await update({
@@ -275,74 +291,66 @@ export default function ScheduleDetailScreen() {
       load();
       router.dismiss();
     } catch (e) {
-      setError(e instanceof Error ? e.message : t('failedToUpdate'));
+      setError(e instanceof Error ? e.message : t("failedToUpdate"));
     } finally {
       setSaving(false);
     }
   }
 
   function handleSkip() {
-    Alert.alert(t('skipNextDate'), t('skipNextDateConfirm'), [
-      { text: t('common:cancel'), style: 'cancel' },
+    Alert.alert(t("skipNextDate"), t("skipNextDateConfirm"), [
+      { text: t("common:cancel"), style: "cancel" },
       {
-        text: t('skip'),
+        text: t("skip"),
         onPress: async () => {
           await skip(schedule!.id);
           load();
-          useUndoStore.getState().showUndo(t('dateSkipped'));
+          useUndoStore.getState().showUndo(t("dateSkipped"));
         },
       },
     ]);
   }
 
   function handlePostNow() {
-    Alert.alert(
-      t('postTransactionNow'),
-      t('postTransactionConfirm'),
-      [
-        { text: t('common:cancel'), style: 'cancel' },
-        {
-          text: t('post'),
-          onPress: async () => {
-            await postTransaction(schedule!.id);
-            load();
-            useUndoStore.getState().showUndo(t('transactionPosted'));
-          },
+    Alert.alert(t("postTransactionNow"), t("postTransactionConfirm"), [
+      { text: t("common:cancel"), style: "cancel" },
+      {
+        text: t("post"),
+        onPress: async () => {
+          await postTransaction(schedule!.id);
+          load();
+          useUndoStore.getState().showUndo(t("transactionPosted"));
         },
-      ],
-    );
+      },
+    ]);
   }
 
   function handleComplete() {
-    Alert.alert(
-      t('completeSchedule'),
-      t('completeConfirm'),
-      [
-        { text: t('common:cancel'), style: 'cancel' },
-        {
-          text: t('complete'),
-          onPress: async () => {
-            await update({
-              schedule: { id: schedule!.id, completed: true },
-            });
-            load();
-            router.dismiss();
-          },
+    Alert.alert(t("completeSchedule"), t("completeConfirm"), [
+      { text: t("common:cancel"), style: "cancel" },
+      {
+        text: t("complete"),
+        onPress: async () => {
+          await update({
+            schedule: { id: schedule!.id, completed: true },
+          });
+          load();
+          router.dismiss();
         },
-      ],
-    );
+      },
+    ]);
   }
 
   function handleDelete() {
-    Alert.alert(t('deleteSchedule'), t('deleteCannotUndo'), [
-      { text: t('common:cancel'), style: 'cancel' },
+    Alert.alert(t("deleteSchedule"), t("deleteCannotUndo"), [
+      { text: t("common:cancel"), style: "cancel" },
       {
-        text: t('common:delete'),
-        style: 'destructive',
+        text: t("common:delete"),
+        style: "destructive",
         onPress: async () => {
           await delete_(schedule!.id);
           load();
-          useUndoStore.getState().showUndo(t('scheduleDeleted'));
+          useUndoStore.getState().showUndo(t("scheduleDeleted"));
           router.dismiss();
         },
       },
@@ -368,21 +376,24 @@ export default function ScheduleDetailScreen() {
             paddingHorizontal: spacing.lg,
             borderBottomLeftRadius: br.lg,
             borderBottomRightRadius: br.lg,
-            alignItems: 'center',
+            alignItems: "center",
             gap: spacing.md,
           }}
         >
-          <View style={{ alignSelf: 'stretch', marginTop: spacing.lg }}>
+          <View style={{ alignSelf: "stretch", marginTop: spacing.lg }}>
             <TypeToggle type={type} onChangeType={setType} />
           </View>
 
           <CurrencyInput
             ref={currencyRef}
             value={cents}
-            onChangeValue={(v) => { setCents(v); setError(null); }}
+            onChangeValue={(v) => {
+              setCents(v);
+              setError(null);
+            }}
             type={type}
             color={headerText}
-            style={{ paddingVertical: spacing.sm, alignSelf: 'stretch' }}
+            style={{ paddingVertical: spacing.sm, alignSelf: "stretch" }}
           />
 
           {status && <ScheduleStatusBadge status={status} />}
@@ -394,36 +405,59 @@ export default function ScheduleDetailScreen() {
             <DetailRow
               icon="wallet-outline"
               label={acctName}
-              placeholder={t('account')}
-              onPress={() => router.push({ pathname: './account-picker', params: { selectedId: acctId ?? '' } })}
+              placeholder={t("account")}
+              onPress={() =>
+                router.push({ pathname: "./account-picker", params: { selectedId: acctId ?? "" } })
+              }
             />
             <View style={dividerStyle} />
 
             <DetailRow
               icon="person-outline"
               label={payeeName}
-              placeholder={t('payee')}
-              onPress={() => router.push({ pathname: './payee-picker', params: { selectedId: payeeId ?? '', selectedName: payeeName, accountId: acctId ?? '' } })}
+              placeholder={t("payee")}
+              onPress={() =>
+                router.push({
+                  pathname: "./payee-picker",
+                  params: {
+                    selectedId: payeeId ?? "",
+                    selectedName: payeeName,
+                    accountId: acctId ?? "",
+                  },
+                })
+              }
             />
             <View style={dividerStyle} />
 
             <DetailRow
               icon="folder-outline"
               label={categoryName}
-              placeholder={t('category')}
-              onClear={categoryId ? () => { setCategoryId(null); setCategoryName(''); } : undefined}
-              onPress={() => router.push({ pathname: './category-picker', params: { selectedId: categoryId ?? '', hideSplit: '1' } })}
+              placeholder={t("category")}
+              onClear={
+                categoryId
+                  ? () => {
+                      setCategoryId(null);
+                      setCategoryName("");
+                    }
+                  : undefined
+              }
+              onPress={() =>
+                router.push({
+                  pathname: "./category-picker",
+                  params: { selectedId: categoryId ?? "", hideSplit: "1" },
+                })
+              }
             />
             <View style={dividerStyle} />
 
             <DetailRow
               icon="repeat"
               label={recurDesc}
-              placeholder={t('repeat')}
+              placeholder={t("repeat")}
               onClear={recurConfig ? () => setRecurConfig(null) : undefined}
               onPress={() => {
                 router.push({
-                  pathname: './recurrence',
+                  pathname: "./recurrence",
                   params: recurConfig ? { config: JSON.stringify(recurConfig) } : {},
                 });
               }}
@@ -437,30 +471,36 @@ export default function ScheduleDetailScreen() {
             <DetailRow
               icon="text-outline"
               label={name}
-              placeholder={t('name')}
+              placeholder={t("name")}
               onPress={() => {
-                Alert.prompt(t('scheduleName'), t('scheduleNamePrompt'), (text) => {
-                  if (text !== undefined) setName(text);
-                }, 'plain-text', name);
+                Alert.prompt(
+                  t("scheduleName"),
+                  t("scheduleNamePrompt"),
+                  (text) => {
+                    if (text !== undefined) setName(text);
+                  },
+                  "plain-text",
+                  name,
+                );
               }}
-              onClear={name ? () => setName('') : undefined}
+              onClear={name ? () => setName("") : undefined}
             />
             <View style={dividerStyle} />
 
             <Pressable
               style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
                 paddingHorizontal: spacing.md,
                 paddingVertical: spacing.md,
                 minHeight: 44,
               }}
               onPress={() => setPostsTransaction(!postsTransaction)}
             >
-              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
                 <Text variant="body" color={colors.textPrimary}>
-                  {t('autoPostTransaction')}
+                  {t("autoPostTransaction")}
                 </Text>
               </View>
               <Switch
@@ -484,7 +524,7 @@ export default function ScheduleDetailScreen() {
         {/* ── Buttons ── */}
         <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.xl, gap: spacing.sm }}>
           <Button
-            title={t('saveChanges')}
+            title={t("saveChanges")}
             onPress={handleSave}
             size="lg"
             loading={saving}
@@ -493,7 +533,7 @@ export default function ScheduleDetailScreen() {
 
           {isRecurring && (
             <Button
-              title={t('skipNextDate')}
+              title={t("skipNextDate")}
               icon="play-forward-outline"
               variant="ghost"
               onPress={handleSkip}
@@ -501,7 +541,7 @@ export default function ScheduleDetailScreen() {
           )}
 
           <Button
-            title={t('postTransactionNow')}
+            title={t("postTransactionNow")}
             icon="checkmark-circle-outline"
             variant="ghost"
             onPress={handlePostNow}
@@ -509,7 +549,7 @@ export default function ScheduleDetailScreen() {
 
           {schedule && !schedule.completed && (
             <Button
-              title={t('completeSchedule')}
+              title={t("completeSchedule")}
               icon="flag-outline"
               variant="ghost"
               onPress={handleComplete}
@@ -517,7 +557,7 @@ export default function ScheduleDetailScreen() {
           )}
 
           <Button
-            title={t('deleteSchedule')}
+            title={t("deleteSchedule")}
             icon="trash-outline"
             variant="ghost"
             textColor={colors.negative}
@@ -530,7 +570,7 @@ export default function ScheduleDetailScreen() {
       <Animated.View
         style={[
           {
-            position: 'absolute',
+            position: "absolute",
             top: 0,
             left: 0,
             right: 0,
@@ -541,20 +581,32 @@ export default function ScheduleDetailScreen() {
         pointerEvents="none"
       >
         <LinearGradient
-          colors={[colors.pageBackground + 'B3', colors.pageBackground + '1A', 'transparent']}
+          colors={[colors.pageBackground + "B3", colors.pageBackground + "1A", "transparent"]}
           style={{ height: 70 }}
         />
       </Animated.View>
 
       {/* Close button */}
-      <View style={{ position: 'absolute', top: 12, left: spacing.md, zIndex: 11 }}>
+      <View style={{ position: "absolute", top: 12, left: spacing.md, zIndex: 11 }}>
         <GlassButton icon="xmark" onPress={() => router.dismiss()} />
       </View>
 
       {/* Title */}
-      <View style={{ position: 'absolute', top: 12, left: 0, right: 0, height: 48, justifyContent: 'center', alignItems: 'center', zIndex: 11, pointerEvents: 'none' }}>
-        <Text variant="body" color={colors.textPrimary} style={{ fontWeight: '600' }}>
-          {t('editSchedule')}
+      <View
+        style={{
+          position: "absolute",
+          top: 12,
+          left: 0,
+          right: 0,
+          height: 48,
+          justifyContent: "center",
+          alignItems: "center",
+          zIndex: 11,
+          pointerEvents: "none",
+        }}
+      >
+        <Text variant="body" color={colors.textPrimary} style={{ fontWeight: "600" }}>
+          {t("editSchedule")}
         </Text>
       </View>
 

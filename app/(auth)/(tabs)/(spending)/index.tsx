@@ -1,48 +1,43 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { useSharedValue } from 'react-native-reanimated';
-import {
-  ActivityIndicator,
-  Alert,
-  LayoutAnimation,
-  RefreshControl,
-} from 'react-native';
-import { LegendList } from '@legendapp/list';
-import { Stack, useFocusEffect, useNavigation, useRouter } from 'expo-router';
-import { useTranslation } from 'react-i18next';
-import {
-  getAllTransactions,
-  getUnclearedCount,
-} from '../../../../src/transactions';
-import { usePrivacyStore } from '../../../../src/stores/privacyStore';
-import { useUndoStore } from '../../../../src/stores/undoStore';
-import { useCommonMenuActions } from '../../../../src/presentation/hooks/useCommonMenuItems';
-import { useTabBarStore } from '../../../../src/stores/tabBarStore';
-import { useTheme } from '../../../../src/presentation/providers/ThemeProvider';
-import { EmptyState } from '../../../../src/presentation/components';
-import { TransactionListSkeleton } from '../../../../src/presentation/components/skeletons/TransactionListSkeleton';
-import { UnclearedPill } from '../../../../src/presentation/components/transaction/UnclearedPill';
-import { TransactionRow } from '../../../../src/presentation/components/account/TransactionRow';
-import { DateSectionHeader } from '../../../../src/presentation/components/account/DateSectionHeader';
-import { UpcomingSectionHeader } from '../../../../src/presentation/components/account/UpcomingSectionHeader';
-import { UpcomingScheduleRow } from '../../../../src/presentation/components/account/UpcomingScheduleRow';
-import { AddTransactionButton } from '../../../../src/presentation/components/molecules/AddTransactionButton';
-import { useTagsStore } from '../../../../src/stores/tagsStore';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useSharedValue } from "react-native-reanimated";
+import { ActivityIndicator, Alert, LayoutAnimation, RefreshControl } from "react-native";
+import { LegendList } from "@legendapp/list";
+import { Stack, useFocusEffect, useNavigation, useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
+import { getAllTransactions, getUnclearedCount } from "../../../../src/transactions";
+import { usePrivacyStore } from "../../../../src/stores/privacyStore";
+import { useUndoStore } from "../../../../src/stores/undoStore";
+import { useCommonMenuActions } from "../../../../src/presentation/hooks/useCommonMenuItems";
+import { useTabBarStore } from "../../../../src/stores/tabBarStore";
+import { useTheme } from "../../../../src/presentation/providers/ThemeProvider";
+import { EmptyState } from "../../../../src/presentation/components";
+import { TransactionListSkeleton } from "../../../../src/presentation/components/skeletons/TransactionListSkeleton";
+import { UnclearedPill } from "../../../../src/presentation/components/transaction/UnclearedPill";
+import { TransactionRow } from "../../../../src/presentation/components/account/TransactionRow";
+import { DateSectionHeader } from "../../../../src/presentation/components/account/DateSectionHeader";
+import { UpcomingSectionHeader } from "../../../../src/presentation/components/account/UpcomingSectionHeader";
+import { UpcomingScheduleRow } from "../../../../src/presentation/components/account/UpcomingScheduleRow";
+import { AddTransactionButton } from "../../../../src/presentation/components/molecules/AddTransactionButton";
+import { useTagsStore } from "../../../../src/stores/tagsStore";
 import {
   buildListData,
   useSelectModeHeader,
   useTransactionList,
   type ListItem,
-} from '../../../../src/presentation/hooks/transactionList';
-import { SelectModeToolbar } from '../../../../src/presentation/components/transaction/SelectModeToolbar';
-import { getAllPreviewTransactions, type PreviewTransaction } from '../../../../src/schedules/preview';
+} from "../../../../src/presentation/hooks/transactionList";
+import { SelectModeToolbar } from "../../../../src/presentation/components/transaction/SelectModeToolbar";
+import {
+  getAllPreviewTransactions,
+  type PreviewTransaction,
+} from "../../../../src/schedules/preview";
 import {
   skipNextDate,
   postTransactionForSchedule,
   postTransactionForScheduleToday,
   deleteSchedule,
   updateSchedule,
-} from '../../../../src/schedules';
-import { useSchedulesStore } from '../../../../src/stores/schedulesStore';
+} from "../../../../src/schedules";
+import { useSchedulesStore } from "../../../../src/stores/schedulesStore";
 
 export default function SpendingScreen() {
   const navigation = useNavigation();
@@ -68,27 +63,29 @@ export default function SpendingScreen() {
 
   const txnList = useTransactionList({
     fetchTransactions,
-    moveMode: 'remap',
+    moveMode: "remap",
     onEnterSelectMode: () => setTabBarHidden(true),
     onExitSelectMode: () => setTabBarHidden(false),
     onDelete: (txn) => {
       if (!txn.cleared && !txn.reconciled) {
-        setUnclearedCount(c => Math.max(0, c - 1));
+        setUnclearedCount((c) => Math.max(0, c - 1));
       }
     },
     onDuplicate: () => {
-      setUnclearedCount(c => c + 1);
+      setUnclearedCount((c) => c + 1);
     },
     onToggleCleared: (txn) => {
       if (!txn.reconciled) {
-        setUnclearedCount(c => Math.max(0, c + (txn.cleared ? 1 : -1)));
+        setUnclearedCount((c) => Math.max(0, c + (txn.cleared ? 1 : -1)));
       }
     },
     optimisticBulkMove: (prev, ids, targetAccountId, targetAccountName) =>
-      prev.map(t => ids.has(t.id) ? { ...t, acct: targetAccountId, accountName: targetAccountName } : t),
+      prev.map((t) =>
+        ids.has(t.id) ? { ...t, acct: targetAccountId, accountName: targetAccountName } : t,
+      ),
     onBulkToggleCleared: (_ids, targetVal, affectedTxns) => {
-      const delta = affectedTxns.filter(t => !t.cleared).length;
-      setUnclearedCount(c => Math.max(0, targetVal ? c - delta : c + delta));
+      const delta = affectedTxns.filter((t) => !t.cleared).length;
+      setUnclearedCount((c) => Math.max(0, targetVal ? c - delta : c + delta));
     },
   });
 
@@ -128,15 +125,19 @@ export default function SpendingScreen() {
     await txnList.silentRefresh();
   }, [txnList.silentRefresh]);
 
-  useFocusEffect(useCallback(() => {
-    if (!txnList.hasLoaded.current) {
-      loadWithPreviews();
-      txnList.hasLoaded.current = true;
-    } else {
-      silentRefreshWithPreviews();
-    }
-    return () => { txnList.resetSelection(); };
-  }, [loadWithPreviews, silentRefreshWithPreviews, txnList.resetSelection]));
+  useFocusEffect(
+    useCallback(() => {
+      if (!txnList.hasLoaded.current) {
+        loadWithPreviews();
+        txnList.hasLoaded.current = true;
+      } else {
+        silentRefreshWithPreviews();
+      }
+      return () => {
+        txnList.resetSelection();
+      };
+    }, [loadWithPreviews, silentRefreshWithPreviews, txnList.resetSelection]),
+  );
 
   // Refresh local list after undo restores data in DB
   useEffect(() => {
@@ -150,13 +151,13 @@ export default function SpendingScreen() {
   }, [undoVersion]);
 
   // ---- Upcoming actions ----
-  const handlePostSchedule = useCallback(async (scheduleId: string) => {
-    await postTransactionForSchedule(scheduleId);
-    await Promise.all([
-      silentRefreshWithPreviews(),
-      useSchedulesStore.getState().load(),
-    ]);
-  }, [silentRefreshWithPreviews]);
+  const handlePostSchedule = useCallback(
+    async (scheduleId: string) => {
+      await postTransactionForSchedule(scheduleId);
+      await Promise.all([silentRefreshWithPreviews(), useSchedulesStore.getState().load()]);
+    },
+    [silentRefreshWithPreviews],
+  );
 
   const handleSkipSchedule = useCallback(async (scheduleId: string) => {
     await skipNextDate(scheduleId);
@@ -167,13 +168,13 @@ export default function SpendingScreen() {
     setPreviewTransactions(previews);
   }, []);
 
-  const handlePostScheduleToday = useCallback(async (scheduleId: string) => {
-    await postTransactionForScheduleToday(scheduleId);
-    await Promise.all([
-      silentRefreshWithPreviews(),
-      useSchedulesStore.getState().load(),
-    ]);
-  }, [silentRefreshWithPreviews]);
+  const handlePostScheduleToday = useCallback(
+    async (scheduleId: string) => {
+      await postTransactionForScheduleToday(scheduleId);
+      await Promise.all([silentRefreshWithPreviews(), useSchedulesStore.getState().load()]);
+    },
+    [silentRefreshWithPreviews],
+  );
 
   const handleCompleteSchedule = useCallback(async (scheduleId: string) => {
     await updateSchedule({ schedule: { id: scheduleId, completed: true } });
@@ -185,11 +186,11 @@ export default function SpendingScreen() {
   }, []);
 
   const handleDeleteSchedule = useCallback((scheduleId: string) => {
-    Alert.alert(t('spending.deleteScheduleTitle'), t('spending.deleteScheduleConfirm'), [
-      { text: t('cancel'), style: 'cancel' },
+    Alert.alert(t("spending.deleteScheduleTitle"), t("spending.deleteScheduleConfirm"), [
+      { text: t("cancel"), style: "cancel" },
       {
-        text: t('delete'),
-        style: 'destructive',
+        text: t("delete"),
+        style: "destructive",
         onPress: async () => {
           await deleteSchedule(scheduleId);
           const [previews] = await Promise.all([
@@ -202,16 +203,20 @@ export default function SpendingScreen() {
     ]);
   }, []);
 
-  const handlePressSchedule = useCallback((scheduleId: string) => {
-    router.push({ pathname: '/(auth)/schedule/[id]', params: { id: scheduleId } });
-  }, [router]);
+  const handlePressSchedule = useCallback(
+    (scheduleId: string) => {
+      router.push({ pathname: "/(auth)/schedule/[id]", params: { id: scheduleId } });
+    },
+    [router],
+  );
 
   // ---- Merged list data ----
   const mergedListData = useMemo(
-    () => buildListData(txnList.transactions, {
-      previewTransactions,
-      upcomingExpanded,
-    }),
+    () =>
+      buildListData(txnList.transactions, {
+        previewTransactions,
+        upcomingExpanded,
+      }),
     [txnList.transactions, previewTransactions, upcomingExpanded],
   );
 
@@ -223,7 +228,7 @@ export default function SpendingScreen() {
     if (txnList.isSelectMode) return;
     navigation.setOptions({
       headerStyle: undefined,
-      title: t('spending.title'),
+      title: t("spending.title"),
       headerTitle: undefined,
       headerLeft: undefined,
       headerRight: undefined,
@@ -246,21 +251,23 @@ export default function SpendingScreen() {
         ListHeaderComponent={
           !txnList.isSelectMode ? (
             <>
-              <Stack.Screen.Title large>{t('spending.title')}</Stack.Screen.Title>
+              <Stack.Screen.Title large>{t("spending.title")}</Stack.Screen.Title>
               {unclearedCount > 0 && (
                 <UnclearedPill
                   count={unclearedCount}
-                  onPress={() => router.push({
-                    pathname: '/(auth)/(tabs)/(spending)/search',
-                    params: { initialFilter: 'uncleared' },
-                  })}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/(auth)/(tabs)/(spending)/search",
+                      params: { initialFilter: "uncleared" },
+                    })
+                  }
                 />
               )}
             </>
           ) : null
         }
         renderItem={({ item }) => {
-          if (item.type === 'upcoming-header') {
+          if (item.type === "upcoming-header") {
             return (
               <UpcomingSectionHeader
                 count={item.count}
@@ -272,7 +279,7 @@ export default function SpendingScreen() {
               />
             );
           }
-          if (item.type === 'upcoming') {
+          if (item.type === "upcoming") {
             return (
               <UpcomingScheduleRow
                 item={item.data}
@@ -287,10 +294,10 @@ export default function SpendingScreen() {
               />
             );
           }
-          if (item.type === 'date') {
+          if (item.type === "date") {
             return <DateSectionHeader date={item.date} />;
           }
-          if (item.type !== 'transaction') return null;
+          if (item.type !== "transaction") return null;
           return (
             <TransactionRow
               item={item.data}
@@ -312,30 +319,28 @@ export default function SpendingScreen() {
           );
         }}
         ListFooterComponent={
-          txnList.loadingMore && !txnList.loading
-            ? <ActivityIndicator color={colors.primary} style={{ paddingVertical: 20 }} />
-            : null
+          txnList.loadingMore && !txnList.loading ? (
+            <ActivityIndicator color={colors.primary} style={{ paddingVertical: 20 }} />
+          ) : null
         }
         ListEmptyComponent={
-          txnList.loading
-            ? <TransactionListSkeleton />
-            : <EmptyState
-                icon="receipt-outline"
-                title={t('spending.noTransactionsYet')}
-                description={t('spending.noTransactionsDescription')}
-              />
+          txnList.loading ? (
+            <TransactionListSkeleton />
+          ) : (
+            <EmptyState
+              icon="receipt-outline"
+              title={t("spending.noTransactionsYet")}
+              description={t("spending.noTransactionsDescription")}
+            />
+          )
         }
         onEndReached={txnList.loadMore}
         onEndReachedThreshold={0.3}
-        refreshControl={
-          <RefreshControl {...txnList.refreshControlProps} />
-        }
+        refreshControl={<RefreshControl {...txnList.refreshControlProps} />}
         contentContainerStyle={{ paddingBottom: 80, backgroundColor: colors.pageBackground }}
       />
 
-      {!txnList.isSelectMode && (
-        <AddTransactionButton collapsed={fabCollapsed} />
-      )}
+      {!txnList.isSelectMode && <AddTransactionButton collapsed={fabCollapsed} />}
 
       {txnList.isSelectMode && (
         <SelectModeToolbar
@@ -350,14 +355,14 @@ export default function SpendingScreen() {
 
       {!txnList.isSelectMode && (
         <Stack.Toolbar placement="right">
-          <Stack.Toolbar.Button onPress={txnList.enterSelectMode}>{t('select')}</Stack.Toolbar.Button>
+          <Stack.Toolbar.Button onPress={txnList.enterSelectMode}>
+            {t("select")}
+          </Stack.Toolbar.Button>
           <Stack.Toolbar.Button
             icon="magnifyingglass"
-            onPress={() => router.push('/(auth)/(tabs)/(spending)/search')}
+            onPress={() => router.push("/(auth)/(tabs)/(spending)/search")}
           />
-          <Stack.Toolbar.Menu icon="ellipsis">
-            {commonActions}
-          </Stack.Toolbar.Menu>
+          <Stack.Toolbar.Menu icon="ellipsis">{commonActions}</Stack.Toolbar.Menu>
         </Stack.Toolbar>
       )}
     </>

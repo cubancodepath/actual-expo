@@ -1,17 +1,17 @@
-import { Pressable, View } from 'react-native';
+import { Pressable, View } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
   withSequence,
-} from 'react-native-reanimated';
-import { scheduleOnRN } from 'react-native-worklets';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { Ionicons } from '@expo/vector-icons';
-import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../providers/ThemeProvider';
-import { useBudgetStore } from '../../../stores/budgetStore';
-import { addMonths, formatMonth } from '../../../lib/date';
+} from "react-native-reanimated";
+import { scheduleOnRN } from "react-native-worklets";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
+import { useTheme } from "../../providers/ThemeProvider";
+import { useBudgetStore } from "../../../stores/budgetStore";
+import { addMonths, formatMonth } from "../../../lib/date";
 
 const SWIPE_THRESHOLD = 50;
 
@@ -65,8 +65,8 @@ export function MonthSelector() {
   return (
     <View
       style={{
-        flexDirection: 'row',
-        alignItems: 'center',
+        flexDirection: "row",
+        alignItems: "center",
         gap: spacing.xs,
       }}
     >
@@ -80,9 +80,9 @@ export function MonthSelector() {
             style={{
               color: colors.headerText,
               fontSize: 17,
-              fontWeight: '600',
+              fontWeight: "600",
               minWidth: 140,
-              textAlign: 'center',
+              textAlign: "center",
             }}
           >
             {formatMonth(month, i18n.language)}

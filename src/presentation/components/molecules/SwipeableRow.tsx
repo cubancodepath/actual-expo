@@ -1,5 +1,5 @@
-import { Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { Pressable, StyleSheet, View, type ViewStyle } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   interpolate,
   useAnimatedStyle,
@@ -7,12 +7,12 @@ import Animated, {
   useSharedValue,
   withSpring,
   withTiming,
-} from 'react-native-reanimated';
-import { scheduleOnRN } from 'react-native-worklets';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../providers/ThemeProvider';
+} from "react-native-reanimated";
+import { scheduleOnRN } from "react-native-worklets";
+import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
+import { useTranslation } from "react-i18next";
+import { useTheme } from "../../providers/ThemeProvider";
 
 const ACTION_WIDTH = 80;
 const SWIPE_THRESHOLD = ACTION_WIDTH * 0.8;
@@ -45,7 +45,7 @@ export function SwipeableRow({
   children,
   onDelete,
   onSwipeRight,
-  swipeRightIcon = 'checkmark-circle',
+  swipeRightIcon = "checkmark-circle",
   swipeRightColor,
   isFirst,
   isLast,
@@ -77,18 +77,18 @@ export function SwipeableRow({
   }
 
   function snapToClose() {
-    'worklet';
+    "worklet";
     translateX.value = reducedMotion ? 0 : withSpring(0, SPRING_CONFIG);
   }
 
   // Left-swipe helpers
   function snapToOpenLeft() {
-    'worklet';
+    "worklet";
     translateX.value = reducedMotion ? -ACTION_WIDTH : withSpring(-ACTION_WIDTH, SPRING_CONFIG);
   }
 
   function triggerDelete() {
-    'worklet';
+    "worklet";
     if (reducedMotion) {
       translateX.value = 0;
       scheduleOnRN(handleDelete);
@@ -102,12 +102,12 @@ export function SwipeableRow({
 
   // Right-swipe helpers
   function snapToOpenRight() {
-    'worklet';
+    "worklet";
     translateX.value = reducedMotion ? ACTION_WIDTH : withSpring(ACTION_WIDTH, SPRING_CONFIG);
   }
 
   function triggerRight() {
-    'worklet';
+    "worklet";
     if (reducedMotion) {
       translateX.value = 0;
       scheduleOnRN(handleSwipeRight);
@@ -227,20 +227,15 @@ export function SwipeableRow({
       swipeAmount,
       [0, ACTION_WIDTH, FULL_THRESHOLD],
       [CIRCLE_SIZE, CIRCLE_SIZE, FULL_THRESHOLD - 16],
-      'clamp',
+      "clamp",
     );
     const scale = interpolate(
       swipeAmount,
       [0, ACTION_WIDTH * 0.5, ACTION_WIDTH],
       [0.3, 0.7, 1],
-      'clamp',
+      "clamp",
     );
-    const opacity = interpolate(
-      swipeAmount,
-      [0, ACTION_WIDTH * 0.3],
-      [0, 1],
-      'clamp',
-    );
+    const opacity = interpolate(swipeAmount, [0, ACTION_WIDTH * 0.3], [0, 1], "clamp");
     return { width: pillWidth, transform: [{ scale }], opacity };
   });
 
@@ -250,7 +245,7 @@ export function SwipeableRow({
       swipeAmount,
       [ACTION_WIDTH, FULL_THRESHOLD],
       [0, -(FULL_THRESHOLD - CIRCLE_SIZE) / 2 + 16],
-      'clamp',
+      "clamp",
     );
     return { transform: [{ translateX: shift }] };
   });
@@ -272,20 +267,15 @@ export function SwipeableRow({
       swipeAmount,
       [0, ACTION_WIDTH, FULL_THRESHOLD],
       [CIRCLE_SIZE, CIRCLE_SIZE, FULL_THRESHOLD - 16],
-      'clamp',
+      "clamp",
     );
     const scale = interpolate(
       swipeAmount,
       [0, ACTION_WIDTH * 0.5, ACTION_WIDTH],
       [0.3, 0.7, 1],
-      'clamp',
+      "clamp",
     );
-    const opacity = interpolate(
-      swipeAmount,
-      [0, ACTION_WIDTH * 0.3],
-      [0, 1],
-      'clamp',
-    );
+    const opacity = interpolate(swipeAmount, [0, ACTION_WIDTH * 0.3], [0, 1], "clamp");
     return { width: pillWidth, transform: [{ scale }], opacity };
   });
 
@@ -295,7 +285,7 @@ export function SwipeableRow({
       swipeAmount,
       [ACTION_WIDTH, FULL_THRESHOLD],
       [0, (FULL_THRESHOLD - CIRCLE_SIZE) / 2 - 16],
-      'clamp',
+      "clamp",
     );
     return { transform: [{ translateX: shift }] };
   });
@@ -339,7 +329,7 @@ export function SwipeableRow({
               handleDelete();
             }}
             accessibilityRole="button"
-            accessibilityLabel={t('a11y.delete')}
+            accessibilityLabel={t("a11y.delete")}
           >
             <Animated.View style={deleteIconStyle}>
               <Ionicons name="trash-outline" size={20} color="#fff" />
@@ -350,9 +340,7 @@ export function SwipeableRow({
 
       {/* Swipeable content */}
       <GestureDetector gesture={pan}>
-        <Animated.View style={rowStyle}>
-          {children}
-        </Animated.View>
+        <Animated.View style={rowStyle}>{children}</Animated.View>
       </GestureDetector>
     </View>
   );
@@ -360,28 +348,28 @@ export function SwipeableRow({
 
 const styles = StyleSheet.create({
   container: {
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   deleteArea: {
-    position: 'absolute',
+    position: "absolute",
     right: 0,
     top: 0,
     bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   rightArea: {
-    position: 'absolute',
+    position: "absolute",
     left: 0,
     top: 0,
     bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   pill: {
     height: CIRCLE_SIZE,
     borderRadius: CIRCLE_SIZE / 2,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

@@ -13,7 +13,7 @@
 export type LimitDef = {
   amount: number;
   hold: boolean;
-  period: 'daily' | 'weekly' | 'monthly';
+  period: "daily" | "weekly" | "monthly";
   start?: string; // YYYY-MM-DD, required for weekly
 };
 
@@ -23,106 +23,106 @@ export type LimitDef = {
 
 /** Budget a fixed amount each month, optionally with a spending limit. */
 export type SimpleTemplate = {
-  type: 'simple';
+  type: "simple";
   monthly?: number; // amount in display units (not cents)
   limit?: LimitDef | null;
   priority: number;
-  directive: 'template';
+  directive: "template";
 };
 
 /** Balance target — shows goal indicator but does NOT budget anything. */
 export type GoalTemplate = {
-  type: 'goal';
+  type: "goal";
   amount: number; // target balance in display units
-  directive: 'goal';
+  directive: "goal";
 };
 
 /** Sinking fund — save a target amount BY a specific month. */
 export type ByTemplate = {
-  type: 'by';
+  type: "by";
   amount: number; // target in display units
   month: string; // YYYY-MM
   annual?: boolean;
   repeat?: number; // repeat period in months (or years if annual)
   priority: number;
-  directive: 'template';
+  directive: "template";
 };
 
 /** Budget based on average spending over the last N months. */
 export type AverageTemplate = {
-  type: 'average';
+  type: "average";
   numMonths: number;
   adjustment?: number;
-  adjustmentType?: 'percent' | 'fixed';
+  adjustmentType?: "percent" | "fixed";
   priority: number;
-  directive: 'template';
+  directive: "template";
 };
 
 /** Copy budget from N months ago. */
 export type CopyTemplate = {
-  type: 'copy';
+  type: "copy";
   lookBack: number;
   priority: number;
-  directive: 'template';
+  directive: "template";
 };
 
 /** Budget based on recurring periodic occurrences within the month. */
 export type PeriodicTemplate = {
-  type: 'periodic';
+  type: "periodic";
   amount: number; // per-occurrence amount in display units
-  period: { period: 'day' | 'week' | 'month' | 'year'; amount: number };
+  period: { period: "day" | "week" | "month" | "year"; amount: number };
   starting?: string; // YYYY-MM-DD
   limit?: LimitDef | null;
   priority: number;
-  directive: 'template';
+  directive: "template";
 };
 
 /** Distribute a target amount across a date range (from → month). */
 export type SpendTemplate = {
-  type: 'spend';
+  type: "spend";
   amount: number; // target in display units
   month: string; // YYYY-MM target month
   from: string; // YYYY-MM start month
   annual?: boolean;
   repeat?: number;
   priority: number;
-  directive: 'template';
+  directive: "template";
 };
 
 /** Budget a percentage of income (all or specific category). */
 export type PercentageTemplate = {
-  type: 'percentage';
+  type: "percentage";
   percent: number; // 0–100
   previous: boolean; // use previous month's income
   category: string; // category ID or 'all-income'
   priority: number;
-  directive: 'template';
+  directive: "template";
 };
 
 /** Distribute remaining budget by weight (processed AFTER priority templates). */
 export type RemainderTemplate = {
-  type: 'remainder';
+  type: "remainder";
   weight: number;
   limit?: LimitDef | null;
-  directive: 'template';
+  directive: "template";
   // No priority — processed post-priority
 };
 
 /** Refill category balance back to its limit amount. */
 export type RefillTemplate = {
-  type: 'refill';
+  type: "refill";
   priority: number;
-  directive: 'template';
+  directive: "template";
 };
 
 /** Standalone spending limit — caps budget from other templates. */
 export type LimitTemplate = {
-  type: 'limit';
+  type: "limit";
   amount: number; // display units
   hold: boolean;
-  period: 'daily' | 'weekly' | 'monthly';
+  period: "daily" | "weekly" | "monthly";
   start?: string; // YYYY-MM-DD, for weekly
-  directive: 'template';
+  directive: "template";
   // No priority — limit enforcement, not budgeting
 };
 

@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
-import { Keyboard, Pressable, ScrollView, View } from 'react-native';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import { useTranslation } from 'react-i18next';
+import { useEffect, useRef, useState } from "react";
+import { Keyboard, Pressable, ScrollView, View } from "react-native";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
+import { useTranslation } from "react-i18next";
 import Animated, {
   FadeIn,
   FadeOut,
@@ -11,19 +11,22 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
-} from 'react-native-reanimated';
-import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
-import { palette } from '../../../src/theme/colors';
-import { useBudgetStore } from '../../../src/stores/budgetStore';
-import { transferMultipleCategories } from '../../../src/budgets';
-import { Text } from '../../../src/presentation/components/atoms/Text';
-import { Amount } from '../../../src/presentation/components/atoms/Amount';
-import { Button } from '../../../src/presentation/components/atoms/Button';
-import { IconButton } from '../../../src/presentation/components/atoms/IconButton';
-import { CompactCurrencyInput, type CompactCurrencyInputRef } from '../../../src/presentation/components/atoms/CompactCurrencyInput';
-import { GlassButton } from '../../../src/presentation/components/atoms/GlassButton';
-import { CalculatorToolbar } from '../../../src/presentation/components/atoms/CalculatorToolbar';
-import { KeyboardToolbar } from '../../../src/presentation/components/molecules/KeyboardToolbar';
+} from "react-native-reanimated";
+import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
+import { palette } from "../../../src/theme/colors";
+import { useBudgetStore } from "../../../src/stores/budgetStore";
+import { transferMultipleCategories } from "../../../src/budgets";
+import { Text } from "../../../src/presentation/components/atoms/Text";
+import { Amount } from "../../../src/presentation/components/atoms/Amount";
+import { Button } from "../../../src/presentation/components/atoms/Button";
+import { IconButton } from "../../../src/presentation/components/atoms/IconButton";
+import {
+  CompactCurrencyInput,
+  type CompactCurrencyInputRef,
+} from "../../../src/presentation/components/atoms/CompactCurrencyInput";
+import { GlassButton } from "../../../src/presentation/components/atoms/GlassButton";
+import { CalculatorToolbar } from "../../../src/presentation/components/atoms/CalculatorToolbar";
+import { KeyboardToolbar } from "../../../src/presentation/components/molecules/KeyboardToolbar";
 
 type SourceEntry = {
   id: string;
@@ -33,7 +36,7 @@ type SourceEntry = {
   amount: number;
 };
 
-type MoveDirection = 'to' | 'from';
+type MoveDirection = "to" | "from";
 
 function SourceRow({
   source,
@@ -52,16 +55,15 @@ function SourceRow({
   const inputRef = useRef<CompactCurrencyInputRef>(null);
   // "to" → picked categories give money (balance decreases)
   // "from" → picked categories receive money (balance increases)
-  const remainingBalance = direction === 'to'
-    ? source.balance - source.amount
-    : source.balance + source.amount;
+  const remainingBalance =
+    direction === "to" ? source.balance - source.amount : source.balance + source.amount;
 
   return (
     <Pressable
       onPress={() => inputRef.current?.focus()}
       style={{
-        flexDirection: 'row',
-        alignItems: 'center',
+        flexDirection: "row",
+        alignItems: "center",
         paddingLeft: spacing.md,
         paddingRight: spacing.xs,
         paddingVertical: spacing.sm,
@@ -76,7 +78,9 @@ function SourceRow({
         ref={inputRef}
         value={source.amount}
         onChangeValue={(cents) => onAmountChange(source.id, cents)}
-        onFocus={() => { if (inputRef.current) onInputFocus?.(inputRef.current); }}
+        onFocus={() => {
+          if (inputRef.current) onInputFocus?.(inputRef.current);
+        }}
       />
 
       <View
@@ -86,7 +90,7 @@ function SourceRow({
           paddingHorizontal: 8,
           paddingVertical: 2,
           marginLeft: spacing.sm,
-          alignItems: 'center',
+          alignItems: "center",
         }}
       >
         <Amount
@@ -129,34 +133,36 @@ function DirectionToggle({
   toLabel: string;
 }) {
   const { colors } = useTheme();
-  const progress = useSharedValue(direction === 'to' ? 0 : 1);
+  const progress = useSharedValue(direction === "to" ? 0 : 1);
 
   useEffect(() => {
-    progress.value = withTiming(direction === 'to' ? 0 : 1, { duration: 250 });
+    progress.value = withTiming(direction === "to" ? 0 : 1, { duration: 250 });
   }, [direction]);
 
   const thumbStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateY: interpolate(progress.value, [0, 1], [0, THUMB_TRAVEL]) },
-    ],
+    transform: [{ translateY: interpolate(progress.value, [0, 1], [0, THUMB_TRAVEL]) }],
   }));
 
   const arrowStyle = useAnimatedStyle(() => ({
-    transform: [
-      { rotate: `${interpolate(progress.value, [0, 1], [0, 180])}deg` },
-    ],
+    transform: [{ rotate: `${interpolate(progress.value, [0, 1], [0, 180])}deg` }],
   }));
 
   return (
-    <View style={{ alignItems: 'center', gap: 6 }}>
-      <Pressable onPress={() => { Haptics.selectionAsync(); onToggle(); }} hitSlop={8}>
+    <View style={{ alignItems: "center", gap: 6 }}>
+      <Pressable
+        onPress={() => {
+          Haptics.selectionAsync();
+          onToggle();
+        }}
+        hitSlop={8}
+      >
         <View
           style={{
             width: TRACK_WIDTH,
             height: TRACK_HEIGHT,
             borderRadius: TRACK_WIDTH / 2,
-            backgroundColor: 'rgba(255,255,255,0.3)',
-            alignItems: 'center',
+            backgroundColor: "rgba(255,255,255,0.3)",
+            alignItems: "center",
             paddingTop: 3,
           }}
         >
@@ -166,9 +172,9 @@ function DirectionToggle({
                 width: THUMB_SIZE,
                 height: THUMB_SIZE,
                 borderRadius: THUMB_SIZE / 2,
-                backgroundColor: '#ffffff',
-                alignItems: 'center',
-                justifyContent: 'center',
+                backgroundColor: "#ffffff",
+                alignItems: "center",
+                justifyContent: "center",
               },
               thumbStyle,
             ]}
@@ -179,9 +185,13 @@ function DirectionToggle({
           </Animated.View>
         </View>
       </Pressable>
-      <Animated.View key={direction} entering={FadeIn.duration(200)} exiting={FadeOut.duration(100)}>
-        <Text variant="captionSm" color="rgba(255,255,255,0.8)" style={{ fontWeight: '600' }}>
-          {direction === 'to' ? fromLabel : toLabel}
+      <Animated.View
+        key={direction}
+        entering={FadeIn.duration(200)}
+        exiting={FadeOut.duration(100)}
+      >
+        <Text variant="captionSm" color="rgba(255,255,255,0.8)" style={{ fontWeight: "600" }}>
+          {direction === "to" ? fromLabel : toLabel}
         </Text>
       </Animated.View>
     </View>
@@ -193,7 +203,7 @@ function DirectionToggle({
 // ---------------------------------------------------------------------------
 
 export default function MoveMoneyScreen() {
-  const { t } = useTranslation('budget');
+  const { t } = useTranslation("budget");
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const router = useRouter();
   const { catId, catName, balance } = useLocalSearchParams<{
@@ -207,7 +217,7 @@ export default function MoveMoneyScreen() {
   const coverTarget = useBudgetStore((s) => s.coverTarget);
   const setCoverTarget = useBudgetStore((s) => s.setCoverTarget);
 
-  const [direction, setDirection] = useState<MoveDirection>('to');
+  const [direction, setDirection] = useState<MoveDirection>("to");
   const [sources, setSources] = useState<SourceEntry[]>([]);
   const [saving, setSaving] = useState(false);
   const focusedInputRef = useRef<CompactCurrencyInputRef | null>(null);
@@ -215,10 +225,8 @@ export default function MoveMoneyScreen() {
   const balanceCents = Number(balance);
   const totalAmount = sources.reduce((sum, s) => sum + s.amount, 0);
   // Projected balance: adding money (to) increases it, moving out (from) decreases it
-  const projectedBalance = direction === 'to'
-    ? balanceCents + totalAmount
-    : balanceCents - totalAmount;
-
+  const projectedBalance =
+    direction === "to" ? balanceCents + totalAmount : balanceCents - totalAmount;
 
   // Open picker after mount transition completes
   const [didAutoOpen, setDidAutoOpen] = useState(false);
@@ -238,7 +246,7 @@ export default function MoveMoneyScreen() {
       if (sources.some((s) => s.id === srcId)) return;
       setSources((prev) => [
         ...prev,
-        { id: srcId, name: srcName, balance: srcBalance, groupName: '', amount: 0 },
+        { id: srcId, name: srcName, balance: srcBalance, groupName: "", amount: 0 },
       ]);
     }
   }, [coverTarget]);
@@ -248,15 +256,13 @@ export default function MoveMoneyScreen() {
   }
 
   function handleAmountChange(id: string, cents: number) {
-    setSources((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, amount: cents } : s)),
-    );
+    setSources((prev) => prev.map((s) => (s.id === id ? { ...s, amount: cents } : s)));
   }
 
   function handleAddCategory() {
-    const excludeIds = sources.map((s) => s.id).join(',');
+    const excludeIds = sources.map((s) => s.id).join(",");
     router.push({
-      pathname: '/(auth)/budget/move-category-picker',
+      pathname: "/(auth)/budget/move-category-picker",
       params: { excludeIds, moveCatId: catId, direction },
     });
   }
@@ -271,7 +277,7 @@ export default function MoveMoneyScreen() {
         month,
         catId,
         entries.map((s) => ({ categoryId: s.id, amountCents: s.amount, name: s.name })),
-        direction === 'to' ? 'to' : 'from',
+        direction === "to" ? "to" : "from",
         catName,
       );
       await loadBudget();
@@ -282,144 +288,148 @@ export default function MoveMoneyScreen() {
   }
 
   // Header color reflects budget health of the category
-  const headerBg = projectedBalance > 0
-    ? colors.positiveFill
-    : projectedBalance < 0
-      ? colors.negativeFill
-      : colors.primary;
+  const headerBg =
+    projectedBalance > 0
+      ? colors.positiveFill
+      : projectedBalance < 0
+        ? colors.negativeFill
+        : colors.primary;
   const headerText = palette.white;
 
   return (
     <>
-    <ScrollView
-      style={{ backgroundColor: colors.pageBackground }}
-      contentContainerStyle={{ paddingBottom: spacing.xl }}
-      keyboardShouldPersistTaps="handled"
-    >
-      <Stack.Screen options={{ headerShown: false }} />
-
-      {/* Custom header with rounded bottom corners */}
-      <View
-        style={{
-          backgroundColor: headerBg,
-          paddingTop: 56,
-          paddingBottom: spacing.xxxl,
-          paddingHorizontal: spacing.lg,
-          borderBottomLeftRadius: br.lg,
-          borderBottomRightRadius: br.lg,
-          alignItems: 'center',
-          gap: spacing.sm,
-        }}
+      <ScrollView
+        style={{ backgroundColor: colors.pageBackground }}
+        contentContainerStyle={{ paddingBottom: spacing.xl }}
+        keyboardShouldPersistTaps="handled"
       >
-        {/* Close button — top left */}
-        <View style={{ position: 'absolute', top: 16, left: spacing.md }}>
-          <GlassButton icon="xmark" onPress={() => router.back()} color={headerText} />
-        </View>
+        <Stack.Screen options={{ headerShown: false }} />
 
-        <Text variant="headingSm" color={headerText} align="center">
-          {catName}
-        </Text>
-
-        {/* Balance pill — shows projected balance after move */}
+        {/* Custom header with rounded bottom corners */}
         <View
           style={{
-            backgroundColor: 'rgba(255,255,255,0.2)',
-            borderRadius: br.full,
-            paddingHorizontal: 12,
-            paddingVertical: 4,
+            backgroundColor: headerBg,
+            paddingTop: 56,
+            paddingBottom: spacing.xxxl,
+            paddingHorizontal: spacing.lg,
+            borderBottomLeftRadius: br.lg,
+            borderBottomRightRadius: br.lg,
+            alignItems: "center",
+            gap: spacing.sm,
           }}
         >
-          <Amount
-            value={projectedBalance}
-            variant="body"
-            color={headerText}
-            weight="700"
+          {/* Close button — top left */}
+          <View style={{ position: "absolute", top: 16, left: spacing.md }}>
+            <GlassButton icon="xmark" onPress={() => router.back()} color={headerText} />
+          </View>
+
+          <Text variant="headingSm" color={headerText} align="center">
+            {catName}
+          </Text>
+
+          {/* Balance pill — shows projected balance after move */}
+          <View
+            style={{
+              backgroundColor: "rgba(255,255,255,0.2)",
+              borderRadius: br.full,
+              paddingHorizontal: 12,
+              paddingVertical: 4,
+            }}
+          >
+            <Amount value={projectedBalance} variant="body" color={headerText} weight="700" />
+          </View>
+
+          {/* Animated direction toggle */}
+          <DirectionToggle
+            direction={direction}
+            onToggle={() => setDirection((d) => (d === "to" ? "from" : "to"))}
+            fromLabel={t("from")}
+            toLabel={t("to")}
           />
         </View>
 
-        {/* Animated direction toggle */}
-        <DirectionToggle
-          direction={direction}
-          onToggle={() => setDirection((d) => (d === 'to' ? 'from' : 'to'))}
-          fromLabel={t('from')}
-          toLabel={t('to')}
-        />
-      </View>
-
-      {/* Source card — overlaps header bottom edge */}
-      <View style={{ marginTop: -20, zIndex: 1, paddingHorizontal: spacing.lg }}>
-        <View
-          style={{
-            backgroundColor: colors.cardBackground,
-            borderRadius: br.lg,
-            borderWidth: bw.thin,
-            borderColor: colors.cardBorder,
-            overflow: 'hidden',
-          }}
-        >
-          {sources.map((source, index) => (
-            <View key={source.id}>
-              <SourceRow
-                source={source}
-                direction={direction}
-                onAmountChange={handleAmountChange}
-                onRemove={handleRemoveSource}
-                onInputFocus={(ref) => { focusedInputRef.current = ref; }}
-              />
-              {(index < sources.length - 1 || true) && (
-                <View style={{ height: bw.thin, backgroundColor: colors.divider, marginHorizontal: spacing.md }} />
-              )}
-            </View>
-          ))}
-
-          {/* Add another */}
-          <Pressable
-            onPress={handleAddCategory}
-            style={({ pressed }) => [
-              {
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'center',
-                paddingVertical: spacing.md,
-                gap: spacing.xs,
-              },
-              pressed && { opacity: 0.6 },
-            ]}
+        {/* Source card — overlaps header bottom edge */}
+        <View style={{ marginTop: -20, zIndex: 1, paddingHorizontal: spacing.lg }}>
+          <View
+            style={{
+              backgroundColor: colors.cardBackground,
+              borderRadius: br.lg,
+              borderWidth: bw.thin,
+              borderColor: colors.cardBorder,
+              overflow: "hidden",
+            }}
           >
-            <Ionicons name="add-circle" size={20} color={colors.primary} />
-            <Text variant="body" color={colors.primary} style={{ fontWeight: '600' }}>
-              {sources.length === 0 ? t('addCategory') : t('addAnother')}
-            </Text>
-          </Pressable>
-        </View>
-      </View>
+            {sources.map((source, index) => (
+              <View key={source.id}>
+                <SourceRow
+                  source={source}
+                  direction={direction}
+                  onAmountChange={handleAmountChange}
+                  onRemove={handleRemoveSource}
+                  onInputFocus={(ref) => {
+                    focusedInputRef.current = ref;
+                  }}
+                />
+                {(index < sources.length - 1 || true) && (
+                  <View
+                    style={{
+                      height: bw.thin,
+                      backgroundColor: colors.divider,
+                      marginHorizontal: spacing.md,
+                    }}
+                  />
+                )}
+              </View>
+            ))}
 
-      {/* Move button */}
-      <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.xl }}>
-        <Button
-          title={saving ? t('movingEllipsis') : t('move')}
-          variant="primary"
-          loading={saving}
-          disabled={totalAmount === 0}
-          onPress={handleMove}
-          style={{ borderRadius: br.lg }}
+            {/* Add another */}
+            <Pressable
+              onPress={handleAddCategory}
+              style={({ pressed }) => [
+                {
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  paddingVertical: spacing.md,
+                  gap: spacing.xs,
+                },
+                pressed && { opacity: 0.6 },
+              ]}
+            >
+              <Ionicons name="add-circle" size={20} color={colors.primary} />
+              <Text variant="body" color={colors.primary} style={{ fontWeight: "600" }}>
+                {sources.length === 0 ? t("addCategory") : t("addAnother")}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+
+        {/* Move button */}
+        <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.xl }}>
+          <Button
+            title={saving ? t("movingEllipsis") : t("move")}
+            variant="primary"
+            loading={saving}
+            disabled={totalAmount === 0}
+            onPress={handleMove}
+            style={{ borderRadius: br.lg }}
+          />
+        </View>
+      </ScrollView>
+      <KeyboardToolbar>
+        <CalculatorToolbar
+          onOperator={(op) => focusedInputRef.current?.injectOperator(op)}
+          onEvaluate={() => focusedInputRef.current?.evaluate()}
         />
-      </View>
-    </ScrollView>
-    <KeyboardToolbar>
-      <CalculatorToolbar
-        onOperator={(op) => focusedInputRef.current?.injectOperator(op)}
-        onEvaluate={() => focusedInputRef.current?.evaluate()}
-      />
-      <View style={{ flex: 1 }} />
-      <GlassButton
-        icon="checkmark"
-        iconSize={16}
-        variant="tinted"
-        tintColor={colors.primary}
-        onPress={() => Keyboard.dismiss()}
-      />
-    </KeyboardToolbar>
+        <View style={{ flex: 1 }} />
+        <GlassButton
+          icon="checkmark"
+          iconSize={16}
+          variant="tinted"
+          tintColor={colors.primary}
+          onPress={() => Keyboard.dismiss()}
+        />
+      </KeyboardToolbar>
     </>
   );
 }

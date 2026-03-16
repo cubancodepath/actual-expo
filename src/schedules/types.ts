@@ -2,28 +2,22 @@
 
 export type RecurPattern = {
   value: number;
-  type: 'SU' | 'MO' | 'TU' | 'WE' | 'TH' | 'FR' | 'SA' | 'day';
+  type: "SU" | "MO" | "TU" | "WE" | "TH" | "FR" | "SA" | "day";
 };
 
 export type RecurConfig = {
-  frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  frequency: "daily" | "weekly" | "monthly" | "yearly";
   interval?: number;
   patterns?: RecurPattern[];
   skipWeekend?: boolean;
   start: string; // 'YYYY-MM-DD'
-  endMode?: 'never' | 'after_n_occurrences' | 'on_date';
+  endMode?: "never" | "after_n_occurrences" | "on_date";
   endOccurrences?: number;
   endDate?: string; // 'YYYY-MM-DD'
-  weekendSolveMode?: 'before' | 'after';
+  weekendSolveMode?: "before" | "after";
 };
 
-export type ScheduleStatus =
-  | 'upcoming'
-  | 'due'
-  | 'paid'
-  | 'missed'
-  | 'scheduled'
-  | 'completed';
+export type ScheduleStatus = "upcoming" | "due" | "paid" | "missed" | "scheduled" | "completed";
 
 export type Schedule = {
   id: string;
@@ -44,5 +38,5 @@ export type Schedule = {
   _conditions: RuleCondition[];
 };
 
-import type { RuleCondition, RuleAction } from '../rules/types';
+import type { RuleCondition, RuleAction } from "../rules/types";
 export type { RuleCondition, RuleAction };

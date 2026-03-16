@@ -238,8 +238,7 @@ async function runDbTests(): Promise<TestResult[]> {
   }
 
   try {
-    const { createCategoryGroup, createCategory, getCategories } =
-      await import("./src/categories");
+    const { createCategoryGroup, createCategory, getCategories } = await import("./src/categories");
     const groupId = await createCategoryGroup({ name: "Food" });
     const catId = await createCategory({
       name: "Groceries",
@@ -262,8 +261,7 @@ async function runDbTests(): Promise<TestResult[]> {
 
   try {
     const { getAccounts } = await import("./src/accounts");
-    const { addTransaction, getTransactions } =
-      await import("./src/transactions");
+    const { addTransaction, getTransactions } = await import("./src/transactions");
     const accounts = await getAccounts();
     if (accounts.length === 0) throw new Error("no accounts");
     const acctId = accounts[0].id;
@@ -302,10 +300,9 @@ export default function App() {
     // Bootstrap stores
     usePrefsStore.getState().loadToken().catch(console.warn);
 
-    Promise.all([
-      runCrdtTests().then(setCrdtResults),
-      runDbTests().then(setDbResults),
-    ]).finally(() => setRunning(false));
+    Promise.all([runCrdtTests().then(setCrdtResults), runDbTests().then(setDbResults)]).finally(
+      () => setRunning(false),
+    );
   }, []);
 
   const allResults = [...crdtResults, ...dbResults];
@@ -321,12 +318,7 @@ export default function App() {
         <Text style={styles.running}>Running…</Text>
       ) : (
         <>
-          <Text
-            style={[
-              styles.summary,
-              passed === total ? styles.allOk : styles.someFail,
-            ]}
-          >
+          <Text style={[styles.summary, passed === total ? styles.allOk : styles.someFail]}>
             {passed}/{total} tests passed
           </Text>
 

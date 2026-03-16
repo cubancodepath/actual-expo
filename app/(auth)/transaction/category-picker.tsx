@@ -1,27 +1,28 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Pressable, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useCategoriesStore } from '../../../src/stores/categoriesStore';
-import { usePickerStore } from '../../../src/stores/pickerStore';
-import { getCategoryBalancesForMonth } from '../../../src/budgets';
-import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
-import { Text } from '../../../src/presentation/components/atoms/Text';
-import { Amount } from '../../../src/presentation/components/atoms/Amount';
-import { GlassButton } from '../../../src/presentation/components/atoms/GlassButton';
-import { CategoryPickerList, type GroupedCategory } from '../../../src/presentation/components';
-import { currentMonth } from '../../../src/lib/date';
+import { useEffect, useMemo, useState } from "react";
+import { Pressable, View } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { useCategoriesStore } from "../../../src/stores/categoriesStore";
+import { usePickerStore } from "../../../src/stores/pickerStore";
+import { getCategoryBalancesForMonth } from "../../../src/budgets";
+import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
+import { Text } from "../../../src/presentation/components/atoms/Text";
+import { Amount } from "../../../src/presentation/components/atoms/Amount";
+import { GlassButton } from "../../../src/presentation/components/atoms/GlassButton";
+import { CategoryPickerList, type GroupedCategory } from "../../../src/presentation/components";
+import { currentMonth } from "../../../src/lib/date";
 
 export default function CategoryPickerScreen() {
-  const { month, selectedId, amount, payeeId, payeeName, transactionId, hideSplit } = useLocalSearchParams<{
-    month?: string;
-    selectedId?: string;
-    amount?: string;
-    payeeId?: string;
-    payeeName?: string;
-    transactionId?: string;
-    hideSplit?: string;
-  }>();
+  const { month, selectedId, amount, payeeId, payeeName, transactionId, hideSplit } =
+    useLocalSearchParams<{
+      month?: string;
+      selectedId?: string;
+      amount?: string;
+      payeeId?: string;
+      payeeName?: string;
+      transactionId?: string;
+      hideSplit?: string;
+    }>();
   const router = useRouter();
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const { groups, categories, load } = useCategoriesStore();
@@ -63,13 +64,13 @@ export default function CategoryPickerScreen() {
 
   function handleSplit() {
     router.push({
-      pathname: './split',
+      pathname: "./split",
       params: {
-        amount: amount ?? '0',
-        payeeId: payeeId ?? '',
-        payeeName: payeeName ?? '',
-        transactionId: transactionId ?? '',
-        fromCategoryPicker: '1',
+        amount: amount ?? "0",
+        payeeId: payeeId ?? "",
+        payeeName: payeeName ?? "",
+        transactionId: transactionId ?? "",
+        fromCategoryPicker: "1",
       },
     });
   }
@@ -79,9 +80,9 @@ export default function CategoryPickerScreen() {
       {/* Custom header */}
       <View
         style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
           paddingHorizontal: spacing.lg,
           paddingTop: spacing.lg,
           paddingBottom: spacing.sm,
@@ -92,7 +93,11 @@ export default function CategoryPickerScreen() {
         <Text variant="headingSm" color={colors.headerText}>
           Category
         </Text>
-        {hideSplit === '1' ? <View style={{ width: 48 }} /> : <GlassButton label="Split" onPress={handleSplit} />}
+        {hideSplit === "1" ? (
+          <View style={{ width: 48 }} />
+        ) : (
+          <GlassButton label="Split" onPress={handleSplit} />
+        )}
       </View>
       <CategoryPickerList
         groups={groupedCategories}
@@ -108,29 +113,27 @@ export default function CategoryPickerScreen() {
               borderRadius: br.lg,
               borderWidth: bw.thin,
               borderColor: colors.cardBorder,
-              overflow: 'hidden',
+              overflow: "hidden",
             }}
           >
             <Pressable
               style={({ pressed }) => [
                 {
-                  flexDirection: 'row' as const,
-                  alignItems: 'center' as const,
+                  flexDirection: "row" as const,
+                  alignItems: "center" as const,
                   paddingHorizontal: spacing.lg,
                   paddingVertical: spacing.md,
                   minHeight: 44,
                 },
                 pressed && { opacity: 0.7 },
               ]}
-              onPress={() => select(null, '')}
+              onPress={() => select(null, "")}
             >
               <Text variant="body" color={colors.textMuted} style={{ flex: 1 }}>
                 No category
               </Text>
-              <View style={{ width: 20, alignItems: 'center' }}>
-                {noneSelected && (
-                  <Ionicons name="checkmark" size={20} color={colors.primary} />
-                )}
+              <View style={{ width: 20, alignItems: "center" }}>
+                {noneSelected && <Ionicons name="checkmark" size={20} color={colors.primary} />}
               </View>
             </Pressable>
           </View>
@@ -149,12 +152,15 @@ export default function CategoryPickerScreen() {
           return (
             <>
               {balance !== undefined && (
-                <Amount value={balance} variant="caption" color={balanceColor} style={{ marginRight: spacing.sm }} />
+                <Amount
+                  value={balance}
+                  variant="caption"
+                  color={balanceColor}
+                  style={{ marginRight: spacing.sm }}
+                />
               )}
-              <View style={{ width: 20, alignItems: 'center' }}>
-                {isSelected && (
-                  <Ionicons name="checkmark" size={20} color={colors.primary} />
-                )}
+              <View style={{ width: 20, alignItems: "center" }}>
+                {isSelected && <Ionicons name="checkmark" size={20} color={colors.primary} />}
               </View>
             </>
           );

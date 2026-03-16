@@ -1,9 +1,9 @@
-import { useMemo, useState, type ReactNode } from 'react';
-import { FlatList, Pressable, View } from 'react-native';
-import { useTheme } from '../../providers/ThemeProvider';
-import { Text } from '../atoms/Text';
-import { RowSeparator } from '../atoms/RowSeparator';
-import { SearchBar } from './SearchBar';
+import { useMemo, useState, type ReactNode } from "react";
+import { FlatList, Pressable, View } from "react-native";
+import { useTheme } from "../../providers/ThemeProvider";
+import { Text } from "../atoms/Text";
+import { RowSeparator } from "../atoms/RowSeparator";
+import { SearchBar } from "./SearchBar";
 
 // ── Public types ──────────────────────────────────────────────
 
@@ -40,15 +40,15 @@ export type CategoryPickerListProps = {
 
 // ── Internal types ────────────────────────────────────────────
 
-type SectionHeaderItem = { type: 'section-header'; title: string; key: string };
+type SectionHeaderItem = { type: "section-header"; title: string; key: string };
 type CategoryRowItem = {
-  type: 'category';
+  type: "category";
   cat: PickerCategory;
   isFirst: boolean;
   isLast: boolean;
   key: string;
 };
-type ExtraItem = { type: 'extra'; key: string };
+type ExtraItem = { type: "extra"; key: string };
 type ListItem = SectionHeaderItem | CategoryRowItem | ExtraItem;
 
 // ── Component ─────────────────────────────────────────────────
@@ -58,13 +58,13 @@ export function CategoryPickerList({
   groups,
   onSelect,
   renderRight,
-  searchPlaceholder = 'Search categories...',
-  emptyMessage = 'No categories available',
+  searchPlaceholder = "Search categories...",
+  emptyMessage = "No categories available",
   listHeaderExtra,
   autoFocusSearch,
 }: CategoryPickerListProps) {
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
 
   const items = useMemo<ListItem[]>(() => {
     const query = search.toLowerCase().trim();
@@ -75,10 +75,10 @@ export function CategoryPickerList({
         return c.name.toLowerCase().includes(query) || g.groupName.toLowerCase().includes(query);
       });
       if (cats.length === 0) continue;
-      result.push({ type: 'section-header', title: g.groupName, key: `header-${g.groupId}` });
+      result.push({ type: "section-header", title: g.groupName, key: `header-${g.groupId}` });
       cats.forEach((cat, i) => {
         result.push({
-          type: 'category',
+          type: "category",
           cat,
           isFirst: i === 0,
           isLast: i === cats.length - 1,
@@ -92,7 +92,7 @@ export function CategoryPickerList({
   // listHeaderExtra is rendered as a scrollable item (index 1), not inside the sticky header
   const dataWithExtra = useMemo(() => {
     if (!listHeaderExtra) return items;
-    return [{ type: 'extra' as const, key: '__extra__' }, ...items];
+    return [{ type: "extra" as const, key: "__extra__" }, ...items];
   }, [items, listHeaderExtra]);
 
   // stickyHeaderIndices=[0] always targets the ListHeaderComponent
@@ -104,7 +104,9 @@ export function CategoryPickerList({
       keyboardShouldPersistTaps="handled"
       stickyHeaderIndices={[0]}
       ListHeaderComponent={
-        <View style={{ backgroundColor: colors.pageBackground, paddingTop: title ? spacing.xl : 0 }}>
+        <View
+          style={{ backgroundColor: colors.pageBackground, paddingTop: title ? spacing.xl : 0 }}
+        >
           {title ? (
             <Text
               variant="bodyLg"
@@ -123,10 +125,10 @@ export function CategoryPickerList({
         </View>
       }
       renderItem={({ item }) => {
-        if (item.type === 'extra') {
+        if (item.type === "extra") {
           return <>{listHeaderExtra}</>;
         }
-        if (item.type === 'section-header') {
+        if (item.type === "section-header") {
           return (
             <View
               style={{
@@ -139,7 +141,7 @@ export function CategoryPickerList({
               <Text
                 variant="captionSm"
                 color={colors.textMuted}
-                style={{ textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: '700' }}
+                style={{ textTransform: "uppercase", letterSpacing: 0.5, fontWeight: "700" }}
               >
                 {item.title}
               </Text>
@@ -162,14 +164,14 @@ export function CategoryPickerList({
               borderTopRightRadius: isFirst ? br.md : 0,
               borderBottomLeftRadius: isLast ? br.md : 0,
               borderBottomRightRadius: isLast ? br.md : 0,
-              overflow: 'hidden' as const,
+              overflow: "hidden" as const,
             }}
           >
             <Pressable
               style={({ pressed }) => [
                 {
-                  flexDirection: 'row' as const,
-                  alignItems: 'center' as const,
+                  flexDirection: "row" as const,
+                  alignItems: "center" as const,
                   paddingHorizontal: spacing.md,
                   paddingVertical: 12,
                   minHeight: 44,
@@ -193,10 +195,12 @@ export function CategoryPickerList({
         );
       }}
       ListEmptyComponent={
-        <View style={{ alignItems: 'center', marginTop: 60, gap: 8 }}>
-          <Text variant="bodyLg" color={colors.textSecondary}>No categories available</Text>
+        <View style={{ alignItems: "center", marginTop: 60, gap: 8 }}>
+          <Text variant="bodyLg" color={colors.textSecondary}>
+            No categories available
+          </Text>
           <Text variant="bodySm" color={colors.textMuted}>
-            {search ? 'No matches found' : emptyMessage}
+            {search ? "No matches found" : emptyMessage}
           </Text>
         </View>
       }

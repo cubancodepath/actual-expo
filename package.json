@@ -1,6 +1,7 @@
 {
   "name": "actual-expo",
   "version": "1.0.0",
+  "private": true,
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
@@ -11,6 +12,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "build:preview": "eas build --profile preview --platform ios --local --non-interactive",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "fmt": "oxfmt",
+    "fmt:check": "oxfmt --check",
     "e2e": "maestro test maestro/",
     "e2e:flow": "maestro test"
   },
@@ -70,8 +75,9 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
+    "oxfmt": "^0.41.0",
+    "oxlint": "^1.56.0",
     "typescript": "~5.9.2",
     "vitest": "^4.0.18"
-  },
-  "private": true
+  }
 }

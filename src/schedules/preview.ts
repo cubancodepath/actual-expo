@@ -6,20 +6,20 @@
  * so users can see what's coming and take actions (post, skip).
  */
 
-import { addDays, startOfDay } from 'date-fns';
-import { getSchedules } from './index';
-import { getStatus, getScheduledAmount } from './helpers';
-import { getNextOccurrence, getDateWithSkippedWeekend, parseDate, dayFromDate } from './recurrence';
-import { todayStr, strToInt } from '../lib/date';
-import { runQuery } from '../db';
-import type { Schedule, RecurConfig, ScheduleStatus } from './types';
+import { addDays, startOfDay } from "date-fns";
+import { getSchedules } from "./index";
+import { getStatus, getScheduledAmount } from "./helpers";
+import { getNextOccurrence, getDateWithSkippedWeekend, parseDate, dayFromDate } from "./recurrence";
+import { todayStr, strToInt } from "../lib/date";
+import { runQuery } from "../db";
+import type { Schedule, RecurConfig, ScheduleStatus } from "./types";
 
 export type PreviewTransaction = {
-  id: string;           // 'preview/{scheduleId}/{dateInt}'
+  id: string; // 'preview/{scheduleId}/{dateInt}'
   scheduleId: string;
   payeeName: string;
   amount: number;
-  date: number;         // YYYYMMDD int
+  date: number; // YYYYMMDD int
   status: ScheduleStatus;
   isRecurring: boolean;
 };
@@ -33,9 +33,7 @@ export async function getPreviewTransactionsForAccount(
   upcomingDays = 7,
 ): Promise<PreviewTransaction[]> {
   const schedules = await getSchedules();
-  const active = schedules.filter(
-    (s) => !s.completed && !s.tombstone && s._account === accountId,
-  );
+  const active = schedules.filter((s) => !s.completed && !s.tombstone && s._account === accountId);
 
   return buildPreviews(active, upcomingDays);
 }
@@ -43,13 +41,9 @@ export async function getPreviewTransactionsForAccount(
 /**
  * Compute upcoming preview transactions across ALL accounts.
  */
-export async function getAllPreviewTransactions(
-  upcomingDays = 7,
-): Promise<PreviewTransaction[]> {
+export async function getAllPreviewTransactions(upcomingDays = 7): Promise<PreviewTransaction[]> {
   const schedules = await getSchedules();
-  const active = schedules.filter(
-    (s) => !s.completed && !s.tombstone && s._account != null,
-  );
+  const active = schedules.filter((s) => !s.completed && !s.tombstone && s._account != null);
 
   return buildPreviews(active, upcomingDays);
 }
@@ -73,20 +67,16 @@ async function buildPreviews(
 
   for (const schedule of active) {
     const hasLinkedTxn = hasTrans.has(schedule.id);
-    const status = getStatus(
-      schedule.next_date,
-      schedule.completed,
-      hasLinkedTxn,
-    );
+    const status = getStatus(schedule.next_date, schedule.completed, hasLinkedTxn);
 
     // Only show upcoming, due, or missed — skip paid/completed
-    if (status === 'paid' || status === 'completed') continue;
+    if (status === "paid" || status === "completed") continue;
 
     const nextDate = schedule.next_date;
     if (!nextDate) continue;
 
     // Check if within upcoming window or missed/due
-    if (status !== 'missed' && status !== 'due' && nextDate > dayFromDate(boundary)) {
+    if (status !== "missed" && status !== "due" && nextDate > dayFromDate(boundary)) {
       continue;
     }
 
@@ -95,14 +85,12 @@ async function buildPreviews(
 
     const amount = getScheduledAmount(schedule._amount);
     const isRecurring =
-      schedule._date != null &&
-      typeof schedule._date === 'object' &&
-      'frequency' in schedule._date;
+      schedule._date != null && typeof schedule._date === "object" && "frequency" in schedule._date;
 
     previews.push({
       id: `preview/${schedule.id}/${dateInt}`,
       scheduleId: schedule.id,
-      payeeName: payeeNames.get(schedule._payee ?? '') ?? '(no payee)',
+      payeeName: payeeNames.get(schedule._payee ?? "") ?? "(no payee)",
       amount,
       date: dateInt,
       status,
@@ -128,9 +116,7 @@ async function buildPreviews(
   return previews;
 }
 
-async function getSchedulesWithTransactions(
-  schedules: Schedule[],
-): Promise<Set<string>> {
+async function getSchedulesWithTransactions(schedules: Schedule[]): Promise<Set<string>> {
   if (schedules.length === 0) return new Set();
 
   // Build a map of schedule_id → next_date (as int) for date-aware matching
@@ -143,7 +129,7 @@ async function getSchedulesWithTransactions(
   }
 
   const ids = schedules.map((s) => s.id);
-  const placeholders = ids.map(() => '?').join(',');
+  const placeholders = ids.map(() => "?").join(",");
   const rows = await runQuery<{ schedule: string; date: number }>(
     `SELECT schedule, date FROM transactions
      WHERE schedule IN (${placeholders}) AND tombstone = 0`,
@@ -161,17 +147,13 @@ async function getSchedulesWithTransactions(
   return result;
 }
 
-async function getPayeeNames(
-  schedules: Schedule[],
-): Promise<Map<string, string>> {
+async function getPayeeNames(schedules: Schedule[]): Promise<Map<string, string>> {
   const payeeIds = [
-    ...new Set(
-      schedules.map((s) => s._payee).filter((id): id is string => id != null),
-    ),
+    ...new Set(schedules.map((s) => s._payee).filter((id): id is string => id != null)),
   ];
   if (payeeIds.length === 0) return new Map();
 
-  const placeholders = payeeIds.map(() => '?').join(',');
+  const placeholders = payeeIds.map(() => "?").join(",");
   const rows = await runQuery<{ id: string; name: string; transfer_acct: string | null }>(
     `SELECT p.id,
             COALESCE(a.name, p.name) AS name,

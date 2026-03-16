@@ -1,14 +1,14 @@
-import { Pressable, ScrollView, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useAccountsStore } from '../../../src/stores/accountsStore';
-import { usePickerStore } from '../../../src/stores/pickerStore';
-import { groupAccounts } from '../../../src/accounts';
-import { useTheme, useThemedStyles } from '../../../src/presentation/providers/ThemeProvider';
-import { Text } from '../../../src/presentation/components/atoms/Text';
-import { GlassButton } from '../../../src/presentation/components/atoms/GlassButton';
-import { Amount } from '../../../src/presentation/components/atoms/Amount';
-import type { Theme } from '../../../src/theme';
+import { Pressable, ScrollView, View } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { useAccountsStore } from "../../../src/stores/accountsStore";
+import { usePickerStore } from "../../../src/stores/pickerStore";
+import { groupAccounts } from "../../../src/accounts";
+import { useTheme, useThemedStyles } from "../../../src/presentation/providers/ThemeProvider";
+import { Text } from "../../../src/presentation/components/atoms/Text";
+import { GlassButton } from "../../../src/presentation/components/atoms/GlassButton";
+import { Amount } from "../../../src/presentation/components/atoms/Amount";
+import type { Theme } from "../../../src/theme";
 
 export default function AccountPickerScreen() {
   const { selectedId } = useLocalSearchParams<{ selectedId?: string }>();
@@ -29,9 +29,9 @@ export default function AccountPickerScreen() {
     <View style={styles.container}>
       <View
         style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
           paddingHorizontal: spacing.lg,
           paddingTop: spacing.lg,
           paddingBottom: spacing.sm,
@@ -44,56 +44,50 @@ export default function AccountPickerScreen() {
         </Text>
         <View style={{ width: 48 }} />
       </View>
-      <ScrollView
-        contentContainerStyle={styles.list}
-      >
-      {groups.map((group) => (
-        <View key={group.type}>
-          <View style={styles.sectionHeader}>
-            <Text
-              variant="captionSm"
-              color={colors.textMuted}
-              style={styles.sectionText}
-            >
-              {group.label.toUpperCase()}
-            </Text>
-          </View>
-          <View style={styles.groupCard}>
-            {group.accounts.map((a, i) => {
-              const isSelected = a.id === selectedId;
-              const isLast = i === group.accounts.length - 1;
-              return (
-                <Pressable
-                  key={a.id}
-                  style={({ pressed }) => [
-                    styles.item,
-                    pressed && styles.pressed,
-                  ]}
-                  onPress={() => select(a.id, a.name)}
-                >
-                  <View style={styles.checkSlot}>
-                    {isSelected && (
-                      <Ionicons name="checkmark" size={20} color={colors.primary} />
-                    )}
-                  </View>
-                  <Text
-                    variant="body"
-                    color={colors.textPrimary}
-                    style={styles.itemLabel}
+      <ScrollView contentContainerStyle={styles.list}>
+        {groups.map((group) => (
+          <View key={group.type}>
+            <View style={styles.sectionHeader}>
+              <Text variant="captionSm" color={colors.textMuted} style={styles.sectionText}>
+                {group.label.toUpperCase()}
+              </Text>
+            </View>
+            <View style={styles.groupCard}>
+              {group.accounts.map((a, i) => {
+                const isSelected = a.id === selectedId;
+                const isLast = i === group.accounts.length - 1;
+                return (
+                  <Pressable
+                    key={a.id}
+                    style={({ pressed }) => [styles.item, pressed && styles.pressed]}
+                    onPress={() => select(a.id, a.name)}
                   >
-                    {a.name}
-                  </Text>
-                  <Amount value={a.balance ?? 0} variant="bodySm" />
-                  {!isLast && (
-                    <View style={{ position: 'absolute', bottom: 0, left: spacing.lg, right: spacing.lg, height: bw.thin, backgroundColor: colors.divider }} />
-                  )}
-                </Pressable>
-              );
-            })}
+                    <View style={styles.checkSlot}>
+                      {isSelected && <Ionicons name="checkmark" size={20} color={colors.primary} />}
+                    </View>
+                    <Text variant="body" color={colors.textPrimary} style={styles.itemLabel}>
+                      {a.name}
+                    </Text>
+                    <Amount value={a.balance ?? 0} variant="bodySm" />
+                    {!isLast && (
+                      <View
+                        style={{
+                          position: "absolute",
+                          bottom: 0,
+                          left: spacing.lg,
+                          right: spacing.lg,
+                          height: bw.thin,
+                          backgroundColor: colors.divider,
+                        }}
+                      />
+                    )}
+                  </Pressable>
+                );
+              })}
+            </View>
           </View>
-        </View>
-      ))}
-    </ScrollView>
+        ))}
+      </ScrollView>
     </View>
   );
 }
@@ -112,7 +106,7 @@ const createStyles = (theme: Theme) => ({
     paddingBottom: theme.spacing.sm,
   },
   sectionText: {
-    fontWeight: '700' as const,
+    fontWeight: "700" as const,
     letterSpacing: 0.8,
   },
   groupCard: {
@@ -121,11 +115,11 @@ const createStyles = (theme: Theme) => ({
     borderRadius: theme.borderRadius.lg,
     borderWidth: theme.borderWidth.thin,
     borderColor: theme.colors.cardBorder,
-    overflow: 'hidden' as const,
+    overflow: "hidden" as const,
   },
   item: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.md,
     minHeight: 44,
@@ -135,7 +129,7 @@ const createStyles = (theme: Theme) => ({
   },
   checkSlot: {
     width: 24,
-    alignItems: 'center' as const,
+    alignItems: "center" as const,
     marginRight: theme.spacing.sm,
   },
   itemLabel: {

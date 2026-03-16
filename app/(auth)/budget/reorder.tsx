@@ -1,12 +1,5 @@
 import { useCallback, useMemo } from "react";
-import {
-  ActionSheetIOS,
-  Alert,
-  Platform,
-  Pressable,
-  ScrollView,
-  View,
-} from "react-native";
+import { ActionSheetIOS, Alert, Platform, Pressable, ScrollView, View } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import Animated, { FadeIn } from "react-native-reanimated";
@@ -27,7 +20,7 @@ type GroupWithCats = {
 };
 
 export default function ReorderBudgetScreen() {
-  const { t } = useTranslation('budget');
+  const { t } = useTranslation("budget");
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const router = useRouter();
   const scrollableRef = useAnimatedRef<ScrollView>();
@@ -98,11 +91,7 @@ export default function ReorderBudgetScreen() {
     await load();
   }
 
-  async function handleCategoryDragEnd(
-    groupId: string,
-    movedKey: string,
-    data: Category[],
-  ) {
+  async function handleCategoryDragEnd(groupId: string, movedKey: string, data: Category[]) {
     const original = categoriesByGroup.get(groupId) ?? [];
     if (original.every((c, i) => c.id === data[i]?.id)) return;
     const idx = data.findIndex((c) => c.id === movedKey);
@@ -122,7 +111,7 @@ export default function ReorderBudgetScreen() {
       const options = [...otherGroups.map((g) => g.name), "Cancel"];
       ActionSheetIOS.showActionSheetWithOptions(
         {
-          title: t('moveCategoryTo', { name: cat.name }),
+          title: t("moveCategoryTo", { name: cat.name }),
           options,
           cancelButtonIndex: options.length - 1,
         },
@@ -134,7 +123,7 @@ export default function ReorderBudgetScreen() {
         },
       );
     } else {
-      Alert.alert(t('moveCategoryTo', { name: cat.name }), undefined, [
+      Alert.alert(t("moveCategoryTo", { name: cat.name }), undefined, [
         ...otherGroups.map((g) => ({
           text: g.name,
           onPress: async () => {
@@ -142,20 +131,14 @@ export default function ReorderBudgetScreen() {
             await load();
           },
         })),
-        { text: t('cancel'), style: "cancel" as const },
+        { text: t("cancel"), style: "cancel" as const },
       ]);
     }
   }
 
   // ---------- Reorder row ----------
 
-  function ReorderCategoryRow({
-    cat,
-    sortable = true,
-  }: {
-    cat: Category;
-    sortable?: boolean;
-  }) {
+  function ReorderCategoryRow({ cat, sortable = true }: { cat: Category; sortable?: boolean }) {
     const icon = (
       <Ionicons
         name="reorder-three-outline"
@@ -167,11 +150,7 @@ export default function ReorderBudgetScreen() {
     const canMoveToOtherGroup = expenseGroups.length > 1;
     return (
       <Pressable
-        onLongPress={
-          canMoveToOtherGroup
-            ? () => handleMoveCategoryToGroup(cat)
-            : undefined
-        }
+        onLongPress={canMoveToOtherGroup ? () => handleMoveCategoryToGroup(cat) : undefined}
         delayLongPress={500}
         style={{
           flexDirection: "row",
@@ -195,13 +174,7 @@ export default function ReorderBudgetScreen() {
 
   // ---------- Group card ----------
 
-  function GroupCardContent({
-    gwc,
-    showHandle,
-  }: {
-    gwc: GroupWithCats;
-    showHandle: boolean;
-  }) {
+  function GroupCardContent({ gwc, showHandle }: { gwc: GroupWithCats; showHandle: boolean }) {
     return (
       <View
         style={{
@@ -257,12 +230,8 @@ export default function ReorderBudgetScreen() {
               borderTopColor: colors.divider,
             }}
           >
-            <Text
-              variant="bodySm"
-              color={colors.textMuted}
-              style={{ fontStyle: "italic" }}
-            >
-              {t('noCategories')}
+            <Text variant="bodySm" color={colors.textMuted} style={{ fontStyle: "italic" }}>
+              {t("noCategories")}
             </Text>
           </View>
         )}
@@ -277,9 +246,7 @@ export default function ReorderBudgetScreen() {
             overDrag="vertical"
             activeItemScale={1.02}
             activeItemOpacity={0.9}
-            onDragStart={() =>
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
-            }
+            onDragStart={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)}
             onOrderChange={() => Haptics.selectionAsync()}
             onDragEnd={({ key, data }) => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -294,9 +261,7 @@ export default function ReorderBudgetScreen() {
   }
 
   const renderGroupCard = useCallback(
-    ({ item }: { item: GroupWithCats }) => (
-      <GroupCardContent gwc={item} showHandle />
-    ),
+    ({ item }: { item: GroupWithCats }) => <GroupCardContent gwc={item} showHandle />,
     [colors, spacing, br, bw, categoriesByGroup],
   );
 
@@ -340,7 +305,7 @@ export default function ReorderBudgetScreen() {
                     fontWeight: "700",
                   }}
                 >
-                  {t('expenses')}
+                  {t("expenses")}
                 </Text>
               </View>
               <Sortable.Grid
@@ -353,9 +318,7 @@ export default function ReorderBudgetScreen() {
                 overDrag="vertical"
                 activeItemScale={1.02}
                 activeItemOpacity={0.9}
-                onDragStart={() =>
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
-                }
+                onDragStart={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)}
                 onOrderChange={() => Haptics.selectionAsync()}
                 onDragEnd={({ key, data }) => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -383,7 +346,7 @@ export default function ReorderBudgetScreen() {
                     fontWeight: "700",
                   }}
                 >
-                  {t('income')}
+                  {t("income")}
                 </Text>
               </View>
               {incomeGroupCards.map((gwc) => (

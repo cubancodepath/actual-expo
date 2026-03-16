@@ -1,7 +1,7 @@
-import { batchMessages } from '../sync';
-import { createAccount } from '../accounts';
-import { createCategoryGroup, createCategory } from '../categories';
-import { refreshAllRegisteredStores } from '../stores/storeRegistry';
+import { batchMessages } from "../sync";
+import { createAccount } from "../accounts";
+import { createCategoryGroup, createCategory } from "../categories";
+import { refreshAllRegisteredStores } from "../stores/storeRegistry";
 
 // ---------------------------------------------------------------------------
 // Default category data — matches what Actual Budget server bundles
@@ -9,32 +9,30 @@ import { refreshAllRegisteredStores } from '../stores/storeRegistry';
 
 export const DEFAULT_CATEGORY_GROUPS = [
   {
-    key: 'usual',
-    name: 'Usual Expenses',
+    key: "usual",
+    name: "Usual Expenses",
     is_income: false,
     categories: [
-      { key: 'food', name: 'Food' },
-      { key: 'general', name: 'General' },
-      { key: 'bills', name: 'Bills' },
-      { key: 'bills_flexible', name: 'Bills (Flexible)' },
+      { key: "food", name: "Food" },
+      { key: "general", name: "General" },
+      { key: "bills", name: "Bills" },
+      { key: "bills_flexible", name: "Bills (Flexible)" },
     ],
   },
   {
-    key: 'income',
-    name: 'Income',
+    key: "income",
+    name: "Income",
     is_income: true,
     categories: [
-      { key: 'income', name: 'Income' },
-      { key: 'starting_balances', name: 'Starting Balances' },
+      { key: "income", name: "Income" },
+      { key: "starting_balances", name: "Starting Balances" },
     ],
   },
   {
-    key: 'investments',
-    name: 'Investments and Savings',
+    key: "investments",
+    name: "Investments and Savings",
     is_income: false,
-    categories: [
-      { key: 'savings', name: 'Savings' },
-    ],
+    categories: [{ key: "savings", name: "Savings" }],
   },
 ] as const;
 
@@ -71,7 +69,7 @@ export async function seedLocalBudget(opts: {
     let groupSort = 1000;
 
     for (const group of DEFAULT_CATEGORY_GROUPS) {
-      const hasSelected = group.categories.some(c => selectedCategories[c.key]);
+      const hasSelected = group.categories.some((c) => selectedCategories[c.key]);
 
       // Always create Income group (required by getStartingBalancePayee)
       if (!hasSelected && !group.is_income) {
@@ -89,7 +87,7 @@ export async function seedLocalBudget(opts: {
       let catSort = 1000;
       for (const cat of group.categories) {
         // Always create "Starting Balances" (required by createAccount)
-        if (!selectedCategories[cat.key] && cat.key !== 'starting_balances') {
+        if (!selectedCategories[cat.key] && cat.key !== "starting_balances") {
           catSort += 1000;
           continue;
         }
@@ -107,10 +105,7 @@ export async function seedLocalBudget(opts: {
 
   // Create account separately — it queries the DB for the "Starting Balances"
   // category and payee, which must already be committed.
-  await createAccount(
-    { name: accountName, offbudget: false },
-    startingBalance,
-  );
+  await createAccount({ name: accountName, offbudget: false }, startingBalance);
 
   await refreshAllRegisteredStores();
 }

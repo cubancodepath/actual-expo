@@ -1,5 +1,5 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
-import { Pressable, TextInput, View, type ViewStyle } from 'react-native';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { Pressable, TextInput, View, type ViewStyle } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -7,16 +7,16 @@ import Animated, {
   withSequence,
   withTiming,
   cancelAnimation,
-} from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
-import { useTheme, useThemedStyles } from '../../providers/ThemeProvider';
-import { Text } from './Text';
-import { useExpressionMode } from '../../hooks/useExpressionMode';
-import { MAX_CENTS, formatCents, formatExpression } from '../../../lib/currency';
-import { formatAmountParts } from '../../../lib/format';
-import { CurrencySymbol } from './CurrencySymbol';
-import { usePreferencesStore } from '../../../stores/preferencesStore';
-import type { Theme } from '../../../theme';
+} from "react-native-reanimated";
+import * as Haptics from "expo-haptics";
+import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
+import { Text } from "./Text";
+import { useExpressionMode } from "../../hooks/useExpressionMode";
+import { MAX_CENTS, formatCents, formatExpression } from "../../../lib/currency";
+import { formatAmountParts } from "../../../lib/format";
+import { CurrencySymbol } from "./CurrencySymbol";
+import { usePreferencesStore } from "../../../stores/preferencesStore";
+import type { Theme } from "../../../theme";
 
 function triggerHaptic() {
   try {
@@ -40,7 +40,7 @@ interface CurrencyInputProps {
   /** Called with new amount in cents */
   onChangeValue: (cents: number) => void;
   /** 'expense' shows -, 'income' shows + */
-  type?: 'expense' | 'income';
+  type?: "expense" | "income";
   /** Auto-focus the input on mount */
   autoFocus?: boolean;
   /** Additional style for the container */
@@ -59,15 +59,18 @@ interface CurrencyInputProps {
  * Supports inline calculator via ref: injectOperator() and evaluate().
  */
 export const CurrencyInput = forwardRef<CurrencyInputRef, CurrencyInputProps>(
-  function CurrencyInput({
-    value,
-    onChangeValue,
-    type = 'expense',
-    autoFocus = false,
-    style,
-    color: colorOverride,
-    compact = false,
-  }, ref) {
+  function CurrencyInput(
+    {
+      value,
+      onChangeValue,
+      type = "expense",
+      autoFocus = false,
+      style,
+      color: colorOverride,
+      compact = false,
+    },
+    ref,
+  ) {
     const theme = useTheme();
     const styles = useThemedStyles(createStyles);
     const inputRef = useRef<TextInput>(null);
@@ -115,14 +118,18 @@ export const CurrencyInput = forwardRef<CurrencyInputRef, CurrencyInputProps>(
     }));
 
     // Subscribe to format prefs for reactivity (formatCents reads module-level config)
-    usePreferencesStore((s) => `${s.numberFormat}:${s.hideFraction}:${s.defaultCurrencyCode}:${s.defaultCurrencyCustomSymbol}:${s.currencySymbolPosition}:${s.currencySpaceBetweenAmountAndSymbol}`);
+    usePreferencesStore(
+      (s) =>
+        `${s.numberFormat}:${s.hideFraction}:${s.defaultCurrencyCode}:${s.defaultCurrencyCustomSymbol}:${s.currencySymbolPosition}:${s.currencySpaceBetweenAmountAndSymbol}`,
+    );
 
-    const amountColor = colorOverride ?? (type === 'expense' ? theme.colors.negative : theme.colors.positive);
-    const prefix = type === 'expense' ? '-' : '';
+    const amountColor =
+      colorOverride ?? (type === "expense" ? theme.colors.negative : theme.colors.positive);
+    const prefix = type === "expense" ? "-" : "";
 
     function handleChangeTextNormal(text: string) {
-      const digits = text.replace(/\D/g, '');
-      const newCents = Math.min(parseInt(digits || '0', 10), MAX_CENTS);
+      const digits = text.replace(/\D/g, "");
+      const newCents = Math.min(parseInt(digits || "0", 10), MAX_CENTS);
 
       if (newCents === 0 && value === 0 && digits.length < buffer.length) {
         triggerHaptic();
@@ -138,46 +145,60 @@ export const CurrencyInput = forwardRef<CurrencyInputRef, CurrencyInputProps>(
       setFocused(false);
     }
 
-    const currentInputValue = expr.expressionMode
-      ? expr.expressionInputValue
-      : buffer;
+    const currentInputValue = expr.expressionMode ? expr.expressionInputValue : buffer;
 
-    const compactOverride = compact ? {
-      fontSize: 20,
-      lineHeight: 26,
-    } : undefined;
+    const compactOverride = compact
+      ? {
+          fontSize: 20,
+          lineHeight: 26,
+        }
+      : undefined;
     const compactCursor = compact ? { height: 18 } : undefined;
     const compactContainer = compact ? { paddingVertical: theme.spacing.sm } : undefined;
 
     return (
-      <Pressable style={[styles.container, compactContainer, style]} onPress={() => inputRef.current?.focus()}>
+      <Pressable
+        style={[styles.container, compactContainer, style]}
+        onPress={() => inputRef.current?.focus()}
+      >
         <View style={styles.display}>
-          {!expr.expressionMode && (() => {
-            const parts = formatAmountParts(value, false);
-            const fontSize = compact ? 20 : 32;
-            return (
-              <>
-                <Text style={[styles.prefix, { color: amountColor }, compactOverride]}>
-                  {prefix}
-                </Text>
-                {parts.svgSymbol && parts.position === 'before' && (
-                  <>
-                    <CurrencySymbol symbol={parts.symbol} svgSymbol={parts.svgSymbol} fontSize={fontSize} color={amountColor} />
-                    {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
-                  </>
-                )}
-                <Text style={[styles.amount, { color: amountColor }, compactOverride]}>
-                  {parts.svgSymbol ? parts.number : formatCents(value)}
-                </Text>
-                {parts.svgSymbol && parts.position === 'after' && (
-                  <>
-                    {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
-                    <CurrencySymbol symbol={parts.symbol} svgSymbol={parts.svgSymbol} fontSize={fontSize} color={amountColor} />
-                  </>
-                )}
-              </>
-            );
-          })()}
+          {!expr.expressionMode &&
+            (() => {
+              const parts = formatAmountParts(value, false);
+              const fontSize = compact ? 20 : 32;
+              return (
+                <>
+                  <Text style={[styles.prefix, { color: amountColor }, compactOverride]}>
+                    {prefix}
+                  </Text>
+                  {parts.svgSymbol && parts.position === "before" && (
+                    <>
+                      <CurrencySymbol
+                        symbol={parts.symbol}
+                        svgSymbol={parts.svgSymbol}
+                        fontSize={fontSize}
+                        color={amountColor}
+                      />
+                      {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
+                    </>
+                  )}
+                  <Text style={[styles.amount, { color: amountColor }, compactOverride]}>
+                    {parts.svgSymbol ? parts.number : formatCents(value)}
+                  </Text>
+                  {parts.svgSymbol && parts.position === "after" && (
+                    <>
+                      {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
+                      <CurrencySymbol
+                        symbol={parts.symbol}
+                        svgSymbol={parts.svgSymbol}
+                        fontSize={fontSize}
+                        color={amountColor}
+                      />
+                    </>
+                  )}
+                </>
+              );
+            })()}
           {expr.expressionMode && (
             <Text
               style={[styles.amount, { color: theme.colors.primary }, compactOverride]}
@@ -187,7 +208,12 @@ export const CurrencyInput = forwardRef<CurrencyInputRef, CurrencyInputProps>(
             </Text>
           )}
           <Animated.View
-            style={[styles.cursor, { backgroundColor: theme.colors.primary }, cursorStyle, compactCursor]}
+            style={[
+              styles.cursor,
+              { backgroundColor: theme.colors.primary },
+              cursorStyle,
+              compactCursor,
+            ]}
           />
         </View>
 
@@ -196,7 +222,7 @@ export const CurrencyInput = forwardRef<CurrencyInputRef, CurrencyInputProps>(
           <Text
             variant="body"
             color={theme.colors.textMuted}
-            style={{ fontVariant: ['tabular-nums'], marginTop: 2, textAlign: 'center' }}
+            style={{ fontVariant: ["tabular-nums"], marginTop: 2, textAlign: "center" }}
           >
             = {formatCents(expr.previewCents)}
           </Text>
@@ -222,25 +248,25 @@ export const CurrencyInput = forwardRef<CurrencyInputRef, CurrencyInputProps>(
 
 const createStyles = (theme: Theme) => ({
   container: {
-    alignItems: 'center' as const,
+    alignItems: "center" as const,
     paddingVertical: theme.spacing.xl,
   },
   display: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
   prefix: {
     fontSize: 32,
     lineHeight: 40,
-    fontWeight: '700' as const,
+    fontWeight: "700" as const,
     marginRight: theme.spacing.xs,
   },
   amount: {
     fontSize: 32,
     lineHeight: 40,
-    fontWeight: '700' as const,
-    fontVariant: ['tabular-nums'] as ('tabular-nums')[],
+    fontWeight: "700" as const,
+    fontVariant: ["tabular-nums"] as "tabular-nums"[],
   },
   cursor: {
     width: 2,
@@ -249,7 +275,7 @@ const createStyles = (theme: Theme) => ({
     borderRadius: 1,
   },
   hiddenInput: {
-    position: 'absolute' as const,
+    position: "absolute" as const,
     opacity: 0,
     height: 0,
     width: 0,

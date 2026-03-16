@@ -1,14 +1,14 @@
-import { useEffect } from 'react';
-import { View, type ViewStyle } from 'react-native';
+import { useEffect } from "react";
+import { View, type ViewStyle } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
   useReducedMotion,
   Easing,
-} from 'react-native-reanimated';
-import Svg, { Defs, Pattern, Line, Rect } from 'react-native-svg';
-import { useTheme } from '../../providers/ThemeProvider';
+} from "react-native-reanimated";
+import Svg, { Defs, Pattern, Line, Rect } from "react-native-svg";
+import { useTheme } from "../../providers/ThemeProvider";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -64,7 +64,7 @@ const TIMING_CONFIG = { duration: 350, easing: Easing.out(Easing.cubic) };
 
 /** Adjust a hex color's brightness. factor > 0 = lighten, < 0 = darken. */
 function adjustBrightness(hex: string, factor: number): string {
-  const clean = hex.replace('#', '').slice(0, 6);
+  const clean = hex.replace("#", "").slice(0, 6);
   const r = parseInt(clean.slice(0, 2), 16);
   const g = parseInt(clean.slice(2, 4), 16);
   const b = parseInt(clean.slice(4, 6), 16);
@@ -74,7 +74,7 @@ function adjustBrightness(hex: string, factor: number): string {
     return Math.max(0, Math.round(c * (1 + factor)));
   };
 
-  return `#${adjust(r).toString(16).padStart(2, '0')}${adjust(g).toString(16).padStart(2, '0')}${adjust(b).toString(16).padStart(2, '0')}`;
+  return `#${adjust(r).toString(16).padStart(2, "0")}${adjust(g).toString(16).padStart(2, "0")}${adjust(b).toString(16).padStart(2, "0")}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -97,15 +97,11 @@ export function ProgressBar({
   const availableWidth = useSharedValue(available);
 
   useEffect(() => {
-    spentWidth.value = reducedMotion
-      ? spent
-      : withTiming(spent, TIMING_CONFIG);
+    spentWidth.value = reducedMotion ? spent : withTiming(spent, TIMING_CONFIG);
   }, [spent, reducedMotion]);
 
   useEffect(() => {
-    availableWidth.value = reducedMotion
-      ? available
-      : withTiming(available, TIMING_CONFIG);
+    availableWidth.value = reducedMotion ? available : withTiming(available, TIMING_CONFIG);
   }, [available, reducedMotion]);
 
   const spentStyle = useAnimatedStyle(() => ({
@@ -132,7 +128,7 @@ export function ProgressBar({
           height,
           borderRadius,
           backgroundColor: colors.divider,
-          overflow: 'hidden',
+          overflow: "hidden",
         },
         style,
       ]}
@@ -141,7 +137,7 @@ export function ProgressBar({
         /* Overspent: full bar in status color (static, no stripes) */
         <View
           style={{
-            position: 'absolute',
+            position: "absolute",
             left: 0,
             top: 0,
             bottom: 0,
@@ -157,7 +153,7 @@ export function ProgressBar({
             <Animated.View
               style={[
                 {
-                  position: 'absolute',
+                  position: "absolute",
                   left: 0,
                   top: 0,
                   bottom: 0,
@@ -174,12 +170,12 @@ export function ProgressBar({
             <Animated.View
               style={[
                 {
-                  position: 'absolute',
+                  position: "absolute",
                   left: 0,
                   top: 0,
                   bottom: 0,
                   borderRadius,
-                  overflow: 'hidden',
+                  overflow: "hidden",
                   backgroundColor: spentBgColor,
                 },
                 spentStyle,

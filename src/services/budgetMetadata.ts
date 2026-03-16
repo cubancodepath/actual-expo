@@ -6,8 +6,8 @@ import {
   makeDirectoryAsync,
   deleteAsync,
   getInfoAsync,
-} from 'expo-file-system/legacy';
-import { randomUUID } from 'expo-crypto';
+} from "expo-file-system/legacy";
+import { randomUUID } from "expo-crypto";
 
 // ---------------------------------------------------------------------------
 // Constants & path helpers
@@ -118,9 +118,9 @@ export async function listLocalBudgets(): Promise<BudgetMetadata[]> {
 /** Generate a unique budget directory name from a human-readable name. */
 export function idFromBudgetName(name: string): string {
   const sanitized = name
-    .replace(/[^a-zA-Z0-9-_ ]/g, '')
+    .replace(/[^a-zA-Z0-9-_ ]/g, "")
     .trim()
-    .replace(/\s+/g, '-')
+    .replace(/\s+/g, "-")
     .toLowerCase()
     .slice(0, 50);
   const suffix = randomUUID().slice(0, 7);

@@ -5,7 +5,7 @@
  * user switches budgets. scheduleFullSync timeout is also managed here.
  */
 
-import { clearUndo } from './undo';
+import { clearUndo } from "./undo";
 
 let _syncGeneration = 0;
 let _switchingBudget = false;
@@ -50,12 +50,12 @@ export function setActiveSyncPromise(p: Promise<void> | null): void {
  */
 export async function waitForSyncToSettle(): Promise<void> {
   if (_activeSyncPromise) {
-    if (__DEV__) console.log('[sync] waitForSyncToSettle: waiting for active sync…');
+    if (__DEV__) console.log("[sync] waitForSyncToSettle: waiting for active sync…");
     await _activeSyncPromise.catch(() => {});
     _activeSyncPromise = null;
-    if (__DEV__) console.log('[sync] waitForSyncToSettle: sync settled');
+    if (__DEV__) console.log("[sync] waitForSyncToSettle: sync settled");
   } else {
-    if (__DEV__) console.log('[sync] waitForSyncToSettle: no active sync');
+    if (__DEV__) console.log("[sync] waitForSyncToSettle: no active sync");
   }
 }
 

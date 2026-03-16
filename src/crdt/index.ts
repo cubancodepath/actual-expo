@@ -1,4 +1,4 @@
-import * as merkle from './merkle';
+import * as merkle from "./merkle";
 
 export { merkle };
 export {
@@ -10,4 +10,4 @@ export {
   deserializeClock,
   type Clock,
   Timestamp,
-} from './timestamp';
+} from "./timestamp";

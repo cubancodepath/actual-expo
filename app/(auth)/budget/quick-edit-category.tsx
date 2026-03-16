@@ -1,23 +1,23 @@
-import { useEffect, useRef, useState } from 'react';
-import { Alert, Pressable, TextInput, View } from 'react-native';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../../src/presentation/providers/ThemeProvider';
-import { useCategoriesStore } from '../../../src/stores/categoriesStore';
-import { useBudgetStore } from '../../../src/stores/budgetStore';
-import { useUndoStore } from '../../../src/stores/undoStore';
-import { Text } from '../../../src/presentation/components/atoms/Text';
-import { Button } from '../../../src/presentation/components/atoms/Button';
-import { IconButton } from '../../../src/presentation/components/atoms/IconButton';
-import { parseGoalDef } from '../../../src/goals';
-import { describeTemplate, translateDescription } from '../../../src/goals/describe';
-import i18n from '../../../src/i18n/config';
-import { useFeatureFlag } from '../../../src/hooks/useFeatureFlag';
+import { useEffect, useRef, useState } from "react";
+import { Alert, Pressable, TextInput, View } from "react-native";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
+import { useTheme } from "../../../src/presentation/providers/ThemeProvider";
+import { useCategoriesStore } from "../../../src/stores/categoriesStore";
+import { useBudgetStore } from "../../../src/stores/budgetStore";
+import { useUndoStore } from "../../../src/stores/undoStore";
+import { Text } from "../../../src/presentation/components/atoms/Text";
+import { Button } from "../../../src/presentation/components/atoms/Button";
+import { IconButton } from "../../../src/presentation/components/atoms/IconButton";
+import { parseGoalDef } from "../../../src/goals";
+import { describeTemplate, translateDescription } from "../../../src/goals/describe";
+import i18n from "../../../src/i18n/config";
+import { useFeatureFlag } from "../../../src/hooks/useFeatureFlag";
 
 export default function QuickEditCategoryScreen() {
-  const { t } = useTranslation('budget');
+  const { t } = useTranslation("budget");
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
-  const goalsEnabled = useFeatureFlag('goalTemplatesEnabled');
+  const goalsEnabled = useFeatureFlag("goalTemplatesEnabled");
   const router = useRouter();
   const { categoryId } = useLocalSearchParams<{ categoryId: string }>();
 
@@ -26,7 +26,7 @@ export default function QuickEditCategoryScreen() {
   const coverTarget = useBudgetStore((s) => s.coverTarget);
   const setCoverTarget = useBudgetStore((s) => s.setCoverTarget);
 
-  const [name, setName] = useState('');
+  const [name, setName] = useState("");
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(false);
@@ -48,7 +48,7 @@ export default function QuickEditCategoryScreen() {
     setEditing(false);
     if (!categoryId || saving) return;
     if (!trimmed || trimmed === category?.name) {
-      setName(category?.name ?? '');
+      setName(category?.name ?? "");
       return;
     }
     setSaving(true);
@@ -64,17 +64,17 @@ export default function QuickEditCategoryScreen() {
   function handleDelete() {
     if (!categoryId) return;
     Alert.alert(
-      t('deleteCategoryTitle'),
-      t('deleteCategoryWithTransfers', { name: category?.name ?? t('category') }),
+      t("deleteCategoryTitle"),
+      t("deleteCategoryWithTransfers", { name: category?.name ?? t("category") }),
       [
-        { text: t('cancel'), style: 'cancel' },
+        { text: t("cancel"), style: "cancel" },
         {
-          text: t('selectCategory'),
+          text: t("selectCategory"),
           onPress: () => {
             setCoverTarget(null);
             setPendingDelete(true);
             router.push({
-              pathname: '/(auth)/budget/delete-category-picker',
+              pathname: "/(auth)/budget/delete-category-picker",
               params: { excludeIds: categoryId, moveCatId: categoryId },
             });
           },
@@ -91,21 +91,21 @@ export default function QuickEditCategoryScreen() {
         await useCategoriesStore.getState().deleteCategory(categoryId, coverTarget.catId);
         await useCategoriesStore.getState().load();
         await useBudgetStore.getState().load();
-        useUndoStore.getState().showUndo(t('categoryDeleted'));
+        useUndoStore.getState().showUndo(t("categoryDeleted"));
         setCoverTarget(null);
         setPendingDelete(false);
         router.back();
       } catch {
         setPendingDelete(false);
         setCoverTarget(null);
-        Alert.alert(t('errorTitle'), t('couldNotDeleteCategory'));
+        Alert.alert(t("errorTitle"), t("couldNotDeleteCategory"));
       }
     })();
   }, [pendingDelete, coverTarget, categoryId, setCoverTarget, router]);
 
   const labelStyle = {
     marginBottom: spacing.xs,
-    textTransform: 'uppercase' as const,
+    textTransform: "uppercase" as const,
     letterSpacing: 0.5,
   };
 
@@ -126,14 +126,14 @@ export default function QuickEditCategoryScreen() {
 
       {/* Category Name */}
       <Text variant="caption" color={colors.textMuted} style={labelStyle}>
-        {t('categoryName')}
+        {t("categoryName")}
       </Text>
       {editing ? (
         <TextInput
           ref={inputRef}
           value={name}
           onChangeText={setName}
-          placeholder={t('categoryNamePlaceholder')}
+          placeholder={t("categoryNamePlaceholder")}
           placeholderTextColor={colors.textMuted}
           autoFocus
           returnKeyType="done"
@@ -164,68 +164,78 @@ export default function QuickEditCategoryScreen() {
           }}
         >
           <Text variant="body" color={colors.textPrimary} numberOfLines={1}>
-            {name || t('categoryNamePlaceholder')}
+            {name || t("categoryNamePlaceholder")}
           </Text>
         </Pressable>
       )}
 
       {/* Target */}
       {goalsEnabled && (
-      <>
-      <Text variant="caption" color={colors.textMuted} style={[labelStyle, { marginTop: spacing.lg }]}>
-        {t('target')}
-      </Text>
-      <View
-        style={{
-          backgroundColor: colors.cardBackground,
-          borderRadius: br.lg,
-          borderWidth: bw.thin,
-          borderColor: colors.divider,
-          padding: spacing.md,
-          paddingHorizontal: spacing.lg,
-          alignItems: 'center',
-          gap: spacing.sm,
-        }}
-      >
-        <Text variant="body" color={goalDescription ? colors.textPrimary : colors.textMuted} numberOfLines={1}>
-          {goalDescription ?? t('noTargetSet')}
-        </Text>
-        <Button
-          title={goalDescription ? t('editTarget') : t('setTarget')}
-          variant="secondary"
-          size="md"
-          style={{ alignSelf: 'stretch' }}
-          icon="flag-outline"
-          onPress={() => {
-            if (categoryId) {
-              router.navigate({
-                pathname: '/(auth)/budget/goal',
-                params: { categoryId },
-              });
-            }
-          }}
-        />
-      </View>
-      </>
+        <>
+          <Text
+            variant="caption"
+            color={colors.textMuted}
+            style={[labelStyle, { marginTop: spacing.lg }]}
+          >
+            {t("target")}
+          </Text>
+          <View
+            style={{
+              backgroundColor: colors.cardBackground,
+              borderRadius: br.lg,
+              borderWidth: bw.thin,
+              borderColor: colors.divider,
+              padding: spacing.md,
+              paddingHorizontal: spacing.lg,
+              alignItems: "center",
+              gap: spacing.sm,
+            }}
+          >
+            <Text
+              variant="body"
+              color={goalDescription ? colors.textPrimary : colors.textMuted}
+              numberOfLines={1}
+            >
+              {goalDescription ?? t("noTargetSet")}
+            </Text>
+            <Button
+              title={goalDescription ? t("editTarget") : t("setTarget")}
+              variant="secondary"
+              size="md"
+              style={{ alignSelf: "stretch" }}
+              icon="flag-outline"
+              onPress={() => {
+                if (categoryId) {
+                  router.navigate({
+                    pathname: "/(auth)/budget/goal",
+                    params: { categoryId },
+                  });
+                }
+              }}
+            />
+          </View>
+        </>
       )}
 
       {/* Hide + Delete side by side */}
-      <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md }}>
+      <View style={{ flexDirection: "row", gap: spacing.sm, marginTop: spacing.md }}>
         <Button
-          title={category?.hidden ? t('show') : t('hide')}
+          title={category?.hidden ? t("show") : t("hide")}
           variant="secondary"
           size="md"
-          icon={category?.hidden ? 'eye-outline' : 'eye-off-outline'}
+          icon={category?.hidden ? "eye-outline" : "eye-off-outline"}
           style={{ flex: 1 }}
           onPress={async () => {
             if (!categoryId) return;
-            await useCategoriesStore.getState().updateCategory(categoryId, { hidden: !category?.hidden });
+            await useCategoriesStore
+              .getState()
+              .updateCategory(categoryId, { hidden: !category?.hidden });
             await useCategoriesStore.getState().load();
             await useBudgetStore.getState().load();
           }}
         />
         <Button
-          title={t('delete')}
+          title={t("delete")}
           variant="danger"
           size="md"
           icon="trash-outline"

@@ -1,5 +1,5 @@
-import { memo, useEffect } from 'react';
-import { Platform, Pressable, View } from 'react-native';
+import { memo, useEffect } from "react";
+import { Platform, Pressable, View } from "react-native";
 import Animated, {
   Easing,
   FadeIn,
@@ -8,16 +8,16 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
-} from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
-import * as ContextMenu from 'zeego/context-menu';
-import { useTheme, useThemedStyles } from '../../providers/ThemeProvider';
-import { Text, Amount, NotesWithTags, RowSeparator } from '..';
-import { formatAmount } from '../../../lib/format';
-import { SwipeableRow } from '../molecules/SwipeableRow';
-import type { TransactionDisplay } from '../../../transactions';
-import type { Tag } from '../../../tags/types';
-import type { Theme } from '../../../theme';
+} from "react-native-reanimated";
+import { Ionicons } from "@expo/vector-icons";
+import * as ContextMenu from "zeego/context-menu";
+import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
+import { Text, Amount, NotesWithTags, RowSeparator } from "..";
+import { formatAmount } from "../../../lib/format";
+import { SwipeableRow } from "../molecules/SwipeableRow";
+import type { TransactionDisplay } from "../../../transactions";
+import type { Tag } from "../../../tags/types";
+import type { Theme } from "../../../theme";
 
 interface TransactionRowProps {
   item: TransactionDisplay;
@@ -67,9 +67,7 @@ export const TransactionRow = memo(function TransactionRow({
   }, [isSelectMode]);
 
   const selectModeStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: interpolate(selectAnim.value, [0, 1], [0, 2]) },
-    ],
+    transform: [{ translateX: interpolate(selectAnim.value, [0, 1], [0, 2]) }],
   }));
 
   const rowContent = (
@@ -89,9 +87,7 @@ export const TransactionRow = memo(function TransactionRow({
       onLongPress={
         // On iOS, ContextMenu handles long-press natively (when not in select mode)
         // On Android, keep long-press for select mode
-        Platform.OS === 'android' || isSelectMode
-          ? () => onLongPress?.(item.id)
-          : undefined
+        Platform.OS === "android" || isSelectMode ? () => onLongPress?.(item.id) : undefined
       }
     >
       {/* Selection checkbox */}
@@ -102,7 +98,7 @@ export const TransactionRow = memo(function TransactionRow({
           style={styles.checkbox}
         >
           <Ionicons
-            name={isSelected ? 'checkmark-circle' : 'ellipse-outline'}
+            name={isSelected ? "checkmark-circle" : "ellipse-outline"}
             size={22}
             color={isSelected ? colors.primary : colors.textMuted}
           />
@@ -114,21 +110,31 @@ export const TransactionRow = memo(function TransactionRow({
         <View style={styles.topRow}>
           <View style={styles.payeeRow}>
             {item.transferred_id != null && (
-              <Ionicons name="swap-horizontal" size={14} color={colors.primary} style={{ marginRight: spacing.xs }} />
+              <Ionicons
+                name="swap-horizontal"
+                size={14}
+                color={colors.primary}
+                style={{ marginRight: spacing.xs }}
+              />
             )}
-            <Text variant="body" numberOfLines={1} style={{ flex: 1, fontWeight: '500' as const }}>
-              {item.payeeName ?? '(no payee)'}
+            <Text variant="body" numberOfLines={1} style={{ flex: 1, fontWeight: "500" as const }}>
+              {item.payeeName ?? "(no payee)"}
             </Text>
           </View>
           <View style={styles.amountRow}>
-            <Amount value={item.amount} variant="body" showSign style={{ fontWeight: '600' as const }} />
+            <Amount
+              value={item.amount}
+              variant="body"
+              showSign
+              style={{ fontWeight: "600" as const }}
+            />
             {!isSelectMode && (
               <View style={{ marginLeft: spacing.sm }}>
                 {item.reconciled ? (
                   <Ionicons name="lock-closed" size={14} color={colors.primary} />
                 ) : (
                   <Ionicons
-                    name={item.cleared ? 'checkmark-circle' : 'ellipse-outline'}
+                    name={item.cleared ? "checkmark-circle" : "ellipse-outline"}
                     size={14}
                     color={item.cleared ? colors.positive : colors.textMuted}
                   />
@@ -142,22 +148,31 @@ export const TransactionRow = memo(function TransactionRow({
         {item.isParent && item.splitCategoryNames ? (
           <>
             {(() => {
-              const names = item.splitCategoryNames.split('||');
-              const amounts = item.splitCategoryAmounts?.split('||') ?? [];
+              const names = item.splitCategoryNames.split("||");
+              const amounts = item.splitCategoryAmounts?.split("||") ?? [];
               return names.map((name, i) => (
                 <View key={i} style={styles.splitLineRow}>
                   <View style={styles.categoryPill}>
                     <Text variant="captionSm" color={colors.textSecondary} numberOfLines={1}>
-                      {name || 'No category'}
+                      {name || "No category"}
                     </Text>
                   </View>
-                  <Text variant="captionSm" color={colors.textMuted} style={{ fontVariant: ['tabular-nums'] }}>
+                  <Text
+                    variant="captionSm"
+                    color={colors.textMuted}
+                    style={{ fontVariant: ["tabular-nums"] }}
+                  >
                     {formatAmount(Math.abs(Number(amounts[i]) || 0))}
                   </Text>
                   {i === 0 && showAccountName && item.accountName && (
                     <>
                       <View style={{ flex: 1 }} />
-                      <Text variant="captionSm" color={colors.textMuted} numberOfLines={1} style={{ flexShrink: 0 }}>
+                      <Text
+                        variant="captionSm"
+                        color={colors.textMuted}
+                        numberOfLines={1}
+                        style={{ flexShrink: 0 }}
+                      >
                         {item.accountName}
                       </Text>
                     </>
@@ -166,27 +181,34 @@ export const TransactionRow = memo(function TransactionRow({
               ));
             })()}
           </>
-        ) : (item.categoryName || (showAccountName && item.accountName)) && (
-          <View style={styles.metaRow}>
-            {item.categoryName ? (
-              <View style={styles.categoryPill}>
-                <Text variant="captionSm" color={colors.textSecondary} numberOfLines={1}>
-                  {item.categoryName}
+        ) : (
+          (item.categoryName || (showAccountName && item.accountName)) && (
+            <View style={styles.metaRow}>
+              {item.categoryName ? (
+                <View style={styles.categoryPill}>
+                  <Text variant="captionSm" color={colors.textSecondary} numberOfLines={1}>
+                    {item.categoryName}
+                  </Text>
+                </View>
+              ) : (
+                <View />
+              )}
+              {showAccountName && item.accountName && (
+                <Text
+                  variant="captionSm"
+                  color={colors.textMuted}
+                  numberOfLines={1}
+                  style={{ flexShrink: 0 }}
+                >
+                  {item.accountName}
                 </Text>
-              </View>
-            ) : <View />}
-            {showAccountName && item.accountName && (
-              <Text variant="captionSm" color={colors.textMuted} numberOfLines={1} style={{ flexShrink: 0 }}>
-                {item.accountName}
-              </Text>
-            )}
-          </View>
+              )}
+            </View>
+          )
         )}
 
         {/* Notes with inline tag pills */}
-        {item.notes && (
-          <NotesWithTags notes={item.notes} tags={tags} />
-        )}
+        {item.notes && <NotesWithTags notes={item.notes} tags={tags} />}
       </View>
 
       {!isLast && <RowSeparator />}
@@ -195,18 +217,14 @@ export const TransactionRow = memo(function TransactionRow({
 
   // In select mode, no SwipeableRow and no ContextMenu
   if (isSelectMode) {
-    return (
-      <Animated.View style={selectModeStyle}>
-        {rowContent}
-      </Animated.View>
-    );
+    return <Animated.View style={selectModeStyle}>{rowContent}</Animated.View>;
   }
 
   const swipeableContent = (
     <SwipeableRow
       onDelete={() => onDelete(item.id)}
       onSwipeRight={item.reconciled ? undefined : () => onToggleCleared(item.id)}
-      swipeRightIcon={item.cleared ? 'ellipse-outline' : 'checkmark-circle'}
+      swipeRightIcon={item.cleared ? "ellipse-outline" : "checkmark-circle"}
       swipeRightColor={item.cleared ? colors.textMuted : colors.positive}
       isFirst={isFirst}
       isLast={isLast}
@@ -217,64 +235,41 @@ export const TransactionRow = memo(function TransactionRow({
   );
 
   // Wrap in zeego ContextMenu on iOS
-  if (Platform.OS === 'ios') {
+  if (Platform.OS === "ios") {
     return (
       <ContextMenu.Root>
         <ContextMenu.Trigger>{swipeableContent}</ContextMenu.Trigger>
         <ContextMenu.Content>
           {!item.reconciled && (
-            <ContextMenu.Item
-              key="toggle-cleared"
-              onSelect={() => onToggleCleared(item.id)}
-            >
-              <ContextMenu.ItemTitle>
-                {item.cleared ? 'Unclear' : 'Clear'}
-              </ContextMenu.ItemTitle>
-              <ContextMenu.ItemIcon
-                ios={{ name: item.cleared ? 'circle' : 'checkmark.circle' }}
-              />
+            <ContextMenu.Item key="toggle-cleared" onSelect={() => onToggleCleared(item.id)}>
+              <ContextMenu.ItemTitle>{item.cleared ? "Unclear" : "Clear"}</ContextMenu.ItemTitle>
+              <ContextMenu.ItemIcon ios={{ name: item.cleared ? "circle" : "checkmark.circle" }} />
             </ContextMenu.Item>
           )}
-          <ContextMenu.Item
-            key="duplicate"
-            onSelect={() => onDuplicate?.(item.id)}
-          >
+          <ContextMenu.Item key="duplicate" onSelect={() => onDuplicate?.(item.id)}>
             <ContextMenu.ItemTitle>Duplicate</ContextMenu.ItemTitle>
-            <ContextMenu.ItemIcon ios={{ name: 'doc.on.doc' }} />
+            <ContextMenu.ItemIcon ios={{ name: "doc.on.doc" }} />
           </ContextMenu.Item>
           {onMove && (
-            <ContextMenu.Item
-              key="move"
-              onSelect={() => onMove(item.id)}
-            >
+            <ContextMenu.Item key="move" onSelect={() => onMove(item.id)}>
               <ContextMenu.ItemTitle>Move to…</ContextMenu.ItemTitle>
-              <ContextMenu.ItemIcon ios={{ name: 'arrow.right.arrow.left' }} />
+              <ContextMenu.ItemIcon ios={{ name: "arrow.right.arrow.left" }} />
             </ContextMenu.Item>
           )}
           {onSetCategory && (
-            <ContextMenu.Item
-              key="set-category"
-              onSelect={() => onSetCategory(item.id)}
-            >
+            <ContextMenu.Item key="set-category" onSelect={() => onSetCategory(item.id)}>
               <ContextMenu.ItemTitle>Categorize</ContextMenu.ItemTitle>
-              <ContextMenu.ItemIcon ios={{ name: 'tag' }} />
+              <ContextMenu.ItemIcon ios={{ name: "tag" }} />
             </ContextMenu.Item>
           )}
-          <ContextMenu.Item
-            key="add-tag"
-            onSelect={() => onAddTag?.(item.id)}
-          >
+          <ContextMenu.Item key="add-tag" onSelect={() => onAddTag?.(item.id)}>
             <ContextMenu.ItemTitle>Add Tag</ContextMenu.ItemTitle>
-            <ContextMenu.ItemIcon ios={{ name: 'tag' }} />
+            <ContextMenu.ItemIcon ios={{ name: "tag" }} />
           </ContextMenu.Item>
           <ContextMenu.Separator />
-          <ContextMenu.Item
-            key="delete"
-            destructive
-            onSelect={() => onDelete(item.id)}
-          >
+          <ContextMenu.Item key="delete" destructive onSelect={() => onDelete(item.id)}>
             <ContextMenu.ItemTitle>Delete</ContextMenu.ItemTitle>
-            <ContextMenu.ItemIcon ios={{ name: 'trash' }} />
+            <ContextMenu.ItemIcon ios={{ name: "trash" }} />
           </ContextMenu.Item>
         </ContextMenu.Content>
       </ContextMenu.Root>
@@ -286,8 +281,8 @@ export const TransactionRow = memo(function TransactionRow({
 
 const createStyles = (theme: Theme) => ({
   row: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
     backgroundColor: theme.colors.cardBackground,
     paddingVertical: theme.spacing.md,
     paddingLeft: theme.spacing.lg,
@@ -303,30 +298,30 @@ const createStyles = (theme: Theme) => ({
     flex: 1,
   },
   topRow: {
-    flexDirection: 'row' as const,
-    justifyContent: 'space-between' as const,
-    alignItems: 'flex-start' as const,
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    alignItems: "flex-start" as const,
   },
   payeeRow: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
     flex: 1,
     marginRight: theme.spacing.md,
   },
   amountRow: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
   },
   metaRow: {
-    flexDirection: 'row' as const,
-    justifyContent: 'space-between' as const,
-    alignItems: 'center' as const,
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
     marginTop: theme.spacing.xs,
     gap: theme.spacing.sm,
   },
   splitLineRow: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
     marginTop: theme.spacing.xs,
     gap: theme.spacing.xs,
   },
@@ -336,6 +331,6 @@ const createStyles = (theme: Theme) => ({
     paddingVertical: theme.spacing.xxs,
     borderRadius: theme.borderRadius.full,
     flexShrink: 1,
-    maxWidth: '70%' as unknown as number,
+    maxWidth: "70%" as unknown as number,
   },
 });

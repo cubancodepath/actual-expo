@@ -69,17 +69,17 @@ export type ZeroBudgetRow = {
 };
 
 export type NoteRow = {
-  id: string;   // entity id (category, account, etc.)
+  id: string; // entity id (category, account, etc.)
   note: string | null;
 };
 
 export type PayeeMappingRow = {
-  id: string;       // original payee id (or self-ref on creation)
+  id: string; // original payee id (or self-ref on creation)
   targetId: string; // canonical payee id (updated when payees are merged)
 };
 
 export type ZeroBudgetMonthRow = {
-  id: string;      // YYYY-MM format (e.g. '2026-03')
+  id: string; // YYYY-MM format (e.g. '2026-03')
   buffered: number; // cents held for next month
 };
 

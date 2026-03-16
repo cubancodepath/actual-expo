@@ -1,8 +1,8 @@
-import { View } from 'react-native';
-import { useTheme } from '../../providers/ThemeProvider';
-import { Skeleton } from '../atoms/Skeleton';
-import { Card } from '../atoms/Card';
-import { RowSeparator } from '../atoms/RowSeparator';
+import { View } from "react-native";
+import { useTheme } from "../../providers/ThemeProvider";
+import { Skeleton } from "../atoms/Skeleton";
+import { Card } from "../atoms/Card";
+import { RowSeparator } from "../atoms/RowSeparator";
 
 const ROWS = 3;
 
@@ -15,8 +15,8 @@ export function AccountListSkeleton() {
         <View key={i}>
           <View
             style={{
-              flexDirection: 'row',
-              alignItems: 'center',
+              flexDirection: "row",
+              alignItems: "center",
               paddingHorizontal: spacing.md,
               paddingVertical: spacing.lg,
               minHeight: 44,
@@ -28,9 +28,7 @@ export function AccountListSkeleton() {
             <Skeleton width={70} height={14} />
             <Skeleton width={16} height={16} borderRadius={8} />
           </View>
-          {i < ROWS - 1 && (
-            <RowSeparator insetLeft={spacing.md} insetRight={spacing.md} />
-          )}
+          {i < ROWS - 1 && <RowSeparator insetLeft={spacing.md} insetRight={spacing.md} />}
         </View>
       ))}
     </Card>

@@ -10,14 +10,7 @@ export function Card({ variant = "default", style, children, ...props }: CardPro
   const styles = useThemedStyles(createStyles);
 
   return (
-    <View
-      style={[
-        styles.base,
-        variant === "elevated" && styles.elevated,
-        style,
-      ]}
-      {...props}
-    >
+    <View style={[styles.base, variant === "elevated" && styles.elevated, style]} {...props}>
       {children}
     </View>
   );

@@ -1,9 +1,9 @@
-import { runQuery } from '../db';
-import type { TransactionRow } from '../db/types';
-import type { TransactionDisplay } from './types';
+import { runQuery } from "../db";
+import type { TransactionRow } from "../db/types";
+import type { TransactionDisplay } from "./types";
 
 // Re-export from shared location for backward compatibility
-export { ALIVE_TX_FILTER } from '../db/filters';
+export { ALIVE_TX_FILTER } from "../db/filters";
 
 /** 5-table JOIN block that resolves payee and category names (via mapping tables). */
 const DISPLAY_JOINS = `
@@ -87,7 +87,7 @@ export class TransactionQueryBuilder {
   private _includeSplits = false;
   private _limit?: number;
   private _offset?: number;
-  private _orderBy = 't.date DESC, t.sort_order DESC';
+  private _orderBy = "t.date DESC, t.sort_order DESC";
 
   // -- Filter methods (chainable) ------------------------------------------
 
@@ -99,36 +99,36 @@ export class TransactionQueryBuilder {
 
   /** Standard "alive" filter: not tombstoned, not a child row. */
   alive(): this {
-    return this.filter('t.tombstone = 0 AND t.isChild = 0');
+    return this.filter("t.tombstone = 0 AND t.isChild = 0");
   }
 
   /** Filter by account. */
   forAccount(accountId: string): this {
-    return this.filter('t.acct = ?', [accountId]);
+    return this.filter("t.acct = ?", [accountId]);
   }
 
   /** Exclude reconciled transactions. */
   hideReconciled(): this {
-    return this.filter('t.reconciled = 0');
+    return this.filter("t.reconciled = 0");
   }
 
   /** Filter by category (including parent splits that have a matching child). */
   withCategory(categoryId: string): this {
     return this.filter(
-      '(t.category = ? OR (t.isParent = 1 AND EXISTS (SELECT 1 FROM transactions ch WHERE ch.parent_id = t.id AND ch.tombstone = 0 AND ch.category = ?)))',
+      "(t.category = ? OR (t.isParent = 1 AND EXISTS (SELECT 1 FROM transactions ch WHERE ch.parent_id = t.id AND ch.tombstone = 0 AND ch.category = ?)))",
       [categoryId, categoryId],
     );
   }
 
   /** Filter by payee (resolved through payee_mapping). */
   withPayee(payeeId: string): this {
-    return this.filter('COALESCE(pm.targetId, t.description) = ?', [payeeId]);
+    return this.filter("COALESCE(pm.targetId, t.description) = ?", [payeeId]);
   }
 
   /** Uncategorized transactions on on-budget accounts (excludes on-budget transfers). */
   uncategorized(): this {
-    this._filters.push({ sql: '(t.category IS NULL AND t.isParent = 0)', params: [] });
-    this._filters.push({ sql: '(p.transfer_acct IS NULL OR tr_acc.offbudget = 1)', params: [] });
+    this._filters.push({ sql: "(t.category IS NULL AND t.isParent = 0)", params: [] });
+    this._filters.push({ sql: "(p.transfer_acct IS NULL OR tr_acc.offbudget = 1)", params: [] });
     return this;
   }
 
@@ -140,25 +140,25 @@ export class TransactionQueryBuilder {
     unreconciled?: boolean;
   }): this {
     const clauses: string[] = [];
-    if (opts.cleared) clauses.push('(t.cleared = 1 AND t.reconciled = 0)');
-    if (opts.uncleared) clauses.push('(t.cleared = 0)');
-    if (opts.reconciled) clauses.push('(t.reconciled = 1)');
-    if (opts.unreconciled) clauses.push('(t.reconciled = 0)');
+    if (opts.cleared) clauses.push("(t.cleared = 1 AND t.reconciled = 0)");
+    if (opts.uncleared) clauses.push("(t.cleared = 0)");
+    if (opts.reconciled) clauses.push("(t.reconciled = 1)");
+    if (opts.unreconciled) clauses.push("(t.reconciled = 0)");
     if (clauses.length > 0) {
-      this._filters.push({ sql: `(${clauses.join(' OR ')})`, params: [] });
+      this._filters.push({ sql: `(${clauses.join(" OR ")})`, params: [] });
     }
     return this;
   }
 
   /** Filter by a single tag in notes. */
   withTag(tagName: string): this {
-    return this.filter('t.notes LIKE ?', [`%#${tagName}%`]);
+    return this.filter("t.notes LIKE ?", [`%#${tagName}%`]);
   }
 
   /** Filter by multiple tags in notes (AND). */
   withTags(tagNames: string[]): this {
     for (const tag of tagNames) {
-      this.filter('t.notes LIKE ?', [`%#${tag}%`]);
+      this.filter("t.notes LIKE ?", [`%#${tag}%`]);
     }
     return this;
   }
@@ -167,7 +167,7 @@ export class TransactionQueryBuilder {
   textSearch(text: string): this {
     const pattern = `%${text}%`;
     return this.filter(
-      '(COALESCE(tr_acc.name, p.name) LIKE ? OR c.name LIKE ? OR t.notes LIKE ? OR acc.name LIKE ?)',
+      "(COALESCE(tr_acc.name, p.name) LIKE ? OR c.name LIKE ? OR t.notes LIKE ? OR acc.name LIKE ?)",
       [pattern, pattern, pattern, pattern],
     );
   }
@@ -214,24 +214,24 @@ export class TransactionQueryBuilder {
   build(): { sql: string; params: (string | number)[] } {
     // SELECT
     let select = DISPLAY_SELECT;
-    if (this._includeAccountName) select += ',\n    acc.name AS account_name';
+    if (this._includeAccountName) select += ",\n    acc.name AS account_name";
     if (this._includeSplits) select += SPLIT_SELECT;
 
     // FROM + JOINs
-    let from = 'FROM transactions t';
+    let from = "FROM transactions t";
     if (this._includeAccountName) {
-      from += '\n  JOIN accounts acc ON acc.id = t.acct AND acc.tombstone = 0';
+      from += "\n  JOIN accounts acc ON acc.id = t.acct AND acc.tombstone = 0";
     }
     from += DISPLAY_JOINS;
     for (const j of this._extraJoins) from += `\n  ${j}`;
 
     // WHERE
     const allParams: (string | number)[] = [];
-    const whereClauses = this._filters.map(f => {
+    const whereClauses = this._filters.map((f) => {
       allParams.push(...f.params);
       return f.sql;
     });
-    const where = whereClauses.length > 0 ? whereClauses.join(' AND ') : '1';
+    const where = whereClauses.length > 0 ? whereClauses.join(" AND ") : "1";
 
     // ORDER BY + pagination
     let tail = `ORDER BY ${this._orderBy}`;

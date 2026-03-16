@@ -11,7 +11,7 @@
 
 type ParserState = { str: string; index: number };
 
-type Operator = '+' | '-' | '*' | '/';
+type Operator = "+" | "-" | "*" | "/";
 type AstNode = number | { op: Operator; left: AstNode; right: AstNode };
 
 // ── Parser helpers ──────────────────────────────────────────────────────────
@@ -30,20 +30,20 @@ function next(state: ParserState): string | null {
 // ── Number parsing ──────────────────────────────────────────────────────────
 
 function parsePrimary(state: ParserState): number {
-  const isNegative = char(state) === '-';
+  const isNegative = char(state) === "-";
   if (isNegative) next(state);
 
-  let numStr = '';
+  let numStr = "";
   let currentChar = char(state);
   while (currentChar && /[0-9.]/.test(currentChar)) {
     numStr += next(state);
     currentChar = char(state);
   }
 
-  if (numStr === '') throw new Error('Expected number');
+  if (numStr === "") throw new Error("Expected number");
 
   const value = parseFloat(numStr);
-  if (isNaN(value)) throw new Error('Invalid number');
+  if (isNaN(value)) throw new Error("Invalid number");
   return isNegative ? -value : value;
 }
 
@@ -51,8 +51,8 @@ function parsePrimary(state: ParserState): number {
 
 function parseMultiplicative(state: ParserState): AstNode {
   let node: AstNode = parsePrimary(state);
-  while (char(state) === '*' || char(state) === '/') {
-    const op = next(state) as '*' | '/';
+  while (char(state) === "*" || char(state) === "/") {
+    const op = next(state) as "*" | "/";
     node = { op, left: node, right: parsePrimary(state) };
   }
   return node;
@@ -60,8 +60,8 @@ function parseMultiplicative(state: ParserState): AstNode {
 
 function parseAdditive(state: ParserState): AstNode {
   let node: AstNode = parseMultiplicative(state);
-  while (char(state) === '+' || char(state) === '-') {
-    const op = next(state) as '+' | '-';
+  while (char(state) === "+" || char(state) === "-") {
+    const op = next(state) as "+" | "-";
     node = { op, left: node, right: parseMultiplicative(state) };
   }
   return node;
@@ -70,16 +70,20 @@ function parseAdditive(state: ParserState): AstNode {
 // ── AST evaluation ──────────────────────────────────────────────────────────
 
 function evaluate(ast: AstNode): number {
-  if (typeof ast === 'number') return ast;
+  if (typeof ast === "number") return ast;
 
   const left = evaluate(ast.left);
   const right = evaluate(ast.right);
 
   switch (ast.op) {
-    case '+': return left + right;
-    case '-': return left - right;
-    case '*': return left * right;
-    case '/': return right === 0 ? 0 : left / right;
+    case "+":
+      return left + right;
+    case "-":
+      return left - right;
+    case "*":
+      return left * right;
+    case "/":
+      return right === 0 ? 0 : left / right;
   }
 }
 
@@ -101,10 +105,10 @@ export function evalArithmetic(
   expression: string,
   defaultValue: number | null = null,
 ): number | null {
-  if (expression.trim() === '') return defaultValue;
+  if (expression.trim() === "") return defaultValue;
 
   try {
-    const state = { str: expression.replace(/\s/g, ''), index: 0 };
+    const state = { str: expression.replace(/\s/g, ""), index: 0 };
     const result = evaluate(parseAdditive(state));
     return isNaN(result) ? defaultValue : result;
   } catch {

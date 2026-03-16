@@ -23,29 +23,26 @@ import {
   isEqual,
   format,
   getDaysInMonth,
-} from 'date-fns';
-import type { RecurConfig, RecurPattern } from './types';
+} from "date-fns";
+import type { RecurConfig, RecurPattern } from "./types";
 
 // ─── Date Helpers ──────────────────────────────────────────
 
 /** Parse 'YYYY-MM-DD' to Date at noon (avoids timezone issues). */
 export function parseDate(str: string): Date {
-  const [y, m, d] = str.split('-').map(Number);
+  const [y, m, d] = str.split("-").map(Number);
   return new Date(y, m - 1, d, 12, 0, 0);
 }
 
 /** Format Date as 'YYYY-MM-DD'. */
 export function dayFromDate(date: Date): string {
-  return format(date, 'yyyy-MM-dd');
+  return format(date, "yyyy-MM-dd");
 }
 
 /** Shift a date to skip weekends per the solve mode. */
-export function getDateWithSkippedWeekend(
-  date: Date,
-  solveMode: 'before' | 'after',
-): Date {
+export function getDateWithSkippedWeekend(date: Date, solveMode: "before" | "after"): Date {
   if (isWeekend(date)) {
-    return solveMode === 'after' ? nextMonday(date) : previousFriday(date);
+    return solveMode === "after" ? nextMonday(date) : previousFriday(date);
   }
   return date;
 }
@@ -75,7 +72,7 @@ function resolveMonthlyPattern(
 ): number[] {
   const daysInMonth = getDaysInMonth(new Date(year, month, 1));
 
-  if (pattern.type === 'day') {
+  if (pattern.type === "day") {
     // { type: 'day', value: N } → Nth day of month
     // value -1 means last day
     if (pattern.value === -1) {
@@ -120,22 +117,19 @@ function resolveMonthlyPattern(
  * Iterate candidate dates from a RecurConfig starting at or after `after`.
  * Yields raw dates WITHOUT weekend skipping applied.
  */
-function* generateOccurrences(
-  config: RecurConfig,
-  after: Date,
-): Generator<Date> {
+function* generateOccurrences(config: RecurConfig, after: Date): Generator<Date> {
   const interval = config.interval ?? 1;
   const start = parseDate(config.start);
 
   // End condition helpers
   const endDate = config.endDate ? parseDate(config.endDate) : null;
   const maxCount =
-    config.endMode === 'after_n_occurrences' ? config.endOccurrences ?? Infinity : Infinity;
+    config.endMode === "after_n_occurrences" ? (config.endOccurrences ?? Infinity) : Infinity;
 
   let occurrenceCount = 0;
 
   switch (config.frequency) {
-    case 'daily': {
+    case "daily": {
       // Find first candidate >= after
       let current = new Date(start);
       if (isBefore(current, after)) {
@@ -158,7 +152,7 @@ function* generateOccurrences(
       }
     }
 
-    case 'weekly': {
+    case "weekly": {
       let current = new Date(start);
       if (isBefore(current, after)) {
         const diffMs = after.getTime() - start.getTime();
@@ -179,7 +173,7 @@ function* generateOccurrences(
       }
     }
 
-    case 'monthly': {
+    case "monthly": {
       const hasPatterns = config.patterns && config.patterns.length > 0;
 
       if (hasPatterns) {
@@ -192,17 +186,12 @@ function* generateOccurrences(
         if (isBefore(start, after)) {
           const afterYear = after.getFullYear();
           const afterMonth = after.getMonth();
-          const totalMonthsDiff =
-            (afterYear - startYear) * 12 + (afterMonth - startMonth);
-          monthOffset =
-            Math.floor(totalMonthsDiff / interval) * interval;
+          const totalMonthsDiff = (afterYear - startYear) * 12 + (afterMonth - startMonth);
+          monthOffset = Math.floor(totalMonthsDiff / interval) * interval;
         }
 
         while (true) {
-          const candidateDate = addMonths(
-            new Date(startYear, startMonth, 1, 12),
-            monthOffset,
-          );
+          const candidateDate = addMonths(new Date(startYear, startMonth, 1, 12), monthOffset);
           const year = candidateDate.getFullYear();
           const month = candidateDate.getMonth();
 
@@ -237,10 +226,8 @@ function* generateOccurrences(
           const startMonth = start.getMonth();
           const afterYear = after.getFullYear();
           const afterMonth = after.getMonth();
-          const totalMonthsDiff =
-            (afterYear - startYear) * 12 + (afterMonth - startMonth);
-          const periodsSkipped =
-            Math.floor(totalMonthsDiff / interval) * interval;
+          const totalMonthsDiff = (afterYear - startYear) * 12 + (afterMonth - startMonth);
+          const periodsSkipped = Math.floor(totalMonthsDiff / interval) * interval;
           current = addMonths(start, periodsSkipped);
           // Clamp to target day
           const daysInCurrent = getDaysInMonth(current);
@@ -261,12 +248,7 @@ function* generateOccurrences(
           if (endDate && isAfter(current, endDate)) return;
           if (!isBefore(current, after)) yield current;
           const nextMonth = addMonths(
-            new Date(
-              start.getFullYear(),
-              start.getMonth(),
-              1,
-              12,
-            ),
+            new Date(start.getFullYear(), start.getMonth(), 1, 12),
             (occurrenceCount + 1) * interval,
           );
           const daysInNext = getDaysInMonth(nextMonth);
@@ -281,7 +263,7 @@ function* generateOccurrences(
       }
     }
 
-    case 'yearly': {
+    case "yearly": {
       let current = new Date(start);
       if (isBefore(current, after)) {
         const diffYears = after.getFullYear() - start.getFullYear();
@@ -289,9 +271,7 @@ function* generateOccurrences(
         current = addYears(start, periodsSkipped);
         if (isBefore(current, after)) current = addYears(current, interval);
       }
-      occurrenceCount = Math.round(
-        (current.getFullYear() - start.getFullYear()) / interval,
-      );
+      occurrenceCount = Math.round((current.getFullYear() - start.getFullYear()) / interval);
 
       while (true) {
         if (occurrenceCount >= maxCount) return;
@@ -310,10 +290,7 @@ function* generateOccurrences(
  * Get the next occurrence date from a RecurConfig, at or after `after`.
  * Returns null if no more occurrences exist.
  */
-export function getNextOccurrence(
-  config: RecurConfig,
-  after: Date,
-): Date | null {
+export function getNextOccurrence(config: RecurConfig, after: Date): Date | null {
   const gen = generateOccurrences(config, after);
   const result = gen.next();
   return result.done ? null : result.value;
@@ -322,11 +299,7 @@ export function getNextOccurrence(
 /**
  * Get the next N upcoming dates from a RecurConfig.
  */
-export function getUpcomingDates(
-  config: RecurConfig,
-  count: number,
-  after?: Date,
-): Date[] {
+export function getUpcomingDates(config: RecurConfig, count: number, after?: Date): Date[] {
   const start = after ?? startOfDay(new Date());
   const gen = generateOccurrences(config, start);
   const dates: Date[] = [];
@@ -341,11 +314,7 @@ export function getUpcomingDates(
 /**
  * Check if a recurrence has any occurrence between start and end (inclusive).
  */
-export function occursBetween(
-  config: RecurConfig,
-  start: Date,
-  end: Date,
-): boolean {
+export function occursBetween(config: RecurConfig, start: Date, end: Date): boolean {
   const gen = generateOccurrences(config, start);
   const result = gen.next();
   if (result.done) return false;
@@ -357,7 +326,7 @@ export function occursBetween(
  * Returns null for infinite recurrences or if no occurrences.
  */
 export function getLastOccurrence(config: RecurConfig): Date | null {
-  if (!config.endMode || config.endMode === 'never') return null;
+  if (!config.endMode || config.endMode === "never") return null;
 
   const start = parseDate(config.start);
   const gen = generateOccurrences(config, start);

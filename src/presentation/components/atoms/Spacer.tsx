@@ -11,13 +11,5 @@ export interface SpacerProps {
 export function Spacer({ size = "md", horizontal = false }: SpacerProps) {
   const value = spacingTokens[size];
 
-  return (
-    <View
-      style={
-        horizontal
-          ? { width: value }
-          : { height: value }
-      }
-    />
-  );
+  return <View style={horizontal ? { width: value } : { height: value }} />;
 }

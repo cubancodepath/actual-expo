@@ -1,12 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  Alert,
-  Keyboard,
-  Pressable,
-  Switch,
-  useColorScheme,
-  View,
-} from "react-native";
+import { Alert, Keyboard, Pressable, Switch, useColorScheme, View } from "react-native";
 import { useRouter } from "expo-router";
 import Animated, {
   useAnimatedScrollHandler,
@@ -38,11 +31,7 @@ import {
   type TransactionType,
 } from "../../../src/presentation/components/transaction/TypeToggle";
 import { DetailRow } from "../../../src/presentation/components/transaction/DetailRow";
-import type {
-  RecurConfig,
-  RuleCondition,
-  RuleAction,
-} from "../../../src/schedules/types";
+import type { RecurConfig, RuleCondition, RuleAction } from "../../../src/schedules/types";
 
 export default function NewScheduleScreen() {
   const router = useRouter();
@@ -183,8 +172,7 @@ export default function NewScheduleScreen() {
       }
       conditions.push({ field: "account", op: "is", value: acctId });
 
-      const signedAmount =
-        type === "expense" ? -Math.abs(cents) : Math.abs(cents);
+      const signedAmount = type === "expense" ? -Math.abs(cents) : Math.abs(cents);
       conditions.push({ field: "amount", op: "is", value: signedAmount });
       conditions.push({ field: "date", op: "isapprox", value: recurConfig });
 
@@ -254,9 +242,7 @@ export default function NewScheduleScreen() {
         </View>
 
         {/* ── Details card ── */}
-        <View
-          style={{ marginTop: -20, zIndex: 1, paddingHorizontal: spacing.lg }}
-        >
+        <View style={{ marginTop: -20, zIndex: 1, paddingHorizontal: spacing.lg }}>
           <View style={cardStyle}>
             <DetailRow
               icon="wallet-outline"
@@ -356,9 +342,7 @@ export default function NewScheduleScreen() {
               }}
               onPress={() => setPostsTransaction(!postsTransaction)}
             >
-              <View
-                style={{ flexDirection: "row", alignItems: "center", flex: 1 }}
-              >
+              <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
                 <Text variant="body" color={colors.textPrimary}>
                   Auto-post Transaction
                 </Text>
@@ -376,14 +360,8 @@ export default function NewScheduleScreen() {
 
         {/* ── Error banner ── */}
         {error && (
-          <View
-            style={{ paddingHorizontal: spacing.lg, marginTop: spacing.md }}
-          >
-            <Banner
-              message={error}
-              variant="error"
-              onDismiss={() => setError(null)}
-            />
+          <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.md }}>
+            <Banner message={error} variant="error" onDismiss={() => setError(null)} />
           </View>
         )}
 
@@ -420,9 +398,7 @@ export default function NewScheduleScreen() {
       </Animated.View>
 
       {/* Close button */}
-      <View
-        style={{ position: "absolute", top: 12, left: spacing.md, zIndex: 11 }}
-      >
+      <View style={{ position: "absolute", top: 12, left: spacing.md, zIndex: 11 }}>
         <GlassButton icon="xmark" onPress={() => router.dismiss()} />
       </View>
 
@@ -440,11 +416,7 @@ export default function NewScheduleScreen() {
           pointerEvents: "none",
         }}
       >
-        <Text
-          variant="body"
-          color={colors.textPrimary}
-          style={{ fontWeight: "600" }}
-        >
+        <Text variant="body" color={colors.textPrimary} style={{ fontWeight: "600" }}>
           New Schedule
         </Text>
       </View>

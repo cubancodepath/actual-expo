@@ -93,7 +93,10 @@ export default function LocalSetupScreen() {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xl, paddingTop: insets.top + spacing.lg }}
+      contentContainerStyle={{
+        paddingBottom: insets.bottom + spacing.xl,
+        paddingTop: insets.top + spacing.lg,
+      }}
     >
       <SectionHeader title={t("yourBudgets")} style={{ marginBottom: spacing.sm }} />
       <Card style={styles.listCard}>

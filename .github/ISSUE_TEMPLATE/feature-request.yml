@@ -1,0 +1,49 @@
+name: Feature Request
+description: Suggest a new feature or improvement for the mobile app.
+title: "[Feature]: "
+labels: ["feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a feature! Please describe the problem you're trying to solve so we can find the best solution.
+
+  - type: checkboxes
+    id: existing-issue
+    attributes:
+      label: Verified this doesn't already exist?
+      description: Please search existing issues and PRs to avoid duplicates.
+      options:
+        - label: I have searched and found no existing issue
+          required: true
+
+  - type: checkboxes
+    attributes:
+      label: Willing to contribute?
+      description: (Optional) Check this if you'd like to implement the feature yourself. We'll help you get started!
+      options:
+        - label: I'd like to implement this feature
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: Describe the problem or frustration that motivated this request.
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Describe your ideal solution
+      description: How would you like this to work? Feel free to share multiple ideas.
+    validations:
+      required: false
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Mockups or examples
+      description: If applicable, add screenshots, mockups, or examples from other apps.
+    validations:
+      required: false

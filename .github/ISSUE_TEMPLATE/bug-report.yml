@@ -1,0 +1,112 @@
+name: Bug Report
+description: Report a bug in the mobile app.
+title: "[Bug]: "
+labels: ["needs triage", "bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this bug! Please provide as much detail as possible so we can reproduce and fix it.
+
+        **Bug reports without clear reproduction steps will be closed.** We cannot investigate bugs we can't reproduce.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: |
+        Describe the bug clearly. Include:
+        - What you were trying to do
+        - What you expected to happen
+        - What actually happened instead
+        - Any error messages shown on screen
+      placeholder: |
+        I was trying to [action] when [context].
+        Expected: [expected behavior]
+        Actual: [actual behavior]
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: |
+        Provide numbered steps anyone can follow to reproduce the bug.
+      placeholder: |
+        1. Open the app
+        2. Navigate to [screen]
+        3. Tap [button/element]
+        4. Enter [data]
+        5. Observe [what happens]
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - iOS
+        - Android
+    validations:
+      required: true
+
+  - type: dropdown
+    id: device-type
+    attributes:
+      label: Device type
+      options:
+        - Physical device
+        - Simulator / Emulator
+    validations:
+      required: true
+
+  - type: input
+    id: os-version
+    attributes:
+      label: OS version
+      description: e.g. iOS 18.2, Android 15
+      placeholder: iOS 18.2
+    validations:
+      required: false
+
+  - type: input
+    id: device-model
+    attributes:
+      label: Device model
+      description: e.g. iPhone 16 Pro, Pixel 9
+      placeholder: iPhone 16 Pro
+    validations:
+      required: false
+
+  - type: input
+    id: app-version
+    attributes:
+      label: App version
+      description: Found in Settings > About
+      placeholder: "1.0.0"
+    validations:
+      required: false
+
+  - type: dropdown
+    id: server
+    attributes:
+      label: Server setup
+      description: How are you running Actual Budget server?
+      options:
+        - Self-hosted (Docker)
+        - Fly.io
+        - PikaPods
+        - Other hosting
+        - None (local-only mode)
+    validations:
+      required: false
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots or screen recordings
+      description: If applicable, add screenshots or screen recordings to help explain the issue.
+    validations:
+      required: false

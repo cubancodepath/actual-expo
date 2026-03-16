@@ -7,10 +7,7 @@ import { useTranslation } from "react-i18next";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { useSharedValue } from "react-native-reanimated";
 import { AddTransactionButton } from "@/presentation/components/molecules/AddTransactionButton";
-import { KeyboardToolbar } from "@/presentation/components/molecules/KeyboardToolbar";
-import { CalculatorToolbar } from "@/presentation/components/atoms/CalculatorToolbar";
-import { GlassButton } from "@/presentation/components/atoms/GlassButton";
-import type { CompactCurrencyInputRef } from "@/presentation/components/atoms/CompactCurrencyInput";
+import type { CompactCurrencyInputRef } from "@/presentation/components/currency-input";
 import { useBudgetStore } from "@/stores/budgetStore";
 import { useCommonMenuActions } from "@/presentation/hooks/useCommonMenuItems";
 import { useRefreshControl } from "@/presentation/hooks/useRefreshControl";
@@ -387,21 +384,6 @@ export default function BudgetScreen() {
         {!keyboardVisible && <AddTransactionButton collapsed={fabCollapsed} />}
       </View>
 
-      {/* Calculator toolbar — floats above keyboard */}
-      <KeyboardToolbar>
-        <CalculatorToolbar
-          onOperator={(op) => focusedInputRef.current?.injectOperator(op)}
-          onEvaluate={() => focusedInputRef.current?.evaluate()}
-        />
-        <View style={{ flex: 1 }} />
-        <GlassButton
-          icon="checkmark"
-          iconSize={16}
-          variant="tinted"
-          tintColor={colors.primary}
-          onPress={dismissEdit}
-        />
-      </KeyboardToolbar>
       <Stack.Toolbar placement="right">
         <Stack.Toolbar.Menu
           icon={

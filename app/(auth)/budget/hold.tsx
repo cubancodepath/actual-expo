@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Keyboard, View } from "react-native";
+import { View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
@@ -10,10 +10,7 @@ import { IconButton } from "@/presentation/components/atoms/IconButton";
 import {
   CurrencyInput,
   type CurrencyInputRef,
-} from "@/presentation/components/atoms/CurrencyInput";
-import { CalculatorToolbar } from "@/presentation/components/atoms/CalculatorToolbar";
-import { GlassButton } from "@/presentation/components/atoms/GlassButton";
-import { KeyboardToolbar } from "@/presentation/components/molecules/KeyboardToolbar";
+} from "@/presentation/components/currency-input";
 import { Amount } from "@/presentation/components/atoms/Amount";
 
 export default function HoldScreen() {
@@ -28,7 +25,6 @@ export default function HoldScreen() {
   const [cents, setCents] = useState(0);
   const [saving, setSaving] = useState(false);
   const currencyInputRef = useRef<CurrencyInputRef>(null);
-
   useEffect(() => {
     setCents(currentCents > 0 ? currentCents : maxCents);
   }, []);
@@ -101,20 +97,6 @@ export default function HoldScreen() {
         />
       </View>
 
-      <KeyboardToolbar>
-        <CalculatorToolbar
-          onOperator={(op) => currencyInputRef.current?.injectOperator(op)}
-          onEvaluate={() => currencyInputRef.current?.evaluate()}
-        />
-        <View style={{ flex: 1 }} />
-        <GlassButton
-          icon="checkmark"
-          iconSize={16}
-          variant="tinted"
-          tintColor={colors.primary}
-          onPress={() => Keyboard.dismiss()}
-        />
-      </KeyboardToolbar>
     </>
   );
 }

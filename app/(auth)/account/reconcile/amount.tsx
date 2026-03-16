@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Keyboard, Pressable, View } from "react-native";
+import { Pressable, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import Animated, {
   interpolate,
@@ -17,10 +17,7 @@ import { Button } from "@/presentation/components/atoms/Button";
 import {
   CompactCurrencyInput,
   type CompactCurrencyInputRef,
-} from "@/presentation/components/atoms/CompactCurrencyInput";
-import { CalculatorToolbar } from "@/presentation/components/atoms/CalculatorToolbar";
-import { GlassButton } from "@/presentation/components/atoms/GlassButton";
-import { KeyboardToolbar } from "@/presentation/components/molecules/KeyboardToolbar";
+} from "@/presentation/components/currency-input";
 import { formatAmount } from "@/lib/format";
 import { useTranslation } from "react-i18next";
 
@@ -205,20 +202,6 @@ export default function ReconcileAmountScreen() {
         />
       </View>
 
-      <KeyboardToolbar>
-        <CalculatorToolbar
-          onOperator={(op) => inputRef.current?.injectOperator(op)}
-          onEvaluate={() => inputRef.current?.evaluate()}
-        />
-        <View style={{ flex: 1 }} />
-        <GlassButton
-          icon="checkmark"
-          iconSize={16}
-          variant="tinted"
-          tintColor={colors.primary}
-          onPress={() => Keyboard.dismiss()}
-        />
-      </KeyboardToolbar>
     </>
   );
 }

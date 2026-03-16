@@ -12,10 +12,7 @@ import { Button } from "@/presentation/components/atoms/Button";
 import {
   CompactCurrencyInput,
   type CompactCurrencyInputRef,
-} from "@/presentation/components/atoms/CompactCurrencyInput";
-import { CalculatorToolbar } from "@/presentation/components/atoms/CalculatorToolbar";
-import { KeyboardToolbar } from "@/presentation/components/molecules/KeyboardToolbar";
-import { GlassButton } from "@/presentation/components/atoms/GlassButton";
+} from "@/presentation/components/currency-input";
 import { Amount } from "@/presentation/components/atoms/Amount";
 
 import { getGoalProgress } from "@/goals/progress";
@@ -333,15 +330,6 @@ export default function AssignBudgetScreen() {
         contentContainerStyle={{ paddingBottom: hasChanges ? 200 : 120 }}
         scrollIndicatorInsets={{ bottom: 120 }}
       />
-
-      <KeyboardToolbar>
-        <CalculatorToolbar
-          onOperator={(op) => focusedInputRef.current?.injectOperator(op)}
-          onEvaluate={() => focusedInputRef.current?.evaluate()}
-        />
-        <View style={{ flex: 1 }} />
-        <GlassButton icon="checkmark" iconSize={18} onPress={() => Keyboard.dismiss()} />
-      </KeyboardToolbar>
 
       {/* Save button — fixed at bottom */}
       {hasChanges && (

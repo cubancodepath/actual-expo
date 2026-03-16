@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Keyboard, Pressable, ScrollView, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
@@ -15,10 +15,8 @@ import { IconButton } from "@/presentation/components/atoms/IconButton";
 import {
   CompactCurrencyInput,
   type CompactCurrencyInputRef,
-} from "@/presentation/components/atoms/CompactCurrencyInput";
+} from "@/presentation/components/currency-input";
 import { GlassButton } from "@/presentation/components/atoms/GlassButton";
-import { CalculatorToolbar } from "@/presentation/components/atoms/CalculatorToolbar";
-import { KeyboardToolbar } from "@/presentation/components/molecules/KeyboardToolbar";
 
 type SourceEntry = {
   id: string;
@@ -313,20 +311,6 @@ export default function CoverSourceScreen() {
           />
         </View>
       </ScrollView>
-      <KeyboardToolbar>
-        <CalculatorToolbar
-          onOperator={(op) => focusedInputRef.current?.injectOperator(op)}
-          onEvaluate={() => focusedInputRef.current?.evaluate()}
-        />
-        <View style={{ flex: 1 }} />
-        <GlassButton
-          icon="checkmark"
-          iconSize={16}
-          variant="tinted"
-          tintColor={colors.primary}
-          onPress={() => Keyboard.dismiss()}
-        />
-      </KeyboardToolbar>
     </>
   );
 }

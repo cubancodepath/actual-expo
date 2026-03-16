@@ -29,10 +29,8 @@ import { GlassButton } from "@/presentation/components/atoms/GlassButton";
 import {
   CurrencyInput,
   type CurrencyInputRef,
-} from "@/presentation/components/atoms/CurrencyInput";
+} from "@/presentation/components/currency-input";
 import { ScheduleStatusBadge } from "@/presentation/components/atoms/ScheduleStatusBadge";
-import { KeyboardToolbar } from "@/presentation/components/molecules/KeyboardToolbar";
-import { CalculatorToolbar } from "@/presentation/components/atoms/CalculatorToolbar";
 import { ErrorBanner } from "@/presentation/components/molecules/ErrorBanner";
 import { useErrorHandler } from "@/presentation/hooks/useErrorHandler";
 import { TypeToggle, type TransactionType } from "@/presentation/components/transaction/TypeToggle";
@@ -597,20 +595,6 @@ export default function ScheduleDetailScreen() {
         </Text>
       </View>
 
-      <KeyboardToolbar>
-        <CalculatorToolbar
-          onOperator={(op) => currencyRef.current?.injectOperator(op)}
-          onEvaluate={() => currencyRef.current?.evaluate()}
-        />
-        <View style={{ flex: 1 }} />
-        <GlassButton
-          icon="checkmark"
-          iconSize={16}
-          variant="tinted"
-          tintColor={colors.primary}
-          onPress={() => Keyboard.dismiss()}
-        />
-      </KeyboardToolbar>
     </View>
   );
 }

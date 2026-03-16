@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Alert, Keyboard, Pressable, ScrollView, Switch, View } from "react-native";
+import { Alert, Pressable, ScrollView, Switch, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Host, DatePicker, Picker, Text as SwiftText } from "@expo/ui/swift-ui";
@@ -17,10 +17,7 @@ import { Divider } from "@/presentation/components/atoms/Divider";
 import {
   CurrencyInput,
   type CurrencyInputRef,
-} from "@/presentation/components/atoms/CurrencyInput";
-import { CalculatorToolbar } from "@/presentation/components/atoms/CalculatorToolbar";
-import { GlassButton } from "@/presentation/components/atoms/GlassButton";
-import { KeyboardToolbar } from "@/presentation/components/molecules/KeyboardToolbar";
+} from "@/presentation/components/currency-input";
 import { getGoalTemplates, setGoalTemplates } from "@/goals";
 import { updateGoalIndicator } from "@/goals/apply";
 import { amountToInteger, integerToAmount } from "@/goals/engine";
@@ -160,7 +157,6 @@ export default function GoalEditorScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const currencyInputRef = useRef<CurrencyInputRef>(null);
-
   // Common state
   const [goalType, setGoalType] = useState<GoalType>("simple");
   const [amountCents, setAmountCents] = useState(0);
@@ -633,7 +629,7 @@ export default function GoalEditorScreen() {
                             type="income"
                             compact
                             style={{ paddingVertical: 0 }}
-                          />
+                                    />
                         }
                       />
                     </>
@@ -1010,20 +1006,6 @@ export default function GoalEditorScreen() {
           </View>
         )}
       </ScrollView>
-      <KeyboardToolbar>
-        <CalculatorToolbar
-          onOperator={(op) => currencyInputRef.current?.injectOperator(op)}
-          onEvaluate={() => currencyInputRef.current?.evaluate()}
-        />
-        <View style={{ flex: 1 }} />
-        <GlassButton
-          icon="checkmark"
-          iconSize={16}
-          variant="tinted"
-          tintColor={colors.primary}
-          onPress={() => Keyboard.dismiss()}
-        />
-      </KeyboardToolbar>
     </>
   );
 }

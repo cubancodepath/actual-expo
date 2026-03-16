@@ -27,6 +27,12 @@ export default function TabsLayout() {
         <NativeTabs.Trigger.Icon sf="chart.line.uptrend.xyaxis" md="trending_up" />
         <NativeTabs.Trigger.Label>{t("tabs.spending")}</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
+      {__DEV__ && (
+        <NativeTabs.Trigger name="(test)">
+          <NativeTabs.Trigger.Icon sf="flask" md="science" />
+          <NativeTabs.Trigger.Label>Test</NativeTabs.Trigger.Label>
+        </NativeTabs.Trigger>
+      )}
     </NativeTabs>
   );
 }

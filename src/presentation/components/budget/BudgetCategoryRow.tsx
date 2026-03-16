@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Text } from "../atoms/Text";
 import { Amount } from "../atoms/Amount";
-import { CompactCurrencyInput, type CompactCurrencyInputRef } from "../atoms/CompactCurrencyInput";
+import { CompactCurrencyInput, type CompactCurrencyInputRef } from "../currency-input";
 import { formatPrivacyAware } from "../../../lib/format";
 import { getGoalProgress, getGoalProgressLabel } from "../../../goals/progress";
 import { parseGoalDef } from "../../../goals";

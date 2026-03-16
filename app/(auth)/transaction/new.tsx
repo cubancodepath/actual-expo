@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Alert, Keyboard, useColorScheme, View } from "react-native";
+import { Alert, useColorScheme, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import Animated, {
@@ -26,14 +26,12 @@ import { todayStr, todayInt, strToInt, intToStr } from "@/lib/date";
 import { withOpacity } from "@/lib/colors";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { Button } from "@/presentation/components/atoms/Button";
-import { KeyboardToolbar } from "@/presentation/components/molecules/KeyboardToolbar";
-import { CalculatorToolbar } from "@/presentation/components/atoms/CalculatorToolbar";
 import { ErrorBanner } from "@/presentation/components/molecules/ErrorBanner";
 import { useErrorHandler } from "@/presentation/hooks/useErrorHandler";
 import {
   CurrencyInput,
   type CurrencyInputRef,
-} from "@/presentation/components/atoms/CurrencyInput";
+} from "@/presentation/components/currency-input";
 import { TypeToggle, type TransactionType } from "@/presentation/components/transaction/TypeToggle";
 import { DetailRow } from "@/presentation/components/transaction/DetailRow";
 import { DatePickerField } from "@/presentation/components/transaction/DatePickerField";
@@ -661,20 +659,6 @@ export default function NewTransactionScreen() {
         </Text>
       </View>
 
-      <KeyboardToolbar>
-        <CalculatorToolbar
-          onOperator={(op) => currencyInputRef.current?.injectOperator(op)}
-          onEvaluate={() => currencyInputRef.current?.evaluate()}
-        />
-        <View style={{ flex: 1 }} />
-        <GlassButton
-          icon="checkmark"
-          iconSize={16}
-          variant="tinted"
-          tintColor={colors.primary}
-          onPress={() => Keyboard.dismiss()}
-        />
-      </KeyboardToolbar>
     </View>
   );
 }

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Dimensions,
-  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -25,10 +24,7 @@ import { Text } from "../atoms/Text";
 import { Button } from "../atoms/Button";
 import { Card } from "../atoms/Card";
 import { Icon } from "../atoms/Icon";
-import { CurrencyInput, type CurrencyInputRef } from "../atoms/CurrencyInput";
-import { CalculatorToolbar } from "../atoms/CalculatorToolbar";
-import { GlassButton } from "../atoms/GlassButton";
-import { KeyboardToolbar } from "../molecules/KeyboardToolbar";
+import { CurrencyInput, type CurrencyInputRef } from "../currency-input";
 import { Banner } from "../molecules/Banner";
 import { usePrefsStore } from "../../../stores/prefsStore";
 import {
@@ -282,7 +278,6 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
   const [seeding, setSeeding] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const currencyInputRef = useRef<CurrencyInputRef>(null);
-
   const animating = useRef(false);
   const inX = useSharedValue(0);
   const outX = useSharedValue(0);
@@ -663,20 +658,6 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
           </Animated.View>
         </View>
       </KeyboardAvoidingView>
-      <KeyboardToolbar>
-        <CalculatorToolbar
-          onOperator={(op) => currencyInputRef.current?.injectOperator(op)}
-          onEvaluate={() => currencyInputRef.current?.evaluate()}
-        />
-        <View style={{ flex: 1 }} />
-        <GlassButton
-          icon="checkmark"
-          iconSize={16}
-          variant="tinted"
-          tintColor={theme.colors.primary}
-          onPress={() => Keyboard.dismiss()}
-        />
-      </KeyboardToolbar>
     </>
   );
 }

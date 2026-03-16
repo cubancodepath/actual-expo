@@ -16,11 +16,9 @@ import { IconButton } from "@/presentation/components/atoms/IconButton";
 import {
   CompactCurrencyInput,
   type CompactCurrencyInputRef,
-} from "@/presentation/components/atoms/CompactCurrencyInput";
+} from "@/presentation/components/currency-input";
 import { formatAmount } from "@/lib/format";
-import { CalculatorToolbar } from "@/presentation/components/atoms/CalculatorToolbar";
 import { GlassButton } from "@/presentation/components/atoms/GlassButton";
-import { KeyboardToolbar } from "@/presentation/components/molecules/KeyboardToolbar";
 import type { Theme } from "@/theme";
 
 // ---------------------------------------------------------------------------
@@ -324,21 +322,6 @@ export default function SplitScreen() {
           </Pressable>
         </View>
       </ScrollView>
-
-      <KeyboardToolbar>
-        <CalculatorToolbar
-          onOperator={(op) => focusedInputRef.current?.injectOperator(op)}
-          onEvaluate={() => focusedInputRef.current?.evaluate()}
-        />
-        <View style={{ flex: 1 }} />
-        <GlassButton
-          icon="checkmark"
-          iconSize={16}
-          variant="tinted"
-          tintColor={theme.colors.primary}
-          onPress={() => Keyboard.dismiss()}
-        />
-      </KeyboardToolbar>
 
       {/* Floating "assign remaining" button — appears when keyboard is visible */}
       {keyboardVisible && totalCents > 0 && remaining > 0 && (

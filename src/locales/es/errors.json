@@ -1,0 +1,12 @@
+{
+  "networkFailure": "No se pudo conectar al servidor. Verifica tu conexión a internet e intenta de nuevo.",
+  "sessionExpired": "Tu sesión ha expirado. Por favor, inicia sesión de nuevo.",
+  "serverError": "Algo salió mal en el servidor. Por favor, intenta de nuevo.",
+  "syncFailed": "La sincronización falló. Tus datos están seguros localmente — lo intentaremos de nuevo pronto.",
+  "encryptionKeyMissing": "Clave de encriptación no disponible. Vuelve a abrir este presupuesto para ingresar tu contraseña.",
+  "databaseUnavailable": "La base de datos no está disponible temporalmente. Por favor, intenta de nuevo.",
+  "unexpectedError": "Algo salió mal. Por favor, intenta de nuevo.",
+  "saveFailed": "No se pudieron guardar los cambios. Por favor, intenta de nuevo.",
+  "deleteFailed": "No se pudo eliminar. Por favor, intenta de nuevo.",
+  "loadFailed": "No se pudieron cargar los datos. Desliza hacia abajo o intenta de nuevo."
+}

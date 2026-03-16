@@ -8,7 +8,7 @@
 import { getClock, merkle, Timestamp } from "../crdt";
 import { encode, decode } from "./encoder";
 import { postBinary } from "../post";
-import { PostError, SyncError } from "../errors";
+import { PostError, SyncError, toAppError } from "../errors";
 import { applyMessages, getMessagesSince } from "./apply";
 import { refreshStoresForDatasets } from "../stores/storeRegistry";
 import { getSyncGeneration, isSwitchingBudget, setActiveSyncPromise } from "./lifecycle";
@@ -137,9 +137,7 @@ async function _fullSync(attempt = 0): Promise<void> {
 
     // Handle missing encryption key gracefully (don't crash, let user re-enter password)
     if (e instanceof SyncError && (e.meta as { isMissingKey?: boolean })?.isMissingKey) {
-      useSyncStore
-        .getState()
-        ._setError("Encryption key not available. Re-open this budget to enter your password.");
+      useSyncStore.getState()._setError(toAppError(e));
       return;
     }
 
@@ -149,7 +147,7 @@ async function _fullSync(attempt = 0): Promise<void> {
       useSyncStore.getState()._setStatus("idle");
       return;
     }
-    useSyncStore.getState()._setError(msg);
+    useSyncStore.getState()._setError(toAppError(e));
     throw e;
   }
 }

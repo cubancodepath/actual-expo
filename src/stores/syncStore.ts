@@ -1,15 +1,17 @@
 import { create } from "zustand";
 import { fullSync } from "../sync";
+import { toAppError } from "../errors";
+import type { AppError } from "../errors";
 
 type SyncStatus = "idle" | "syncing" | "error" | "success";
 
 type SyncState = {
   status: SyncStatus;
-  error: string | null;
+  error: AppError | null;
   lastSync: Date | null;
   sync(): Promise<void>;
   _setStatus(status: SyncStatus): void;
-  _setError(error: string): void;
+  _setError(error: AppError): void;
 };
 
 export const useSyncStore = create<SyncState>((set) => ({
@@ -23,8 +25,7 @@ export const useSyncStore = create<SyncState>((set) => ({
       await fullSync();
       set({ status: "success", lastSync: new Date() });
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
-      set({ status: "error", error: msg });
+      set({ status: "error", error: toAppError(e) });
     }
   },
 

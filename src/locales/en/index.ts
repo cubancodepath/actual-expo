@@ -7,6 +7,7 @@ import accounts from "./accounts.json";
 import schedules from "./schedules.json";
 import budget from "./budget.json";
 import setup from "./setup.json";
+import errors from "./errors.json";
 
 export default {
   common,
@@ -18,4 +19,5 @@ export default {
   schedules,
   budget,
   setup,
+  errors,
 } as const;

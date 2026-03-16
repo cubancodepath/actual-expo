@@ -24,7 +24,7 @@ export default function TabsLayout() {
         <NativeTabs.Trigger.Label>{t('tabs.budget')}</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="(spending)">
-        <NativeTabs.Trigger.Icon sf="chart.line.downtrend.xyaxis" md="trending_down" />
+        <NativeTabs.Trigger.Icon sf="chart.line.uptrend.xyaxis" md="trending_up" />
         <NativeTabs.Trigger.Label>{t('tabs.spending')}</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
     </NativeTabs>

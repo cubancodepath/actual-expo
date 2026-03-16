@@ -32,6 +32,8 @@ import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvide
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
 import { Banner } from "@/presentation/components/molecules/Banner";
+import { ErrorBanner } from "@/presentation/components/molecules/ErrorBanner";
+import { useErrorHandler } from "@/presentation/hooks/useErrorHandler";
 import type { Theme } from "@/theme";
 
 WebBrowser.maybeCompleteAuthSession();
@@ -46,7 +48,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [step, setStep] = useState<"idle" | "probing" | LoginMethod>("idle");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { error, handleError, setValidationError, dismissError } = useErrorHandler();
 
   const urlRef = useRef("");
   const reducedMotion = useReducedMotion();
@@ -88,50 +90,43 @@ export default function LoginScreen() {
   async function handleProbe() {
     const url = serverUrl.trim().replace(/\/$/, "");
     if (!url) {
-      setError(t("serverUrlRequired"));
+      setValidationError(t("serverUrlRequired"));
       return;
     }
 
-    setError(null);
     setStep("probing");
-    try {
-      const info = await probeWithRetry(url);
-      urlRef.current = url;
-
-      if (!info.bootstrapped) {
-        setError(t("serverNotSetUp"));
-        setStep("idle");
-        return;
-      }
-
-      setStep(info.loginMethod);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : String(e));
+    const info = await handleError(() => probeWithRetry(url));
+    if (!info) {
       setStep("idle");
+      return;
     }
+
+    urlRef.current = url;
+    if (!info.bootstrapped) {
+      setValidationError(t("serverNotSetUp"));
+      setStep("idle");
+      return;
+    }
+
+    setStep(info.loginMethod);
   }
 
   // ── Step 2a: Password login ───────────────────────────────────────────────
   async function handlePasswordLogin() {
-    setError(null);
     setLoading(true);
-    try {
+    await handleError(async () => {
       const token = await login(urlRef.current, password.trim());
       setPrefs({ serverUrl: urlRef.current });
       await saveToken(token);
       router.replace("/(files)/files");
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setLoading(false);
-    }
+    });
+    setLoading(false);
   }
 
   // ── Step 2b: OpenID login ─────────────────────────────────────────────────
   async function handleOpenIdLogin() {
-    setError(null);
     setLoading(true);
-    try {
+    await handleError(async () => {
       const serverUrl = urlRef.current;
       const appScheme = "actualbudget";
       const serverHostname = new URL(serverUrl).hostname;
@@ -149,7 +144,7 @@ export default function LoginScreen() {
       const parsed = Linking.parse(result.url);
       const token = parsed.queryParams?.token as string | undefined;
       if (!token) {
-        setError(t("openIdNoToken"));
+        setValidationError(t("openIdNoToken"));
         setLoading(false);
         return;
       }
@@ -157,16 +152,14 @@ export default function LoginScreen() {
       setPrefs({ serverUrl });
       await saveToken(token);
       router.replace("/(files)/files");
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : String(e));
-      setLoading(false);
-    }
+    });
+    setLoading(false);
   }
 
   function handleChangeServer() {
     setStep("idle");
     setPassword("");
-    setError(null);
+    dismissError();
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -211,7 +204,7 @@ export default function LoginScreen() {
                   onChangeText={(v) => {
                     setServerUrl(v);
                     setStep("idle");
-                    setError(null);
+                    dismissError();
                   }}
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -269,7 +262,7 @@ export default function LoginScreen() {
             {step === "openid" && <Banner message={t("openIdRedirect")} variant="info" />}
 
             {/* Error */}
-            {error && <Banner message={error} variant="error" onDismiss={() => setError(null)} />}
+            <ErrorBanner error={error} onDismiss={dismissError} />
 
             {/* Action buttons */}
             {step === "idle" && (

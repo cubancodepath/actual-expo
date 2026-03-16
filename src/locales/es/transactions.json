@@ -70,5 +70,12 @@
 
   "changeCategoryTitle": "Cambiar Categoría",
   "changeCategoryReconciledMessage": "Algunas de las transacciones seleccionadas están conciliadas. Editarlas puede desequilibrar tu conciliación.",
-  "changeAnyway": "Cambiar de Todos Modos"
+  "changeAnyway": "Cambiar de Todos Modos",
+
+  "searchPayees": "Buscar beneficiarios o cuentas...",
+  "nearbyPayees": "CERCANOS",
+  "transferToAccount": "TRANSFERIR A CUENTA",
+  "payees": "BENEFICIARIOS",
+  "noPayee": "Sin beneficiario",
+  "createPayee": "Crear \"{{name}}\""
 }

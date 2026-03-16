@@ -22,6 +22,9 @@ import type { RecurConfig } from "@/schedules/types";
 import { extractTagsFromNotes } from "@/tags";
 import { suggestCategoryForPayee, applyRulesToForm } from "@/rules/apply";
 import { findPayeeByName } from "@/payees";
+import { usePrefsStore } from "@/stores/prefsStore";
+import { usePayeeLocationsStore } from "@/stores/payeeLocationsStore";
+import { getCurrentPosition } from "@/services/locationService";
 import { todayStr, todayInt, strToInt, intToStr } from "@/lib/date";
 import { withOpacity } from "@/lib/colors";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
@@ -323,6 +326,21 @@ export default function NewTransactionScreen() {
       if (recurConfig) {
         useSchedulesStore.getState().load();
       }
+
+      // Auto-save payee location (fire-and-forget)
+      const resolvedPayeeId = payeeId;
+      if (
+        resolvedPayeeId &&
+        !isTransfer &&
+        usePrefsStore.getState().payeeLocationsEnabled
+      ) {
+        getCurrentPosition().then((coords) => {
+          if (coords) {
+            usePayeeLocationsStore.getState().saveLocation(resolvedPayeeId, coords);
+          }
+        });
+      }
+
       router.dismiss();
     });
     setLoading(false);

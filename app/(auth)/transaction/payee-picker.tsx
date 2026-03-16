@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
 import { usePayeesStore } from "@/stores/payeesStore";
 import { usePickerStore } from "@/stores/pickerStore";
@@ -8,6 +9,8 @@ import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvide
 import { Text } from "@/presentation/components/atoms/Text";
 import { GlassButton } from "@/presentation/components/atoms/GlassButton";
 import { SearchBar } from "@/presentation/components/molecules/SearchBar";
+import { useNearbyPayees } from "@/presentation/hooks/useNearbyPayees";
+import { formatDistance } from "@/payee-locations/location-utils";
 import type { Theme } from "@/theme";
 
 export default function PayeePickerScreen() {
@@ -17,14 +20,17 @@ export default function PayeePickerScreen() {
     accountId?: string;
   }>();
   const router = useRouter();
+  const { t } = useTranslation("transactions");
   const { colors, spacing, borderWidth: bw } = useTheme();
   const styles = useThemedStyles(createStyles);
   const { payees, load } = usePayeesStore();
   const setPayee = usePickerStore((s) => s.setPayee);
   const [search, setSearch] = useState(selectedName ?? "");
+  const { nearbyPayees, loading: nearbyLoading, refresh: refreshNearby, enabled: nearbyEnabled } = useNearbyPayees();
 
   useEffect(() => {
     if (payees.length === 0) load();
+    refreshNearby();
   }, []);
 
   const transfers = payees.filter((p) => p.transfer_acct != null && p.transfer_acct !== accountId);
@@ -42,6 +48,12 @@ export default function PayeePickerScreen() {
   const filteredRegular = query
     ? regular.filter((p) => p.name.toLowerCase().includes(query))
     : regular;
+
+  const filteredNearby = nearbyEnabled
+    ? query
+      ? nearbyPayees.filter((n) => n.payee_name.toLowerCase().includes(query))
+      : nearbyPayees
+    : [];
 
   const exactMatch = payees.some((p) => p.name.toLowerCase() === search.trim().toLowerCase());
 
@@ -63,7 +75,7 @@ export default function PayeePickerScreen() {
         onPress={() => select(null, "")}
       >
         <Text variant="body" color={colors.textMuted} style={styles.itemText}>
-          No payee
+          {t("noPayee")}
         </Text>
         {noneSelected && <Ionicons name="checkmark" size={20} color={colors.primary} />}
       </Pressable>
@@ -78,7 +90,7 @@ export default function PayeePickerScreen() {
           onPress={() => select(null, search.trim())}
         >
           <Text variant="body" color={colors.link} style={styles.itemText}>
-            Create "{search.trim()}"
+            {t("createPayee", { name: search.trim() })}
           </Text>
         </Pressable>
       ),
@@ -100,14 +112,14 @@ export default function PayeePickerScreen() {
       >
         <GlassButton icon="chevron.left" onPress={() => router.back()} />
         <Text variant="headingSm" color={colors.headerText}>
-          Payee
+          {t("payee")}
         </Text>
         <View style={{ width: 48 }} />
       </View>
       <SearchBar
         value={search}
         onChangeText={setSearch}
-        placeholder="Search payees or accounts..."
+        placeholder={t("searchPayees")}
         autoFocus
       />
 
@@ -133,12 +145,74 @@ export default function PayeePickerScreen() {
           ))}
         </View>
 
+        {/* Nearby payees */}
+        {(filteredNearby.length > 0 || nearbyLoading) && (
+          <>
+            <View style={styles.sectionHeader}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+                <Text variant="captionSm" color={colors.textMuted} style={styles.sectionText}>
+                  {t("nearbyPayees")}
+                </Text>
+                {nearbyLoading && <ActivityIndicator size="small" color={colors.textMuted} />}
+              </View>
+            </View>
+            {filteredNearby.length > 0 && (
+              <View style={styles.groupCard}>
+                {filteredNearby.map((n, i) => {
+                  const isSelected = n.payee_id === selectedId;
+                  const isLast = i === filteredNearby.length - 1;
+                  return (
+                    <Pressable
+                      key={n.location_id}
+                      style={({ pressed }) => [styles.item, pressed && styles.pressed]}
+                      onPress={() => select(n.payee_id, n.payee_name)}
+                    >
+                      <Ionicons
+                        name="location-outline"
+                        size={16}
+                        color={colors.primary}
+                        style={styles.transferIcon}
+                      />
+                      <Text variant="body" color={colors.textPrimary} style={styles.itemText}>
+                        {n.payee_name}
+                      </Text>
+                      <Text variant="captionSm" color={colors.textMuted}>
+                        {formatDistance(n.distance)}
+                      </Text>
+                      {isSelected && (
+                        <Ionicons
+                          name="checkmark"
+                          size={20}
+                          color={colors.primary}
+                          style={{ marginLeft: spacing.sm }}
+                        />
+                      )}
+                      {!isLast && (
+                        <View
+                          style={{
+                            position: "absolute",
+                            bottom: 0,
+                            left: spacing.lg,
+                            right: spacing.lg,
+                            height: bw.thin,
+                            backgroundColor: colors.divider,
+                          }}
+                        />
+                      )}
+                    </Pressable>
+                  );
+                })}
+              </View>
+            )}
+          </>
+        )}
+
         {/* Transfer to Account */}
         {filteredTransfers.length > 0 && (
           <>
             <View style={styles.sectionHeader}>
               <Text variant="captionSm" color={colors.textMuted} style={styles.sectionText}>
-                TRANSFER TO ACCOUNT
+                {t("transferToAccount")}
               </Text>
             </View>
             <View style={styles.groupCard}>
@@ -185,7 +259,7 @@ export default function PayeePickerScreen() {
           <>
             <View style={styles.sectionHeader}>
               <Text variant="captionSm" color={colors.textMuted} style={styles.sectionText}>
-                PAYEES
+                {t("payees")}
               </Text>
             </View>
             <View style={styles.groupCard}>

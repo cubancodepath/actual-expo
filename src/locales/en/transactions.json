@@ -70,5 +70,12 @@
 
   "changeCategoryTitle": "Change Category",
   "changeCategoryReconciledMessage": "Some of the selected transactions are reconciled. Editing them may bring your reconciliation out of balance.",
-  "changeAnyway": "Change Anyway"
+  "changeAnyway": "Change Anyway",
+
+  "searchPayees": "Search payees or accounts...",
+  "nearbyPayees": "NEARBY PAYEES",
+  "transferToAccount": "TRANSFER TO ACCOUNT",
+  "payees": "PAYEES",
+  "noPayee": "No payee",
+  "createPayee": "Create \"{{name}}\""
 }

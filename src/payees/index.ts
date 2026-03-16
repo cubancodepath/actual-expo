@@ -157,6 +157,17 @@ export const mergePayees = undoable(async function mergePayees(
   await sendMessages(messages);
 });
 
+/** Find an existing payee by name (case-insensitive). Returns the ID or null. */
+export async function findPayeeByName(name: string): Promise<string | null> {
+  const trimmed = name.trim();
+  if (!trimmed) return null;
+  const row = await first<{ id: string }>(
+    `SELECT id FROM payees WHERE LOWER(name) = LOWER(?) AND tombstone = 0 LIMIT 1`,
+    [trimmed],
+  );
+  return row?.id ?? null;
+}
+
 /** Find an existing payee by name (case-insensitive) or create a new one. */
 export async function findOrCreatePayee(name: string): Promise<string | null> {
   const trimmed = name.trim();

@@ -21,6 +21,7 @@ import { getRecurringDescription } from "@/schedules";
 import type { RecurConfig } from "@/schedules/types";
 import { extractTagsFromNotes } from "@/tags";
 import { suggestCategoryForPayee, applyRulesToForm } from "@/rules/apply";
+import { findPayeeByName } from "@/payees";
 import { todayStr, todayInt, strToInt, intToStr } from "@/lib/date";
 import { withOpacity } from "@/lib/colors";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
@@ -183,6 +184,27 @@ export default function NewTransactionScreen() {
       }
     }, [transactionId]),
   );
+
+  // When payeeName comes from a shortcut (no payeeId yet), look up the existing
+  // payee in the DB so rules can suggest a category before the user saves.
+  useEffect(() => {
+    if (!payeeNameParam || payeeId || isEdit || userOverrides.current.has("category")) return;
+
+    (async () => {
+      const existingId = await findPayeeByName(payeeNameParam);
+      if (!existingId) return; // New payee — no rules to apply
+
+      setPayeeId(existingId);
+      const suggestedId = suggestCategoryForPayee(rules, existingId, acctId);
+      if (suggestedId) {
+        const cat = categories.find((c) => c.id === suggestedId);
+        if (cat) {
+          setCategoryId(suggestedId);
+          setCategoryName(cat.name);
+        }
+      }
+    })();
+  }, [payeeNameParam, rules]);
 
   // React to picker selections
   useEffect(() => {

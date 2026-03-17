@@ -1,10 +1,10 @@
 import { useCallback } from "react";
-import { usePrefsStore } from "@/stores/prefsStore";
+import { useFeatureFlagsStore } from "@/stores/featureFlagsStore";
 import { usePayeeLocationsStore } from "@/stores/payeeLocationsStore";
 import { getCurrentPosition } from "@/services/locationService";
 
 export function useNearbyPayees() {
-  const enabled = usePrefsStore((s) => s.payeeLocationsEnabled);
+  const enabled = useFeatureFlagsStore((s) => s.payeeLocations);
   const nearbyPayees = usePayeeLocationsStore((s) => s.nearbyPayees);
   const loading = usePayeeLocationsStore((s) => s.loading);
   const loadNearby = usePayeeLocationsStore((s) => s.loadNearby);

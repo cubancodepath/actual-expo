@@ -1,4 +1,5 @@
 import type { SQLiteDatabase } from "expo-sqlite";
+import { usePrefsStore } from "../stores/prefsStore";
 
 // ---------------------------------------------------------------------------
 // Tables — matches the original Actual Budget schema (init.sql + all migrations)
@@ -337,7 +338,7 @@ CREATE INDEX IF NOT EXISTS idx_payee_locations_geo_tombstone ON payee_locations(
 // When a new stable release adds migrations, uncomment them here.
 // ---------------------------------------------------------------------------
 
-const MIGRATION_IDS = [
+const BASE_MIGRATION_IDS = [
   1548957970627, 1550601598648, 1555786194328, 1561751833510, 1567699552727, 1582384163573,
   1597756566448, 1608652596043, 1608652596044, 1612625548236, 1614782639336, 1615745967948,
   1616167010796, 1618975177358, 1632571489012, 1679728867040, 1681115033845, 1682974838138,
@@ -347,9 +348,12 @@ const MIGRATION_IDS = [
   1730744182000, 1736640000000, 1737158400000, 1738491452000, 1739139550000, 1740506588539,
   1745425408000, 1749799110000, 1749799110001, 1754611200000, 1759260219000, 1759842823172,
   1762178745667, 1765518577215,
-  // TODO: uncomment when Docker stable release includes these:
-  // 1768872504000, // add_payee_locations
 ];
+
+/** Migrations gated by server feature support. Keyed by feature name in serverFeatures. */
+const CONDITIONAL_MIGRATIONS: Record<string, number[]> = {
+  payeeLocations: [1768872504000], // add_payee_locations — requires server ≥ 26.4.0
+};
 
 // ---------------------------------------------------------------------------
 // Runner
@@ -359,7 +363,17 @@ export async function runSchema(db: SQLiteDatabase): Promise<void> {
   await db.execAsync(TABLES);
   await db.execAsync(INDEXES);
 
-  // Populate __migrations__ with all known IDs (idempotent via INSERT OR IGNORE)
-  const values = MIGRATION_IDS.map((id) => `(${id})`).join(",");
+  // Build migration list: base + conditional based on server support
+  const { serverFeatures, isLocalOnly } = usePrefsStore.getState();
+  const migrations = [...BASE_MIGRATION_IDS];
+
+  for (const [feature, ids] of Object.entries(CONDITIONAL_MIGRATIONS)) {
+    if (isLocalOnly || serverFeatures[feature]) {
+      migrations.push(...ids);
+    }
+  }
+
+  // Populate __migrations__ with known IDs (idempotent via INSERT OR IGNORE)
+  const values = migrations.map((id) => `(${id})`).join(",");
   await db.execAsync(`INSERT OR IGNORE INTO __migrations__ (id) VALUES ${values}`);
 }

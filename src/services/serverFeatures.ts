@@ -1,6 +1,6 @@
 /** Register features and their minimum required server versions here. */
 const FEATURE_REQUIREMENTS: Record<string, string> = {
-  // "payeeLocations": "26.4.0",  // uncomment when server ships with the migration
+  payeeLocations: "26.4.0", // migration ships in this release
 };
 
 export type ServerFeatures = Record<string, boolean>;

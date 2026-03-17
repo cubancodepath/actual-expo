@@ -42,7 +42,6 @@ type PrefsState = {
   themeMode: "system" | "light" | "dark";
   language: "system" | "en" | "es";
   serverVersion: string;
-  payeeLocationsEnabled: boolean;
 
   // Token — in-memory only; persisted in iOS Keychain / Android Keystore
   token: string;
@@ -67,7 +66,6 @@ type PrefsState = {
   toggleHideReconciled(): void;
   toggleShowHiddenCategories(): void;
   setServerVersion(version: string): void;
-  togglePayeeLocations(): void;
   markOnboardingSeen(): void;
   /** Full logout: wipe MMKV + SecureStore and reset state. */
   clearAll(): Promise<void>;
@@ -102,7 +100,6 @@ export const usePrefsStore = create<PrefsState>()(
       themeMode: "system",
       language: "system",
       serverVersion: "0.0.0",
-      payeeLocationsEnabled: false,
       hasToken: false,
       isConfigured: false,
       serverFeatures: resolveFeatures("0.0.0"),
@@ -138,10 +135,6 @@ export const usePrefsStore = create<PrefsState>()(
 
       setServerVersion(version: string) {
         set({ serverVersion: version, serverFeatures: resolveFeatures(version) });
-      },
-
-      togglePayeeLocations() {
-        set((state) => ({ payeeLocationsEnabled: !state.payeeLocationsEnabled }));
       },
 
       markOnboardingSeen() {
@@ -193,7 +186,6 @@ export const usePrefsStore = create<PrefsState>()(
           hasSeenOnboarding,
           themeMode,
           language,
-          payeeLocationsEnabled: false,
         });
       },
     }),
@@ -217,7 +209,6 @@ export const usePrefsStore = create<PrefsState>()(
         isLocalOnly: state.isLocalOnly,
         themeMode: state.themeMode,
         language: state.language,
-        payeeLocationsEnabled: state.payeeLocationsEnabled,
       }),
     },
   ),

@@ -70,5 +70,6 @@
   "locationServices": "Nearby Payees",
   "locationServicesDescription": "Shows nearby payees when adding a transaction",
   "locationPermissionTitle": "Location Access Needed",
-  "locationPermissionMessage": "To suggest nearby payees, allow location access in your device Settings."
+  "locationPermissionMessage": "To suggest nearby payees, allow location access in your device Settings.",
+  "openSettings": "Open Settings"
 }

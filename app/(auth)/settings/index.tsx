@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Alert, Platform, ScrollView, Switch } from "react-native";
+import { Alert, Platform, ScrollView } from "react-native";
 import * as Sentry from "@sentry/react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -12,8 +12,6 @@ import { Text, Card, ListItem, SectionHeader, Button } from "@/presentation/comp
 import { usePrefsStore } from "@/stores/prefsStore";
 import { resetAllStores } from "@/stores/resetStores";
 import { useSyncStore } from "@/stores/syncStore";
-import { usePrivacyStore } from "@/stores/privacyStore";
-import { useLocationPermission } from "@/presentation/hooks/useLocationPermission";
 import { resetSyncState, clearSwitchingFlag, loadClock } from "@/sync";
 import { clearLocalData } from "@/db";
 import { closeBudget } from "@/services/budgetfiles";
@@ -84,10 +82,6 @@ export default function SettingsScreen() {
     clearAll,
   } = usePrefsStore();
   const lastSync = useSyncStore((s) => s.lastSync);
-  const { privacyMode, toggle: togglePrivacy } = usePrivacyStore();
-  const payeeLocationsEnabled = usePrefsStore((s) => s.payeeLocationsEnabled);
-  const togglePayeeLocations = usePrefsStore((s) => s.togglePayeeLocations);
-  const { status: locationStatus, request: requestLocation } = useLocationPermission();
   const [loggingOut, setLoggingOut] = useState(false);
 
   const lastSyncText = lastSync
@@ -223,75 +217,6 @@ export default function SettingsScreen() {
           left={<SettingsIcon sfSymbol="globe" ionIcon="globe-outline" color={colors.textMuted} />}
           showChevron
           onPress={() => router.push("/(auth)/settings/language")}
-          showSeparator
-          separatorInsetLeft={spacing.lg + ICON_SIZE + spacing.md}
-        />
-        <ListItem
-          title={t("hideAmounts")}
-          subtitle={t("hideAmountsDescription")}
-          left={
-            <SettingsIcon sfSymbol="eye.slash" ionIcon="eye-off-outline" color={colors.textMuted} />
-          }
-          onPress={togglePrivacy}
-          right={
-            <Switch
-              value={privacyMode}
-              onValueChange={togglePrivacy}
-              trackColor={{ true: colors.primary }}
-              accessibilityLabel={t("hideAmounts")}
-            />
-          }
-          showSeparator
-          separatorInsetLeft={spacing.lg + ICON_SIZE + spacing.md}
-        />
-        <ListItem
-          title={t("locationServices")}
-          subtitle={t("locationServicesDescription")}
-          left={
-            <SettingsIcon
-              sfSymbol="location"
-              ionIcon="location-outline"
-              color={colors.textMuted}
-            />
-          }
-          onPress={async () => {
-            if (!payeeLocationsEnabled) {
-              // Turning ON — request permission first
-              if (locationStatus !== "granted") {
-                const granted = await requestLocation();
-                if (!granted) {
-                  Alert.alert(
-                    t("locationPermissionTitle"),
-                    t("locationPermissionMessage"),
-                  );
-                  return;
-                }
-              }
-            }
-            togglePayeeLocations();
-          }}
-          right={
-            <Switch
-              value={payeeLocationsEnabled}
-              onValueChange={async () => {
-                if (!payeeLocationsEnabled) {
-                  if (locationStatus !== "granted") {
-                    const granted = await requestLocation();
-                    if (!granted) {
-                      Alert.alert(
-                        t("locationPermissionTitle"),
-                        t("locationPermissionMessage"),
-                      );
-                      return;
-                    }
-                  }
-                }
-                togglePayeeLocations();
-              }}
-              trackColor={{ true: colors.primary }}
-              accessibilityLabel={t("locationServices")}
-            />
-          }
         />
       </Card>
 

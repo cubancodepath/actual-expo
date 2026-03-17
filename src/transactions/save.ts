@@ -8,6 +8,10 @@
 
 import { findOrCreatePayee } from "../payees";
 import { batchMessages } from "../sync";
+import { getCurrentPosition } from "../services/locationService";
+import { usePrefsStore } from "../stores/prefsStore";
+import { useFeatureFlagsStore } from "../stores/featureFlagsStore";
+import { usePayeeLocationsStore } from "../stores/payeeLocationsStore";
 import {
   addTransaction,
   updateTransaction,
@@ -200,6 +204,11 @@ export async function saveTransaction(
     await linkSchedule(newId, recurConfig, resolvedPayeeId, acct, finalAmount);
   }
 
+  // Save current location for the payee (fire-and-forget)
+  if (resolvedPayeeId) {
+    savePayeeLocationIfEnabled(resolvedPayeeId);
+  }
+
   return newId;
 }
 
@@ -234,4 +243,21 @@ async function linkSchedule(
     conditions,
     start: (nextDate) => addDays(parseDate(nextDate), 1),
   });
+}
+
+function savePayeeLocationIfEnabled(payeeId: string): void {
+  if (!useFeatureFlagsStore.getState().payeeLocations) return;
+
+  const { isLocalOnly, serverFeatures } = usePrefsStore.getState();
+  if (!isLocalOnly && !serverFeatures.payeeLocations) return;
+
+  getCurrentPosition()
+    .then((coords) => {
+      if (coords) {
+        return usePayeeLocationsStore.getState().saveLocation(payeeId, coords);
+      }
+    })
+    .catch(() => {
+      // Silently ignore — location is best-effort
+    });
 }

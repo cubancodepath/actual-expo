@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { AppState } from "react-native";
 import {
   requestLocationPermission,
   getLocationPermissionStatus,
@@ -9,6 +10,10 @@ export function useLocationPermission() {
 
   useEffect(() => {
     getLocationPermissionStatus().then(setStatus);
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") getLocationPermissionStatus().then(setStatus);
+    });
+    return () => sub.remove();
   }, []);
 
   const request = useCallback(async () => {

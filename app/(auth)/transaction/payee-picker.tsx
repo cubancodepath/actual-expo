@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
+import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
+import { SymbolView } from "expo-symbols";
 import { usePayeesStore } from "@/stores/payeesStore";
 import { usePickerStore } from "@/stores/pickerStore";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
@@ -10,6 +11,7 @@ import { Text } from "@/presentation/components/atoms/Text";
 import { GlassButton } from "@/presentation/components/atoms/GlassButton";
 import { SearchBar } from "@/presentation/components/molecules/SearchBar";
 import { useNearbyPayees } from "@/presentation/hooks/useNearbyPayees";
+import { useLocationPermission } from "@/presentation/hooks/useLocationPermission";
 import { formatDistance } from "@/payee-locations/location-utils";
 import type { Theme } from "@/theme";
 
@@ -27,6 +29,7 @@ export default function PayeePickerScreen() {
   const setPayee = usePickerStore((s) => s.setPayee);
   const [search, setSearch] = useState(selectedName ?? "");
   const { nearbyPayees, loading: nearbyLoading, refresh: refreshNearby, enabled: nearbyEnabled } = useNearbyPayees();
+  const { status: locationStatus } = useLocationPermission();
 
   useEffect(() => {
     if (payees.length === 0) load();
@@ -145,6 +148,43 @@ export default function PayeePickerScreen() {
           ))}
         </View>
 
+        {/* Nearby payees — permission required */}
+        {nearbyEnabled && locationStatus !== "granted" && !nearbyLoading && (
+          <>
+            <View style={styles.sectionHeader}>
+              <Text variant="captionSm" color={colors.textMuted} style={styles.sectionText}>
+                {t("nearbyPayees")}
+              </Text>
+            </View>
+            <View style={styles.groupCard}>
+              <Pressable
+                style={({ pressed }) => [styles.item, pressed && styles.pressed]}
+                onPress={() => Linking.openSettings()}
+              >
+                {Platform.OS === "ios" ? (
+                  <SymbolView
+                    name="location"
+                    size={16}
+                    tintColor={colors.textMuted}
+                    style={styles.transferIcon}
+                  />
+                ) : (
+                  <Ionicons
+                    name="location-outline"
+                    size={16}
+                    color={colors.textMuted}
+                    style={styles.transferIcon}
+                  />
+                )}
+                <Text variant="body" color={colors.textSecondary} style={styles.itemText}>
+                  {t("enableLocationAccess")}
+                </Text>
+                <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+              </Pressable>
+            </View>
+          </>
+        )}
+
         {/* Nearby payees */}
         {(filteredNearby.length > 0 || nearbyLoading) && (
           <>
@@ -167,12 +207,21 @@ export default function PayeePickerScreen() {
                       style={({ pressed }) => [styles.item, pressed && styles.pressed]}
                       onPress={() => select(n.payee_id, n.payee_name)}
                     >
-                      <Ionicons
-                        name="location-outline"
-                        size={16}
-                        color={colors.primary}
-                        style={styles.transferIcon}
-                      />
+                      {Platform.OS === "ios" ? (
+                        <SymbolView
+                          name="location"
+                          size={16}
+                          tintColor={colors.textMuted}
+                          style={styles.transferIcon}
+                        />
+                      ) : (
+                        <Ionicons
+                          name="location-outline"
+                          size={16}
+                          color={colors.textMuted}
+                          style={styles.transferIcon}
+                        />
+                      )}
                       <Text variant="body" color={colors.textPrimary} style={styles.itemText}>
                         {n.payee_name}
                       </Text>

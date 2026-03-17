@@ -74,7 +74,6 @@ export default function AccountSettingsScreen() {
 
   function handleClose() {
     if (account!.closed) {
-      // Reopen — simple toggle
       Alert.alert(t("settings.reopenAccountTitle"), t("settings.reopenAccountMessage"), [
         { text: tc("cancel"), style: "cancel" },
         {
@@ -90,7 +89,6 @@ export default function AccountSettingsScreen() {
         },
       ]);
     } else {
-      // Close — open the close account modal
       router.push({ pathname: "/(auth)/account/close", params: { id } });
     }
   }
@@ -100,7 +98,12 @@ export default function AccountSettingsScreen() {
       <Stack.Screen
         options={{
           headerLeft: () => (
-            <Pressable onPress={() => router.back()} hitSlop={8}>
+            <Pressable
+              onPress={() => router.back()}
+              hitSlop={12}
+              accessibilityLabel={tc("close")}
+              accessibilityRole="button"
+            >
               <Icon name="close" size={24} color={theme.colors.textSecondary} />
             </Pressable>
           ),
@@ -113,14 +116,14 @@ export default function AccountSettingsScreen() {
         automaticallyAdjustKeyboardInsets
       >
         {/* Account name */}
-        <Text variant="caption" color={theme.colors.textSecondary} style={styles.label}>
+        <Text variant="bodySm" color={theme.colors.textSecondary} style={styles.label}>
           {t("settings.accountNameLabel")}
         </Text>
         <Input
           placeholder={t("settings.accountNamePlaceholder")}
           value={name}
-          onChangeText={(t) => {
-            setName(t);
+          onChangeText={(text) => {
+            setName(text);
             dismissError();
           }}
           returnKeyType="done"
@@ -145,44 +148,44 @@ export default function AccountSettingsScreen() {
             }}
             thumbColor={theme.colors.cardBackground}
             ios_backgroundColor={theme.colors.inputBorder}
+            accessibilityLabel={t("settings.offBudget")}
           />
         </View>
 
         {/* Bank Sync */}
         <Divider style={styles.divider} />
-        <Text variant="caption" color={theme.colors.textSecondary} style={styles.label}>
+        <Text variant="bodySm" color={theme.colors.textSecondary} style={styles.label}>
           {tb("title")}
         </Text>
 
         {isLinked ? (
           <>
-            <View style={styles.toggleRow}>
-              <View style={styles.toggleText}>
-                <Text variant="body" color={theme.colors.textPrimary}>
-                  {account!.accountSyncSource === "goCardless" ? "GoCardless" : "SimpleFin"}
+            <View style={styles.syncInfo}>
+              <Text variant="body" color={theme.colors.textPrimary}>
+                {account!.accountSyncSource === "goCardless" ? "GoCardless" : "SimpleFin"}
+              </Text>
+              <Text variant="captionSm" color={theme.colors.textMuted}>
+                {account!.lastSync
+                  ? tb("lastSynced", { date: new Date(account!.lastSync).toLocaleDateString() })
+                  : tb("neverSynced")}
+              </Text>
+              {accountSyncStatus === "success" && accountSyncResult && (
+                <Text variant="captionSm" color={theme.colors.positive}>
+                  {accountSyncResult.added + accountSyncResult.updated > 0
+                    ? tb("syncSuccess", {
+                        added: accountSyncResult.added,
+                        updated: accountSyncResult.updated,
+                      })
+                    : tb("syncSuccessNoChanges")}
                 </Text>
-                <Text variant="captionSm" color={theme.colors.textMuted}>
-                  {account!.lastSync
-                    ? tb("lastSynced", { date: new Date(account!.lastSync).toLocaleDateString() })
-                    : tb("neverSynced")}
-                </Text>
-                {accountSyncStatus === "success" && accountSyncResult && (
-                  <Text variant="captionSm" color={theme.colors.positive}>
-                    {accountSyncResult.added + accountSyncResult.updated > 0
-                      ? tb("syncSuccess", {
-                          added: accountSyncResult.added,
-                          updated: accountSyncResult.updated,
-                        })
-                      : tb("syncSuccessNoChanges")}
-                  </Text>
-                )}
-              </View>
+              )}
             </View>
             <Button
               title={tb("syncNow")}
               onPress={() => syncAccount(id)}
               variant="secondary"
               icon="sync-outline"
+              size="lg"
               loading={accountSyncStatus === "syncing"}
               disabled={saving || accountSyncStatus === "syncing"}
               style={styles.bankSyncButton}
@@ -205,6 +208,7 @@ export default function AccountSettingsScreen() {
               icon="unlink-outline"
               textColor={theme.colors.negative}
               disabled={saving}
+              style={styles.bankSyncButton}
             />
           </>
         ) : (
@@ -215,6 +219,7 @@ export default function AccountSettingsScreen() {
             }}
             variant="secondary"
             icon="link-outline"
+            size="lg"
             disabled={saving || (providersChecked && !goCardlessConfigured && !simpleFinConfigured)}
             style={styles.bankSyncButton}
           />
@@ -260,10 +265,8 @@ const createStyles = (theme: Theme) => ({
   },
   container: {
     padding: theme.spacing.xl,
-    gap: theme.spacing.sm,
   },
   label: {
-    fontWeight: "600" as const,
     marginTop: theme.spacing.lg,
     marginLeft: theme.spacing.xs,
     marginBottom: theme.spacing.xs,
@@ -283,14 +286,19 @@ const createStyles = (theme: Theme) => ({
     flex: 1,
     marginRight: theme.spacing.md,
   },
+  syncInfo: {
+    paddingHorizontal: theme.spacing.xs,
+    gap: 2,
+  },
   saveButton: {
     marginTop: theme.spacing.xxl,
   },
   closeButton: {
-    marginTop: theme.spacing.sm,
+    marginTop: theme.spacing.xl,
   },
   divider: {
     marginTop: theme.spacing.xl,
+    marginBottom: theme.spacing.sm,
   },
   bankSyncButton: {
     marginTop: theme.spacing.sm,

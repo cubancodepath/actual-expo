@@ -30,6 +30,7 @@ export default function NewAccountScreen() {
   const providersAvailable = goCardlessConfigured || simpleFinConfigured;
 
   const { t } = useTranslation("accounts");
+  const { t: tc } = useTranslation("common");
   const [name, setName] = useState("");
   const [balanceStr, setBalanceStr] = useState("");
   const [offbudget, setOffbudget] = useState(false);
@@ -57,19 +58,13 @@ export default function NewAccountScreen() {
       <Stack.Screen
         options={{
           headerLeft: () => (
-            <Pressable onPress={() => router.back()} hitSlop={8}>
+            <Pressable
+              onPress={() => router.back()}
+              hitSlop={12}
+              accessibilityLabel={tc("close")}
+              accessibilityRole="button"
+            >
               <Icon name="close" size={24} color={theme.colors.textSecondary} />
-            </Pressable>
-          ),
-          headerRight: () => (
-            <Pressable onPress={handleCreate} hitSlop={8} disabled={!name.trim() || loading}>
-              <Text
-                variant="body"
-                color={name.trim() && !loading ? theme.colors.primary : theme.colors.textMuted}
-                style={{ fontWeight: "600", fontSize: 17 }}
-              >
-                {t("newAccount.create")}
-              </Text>
             </Pressable>
           ),
         }}
@@ -81,7 +76,7 @@ export default function NewAccountScreen() {
         automaticallyAdjustKeyboardInsets
       >
         {/* Account name */}
-        <Text variant="caption" color={theme.colors.textSecondary} style={styles.label}>
+        <Text variant="bodySm" color={theme.colors.textSecondary} style={styles.label}>
           {t("newAccount.accountNameLabel")}
         </Text>
         <Input
@@ -96,7 +91,7 @@ export default function NewAccountScreen() {
         />
 
         {/* Starting balance */}
-        <Text variant="caption" color={theme.colors.textSecondary} style={styles.label}>
+        <Text variant="bodySm" color={theme.colors.textSecondary} style={styles.label}>
           {t("newAccount.startingBalanceLabel")}
         </Text>
         <Input
@@ -128,6 +123,7 @@ export default function NewAccountScreen() {
             trackColor={{ false: theme.colors.inputBorder, true: theme.colors.primary }}
             thumbColor={theme.colors.cardBackground}
             ios_backgroundColor={theme.colors.inputBorder}
+            accessibilityLabel={t("newAccount.offBudget")}
           />
         </View>
 
@@ -146,7 +142,7 @@ export default function NewAccountScreen() {
 
         {/* Link to bank */}
         <Divider style={styles.divider} />
-        <Text variant="caption" color={theme.colors.textMuted} style={styles.orText}>
+        <Text variant="captionSm" color={theme.colors.textMuted} style={styles.orText}>
           {t("newAccount.or")}
         </Text>
         <Button
@@ -174,10 +170,8 @@ const createStyles = (theme: Theme) => ({
   },
   container: {
     padding: theme.spacing.xl,
-    gap: theme.spacing.sm,
   },
   label: {
-    fontWeight: "600" as const,
     marginTop: theme.spacing.lg,
     marginLeft: theme.spacing.xs,
     marginBottom: theme.spacing.xs,

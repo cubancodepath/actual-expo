@@ -172,7 +172,8 @@ export default function NewTransactionScreen() {
               icon="pricetags-outline"
               label={
                 form.extractTagsFromNotes(form.notes).length > 0
-                  ? form.extractTagsFromNotes(form.notes)
+                  ? form
+                      .extractTagsFromNotes(form.notes)
                       .map((tag) => `#${tag}`)
                       .join(", ")
                   : ""
@@ -261,7 +262,6 @@ export default function NewTransactionScreen() {
           {form.isEdit ? t("editTransaction") : t("addTransaction")}
         </Text>
       </View>
-
     </View>
   );
 }

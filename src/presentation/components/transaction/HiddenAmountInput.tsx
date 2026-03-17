@@ -30,7 +30,10 @@ export function HiddenAmountInput({ amountInput, autoFocus, onDone }: HiddenAmou
   return (
     <>
       {Platform.OS === "ios" && (
-        <InputAccessoryView nativeID={amountInput.AMOUNT_ACCESSORY_ID} backgroundColor="transparent">
+        <InputAccessoryView
+          nativeID={amountInput.AMOUNT_ACCESSORY_ID}
+          backgroundColor="transparent"
+        >
           <CalculatorPill inputRef={amountInput.selfRef} onDone={onDone} />
         </InputAccessoryView>
       )}
@@ -45,7 +48,13 @@ export function HiddenAmountInput({ amountInput, autoFocus, onDone }: HiddenAmou
         caretHidden
         contextMenuHidden
         inputAccessoryViewID={Platform.OS === "ios" ? amountInput.AMOUNT_ACCESSORY_ID : undefined}
-        style={{ position: "absolute", opacity: 0, height: 1, width: 1, pointerEvents: "none" as const }}
+        style={{
+          position: "absolute",
+          opacity: 0,
+          height: 1,
+          width: 1,
+          pointerEvents: "none" as const,
+        }}
       />
     </>
   );

@@ -1,5 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Alert, Keyboard, Pressable, ScrollView, View } from "react-native";
+import { useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
+import {
+  Alert,
+  InputAccessoryView,
+  Keyboard,
+  Platform,
+  Pressable,
+  ScrollView,
+  TextInput,
+  View,
+} from "react-native";
 import { useTranslation } from "react-i18next";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -10,38 +19,56 @@ import { BlurView } from "expo-blur";
 import { usePickerStore, type SplitLine } from "@/stores/pickerStore";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
 import { useKeyboardHeight } from "@/presentation/hooks/useKeyboardHeight";
+import { useCursorBlink } from "@/presentation/hooks/useCursorBlink";
+import { useExpressionMode } from "@/presentation/hooks/useExpressionMode";
+import { useKeyboardBlur } from "@/presentation/hooks/useKeyboardBlur";
+import { usePreferencesStore } from "@/stores/preferencesStore";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Amount } from "@/presentation/components/atoms/Amount";
 import { IconButton } from "@/presentation/components/atoms/IconButton";
-import {
-  CompactCurrencyInput,
-  type CompactCurrencyInputRef,
-} from "@/presentation/components/currency-input";
-import { formatAmount } from "@/lib/format";
 import { GlassButton } from "@/presentation/components/atoms/GlassButton";
+import { CalculatorPill } from "@/presentation/components/currency-input/CalculatorPill";
+import { CurrencySymbol } from "@/presentation/components/atoms/CurrencySymbol";
+import { formatAmount, formatAmountParts } from "@/lib/format";
+import { formatCents, formatExpression, MAX_CENTS } from "@/lib/currency";
+import type { CurrencyInputRef } from "@/presentation/components/currency-input";
 import type { Theme } from "@/theme";
+import { useId } from "react";
 
 // ---------------------------------------------------------------------------
-// Split Line Row
+// Split Line Row — display only (no TextInput inside)
 // ---------------------------------------------------------------------------
 
 function SplitRow({
   line,
-  onAmountChange,
+  isActive,
+  expressionMode,
+  fullExpression,
   onCategoryPress,
   onRemove,
-  onFocus,
-  inputRef,
+  onPress,
 }: {
   line: SplitLine;
-  onAmountChange: (id: string, cents: number) => void;
+  isActive: boolean;
+  expressionMode: boolean;
+  fullExpression: string;
   onCategoryPress: (id: string) => void;
   onRemove: (id: string) => void;
-  onFocus: (id: string) => void;
-  inputRef: React.RefObject<CompactCurrencyInputRef | null>;
+  onPress: () => void;
 }) {
   const { colors, spacing } = useTheme();
   const { t } = useTranslation("transactions");
+  const { renderCursor } = useCursorBlink(isActive);
+  usePreferencesStore(
+    (s) =>
+      `${s.numberFormat}:${s.hideFraction}:${s.defaultCurrencyCode}:${s.defaultCurrencyCustomSymbol}:${s.currencySymbolPosition}:${s.currencySpaceBetweenAmountAndSymbol}`,
+  );
+
+  const displayColor = isActive
+    ? colors.primary
+    : line.amount > 0
+      ? colors.textPrimary
+      : colors.textMuted;
 
   return (
     <View
@@ -80,13 +107,60 @@ function SplitRow({
         />
       </Pressable>
 
-      <Pressable onPress={() => inputRef.current?.focus()}>
-        <CompactCurrencyInput
-          ref={inputRef}
-          value={line.amount}
-          onChangeValue={(cents) => onAmountChange(line.id, cents)}
-          onFocus={() => onFocus(line.id)}
-        />
+      <Pressable onPress={onPress}>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          {isActive && expressionMode ? (
+            <Text
+              variant="body"
+              style={{ fontWeight: "600", fontVariant: ["tabular-nums"], color: colors.primary }}
+              numberOfLines={1}
+            >
+              {formatExpression(fullExpression)}
+            </Text>
+          ) : (
+            (() => {
+              const parts = formatAmountParts(Math.abs(line.amount), false);
+              const fontSize = 14;
+              return (
+                <>
+                  {parts.svgSymbol && parts.position === "before" && (
+                    <>
+                      <CurrencySymbol
+                        symbol={parts.symbol}
+                        svgSymbol={parts.svgSymbol}
+                        fontSize={fontSize}
+                        color={displayColor}
+                      />
+                      {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
+                    </>
+                  )}
+                  <Text
+                    variant="body"
+                    style={{
+                      fontWeight: "600",
+                      fontVariant: ["tabular-nums"],
+                      color: displayColor,
+                    }}
+                  >
+                    {parts.svgSymbol ? parts.number : formatCents(Math.abs(line.amount))}
+                  </Text>
+                  {parts.svgSymbol && parts.position === "after" && (
+                    <>
+                      {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
+                      <CurrencySymbol
+                        symbol={parts.symbol}
+                        svgSymbol={parts.svgSymbol}
+                        fontSize={fontSize}
+                        color={displayColor}
+                      />
+                    </>
+                  )}
+                </>
+              );
+            })()
+          )}
+          {renderCursor({ width: 1.5, height: 16, marginLeft: 1, borderRadius: 1 }, colors.primary)}
+        </View>
       </Pressable>
 
       <IconButton
@@ -133,15 +207,62 @@ export default function SplitScreen() {
   });
 
   const [activeLineId, setActiveLineId] = useState<string | null>(null);
-  const focusedInputRef = useRef<CompactCurrencyInputRef | null>(null);
+  const activeAmount = activeLineId ? (splits.find((s) => s.id === activeLineId)?.amount ?? 0) : 0;
 
-  // Keep refs for each split line input
-  const inputRefs = useRef<Map<string, React.RefObject<CompactCurrencyInputRef | null>>>(new Map());
-  function getInputRef(id: string) {
-    if (!inputRefs.current.has(id)) {
-      inputRefs.current.set(id, { current: null });
+  // Shared hidden input
+  const accessoryID = useId();
+  const sharedInputRef = useRef<TextInput>(null);
+  const selfRef = useRef<CurrencyInputRef>(null);
+
+  const expr = useExpressionMode({
+    value: activeAmount,
+    onChangeValue: (cents) => {
+      if (!activeLineId) return;
+      setSplits((prev) => prev.map((s) => (s.id === activeLineId ? { ...s, amount: cents } : s)));
+    },
+  });
+
+  useKeyboardBlur(activeLineId !== null, () => {
+    expr.handleBlurExpression();
+    setActiveLineId(null);
+  });
+
+  useImperativeHandle(selfRef, () => ({
+    focus: () => sharedInputRef.current?.focus(),
+    injectOperator: (op: string) => expr.injectOperator(op, () => sharedInputRef.current?.focus()),
+    evaluate: () => expr.evaluate(),
+    deleteBackward: () => {
+      if (expr.expressionMode) {
+        expr.handleKeyPress({ nativeEvent: { key: "Backspace" } });
+      } else if (activeLineId) {
+        setSplits((prev) => prev.map((s) => (s.id === activeLineId ? { ...s, amount: 0 } : s)));
+      }
+    },
+  }));
+
+  const currentInputValue = expr.expressionMode ? expr.expressionInputValue : String(activeAmount);
+
+  function handleChangeText(text: string) {
+    if (!activeLineId) return;
+    if (expr.expressionMode) {
+      expr.handleChangeTextOperand(text);
+    } else {
+      const digits = text.replace(/\D/g, "");
+      const newCents = Math.min(parseInt(digits || "0", 10), MAX_CENTS);
+      setSplits((prev) =>
+        prev.map((s) => (s.id === activeLineId ? { ...s, amount: newCents } : s)),
+      );
     }
-    return inputRefs.current.get(id)!;
+  }
+
+  function handleRowPress(id: string) {
+    if (activeLineId === id) {
+      sharedInputRef.current?.blur();
+      return;
+    }
+    if (activeLineId) expr.handleBlurExpression();
+    setActiveLineId(id);
+    setTimeout(() => sharedInputRef.current?.focus(), 50);
   }
 
   // Pick up category selection from split-category-picker
@@ -158,18 +279,11 @@ export default function SplitScreen() {
   const totalAllocated = splits.reduce((sum, s) => sum + s.amount, 0);
   const remaining = totalCents - totalAllocated;
 
-  function handleAmountChange(id: string, cents: number) {
-    setSplits((prev) => prev.map((s) => (s.id === id ? { ...s, amount: cents } : s)));
-  }
-
   function handleCategoryPress(lineId: string) {
     const line = splits.find((s) => s.id === lineId);
     router.push({
       pathname: "./split-category-picker",
-      params: {
-        splitLineId: lineId,
-        selectedId: line?.categoryId ?? "",
-      },
+      params: { splitLineId: lineId, selectedId: line?.categoryId ?? "" },
     });
   }
 
@@ -199,7 +313,6 @@ export default function SplitScreen() {
   }
 
   function handleDone() {
-    // If there was a preset amount, splits must match it
     if (totalCents > 0 && remaining !== 0) {
       Alert.alert(
         t("amountsDontMatchTitle"),
@@ -207,13 +320,11 @@ export default function SplitScreen() {
       );
       return;
     }
-
     const validSplits = splits.filter((s) => s.amount > 0);
     if (validSplits.length === 0) {
       Alert.alert(t("noSplitsTitle"), t("noSplitsMessage"));
       return;
     }
-
     setSplitCategories(validSplits);
     router.dismiss(fromCategoryPicker === "1" ? 2 : 1);
   }
@@ -223,12 +334,12 @@ export default function SplitScreen() {
 
   return (
     <>
-      {/* Back button — top left */}
+      {/* Back button */}
       <View style={{ position: "absolute", top: 12, left: theme.spacing.md, zIndex: 11 }}>
         <GlassButton icon="chevron.left" onPress={() => router.back()} />
       </View>
 
-      {/* Title — centered */}
+      {/* Title */}
       <View
         style={{
           position: "absolute",
@@ -247,7 +358,7 @@ export default function SplitScreen() {
         </Text>
       </View>
 
-      {/* Done button — top right */}
+      {/* Done button */}
       <View style={{ position: "absolute", top: 12, right: theme.spacing.md, zIndex: 11 }}>
         <GlassButton icon="checkmark" onPress={handleDone} />
       </View>
@@ -256,7 +367,6 @@ export default function SplitScreen() {
         style={styles.scroll}
         contentContainerStyle={styles.container}
         keyboardShouldPersistTaps="handled"
-        automaticallyAdjustKeyboardInsets
       >
         {/* Payee + amount pill */}
         <View style={styles.headerCard}>
@@ -276,7 +386,7 @@ export default function SplitScreen() {
           </View>
         </View>
 
-        {/* Section header: Categories + remaining/total */}
+        {/* Section header */}
         <View style={styles.sectionHeader}>
           <Text variant="captionSm" color={theme.colors.textMuted} style={styles.sectionText}>
             {t("categories")}
@@ -294,23 +404,17 @@ export default function SplitScreen() {
             <View key={line.id}>
               <SplitRow
                 line={line}
-                onAmountChange={handleAmountChange}
+                isActive={activeLineId === line.id}
+                expressionMode={activeLineId === line.id && expr.expressionMode}
+                fullExpression={activeLineId === line.id ? expr.fullExpression : ""}
                 onCategoryPress={handleCategoryPress}
                 onRemove={handleRemove}
-                onFocus={(id) => {
-                  setActiveLineId(id);
-                  const ref = getInputRef(id);
-                  if (ref.current) focusedInputRef.current = ref.current;
-                }}
-                inputRef={getInputRef(line.id)}
+                onPress={() => handleRowPress(line.id)}
               />
               {index < splits.length - 1 && <View style={styles.divider} />}
             </View>
           ))}
-
           <View style={styles.divider} />
-
-          {/* Add category button */}
           <Pressable
             onPress={handleAdd}
             style={({ pressed }) => [styles.addButton, pressed && { opacity: 0.6 }]}
@@ -323,7 +427,28 @@ export default function SplitScreen() {
         </View>
       </ScrollView>
 
-      {/* Floating "assign remaining" button — appears when keyboard is visible */}
+      {/* Shared hidden TextInput + InputAccessoryView */}
+      {Platform.OS === "ios" && (
+        <InputAccessoryView nativeID={accessoryID} backgroundColor="transparent">
+          <CalculatorPill inputRef={selfRef} onDone={() => Keyboard.dismiss()} />
+        </InputAccessoryView>
+      )}
+      <TextInput
+        ref={sharedInputRef}
+        value={currentInputValue}
+        onChangeText={handleChangeText}
+        onBlur={() => {
+          expr.handleBlurExpression();
+          setActiveLineId(null);
+        }}
+        keyboardType="number-pad"
+        caretHidden
+        contextMenuHidden
+        inputAccessoryViewID={Platform.OS === "ios" ? accessoryID : undefined}
+        style={{ position: "absolute", opacity: 0, height: 1, width: 1, pointerEvents: "none" }}
+      />
+
+      {/* Floating "assign remaining" button */}
       {keyboardVisible && totalCents > 0 && remaining > 0 && (
         <Animated.View
           style={[
@@ -377,10 +502,7 @@ export default function SplitScreen() {
 }
 
 const createStyles = (theme: Theme) => ({
-  scroll: {
-    flex: 1,
-    backgroundColor: theme.colors.pageBackground,
-  },
+  scroll: { flex: 1, backgroundColor: theme.colors.pageBackground },
   container: {
     paddingTop: 72,
     paddingHorizontal: theme.spacing.lg,
@@ -411,10 +533,7 @@ const createStyles = (theme: Theme) => ({
     alignItems: "center" as const,
     paddingHorizontal: theme.spacing.sm,
   },
-  sectionText: {
-    fontWeight: "700" as const,
-    letterSpacing: 0.8,
-  },
+  sectionText: { fontWeight: "700" as const, letterSpacing: 0.8 },
   card: {
     backgroundColor: theme.colors.cardBackground,
     borderRadius: theme.borderRadius.lg,

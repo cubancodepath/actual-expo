@@ -254,7 +254,8 @@ export default function ScheduleDetailScreen() {
       }
       conditions.push({ field: "account", op: "is", value: acctId });
 
-      const signedAmount = type === "expense" ? -Math.abs(amountInput.cents) : Math.abs(amountInput.cents);
+      const signedAmount =
+        type === "expense" ? -Math.abs(amountInput.cents) : Math.abs(amountInput.cents);
       conditions.push({ field: "amount", op: "is", value: signedAmount });
 
       if (recurConfig) {
@@ -585,7 +586,6 @@ export default function ScheduleDetailScreen() {
           {t("editSchedule")}
         </Text>
       </View>
-
     </View>
   );
 }

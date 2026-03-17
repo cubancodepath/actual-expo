@@ -167,7 +167,8 @@ export default function NewScheduleScreen() {
       }
       conditions.push({ field: "account", op: "is", value: acctId });
 
-      const signedAmount = type === "expense" ? -Math.abs(amountInput.cents) : Math.abs(amountInput.cents);
+      const signedAmount =
+        type === "expense" ? -Math.abs(amountInput.cents) : Math.abs(amountInput.cents);
       conditions.push({ field: "amount", op: "is", value: signedAmount });
       conditions.push({ field: "date", op: "isapprox", value: recurConfig });
 
@@ -397,7 +398,6 @@ export default function NewScheduleScreen() {
           New Schedule
         </Text>
       </View>
-
     </View>
   );
 }

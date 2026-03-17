@@ -7,10 +7,7 @@ import { useBudgetStore } from "@/stores/budgetStore";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
 import { IconButton } from "@/presentation/components/atoms/IconButton";
-import {
-  CurrencyInput,
-  type CurrencyInputRef,
-} from "@/presentation/components/currency-input";
+import { CurrencyInput, type CurrencyInputRef } from "@/presentation/components/currency-input";
 import { Amount } from "@/presentation/components/atoms/Amount";
 
 export default function HoldScreen() {
@@ -96,7 +93,6 @@ export default function HoldScreen() {
           style={{ marginTop: spacing.xl, borderRadius: br.full }}
         />
       </View>
-
     </>
   );
 }

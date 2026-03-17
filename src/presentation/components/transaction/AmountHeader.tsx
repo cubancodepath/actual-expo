@@ -79,7 +79,15 @@ export const AmountHeader = memo(function AmountHeader({
               const prefix = isExpense ? "-" : "";
               return (
                 <>
-                  <Text style={{ fontSize: 32, lineHeight: 40, fontWeight: "700", marginRight: spacing.xs, color: headerText }}>
+                  <Text
+                    style={{
+                      fontSize: 32,
+                      lineHeight: 40,
+                      fontWeight: "700",
+                      marginRight: spacing.xs,
+                      color: headerText,
+                    }}
+                  >
                     {prefix}
                   </Text>
                   {parts.svgSymbol && parts.position === "before" && (
@@ -93,7 +101,15 @@ export const AmountHeader = memo(function AmountHeader({
                       {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
                     </>
                   )}
-                  <Text style={{ fontSize: 32, lineHeight: 40, fontWeight: "700", fontVariant: ["tabular-nums"], color: headerText }}>
+                  <Text
+                    style={{
+                      fontSize: 32,
+                      lineHeight: 40,
+                      fontWeight: "700",
+                      fontVariant: ["tabular-nums"],
+                      color: headerText,
+                    }}
+                  >
                     {parts.svgSymbol ? parts.number : formatCents(cents)}
                   </Text>
                   {parts.svgSymbol && parts.position === "after" && (
@@ -112,16 +128,19 @@ export const AmountHeader = memo(function AmountHeader({
             })()}
           {expressionMode && (
             <Text
-              style={{ fontSize: 32, lineHeight: 40, fontWeight: "700", fontVariant: ["tabular-nums"], color: primaryColor }}
+              style={{
+                fontSize: 32,
+                lineHeight: 40,
+                fontWeight: "700",
+                fontVariant: ["tabular-nums"],
+                color: primaryColor,
+              }}
               numberOfLines={1}
             >
               {formatExpression(fullExpression)}
             </Text>
           )}
-          {renderCursor(
-            { width: 2, height: 28, marginLeft: 2, borderRadius: 1 },
-            primaryColor,
-          )}
+          {renderCursor({ width: 2, height: 28, marginLeft: 2, borderRadius: 1 }, primaryColor)}
         </View>
       </Pressable>
       {children}

@@ -13,18 +13,48 @@ export function toAppError(e: unknown): AppError {
   if (e instanceof PostError) {
     switch (e.type) {
       case "network-failure":
-        return { category: "network", message: t("errors:networkFailure"), recovery: "retry", cause: e };
+        return {
+          category: "network",
+          message: t("errors:networkFailure"),
+          recovery: "retry",
+          cause: e,
+        };
       case "invalid-password":
-        return { category: "validation", message: t("errors:invalidPassword"), recovery: "dismiss", cause: e };
+        return {
+          category: "validation",
+          message: t("errors:invalidPassword"),
+          recovery: "dismiss",
+          cause: e,
+        };
       case "unauthorized":
       case "token-expired":
-        return { category: "auth", message: t("errors:sessionExpired"), recovery: "login", cause: e };
+        return {
+          category: "auth",
+          message: t("errors:sessionExpired"),
+          recovery: "login",
+          cause: e,
+        };
       case "internal":
-        return { category: "unknown", message: t("errors:serverError"), recovery: "retry", cause: e };
+        return {
+          category: "unknown",
+          message: t("errors:serverError"),
+          recovery: "retry",
+          cause: e,
+        };
       case "parse-json":
-        return { category: "unknown", message: t("errors:serverError"), recovery: "retry", cause: e };
+        return {
+          category: "unknown",
+          message: t("errors:serverError"),
+          recovery: "retry",
+          cause: e,
+        };
       default:
-        return { category: "unknown", message: t("errors:unexpectedError"), recovery: "dismiss", cause: e };
+        return {
+          category: "unknown",
+          message: t("errors:unexpectedError"),
+          recovery: "dismiss",
+          cause: e,
+        };
     }
   }
 
@@ -47,14 +77,29 @@ export function toAppError(e: unknown): AppError {
     const msg = e.message.toLowerCase();
 
     if (msg.includes("network") || msg.includes("fetch") || msg.includes("timeout")) {
-      return { category: "network", message: t("errors:networkFailure"), recovery: "retry", cause: e };
+      return {
+        category: "network",
+        message: t("errors:networkFailure"),
+        recovery: "retry",
+        cause: e,
+      };
     }
 
     if (msg.includes("closed resource") || msg.includes("not initialized")) {
-      return { category: "database", message: t("errors:databaseUnavailable"), recovery: "dismiss", cause: e };
+      return {
+        category: "database",
+        message: t("errors:databaseUnavailable"),
+        recovery: "dismiss",
+        cause: e,
+      };
     }
   }
 
   // Fallback
-  return { category: "unknown", message: t("errors:unexpectedError"), recovery: "dismiss", cause: e };
+  return {
+    category: "unknown",
+    message: t("errors:unexpectedError"),
+    recovery: "dismiss",
+    cause: e,
+  };
 }

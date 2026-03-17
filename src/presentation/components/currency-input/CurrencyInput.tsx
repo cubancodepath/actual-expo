@@ -1,5 +1,12 @@
 import { useEffect, useImperativeHandle, useRef, useState } from "react";
-import { InputAccessoryView, Platform, Pressable, TextInput, View, type ViewStyle } from "react-native";
+import {
+  InputAccessoryView,
+  Platform,
+  Pressable,
+  TextInput,
+  View,
+  type ViewStyle,
+} from "react-native";
 import * as Haptics from "expo-haptics";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Text } from "../atoms/Text";
@@ -135,7 +142,8 @@ export function CurrencyInput({
   const prefix = type === "expense" ? "-" : "";
   const previewColor = withOpacity(amountColor, 0.6);
 
-  const typeLabel = type === "expense" ? "expense amount" : type === "income" ? "income amount" : "amount";
+  const typeLabel =
+    type === "expense" ? "expense amount" : type === "income" ? "income amount" : "amount";
 
   return (
     <View>
@@ -199,10 +207,7 @@ export function CurrencyInput({
               {formatExpression(ci.fullExpression)}
             </Text>
           )}
-          {ci.renderCursor(
-            { ...styles.cursor, ...(compactCursor ?? {}) },
-            theme.colors.primary,
-          )}
+          {ci.renderCursor({ ...styles.cursor, ...(compactCursor ?? {}) }, theme.colors.primary)}
         </View>
 
         <TextInput

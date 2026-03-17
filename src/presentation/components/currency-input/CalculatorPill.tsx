@@ -53,21 +53,23 @@ function DonePill({ onPress }: { onPress: () => void }) {
       accessibilityRole="button"
       accessibilityLabel="Done editing"
     >
-      <Text
-        variant="body"
-        color={colors.primary}
-        style={{ fontWeight: "600" }}
-      >
+      <Text variant="body" color={colors.primary} style={{ fontWeight: "600" }}>
         Done
       </Text>
     </Pressable>
   );
 
   if (glass) {
-    return <GlassView style={{ borderRadius: PILL_HEIGHT / 2, overflow: "hidden" }}>{content}</GlassView>;
+    return (
+      <GlassView style={{ borderRadius: PILL_HEIGHT / 2, overflow: "hidden" }}>{content}</GlassView>
+    );
   }
   return (
-    <BlurView tint="systemChromeMaterial" intensity={100} style={{ borderRadius: PILL_HEIGHT / 2, overflow: "hidden" }}>
+    <BlurView
+      tint="systemChromeMaterial"
+      intensity={100}
+      style={{ borderRadius: PILL_HEIGHT / 2, overflow: "hidden" }}
+    >
       {content}
     </BlurView>
   );

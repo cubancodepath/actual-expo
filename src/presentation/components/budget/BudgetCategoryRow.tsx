@@ -75,7 +75,8 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
 
   // Subscribe to currency preferences so display re-renders on changes
   usePreferencesStore(
-    (s) => `${s.numberFormat}:${s.hideFraction}:${s.defaultCurrencyCode}:${s.defaultCurrencyCustomSymbol}:${s.currencySymbolPosition}:${s.currencySpaceBetweenAmountAndSymbol}`,
+    (s) =>
+      `${s.numberFormat}:${s.hideFraction}:${s.defaultCurrencyCode}:${s.defaultCurrencyCustomSymbol}:${s.currencySymbolPosition}:${s.currencySpaceBetweenAmountAndSymbol}`,
   );
 
   const insetStyle = {
@@ -263,7 +264,11 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
   }
 
   const displayCents = isEditing ? (editValue ?? 0) : cat.budgeted;
-  const displayColor = isEditing ? colors.primary : cat.budgeted !== 0 ? colors.textPrimary : colors.textMuted;
+  const displayColor = isEditing
+    ? colors.primary
+    : cat.budgeted !== 0
+      ? colors.textPrimary
+      : colors.textMuted;
 
   const pressableContent = (
     <Pressable
@@ -305,7 +310,11 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
                 {/* Line 1: left operand */}
                 <Text
                   variant="body"
-                  style={{ fontWeight: "600", fontVariant: ["tabular-nums"], color: colors.textMuted }}
+                  style={{
+                    fontWeight: "600",
+                    fontVariant: ["tabular-nums"],
+                    color: colors.textMuted,
+                  }}
                   numberOfLines={1}
                 >
                   {formatCents(parseFloat(expression.slice(0, -1)) * 100 || 0)}
@@ -314,11 +323,19 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
                 <View style={{ flexDirection: "row", alignItems: "center" }}>
                   <Text
                     variant="body"
-                    style={{ fontWeight: "600", fontVariant: ["tabular-nums"], color: colors.primary }}
+                    style={{
+                      fontWeight: "600",
+                      fontVariant: ["tabular-nums"],
+                      color: colors.primary,
+                    }}
                   >
-                    {expression.slice(-1)}{formatCents(Math.abs(editValue ?? 0))}
+                    {expression.slice(-1)}
+                    {formatCents(Math.abs(editValue ?? 0))}
                   </Text>
-                  {renderCursor({ width: 1.5, height: 16, marginLeft: 1, borderRadius: 1 }, colors.primary)}
+                  {renderCursor(
+                    { width: 1.5, height: 16, marginLeft: 1, borderRadius: 1 },
+                    colors.primary,
+                  )}
                 </View>
               </>
             ) : isEditing ? (
@@ -330,26 +347,47 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
                     <>
                       {parts.svgSymbol && parts.position === "before" && (
                         <>
-                          <CurrencySymbol symbol={parts.symbol} svgSymbol={parts.svgSymbol} fontSize={fontSize} color={displayColor} />
-                          {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
+                          <CurrencySymbol
+                            symbol={parts.symbol}
+                            svgSymbol={parts.svgSymbol}
+                            fontSize={fontSize}
+                            color={displayColor}
+                          />
+                          {parts.spaceBetween && (
+                            <View style={{ width: Math.round(fontSize / 3) }} />
+                          )}
                         </>
                       )}
                       <Text
                         variant="body"
-                        style={{ fontWeight: "600", fontVariant: ["tabular-nums"], color: displayColor }}
+                        style={{
+                          fontWeight: "600",
+                          fontVariant: ["tabular-nums"],
+                          color: displayColor,
+                        }}
                       >
                         {parts.svgSymbol ? parts.number : formatCents(Math.abs(displayCents))}
                       </Text>
                       {parts.svgSymbol && parts.position === "after" && (
                         <>
-                          {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
-                          <CurrencySymbol symbol={parts.symbol} svgSymbol={parts.svgSymbol} fontSize={fontSize} color={displayColor} />
+                          {parts.spaceBetween && (
+                            <View style={{ width: Math.round(fontSize / 3) }} />
+                          )}
+                          <CurrencySymbol
+                            symbol={parts.symbol}
+                            svgSymbol={parts.svgSymbol}
+                            fontSize={fontSize}
+                            color={displayColor}
+                          />
                         </>
                       )}
                     </>
                   );
                 })()}
-                {renderCursor({ width: 1.5, height: 16, marginLeft: 1, borderRadius: 1 }, colors.primary)}
+                {renderCursor(
+                  { width: 1.5, height: 16, marginLeft: 1, borderRadius: 1 },
+                  colors.primary,
+                )}
               </View>
             ) : (
               <Amount
@@ -383,7 +421,14 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
               flexWrap: "nowrap",
             }}
           >
-            <Amount value={cat.balance} variant="captionSm" color={pillText} weight="700" numberOfLines={1} adjustsFontSizeToFit />
+            <Amount
+              value={cat.balance}
+              variant="captionSm"
+              color={pillText}
+              weight="700"
+              numberOfLines={1}
+              adjustsFontSizeToFit
+            />
           </View>
         </View>
       </View>

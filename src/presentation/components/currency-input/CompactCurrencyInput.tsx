@@ -103,9 +103,7 @@ export function CompactCurrencyInput({
     return handle;
   });
 
-  const currentInputValue = ci.expressionMode
-    ? ci.expressionInputValue
-    : String(Math.abs(value));
+  const currentInputValue = ci.expressionMode ? ci.expressionInputValue : String(Math.abs(value));
 
   const isNeg = value < 0;
   const displayColor = colorProp ?? (value !== 0 ? colors.textPrimary : colors.textMuted);
@@ -211,4 +209,3 @@ export function CompactCurrencyInput({
     </View>
   );
 }
-

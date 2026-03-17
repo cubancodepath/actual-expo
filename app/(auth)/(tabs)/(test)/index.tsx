@@ -18,15 +18,27 @@ const glass = isLiquidGlassAvailable();
 const ACCESSORY_ID = "sharedCalcToolbar";
 
 const CATEGORIES = [
-  "Groceries", "Rent", "Utilities", "Transport", "Entertainment",
-  "Dining Out", "Clothing", "Health", "Insurance", "Savings",
+  "Groceries",
+  "Rent",
+  "Utilities",
+  "Transport",
+  "Entertainment",
+  "Dining Out",
+  "Clothing",
+  "Health",
+  "Insurance",
+  "Savings",
 ];
 
 // ---------------------------------------------------------------------------
 // Calculator pill (same as production CalculatorPill)
 // ---------------------------------------------------------------------------
 
-const OPERATORS: { icon: "plus" | "minus" | "multiply" | "divide"; value: string; label: string }[] = [
+const OPERATORS: {
+  icon: "plus" | "minus" | "multiply" | "divide";
+  value: string;
+  label: string;
+}[] = [
   { icon: "plus", value: "+", label: "Add" },
   { icon: "minus", value: "-", label: "Subtract" },
   { icon: "multiply", value: "*", label: "Multiply" },
@@ -39,7 +51,10 @@ interface SharedInputRef {
   deleteBackward: () => void;
 }
 
-function CalculatorPill({ inputRef, isExpressionMode }: {
+function CalculatorPill({
+  inputRef,
+  isExpressionMode,
+}: {
   inputRef: React.RefObject<SharedInputRef | null>;
   isExpressionMode: boolean;
 }) {
@@ -53,7 +68,15 @@ function CalculatorPill({ inputRef, isExpressionMode }: {
     borderRadius: 22,
   };
 
-  function PillBtn({ icon, color, onPress }: { icon: Parameters<typeof SymbolView>[0]["name"]; color: string; onPress: () => void }) {
+  function PillBtn({
+    icon,
+    color,
+    onPress,
+  }: {
+    icon: Parameters<typeof SymbolView>[0]["name"];
+    color: string;
+    onPress: () => void;
+  }) {
     return (
       <Pressable
         onPress={onPress}
@@ -71,26 +94,58 @@ function CalculatorPill({ inputRef, isExpressionMode }: {
     );
   }
 
-  const divider = <View style={{ width: 1, height: 20, backgroundColor: colors.textMuted, opacity: 0.3, marginHorizontal: 4 }} />;
+  const divider = (
+    <View
+      style={{
+        width: 1,
+        height: 20,
+        backgroundColor: colors.textMuted,
+        opacity: 0.3,
+        marginHorizontal: 4,
+      }}
+    />
+  );
 
   const content = (
     <>
       {OPERATORS.map(({ icon, value }) => (
-        <PillBtn key={value} icon={icon} color={colors.textPrimary} onPress={() => inputRef.current?.injectOperator(value)} />
+        <PillBtn
+          key={value}
+          icon={icon}
+          color={colors.textPrimary}
+          onPress={() => inputRef.current?.injectOperator(value)}
+        />
       ))}
       {divider}
-      <PillBtn icon="equal" color={isExpressionMode ? colors.primary : colors.textMuted} onPress={() => inputRef.current?.evaluate()} />
+      <PillBtn
+        icon="equal"
+        color={isExpressionMode ? colors.primary : colors.textMuted}
+        onPress={() => inputRef.current?.evaluate()}
+      />
       {divider}
-      <PillBtn icon="delete.backward" color={colors.textMuted} onPress={() => inputRef.current?.deleteBackward()} />
+      <PillBtn
+        icon="delete.backward"
+        color={colors.textMuted}
+        onPress={() => inputRef.current?.deleteBackward()}
+      />
     </>
   );
 
   return (
-    <View style={{ flexDirection: "row", justifyContent: "flex-end", paddingHorizontal: spacing.md, marginBottom: 6 }}>
+    <View
+      style={{
+        flexDirection: "row",
+        justifyContent: "flex-end",
+        paddingHorizontal: spacing.md,
+        marginBottom: 6,
+      }}
+    >
       {glass ? (
         <GlassView style={pillStyle}>{content}</GlassView>
       ) : (
-        <BlurView tint="systemChromeMaterial" intensity={100} style={pillStyle}>{content}</BlurView>
+        <BlurView tint="systemChromeMaterial" intensity={100} style={pillStyle}>
+          {content}
+        </BlurView>
       )}
     </View>
   );
@@ -100,7 +155,15 @@ function CalculatorPill({ inputRef, isExpressionMode }: {
 // Category row — display only, with blinking cursor when active
 // ---------------------------------------------------------------------------
 
-function CategoryRow({ name, cents, isActive, expressionMode, fullExpression, previewCents, onPress }: {
+function CategoryRow({
+  name,
+  cents,
+  isActive,
+  expressionMode,
+  fullExpression,
+  previewCents,
+  onPress,
+}: {
   name: string;
   cents: number;
   isActive: boolean;
@@ -113,10 +176,15 @@ function CategoryRow({ name, cents, isActive, expressionMode, fullExpression, pr
   const { renderCursor } = useCursorBlink(isActive);
 
   usePreferencesStore(
-    (s) => `${s.numberFormat}:${s.hideFraction}:${s.defaultCurrencyCode}:${s.defaultCurrencyCustomSymbol}:${s.currencySymbolPosition}:${s.currencySpaceBetweenAmountAndSymbol}`,
+    (s) =>
+      `${s.numberFormat}:${s.hideFraction}:${s.defaultCurrencyCode}:${s.defaultCurrencyCustomSymbol}:${s.currencySymbolPosition}:${s.currencySpaceBetweenAmountAndSymbol}`,
   );
 
-  const displayColor = isActive ? colors.primary : cents !== 0 ? colors.textPrimary : colors.textMuted;
+  const displayColor = isActive
+    ? colors.primary
+    : cents !== 0
+      ? colors.textPrimary
+      : colors.textMuted;
 
   return (
     <Pressable
@@ -129,7 +197,9 @@ function CategoryRow({ name, cents, isActive, expressionMode, fullExpression, pr
         minHeight: 44,
       }}
     >
-      <Text variant="body" style={{ flex: 1 }} numberOfLines={1}>{name}</Text>
+      <Text variant="body" style={{ flex: 1 }} numberOfLines={1}>
+        {name}
+      </Text>
       <View style={{ alignItems: "flex-end" }}>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           {isActive && expressionMode ? (
@@ -148,20 +218,34 @@ function CategoryRow({ name, cents, isActive, expressionMode, fullExpression, pr
                 <>
                   {parts.svgSymbol && parts.position === "before" && (
                     <>
-                      <CurrencySymbol symbol={parts.symbol} svgSymbol={parts.svgSymbol} fontSize={fontSize} color={displayColor} />
+                      <CurrencySymbol
+                        symbol={parts.symbol}
+                        svgSymbol={parts.svgSymbol}
+                        fontSize={fontSize}
+                        color={displayColor}
+                      />
                       {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
                     </>
                   )}
                   <Text
                     variant="body"
-                    style={{ fontWeight: "600", fontVariant: ["tabular-nums"], color: displayColor }}
+                    style={{
+                      fontWeight: "600",
+                      fontVariant: ["tabular-nums"],
+                      color: displayColor,
+                    }}
                   >
                     {parts.svgSymbol ? parts.number : formatCents(Math.abs(cents))}
                   </Text>
                   {parts.svgSymbol && parts.position === "after" && (
                     <>
                       {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
-                      <CurrencySymbol symbol={parts.symbol} svgSymbol={parts.svgSymbol} fontSize={fontSize} color={displayColor} />
+                      <CurrencySymbol
+                        symbol={parts.symbol}
+                        svgSymbol={parts.svgSymbol}
+                        fontSize={fontSize}
+                        color={displayColor}
+                      />
                     </>
                   )}
                 </>
@@ -171,7 +255,11 @@ function CategoryRow({ name, cents, isActive, expressionMode, fullExpression, pr
           {renderCursor({ width: 1.5, height: 16, marginLeft: 1, borderRadius: 1 }, colors.primary)}
         </View>
         {isActive && expressionMode && previewCents !== null && (
-          <Text variant="captionSm" color={colors.textMuted} style={{ fontVariant: ["tabular-nums"], marginTop: 1 }}>
+          <Text
+            variant="captionSm"
+            color={colors.textMuted}
+            style={{ fontVariant: ["tabular-nums"], marginTop: 1 }}
+          >
             = {formatCents(previewCents)}
           </Text>
         )}
@@ -194,7 +282,7 @@ export default function TestPlayground() {
   const [activeRow, setActiveRow] = useState<string | null>(null);
 
   // The active row's value — drives the shared input
-  const activeValue = activeRow ? values[activeRow] ?? 0 : 0;
+  const activeValue = activeRow ? (values[activeRow] ?? 0) : 0;
 
   function handleChangeValue(cents: number) {
     if (!activeRow) return;
@@ -206,7 +294,8 @@ export default function TestPlayground() {
   const expr = useExpressionMode({ value: activeValue, onChangeValue: handleChangeValue });
 
   usePreferencesStore(
-    (s) => `${s.numberFormat}:${s.hideFraction}:${s.defaultCurrencyCode}:${s.defaultCurrencyCustomSymbol}:${s.currencySymbolPosition}:${s.currencySpaceBetweenAmountAndSymbol}`,
+    (s) =>
+      `${s.numberFormat}:${s.hideFraction}:${s.defaultCurrencyCode}:${s.defaultCurrencyCustomSymbol}:${s.currencySymbolPosition}:${s.currencySpaceBetweenAmountAndSymbol}`,
   );
 
   function handleBlur() {
@@ -301,7 +390,13 @@ export default function TestPlayground() {
                 onPress={() => handleRowPress(name)}
               />
               {i < CATEGORIES.length - 1 && (
-                <View style={{ height: bw.thin, backgroundColor: colors.divider, marginHorizontal: spacing.lg }} />
+                <View
+                  style={{
+                    height: bw.thin,
+                    backgroundColor: colors.divider,
+                    marginHorizontal: spacing.lg,
+                  }}
+                />
               )}
             </View>
           ))}

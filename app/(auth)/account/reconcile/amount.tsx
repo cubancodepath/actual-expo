@@ -140,7 +140,10 @@ function AmountDisplay({
   );
 
   return (
-    <Pressable onPress={onPress} style={{ flex: 1, justifyContent: "center" }}>
+    <Pressable
+      onPress={onPress}
+      style={{ flex: 1, justifyContent: "center", alignItems: "flex-end" }}
+    >
       <View style={{ flexDirection: "row", alignItems: "center" }}>
         {expressionMode ? (
           <Text
@@ -158,17 +161,30 @@ function AmountDisplay({
               <>
                 {parts.svgSymbol && parts.position === "before" && (
                   <>
-                    <CurrencySymbol symbol={parts.symbol} svgSymbol={parts.svgSymbol} fontSize={fontSize} color={color} />
+                    <CurrencySymbol
+                      symbol={parts.symbol}
+                      svgSymbol={parts.svgSymbol}
+                      fontSize={fontSize}
+                      color={color}
+                    />
                     {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
                   </>
                 )}
-                <Text variant="body" style={{ fontWeight: "600", fontVariant: ["tabular-nums"], color }}>
+                <Text
+                  variant="body"
+                  style={{ fontWeight: "600", fontVariant: ["tabular-nums"], color }}
+                >
                   {parts.svgSymbol ? parts.number : formatCents(Math.abs(cents))}
                 </Text>
                 {parts.svgSymbol && parts.position === "after" && (
                   <>
                     {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
-                    <CurrencySymbol symbol={parts.symbol} svgSymbol={parts.svgSymbol} fontSize={fontSize} color={color} />
+                    <CurrencySymbol
+                      symbol={parts.symbol}
+                      svgSymbol={parts.svgSymbol}
+                      fontSize={fontSize}
+                      color={color}
+                    />
                   </>
                 )}
               </>
@@ -207,7 +223,8 @@ export default function ReconcileAmountScreen() {
 
   const bankBalance = isNegative ? -amountInput.cents : amountInput.cents;
   const diff = bankBalance - clearedCents;
-  const displayColor = amountInput.cents > 0 ? (isNegative ? colors.negative : colors.positive) : colors.textMuted;
+  const displayColor =
+    amountInput.cents > 0 ? (isNegative ? colors.negative : colors.positive) : colors.textMuted;
 
   async function handleReconcile() {
     if (amountInput.cents === 0 || loading) return;

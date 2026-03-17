@@ -7,12 +7,7 @@ export type ErrorCategory =
   | "database"
   | "unknown";
 
-export type RecoveryAction =
-  | "retry"
-  | "login"
-  | "dismiss"
-  | "reopen"
-  | "none";
+export type RecoveryAction = "retry" | "login" | "dismiss" | "reopen" | "none";
 
 export type AppError = {
   /** Machine-readable category for display strategy decisions */

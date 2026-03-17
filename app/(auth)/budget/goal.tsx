@@ -14,10 +14,7 @@ import { IconButton } from "@/presentation/components/atoms/IconButton";
 import { Card } from "@/presentation/components/atoms/Card";
 import { ListItem } from "@/presentation/components/molecules/ListItem";
 import { Divider } from "@/presentation/components/atoms/Divider";
-import {
-  CurrencyInput,
-  type CurrencyInputRef,
-} from "@/presentation/components/currency-input";
+import { CurrencyInput, type CurrencyInputRef } from "@/presentation/components/currency-input";
 import { getGoalTemplates, setGoalTemplates } from "@/goals";
 import { updateGoalIndicator } from "@/goals/apply";
 import { amountToInteger, integerToAmount } from "@/goals/engine";
@@ -582,7 +579,9 @@ export default function GoalEditorScreen() {
             <View style={{ padding: spacing.md }}>
               <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.xs }}>
                 {goalType === "simple"
-                  ? simpleRefill ? t("refillTo") : t("monthlyAmount")
+                  ? simpleRefill
+                    ? t("refillTo")
+                    : t("monthlyAmount")
                   : goalType === "goal"
                     ? t("targetBalance")
                     : goalType === "limit"
@@ -638,7 +637,7 @@ export default function GoalEditorScreen() {
                             type="income"
                             compact
                             style={{ paddingVertical: 0 }}
-                                    />
+                          />
                         }
                       />
                     </>

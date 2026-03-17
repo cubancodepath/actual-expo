@@ -56,7 +56,7 @@ export const TransactionDetailsCard = memo(function TransactionDetailsCard({
     <View style={{ marginTop: -20, zIndex: 1, paddingHorizontal: spacing.lg }}>
       <View style={cardStyle}>
         <DetailRow
-          icon="wallet-outline"
+          icon="wallet"
           label={acctName}
           placeholder={t("account")}
           onPress={() =>
@@ -66,7 +66,7 @@ export const TransactionDetailsCard = memo(function TransactionDetailsCard({
         <View style={dividerStyle} />
 
         <DetailRow
-          icon="person-outline"
+          icon="personOutline"
           label={payeeName}
           placeholder={t("payee")}
           onPress={() =>
@@ -83,7 +83,7 @@ export const TransactionDetailsCard = memo(function TransactionDetailsCard({
         <View style={dividerStyle} />
 
         <DetailRow
-          icon={isSplit ? "git-branch-outline" : "folder-outline"}
+          icon={isSplit ? "gitBranchOutline" : "folderOutline"}
           label={
             isTransfer
               ? ""

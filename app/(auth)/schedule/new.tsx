@@ -223,7 +223,7 @@ export default function NewScheduleScreen() {
         <View style={{ marginTop: -20, zIndex: 1, paddingHorizontal: spacing.lg }}>
           <View style={cardStyle}>
             <DetailRow
-              icon="wallet-outline"
+              icon="wallet"
               label={acctName}
               placeholder="Account"
               onPress={() =>
@@ -236,7 +236,7 @@ export default function NewScheduleScreen() {
             <View style={dividerStyle} />
 
             <DetailRow
-              icon="person-outline"
+              icon="personOutline"
               label={payeeName}
               placeholder="Payee"
               onPress={() =>
@@ -253,7 +253,7 @@ export default function NewScheduleScreen() {
             <View style={dividerStyle} />
 
             <DetailRow
-              icon="folder-outline"
+              icon="folderOutline"
               label={categoryName}
               placeholder="Category"
               onClear={
@@ -291,7 +291,7 @@ export default function NewScheduleScreen() {
         <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.md }}>
           <View style={cardStyle}>
             <DetailRow
-              icon="text-outline"
+              icon="textOutline"
               label={name}
               placeholder="Name"
               onPress={() => {
@@ -377,7 +377,7 @@ export default function NewScheduleScreen() {
 
       {/* Close button */}
       <View style={{ position: "absolute", top: 12, left: spacing.md, zIndex: 11 }}>
-        <GlassButton icon="xmark" onPress={() => router.dismiss()} />
+        <GlassButton icon="close" onPress={() => router.dismiss()} />
       </View>
 
       {/* Title */}

@@ -1,7 +1,7 @@
 import { Pressable, ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { useAccountsStore } from "@/stores/accountsStore";
+import { Icon } from "@/presentation/components/atoms/Icon";
 import { usePickerStore } from "@/stores/pickerStore";
 import { groupAccounts } from "@/accounts";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
@@ -38,7 +38,7 @@ export default function AccountPickerScreen() {
           backgroundColor: colors.pageBackground,
         }}
       >
-        <GlassButton icon="chevron.left" onPress={() => router.back()} />
+        <GlassButton icon="chevronBack" onPress={() => router.back()} />
         <Text variant="headingSm" color={colors.headerText}>
           Account
         </Text>
@@ -63,7 +63,7 @@ export default function AccountPickerScreen() {
                     onPress={() => select(a.id, a.name)}
                   >
                     <View style={styles.checkSlot}>
-                      {isSelected && <Ionicons name="checkmark" size={20} color={colors.primary} />}
+                      {isSelected && <Icon name="checkmark" size={20} color={colors.primary} />}
                     </View>
                     <Text variant="body" color={colors.textPrimary} style={styles.itemLabel}>
                       {a.name}

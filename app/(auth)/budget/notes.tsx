@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { SectionList, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "@/presentation/components/atoms/Icon";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { Text } from "@/presentation/components/atoms/Text";
@@ -91,7 +91,7 @@ export default function BudgetNotesScreen() {
         options={{
           headerLeft: () => (
             <IconButton
-              sfSymbol="xmark"
+              name="close"
               size={22}
               color={colors.headerText}
               onPress={() => router.back()}
@@ -134,8 +134,8 @@ export default function BudgetNotesScreen() {
                 gap: spacing.sm,
               }}
             >
-              <Ionicons
-                name="swap-horizontal"
+              <Icon
+                name="swapHorizontal"
                 size={16}
                 color={colors.primary}
                 style={{ marginTop: 2 }}
@@ -149,7 +149,7 @@ export default function BudgetNotesScreen() {
         }}
         ListEmptyComponent={
           <View style={{ alignItems: "center", paddingTop: 60, gap: spacing.md }}>
-            <Ionicons name="document-text-outline" size={40} color={colors.textMuted} />
+            <Icon name="documentTextOutline" size={40} color={colors.textMuted} />
             <Text variant="body" color={colors.textSecondary} style={{ textAlign: "center" }}>
               {categoryName
                 ? t("noMovementsForCategory", { name: categoryName })

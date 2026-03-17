@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "@/presentation/components/atoms/Icon";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
 import { useTagsStore } from "@/stores/tagsStore";
 import { usePickerStore } from "@/stores/pickerStore";
@@ -136,7 +136,7 @@ export default function TransactionTagsScreen() {
           title: "Tags",
           headerLeft: () => (
             <IconButton
-              sfSymbol="xmark"
+              name="close"
               size={22}
               color={colors.headerText}
               onPress={() => router.back()}
@@ -158,7 +158,7 @@ export default function TransactionTagsScreen() {
             onPress={handleCreate}
             style={({ pressed }) => [styles.item, pressed && styles.pressed]}
           >
-            <Ionicons name="add-circle" size={22} color={colors.primary} />
+            <Icon name="addCircle" size={22} color={colors.primary} />
             <Text
               variant="body"
               color={colors.primary}
@@ -189,7 +189,7 @@ export default function TransactionTagsScreen() {
                 >
                   <TagPill tagName={tag.tag} color={tag.color} />
                   <View style={{ flex: 1 }} />
-                  {isActive && <Ionicons name="checkmark" size={20} color={colors.primary} />}
+                  {isActive && <Icon name="checkmark" size={20} color={colors.primary} />}
                   {!isLast && (
                     <View style={[styles.divider, { backgroundColor: colors.divider }]} />
                   )}

@@ -1,5 +1,5 @@
 import { View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "../atoms/Icon";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Text } from "../atoms/Text";
 import { Amount } from "../atoms/Amount";
@@ -60,7 +60,7 @@ export function BalanceSummary({ balance, clearedBalance, lastReconciled }: Bala
       {/* Last reconciled */}
       {lastReconciled && (
         <View style={styles.reconciledRow}>
-          <Ionicons name="lock-closed" size={11} color={colors.textMuted} />
+          <Icon name="lockClosed" size={11} color={colors.textMuted} />
           <Text variant="captionSm" color={colors.textMuted}>
             Reconciled {formatReconciled(lastReconciled)}
           </Text>

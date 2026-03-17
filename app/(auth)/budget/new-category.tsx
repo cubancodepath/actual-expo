@@ -36,7 +36,7 @@ export default function NewCategoryScreen() {
         options={{
           headerLeft: () => (
             <IconButton
-              sfSymbol="xmark"
+              name="close"
               size={22}
               color={colors.headerText}
               onPress={() => router.back()}

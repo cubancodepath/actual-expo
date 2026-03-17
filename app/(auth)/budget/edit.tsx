@@ -10,8 +10,8 @@ import Animated, {
   withDelay,
   withTiming,
 } from "react-native-reanimated";
-import { Ionicons } from "@expo/vector-icons";
 import { SymbolView } from "expo-symbols";
+import { Icon } from "@/presentation/components/atoms/Icon";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { useCategoriesStore } from "@/stores/categoriesStore";
@@ -431,7 +431,7 @@ export default function EditBudgetScreen() {
             accessibilityRole="button"
             accessibilityLabel={t("addGroupAccessibility", { name: group.name })}
           >
-            <Ionicons name="add-circle" size={18} color={colors.primary} />
+            <Icon name="addCircle" size={18} color={colors.primary} />
           </Pressable>
           <Pressable
             onPress={() =>
@@ -445,11 +445,7 @@ export default function EditBudgetScreen() {
             accessibilityRole="button"
             accessibilityLabel={t("editGroupAccessibility", { name: group.name })}
           >
-            <Ionicons
-              name="ellipsis-horizontal-circle-outline"
-              size={18}
-              color={colors.textMuted}
-            />
+            <Icon name="ellipsisHorizontalCircleOutline" size={18} color={colors.textMuted} />
           </Pressable>
         </View>
       );
@@ -530,7 +526,7 @@ export default function EditBudgetScreen() {
                 ) : goalsEnabled ? (
                   <Button
                     title={t("addTarget")}
-                    icon="add-circle"
+                    icon="addCircle"
                     variant="ghost"
                     size="sm"
                     onPress={() => {
@@ -685,7 +681,7 @@ export default function EditBudgetScreen() {
       <View style={{ flex: 1 }}>
         <Button
           title={t("reorder")}
-          icon="reorder-three-outline"
+          icon="reorderThreeOutline"
           variant="secondary"
           size="sm"
           onPress={() => router.push("/(auth)/budget/reorder")}
@@ -813,7 +809,7 @@ export default function EditBudgetScreen() {
         }}
       >
         <GlassButton
-          icon="chevron.left"
+          icon="chevronBack"
           iconSize={24}
           onPress={() => router.back()}
           color={headerText}

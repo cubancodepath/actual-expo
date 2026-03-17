@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "../atoms/Icon";
 import { useTranslation } from "react-i18next";
 import { useSyncStore } from "../../../stores/syncStore";
 import { useTheme } from "../../providers/ThemeProvider";
@@ -44,7 +44,7 @@ export function SyncBadge() {
         accessibilityRole="button"
         accessibilityLabel={t("a11y.syncFailed")}
       >
-        <Ionicons name="alert-circle" size={20} color={colors.negative} accessible={false} />
+        <Icon name="alertCircle" size={20} color={colors.negative} />
       </Pressable>
     );
   }
@@ -57,7 +57,7 @@ export function SyncBadge() {
         accessibilityRole="text"
         accessibilityLabel={t("a11y.synced")}
       >
-        <Ionicons name="checkmark-circle" size={20} color={colors.positive} accessible={false} />
+        <Icon name="checkmarkCircle" size={20} color={colors.positive} />
       </View>
     );
   }

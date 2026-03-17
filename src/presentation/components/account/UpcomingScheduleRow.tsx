@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { Platform, Pressable, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "../atoms/Icon";
 import * as ContextMenu from "zeego/context-menu";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Text, Amount } from "..";
@@ -45,8 +45,8 @@ export const UpcomingScheduleRow = memo(function UpcomingScheduleRow({
         {/* Top row: payee + amount */}
         <View style={styles.topRow}>
           <View style={styles.payeeRow}>
-            <Ionicons
-              name={item.isRecurring ? "repeat" : "calendar-outline"}
+            <Icon
+              name={item.isRecurring ? "repeat" : "calendarOutline"}
               size={14}
               color={colors.primary}
               style={{ marginRight: spacing.xs }}
@@ -87,7 +87,7 @@ export const UpcomingScheduleRow = memo(function UpcomingScheduleRow({
     <SwipeableRow
       onDelete={() => onSkip(item.scheduleId)}
       onSwipeRight={() => onPost(item.scheduleId)}
-      swipeRightIcon="checkmark-circle"
+      swipeRightIcon="checkmarkCircle"
       swipeRightColor={colors.positive}
       isFirst={isFirst}
       isLast={isLast}

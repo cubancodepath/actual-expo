@@ -64,7 +64,7 @@ export default function ChangeBudgetScreen() {
         options={{
           headerLeft: () => (
             <IconButton
-              sfSymbol="xmark"
+              name="close"
               size={22}
               color={colors.headerText}
               onPress={() => router.back()}
@@ -139,7 +139,7 @@ export default function ChangeBudgetScreen() {
         </>
       ) : (
         <EmptyState
-          icon="folder-open-outline"
+          icon="folderOpenOutline"
           title={t("budget.noBudgetsFound")}
           description={t("budget.noBudgetsDescription")}
           actionLabel={t("budget.createNewBudget")}

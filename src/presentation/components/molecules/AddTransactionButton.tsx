@@ -1,6 +1,6 @@
 import { View } from "react-native";
 import Animated, { useAnimatedStyle, withTiming, type SharedValue } from "react-native-reanimated";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "../atoms/Icon";
 import { useRouter } from "expo-router";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Text } from "../atoms/Text";
@@ -63,7 +63,7 @@ export function AddTransactionButton({
         animatedContainerStyle={containerStyle}
         animatedInnerStyle={innerStyle}
       >
-        <Ionicons name="add" size={ICON_SIZE} color={colors.textPrimary} />
+        <Icon name="add" size={ICON_SIZE} color={colors.textPrimary} />
         <Animated.View style={[{ overflow: "hidden" }, labelStyle]}>
           <Text
             variant="body"

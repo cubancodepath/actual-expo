@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Platform, Pressable, TextInput, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "../atoms/Icon";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Text } from "../atoms/Text";
 import { formatDateLong, formatInputDate, intToStr, strToInt } from "../../../lib/date";
@@ -57,12 +57,12 @@ export function DatePickerField({ dateInt, onDateChange }: DatePickerFieldProps)
     <>
       <Pressable style={styles.row} onPress={() => setShowPicker(!showPicker)}>
         <View style={styles.left}>
-          <Ionicons name="calendar-outline" size={18} color={theme.colors.textMuted} />
+          <Icon name="calendarOutline" size={18} color={theme.colors.textMuted} />
           <Text variant="body" color={theme.colors.textPrimary} style={styles.label}>
             {formatDateLong(dateInt)}
           </Text>
         </View>
-        <Ionicons name="chevron-forward" size={18} color={theme.colors.textMuted} />
+        <Icon name="chevronForward" size={18} color={theme.colors.textMuted} />
       </Pressable>
       {showPicker &&
         (Platform.OS === "ios" && SwiftDatePicker && Host && datePickerStyleMod ? (

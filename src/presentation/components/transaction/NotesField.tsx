@@ -1,5 +1,5 @@
 import { TextInput, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "../atoms/Icon";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import type { Theme } from "../../../theme";
 
@@ -15,8 +15,8 @@ export function NotesField({ value, onChangeText }: NotesFieldProps) {
   return (
     <View style={styles.row}>
       <View style={styles.container}>
-        <Ionicons
-          name="document-text-outline"
+        <Icon
+          name="documentTextOutline"
           size={18}
           color={theme.colors.textMuted}
           style={{ marginTop: 2 }}

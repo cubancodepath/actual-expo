@@ -1,7 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { Alert, Pressable, SectionList, View } from "react-native";
 import { Stack, useFocusEffect, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
 import {
@@ -12,6 +11,7 @@ import {
   ScheduleStatusBadge,
   RowSeparator,
 } from "@/presentation/components";
+import { Icon } from "@/presentation/components/atoms/Icon";
 import { SwipeableRow } from "@/presentation/components";
 import { useSchedulesStore } from "@/stores/schedulesStore";
 import { usePayeesStore } from "@/stores/payeesStore";
@@ -94,8 +94,8 @@ function ScheduleRow({
     <SwipeableRow onDelete={onDelete}>
       <Pressable onPress={onPress} style={styles.row}>
         <View style={styles.rowIcon}>
-          <Ionicons
-            name={isRecurring ? "repeat" : "calendar-outline"}
+          <Icon
+            name={isRecurring ? "repeat" : "calendarOutline"}
             size={20}
             color={colors.primary}
           />
@@ -173,12 +173,12 @@ export default function SchedulesScreen() {
         options={{
           headerLeft: () => (
             <Pressable onPress={() => router.back()} hitSlop={8}>
-              <Ionicons name="close" size={24} color={colors.textSecondary} />
+              <Icon name="close" size={24} color={colors.textSecondary} />
             </Pressable>
           ),
           headerRight: () => (
             <Pressable onPress={() => router.push("/(auth)/schedule/new")} hitSlop={8}>
-              <Ionicons name="add" size={24} color={colors.primary} />
+              <Icon name="add" size={24} color={colors.primary} />
             </Pressable>
           ),
         }}
@@ -210,7 +210,7 @@ export default function SchedulesScreen() {
         )}
         ListEmptyComponent={
           <EmptyState
-            icon="calendar-outline"
+            icon="calendarOutline"
             title={t("noSchedules")}
             description={t("noSchedulesDescription")}
           />

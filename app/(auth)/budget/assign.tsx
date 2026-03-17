@@ -240,7 +240,7 @@ export default function AssignBudgetScreen() {
           options={{
             headerLeft: () => (
               <IconButton
-                sfSymbol="xmark"
+                name="close"
                 size={22}
                 color={colors.headerText}
                 onPress={() => router.back()}
@@ -288,7 +288,7 @@ export default function AssignBudgetScreen() {
           <View style={{ flex: 1 }}>
             <Button
               title={t("reserve")}
-              icon="calendar-outline"
+              icon="calendarOutline"
               variant="secondary"
               size="sm"
               onPress={() => {

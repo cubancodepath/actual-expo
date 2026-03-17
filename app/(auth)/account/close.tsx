@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, ScrollView, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "@/presentation/components/atoms/Icon";
 import { useAccountsStore } from "@/stores/accountsStore";
 import { useCategoriesStore } from "@/stores/categoriesStore";
 import { useUndoStore } from "@/stores/undoStore";
@@ -133,7 +133,7 @@ export default function CloseAccountScreen() {
         options={{
           headerLeft: () => (
             <IconButton
-              sfSymbol="xmark"
+              name="close"
               size={22}
               color={theme.colors.headerText}
               onPress={() => router.back()}
@@ -295,7 +295,7 @@ function AccountPickerList({
                 >
                   {acct.name}
                 </Text>
-                {selected && <Ionicons name="checkmark" size={20} color={theme.colors.primary} />}
+                {selected && <Icon name="checkmark" size={20} color={theme.colors.primary} />}
               </Pressable>
             );
           })}
@@ -356,7 +356,7 @@ function CategoryPickerList({
                   >
                     {cat.name}
                   </Text>
-                  {selected && <Ionicons name="checkmark" size={20} color={theme.colors.primary} />}
+                  {selected && <Icon name="checkmark" size={20} color={theme.colors.primary} />}
                 </Pressable>
               );
             })}

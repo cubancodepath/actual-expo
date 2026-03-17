@@ -1,5 +1,5 @@
 import { Pressable, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "../atoms/Icon";
 import Animated, { useAnimatedStyle, withTiming } from "react-native-reanimated";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Text } from "..";
@@ -31,8 +31,8 @@ export function UpcomingSectionHeader({ count, expanded, onToggle }: UpcomingSec
       })}
     >
       <Animated.View style={chevronStyle}>
-        <Ionicons
-          name="chevron-down"
+        <Icon
+          name="chevronDown"
           size={14}
           color={colors.textMuted}
           style={{ marginRight: spacing.xs }}

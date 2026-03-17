@@ -10,8 +10,8 @@ import {
 } from "react-native";
 
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { useAccountsStore } from "@/stores/accountsStore";
+import { Icon } from "@/presentation/components/atoms/Icon";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
@@ -96,7 +96,7 @@ export default function AccountSettingsScreen() {
         options={{
           headerLeft: () => (
             <Pressable onPress={() => router.back()} hitSlop={8}>
-              <Ionicons name="close" size={24} color={theme.colors.textSecondary} />
+              <Icon name="close" size={24} color={theme.colors.textSecondary} />
             </Pressable>
           ),
         }}
@@ -159,7 +159,7 @@ export default function AccountSettingsScreen() {
           title={account.closed ? t("contextMenu.reopenAccount") : t("contextMenu.closeAccount")}
           onPress={handleClose}
           variant="ghost"
-          icon={account.closed ? "arrow-undo-outline" : "trash-outline"}
+          icon={account.closed ? "arrowUndoOutline" : "trashOutline"}
           textColor={account.closed ? undefined : theme.colors.negative}
           disabled={saving}
           style={styles.closeButton}

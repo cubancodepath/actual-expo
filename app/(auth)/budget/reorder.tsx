@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { useAnimatedRef } from "react-native-reanimated";
 import Sortable from "react-native-sortables";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "@/presentation/components/atoms/Icon";
 import * as Haptics from "expo-haptics";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { useCategoriesStore } from "@/stores/categoriesStore";
@@ -140,8 +140,8 @@ export default function ReorderBudgetScreen() {
 
   function ReorderCategoryRow({ cat, sortable = true }: { cat: Category; sortable?: boolean }) {
     const icon = (
-      <Ionicons
-        name="reorder-three-outline"
+      <Icon
+        name="reorderThreeOutline"
         size={20}
         color={colors.textMuted}
         style={{ marginRight: spacing.sm }}
@@ -199,8 +199,8 @@ export default function ReorderBudgetScreen() {
         >
           {showHandle && (
             <Sortable.Handle>
-              <Ionicons
-                name="reorder-three-outline"
+              <Icon
+                name="reorderThreeOutline"
                 size={22}
                 color={colors.textMuted}
                 style={{ marginRight: spacing.sm }}
@@ -271,7 +271,7 @@ export default function ReorderBudgetScreen() {
         options={{
           headerRight: () => (
             <IconButton
-              ionIcon="checkmark"
+              name="checkmark"
               size={22}
               color={colors.headerText}
               onPress={() => router.back()}

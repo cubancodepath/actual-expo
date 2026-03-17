@@ -25,6 +25,7 @@ import { useTranslation } from "react-i18next";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Icon } from "@/presentation/components/atoms/Icon";
+import type { IconName } from "@/presentation/components/atoms/iconRegistry";
 import { usePrefsStore } from "@/stores/prefsStore";
 import { palette } from "@/theme";
 import type { Theme } from "@/theme";
@@ -127,7 +128,7 @@ function FeatureRow({ label, delay: delayMs = 0 }: { label: string; delay?: numb
         animStyle,
       ]}
     >
-      <Icon name="checkmark-circle-outline" size={20} color={theme.colors.positive} />
+      <Icon name="checkmarkCircleOutline" size={20} color={theme.colors.positive} />
       <Text variant="bodyLg" color={theme.colors.textPrimary}>
         {label}
       </Text>
@@ -143,7 +144,7 @@ function FeatureCard({
   body,
   delay: delayMs = 0,
 }: {
-  iconName: keyof typeof import("@expo/vector-icons").Ionicons.glyphMap;
+  iconName: IconName;
   title: string;
   body: string;
   delay?: number;
@@ -262,20 +263,14 @@ function HeroScreen() {
       />
 
       <Animated.View style={[{ flexDirection: "row", gap: theme.spacing.sm }, pillsStyle]}>
-        <FeaturePill icon="lock-closed-outline" label={t("pillPrivate")} />
-        <FeaturePill icon="server-outline" label={t("pillNoSub")} />
+        <FeaturePill icon="lockClosedOutline" label={t("pillPrivate")} />
+        <FeaturePill icon="serverOutline" label={t("pillNoSub")} />
       </Animated.View>
     </View>
   );
 }
 
-function FeaturePill({
-  icon,
-  label,
-}: {
-  icon: keyof typeof import("@expo/vector-icons").Ionicons.glyphMap;
-  label: string;
-}) {
+function FeaturePill({ icon, label }: { icon: IconName; label: string }) {
   const theme = useTheme();
   return (
     <View
@@ -350,7 +345,7 @@ function PrivacyScreen() {
             justifyContent: "center",
           }}
         >
-          <Icon name="server-outline" size={32} color={theme.colors.primary} />
+          <Icon name="serverOutline" size={32} color={theme.colors.primary} />
         </View>
         <Text
           variant="headingLg"
@@ -410,19 +405,19 @@ function FeaturesScreen() {
 
       <View style={{ gap: theme.spacing.md }}>
         <FeatureCard
-          iconName="layers-outline"
+          iconName="layersOutline"
           title={t("cardEnvelopeTitle")}
           body={t("cardEnvelopeBody")}
           delay={0}
         />
         <FeatureCard
-          iconName="wallet-outline"
+          iconName="wallet"
           title={t("cardAccountsTitle")}
           body={t("cardAccountsBody")}
           delay={60}
         />
         <FeatureCard
-          iconName="bar-chart-outline"
+          iconName="barChartOutline"
           title={t("cardInsightsTitle")}
           body={t("cardInsightsBody")}
           delay={120}

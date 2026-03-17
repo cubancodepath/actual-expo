@@ -1,10 +1,11 @@
 import { Pressable } from "react-native";
-import { SymbolView } from "expo-symbols";
+import { Icon } from "../atoms/Icon";
+import type { IconName } from "../atoms/iconRegistry";
 
 const PILL_ICON_SIZE = 20;
 
 interface PillButtonProps {
-  icon: Parameters<typeof SymbolView>[0]["name"];
+  icon: IconName;
   color: string;
   onPress: () => void;
   label?: string;
@@ -24,7 +25,7 @@ export function PillButton({ icon, color, onPress, label }: PillButtonProps) {
       accessibilityRole="button"
       accessibilityLabel={label}
     >
-      <SymbolView name={icon} size={PILL_ICON_SIZE} tintColor={color} />
+      <Icon name={icon} size={PILL_ICON_SIZE} color={color} />
     </Pressable>
   );
 }

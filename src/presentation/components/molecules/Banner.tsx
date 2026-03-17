@@ -1,5 +1,6 @@
 import { View, Pressable, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "../atoms/Icon";
+import type { IconName } from "../atoms/iconRegistry";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Text } from "../atoms/Text";
 import type { ThemeColors } from "../../../theme";
@@ -19,18 +20,26 @@ function getVariantStyles(colors: ThemeColors, variant: BannerVariant) {
       return {
         bg: colors.primarySubtle,
         text: colors.primary,
-        icon: "information-circle" as const,
+        icon: "informationCircle" as const satisfies IconName,
       };
     case "success":
       return {
         bg: colors.successBackground,
         text: colors.successText,
-        icon: "checkmark-circle" as const,
+        icon: "checkmarkCircle" as const satisfies IconName,
       };
     case "warning":
-      return { bg: colors.warningBackground, text: colors.warningText, icon: "warning" as const };
+      return {
+        bg: colors.warningBackground,
+        text: colors.warningText,
+        icon: "warning" as const satisfies IconName,
+      };
     case "error":
-      return { bg: colors.errorBackground, text: colors.errorText, icon: "alert-circle" as const };
+      return {
+        bg: colors.errorBackground,
+        text: colors.errorText,
+        icon: "alertCircle" as const satisfies IconName,
+      };
   }
 }
 
@@ -57,7 +66,7 @@ export function Banner({ message, variant = "info", onDismiss, onPress }: Banner
       accessibilityLiveRegion={isError ? "assertive" : "polite"}
       accessibilityLabel={message}
     >
-      <Ionicons name={v.icon} size={20} color={v.text} style={{ marginRight: spacing.sm }} />
+      <Icon name={v.icon} size={20} color={v.text} style={{ marginRight: spacing.sm }} />
       <Text variant="bodySm" color={v.text} style={styles.message}>
         {message}
       </Text>
@@ -68,7 +77,7 @@ export function Banner({ message, variant = "info", onDismiss, onPress }: Banner
           accessibilityLabel="Dismiss"
           accessibilityRole="button"
         >
-          <Ionicons name="close" size={18} color={v.text} />
+          <Icon name="close" size={18} color={v.text} />
         </Pressable>
       )}
     </View>

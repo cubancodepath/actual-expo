@@ -1,14 +1,10 @@
-import { Platform, Pressable, StyleSheet, type ViewStyle } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { SymbolView } from "expo-symbols";
-import type { SFSymbol } from "sf-symbols-typescript";
+import { Pressable, StyleSheet, type ViewStyle } from "react-native";
 import { useTheme } from "../../providers/ThemeProvider";
+import { Icon } from "./Icon";
+import type { IconName } from "./iconRegistry";
 
-type IconSource =
-  | { ionIcon: keyof typeof Ionicons.glyphMap; sfSymbol?: never }
-  | { sfSymbol: SFSymbol; ionIcon?: never };
-
-export type IconButtonProps = IconSource & {
+export type IconButtonProps = {
+  name: IconName;
   size?: number;
   color?: string;
   onPress: () => void;
@@ -19,8 +15,7 @@ export type IconButtonProps = IconSource & {
 };
 
 export function IconButton({
-  ionIcon,
-  sfSymbol,
+  name,
   size = 22,
   color,
   onPress,
@@ -47,11 +42,7 @@ export function IconButton({
         style,
       ]}
     >
-      {sfSymbol && Platform.OS === "ios" ? (
-        <SymbolView name={sfSymbol} size={size} tintColor={tint} />
-      ) : ionIcon ? (
-        <Ionicons name={ionIcon} size={size} color={tint} />
-      ) : null}
+      <Icon name={name} size={size} color={tint} />
     </Pressable>
   );
 }

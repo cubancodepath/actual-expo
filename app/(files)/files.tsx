@@ -183,7 +183,7 @@ export default function FilesScreen() {
                     key={fileKey(file)}
                     onDelete={() => handleDelete(file)}
                     onSwipeRight={file.state === "local" ? () => handleUpload(file) : undefined}
-                    swipeRightIcon="cloud-upload-outline"
+                    swipeRightIcon="cloudUploadOutline"
                     swipeRightColor={colors.primary}
                     isFirst={index === 0}
                     isLast={index === localFiles.length - 1}
@@ -233,7 +233,7 @@ export default function FilesScreen() {
         </>
       ) : (
         <EmptyState
-          icon="folder-open-outline"
+          icon="folderOpenOutline"
           title={t("noBudgetsFound")}
           description={t("noBudgetsDescription")}
           actionLabel={t("createNewBudget")}

@@ -8,8 +8,8 @@ import Animated, {
 } from "react-native-reanimated";
 import * as ContextMenu from "zeego/context-menu";
 import { Stack, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { useAccountsStore } from "@/stores/accountsStore";
+import { Icon } from "@/presentation/components/atoms/Icon";
 import { useRefreshControl } from "@/presentation/hooks/useRefreshControl";
 import { groupAccounts, type AccountGroup } from "@/accounts";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
@@ -79,7 +79,7 @@ function AccountRow({
         {account.name}
       </Text>
       <Amount value={account.balance ?? 0} variant="body" />
-      <Ionicons name="chevron-forward" size={16} color={theme.colors.textMuted} />
+      <Icon name="chevronForward" size={16} color={theme.colors.textMuted} />
       {!isLast && <RowSeparator insetLeft={theme.spacing.md} insetRight={theme.spacing.md} />}
     </Pressable>
   );
@@ -196,7 +196,7 @@ function AccountSection({
       {/* Section header */}
       <Pressable style={styles.sectionHeader} onPress={toggle}>
         <Animated.View style={chevronStyle}>
-          <Ionicons name="chevron-down" size={18} color={theme.colors.textSecondary} />
+          <Icon name="chevronDown" size={18} color={theme.colors.textSecondary} />
         </Animated.View>
         <Text variant="body" color={theme.colors.textPrimary} style={styles.sectionLabel}>
           {groupLabel}
@@ -305,14 +305,14 @@ export default function AccountsScreen() {
             <Button
               title={t("addAccount")}
               variant="ghost"
-              icon="add-circle-outline"
+              icon="addCircleOutline"
               onPress={() => router.push("/(auth)/account/new")}
               style={styles.addButton}
             />
           </>
         ) : (
           <EmptyState
-            icon="wallet-outline"
+            icon="wallet"
             title={t("emptyState.title")}
             description={t("emptyState.description")}
             actionLabel={t("addAccount")}

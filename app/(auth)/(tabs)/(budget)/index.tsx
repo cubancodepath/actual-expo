@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { useFocusEffect } from "expo-router";
 import { Alert, Keyboard, RefreshControl, SectionList, TextInput, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "@/presentation/components/atoms/Icon";
 import { Stack, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
@@ -435,7 +435,7 @@ export default function BudgetScreen() {
             ListEmptyComponent={
               filter !== "all" ? (
                 <View style={{ alignItems: "center", marginTop: 80, gap: 8 }}>
-                  <Ionicons name="funnel-outline" size={32} color={colors.textMuted} />
+                  <Icon name="funnelOutline" size={32} color={colors.textMuted} />
                   <Text variant="bodyLg" color={colors.textSecondary}>
                     {t("noMatchingCategories")}
                   </Text>

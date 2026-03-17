@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Platform, Pressable, ScrollView, Switch, TextInput, View } from "react-native";
 import { Stack, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "@/presentation/components/atoms/Icon";
 import { useAccountsStore } from "@/stores/accountsStore";
 import { usePayeesStore } from "@/stores/payeesStore";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
@@ -57,7 +57,7 @@ export default function NewAccountScreen() {
         options={{
           headerLeft: () => (
             <Pressable onPress={() => router.back()} hitSlop={8}>
-              <Ionicons name="close" size={24} color={theme.colors.textSecondary} />
+              <Icon name="close" size={24} color={theme.colors.textSecondary} />
             </Pressable>
           ),
           headerRight: () => (

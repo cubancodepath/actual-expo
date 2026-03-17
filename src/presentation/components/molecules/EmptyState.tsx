@@ -1,10 +1,11 @@
 import { Pressable, View, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "../atoms/Icon";
+import type { IconName } from "../atoms/iconRegistry";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Text } from "../atoms/Text";
 
 export interface EmptyStateProps {
-  icon?: keyof typeof Ionicons.glyphMap;
+  icon?: IconName;
   title: string;
   description?: string;
   actionLabel?: string;
@@ -12,7 +13,7 @@ export interface EmptyStateProps {
 }
 
 export function EmptyState({
-  icon = "folder-open-outline",
+  icon = "folderOpenOutline",
   title,
   description,
   actionLabel,
@@ -22,7 +23,7 @@ export function EmptyState({
 
   return (
     <View style={styles.container}>
-      <Ionicons name={icon} size={48} color={colors.textMuted} />
+      <Icon name={icon} size={48} color={colors.textMuted} />
       <Text variant="headingSm" color={colors.textSecondary} style={{ marginTop: spacing.lg }}>
         {title}
       </Text>

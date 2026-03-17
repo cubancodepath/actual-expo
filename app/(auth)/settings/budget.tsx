@@ -484,7 +484,7 @@ export default function BudgetSettingsScreen() {
       {/* Danger Zone */}
       <Button
         title={t("deleteBudget")}
-        icon="trash-outline"
+        icon="trashOutline"
         variant="ghost"
         textColor={colors.negative}
         onPress={handleDeleteBudget}

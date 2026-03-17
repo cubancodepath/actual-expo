@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Alert, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { Icon } from "@/presentation/components/atoms/Icon";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import Animated, {
@@ -446,7 +446,7 @@ export default function CategoryDetailsScreen() {
                     strokeWidth={7}
                   >
                     {goalChart.percent >= 100 ? (
-                      <Ionicons name="checkmark-circle" size={30} color={goalChart.color} />
+                      <Icon name="checkmarkCircle" size={30} color={goalChart.color} />
                     ) : (
                       <Text
                         variant="body"
@@ -557,7 +557,7 @@ export default function CategoryDetailsScreen() {
                   title={t("editTarget")}
                   variant="secondary"
                   size="md"
-                  icon="flag-outline"
+                  icon="flagOutline"
                   style={{ alignSelf: "stretch" }}
                   onPress={() => {
                     if (categoryId) {
@@ -580,8 +580,8 @@ export default function CategoryDetailsScreen() {
                   },
                 ]}
               >
-                <Ionicons
-                  name="flag-outline"
+                <Icon
+                  name="flagOutline"
                   size={28}
                   color={colors.textMuted}
                   style={{ marginBottom: spacing.sm }}
@@ -629,7 +629,7 @@ export default function CategoryDetailsScreen() {
           title={t("renameCategory")}
           variant="secondary"
           size="md"
-          icon="pencil-outline"
+          icon="pencilOutline"
           style={{ alignSelf: "stretch" }}
           onPress={() => {
             if (categoryId) {
@@ -645,7 +645,7 @@ export default function CategoryDetailsScreen() {
           title={category?.hidden ? t("showCategory") : t("hideCategory")}
           variant="secondary"
           size="md"
-          icon={category?.hidden ? "eye-outline" : "eye-off-outline"}
+          icon={category?.hidden ? "eyeOutline" : "eyeOffOutline"}
           style={{ alignSelf: "stretch" }}
           onPress={async () => {
             if (!categoryId) return;
@@ -659,7 +659,7 @@ export default function CategoryDetailsScreen() {
         <Button
           title={t("deleteCategory")}
           variant="ghost"
-          icon="trash-outline"
+          icon="trashOutline"
           textColor={colors.negative}
           onPress={handleDelete}
           disabled={deleting}
@@ -696,7 +696,7 @@ export default function CategoryDetailsScreen() {
           zIndex: 11,
         }}
       >
-        <GlassButton icon="xmark" onPress={() => router.back()} />
+        <GlassButton icon="close" onPress={() => router.back()} />
       </View>
 
       {/* ── Inline title — fades in on scroll ── */}

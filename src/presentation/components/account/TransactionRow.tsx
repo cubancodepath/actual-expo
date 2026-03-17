@@ -9,7 +9,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "../atoms/Icon";
 import * as ContextMenu from "zeego/context-menu";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Text, Amount, NotesWithTags, RowSeparator } from "..";
@@ -97,8 +97,8 @@ export const TransactionRow = memo(function TransactionRow({
           exiting={FadeOut.duration(150).easing(Easing.in(Easing.quad))}
           style={styles.checkbox}
         >
-          <Ionicons
-            name={isSelected ? "checkmark-circle" : "ellipse-outline"}
+          <Icon
+            name={isSelected ? "checkmarkCircle" : "ellipseOutline"}
             size={22}
             color={isSelected ? colors.primary : colors.textMuted}
           />
@@ -110,8 +110,8 @@ export const TransactionRow = memo(function TransactionRow({
         <View style={styles.topRow}>
           <View style={styles.payeeRow}>
             {item.transferred_id != null && (
-              <Ionicons
-                name="swap-horizontal"
+              <Icon
+                name="swapHorizontal"
                 size={14}
                 color={colors.primary}
                 style={{ marginRight: spacing.xs }}
@@ -131,10 +131,10 @@ export const TransactionRow = memo(function TransactionRow({
             {!isSelectMode && (
               <View style={{ marginLeft: spacing.sm }}>
                 {item.reconciled ? (
-                  <Ionicons name="lock-closed" size={14} color={colors.primary} />
+                  <Icon name="lockClosed" size={14} color={colors.primary} />
                 ) : (
-                  <Ionicons
-                    name={item.cleared ? "checkmark-circle" : "ellipse-outline"}
+                  <Icon
+                    name={item.cleared ? "checkmarkCircle" : "ellipseOutline"}
                     size={14}
                     color={item.cleared ? colors.positive : colors.textMuted}
                   />
@@ -224,7 +224,7 @@ export const TransactionRow = memo(function TransactionRow({
     <SwipeableRow
       onDelete={() => onDelete(item.id)}
       onSwipeRight={item.reconciled ? undefined : () => onToggleCleared(item.id)}
-      swipeRightIcon={item.cleared ? "ellipse-outline" : "checkmark-circle"}
+      swipeRightIcon={item.cleared ? "ellipseOutline" : "checkmarkCircle"}
       swipeRightColor={item.cleared ? colors.textMuted : colors.positive}
       isFirst={isFirst}
       isLast={isLast}

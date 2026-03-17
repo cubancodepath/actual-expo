@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Pressable, ScrollView, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "@/presentation/components/atoms/Icon";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
@@ -85,7 +85,7 @@ export default function RecurrencePickerScreen() {
           paddingBottom: spacing.sm,
         }}
       >
-        <GlassButton icon="chevron.left" onPress={() => router.back()} />
+        <GlassButton icon="chevronBack" onPress={() => router.back()} />
         <Text variant="headingSm" color={colors.headerText}>
           {t("repeat")}
         </Text>
@@ -123,7 +123,7 @@ export default function RecurrencePickerScreen() {
               {t("never")}
             </Text>
             <View style={{ width: 20, alignItems: "center" }}>
-              {isNever && <Ionicons name="checkmark" size={20} color={colors.primary} />}
+              {isNever && <Icon name="checkmark" size={20} color={colors.primary} />}
             </View>
           </Pressable>
 
@@ -150,7 +150,7 @@ export default function RecurrencePickerScreen() {
                     {preset.label}
                   </Text>
                   <View style={{ width: 20, alignItems: "center" }}>
-                    {selected && <Ionicons name="checkmark" size={20} color={colors.primary} />}
+                    {selected && <Icon name="checkmark" size={20} color={colors.primary} />}
                   </View>
                 </Pressable>
               </View>
@@ -203,7 +203,7 @@ export default function RecurrencePickerScreen() {
                 {getRecurringDescription(currentConfig!)}
               </Text>
             )}
-            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+            <Icon name="chevronForward" size={18} color={colors.textMuted} />
           </Pressable>
         </View>
       </ScrollView>

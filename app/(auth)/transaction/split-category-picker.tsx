@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { Pressable, SafeAreaView, ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { useCategoriesStore } from "@/stores/categoriesStore";
+import { Icon } from "@/presentation/components/atoms/Icon";
 import { usePickerStore } from "@/stores/pickerStore";
 import { getCategoryBalancesForMonth } from "@/budgets";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
@@ -46,7 +46,7 @@ export default function SplitCategoryPickerScreen() {
     <View style={styles.container}>
       {/* Back button — top left */}
       <View style={{ position: "absolute", top: 12, left: spacing.md, zIndex: 11 }}>
-        <GlassButton icon="chevron.left" onPress={() => router.back()} />
+        <GlassButton icon="chevronBack" onPress={() => router.back()} />
       </View>
 
       {/* Title — centered */}
@@ -78,7 +78,7 @@ export default function SplitCategoryPickerScreen() {
             <Text variant="body" color={colors.textMuted} style={styles.catName}>
               No category
             </Text>
-            {noneSelected && <Ionicons name="checkmark" size={20} color={colors.primary} />}
+            {noneSelected && <Icon name="checkmark" size={20} color={colors.primary} />}
           </Pressable>
         </View>
 
@@ -130,9 +130,7 @@ export default function SplitCategoryPickerScreen() {
                             style={styles.balance}
                           />
                         )}
-                        {isSelected && (
-                          <Ionicons name="checkmark" size={20} color={colors.primary} />
-                        )}
+                        {isSelected && <Icon name="checkmark" size={20} color={colors.primary} />}
                         {!isLast && (
                           <View
                             style={{

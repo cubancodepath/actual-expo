@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { Pressable, TextInput, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "../atoms/Icon";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Text } from "../atoms/Text";
 import type { SearchToken, StatusFilter } from "../../../transactions/types";
@@ -93,7 +93,7 @@ export function TokenSearchBar({
         gap: spacing.xs,
       }}
     >
-      <Ionicons name="search" size={16} color={colors.textMuted} />
+      <Icon name="search" size={16} color={colors.textMuted} />
 
       {tokens.map((t, i) => (
         <Pressable
@@ -119,7 +119,7 @@ export function TokenSearchBar({
           >
             {tokenLabel(t)}
           </Text>
-          <Ionicons name="close-circle" size={14} color="rgba(255,255,255,0.7)" />
+          <Icon name="closeCircle" size={14} color="rgba(255,255,255,0.7)" />
         </Pressable>
       ))}
 
@@ -153,7 +153,7 @@ export function TokenSearchBar({
             padding: spacing.xs,
           }}
         >
-          <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+          <Icon name="closeCircle" size={18} color={colors.textMuted} />
         </Pressable>
       )}
     </Pressable>

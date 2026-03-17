@@ -1,5 +1,5 @@
 import { View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "../atoms/Icon";
 import { useTheme } from "../../providers/ThemeProvider";
 import { palette } from "../../../theme/colors";
 import { Text } from "../atoms/Text";
@@ -65,9 +65,7 @@ export function UnclearedPill({
           </Text>
         </View>
       }
-      right={
-        <Ionicons name="chevron-forward" size={14} color={chevronColor} style={{ opacity: 0.6 }} />
-      }
+      right={<Icon name="chevronForward" size={14} color={chevronColor} style={{ opacity: 0.6 }} />}
     />
   );
 }

@@ -93,7 +93,7 @@ export default function CategoryTransactionsScreen() {
       title: categoryName ?? t("transactions"),
       headerLeft: () => (
         <IconButton
-          sfSymbol="xmark"
+          name="close"
           size={22}
           color={colors.headerText}
           onPress={() => router.back()}
@@ -171,7 +171,7 @@ export default function CategoryTransactionsScreen() {
           }
           ListEmptyComponent={
             <EmptyState
-              icon="receipt-outline"
+              icon="receiptOutline"
               title={t("noTransactions")}
               description={t("noTransactionsForCategory", { name: categoryName ?? t("category") })}
             />

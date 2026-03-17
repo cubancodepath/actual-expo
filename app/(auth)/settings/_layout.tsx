@@ -19,7 +19,7 @@ export default function SettingsLayout() {
             title: t("title"),
             headerLeft: () => (
               <IconButton
-                sfSymbol="xmark"
+                name="close"
                 size={22}
                 color={theme.colors.headerText}
                 onPress={() => router.dismissAll()}

@@ -1,11 +1,12 @@
 import { Pressable, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "../atoms/Icon";
+import type { IconName } from "../atoms/iconRegistry";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Text } from "../atoms/Text";
 import type { Theme } from "../../../theme";
 
 interface DetailRowProps {
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: IconName;
   label: string;
   placeholder: string;
   onPress: () => void;
@@ -20,7 +21,7 @@ export function DetailRow({ icon, label, placeholder, onPress, onClear }: Detail
   return (
     <Pressable style={styles.row} onPress={onPress}>
       <View style={styles.left}>
-        <Ionicons name={icon} size={18} color={theme.colors.textMuted} />
+        <Icon name={icon} size={18} color={theme.colors.textMuted} />
         <Text
           variant="body"
           color={hasValue ? theme.colors.textPrimary : theme.colors.textMuted}
@@ -32,10 +33,10 @@ export function DetailRow({ icon, label, placeholder, onPress, onClear }: Detail
       </View>
       {hasValue && onClear ? (
         <Pressable onPress={onClear} hitSlop={8}>
-          <Ionicons name="close-circle" size={18} color={theme.colors.textMuted} />
+          <Icon name="closeCircle" size={18} color={theme.colors.textMuted} />
         </Pressable>
       ) : (
-        <Ionicons name="chevron-forward" size={18} color={theme.colors.textMuted} />
+        <Icon name="chevronForward" size={18} color={theme.colors.textMuted} />
       )}
     </Pressable>
   );

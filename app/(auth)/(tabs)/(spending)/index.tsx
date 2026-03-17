@@ -325,7 +325,7 @@ export default function SpendingScreen() {
             <TransactionListSkeleton />
           ) : (
             <EmptyState
-              icon="receipt-outline"
+              icon="receiptOutline"
               title={t("spending.noTransactionsYet")}
               description={t("spending.noTransactionsDescription")}
             />

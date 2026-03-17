@@ -1,5 +1,5 @@
 import { Pressable, Switch, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "../atoms/Icon";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Text } from "../atoms/Text";
 import type { Theme } from "../../../theme";
@@ -16,7 +16,7 @@ export function ClearedToggle({ value, onValueChange }: ClearedToggleProps) {
   return (
     <Pressable style={styles.row} onPress={() => onValueChange(!value)}>
       <View style={styles.left}>
-        <Ionicons name="checkmark-circle-outline" size={18} color={theme.colors.textMuted} />
+        <Icon name="checkmarkCircleOutline" size={18} color={theme.colors.textMuted} />
         <Text variant="body" color={theme.colors.textPrimary} style={styles.label}>
           Cleared
         </Text>

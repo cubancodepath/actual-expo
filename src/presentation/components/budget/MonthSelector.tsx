@@ -7,7 +7,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "../atoms/Icon";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../../providers/ThemeProvider";
 import { useBudgetStore } from "../../../stores/budgetStore";
@@ -71,7 +71,7 @@ export function MonthSelector() {
       }}
     >
       <Pressable onPress={() => goToMonth(-1)} hitSlop={12}>
-        <Ionicons name="chevron-back" size={22} color={colors.headerText} />
+        <Icon name="chevronBack" size={22} color={colors.headerText} />
       </Pressable>
 
       <GestureDetector gesture={panGesture}>
@@ -91,7 +91,7 @@ export function MonthSelector() {
       </GestureDetector>
 
       <Pressable onPress={() => goToMonth(1)} hitSlop={12}>
-        <Ionicons name="chevron-forward" size={22} color={colors.headerText} />
+        <Icon name="chevronForward" size={22} color={colors.headerText} />
       </Pressable>
     </View>
   );

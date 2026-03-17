@@ -1,5 +1,6 @@
 import { ActivityIndicator, Pressable, StyleSheet, type ViewStyle } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "./Icon";
+import type { IconName } from "./iconRegistry";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Text } from "./Text";
 import type { Theme } from "../../../theme";
@@ -12,7 +13,7 @@ export interface ButtonProps {
   onPress: () => void;
   variant?: ButtonVariant;
   size?: ButtonSize;
-  icon?: keyof typeof Ionicons.glyphMap;
+  icon?: IconName;
   loading?: boolean;
   disabled?: boolean;
   textColor?: string;
@@ -98,7 +99,7 @@ export function Button({
       ) : (
         <>
           {icon && (
-            <Ionicons
+            <Icon
               name={icon}
               size={sizeStyles.fontSize + 4}
               color={color}

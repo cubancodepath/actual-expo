@@ -2,7 +2,7 @@ import { Component, type ReactNode } from "react";
 import { ScrollView, View, Pressable, StyleSheet, Appearance } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Sentry from "@sentry/react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "./atoms/Icon";
 import { lightColors, darkColors } from "../../theme/colors";
 
 // Use raw RN Text to avoid circular deps with themed components
@@ -43,7 +43,7 @@ export class ErrorBoundary extends Component<Props, State> {
       <SafeAreaView style={[styles.container, { backgroundColor: colors.pageBackground }]}>
         <ScrollView contentContainerStyle={styles.content} bounces={false}>
           <View style={[styles.iconCircle, { backgroundColor: colors.errorBackground }]}>
-            <Ionicons name="warning-outline" size={32} color={colors.errorText} />
+            <Icon name="warningOutline" size={32} color={colors.errorText} />
           </View>
 
           <View style={styles.textBlock}>
@@ -82,7 +82,7 @@ export class ErrorBoundary extends Component<Props, State> {
             accessibilityRole="button"
             accessibilityLabel="Try again"
           >
-            <Ionicons name="refresh" size={18} color="#fff" />
+            <Icon name="refresh" size={18} color="#fff" />
             <RNText style={styles.buttonText}>Try Again</RNText>
           </Pressable>
         </ScrollView>

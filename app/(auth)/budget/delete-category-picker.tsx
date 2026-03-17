@@ -51,7 +51,7 @@ export default function DeleteCategoryPickerScreen() {
             paddingHorizontal: spacing.md,
           }}
         >
-          <GlassButton icon="xmark" onPress={() => router.back()} />
+          <GlassButton icon="close" onPress={() => router.back()} />
           <View style={{ flex: 1, alignItems: "center", marginRight: 48 }}>
             <Text variant="body" color={colors.textPrimary} style={{ fontWeight: "600" }}>
               {t("moveTransactionsTo")}

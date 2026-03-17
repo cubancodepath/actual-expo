@@ -476,7 +476,7 @@ export default function SearchScreen() {
               noHorizontalMargin
             />
           </View>
-          <GlassButton icon="xmark" onPress={() => router.back()} hitSlop={4} />
+          <GlassButton icon="close" onPress={() => router.back()} hitSlop={4} />
         </View>
         {searchFocused && (
           <SearchSuggestions
@@ -532,7 +532,7 @@ export default function SearchScreen() {
         ListEmptyComponent={
           hasSearched ? (
             <EmptyState
-              icon="search-outline"
+              icon="searchOutline"
               title={t("spending.noMatchingTransactions")}
               description={t("spending.tryDifferentSearch")}
             />

@@ -1,6 +1,6 @@
 import { Pressable, View } from "react-native";
 import Animated, { useAnimatedStyle, withTiming } from "react-native-reanimated";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "../atoms/Icon";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Text } from "../atoms/Text";
@@ -85,7 +85,7 @@ export function BudgetGroupHeader({
         onPress={onToggle}
       >
         <Animated.View style={chevronStyle}>
-          <Ionicons name="chevron-down" size={14} color={colors.textMuted} />
+          <Icon name="chevronDown" size={14} color={colors.textMuted} />
         </Animated.View>
         <Text
           variant="captionSm"

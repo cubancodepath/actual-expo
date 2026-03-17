@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Alert, Pressable, ScrollView, Switch, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "@/presentation/components/atoms/Icon";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Host, DatePicker, Picker, Text as SwiftText } from "@expo/ui/swift-ui";
 import { useTranslation } from "react-i18next";
@@ -480,11 +480,7 @@ export default function GoalEditorScreen() {
               <Text variant="body" color={colors.primary}>
                 {formatDateLong(dateToInt(date))}
               </Text>
-              <Ionicons
-                name={show ? "chevron-up" : "chevron-down"}
-                size={16}
-                color={colors.textMuted}
-              />
+              <Icon name={show ? "chevronUp" : "chevronDown"} size={16} color={colors.textMuted} />
             </View>
           }
           onPress={onToggle}
@@ -546,7 +542,7 @@ export default function GoalEditorScreen() {
           options={{
             headerLeft: () => (
               <IconButton
-                sfSymbol="xmark"
+                name="close"
                 size={22}
                 color={colors.headerText}
                 onPress={() => router.back()}
@@ -927,7 +923,7 @@ export default function GoalEditorScreen() {
             <Button
               title={t("removeTarget")}
               variant="ghost"
-              icon="trash-outline"
+              icon="trashOutline"
               textColor={colors.negative}
               onPress={handleDelete}
             />

@@ -42,7 +42,7 @@ export default function RenameCategoryScreen() {
         options={{
           headerLeft: () => (
             <IconButton
-              sfSymbol="xmark"
+              name="close"
               size={22}
               color={colors.headerText}
               onPress={() => router.back()}

@@ -16,7 +16,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "@/presentation/components/atoms/Icon";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import Constants from "expo-constants";
@@ -201,7 +201,7 @@ export default function LoginScreen() {
                   step !== "idle" && step !== "probing" && styles.inputLocked,
                 ]}
               >
-                <Ionicons name="server-outline" size={18} color={theme.colors.textMuted} />
+                <Icon name="serverOutline" size={18} color={theme.colors.textMuted} />
                 <TextInput
                   testID="server-url-input"
                   style={[styles.input, { color: theme.colors.textPrimary }]}
@@ -254,7 +254,7 @@ export default function LoginScreen() {
                     },
                   ]}
                 >
-                  <Ionicons name="lock-closed-outline" size={18} color={theme.colors.textMuted} />
+                  <Icon name="lockClosedOutline" size={18} color={theme.colors.textMuted} />
                   <TextInput
                     testID="password-input"
                     style={[styles.input, { color: theme.colors.textPrimary }]}

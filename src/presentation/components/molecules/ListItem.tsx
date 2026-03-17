@@ -1,5 +1,5 @@
 import { Pressable, View, StyleSheet, type ViewStyle } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "../atoms/Icon";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Text } from "../atoms/Text";
 import { RowSeparator } from "../atoms/RowSeparator";
@@ -61,22 +61,20 @@ export function ListItem({
       {right && <View style={styles.right}>{right}</View>}
 
       {checkmark && (
-        <Ionicons
+        <Icon
           name="checkmark"
           size={20}
           color={colors.primary}
           style={{ marginLeft: spacing.sm }}
-          accessible={false}
         />
       )}
 
       {showChevron && (
-        <Ionicons
-          name="chevron-forward"
+        <Icon
+          name="chevronForward"
           size={18}
           color={colors.textMuted}
           style={{ marginLeft: spacing.sm }}
-          accessible={false}
         />
       )}
 

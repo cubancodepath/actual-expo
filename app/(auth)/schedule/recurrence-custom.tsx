@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { ScrollView, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "@/presentation/components/atoms/Icon";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Host, DatePicker, Picker, Text as SwiftText } from "@expo/ui/swift-ui";
 import { datePickerStyle, frame, pickerStyle, tag, tint } from "@expo/ui/swift-ui/modifiers";
@@ -144,7 +144,7 @@ export default function RecurrenceCustomScreen() {
           paddingBottom: spacing.sm,
         }}
       >
-        <GlassButton icon="chevron.left" onPress={() => router.back()} />
+        <GlassButton icon="chevronBack" onPress={() => router.back()} />
         <Text variant="headingSm" color={colors.headerText}>
           Custom Repeat
         </Text>
@@ -267,8 +267,8 @@ export default function RecurrenceCustomScreen() {
                       )!,
                     )}
                   </Text>
-                  <Ionicons
-                    name={showDatePicker ? "chevron-up" : "chevron-down"}
+                  <Icon
+                    name={showDatePicker ? "chevronUp" : "chevronDown"}
                     size={16}
                     color={colors.textMuted}
                   />

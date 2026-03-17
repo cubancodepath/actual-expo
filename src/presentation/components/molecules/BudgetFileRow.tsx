@@ -1,5 +1,6 @@
 import { ActivityIndicator, type ViewStyle } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "../atoms/Icon";
+import type { IconName } from "../atoms/iconRegistry";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../../providers/ThemeProvider";
 import { ListItem } from "./ListItem";
@@ -17,11 +18,11 @@ export interface BudgetFileRowProps {
   style?: ViewStyle;
 }
 
-const STATE_ICON: Record<BudgetFileState, keyof typeof Ionicons.glyphMap> = {
-  synced: "document-text",
+const STATE_ICON: Record<BudgetFileState, IconName> = {
+  synced: "documentText",
   local: "document",
-  detached: "alert-circle-outline",
-  remote: "cloud-download-outline",
+  detached: "alertCircleOutline",
+  remote: "cloudDownloadOutline",
 };
 
 const STATE_LABEL_KEY = {
@@ -61,7 +62,7 @@ export function BudgetFileRow({
       : file.state === "remote"
         ? colors.textMuted
         : colors.primary;
-  const icon = <Ionicons name={iconName} size={ICON_SIZE} color={iconColor} />;
+  const icon = <Icon name={iconName} size={ICON_SIZE} color={iconColor} />;
 
   let right: React.ReactNode = undefined;
   if (isSelecting || isActionInProgress) {
@@ -69,9 +70,9 @@ export function BudgetFileRow({
   } else if (isActive && onActionPress) {
     right = (
       <>
-        <Ionicons name="checkmark" size={20} color={colors.primary} />
+        <Icon name="checkmark" size={20} color={colors.primary} />
         <IconButton
-          ionIcon="ellipsis-horizontal"
+          name="ellipsisHorizontal"
           size={18}
           color={colors.textMuted}
           onPress={onActionPress}
@@ -80,11 +81,11 @@ export function BudgetFileRow({
       </>
     );
   } else if (isActive) {
-    right = <Ionicons name="checkmark" size={20} color={colors.primary} />;
+    right = <Icon name="checkmark" size={20} color={colors.primary} />;
   } else if (onActionPress) {
     right = (
       <IconButton
-        ionIcon="ellipsis-horizontal"
+        name="ellipsisHorizontal"
         size={18}
         color={colors.textMuted}
         onPress={onActionPress}

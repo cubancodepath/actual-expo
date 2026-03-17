@@ -1,14 +1,19 @@
 import { useState } from "react";
-import { Alert, Platform, ScrollView } from "react-native";
+import { Alert, ScrollView } from "react-native";
 import * as Sentry from "@sentry/react-native";
 import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { SymbolView } from "expo-symbols";
-import type { SFSymbol } from "sf-symbols-typescript";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
-import { Text, Card, ListItem, SectionHeader, Button } from "@/presentation/components";
+import {
+  Text,
+  Card,
+  ListItem,
+  SectionHeader,
+  Button,
+  Icon,
+  type IconName,
+} from "@/presentation/components";
 import { usePrefsStore } from "@/stores/prefsStore";
 import { resetAllStores } from "@/stores/resetStores";
 import { useSyncStore } from "@/stores/syncStore";
@@ -19,39 +24,26 @@ import type { Theme } from "@/theme";
 
 const ICON_SIZE = 20;
 
-function SettingsIcon({
-  sfSymbol,
-  ionIcon,
-  color,
-}: {
-  sfSymbol: SFSymbol;
-  ionIcon: keyof typeof Ionicons.glyphMap;
-  color: string;
-}) {
-  if (Platform.OS === "ios") {
-    return <SymbolView name={sfSymbol} size={ICON_SIZE} tintColor={color} />;
-  }
-  return <Ionicons name={ionIcon} size={ICON_SIZE} color={color} />;
+function SettingsIcon({ name, color }: { name: IconName; color: string }) {
+  return <Icon name={name} size={ICON_SIZE} color={color} />;
 }
 
 function ServerRow({
   label,
   value,
-  sfSymbol,
-  ionIcon,
+  icon,
   showSeparator,
 }: {
   label: string;
   value: string;
-  sfSymbol: SFSymbol;
-  ionIcon: keyof typeof Ionicons.glyphMap;
+  icon: IconName;
   showSeparator?: boolean;
 }) {
   const { colors, spacing } = useTheme();
   return (
     <ListItem
       title={label}
-      left={<SettingsIcon sfSymbol={sfSymbol} ionIcon={ionIcon} color={colors.textMuted} />}
+      left={<SettingsIcon name={icon} color={colors.textMuted} />}
       right={
         <Text variant="bodySm" color={colors.textSecondary} numberOfLines={1}>
           {value || "—"}
@@ -159,13 +151,7 @@ export default function SettingsScreen() {
       <Card>
         <ListItem
           title={t("budgetSettings")}
-          left={
-            <SettingsIcon
-              sfSymbol="gearshape"
-              ionIcon="settings-outline"
-              color={colors.textMuted}
-            />
-          }
+          left={<SettingsIcon name="settingsOutline" color={colors.textMuted} />}
           showChevron
           onPress={() => router.push("/(auth)/settings/budget")}
           showSeparator
@@ -173,13 +159,7 @@ export default function SettingsScreen() {
         />
         <ListItem
           title={t("newBudget")}
-          left={
-            <SettingsIcon
-              sfSymbol="plus.circle"
-              ionIcon="add-circle-outline"
-              color={colors.textMuted}
-            />
-          }
+          left={<SettingsIcon name="addCircleOutline" color={colors.textMuted} />}
           showChevron
           onPress={() => router.push("/(auth)/new-budget")}
           showSeparator
@@ -187,9 +167,7 @@ export default function SettingsScreen() {
         />
         <ListItem
           title={t("openBudget")}
-          left={
-            <SettingsIcon sfSymbol="folder" ionIcon="folder-outline" color={colors.textMuted} />
-          }
+          left={<SettingsIcon name="folderOutline" color={colors.textMuted} />}
           showChevron
           onPress={() => router.push("/(auth)/change-budget")}
         />
@@ -200,13 +178,7 @@ export default function SettingsScreen() {
       <Card>
         <ListItem
           title={t("display")}
-          left={
-            <SettingsIcon
-              sfSymbol="paintbrush"
-              ionIcon="color-palette-outline"
-              color={colors.textMuted}
-            />
-          }
+          left={<SettingsIcon name="colorPaletteOutline" color={colors.textMuted} />}
           showChevron
           onPress={() => router.push("/(auth)/settings/display")}
           showSeparator
@@ -214,7 +186,7 @@ export default function SettingsScreen() {
         />
         <ListItem
           title={t("language")}
-          left={<SettingsIcon sfSymbol="globe" ionIcon="globe-outline" color={colors.textMuted} />}
+          left={<SettingsIcon name="globeOutline" color={colors.textMuted} />}
           showChevron
           onPress={() => router.push("/(auth)/settings/language")}
         />
@@ -228,26 +200,14 @@ export default function SettingsScreen() {
             <ListItem
               title={t("localOnly")}
               subtitle={t("localOnlyDescription")}
-              left={
-                <SettingsIcon
-                  sfSymbol="iphone"
-                  ionIcon="phone-portrait-outline"
-                  color={colors.textMuted}
-                />
-              }
+              left={<SettingsIcon name="phonePortraitOutline" color={colors.textMuted} />}
               showSeparator
               separatorInsetLeft={spacing.lg + ICON_SIZE + spacing.md}
             />
             <ListItem
               title={t("connectToServer")}
               subtitle={t("connectToServerDescription")}
-              left={
-                <SettingsIcon
-                  sfSymbol="server.rack"
-                  ionIcon="server-outline"
-                  color={colors.textMuted}
-                />
-              }
+              left={<SettingsIcon name="serverOutline" color={colors.textMuted} />}
               showChevron
               onPress={handleConnectToServer}
               showSeparator
@@ -256,9 +216,7 @@ export default function SettingsScreen() {
             <ListItem
               title={t("deleteAllData")}
               titleColor={colors.negative}
-              left={
-                <SettingsIcon sfSymbol="trash" ionIcon="trash-outline" color={colors.negative} />
-              }
+              left={<SettingsIcon name="trashOutline" color={colors.negative} />}
               onPress={handleDeleteLocal}
             />
           </Card>
@@ -267,46 +225,36 @@ export default function SettingsScreen() {
         <>
           <SectionHeader title={t("server")} style={{ marginTop: spacing.xl }} />
           <Card>
-            <ServerRow
-              label={t("url")}
-              value={serverUrl}
-              sfSymbol="link"
-              ionIcon="link-outline"
-              showSeparator
-            />
+            <ServerRow label={t("url")} value={serverUrl} icon="linkOutline" showSeparator />
             <ServerRow
               label={t("lastSync")}
               value={lastSyncText}
-              sfSymbol="arrow.triangle.2.circlepath"
-              ionIcon="sync-outline"
+              icon="syncOutline"
               showSeparator
             />
             <ServerRow
               label={t("fileId")}
               value={fileId ? `${fileId.slice(0, 8)}…` : ""}
-              sfSymbol="doc"
-              ionIcon="document-outline"
+              icon="documentOutline"
               showSeparator
             />
             <ServerRow
               label={t("groupId")}
               value={groupId ? `${groupId.slice(0, 8)}…` : ""}
-              sfSymbol="person.2"
-              ionIcon="people-outline"
+              icon="peopleOutline"
               showSeparator
             />
             {encryptKeyId && (
               <ServerRow
                 label={t("encryption")}
                 value={`${encryptKeyId.slice(0, 8)}…`}
-                sfSymbol="lock.shield"
-                ionIcon="shield-checkmark-outline"
+                icon="lockShieldOutline"
               />
             )}
           </Card>
           <Button
             title={t("disconnectFromServer")}
-            icon="log-out-outline"
+            icon="logOutOutline"
             variant="ghost"
             textColor={colors.negative}
             onPress={handleLogout}
@@ -322,7 +270,7 @@ export default function SettingsScreen() {
           <Card>
             <ListItem
               title="Test Sentry Error"
-              left={<SettingsIcon sfSymbol="ant" ionIcon="bug-outline" color={colors.warning} />}
+              left={<SettingsIcon name="bugOutline" color={colors.warning} />}
               onPress={() => {
                 Sentry.captureException(new Error("Test error from Settings"));
                 Alert.alert("Sentry", "Test error sent! Check your Sentry dashboard.");

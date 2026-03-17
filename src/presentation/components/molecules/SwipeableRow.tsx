@@ -9,7 +9,8 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "../atoms/Icon";
+import type { IconName } from "../atoms/iconRegistry";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../../providers/ThemeProvider";
@@ -26,7 +27,7 @@ interface SwipeableRowProps {
   onDelete: () => void;
   /** Optional right-swipe action (e.g., clear/unclear) */
   onSwipeRight?: () => void;
-  swipeRightIcon?: keyof typeof Ionicons.glyphMap;
+  swipeRightIcon?: IconName;
   swipeRightColor?: string;
   isFirst?: boolean;
   isLast?: boolean;
@@ -45,7 +46,7 @@ export function SwipeableRow({
   children,
   onDelete,
   onSwipeRight,
-  swipeRightIcon = "checkmark-circle",
+  swipeRightIcon = "checkmarkCircle",
   swipeRightColor,
   isFirst,
   isLast,
@@ -312,7 +313,7 @@ export function SwipeableRow({
               accessibilityRole="button"
             >
               <Animated.View style={rightIconStyle}>
-                <Ionicons name={swipeRightIcon} size={20} color="#fff" />
+                <Icon name={swipeRightIcon} size={20} color="#fff" />
               </Animated.View>
             </Pressable>
           </Animated.View>
@@ -332,7 +333,7 @@ export function SwipeableRow({
             accessibilityLabel={t("a11y.delete")}
           >
             <Animated.View style={deleteIconStyle}>
-              <Ionicons name="trash-outline" size={20} color="#fff" />
+              <Icon name="trashOutline" size={20} color="#fff" />
             </Animated.View>
           </Pressable>
         </Animated.View>

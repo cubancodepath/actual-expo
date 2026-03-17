@@ -169,7 +169,7 @@ export default function NewTransactionScreen() {
             )}
             <View style={dividerStyle} />
             <DetailRow
-              icon="pricetags-outline"
+              icon="pricetagsOutline"
               label={
                 form.extractTagsFromNotes(form.notes).length > 0
                   ? form
@@ -207,7 +207,7 @@ export default function NewTransactionScreen() {
           {form.isEdit && (
             <Button
               title={t("deleteTransaction")}
-              icon="trash-outline"
+              icon="trashOutline"
               variant="ghost"
               textColor={colors.negative}
               onPress={form.handleDelete}
@@ -241,7 +241,7 @@ export default function NewTransactionScreen() {
 
       {/* Close button — always visible, fixed at top-left of modal */}
       <View style={{ position: "absolute", top: 12, left: spacing.md, zIndex: 11 }}>
-        <GlassButton icon="xmark" onPress={() => router.dismiss()} />
+        <GlassButton icon="close" onPress={() => router.dismiss()} />
       </View>
 
       {/* Title — always visible, vertically centered with close button */}

@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Alert, Keyboard, Pressable, ScrollView, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { randomUUID } from "expo-crypto";
+import { Icon } from "@/presentation/components/atoms/Icon";
 import Animated, { useAnimatedStyle } from "react-native-reanimated";
 import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
 import { BlurView } from "expo-blur";
@@ -65,8 +65,8 @@ function SplitRow({
         onPress={() => onCategoryPress(line.id)}
         style={{ flex: 1, flexDirection: "row", alignItems: "center" }}
       >
-        <Ionicons
-          name="folder-outline"
+        <Icon
+          name="folderOutline"
           size={16}
           color={colors.textMuted}
           style={{ marginRight: spacing.xs }}
@@ -79,8 +79,8 @@ function SplitRow({
         >
           {line.categoryName || t("selectCategory")}
         </Text>
-        <Ionicons
-          name="chevron-forward"
+        <Icon
+          name="chevronForward"
           size={14}
           color={colors.textMuted}
           style={{ marginRight: spacing.sm }}
@@ -99,7 +99,7 @@ function SplitRow({
       </Pressable>
 
       <IconButton
-        sfSymbol="xmark.circle.fill"
+        name="closeCircle"
         size={18}
         color={colors.textMuted}
         onPress={() => onRemove(line.id)}
@@ -240,7 +240,7 @@ export default function SplitScreen() {
     <>
       {/* Back button */}
       <View style={{ position: "absolute", top: 12, left: theme.spacing.md, zIndex: 11 }}>
-        <GlassButton icon="chevron.left" onPress={() => router.back()} />
+        <GlassButton icon="chevronBack" onPress={() => router.back()} />
       </View>
 
       {/* Title */}
@@ -276,7 +276,7 @@ export default function SplitScreen() {
         <View style={styles.headerCard}>
           <View style={styles.headerRow}>
             <View style={styles.payeePill}>
-              <Ionicons name="person-outline" size={16} color={theme.colors.textMuted} />
+              <Icon name="personOutline" size={16} color={theme.colors.textMuted} />
               <Text
                 variant="body"
                 color={payeeName ? theme.colors.textPrimary : theme.colors.textMuted}
@@ -323,7 +323,7 @@ export default function SplitScreen() {
             onPress={handleAdd}
             style={({ pressed }) => [styles.addButton, pressed && { opacity: 0.6 }]}
           >
-            <Ionicons name="add-circle" size={20} color={theme.colors.primary} />
+            <Icon name="addCircle" size={20} color={theme.colors.primary} />
             <Text variant="body" color={theme.colors.primary} style={{ fontWeight: "600" }}>
               {t("addAnother")}
             </Text>

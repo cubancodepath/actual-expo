@@ -1,5 +1,5 @@
 import { TextInput, View, Pressable, StyleSheet, type TextInputProps } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "../atoms/Icon";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../../providers/ThemeProvider";
 
@@ -41,7 +41,7 @@ export function SearchBar({
         },
       ]}
     >
-      <Ionicons name="search" size={18} color={colors.textMuted} accessible={false} />
+      <Icon name="search" size={18} color={colors.textMuted} />
       <TextInput
         value={value}
         onChangeText={onChangeText}
@@ -61,7 +61,7 @@ export function SearchBar({
           accessibilityRole="button"
           accessibilityLabel={t("a11y.clearSearch")}
         >
-          <Ionicons name="close-circle" size={18} color={colors.textMuted} accessible={false} />
+          <Icon name="closeCircle" size={18} color={colors.textMuted} />
         </Pressable>
       )}
     </View>

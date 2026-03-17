@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "@/presentation/components/atoms/Icon";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import Animated, {
@@ -88,7 +88,7 @@ function SourceRow({
       </View>
 
       <IconButton
-        sfSymbol="xmark.circle.fill"
+        name="closeCircle"
         size={18}
         color={colors.textMuted}
         onPress={() => onRemove(source.id)}
@@ -166,7 +166,7 @@ function DirectionToggle({
             ]}
           >
             <Animated.View style={arrowStyle}>
-              <Ionicons name="arrow-up" size={16} color={colors.primary} />
+              <Icon name="arrowUp" size={16} color={colors.primary} />
             </Animated.View>
           </Animated.View>
         </View>
@@ -329,7 +329,7 @@ export default function MoveMoneyScreen() {
           }}
         >
           <View style={{ position: "absolute", top: 16, left: spacing.md }}>
-            <GlassButton icon="xmark" onPress={() => router.back()} color={headerText} />
+            <GlassButton icon="close" onPress={() => router.back()} color={headerText} />
           </View>
 
           <Text variant="headingSm" color={headerText} align="center">
@@ -399,7 +399,7 @@ export default function MoveMoneyScreen() {
                 pressed && { opacity: 0.6 },
               ]}
             >
-              <Ionicons name="add-circle" size={20} color={colors.primary} />
+              <Icon name="addCircle" size={20} color={colors.primary} />
               <Text variant="body" color={colors.primary} style={{ fontWeight: "600" }}>
                 {sources.length === 0 ? t("addCategory") : t("addAnother")}
               </Text>

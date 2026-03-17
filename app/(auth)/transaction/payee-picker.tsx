@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { Ionicons } from "@expo/vector-icons";
 import { SymbolView } from "expo-symbols";
+import { Icon } from "@/presentation/components/atoms/Icon";
 import { usePayeesStore } from "@/stores/payeesStore";
 import { usePickerStore } from "@/stores/pickerStore";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
@@ -28,7 +28,12 @@ export default function PayeePickerScreen() {
   const { payees, load } = usePayeesStore();
   const setPayee = usePickerStore((s) => s.setPayee);
   const [search, setSearch] = useState(selectedName ?? "");
-  const { nearbyPayees, loading: nearbyLoading, refresh: refreshNearby, enabled: nearbyEnabled } = useNearbyPayees();
+  const {
+    nearbyPayees,
+    loading: nearbyLoading,
+    refresh: refreshNearby,
+    enabled: nearbyEnabled,
+  } = useNearbyPayees();
   const { status: locationStatus } = useLocationPermission();
 
   useEffect(() => {
@@ -80,7 +85,7 @@ export default function PayeePickerScreen() {
         <Text variant="body" color={colors.textMuted} style={styles.itemText}>
           {t("noPayee")}
         </Text>
-        {noneSelected && <Ionicons name="checkmark" size={20} color={colors.primary} />}
+        {noneSelected && <Icon name="checkmark" size={20} color={colors.primary} />}
       </Pressable>
     ),
   });
@@ -113,7 +118,7 @@ export default function PayeePickerScreen() {
           backgroundColor: colors.pageBackground,
         }}
       >
-        <GlassButton icon="chevron.left" onPress={() => router.back()} />
+        <GlassButton icon="chevronBack" onPress={() => router.back()} />
         <Text variant="headingSm" color={colors.headerText}>
           {t("payee")}
         </Text>
@@ -169,8 +174,8 @@ export default function PayeePickerScreen() {
                     style={styles.transferIcon}
                   />
                 ) : (
-                  <Ionicons
-                    name="location-outline"
+                  <Icon
+                    name="locationOutline"
                     size={16}
                     color={colors.textMuted}
                     style={styles.transferIcon}
@@ -179,7 +184,7 @@ export default function PayeePickerScreen() {
                 <Text variant="body" color={colors.textSecondary} style={styles.itemText}>
                   {t("enableLocationAccess")}
                 </Text>
-                <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+                <Icon name="chevronForward" size={16} color={colors.textMuted} />
               </Pressable>
             </View>
           </>
@@ -215,8 +220,8 @@ export default function PayeePickerScreen() {
                           style={styles.transferIcon}
                         />
                       ) : (
-                        <Ionicons
-                          name="location-outline"
+                        <Icon
+                          name="locationOutline"
                           size={16}
                           color={colors.textMuted}
                           style={styles.transferIcon}
@@ -229,7 +234,7 @@ export default function PayeePickerScreen() {
                         {formatDistance(n.distance)}
                       </Text>
                       {isSelected && (
-                        <Ionicons
+                        <Icon
                           name="checkmark"
                           size={20}
                           color={colors.primary}
@@ -274,8 +279,8 @@ export default function PayeePickerScreen() {
                     style={({ pressed }) => [styles.item, pressed && styles.pressed]}
                     onPress={() => select(p.id, p.name, p.transfer_acct)}
                   >
-                    <Ionicons
-                      name="swap-horizontal"
+                    <Icon
+                      name="swapHorizontal"
                       size={16}
                       color={colors.link}
                       style={styles.transferIcon}
@@ -283,7 +288,7 @@ export default function PayeePickerScreen() {
                     <Text variant="body" color={colors.textPrimary} style={styles.itemText}>
                       {p.name}
                     </Text>
-                    {isSelected && <Ionicons name="checkmark" size={20} color={colors.primary} />}
+                    {isSelected && <Icon name="checkmark" size={20} color={colors.primary} />}
                     {!isLast && (
                       <View
                         style={{
@@ -322,17 +327,12 @@ export default function PayeePickerScreen() {
                     onPress={() => select(p.id, p.name)}
                   >
                     {p.favorite && (
-                      <Ionicons
-                        name="star"
-                        size={14}
-                        color={colors.warning}
-                        style={styles.starIcon}
-                      />
+                      <Icon name="star" size={14} color={colors.warning} style={styles.starIcon} />
                     )}
                     <Text variant="body" color={colors.textPrimary} style={styles.itemText}>
                       {p.name}
                     </Text>
-                    {isSelected && <Ionicons name="checkmark" size={20} color={colors.primary} />}
+                    {isSelected && <Icon name="checkmark" size={20} color={colors.primary} />}
                     {!isLast && (
                       <View
                         style={{

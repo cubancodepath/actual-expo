@@ -207,7 +207,7 @@ export function CurrencyInput({
               {formatExpression(ci.fullExpression)}
             </Text>
           )}
-          {ci.renderCursor({ ...styles.cursor, ...(compactCursor ?? {}) }, theme.colors.primary)}
+          {ci.renderCursor({ ...styles.cursor, ...compactCursor }, theme.colors.primary)}
         </View>
 
         <TextInput

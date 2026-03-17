@@ -1,5 +1,5 @@
 import { View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "../atoms/Icon";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Text } from "../atoms/Text";
 import { Amount } from "../atoms/Amount";
@@ -22,7 +22,7 @@ export function CategoryBreakdownRow({ categoryName, total, maxTotal }: Category
   return (
     <View style={styles.row}>
       <View style={[styles.iconWell, { backgroundColor: colors.primarySubtle }]}>
-        <Ionicons name="folder-outline" size={14} color={colors.primary} />
+        <Icon name="folderOutline" size={14} color={colors.primary} />
       </View>
 
       <View style={styles.nameCol}>

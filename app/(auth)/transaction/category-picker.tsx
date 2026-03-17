@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { useCategoriesStore } from "@/stores/categoriesStore";
+import { Icon } from "@/presentation/components/atoms/Icon";
 import { usePickerStore } from "@/stores/pickerStore";
 import { getCategoryBalancesForMonth } from "@/budgets";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
@@ -89,7 +89,7 @@ export default function CategoryPickerScreen() {
           backgroundColor: colors.pageBackground,
         }}
       >
-        <GlassButton icon="chevron.left" onPress={() => router.back()} />
+        <GlassButton icon="chevronBack" onPress={() => router.back()} />
         <Text variant="headingSm" color={colors.headerText}>
           Category
         </Text>
@@ -133,7 +133,7 @@ export default function CategoryPickerScreen() {
                 No category
               </Text>
               <View style={{ width: 20, alignItems: "center" }}>
-                {noneSelected && <Ionicons name="checkmark" size={20} color={colors.primary} />}
+                {noneSelected && <Icon name="checkmark" size={20} color={colors.primary} />}
               </View>
             </Pressable>
           </View>
@@ -160,7 +160,7 @@ export default function CategoryPickerScreen() {
                 />
               )}
               <View style={{ width: 20, alignItems: "center" }}>
-                {isSelected && <Ionicons name="checkmark" size={20} color={colors.primary} />}
+                {isSelected && <Icon name="checkmark" size={20} color={colors.primary} />}
               </View>
             </>
           );

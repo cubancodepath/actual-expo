@@ -21,7 +21,7 @@ const pillStyle = {
 };
 
 const OPERATORS: {
-  icon: "plus" | "minus" | "multiply" | "divide";
+  icon: import("../atoms/iconRegistry").IconName;
   value: "+" | "-" | "*" | "/";
   label: string;
 }[] = [
@@ -91,7 +91,7 @@ export function CalculatorPill({ inputRef, onDone }: CalculatorPillProps) {
       ))}
       <PillDivider color={colors.textMuted} />
       <PillButton
-        icon="delete.backward"
+        icon="deleteBackward"
         color={colors.textMuted}
         onPress={() => inputRef.current?.deleteBackward()}
         label="Delete"

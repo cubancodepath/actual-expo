@@ -67,7 +67,7 @@ export default function EditGroupScreen() {
         options={{
           headerLeft: () => (
             <IconButton
-              sfSymbol="xmark"
+              name="close"
               size={22}
               color={colors.headerText}
               onPress={() => router.back()}
@@ -144,7 +144,7 @@ export default function EditGroupScreen() {
       <Button
         title={t("deleteGroup")}
         variant="danger"
-        icon="trash-outline"
+        icon="trashOutline"
         onPress={handleDelete}
         style={{ marginTop: spacing.sm, borderRadius: 999 }}
       />

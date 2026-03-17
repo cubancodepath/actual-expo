@@ -3,9 +3,9 @@ import { Pressable, View, type ViewStyle } from "react-native";
 import Animated, { type AnimatedStyle } from "react-native-reanimated";
 import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
 import { BlurView } from "expo-blur";
-import { SymbolView } from "expo-symbols";
-import type { SFSymbol } from "sf-symbols-typescript";
 import { useTheme } from "../../providers/ThemeProvider";
+import { Icon } from "./Icon";
+import type { IconName } from "./iconRegistry";
 import { Text } from "./Text";
 
 const glass = isLiquidGlassAvailable();
@@ -15,8 +15,8 @@ const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
 
 type GlassButtonProps = {
   onPress?: () => void;
-  /** SF Symbol name (e.g. "xmark", "chevron.left") */
-  icon?: SFSymbol;
+  /** Icon name from the registry */
+  icon?: IconName;
   /** Icon size — defaults to 22 */
   iconSize?: number;
   /** Text label (renders pill shape) */
@@ -67,10 +67,10 @@ export function GlassButton({
   ) : (
     <>
       {icon && (
-        <SymbolView
+        <Icon
           name={icon}
           size={iconSize}
-          tintColor={variant === "tinted" ? colors.primaryText : iconColor}
+          color={variant === "tinted" ? colors.primaryText : iconColor}
         />
       )}
       {hasLabel && (

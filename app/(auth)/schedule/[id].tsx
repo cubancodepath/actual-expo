@@ -380,7 +380,7 @@ export default function ScheduleDetailScreen() {
         <View style={{ marginTop: -20, zIndex: 1, paddingHorizontal: spacing.lg }}>
           <View style={cardStyle}>
             <DetailRow
-              icon="wallet-outline"
+              icon="wallet"
               label={acctName}
               placeholder={t("account")}
               onPress={() =>
@@ -390,7 +390,7 @@ export default function ScheduleDetailScreen() {
             <View style={dividerStyle} />
 
             <DetailRow
-              icon="person-outline"
+              icon="personOutline"
               label={payeeName}
               placeholder={t("payee")}
               onPress={() =>
@@ -407,7 +407,7 @@ export default function ScheduleDetailScreen() {
             <View style={dividerStyle} />
 
             <DetailRow
-              icon="folder-outline"
+              icon="folderOutline"
               label={categoryName}
               placeholder={t("category")}
               onClear={
@@ -446,7 +446,7 @@ export default function ScheduleDetailScreen() {
         <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.md }}>
           <View style={cardStyle}>
             <DetailRow
-              icon="text-outline"
+              icon="textOutline"
               label={name}
               placeholder={t("name")}
               onPress={() => {
@@ -509,7 +509,7 @@ export default function ScheduleDetailScreen() {
           {isRecurring && (
             <Button
               title={t("skipNextDate")}
-              icon="play-forward-outline"
+              icon="playForwardOutline"
               variant="ghost"
               onPress={handleSkip}
             />
@@ -517,7 +517,7 @@ export default function ScheduleDetailScreen() {
 
           <Button
             title={t("postTransactionNow")}
-            icon="checkmark-circle-outline"
+            icon="checkmarkCircleOutline"
             variant="ghost"
             onPress={handlePostNow}
           />
@@ -525,7 +525,7 @@ export default function ScheduleDetailScreen() {
           {schedule && !schedule.completed && (
             <Button
               title={t("completeSchedule")}
-              icon="flag-outline"
+              icon="flagOutline"
               variant="ghost"
               onPress={handleComplete}
             />
@@ -533,7 +533,7 @@ export default function ScheduleDetailScreen() {
 
           <Button
             title={t("deleteSchedule")}
-            icon="trash-outline"
+            icon="trashOutline"
             variant="ghost"
             textColor={colors.negative}
             onPress={handleDelete}
@@ -565,7 +565,7 @@ export default function ScheduleDetailScreen() {
 
       {/* Close button */}
       <View style={{ position: "absolute", top: 12, left: spacing.md, zIndex: 11 }}>
-        <GlassButton icon="xmark" onPress={() => router.dismiss()} />
+        <GlassButton icon="close" onPress={() => router.dismiss()} />
       </View>
 
       {/* Title */}

@@ -1,5 +1,5 @@
 import { View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "../atoms/Icon";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Text } from "..";
@@ -17,7 +17,7 @@ export function UnclearedBanner({ count }: UnclearedBannerProps) {
   return (
     <View style={{ paddingHorizontal: spacing.lg, paddingVertical: spacing.sm }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
-        <Ionicons name="ellipse-outline" size={14} color={colors.textMuted} />
+        <Icon name="ellipseOutline" size={14} color={colors.textMuted} />
         <Text variant="bodySm" color={colors.textSecondary}>
           {t("detail.unclearedBanner", { count })}
         </Text>

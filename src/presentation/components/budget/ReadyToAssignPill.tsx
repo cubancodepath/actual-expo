@@ -1,5 +1,6 @@
 import { Pressable, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "../atoms/Icon";
+import type { IconName } from "../atoms/iconRegistry";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Text } from "../atoms/Text";
@@ -48,11 +49,11 @@ export function ReadyToAssignPill({
       ? colors.budgetOverspentBg
       : colors.cardBackground;
 
-  const icon: keyof typeof Ionicons.glyphMap = isPositive
-    ? "wallet-outline"
+  const icon: IconName = isPositive
+    ? "wallet"
     : isNegative
-      ? "alert-circle-outline"
-      : "checkmark-circle-outline";
+      ? "alertCircleOutline"
+      : "checkmarkCircleOutline";
 
   const label = isPositive
     ? t("readyToAssign")
@@ -69,7 +70,7 @@ export function ReadyToAssignPill({
         accessibilityLabel={`${formatPrivacyAware(amount)} ${label}. Tap to edit budget.`}
         left={
           <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs }}>
-            <Ionicons name={icon} size={15} color={textColor} />
+            <Icon name={icon} size={15} color={textColor} />
             <Amount value={amount} variant="bodySm" color={textColor} weight="700" />
           </View>
         }
@@ -79,12 +80,7 @@ export function ReadyToAssignPill({
               {label}
             </Text>
             {onPress && (
-              <Ionicons
-                name="chevron-forward"
-                size={12}
-                color={textColor}
-                style={{ opacity: 0.45 }}
-              />
+              <Icon name="chevronForward" size={12} color={textColor} style={{ opacity: 0.45 }} />
             )}
           </View>
         }
@@ -118,7 +114,7 @@ export function ReadyToAssignPill({
         disabled={!onPress}
       >
         <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs }}>
-          <Ionicons name={icon} size={15} color={textColor} />
+          <Icon name={icon} size={15} color={textColor} />
           {!isZero && <Amount value={amount} variant="bodySm" color={textColor} weight="700" />}
           {isZero && (
             <Text variant="bodySm" color={textColor} style={{ fontWeight: "700" }}>
@@ -133,12 +129,7 @@ export function ReadyToAssignPill({
             </Text>
           )}
           {onPress && (
-            <Ionicons
-              name="chevron-forward"
-              size={12}
-              color={textColor}
-              style={{ opacity: 0.45 }}
-            />
+            <Icon name="chevronForward" size={12} color={textColor} style={{ opacity: 0.45 }} />
           )}
         </View>
       </Pressable>
@@ -164,8 +155,8 @@ export function ReadyToAssignPill({
       >
         {/* Hold info */}
         <View style={{ flexDirection: "row", alignItems: "center", flex: 1, flexWrap: "wrap" }}>
-          <Ionicons
-            name="play-skip-forward-outline"
+          <Icon
+            name="playSkipForwardOutline"
             size={13}
             color={textColor}
             style={{ opacity: 0.5, marginRight: spacing.xxs }}

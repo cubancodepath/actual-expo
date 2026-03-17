@@ -9,7 +9,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import type { IconName } from "../atoms/iconRegistry";
 import { useTranslation } from "react-i18next";
 import { scheduleOnRN } from "react-native-worklets";
 import Animated, {
@@ -137,7 +137,7 @@ function CategoryRow({
     <Pressable onPress={handlePress} style={style}>
       <Animated.View style={iconStyle}>
         <Icon
-          name={checked ? "checkmark-circle" : "ellipse-outline"}
+          name={checked ? "checkmarkCircle" : "ellipseOutline"}
           size={24}
           color={checked ? theme.colors.primary : theme.colors.textMuted}
         />
@@ -183,7 +183,7 @@ function ReadyCheckmark() {
         s,
       ]}
     >
-      <Icon name="checkmark-circle" size={48} color={theme.colors.positive} />
+      <Icon name="checkmarkCircle" size={48} color={theme.colors.positive} />
     </Animated.View>
   );
 }
@@ -204,7 +204,7 @@ function BackLink({ onPress, label = "Back" }: { onPress: () => void; label?: st
         gap: 2,
       }}
     >
-      <Icon name="chevron-back-outline" size={16} color={theme.colors.textSecondary} />
+      <Icon name="chevronBackOutline" size={16} color={theme.colors.textSecondary} />
       <Text variant="bodySm" color={theme.colors.textSecondary}>
         {label}
       </Text>
@@ -220,7 +220,7 @@ function SummaryRow({
   value,
   delay: delayMs = 0,
 }: {
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: IconName;
   label: string;
   value: string;
   delay?: number;
@@ -425,7 +425,7 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
           {t("name.subtext")}
         </Text>
         <View style={styles.inputContainer}>
-          <Ionicons name="document-text-outline" size={18} color={theme.colors.textMuted} />
+          <Icon name="documentTextOutline" size={18} color={theme.colors.textMuted} />
           <TextInput
             style={[styles.input, { color: theme.colors.textPrimary }]}
             value={budgetName}
@@ -462,7 +462,7 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
           {t("account.nameLabel")}
         </Text>
         <View style={styles.inputContainer}>
-          <Ionicons name="wallet-outline" size={18} color={theme.colors.textMuted} />
+          <Icon name="wallet" size={18} color={theme.colors.textMuted} />
           <TextInput
             style={[styles.input, { color: theme.colors.textPrimary }]}
             value={accountName}
@@ -567,19 +567,19 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
         </Text>
         <Card style={styles.summaryCard}>
           <SummaryRow
-            icon="document-text-outline"
+            icon="documentTextOutline"
             label={t("ready.budget")}
             value={budgetName}
             delay={0}
           />
           <SummaryRow
-            icon="wallet-outline"
+            icon="wallet"
             label={t("ready.account")}
             value={`${accountName} · ${balanceText}`}
             delay={60}
           />
           <SummaryRow
-            icon="layers-outline"
+            icon="layersOutline"
             label={t("ready.categories")}
             value={t("ready.categoriesCount", { count: selectedCount })}
             delay={120}
@@ -589,7 +589,7 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
           title={t("ready.button")}
           onPress={handleStart}
           size="lg"
-          icon="arrow-forward-outline"
+          icon="arrowForwardOutline"
           style={styles.actionButton}
         />
       </ScrollView>

@@ -365,7 +365,7 @@ export default function AccountTransactionsScreen() {
           ListEmptyComponent={
             hideReconciled ? (
               <EmptyState
-                icon="lock-closed-outline"
+                icon="lockClosedOutline"
                 title={t("detail.allReconciled.title")}
                 description={t("detail.allReconciled.description")}
                 actionLabel={t("detail.allReconciled.showAll")}
@@ -373,7 +373,7 @@ export default function AccountTransactionsScreen() {
               />
             ) : (
               <EmptyState
-                icon="receipt-outline"
+                icon="receiptOutline"
                 title={t("detail.noTransactions.title")}
                 description={t("detail.noTransactions.description")}
               />

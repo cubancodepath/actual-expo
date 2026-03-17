@@ -115,7 +115,7 @@ export default function QuickEditCategoryScreen() {
         options={{
           headerLeft: () => (
             <IconButton
-              sfSymbol="xmark"
+              name="close"
               size={22}
               color={colors.headerText}
               onPress={() => router.back()}
@@ -203,7 +203,7 @@ export default function QuickEditCategoryScreen() {
               variant="secondary"
               size="md"
               style={{ alignSelf: "stretch" }}
-              icon="flag-outline"
+              icon="flagOutline"
               onPress={() => {
                 if (categoryId) {
                   router.navigate({
@@ -223,7 +223,7 @@ export default function QuickEditCategoryScreen() {
           title={category?.hidden ? t("show") : t("hide")}
           variant="secondary"
           size="md"
-          icon={category?.hidden ? "eye-outline" : "eye-off-outline"}
+          icon={category?.hidden ? "eyeOutline" : "eyeOffOutline"}
           style={{ flex: 1 }}
           onPress={async () => {
             if (!categoryId) return;
@@ -238,7 +238,7 @@ export default function QuickEditCategoryScreen() {
           title={t("delete")}
           variant="danger"
           size="md"
-          icon="trash-outline"
+          icon="trashOutline"
           style={{ flex: 1 }}
           onPress={handleDelete}
         />

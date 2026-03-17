@@ -1,5 +1,6 @@
 import { Pressable, ScrollView, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "../atoms/Icon";
+import type { IconName } from "../atoms/iconRegistry";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Text } from "../atoms/Text";
@@ -227,30 +228,30 @@ export function SearchSuggestions({
     }
   }
 
-  function iconForSuggestion(s: Suggestion): keyof typeof Ionicons.glyphMap {
+  function iconForSuggestion(s: Suggestion): IconName {
     switch (s.kind) {
       case "status":
         switch (s.value) {
           case "cleared":
-            return "checkmark-circle";
+            return "checkmarkCircle";
           case "uncleared":
-            return "checkmark-circle-outline";
+            return "checkmarkCircleOutline";
           case "reconciled":
-            return "lock-closed";
+            return "lockClosed";
           case "unreconciled":
-            return "lock-open";
+            return "lockOpen";
         }
         break;
       case "account":
-        return "wallet-outline";
+        return "wallet";
       case "category":
-        return "folder-outline";
+        return "folderOutline";
       case "payee":
-        return "person-outline";
+        return "personOutline";
       case "tag":
-        return "pricetags-outline";
+        return "pricetagsOutline";
       case "uncategorized":
-        return "help-circle-outline";
+        return "helpCircleOutline";
     }
   }
 
@@ -273,7 +274,7 @@ export function SearchSuggestions({
             opacity: pressed ? 0.6 : 1,
           })}
         >
-          <Ionicons name={iconForSuggestion(s)} size={18} color={colors.textMuted} />
+          <Icon name={iconForSuggestion(s)} size={18} color={colors.textMuted} />
           <Text variant="body" color={colors.textPrimary}>
             {s.label}
           </Text>

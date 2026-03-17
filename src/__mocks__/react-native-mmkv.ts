@@ -3,6 +3,9 @@ export class MMKV {
   getString() {
     return undefined;
   }
+  getBoolean() {
+    return undefined;
+  }
   set() {}
   delete() {}
   contains() {
@@ -11,4 +14,8 @@ export class MMKV {
   getAllKeys() {
     return [];
   }
+}
+
+export function createMMKV() {
+  return new MMKV();
 }

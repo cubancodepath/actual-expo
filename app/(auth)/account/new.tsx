@@ -4,10 +4,12 @@ import { Input } from "@/presentation/components/atoms/Input";
 import { Stack, useRouter } from "expo-router";
 import { Icon } from "@/presentation/components/atoms/Icon";
 import { createAccount } from "@/accounts";
+import { useBankSyncStore } from "@/stores/bankSyncStore";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
 import { ErrorBanner } from "@/presentation/components/molecules/ErrorBanner";
+import { Divider } from "@/presentation/components/atoms/Divider";
 import { useErrorHandler } from "@/presentation/hooks/useErrorHandler";
 import { useTranslation } from "react-i18next";
 import type { Theme } from "@/theme";
@@ -24,6 +26,8 @@ export default function NewAccountScreen() {
   const router = useRouter();
   const theme = useTheme();
   const styles = useThemedStyles(createStyles);
+  const { goCardlessConfigured, simpleFinConfigured } = useBankSyncStore();
+  const providersAvailable = goCardlessConfigured || simpleFinConfigured;
 
   const { t } = useTranslation("accounts");
   const [name, setName] = useState("");
@@ -139,6 +143,25 @@ export default function NewAccountScreen() {
           disabled={!name.trim()}
           style={styles.createButton}
         />
+
+        {/* Link to bank */}
+        <Divider style={styles.divider} />
+        <Text variant="caption" color={theme.colors.textMuted} style={styles.orText}>
+          {t("newAccount.or")}
+        </Text>
+        <Button
+          title={t("newAccount.linkToBank")}
+          variant="secondary"
+          icon="link-outline"
+          size="lg"
+          onPress={() =>
+            router.push({
+              pathname: "/(auth)/bank-sync",
+              params: { mode: "create", offbudget: offbudget ? "1" : "0" },
+            })
+          }
+          disabled={!providersAvailable}
+        />
       </ScrollView>
     </>
   );
@@ -181,5 +204,12 @@ const createStyles = (theme: Theme) => ({
   },
   createButton: {
     marginTop: theme.spacing.xxl,
+  },
+  divider: {
+    marginTop: theme.spacing.xl,
+  },
+  orText: {
+    textAlign: "center" as const,
+    marginVertical: theme.spacing.sm,
   },
 });

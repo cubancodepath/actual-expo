@@ -12,6 +12,7 @@ import { Banner } from "../molecules/Banner";
 import { WizardShell, useWizardTransition, type WizardDirection } from "../wizard";
 import { useBankSyncStore } from "../../../stores/bankSyncStore";
 import { useAccountsStore } from "../../../stores/accountsStore";
+import { createAccount } from "../../../accounts";
 import {
   getGoCardlessBanks,
   createGoCardlessWebToken,
@@ -56,15 +57,29 @@ const COUNTRIES = [
 // ---------------------------------------------------------------------------
 
 type Props = {
-  localAccountId: string;
+  /** Account to link (required for mode "link") */
+  localAccountId?: string;
+  /** "link" = link existing account, "create" = create new account + link */
+  mode?: "link" | "create";
+  /** Off-budget flag for newly created accounts (mode "create") */
+  offbudget?: boolean;
+  /** Called when wizard finishes or is dismissed */
   onClose: () => void;
+  /** Called after a new account is created and linked (mode "create") */
+  onAccountCreated?: (accountId: string) => void;
 };
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-export function BankSyncWizard({ localAccountId, onClose }: Props) {
+export function BankSyncWizard({
+  localAccountId,
+  mode = "link",
+  offbudget = false,
+  onClose,
+  onAccountCreated,
+}: Props) {
   const theme = useTheme();
   const styles = useThemedStyles(createStyles);
   const { t } = useTranslation("bankSync");
@@ -199,11 +214,22 @@ export function BankSyncWizard({ localAccountId, onClose }: Props) {
     }
   }
 
+  async function resolveAccountId(bankName: string): Promise<string> {
+    if (mode === "create") {
+      const name = bankName || "Linked Account";
+      const newId = await createAccount({ name, offbudget }, 0);
+      return newId;
+    }
+    return localAccountId!;
+  }
+
   async function handleLinkGoCardless(account: GoCardlessAccount) {
     setLinking(true);
     try {
-      await linkAccount(localAccountId, "goCardless", account.id, institution?.name, requisitionId!);
+      const acctId = await resolveAccountId(account.name ?? account.id);
+      await linkAccount(acctId, "goCardless", account.id, institution?.name, requisitionId!);
       await useAccountsStore.getState().load();
+      if (mode === "create") onAccountCreated?.(acctId);
       onClose();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -214,8 +240,10 @@ export function BankSyncWizard({ localAccountId, onClose }: Props) {
   async function handleLinkSimpleFin(account: SimpleFinAccount) {
     setLinking(true);
     try {
-      await linkAccount(localAccountId, "simpleFin", account.id, account.org.name);
+      const acctId = await resolveAccountId(account.name);
+      await linkAccount(acctId, "simpleFin", account.id, account.org.name);
       await useAccountsStore.getState().load();
+      if (mode === "create") onAccountCreated?.(acctId);
       onClose();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));

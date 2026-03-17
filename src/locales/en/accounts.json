@@ -30,7 +30,9 @@
     "startingBalanceHint": "Leave blank or 0 to start with an empty account.\nUse a negative value for an account already in debt.",
     "offBudget": "Off budget",
     "offBudgetDescription": "Transactions won't affect your budget",
-    "accountNameRequired": "Account name is required"
+    "accountNameRequired": "Account name is required",
+    "or": "or",
+    "linkToBank": "Link to Bank"
   },
 
   "detail": {

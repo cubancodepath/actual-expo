@@ -30,7 +30,9 @@
     "startingBalanceHint": "Deja en blanco o 0 para comenzar con una cuenta vacía.\nUsa un valor negativo para una cuenta con deuda.",
     "offBudget": "Fuera de presupuesto",
     "offBudgetDescription": "Las transacciones no afectarán tu presupuesto",
-    "accountNameRequired": "El nombre de la cuenta es obligatorio"
+    "accountNameRequired": "El nombre de la cuenta es obligatorio",
+    "or": "o",
+    "linkToBank": "Vincular a Banco"
   },
 
   "detail": {

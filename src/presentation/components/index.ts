@@ -11,7 +11,6 @@ export { CurrencySymbol } from "./atoms/CurrencySymbol";
 export { Icon, type IconProps } from "./atoms/Icon";
 export { RowSeparator, type RowSeparatorProps } from "./atoms/RowSeparator";
 export { CurrencyInput, type CurrencyInputRef } from "./currency-input";
-export { CompactCurrencyInput, type CompactCurrencyInputRef } from "./currency-input";
 export { InfoPill } from "./atoms/InfoPill";
 export { TagPill, type TagPillProps } from "./atoms/TagPill";
 export { NotesWithTags, type NotesWithTagsProps } from "./atoms/NotesWithTags";

@@ -110,7 +110,7 @@ function SignToggle({ isNegative, onToggle }: { isNegative: boolean; onToggle: (
 }
 
 // ---------------------------------------------------------------------------
-// Inline amount display (replaces CompactCurrencyInput)
+// Inline amount display
 // ---------------------------------------------------------------------------
 
 function AmountDisplay({

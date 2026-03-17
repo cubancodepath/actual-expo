@@ -206,6 +206,30 @@ transition={{ type: 'none' }}
 </EaseView>
 ```
 
+### Exit animation (animate then unmount)
+
+EaseView has no `exiting` prop. Use state + `onTransitionEnd` to animate out before unmounting:
+
+```tsx
+const [visible, setVisible] = useState(true);
+const [mounted, setMounted] = useState(true);
+
+// Trigger exit:
+const handleClose = () => setVisible(false);
+
+{mounted && (
+  <EaseView
+    animate={{ opacity: visible ? 1 : 0, translateY: visible ? 0 : 20 }}
+    transition={{ type: 'timing', duration: 300 }}
+    onTransitionEnd={({ finished }) => {
+      if (finished && !visible) setMounted(false);
+    }}
+  >
+    {children}
+  </EaseView>
+)}
+```
+
 ### Marquee / ticker scroll
 
 ```tsx
@@ -258,12 +282,15 @@ Alternative without Reanimated dependency: use `AccessibilityInfo.isReduceMotion
 2. **Spring does NOT support `loop`** — use timing for looping animations
 3. **Don't duplicate properties in `animate` and `style`** — animate wins, style value is stripped, dev warning logged
 4. **Width/height are NOT animatable** — use `scale`, `scaleX`, `scaleY`, or `translateX`/`translateY` instead
-5. **Requires React Native 0.76+ with Fabric** (new architecture)
-6. **`transformOrigin` uses 0-1 fractions** — not pixels or percentages (0=start, 0.5=center, 1=end)
-7. **`useHardwareLayer` clips overflow** on Android — avoid with translateX/translateY on views with overflowing children
-8. **`backgroundColor` animation on Android is timing-only** — spring not supported for colors on Android (works on iOS)
-9. **Animations are interruptible** — changing `animate` mid-flight smoothly redirects, no jumps
-10. **`onTransitionEnd` reports `{ finished: boolean }`** — false means interrupted by a new animation
+5. **No per-property transitions** — one `transition` config applies to ALL animated properties simultaneously
+6. **No animation sequencing** — no equivalent to `withSequence`/`withDelay`; for sequenced effects, use Reanimated
+7. **`type: 'none'` fires `onTransitionEnd` immediately** with `{ finished: true }` — useful for reduced motion fallbacks
+8. **Requires React Native 0.76+ with Fabric** (new architecture)
+9. **`transformOrigin` uses 0-1 fractions** — not pixels or percentages (0=start, 0.5=center, 1=end)
+10. **`useHardwareLayer` clips overflow** on Android — avoid with translateX/translateY on views with overflowing children
+11. **`backgroundColor` animation on Android is timing-only** — spring not supported for colors on Android (works on iOS)
+12. **Animations are interruptible** — changing `animate` mid-flight smoothly redirects, no jumps
+13. **`onTransitionEnd` reports `{ finished: boolean }`** — false means interrupted by a new animation
 
 ## Platform Implementation
 

@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Alert, Keyboard, Pressable, SectionList, View } from "react-native";
+import { useEffect, useId, useImperativeHandle, useMemo, useRef, useState } from "react";
+import { Alert, Keyboard, Pressable, SectionList, TextInput, View } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
@@ -9,11 +9,16 @@ import { useBudgetStore } from "@/stores/budgetStore";
 import { Text } from "@/presentation/components/atoms/Text";
 import { IconButton } from "@/presentation/components/atoms/IconButton";
 import { Button } from "@/presentation/components/atoms/Button";
-import {
-  CompactCurrencyInput,
-  type CompactCurrencyInputRef,
-} from "@/presentation/components/currency-input";
+import { CurrencySymbol } from "@/presentation/components/atoms/CurrencySymbol";
 import { Amount } from "@/presentation/components/atoms/Amount";
+import { SharedAmountInput } from "@/presentation/components/transaction/SharedAmountInput";
+import { useCursorBlink } from "@/presentation/hooks/useCursorBlink";
+import { useExpressionMode } from "@/presentation/hooks/useExpressionMode";
+import { useKeyboardBlur } from "@/presentation/hooks/useKeyboardBlur";
+import { usePreferencesStore } from "@/stores/preferencesStore";
+import { formatAmountParts } from "@/lib/format";
+import { formatCents, formatExpression, MAX_CENTS } from "@/lib/currency";
+import type { CurrencyInputRef } from "@/presentation/components/currency-input";
 
 import { getGoalProgress } from "@/goals/progress";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
@@ -41,11 +46,67 @@ export default function AssignBudgetScreen() {
   const [edits, setEdits] = useState<Record<string, number>>({});
   const [saving, setSaving] = useState(false);
   const hapticFiredRef = useRef(false);
-  const focusedInputRef = useRef<CompactCurrencyInputRef | null>(null);
+
+  // Shared hidden input state
+  const [activeEditCatId, setActiveEditCatId] = useState<string | null>(null);
+  const activeAmount = activeEditCatId ? (edits[activeEditCatId] ?? 0) : 0;
+  const accessoryID = useId();
+  const sharedInputRef = useRef<TextInput>(null);
+  const selfRef = useRef<CurrencyInputRef>(null);
+
+  const expr = useExpressionMode({
+    value: activeAmount,
+    onChangeValue: (cents) => {
+      if (!activeEditCatId) return;
+      setEdits((prev) => ({ ...prev, [activeEditCatId]: cents }));
+    },
+  });
+
+  useKeyboardBlur(activeEditCatId !== null, () => {
+    expr.handleBlurExpression();
+    setActiveEditCatId(null);
+  });
+
+  useImperativeHandle(selfRef, () => ({
+    focus: () => sharedInputRef.current?.focus(),
+    injectOperator: (op: string) => expr.injectOperator(op, () => sharedInputRef.current?.focus()),
+    evaluate: () => expr.evaluate(),
+    deleteBackward: () => {
+      if (expr.expressionMode) {
+        expr.handleKeyPress({ nativeEvent: { key: "Backspace" } });
+      } else if (activeEditCatId) {
+        setEdits((prev) => ({ ...prev, [activeEditCatId]: 0 }));
+      }
+    },
+  }));
+
+  const currentInputValue = expr.expressionMode ? expr.expressionInputValue : String(activeAmount);
+
+  function handleChangeText(text: string) {
+    if (!activeEditCatId) return;
+    if (expr.expressionMode) {
+      expr.handleChangeTextOperand(text);
+    } else {
+      const digits = text.replace(/\D/g, "");
+      const newCents = Math.min(parseInt(digits || "0", 10), MAX_CENTS);
+      setEdits((prev) => ({ ...prev, [activeEditCatId]: newCents }));
+    }
+  }
+
+  function handleRowPress(cat: BudgetCategory) {
+    if (activeEditCatId === cat.id) {
+      sharedInputRef.current?.blur();
+      return;
+    }
+    if (activeEditCatId) expr.handleBlurExpression();
+    setActiveEditCatId(cat.id);
+    setTimeout(() => sharedInputRef.current?.focus(), 50);
+  }
 
   // Initialize edits from current budget data (re-run when groups change, e.g. month switch)
   useEffect(() => {
     Keyboard.dismiss(); // Clear focus so no input holds stale values
+    setActiveEditCatId(null);
     const initial: Record<string, number> = {};
     for (const g of groups) {
       if (g.is_income) continue;
@@ -206,160 +267,174 @@ export default function AssignBudgetScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.pageBackground }}>
-      <Stack.Screen
-        options={{
-          headerLeft: () => (
-            <IconButton
-              sfSymbol="xmark"
-              size={22}
-              color={colors.headerText}
-              onPress={() => router.back()}
-            />
-          ),
-        }}
-      />
+    <>
+      <View style={{ flex: 1, backgroundColor: colors.pageBackground }}>
+        <Stack.Screen
+          options={{
+            headerLeft: () => (
+              <IconButton
+                sfSymbol="xmark"
+                size={22}
+                color={colors.headerText}
+                onPress={() => router.back()}
+              />
+            ),
+          }}
+        />
 
-      {/* Summary Card — fixed above the list */}
-      <View
-        style={{
-          marginHorizontal: spacing.lg,
-          marginTop: spacing.lg,
-          marginBottom: spacing.sm,
-          backgroundColor: cardBg,
-          borderRadius: br.lg,
-          paddingHorizontal: spacing.lg,
-          paddingVertical: spacing.md,
-          alignItems: "center",
-        }}
-      >
-        <Amount value={remaining} variant="headingLg" color={statusColor} weight="700" />
-        <Text variant="captionSm" color={statusColor} style={{ fontWeight: "500", marginTop: 2 }}>
-          {statusLabel}
-        </Text>
-        {underfunded > 0 && (
-          <View style={{ flexDirection: "row", alignItems: "center", marginTop: 4 }}>
-            <Amount value={underfunded} variant="captionSm" color={statusColor} weight="600" />
-            <Text variant="captionSm" color={statusColor} style={{ opacity: 0.7 }}>
-              {t("toFullyFundGoals")}
-            </Text>
-          </View>
-        )}
-      </View>
-
-      {/* Quick Actions — fixed */}
-      <View
-        style={{
-          flexDirection: "row",
-          paddingHorizontal: spacing.lg,
-          paddingBottom: spacing.sm,
-          gap: spacing.sm,
-        }}
-      >
-        <View style={{ flex: 1 }}>
-          <Button
-            title={t("reserve")}
-            icon="calendar-outline"
-            variant="secondary"
-            size="sm"
-            onPress={() => {
-              Keyboard.dismiss();
-              router.push({
-                pathname: "/(auth)/budget/hold",
-                params: { current: String(buffered), maxAmount: String(remaining + buffered) },
-              });
-            }}
-            style={{ borderRadius: br.full }}
-          />
+        {/* Summary Card — fixed above the list */}
+        <View
+          style={{
+            marginHorizontal: spacing.lg,
+            marginTop: spacing.lg,
+            marginBottom: spacing.sm,
+            backgroundColor: cardBg,
+            borderRadius: br.lg,
+            paddingHorizontal: spacing.lg,
+            paddingVertical: spacing.md,
+            alignItems: "center",
+          }}
+        >
+          <Amount value={remaining} variant="headingLg" color={statusColor} weight="700" />
+          <Text variant="captionSm" color={statusColor} style={{ fontWeight: "500", marginTop: 2 }}>
+            {statusLabel}
+          </Text>
+          {underfunded > 0 && (
+            <View style={{ flexDirection: "row", alignItems: "center", marginTop: 4 }}>
+              <Amount value={underfunded} variant="captionSm" color={statusColor} weight="600" />
+              <Text variant="captionSm" color={statusColor} style={{ opacity: 0.7 }}>
+                {t("toFullyFundGoals")}
+              </Text>
+            </View>
+          )}
         </View>
-        {goalsEnabled && (
+
+        {/* Quick Actions — fixed */}
+        <View
+          style={{
+            flexDirection: "row",
+            paddingHorizontal: spacing.lg,
+            paddingBottom: spacing.sm,
+            gap: spacing.sm,
+          }}
+        >
           <View style={{ flex: 1 }}>
             <Button
-              title={t("autoAssign")}
-              icon="sparkles"
-              variant="primary"
+              title={t("reserve")}
+              icon="calendar-outline"
+              variant="secondary"
               size="sm"
-              onPress={() => handleAutoAssign()}
+              onPress={() => {
+                Keyboard.dismiss();
+                router.push({
+                  pathname: "/(auth)/budget/hold",
+                  params: { current: String(buffered), maxAmount: String(remaining + buffered) },
+                });
+              }}
+              style={{ borderRadius: br.full }}
+            />
+          </View>
+          {goalsEnabled && (
+            <View style={{ flex: 1 }}>
+              <Button
+                title={t("autoAssign")}
+                icon="sparkles"
+                variant="primary"
+                size="sm"
+                onPress={() => handleAutoAssign()}
+                style={{ borderRadius: br.full }}
+              />
+            </View>
+          )}
+        </View>
+
+        <SectionList
+          style={{ flex: 1 }}
+          sections={sections}
+          keyExtractor={(item) => item.id}
+          keyboardShouldPersistTaps="handled"
+          stickySectionHeadersEnabled
+          keyboardDismissMode="on-drag"
+          renderSectionHeader={({ section }) => (
+            <View
+              style={{
+                paddingHorizontal: spacing.lg * 2,
+                paddingTop: spacing.lg,
+                paddingBottom: spacing.xs,
+                backgroundColor: colors.pageBackground,
+              }}
+            >
+              <Text variant="captionSm" color={colors.textMuted} style={labelStyle}>
+                {section.title}
+              </Text>
+            </View>
+          )}
+          renderItem={({ item: cat, index, section }) => {
+            const isFirst = index === 0;
+            const isLast = index === section.data.length - 1;
+            const editedValue = edits[cat.id] ?? cat.budgeted;
+            const isEdited = editedValue !== cat.budgeted;
+            return (
+              <CategoryAmountRow
+                cat={cat}
+                value={editedValue}
+                onChange={updateEdit}
+                isFirst={isFirst}
+                isLast={isLast}
+                isEdited={isEdited}
+                isActive={activeEditCatId === cat.id}
+                expressionMode={activeEditCatId === cat.id && expr.expressionMode}
+                fullExpression={activeEditCatId === cat.id ? expr.fullExpression : ""}
+                onPress={() => handleRowPress(cat)}
+              />
+            );
+          }}
+          contentContainerStyle={{ paddingBottom: hasChanges ? 200 : 120 }}
+          scrollIndicatorInsets={{ bottom: 120 }}
+        />
+
+        {/* Save button — fixed at bottom */}
+        {hasChanges && (
+          <View
+            style={{
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              zIndex: 10,
+              paddingHorizontal: spacing.lg,
+              paddingTop: spacing.md,
+              paddingBottom: Math.max(insets.bottom, spacing.md),
+              backgroundColor: colors.pageBackground,
+              borderTopWidth: bw.thin,
+              borderTopColor: colors.divider,
+            }}
+          >
+            <Button
+              title={saving ? t("savingEllipsis") : t("saveAssignment")}
+              icon="checkmark"
+              variant="primary"
+              size="lg"
+              loading={saving}
+              onPress={handleSave}
               style={{ borderRadius: br.full }}
             />
           </View>
         )}
       </View>
 
-      <SectionList
-        style={{ flex: 1 }}
-        sections={sections}
-        keyExtractor={(item) => item.id}
-        keyboardShouldPersistTaps="handled"
-        automaticallyAdjustKeyboardInsets
-        stickySectionHeadersEnabled
-        keyboardDismissMode="on-drag"
-        renderSectionHeader={({ section }) => (
-          <View
-            style={{
-              paddingHorizontal: spacing.lg * 2,
-              paddingTop: spacing.lg,
-              paddingBottom: spacing.xs,
-              backgroundColor: colors.pageBackground,
-            }}
-          >
-            <Text variant="captionSm" color={colors.textMuted} style={labelStyle}>
-              {section.title}
-            </Text>
-          </View>
-        )}
-        renderItem={({ item: cat, index, section }) => {
-          const isFirst = index === 0;
-          const isLast = index === section.data.length - 1;
-          const editedValue = edits[cat.id] ?? cat.budgeted;
-          const isEdited = editedValue !== cat.budgeted;
-          return (
-            <CategoryAmountRow
-              cat={cat}
-              value={editedValue}
-              onChange={updateEdit}
-              onInputFocus={(ref) => {
-                focusedInputRef.current = ref;
-              }}
-              isFirst={isFirst}
-              isLast={isLast}
-              isEdited={isEdited}
-            />
-          );
+      <SharedAmountInput
+        accessoryID={accessoryID}
+        sharedInputRef={sharedInputRef}
+        selfRef={selfRef}
+        value={currentInputValue}
+        onChangeText={handleChangeText}
+        onBlur={() => {
+          expr.handleBlurExpression();
+          setActiveEditCatId(null);
         }}
-        contentContainerStyle={{ paddingBottom: hasChanges ? 200 : 120 }}
-        scrollIndicatorInsets={{ bottom: 120 }}
       />
-
-      {/* Save button — fixed at bottom */}
-      {hasChanges && (
-        <View
-          style={{
-            position: "absolute",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            zIndex: 10,
-            paddingHorizontal: spacing.lg,
-            paddingTop: spacing.md,
-            paddingBottom: Math.max(insets.bottom, spacing.md),
-            backgroundColor: colors.pageBackground,
-            borderTopWidth: bw.thin,
-            borderTopColor: colors.divider,
-          }}
-        >
-          <Button
-            title={saving ? t("savingEllipsis") : t("saveAssignment")}
-            icon="checkmark"
-            variant="primary"
-            size="lg"
-            loading={saving}
-            onPress={handleSave}
-            style={{ borderRadius: br.full }}
-          />
-        </View>
-      )}
-    </View>
+    </>
   );
 }
 
@@ -369,23 +444,35 @@ function CategoryAmountRow({
   cat,
   value,
   onChange,
-  onInputFocus,
   isFirst,
   isLast,
   isEdited,
+  isActive,
+  expressionMode,
+  fullExpression,
+  onPress,
 }: {
   cat: BudgetCategory;
   value: number;
   onChange: (catId: string, cents: number) => void;
-  onInputFocus?: (ref: CompactCurrencyInputRef) => void;
   isFirst: boolean;
   isLast: boolean;
   isEdited: boolean;
+  isActive: boolean;
+  expressionMode: boolean;
+  fullExpression: string;
+  onPress: () => void;
 }) {
   const { t } = useTranslation("budget");
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const goalsEnabled = useFeatureFlag("goalTemplatesEnabled");
-  const inputRef = useRef<CompactCurrencyInputRef>(null);
+  const { renderCursor } = useCursorBlink(isActive);
+
+  // Subscribe to currency preferences so display re-renders on changes
+  usePreferencesStore(
+    (s) =>
+      `${s.numberFormat}:${s.hideFraction}:${s.defaultCurrencyCode}:${s.defaultCurrencyCustomSymbol}:${s.currencySymbolPosition}:${s.currencySpaceBetweenAmountAndSymbol}`,
+  );
 
   const hasGoal = goalsEnabled && cat.goal != null && cat.goal > 0;
 
@@ -411,9 +498,15 @@ function CategoryAmountRow({
     [cat, value],
   );
 
+  const displayColor = isActive
+    ? colors.primary
+    : value > 0
+      ? colors.textPrimary
+      : colors.textMuted;
+
   return (
     <Pressable
-      onPress={() => inputRef.current?.focus()}
+      onPress={onPress}
       style={{
         paddingHorizontal: spacing.lg,
         paddingTop: 12,
@@ -427,19 +520,64 @@ function CategoryAmountRow({
         borderBottomRightRadius: isLast ? br.lg : 0,
       }}
     >
-      {/* Line 1: Name + Input */}
+      {/* Line 1: Name + Display amount + cursor */}
       <View style={{ flexDirection: "row", alignItems: "center" }}>
         <Text variant="body" style={{ flex: 1 }} numberOfLines={1}>
           {cat.name}
         </Text>
-        <CompactCurrencyInput
-          ref={inputRef}
-          value={value}
-          onChangeValue={(cents) => onChange(cat.id, cents)}
-          onFocus={() => {
-            if (inputRef.current) onInputFocus?.(inputRef.current);
-          }}
-        />
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          {isActive && expressionMode ? (
+            <Text
+              variant="body"
+              style={{ fontWeight: "600", fontVariant: ["tabular-nums"], color: colors.primary }}
+              numberOfLines={1}
+            >
+              {formatExpression(fullExpression)}
+            </Text>
+          ) : (
+            (() => {
+              const parts = formatAmountParts(Math.abs(value), false);
+              const fontSize = 14;
+              return (
+                <>
+                  {parts.svgSymbol && parts.position === "before" && (
+                    <>
+                      <CurrencySymbol
+                        symbol={parts.symbol}
+                        svgSymbol={parts.svgSymbol}
+                        fontSize={fontSize}
+                        color={displayColor}
+                      />
+                      {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
+                    </>
+                  )}
+                  <Text
+                    variant="body"
+                    style={{
+                      fontWeight: "600",
+                      fontVariant: ["tabular-nums"],
+                      color: displayColor,
+                    }}
+                  >
+                    {parts.svgSymbol ? parts.number : formatCents(Math.abs(value))}
+                  </Text>
+                  {parts.svgSymbol && parts.position === "after" && (
+                    <>
+                      {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
+                      <CurrencySymbol
+                        symbol={parts.symbol}
+                        svgSymbol={parts.svgSymbol}
+                        fontSize={fontSize}
+                        color={displayColor}
+                      />
+                    </>
+                  )}
+                </>
+              );
+            })()
+          )}
+          {renderCursor({ width: 1.5, height: 16, marginLeft: 1, borderRadius: 1 }, colors.primary)}
+        </View>
       </View>
 
       {/* Line 2: Progress bar */}

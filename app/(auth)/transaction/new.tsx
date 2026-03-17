@@ -1,4 +1,4 @@
-import { InputAccessoryView, Platform, TextInput, View, useColorScheme } from "react-native";
+import { View, useColorScheme } from "react-native";
 import { useTranslation } from "react-i18next";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import Animated, {
@@ -17,8 +17,8 @@ import { GlassButton } from "@/presentation/components/atoms/GlassButton";
 import { NotesField } from "@/presentation/components/transaction/NotesField";
 import { ClearedToggle } from "@/presentation/components/transaction/ClearedToggle";
 import { DetailRow } from "@/presentation/components/transaction/DetailRow";
-import { CalculatorPill } from "@/presentation/components/currency-input/CalculatorPill";
 import { AmountHeader } from "@/presentation/components/transaction/AmountHeader";
+import { HiddenAmountInput } from "@/presentation/components/transaction/HiddenAmountInput";
 import { TransactionDetailsCard } from "@/presentation/components/transaction/TransactionDetailsCard";
 import { useAmountInput } from "@/presentation/components/transaction/useAmountInput";
 import { useTransactionForm } from "@/presentation/components/transaction/useTransactionForm";
@@ -216,27 +216,7 @@ export default function NewTransactionScreen() {
         </View>
       </Animated.ScrollView>
 
-      {/* InputAccessoryView registered BEFORE TextInput — iOS needs it available at focus time */}
-      {Platform.OS === "ios" && (
-        <InputAccessoryView nativeID={amountInput.AMOUNT_ACCESSORY_ID} backgroundColor="transparent">
-          <CalculatorPill inputRef={amountInput.selfRef} />
-        </InputAccessoryView>
-      )}
-
-      {/* Shared hidden TextInput — outside ScrollView for reliable focus */}
-      <TextInput
-        ref={amountInput.sharedInputRef}
-        value={amountInput.currentAmountInputValue}
-        onChangeText={amountInput.handleAmountChangeText}
-        onFocus={() => amountInput.setAmountFocused(true)}
-        onBlur={amountInput.handleAmountBlur}
-        keyboardType="number-pad"
-        autoFocus={!form.isEdit}
-        caretHidden
-        contextMenuHidden
-        inputAccessoryViewID={Platform.OS === "ios" ? amountInput.AMOUNT_ACCESSORY_ID : undefined}
-        style={{ position: "absolute", opacity: 0, height: 1, width: 1, pointerEvents: "none" }}
-      />
+      <HiddenAmountInput amountInput={amountInput} autoFocus={!form.isEdit} />
 
       {/* ── Fixed top blur: fades in on scroll like Apple nav bars ── */}
       <Animated.View

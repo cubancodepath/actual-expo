@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import Animated, {
@@ -14,12 +14,15 @@ import { useAccountsStore } from "@/stores/accountsStore";
 import { reconcileAccount } from "@/transactions";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
-import {
-  CompactCurrencyInput,
-  type CompactCurrencyInputRef,
-} from "@/presentation/components/currency-input";
-import { formatAmount } from "@/lib/format";
+import { useAmountInput } from "@/presentation/components/transaction/useAmountInput";
+import { HiddenAmountInput } from "@/presentation/components/transaction/HiddenAmountInput";
+import { useCursorBlink } from "@/presentation/hooks/useCursorBlink";
+import { formatAmount, formatAmountParts } from "@/lib/format";
+import { formatCents, formatExpression } from "@/lib/currency";
+import { CurrencySymbol } from "@/presentation/components/atoms/CurrencySymbol";
+import { usePreferencesStore } from "@/stores/preferencesStore";
 import { useTranslation } from "react-i18next";
+import { useRef } from "react";
 
 // ---------------------------------------------------------------------------
 // Sign Toggle (+/−)
@@ -110,7 +113,76 @@ function SignToggle({ isNegative, onToggle }: { isNegative: boolean; onToggle: (
 }
 
 // ---------------------------------------------------------------------------
-// Amount Screen (Phase 2)
+// Inline amount display (replaces CompactCurrencyInput)
+// ---------------------------------------------------------------------------
+
+function AmountDisplay({
+  cents,
+  color,
+  focused,
+  expressionMode,
+  fullExpression,
+  primaryColor,
+  onPress,
+}: {
+  cents: number;
+  color: string;
+  focused: boolean;
+  expressionMode: boolean;
+  fullExpression: string;
+  primaryColor: string;
+  onPress: () => void;
+}) {
+  const { renderCursor } = useCursorBlink(focused);
+  usePreferencesStore(
+    (s) =>
+      `${s.numberFormat}:${s.hideFraction}:${s.defaultCurrencyCode}:${s.defaultCurrencyCustomSymbol}:${s.currencySymbolPosition}:${s.currencySpaceBetweenAmountAndSymbol}`,
+  );
+
+  return (
+    <Pressable onPress={onPress} style={{ flex: 1, justifyContent: "center" }}>
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        {expressionMode ? (
+          <Text
+            variant="body"
+            style={{ fontWeight: "600", fontVariant: ["tabular-nums"], color: primaryColor }}
+            numberOfLines={1}
+          >
+            {formatExpression(fullExpression)}
+          </Text>
+        ) : (
+          (() => {
+            const parts = formatAmountParts(Math.abs(cents), false);
+            const fontSize = 14;
+            return (
+              <>
+                {parts.svgSymbol && parts.position === "before" && (
+                  <>
+                    <CurrencySymbol symbol={parts.symbol} svgSymbol={parts.svgSymbol} fontSize={fontSize} color={color} />
+                    {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
+                  </>
+                )}
+                <Text variant="body" style={{ fontWeight: "600", fontVariant: ["tabular-nums"], color }}>
+                  {parts.svgSymbol ? parts.number : formatCents(Math.abs(cents))}
+                </Text>
+                {parts.svgSymbol && parts.position === "after" && (
+                  <>
+                    {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
+                    <CurrencySymbol symbol={parts.symbol} svgSymbol={parts.svgSymbol} fontSize={fontSize} color={color} />
+                  </>
+                )}
+              </>
+            );
+          })()
+        )}
+        {renderCursor({ width: 1.5, height: 16, marginLeft: 1, borderRadius: 1 }, primaryColor)}
+      </View>
+    </Pressable>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Amount Screen
 // ---------------------------------------------------------------------------
 
 export default function ReconcileAmountScreen() {
@@ -125,19 +197,20 @@ export default function ReconcileAmountScreen() {
   const clearedCents = Number(clearedBalance) || 0;
 
   const [isNegative, setIsNegative] = useState(false);
-  const [amountCents, setAmountCents] = useState(0);
   const [loading, setLoading] = useState(false);
-  const inputRef = useRef<CompactCurrencyInputRef>(null);
+  const amountInput = useAmountInput(0);
 
-  const bankBalance = isNegative ? -amountCents : amountCents;
-  const diff = bankBalance - clearedCents;
-
+  // Auto-focus after mount
   useEffect(() => {
-    setTimeout(() => inputRef.current?.focus(), 300);
+    setTimeout(() => amountInput.sharedInputRef.current?.focus(), 300);
   }, []);
 
+  const bankBalance = isNegative ? -amountInput.cents : amountInput.cents;
+  const diff = bankBalance - clearedCents;
+  const displayColor = amountInput.cents > 0 ? (isNegative ? colors.negative : colors.positive) : colors.textMuted;
+
   async function handleReconcile() {
-    if (amountCents === 0 || loading) return;
+    if (amountInput.cents === 0 || loading) return;
     setLoading(true);
     try {
       await reconcileAccount(accountId, bankBalance);
@@ -159,9 +232,9 @@ export default function ReconcileAmountScreen() {
           {t("reconcile.bankBalanceQuestion")}
         </Text>
 
-        {/* Sign toggle + amount input */}
+        {/* Sign toggle + amount display */}
         <Pressable
-          onPress={() => inputRef.current?.focus()}
+          onPress={() => amountInput.sharedInputRef.current?.focus()}
           style={{
             flexDirection: "row",
             alignItems: "center",
@@ -173,16 +246,18 @@ export default function ReconcileAmountScreen() {
           }}
         >
           <SignToggle isNegative={isNegative} onToggle={() => setIsNegative((prev) => !prev)} />
-          <CompactCurrencyInput
-            ref={inputRef}
-            value={amountCents}
-            onChangeValue={setAmountCents}
-            color={amountCents > 0 ? (isNegative ? colors.negative : colors.positive) : undefined}
-            style={{ flex: 1, justifyContent: "center" }}
+          <AmountDisplay
+            cents={amountInput.cents}
+            color={displayColor}
+            focused={amountInput.amountFocused}
+            expressionMode={amountInput.expr.expressionMode}
+            fullExpression={amountInput.expr.fullExpression}
+            primaryColor={colors.primary}
+            onPress={() => amountInput.sharedInputRef.current?.focus()}
           />
         </Pressable>
 
-        {amountCents > 0 && diff !== 0 && (
+        {amountInput.cents > 0 && diff !== 0 && (
           <Text
             variant="captionSm"
             color={colors.textMuted}
@@ -197,11 +272,12 @@ export default function ReconcileAmountScreen() {
           variant="primary"
           onPress={handleReconcile}
           loading={loading}
-          disabled={amountCents === 0}
+          disabled={amountInput.cents === 0}
           style={{ marginTop: spacing.xl, borderRadius: br.full }}
         />
       </View>
 
+      <HiddenAmountInput amountInput={amountInput} />
     </>
   );
 }

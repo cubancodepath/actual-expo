@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Alert, InputAccessoryView, Keyboard, Platform, Pressable, Switch, TextInput, useColorScheme, View } from "react-native";
+import { Alert, Keyboard, Pressable, Switch, useColorScheme, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import Animated, {
@@ -26,8 +26,8 @@ import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { Button } from "@/presentation/components/atoms/Button";
 import { Text } from "@/presentation/components/atoms/Text";
 import { GlassButton } from "@/presentation/components/atoms/GlassButton";
-import { CalculatorPill } from "@/presentation/components/currency-input/CalculatorPill";
 import { AmountHeader } from "@/presentation/components/transaction/AmountHeader";
+import { HiddenAmountInput } from "@/presentation/components/transaction/HiddenAmountInput";
 import { useAmountInput } from "@/presentation/components/transaction/useAmountInput";
 import { ScheduleStatusBadge } from "@/presentation/components/atoms/ScheduleStatusBadge";
 import { ErrorBanner } from "@/presentation/components/molecules/ErrorBanner";
@@ -540,26 +540,7 @@ export default function ScheduleDetailScreen() {
         </View>
       </Animated.ScrollView>
 
-      {/* InputAccessoryView registered BEFORE TextInput — iOS needs it available at focus time */}
-      {Platform.OS === "ios" && (
-        <InputAccessoryView nativeID={amountInput.AMOUNT_ACCESSORY_ID} backgroundColor="transparent">
-          <CalculatorPill inputRef={amountInput.selfRef} />
-        </InputAccessoryView>
-      )}
-
-      {/* Shared hidden TextInput — outside ScrollView for reliable focus */}
-      <TextInput
-        ref={amountInput.sharedInputRef}
-        value={amountInput.currentAmountInputValue}
-        onChangeText={amountInput.handleAmountChangeText}
-        onFocus={() => amountInput.setAmountFocused(true)}
-        onBlur={amountInput.handleAmountBlur}
-        keyboardType="number-pad"
-        caretHidden
-        contextMenuHidden
-        inputAccessoryViewID={Platform.OS === "ios" ? amountInput.AMOUNT_ACCESSORY_ID : undefined}
-        style={{ position: "absolute", opacity: 0, height: 1, width: 1, pointerEvents: "none" }}
-      />
+      <HiddenAmountInput amountInput={amountInput} />
 
       {/* ── Fixed top blur: fades in on scroll like Apple nav bars ── */}
       <Animated.View

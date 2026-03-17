@@ -1,14 +1,5 @@
 import { useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
-import {
-  Alert,
-  InputAccessoryView,
-  Keyboard,
-  Platform,
-  Pressable,
-  ScrollView,
-  TextInput,
-  View,
-} from "react-native";
+import { Alert, Keyboard, Pressable, ScrollView, TextInput, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -27,7 +18,7 @@ import { Text } from "@/presentation/components/atoms/Text";
 import { Amount } from "@/presentation/components/atoms/Amount";
 import { IconButton } from "@/presentation/components/atoms/IconButton";
 import { GlassButton } from "@/presentation/components/atoms/GlassButton";
-import { CalculatorPill } from "@/presentation/components/currency-input/CalculatorPill";
+import { SharedAmountInput } from "@/presentation/components/transaction/SharedAmountInput";
 import { CurrencySymbol } from "@/presentation/components/atoms/CurrencySymbol";
 import { formatAmount, formatAmountParts } from "@/lib/format";
 import { formatCents, formatExpression, MAX_CENTS } from "@/lib/currency";
@@ -428,24 +419,16 @@ export default function SplitScreen() {
       </ScrollView>
 
       {/* Shared hidden TextInput + InputAccessoryView */}
-      {Platform.OS === "ios" && (
-        <InputAccessoryView nativeID={accessoryID} backgroundColor="transparent">
-          <CalculatorPill inputRef={selfRef} onDone={() => Keyboard.dismiss()} />
-        </InputAccessoryView>
-      )}
-      <TextInput
-        ref={sharedInputRef}
+      <SharedAmountInput
+        accessoryID={accessoryID}
+        sharedInputRef={sharedInputRef}
+        selfRef={selfRef}
         value={currentInputValue}
         onChangeText={handleChangeText}
         onBlur={() => {
           expr.handleBlurExpression();
           setActiveLineId(null);
         }}
-        keyboardType="number-pad"
-        caretHidden
-        contextMenuHidden
-        inputAccessoryViewID={Platform.OS === "ios" ? accessoryID : undefined}
-        style={{ position: "absolute", opacity: 0, height: 1, width: 1, pointerEvents: "none" }}
       />
 
       {/* Floating "assign remaining" button */}

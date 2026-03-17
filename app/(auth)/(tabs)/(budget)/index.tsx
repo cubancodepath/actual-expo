@@ -1,22 +1,13 @@
 import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { useFocusEffect } from "expo-router";
-import {
-  Alert,
-  InputAccessoryView,
-  Keyboard,
-  Platform,
-  RefreshControl,
-  SectionList,
-  TextInput,
-  View,
-} from "react-native";
+import { Alert, Keyboard, RefreshControl, SectionList, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { useSharedValue } from "react-native-reanimated";
 import { AddTransactionButton } from "@/presentation/components/molecules/AddTransactionButton";
-import { CalculatorPill } from "@/presentation/components/currency-input/CalculatorPill";
+import { SharedAmountInput } from "@/presentation/components/transaction/SharedAmountInput";
 import type { CurrencyInputRef } from "@/presentation/components/currency-input/CurrencyInput";
 import { useBudgetStore } from "@/stores/budgetStore";
 import { useCommonMenuActions } from "@/presentation/hooks/useCommonMenuItems";
@@ -471,24 +462,14 @@ export default function BudgetScreen() {
       </View>
 
       {/* Shared hidden TextInput — one for all budget rows */}
-      <TextInput
-        ref={sharedInputRef}
+      <SharedAmountInput
+        accessoryID={BUDGET_ACCESSORY_ID}
+        sharedInputRef={sharedInputRef}
+        selfRef={selfRef}
         value={currentInputValue}
         onChangeText={handleChangeText}
         onBlur={handleBlur}
-        keyboardType="number-pad"
-        caretHidden
-        contextMenuHidden
-        inputAccessoryViewID={Platform.OS === "ios" ? BUDGET_ACCESSORY_ID : undefined}
-        style={{ position: "absolute", opacity: 0, height: 1, width: 1, pointerEvents: "none" }}
       />
-
-      {/* Single InputAccessoryView — calculator pill */}
-      {Platform.OS === "ios" && (
-        <InputAccessoryView nativeID={BUDGET_ACCESSORY_ID} backgroundColor="transparent">
-          <CalculatorPill inputRef={selfRef} onDone={() => Keyboard.dismiss()} />
-        </InputAccessoryView>
-      )}
 
       <Stack.Toolbar placement="right">
         <Stack.Toolbar.Menu

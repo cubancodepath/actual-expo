@@ -1,18 +1,24 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { useFocusEffect } from "expo-router";
-import { Alert, Keyboard, RefreshControl, SectionList, View } from "react-native";
+import { Alert, InputAccessoryView, Keyboard, Platform, RefreshControl, SectionList, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { useSharedValue } from "react-native-reanimated";
 import { AddTransactionButton } from "@/presentation/components/molecules/AddTransactionButton";
-import type { CompactCurrencyInputRef } from "@/presentation/components/currency-input";
+import { CalculatorPill } from "@/presentation/components/currency-input/CalculatorPill";
+import type { CurrencyInputRef } from "@/presentation/components/currency-input/CurrencyInput";
 import { useBudgetStore } from "@/stores/budgetStore";
 import { useCommonMenuActions } from "@/presentation/hooks/useCommonMenuItems";
 import { useRefreshControl } from "@/presentation/hooks/useRefreshControl";
 import { useKeyboardHeight } from "@/presentation/hooks/useKeyboardHeight";
+import { useExpressionMode } from "@/presentation/hooks/useExpressionMode";
+import { useKeyboardBlur } from "@/presentation/hooks/useKeyboardBlur";
+import { MAX_CENTS } from "@/lib/currency";
 import type { BudgetCategory, BudgetGroup } from "@/budgets/types";
+
+const BUDGET_ACCESSORY_ID = "budgetSharedCalcToolbar";
 
 import { BudgetGroupHeader } from "@/presentation/components/budget/BudgetGroupHeader";
 import { BudgetCategoryRow } from "@/presentation/components/budget/BudgetCategoryRow";
@@ -107,9 +113,87 @@ export default function BudgetScreen() {
   const [filter, setFilter] = useState<BudgetFilter>("all");
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
-  // -- Calculator: track the currently focused input ref --
-  const focusedInputRef = useRef<CompactCurrencyInputRef | null>(null);
-  const [anyRowEditing, setAnyRowEditing] = useState(false);
+  // -- Shared hidden input: editing state --
+  const [editingCatId, setEditingCatId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState(0);
+  const sharedInputRef = useRef<TextInput>(null);
+  const sectionListRef = useRef<SectionList<BudgetCategory, BudgetSection>>(null);
+  const expr = useExpressionMode({ value: editValue, onChangeValue: setEditValue });
+
+  // Imperative ref for the calculator pill (conforms to CurrencyInputRef)
+  const selfRef = useRef<CurrencyInputRef>(null);
+  useImperativeHandle(selfRef, () => ({
+    focus: () => sharedInputRef.current?.focus(),
+    injectOperator: (op: string) => expr.injectOperator(op, () => sharedInputRef.current?.focus()),
+    evaluate: () => expr.evaluate(),
+    deleteBackward: () => {
+      if (expr.expressionMode) {
+        expr.handleKeyPress({ nativeEvent: { key: "Backspace" } });
+      } else {
+        setEditValue(0);
+      }
+    },
+  }));
+
+  function handleRowPress(cat: BudgetCategory) {
+    if (editingCatId === cat.id) {
+      sharedInputRef.current?.blur();
+      return;
+    }
+    // If switching rows, commit current first
+    if (editingCatId) {
+      commitEdit();
+    }
+    setEditingCatId(cat.id);
+    setEditValue(cat.budgeted);
+    setTimeout(() => {
+      sharedInputRef.current?.focus();
+      // Scroll to the edited row so it's visible above the keyboard
+      for (let si = 0; si < sections.length; si++) {
+        const ii = sections[si].data.findIndex((c) => c.id === cat.id);
+        if (ii !== -1) {
+          sectionListRef.current?.scrollToLocation({
+            sectionIndex: si,
+            itemIndex: ii,
+            viewOffset: 120, // offset from top to keep row visible above keyboard
+            animated: true,
+          });
+          break;
+        }
+      }
+    }, 100);
+  }
+
+  function commitEdit() {
+    if (editingCatId !== null) {
+      expr.handleBlurExpression();
+      // Read latest editValue from ref since handleBlurExpression may have updated it
+      setAmount(editingCatId, editValue);
+    }
+  }
+
+  function handleBlur() {
+    commitEdit();
+    setEditingCatId(null);
+    setEditValue(0);
+  }
+
+  useKeyboardBlur(editingCatId !== null, handleBlur);
+
+  const currentInputValue = expr.expressionMode
+    ? expr.expressionInputValue
+    : String(Math.abs(editValue));
+
+  function handleChangeText(text: string) {
+    if (!editingCatId) return;
+    if (expr.expressionMode) {
+      expr.handleChangeTextOperand(text);
+    } else {
+      const digits = text.replace(/\D/g, "");
+      const newCents = Math.min(parseInt(digits || "0", 10), MAX_CENTS);
+      setEditValue(newCents);
+    }
+  }
 
   // -- Collapsible groups --
   function toggleGroup(groupId: string) {
@@ -128,7 +212,7 @@ export default function BudgetScreen() {
   useFocusEffect(
     useCallback(() => {
       return () => {
-        focusedInputRef.current?.blur();
+        sharedInputRef.current?.blur();
         Keyboard.dismiss();
       };
     }, []),
@@ -198,11 +282,6 @@ export default function BudgetScreen() {
     ]);
   }
 
-  // -- Save individual budget amount --
-  function handleCommit(catId: string, cents: number) {
-    setAmount(catId, cents);
-  }
-
   // -- Budget assignment balance --
   const toBudget = data?.toBudget ?? 0;
 
@@ -224,13 +303,12 @@ export default function BudgetScreen() {
   }
 
   // -- Column header visibility --
-  const showBudgetedColumn = !goalsEnabled || anyRowEditing || !showProgressBars;
+  const showBudgetedColumn = !goalsEnabled || editingCatId !== null || !showProgressBars;
 
   // -- Render helpers --
   function dismissEdit() {
-    focusedInputRef.current?.blur();
+    sharedInputRef.current?.blur();
     Keyboard.dismiss();
-    setAnyRowEditing(false);
   }
 
   function renderSectionHeader({ section }: { section: BudgetSection }) {
@@ -271,14 +349,13 @@ export default function BudgetScreen() {
           onToggleCarryover={handleToggleCarryover}
           onViewTransactions={handleViewTransactions}
           onBudgetNotes={handleBudgetNotes}
-          onCommit={handleCommit}
-          onInputFocus={(ref) => {
-            focusedInputRef.current = ref;
-            setAnyRowEditing(true);
-          }}
-          onInputBlur={() => setAnyRowEditing(false)}
+          isEditing={editingCatId === cat.id}
+          editValue={editingCatId === cat.id ? editValue : undefined}
+          expressionMode={editingCatId === cat.id && expr.expressionMode}
+          expression={editingCatId === cat.id ? expr.expression : ""}
+          onPress={() => handleRowPress(cat)}
           showProgressBar={goalsEnabled && showProgressBars}
-          showBudgetedColumn={!goalsEnabled || anyRowEditing || !showProgressBars}
+          showBudgetedColumn={!goalsEnabled || editingCatId !== null || !showProgressBars}
         />
       </View>
     );
@@ -322,14 +399,14 @@ export default function BudgetScreen() {
             keyExtractor={(c) => c.id}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
-            automaticallyAdjustKeyboardInsets
+            ref={sectionListRef}
             renderItem={renderItem}
             renderSectionHeader={renderSectionHeader}
             stickySectionHeadersEnabled
             onScroll={handleScroll}
             onScrollBeginDrag={() => Keyboard.dismiss()}
             scrollEventThrottle={16}
-            extraData={`${collapsedGroups.size}-${anyRowEditing}`}
+            extraData={`${collapsedGroups.size}-${editingCatId}`}
             ListHeaderComponent={
               data && (overspentCount > 0 || uncategorizedCount > 0) ? (
                 <View
@@ -383,6 +460,26 @@ export default function BudgetScreen() {
 
         {!keyboardVisible && <AddTransactionButton collapsed={fabCollapsed} />}
       </View>
+
+      {/* Shared hidden TextInput — one for all budget rows */}
+      <TextInput
+        ref={sharedInputRef}
+        value={currentInputValue}
+        onChangeText={handleChangeText}
+        onBlur={handleBlur}
+        keyboardType="number-pad"
+        caretHidden
+        contextMenuHidden
+        inputAccessoryViewID={Platform.OS === "ios" ? BUDGET_ACCESSORY_ID : undefined}
+        style={{ position: "absolute", opacity: 0, height: 0, width: 0 }}
+      />
+
+      {/* Single InputAccessoryView — calculator pill */}
+      {Platform.OS === "ios" && (
+        <InputAccessoryView nativeID={BUDGET_ACCESSORY_ID} backgroundColor="transparent">
+          <CalculatorPill inputRef={selfRef} onDone={() => Keyboard.dismiss()} />
+        </InputAccessoryView>
+      )}
 
       <Stack.Toolbar placement="right">
         <Stack.Toolbar.Menu

@@ -1,4 +1,4 @@
-import { type RefObject, useState, useRef, type ReactNode } from "react";
+import { useState, useRef, type ReactNode } from "react";
 import { TextInput, type ViewStyle } from "react-native";
 import { useExpressionMode } from "../../hooks/useExpressionMode";
 import { useCursorBlink } from "../../hooks/useCursorBlink";

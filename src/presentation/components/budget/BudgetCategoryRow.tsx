@@ -1,16 +1,19 @@
-import { memo, useRef, useState } from "react";
-import { Keyboard, Platform, Pressable, View } from "react-native";
+import { memo } from "react";
+import { Platform, Pressable, View } from "react-native";
 import * as ContextMenu from "zeego/context-menu";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Text } from "../atoms/Text";
 import { Amount } from "../atoms/Amount";
-import { CompactCurrencyInput, type CompactCurrencyInputRef } from "../currency-input";
-import { formatPrivacyAware } from "../../../lib/format";
+import { CurrencySymbol } from "../atoms/CurrencySymbol";
+import { formatPrivacyAware, formatAmountParts } from "../../../lib/format";
+import { formatCents } from "../../../lib/currency";
 import { getGoalProgress, getGoalProgressLabel } from "../../../goals/progress";
 import { parseGoalDef } from "../../../goals";
 import { ProgressBar } from "../atoms/ProgressBar";
 import { useFeatureFlag } from "../../../hooks/useFeatureFlag";
+import { useCursorBlink } from "../../hooks/useCursorBlink";
+import { usePreferencesStore } from "../../../stores/preferencesStore";
 import type { BudgetCategory } from "../../../budgets/types";
 
 /** Shared column widths for table-style alignment across header, rows, and group headers. */
@@ -30,12 +33,16 @@ interface BudgetCategoryRowProps {
   onToggleCarryover?: (cat: BudgetCategory) => void;
   onViewTransactions?: (cat: BudgetCategory) => void;
   onBudgetNotes?: (cat: BudgetCategory) => void;
-  /** Called when the user commits a new budget amount (blur / done). */
-  onCommit?: (catId: string, cents: number) => void;
-  /** Called when the currency input gains focus, with a ref to the input. */
-  onInputFocus?: (ref: CompactCurrencyInputRef) => void;
-  /** Called when the row exits edit mode. */
-  onInputBlur?: () => void;
+  /** Whether this row is currently being edited via the shared input. */
+  isEditing: boolean;
+  /** The value while editing, passed from parent. */
+  editValue?: number;
+  /** Whether the shared input is in expression mode for this row. */
+  expressionMode?: boolean;
+  /** Expression string (left operand + operator, e.g. "56.00+"). */
+  expression?: string;
+  /** Called when the row is tapped (to start/toggle editing). */
+  onPress: () => void;
   /** Whether to show progress bars and goal text (default true). */
   showProgressBar?: boolean;
   /** Whether to show the budgeted column (Amount or input). */
@@ -53,16 +60,23 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
   onToggleCarryover,
   onViewTransactions,
   onBudgetNotes,
-  onCommit,
-  onInputFocus,
-  onInputBlur,
+  isEditing,
+  editValue,
+  expressionMode = false,
+  expression = "",
+  onPress,
   showProgressBar = true,
   showBudgetedColumn = true,
 }: BudgetCategoryRowProps) {
   const { t } = useTranslation("budget");
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const goalsEnabled = useFeatureFlag("goalTemplatesEnabled");
-  const inputRef = useRef<CompactCurrencyInputRef>(null);
+  const { renderCursor } = useCursorBlink(isEditing);
+
+  // Subscribe to currency preferences so display re-renders on changes
+  usePreferencesStore(
+    (s) => `${s.numberFormat}:${s.hideFraction}:${s.defaultCurrencyCode}:${s.defaultCurrencyCustomSymbol}:${s.currencySymbolPosition}:${s.currencySpaceBetweenAmountAndSymbol}`,
+  );
 
   const insetStyle = {
     marginHorizontal: spacing.lg,
@@ -248,21 +262,8 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
         : colors.textMuted;
   }
 
-  // Local edit state — tracks value while editing, commits on blur
-  const [editValue, setEditValue] = useState<number | null>(null);
-  const isEditing = editValue !== null;
-
-  function handleFocus() {
-    if (inputRef.current) onInputFocus?.(inputRef.current);
-  }
-
-  function handleBlur() {
-    if (editValue !== null && editValue !== cat.budgeted) {
-      onCommit?.(cat.id, editValue);
-    }
-    setEditValue(null);
-    onInputBlur?.();
-  }
+  const displayCents = isEditing ? (editValue ?? 0) : cat.budgeted;
+  const displayColor = isEditing ? colors.primary : cat.budgeted !== 0 ? colors.textPrimary : colors.textMuted;
 
   const pressableContent = (
     <Pressable
@@ -273,14 +274,7 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
         minHeight: 44,
         ...insetStyle,
       }}
-      onPress={() => {
-        if (editValue !== null) {
-          handleBlur();
-          Keyboard.dismiss();
-        } else {
-          setEditValue(cat.budgeted);
-        }
-      }}
+      onPress={onPress}
       onLongPress={Platform.OS === "android" ? () => onLongPress(cat) : undefined}
       delayLongPress={400}
     >
@@ -304,26 +298,68 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
             </Text>
           )}
         </View>
-        {isEditing ? (
+        {showBudgetedColumn ? (
           <View style={{ width: BUDGET_COLUMNS.budgeted, alignItems: "flex-end" }}>
-            <CompactCurrencyInput
-              ref={inputRef}
-              value={editValue}
-              onChangeValue={(cents) => setEditValue(cents)}
-              onFocus={handleFocus}
-              onBlur={handleBlur}
-              autoFocus
-            />
-          </View>
-        ) : showBudgetedColumn ? (
-          <View style={{ width: BUDGET_COLUMNS.budgeted, alignItems: "flex-end" }}>
-            <Amount
-              value={cat.budgeted}
-              variant="body"
-              color={cat.budgeted !== 0 ? colors.textPrimary : colors.textMuted}
-              weight="600"
-              style={{ fontVariant: ["tabular-nums"] }}
-            />
+            {isEditing && expressionMode ? (
+              <>
+                {/* Line 1: left operand */}
+                <Text
+                  variant="body"
+                  style={{ fontWeight: "600", fontVariant: ["tabular-nums"], color: colors.textMuted }}
+                  numberOfLines={1}
+                >
+                  {formatCents(parseFloat(expression.slice(0, -1)) * 100 || 0)}
+                </Text>
+                {/* Line 2: operator + right operand (editValue) + cursor */}
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <Text
+                    variant="body"
+                    style={{ fontWeight: "600", fontVariant: ["tabular-nums"], color: colors.primary }}
+                  >
+                    {expression.slice(-1)}{formatCents(Math.abs(editValue ?? 0))}
+                  </Text>
+                  {renderCursor({ width: 1.5, height: 16, marginLeft: 1, borderRadius: 1 }, colors.primary)}
+                </View>
+              </>
+            ) : isEditing ? (
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                {(() => {
+                  const parts = formatAmountParts(Math.abs(displayCents), false);
+                  const fontSize = 14;
+                  return (
+                    <>
+                      {parts.svgSymbol && parts.position === "before" && (
+                        <>
+                          <CurrencySymbol symbol={parts.symbol} svgSymbol={parts.svgSymbol} fontSize={fontSize} color={displayColor} />
+                          {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
+                        </>
+                      )}
+                      <Text
+                        variant="body"
+                        style={{ fontWeight: "600", fontVariant: ["tabular-nums"], color: displayColor }}
+                      >
+                        {parts.svgSymbol ? parts.number : formatCents(Math.abs(displayCents))}
+                      </Text>
+                      {parts.svgSymbol && parts.position === "after" && (
+                        <>
+                          {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
+                          <CurrencySymbol symbol={parts.symbol} svgSymbol={parts.svgSymbol} fontSize={fontSize} color={displayColor} />
+                        </>
+                      )}
+                    </>
+                  );
+                })()}
+                {renderCursor({ width: 1.5, height: 16, marginLeft: 1, borderRadius: 1 }, colors.primary)}
+              </View>
+            ) : (
+              <Amount
+                value={cat.budgeted}
+                variant="body"
+                color={cat.budgeted !== 0 ? colors.textPrimary : colors.textMuted}
+                weight="600"
+                style={{ fontVariant: ["tabular-nums"] }}
+              />
+            )}
           </View>
         ) : null}
         <View
@@ -347,7 +383,7 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
               flexWrap: "nowrap",
             }}
           >
-            <Amount value={cat.balance} variant="captionSm" color={pillText} weight="700" />
+            <Amount value={cat.balance} variant="captionSm" color={pillText} weight="700" numberOfLines={1} adjustsFontSizeToFit />
           </View>
         </View>
       </View>

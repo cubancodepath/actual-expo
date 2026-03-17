@@ -1,4 +1,4 @@
-import { useEffect, useId, useImperativeHandle, useRef, useState } from "react";
+import { useEffect, useImperativeHandle, useRef, useState } from "react";
 import { InputAccessoryView, Platform, Pressable, TextInput, View, type ViewStyle } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
@@ -69,7 +69,7 @@ export function CurrencyInput({
 }: CurrencyInputProps) {
   const theme = useTheme();
   const styles = useThemedStyles(createStyles);
-  const accessoryID = useId();
+  const accessoryID = "currencyInputAccessory";
   const selfRef = useRef<CurrencyInputRef>(null);
 
   // Buffer state (CurrencyInput-specific — tracks raw digit string)
@@ -138,7 +138,14 @@ export function CurrencyInput({
   const typeLabel = type === "expense" ? "expense amount" : type === "income" ? "income amount" : "amount";
 
   return (
-    <>
+    <View>
+      {/* InputAccessoryView mounted first and unconditionally — prevents iOS unmount bug */}
+      {Platform.OS === "ios" && (
+        <InputAccessoryView nativeID={accessoryID} backgroundColor="transparent">
+          <CalculatorPill inputRef={selfRef} />
+        </InputAccessoryView>
+      )}
+
       <Pressable
         style={[styles.container, compactContainer, style]}
         onPress={() => ci.inputRef.current?.focus()}
@@ -198,17 +205,6 @@ export function CurrencyInput({
           )}
         </View>
 
-        {/* Live preview of expression result */}
-        {ci.expressionMode && ci.previewCents !== null && (
-          <Text
-            variant="body"
-            color={previewColor}
-            style={{ fontVariant: ["tabular-nums"], marginTop: 2, textAlign: "center" }}
-          >
-            = {formatCents(ci.previewCents)}
-          </Text>
-        )}
-
         <TextInput
           ref={ci.inputRef}
           style={styles.hiddenInput}
@@ -225,17 +221,13 @@ export function CurrencyInput({
         />
       </Pressable>
 
-      {/* Calculator toolbar — iOS: native InputAccessoryView, Android: animated */}
-      {Platform.OS === "ios" ? (
-        <InputAccessoryView nativeID={accessoryID} backgroundColor="transparent">
-          <CalculatorPill inputRef={selfRef} isExpressionMode={ci.expressionMode} />
-        </InputAccessoryView>
-      ) : (
+      {/* Android: animated KeyboardToolbar positioning */}
+      {Platform.OS !== "ios" && (
         <KeyboardToolbar style={{ paddingHorizontal: 0 }}>
-          <CalculatorPill inputRef={selfRef} isExpressionMode={ci.expressionMode} />
+          <CalculatorPill inputRef={selfRef} />
         </KeyboardToolbar>
       )}
-    </>
+    </View>
   );
 }
 

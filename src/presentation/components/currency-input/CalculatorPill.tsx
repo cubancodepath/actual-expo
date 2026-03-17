@@ -1,8 +1,9 @@
 import type { RefObject } from "react";
-import { View } from "react-native";
+import { Pressable, View } from "react-native";
 import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
 import { BlurView } from "expo-blur";
 import { useTheme } from "../../providers/ThemeProvider";
+import { Text } from "../atoms/Text";
 import { PillButton } from "./PillButton";
 import { PillDivider } from "./PillDivider";
 import type { CurrencyInputRef } from "./CurrencyInput";
@@ -32,10 +33,47 @@ const OPERATORS: {
 
 interface CalculatorPillProps {
   inputRef: RefObject<CurrencyInputRef | null>;
-  isExpressionMode: boolean;
+  /** When provided, renders a "Done" pill to the right. Used in list-editing contexts. */
+  onDone?: () => void;
 }
 
-export function CalculatorPill({ inputRef, isExpressionMode }: CalculatorPillProps) {
+function DonePill({ onPress }: { onPress: () => void }) {
+  const { colors } = useTheme();
+
+  const content = (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => ({
+        height: PILL_HEIGHT,
+        paddingHorizontal: 20,
+        justifyContent: "center",
+        alignItems: "center",
+        opacity: pressed ? 0.7 : 1,
+      })}
+      accessibilityRole="button"
+      accessibilityLabel="Done editing"
+    >
+      <Text
+        variant="body"
+        color={colors.primary}
+        style={{ fontWeight: "600" }}
+      >
+        Done
+      </Text>
+    </Pressable>
+  );
+
+  if (glass) {
+    return <GlassView style={{ borderRadius: PILL_HEIGHT / 2, overflow: "hidden" }}>{content}</GlassView>;
+  }
+  return (
+    <BlurView tint="systemChromeMaterial" intensity={100} style={{ borderRadius: PILL_HEIGHT / 2, overflow: "hidden" }}>
+      {content}
+    </BlurView>
+  );
+}
+
+export function CalculatorPill({ inputRef, onDone }: CalculatorPillProps) {
   const { colors, spacing } = useTheme();
 
   const content = (
@@ -49,13 +87,6 @@ export function CalculatorPill({ inputRef, isExpressionMode }: CalculatorPillPro
           label={label}
         />
       ))}
-      <PillDivider color={colors.textMuted} />
-      <PillButton
-        icon="equal"
-        color={isExpressionMode ? colors.primary : colors.textMuted}
-        onPress={() => inputRef.current?.evaluate()}
-        label="Calculate result"
-      />
       <PillDivider color={colors.textMuted} />
       <PillButton
         icon="delete.backward"
@@ -79,11 +110,14 @@ export function CalculatorPill({ inputRef, isExpressionMode }: CalculatorPillPro
       style={{
         flexDirection: "row",
         justifyContent: "flex-end",
+        alignItems: "center",
         paddingHorizontal: spacing.md,
         marginBottom: 6,
+        gap: spacing.sm,
       }}
     >
       {pill}
+      {onDone && <DonePill onPress={onDone} />}
     </View>
   );
 }

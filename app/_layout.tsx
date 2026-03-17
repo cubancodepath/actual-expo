@@ -3,6 +3,7 @@ import * as Sentry from "@sentry/react-native";
 import { useEffect, useRef, useState } from "react";
 import { AppState, Settings, useColorScheme } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { KeyboardProvider } from "react-native-keyboard-controller";
 import {
   ThemeProvider as NavigationThemeProvider,
   DarkTheme,
@@ -215,6 +216,7 @@ function RootLayout() {
   return (
     <ErrorBoundary>
       <GestureHandlerRootView style={{ flex: 1 }}>
+        <KeyboardProvider>
         <NavigationThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
           <ThemeProvider>
             <Stack>
@@ -231,6 +233,7 @@ function RootLayout() {
             <UndoToast />
           </ThemeProvider>
         </NavigationThemeProvider>
+        </KeyboardProvider>
       </GestureHandlerRootView>
     </ErrorBoundary>
   );

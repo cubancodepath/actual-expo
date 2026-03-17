@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Alert, Keyboard, Pressable, Switch, useColorScheme, View } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { Alert, InputAccessoryView, Keyboard, Platform, Pressable, Switch, TextInput, useColorScheme, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import Animated, {
@@ -26,14 +26,13 @@ import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { Button } from "@/presentation/components/atoms/Button";
 import { Text } from "@/presentation/components/atoms/Text";
 import { GlassButton } from "@/presentation/components/atoms/GlassButton";
-import {
-  CurrencyInput,
-  type CurrencyInputRef,
-} from "@/presentation/components/currency-input";
+import { CalculatorPill } from "@/presentation/components/currency-input/CalculatorPill";
+import { AmountHeader } from "@/presentation/components/transaction/AmountHeader";
+import { useAmountInput } from "@/presentation/components/transaction/useAmountInput";
 import { ScheduleStatusBadge } from "@/presentation/components/atoms/ScheduleStatusBadge";
 import { ErrorBanner } from "@/presentation/components/molecules/ErrorBanner";
 import { useErrorHandler } from "@/presentation/hooks/useErrorHandler";
-import { TypeToggle, type TransactionType } from "@/presentation/components/transaction/TypeToggle";
+import type { TransactionType } from "@/presentation/components/transaction/TypeToggle";
 import { DetailRow } from "@/presentation/components/transaction/DetailRow";
 import type { Schedule, RecurConfig, RuleCondition, RuleAction } from "@/schedules/types";
 
@@ -62,9 +61,11 @@ export default function ScheduleDetailScreen() {
   const [saving, setSaving] = useState(false);
   const { error, handleError, dismissError } = useErrorHandler();
 
+  // Amount input hook
+  const amountInput = useAmountInput(0);
+
   // Form state
   const [type, setType] = useState<TransactionType>("expense");
-  const [cents, setCents] = useState(0);
   const [name, setName] = useState("");
   const [payeeId, setPayeeId] = useState<string | null>(null);
   const [payeeName, setPayeeName] = useState("");
@@ -74,7 +75,6 @@ export default function ScheduleDetailScreen() {
   const [categoryName, setCategoryName] = useState("");
   const [postsTransaction, setPostsTransaction] = useState(false);
   const [recurConfig, setRecurConfig] = useState<RecurConfig | null>(null);
-  const currencyRef = useRef<CurrencyInputRef>(null);
   const scrollY = useSharedValue(0);
 
   const scrollHandler = useAnimatedScrollHandler({
@@ -128,7 +128,7 @@ export default function ScheduleDetailScreen() {
           const amt = getScheduledAmount(s._amount);
           const isIncome = amt > 0;
           setType(isIncome ? "income" : "expense");
-          setCents(Math.abs(amt));
+          amountInput.setCents(Math.abs(amt));
 
           const pId = s._payee ?? null;
           setPayeeId(pId);
@@ -201,7 +201,7 @@ export default function ScheduleDetailScreen() {
   const hasChanges =
     initial != null &&
     (type !== initial.type ||
-      cents !== initial.cents ||
+      amountInput.cents !== initial.cents ||
       (name.trim() || null) !== initial.name ||
       payeeId !== initial.payeeId ||
       acctId !== initial.acctId ||
@@ -254,7 +254,7 @@ export default function ScheduleDetailScreen() {
       }
       conditions.push({ field: "account", op: "is", value: acctId });
 
-      const signedAmount = type === "expense" ? -Math.abs(cents) : Math.abs(cents);
+      const signedAmount = type === "expense" ? -Math.abs(amountInput.cents) : Math.abs(amountInput.cents);
       conditions.push({ field: "amount", op: "is", value: signedAmount });
 
       if (recurConfig) {
@@ -355,36 +355,25 @@ export default function ScheduleDetailScreen() {
         scrollEventThrottle={16}
       >
         {/* ── Colored header ── */}
-        <View
-          style={{
-            backgroundColor: headerBg,
-            paddingTop: 56,
-            paddingBottom: spacing.xxxl,
-            paddingHorizontal: spacing.lg,
-            borderBottomLeftRadius: br.lg,
-            borderBottomRightRadius: br.lg,
-            alignItems: "center",
-            gap: spacing.md,
-          }}
-        >
-          <View style={{ alignSelf: "stretch", marginTop: spacing.lg }}>
-            <TypeToggle type={type} onChangeType={setType} />
+        <AmountHeader
+          type={type}
+          cents={amountInput.cents}
+          headerBg={headerBg}
+          headerText={headerText}
+          expressionMode={amountInput.expr.expressionMode}
+          fullExpression={amountInput.expr.fullExpression}
+          amountFocused={amountInput.amountFocused}
+          renderCursor={amountInput.renderCursor}
+          onFocusAmount={() => amountInput.sharedInputRef.current?.focus()}
+          onChangeType={setType}
+          spacing={spacing}
+          primaryColor={colors.primary}
+        />
+        {status && (
+          <View style={{ marginTop: -spacing.lg, alignItems: "center", zIndex: 1 }}>
+            <ScheduleStatusBadge status={status} />
           </View>
-
-          <CurrencyInput
-            ref={currencyRef}
-            value={cents}
-            onChangeValue={(v) => {
-              setCents(v);
-              dismissError();
-            }}
-            type={type}
-            color={headerText}
-            style={{ paddingVertical: spacing.sm, alignSelf: "stretch" }}
-          />
-
-          {status && <ScheduleStatusBadge status={status} />}
-        </View>
+        )}
 
         {/* ── Details card ── */}
         <View style={{ marginTop: -20, zIndex: 1, paddingHorizontal: spacing.lg }}>
@@ -550,6 +539,27 @@ export default function ScheduleDetailScreen() {
           />
         </View>
       </Animated.ScrollView>
+
+      {/* InputAccessoryView registered BEFORE TextInput — iOS needs it available at focus time */}
+      {Platform.OS === "ios" && (
+        <InputAccessoryView nativeID={amountInput.AMOUNT_ACCESSORY_ID} backgroundColor="transparent">
+          <CalculatorPill inputRef={amountInput.selfRef} />
+        </InputAccessoryView>
+      )}
+
+      {/* Shared hidden TextInput — outside ScrollView for reliable focus */}
+      <TextInput
+        ref={amountInput.sharedInputRef}
+        value={amountInput.currentAmountInputValue}
+        onChangeText={amountInput.handleAmountChangeText}
+        onFocus={() => amountInput.setAmountFocused(true)}
+        onBlur={amountInput.handleAmountBlur}
+        keyboardType="number-pad"
+        caretHidden
+        contextMenuHidden
+        inputAccessoryViewID={Platform.OS === "ios" ? amountInput.AMOUNT_ACCESSORY_ID : undefined}
+        style={{ position: "absolute", opacity: 0, height: 1, width: 1, pointerEvents: "none" }}
+      />
 
       {/* ── Fixed top blur: fades in on scroll like Apple nav bars ── */}
       <Animated.View

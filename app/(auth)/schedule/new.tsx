@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { Alert, Keyboard, Pressable, Switch, useColorScheme, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Alert, InputAccessoryView, Keyboard, Platform, Pressable, Switch, TextInput, useColorScheme, View } from "react-native";
 import { useRouter } from "expo-router";
 import Animated, {
   useAnimatedScrollHandler,
@@ -19,13 +19,12 @@ import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { Button } from "@/presentation/components/atoms/Button";
 import { Text } from "@/presentation/components/atoms/Text";
 import { GlassButton } from "@/presentation/components/atoms/GlassButton";
-import {
-  CurrencyInput,
-  type CurrencyInputRef,
-} from "@/presentation/components/currency-input";
+import { CalculatorPill } from "@/presentation/components/currency-input/CalculatorPill";
+import { AmountHeader } from "@/presentation/components/transaction/AmountHeader";
+import { useAmountInput } from "@/presentation/components/transaction/useAmountInput";
 import { ErrorBanner } from "@/presentation/components/molecules/ErrorBanner";
 import { useErrorHandler } from "@/presentation/hooks/useErrorHandler";
-import { TypeToggle, type TransactionType } from "@/presentation/components/transaction/TypeToggle";
+import type { TransactionType } from "@/presentation/components/transaction/TypeToggle";
 import { DetailRow } from "@/presentation/components/transaction/DetailRow";
 import type { RecurConfig, RuleCondition, RuleAction } from "@/schedules/types";
 
@@ -45,9 +44,11 @@ export default function NewScheduleScreen() {
   const selectedRecurConfig = usePickerStore((s) => s.selectedRecurConfig);
   const clearPicker = usePickerStore((s) => s.clear);
 
+  // Amount input hook
+  const amountInput = useAmountInput(0);
+
   // Form state
   const [type, setType] = useState<TransactionType>("expense");
-  const [cents, setCents] = useState(0);
   const [name, setName] = useState("");
   const [payeeId, setPayeeId] = useState<string | null>(null);
   const [payeeName, setPayeeName] = useState("");
@@ -62,7 +63,6 @@ export default function NewScheduleScreen() {
   });
   const [saving, setSaving] = useState(false);
   const { error, handleError, setValidationError, dismissError } = useErrorHandler();
-  const currencyRef = useRef<CurrencyInputRef>(null);
   const scrollY = useSharedValue(0);
 
   const scrollHandler = useAnimatedScrollHandler({
@@ -151,7 +151,7 @@ export default function NewScheduleScreen() {
       setValidationError("Please select an account.");
       return;
     }
-    if (cents === 0) {
+    if (amountInput.cents === 0) {
       setValidationError("Enter an amount.");
       return;
     }
@@ -167,7 +167,7 @@ export default function NewScheduleScreen() {
       }
       conditions.push({ field: "account", op: "is", value: acctId });
 
-      const signedAmount = type === "expense" ? -Math.abs(cents) : Math.abs(cents);
+      const signedAmount = type === "expense" ? -Math.abs(amountInput.cents) : Math.abs(amountInput.cents);
       conditions.push({ field: "amount", op: "is", value: signedAmount });
       conditions.push({ field: "date", op: "isapprox", value: recurConfig });
 
@@ -190,7 +190,7 @@ export default function NewScheduleScreen() {
     setSaving(false);
   }
 
-  const canSave = acctId && cents !== 0;
+  const canSave = acctId && amountInput.cents !== 0;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.pageBackground }}>
@@ -203,35 +203,20 @@ export default function NewScheduleScreen() {
         scrollEventThrottle={16}
       >
         {/* ── Colored header ── */}
-        <View
-          style={{
-            backgroundColor: headerBg,
-            paddingTop: 56,
-            paddingBottom: spacing.xxxl,
-            paddingHorizontal: spacing.lg,
-            borderBottomLeftRadius: br.lg,
-            borderBottomRightRadius: br.lg,
-            alignItems: "center",
-            gap: spacing.md,
-          }}
-        >
-          <View style={{ alignSelf: "stretch", marginTop: spacing.lg }}>
-            <TypeToggle type={type} onChangeType={setType} />
-          </View>
-
-          <CurrencyInput
-            ref={currencyRef}
-            value={cents}
-            onChangeValue={(v) => {
-              setCents(v);
-              dismissError();
-            }}
-            type={type}
-            autoFocus
-            color={headerText}
-            style={{ paddingVertical: spacing.sm, alignSelf: "stretch" }}
-          />
-        </View>
+        <AmountHeader
+          type={type}
+          cents={amountInput.cents}
+          headerBg={headerBg}
+          headerText={headerText}
+          expressionMode={amountInput.expr.expressionMode}
+          fullExpression={amountInput.expr.fullExpression}
+          amountFocused={amountInput.amountFocused}
+          renderCursor={amountInput.renderCursor}
+          onFocusAmount={() => amountInput.sharedInputRef.current?.focus()}
+          onChangeType={setType}
+          spacing={spacing}
+          primaryColor={colors.primary}
+        />
 
         {/* ── Details card ── */}
         <View style={{ marginTop: -20, zIndex: 1, paddingHorizontal: spacing.lg }}>
@@ -366,6 +351,28 @@ export default function NewScheduleScreen() {
           />
         </View>
       </Animated.ScrollView>
+
+      {/* InputAccessoryView registered BEFORE TextInput — iOS needs it available at focus time */}
+      {Platform.OS === "ios" && (
+        <InputAccessoryView nativeID={amountInput.AMOUNT_ACCESSORY_ID} backgroundColor="transparent">
+          <CalculatorPill inputRef={amountInput.selfRef} />
+        </InputAccessoryView>
+      )}
+
+      {/* Shared hidden TextInput — outside ScrollView for reliable focus */}
+      <TextInput
+        ref={amountInput.sharedInputRef}
+        value={amountInput.currentAmountInputValue}
+        onChangeText={amountInput.handleAmountChangeText}
+        onFocus={() => amountInput.setAmountFocused(true)}
+        onBlur={amountInput.handleAmountBlur}
+        keyboardType="number-pad"
+        autoFocus
+        caretHidden
+        contextMenuHidden
+        inputAccessoryViewID={Platform.OS === "ios" ? amountInput.AMOUNT_ACCESSORY_ID : undefined}
+        style={{ position: "absolute", opacity: 0, height: 1, width: 1, pointerEvents: "none" }}
+      />
 
       {/* ── Fixed top blur: fades in on scroll like Apple nav bars ── */}
       <Animated.View

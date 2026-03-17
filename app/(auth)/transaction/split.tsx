@@ -1,5 +1,5 @@
-import { useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
-import { Alert, Keyboard, Pressable, ScrollView, TextInput, View } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { Alert, Keyboard, Pressable, ScrollView, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -10,21 +10,15 @@ import { BlurView } from "expo-blur";
 import { usePickerStore, type SplitLine } from "@/stores/pickerStore";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
 import { useKeyboardHeight } from "@/presentation/hooks/useKeyboardHeight";
-import { useCursorBlink } from "@/presentation/hooks/useCursorBlink";
-import { useExpressionMode } from "@/presentation/hooks/useExpressionMode";
-import { useKeyboardBlur } from "@/presentation/hooks/useKeyboardBlur";
-import { usePreferencesStore } from "@/stores/preferencesStore";
+import { useSharedAmountInput } from "@/presentation/hooks/useSharedAmountInput";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Amount } from "@/presentation/components/atoms/Amount";
 import { IconButton } from "@/presentation/components/atoms/IconButton";
 import { GlassButton } from "@/presentation/components/atoms/GlassButton";
 import { SharedAmountInput } from "@/presentation/components/transaction/SharedAmountInput";
-import { CurrencySymbol } from "@/presentation/components/atoms/CurrencySymbol";
-import { formatAmount, formatAmountParts } from "@/lib/format";
-import { formatCents, formatExpression, MAX_CENTS } from "@/lib/currency";
-import type { CurrencyInputRef } from "@/presentation/components/currency-input";
+import { CurrencyAmountDisplay } from "@/presentation/components/currency-input/CurrencyAmountDisplay";
+import { formatAmount } from "@/lib/format";
 import type { Theme } from "@/theme";
-import { useId } from "react";
 
 // ---------------------------------------------------------------------------
 // Split Line Row — display only (no TextInput inside)
@@ -49,11 +43,6 @@ function SplitRow({
 }) {
   const { colors, spacing } = useTheme();
   const { t } = useTranslation("transactions");
-  const { renderCursor } = useCursorBlink(isActive);
-  usePreferencesStore(
-    (s) =>
-      `${s.numberFormat}:${s.hideFraction}:${s.defaultCurrencyCode}:${s.defaultCurrencyCustomSymbol}:${s.currencySymbolPosition}:${s.currencySpaceBetweenAmountAndSymbol}`,
-  );
 
   const displayColor = isActive
     ? colors.primary
@@ -99,59 +88,14 @@ function SplitRow({
       </Pressable>
 
       <Pressable onPress={onPress}>
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          {isActive && expressionMode ? (
-            <Text
-              variant="body"
-              style={{ fontWeight: "600", fontVariant: ["tabular-nums"], color: colors.primary }}
-              numberOfLines={1}
-            >
-              {formatExpression(fullExpression)}
-            </Text>
-          ) : (
-            (() => {
-              const parts = formatAmountParts(Math.abs(line.amount), false);
-              const fontSize = 14;
-              return (
-                <>
-                  {parts.svgSymbol && parts.position === "before" && (
-                    <>
-                      <CurrencySymbol
-                        symbol={parts.symbol}
-                        svgSymbol={parts.svgSymbol}
-                        fontSize={fontSize}
-                        color={displayColor}
-                      />
-                      {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
-                    </>
-                  )}
-                  <Text
-                    variant="body"
-                    style={{
-                      fontWeight: "600",
-                      fontVariant: ["tabular-nums"],
-                      color: displayColor,
-                    }}
-                  >
-                    {parts.svgSymbol ? parts.number : formatCents(Math.abs(line.amount))}
-                  </Text>
-                  {parts.svgSymbol && parts.position === "after" && (
-                    <>
-                      {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
-                      <CurrencySymbol
-                        symbol={parts.symbol}
-                        svgSymbol={parts.svgSymbol}
-                        fontSize={fontSize}
-                        color={displayColor}
-                      />
-                    </>
-                  )}
-                </>
-              );
-            })()
-          )}
-          {renderCursor({ width: 1.5, height: 16, marginLeft: 1, borderRadius: 1 }, colors.primary)}
-        </View>
+        <CurrencyAmountDisplay
+          amount={line.amount}
+          isActive={isActive}
+          expressionMode={expressionMode}
+          fullExpression={fullExpression}
+          color={displayColor}
+          primaryColor={colors.primary}
+        />
       </Pressable>
 
       <IconButton
@@ -200,60 +144,29 @@ export default function SplitScreen() {
   const [activeLineId, setActiveLineId] = useState<string | null>(null);
   const activeAmount = activeLineId ? (splits.find((s) => s.id === activeLineId)?.amount ?? 0) : 0;
 
-  // Shared hidden input
-  const accessoryID = useId();
-  const sharedInputRef = useRef<TextInput>(null);
-  const selfRef = useRef<CurrencyInputRef>(null);
-
-  const expr = useExpressionMode({
-    value: activeAmount,
-    onChangeValue: (cents) => {
+  const shared = useSharedAmountInput({
+    activeAmount,
+    isActive: activeLineId !== null,
+    onAmountChange: (cents) => {
       if (!activeLineId) return;
       setSplits((prev) => prev.map((s) => (s.id === activeLineId ? { ...s, amount: cents } : s)));
     },
-  });
-
-  useKeyboardBlur(activeLineId !== null, () => {
-    expr.handleBlurExpression();
-    setActiveLineId(null);
-  });
-
-  useImperativeHandle(selfRef, () => ({
-    focus: () => sharedInputRef.current?.focus(),
-    injectOperator: (op: string) => expr.injectOperator(op, () => sharedInputRef.current?.focus()),
-    evaluate: () => expr.evaluate(),
-    deleteBackward: () => {
-      if (expr.expressionMode) {
-        expr.handleKeyPress({ nativeEvent: { key: "Backspace" } });
-      } else if (activeLineId) {
+    onBlur: () => setActiveLineId(null),
+    onClear: () => {
+      if (activeLineId) {
         setSplits((prev) => prev.map((s) => (s.id === activeLineId ? { ...s, amount: 0 } : s)));
       }
     },
-  }));
-
-  const currentInputValue = expr.expressionMode ? expr.expressionInputValue : String(activeAmount);
-
-  function handleChangeText(text: string) {
-    if (!activeLineId) return;
-    if (expr.expressionMode) {
-      expr.handleChangeTextOperand(text);
-    } else {
-      const digits = text.replace(/\D/g, "");
-      const newCents = Math.min(parseInt(digits || "0", 10), MAX_CENTS);
-      setSplits((prev) =>
-        prev.map((s) => (s.id === activeLineId ? { ...s, amount: newCents } : s)),
-      );
-    }
-  }
+  });
 
   function handleRowPress(id: string) {
     if (activeLineId === id) {
-      sharedInputRef.current?.blur();
+      shared.blur();
       return;
     }
-    if (activeLineId) expr.handleBlurExpression();
+    if (activeLineId) shared.expr.handleBlurExpression();
     setActiveLineId(id);
-    setTimeout(() => sharedInputRef.current?.focus(), 50);
+    shared.focus();
   }
 
   // Pick up category selection from split-category-picker
@@ -396,8 +309,8 @@ export default function SplitScreen() {
               <SplitRow
                 line={line}
                 isActive={activeLineId === line.id}
-                expressionMode={activeLineId === line.id && expr.expressionMode}
-                fullExpression={activeLineId === line.id ? expr.fullExpression : ""}
+                expressionMode={activeLineId === line.id && shared.expr.expressionMode}
+                fullExpression={activeLineId === line.id ? shared.expr.fullExpression : ""}
                 onCategoryPress={handleCategoryPress}
                 onRemove={handleRemove}
                 onPress={() => handleRowPress(line.id)}
@@ -420,15 +333,12 @@ export default function SplitScreen() {
 
       {/* Shared hidden TextInput + InputAccessoryView */}
       <SharedAmountInput
-        accessoryID={accessoryID}
-        sharedInputRef={sharedInputRef}
-        selfRef={selfRef}
-        value={currentInputValue}
-        onChangeText={handleChangeText}
-        onBlur={() => {
-          expr.handleBlurExpression();
-          setActiveLineId(null);
-        }}
+        accessoryID={shared.accessoryID}
+        sharedInputRef={shared.sharedInputRef}
+        selfRef={shared.selfRef}
+        value={shared.currentInputValue}
+        onChangeText={shared.handleChangeText}
+        onBlur={shared.handleBlur}
       />
 
       {/* Floating "assign remaining" button */}

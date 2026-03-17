@@ -16,11 +16,8 @@ import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
 import { useAmountInput } from "@/presentation/components/transaction/useAmountInput";
 import { HiddenAmountInput } from "@/presentation/components/transaction/HiddenAmountInput";
-import { useCursorBlink } from "@/presentation/hooks/useCursorBlink";
-import { formatAmount, formatAmountParts } from "@/lib/format";
-import { formatCents, formatExpression } from "@/lib/currency";
-import { CurrencySymbol } from "@/presentation/components/atoms/CurrencySymbol";
-import { usePreferencesStore } from "@/stores/preferencesStore";
+import { CurrencyAmountDisplay } from "@/presentation/components/currency-input/CurrencyAmountDisplay";
+import { formatAmount } from "@/lib/format";
 import { useTranslation } from "react-i18next";
 import { useRef } from "react";
 
@@ -133,66 +130,19 @@ function AmountDisplay({
   primaryColor: string;
   onPress: () => void;
 }) {
-  const { renderCursor } = useCursorBlink(focused);
-  usePreferencesStore(
-    (s) =>
-      `${s.numberFormat}:${s.hideFraction}:${s.defaultCurrencyCode}:${s.defaultCurrencyCustomSymbol}:${s.currencySymbolPosition}:${s.currencySpaceBetweenAmountAndSymbol}`,
-  );
-
   return (
     <Pressable
       onPress={onPress}
       style={{ flex: 1, justifyContent: "center", alignItems: "flex-end" }}
     >
-      <View style={{ flexDirection: "row", alignItems: "center" }}>
-        {expressionMode ? (
-          <Text
-            variant="body"
-            style={{ fontWeight: "600", fontVariant: ["tabular-nums"], color: primaryColor }}
-            numberOfLines={1}
-          >
-            {formatExpression(fullExpression)}
-          </Text>
-        ) : (
-          (() => {
-            const parts = formatAmountParts(Math.abs(cents), false);
-            const fontSize = 14;
-            return (
-              <>
-                {parts.svgSymbol && parts.position === "before" && (
-                  <>
-                    <CurrencySymbol
-                      symbol={parts.symbol}
-                      svgSymbol={parts.svgSymbol}
-                      fontSize={fontSize}
-                      color={color}
-                    />
-                    {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
-                  </>
-                )}
-                <Text
-                  variant="body"
-                  style={{ fontWeight: "600", fontVariant: ["tabular-nums"], color }}
-                >
-                  {parts.svgSymbol ? parts.number : formatCents(Math.abs(cents))}
-                </Text>
-                {parts.svgSymbol && parts.position === "after" && (
-                  <>
-                    {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
-                    <CurrencySymbol
-                      symbol={parts.symbol}
-                      svgSymbol={parts.svgSymbol}
-                      fontSize={fontSize}
-                      color={color}
-                    />
-                  </>
-                )}
-              </>
-            );
-          })()
-        )}
-        {renderCursor({ width: 1.5, height: 16, marginLeft: 1, borderRadius: 1 }, primaryColor)}
-      </View>
+      <CurrencyAmountDisplay
+        amount={cents}
+        isActive={focused}
+        expressionMode={expressionMode}
+        fullExpression={fullExpression}
+        color={color}
+        primaryColor={primaryColor}
+      />
     </Pressable>
   );
 }

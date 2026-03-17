@@ -5,15 +5,14 @@ import { useTranslation } from "react-i18next";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Text } from "../atoms/Text";
 import { Amount } from "../atoms/Amount";
-import { CurrencySymbol } from "../atoms/CurrencySymbol";
-import { formatPrivacyAware, formatAmountParts } from "../../../lib/format";
+import { formatPrivacyAware } from "../../../lib/format";
 import { formatCents } from "../../../lib/currency";
 import { getGoalProgress, getGoalProgressLabel } from "../../../goals/progress";
 import { parseGoalDef } from "../../../goals";
 import { ProgressBar } from "../atoms/ProgressBar";
 import { useFeatureFlag } from "../../../hooks/useFeatureFlag";
 import { useCursorBlink } from "../../hooks/useCursorBlink";
-import { usePreferencesStore } from "../../../stores/preferencesStore";
+import { CurrencyAmountDisplay } from "../currency-input/CurrencyAmountDisplay";
 import type { BudgetCategory } from "../../../budgets/types";
 
 /** Shared column widths for table-style alignment across header, rows, and group headers. */
@@ -72,12 +71,6 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const goalsEnabled = useFeatureFlag("goalTemplatesEnabled");
   const { renderCursor } = useCursorBlink(isEditing);
-
-  // Subscribe to currency preferences so display re-renders on changes
-  usePreferencesStore(
-    (s) =>
-      `${s.numberFormat}:${s.hideFraction}:${s.defaultCurrencyCode}:${s.defaultCurrencyCustomSymbol}:${s.currencySymbolPosition}:${s.currencySpaceBetweenAmountAndSymbol}`,
-  );
 
   const insetStyle = {
     marginHorizontal: spacing.lg,
@@ -339,56 +332,14 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
                 </View>
               </>
             ) : isEditing ? (
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                {(() => {
-                  const parts = formatAmountParts(Math.abs(displayCents), false);
-                  const fontSize = 14;
-                  return (
-                    <>
-                      {parts.svgSymbol && parts.position === "before" && (
-                        <>
-                          <CurrencySymbol
-                            symbol={parts.symbol}
-                            svgSymbol={parts.svgSymbol}
-                            fontSize={fontSize}
-                            color={displayColor}
-                          />
-                          {parts.spaceBetween && (
-                            <View style={{ width: Math.round(fontSize / 3) }} />
-                          )}
-                        </>
-                      )}
-                      <Text
-                        variant="body"
-                        style={{
-                          fontWeight: "600",
-                          fontVariant: ["tabular-nums"],
-                          color: displayColor,
-                        }}
-                      >
-                        {parts.svgSymbol ? parts.number : formatCents(Math.abs(displayCents))}
-                      </Text>
-                      {parts.svgSymbol && parts.position === "after" && (
-                        <>
-                          {parts.spaceBetween && (
-                            <View style={{ width: Math.round(fontSize / 3) }} />
-                          )}
-                          <CurrencySymbol
-                            symbol={parts.symbol}
-                            svgSymbol={parts.svgSymbol}
-                            fontSize={fontSize}
-                            color={displayColor}
-                          />
-                        </>
-                      )}
-                    </>
-                  );
-                })()}
-                {renderCursor(
-                  { width: 1.5, height: 16, marginLeft: 1, borderRadius: 1 },
-                  colors.primary,
-                )}
-              </View>
+              <CurrencyAmountDisplay
+                amount={displayCents}
+                isActive
+                expressionMode={false}
+                fullExpression=""
+                color={displayColor}
+                primaryColor={colors.primary}
+              />
             ) : (
               <Amount
                 value={cat.budgeted}

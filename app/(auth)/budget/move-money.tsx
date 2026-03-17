@@ -1,5 +1,5 @@
-import { useEffect, useId, useImperativeHandle, useRef, useState } from "react";
-import { Pressable, ScrollView, TextInput, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Pressable, ScrollView, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -22,14 +22,8 @@ import { Button } from "@/presentation/components/atoms/Button";
 import { IconButton } from "@/presentation/components/atoms/IconButton";
 import { GlassButton } from "@/presentation/components/atoms/GlassButton";
 import { SharedAmountInput } from "@/presentation/components/transaction/SharedAmountInput";
-import { CurrencySymbol } from "@/presentation/components/atoms/CurrencySymbol";
-import { useCursorBlink } from "@/presentation/hooks/useCursorBlink";
-import { useExpressionMode } from "@/presentation/hooks/useExpressionMode";
-import { useKeyboardBlur } from "@/presentation/hooks/useKeyboardBlur";
-import { usePreferencesStore } from "@/stores/preferencesStore";
-import { formatAmountParts } from "@/lib/format";
-import { formatCents, formatExpression, MAX_CENTS } from "@/lib/currency";
-import type { CurrencyInputRef } from "@/presentation/components/currency-input";
+import { EditableAmountRow } from "@/presentation/components/currency-input/EditableAmountRow";
+import { useSharedAmountInput } from "@/presentation/hooks/useSharedAmountInput";
 
 type SourceEntry = {
   id: string;
@@ -63,86 +57,18 @@ function SourceRow({
   onPress: () => void;
 }) {
   const { colors, spacing } = useTheme();
-  const { renderCursor } = useCursorBlink(isActive);
-  usePreferencesStore(
-    (s) =>
-      `${s.numberFormat}:${s.hideFraction}:${s.defaultCurrencyCode}:${s.defaultCurrencyCustomSymbol}:${s.currencySymbolPosition}:${s.currencySpaceBetweenAmountAndSymbol}`,
-  );
-
-  const displayColor = isActive
-    ? colors.primary
-    : source.amount > 0
-      ? colors.textPrimary
-      : colors.textMuted;
   const remainingBalance =
     direction === "to" ? source.balance - source.amount : source.balance + source.amount;
 
   return (
-    <Pressable
+    <EditableAmountRow
+      label={source.name}
+      amount={source.amount}
+      isActive={isActive}
+      expressionMode={expressionMode}
+      fullExpression={fullExpression}
       onPress={onPress}
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        paddingLeft: spacing.md,
-        paddingRight: spacing.xs,
-        paddingVertical: spacing.sm,
-        minHeight: 48,
-      }}
     >
-      <Text variant="body" color={colors.textPrimary} numberOfLines={1} style={{ flex: 1 }}>
-        {source.name}
-      </Text>
-
-      <View style={{ flexDirection: "row", alignItems: "center" }}>
-        {isActive && expressionMode ? (
-          <Text
-            variant="body"
-            style={{ fontWeight: "600", fontVariant: ["tabular-nums"], color: colors.primary }}
-            numberOfLines={1}
-          >
-            {formatExpression(fullExpression)}
-          </Text>
-        ) : (
-          (() => {
-            const parts = formatAmountParts(Math.abs(source.amount), false);
-            const fontSize = 14;
-            return (
-              <>
-                {parts.svgSymbol && parts.position === "before" && (
-                  <>
-                    <CurrencySymbol
-                      symbol={parts.symbol}
-                      svgSymbol={parts.svgSymbol}
-                      fontSize={fontSize}
-                      color={displayColor}
-                    />
-                    {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
-                  </>
-                )}
-                <Text
-                  variant="body"
-                  style={{ fontWeight: "600", fontVariant: ["tabular-nums"], color: displayColor }}
-                >
-                  {parts.svgSymbol ? parts.number : formatCents(Math.abs(source.amount))}
-                </Text>
-                {parts.svgSymbol && parts.position === "after" && (
-                  <>
-                    {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
-                    <CurrencySymbol
-                      symbol={parts.symbol}
-                      svgSymbol={parts.svgSymbol}
-                      fontSize={fontSize}
-                      color={displayColor}
-                    />
-                  </>
-                )}
-              </>
-            );
-          })()
-        )}
-        {renderCursor({ width: 1.5, height: 16, marginLeft: 1, borderRadius: 1 }, colors.primary)}
-      </View>
-
       <View
         style={{
           backgroundColor: remainingBalance >= 0 ? colors.positiveSubtle : colors.negativeSubtle,
@@ -168,7 +94,7 @@ function SourceRow({
         onPress={() => onRemove(source.id)}
         style={{ marginLeft: spacing.xxs }}
       />
-    </Pressable>
+    </EditableAmountRow>
   );
 }
 
@@ -286,62 +212,31 @@ export default function MoveMoneyScreen() {
     ? (sources.find((s) => s.id === activeSourceId)?.amount ?? 0)
     : 0;
 
-  // Shared hidden input
-  const accessoryID = useId();
-  const sharedInputRef = useRef<TextInput>(null);
-  const selfRef = useRef<CurrencyInputRef>(null);
-
-  const expr = useExpressionMode({
-    value: activeAmount,
-    onChangeValue: (cents) => {
+  const shared = useSharedAmountInput({
+    activeAmount,
+    isActive: activeSourceId !== null,
+    onAmountChange: (cents) => {
       if (!activeSourceId) return;
       setSources((prev) =>
         prev.map((s) => (s.id === activeSourceId ? { ...s, amount: cents } : s)),
       );
     },
-  });
-
-  useKeyboardBlur(activeSourceId !== null, () => {
-    expr.handleBlurExpression();
-    setActiveSourceId(null);
-  });
-
-  useImperativeHandle(selfRef, () => ({
-    focus: () => sharedInputRef.current?.focus(),
-    injectOperator: (op: string) => expr.injectOperator(op, () => sharedInputRef.current?.focus()),
-    evaluate: () => expr.evaluate(),
-    deleteBackward: () => {
-      if (expr.expressionMode) {
-        expr.handleKeyPress({ nativeEvent: { key: "Backspace" } });
-      } else if (activeSourceId) {
+    onBlur: () => setActiveSourceId(null),
+    onClear: () => {
+      if (activeSourceId) {
         setSources((prev) => prev.map((s) => (s.id === activeSourceId ? { ...s, amount: 0 } : s)));
       }
     },
-  }));
-
-  const currentInputValue = expr.expressionMode ? expr.expressionInputValue : String(activeAmount);
-
-  function handleChangeText(text: string) {
-    if (!activeSourceId) return;
-    if (expr.expressionMode) {
-      expr.handleChangeTextOperand(text);
-    } else {
-      const digits = text.replace(/\D/g, "");
-      const newCents = Math.min(parseInt(digits || "0", 10), MAX_CENTS);
-      setSources((prev) =>
-        prev.map((s) => (s.id === activeSourceId ? { ...s, amount: newCents } : s)),
-      );
-    }
-  }
+  });
 
   function handleRowPress(id: string) {
     if (activeSourceId === id) {
-      sharedInputRef.current?.blur();
+      shared.blur();
       return;
     }
-    if (activeSourceId) expr.handleBlurExpression();
+    if (activeSourceId) shared.expr.handleBlurExpression();
     setActiveSourceId(id);
-    setTimeout(() => sharedInputRef.current?.focus(), 50);
+    shared.focus();
   }
 
   const balanceCents = Number(balance);
@@ -476,8 +371,8 @@ export default function MoveMoneyScreen() {
                   source={source}
                   direction={direction}
                   isActive={activeSourceId === source.id}
-                  expressionMode={activeSourceId === source.id && expr.expressionMode}
-                  fullExpression={activeSourceId === source.id ? expr.fullExpression : ""}
+                  expressionMode={activeSourceId === source.id && shared.expr.expressionMode}
+                  fullExpression={activeSourceId === source.id ? shared.expr.fullExpression : ""}
                   onRemove={handleRemoveSource}
                   onPress={() => handleRowPress(source.id)}
                 />
@@ -525,15 +420,12 @@ export default function MoveMoneyScreen() {
       </ScrollView>
 
       <SharedAmountInput
-        accessoryID={accessoryID}
-        sharedInputRef={sharedInputRef}
-        selfRef={selfRef}
-        value={currentInputValue}
-        onChangeText={handleChangeText}
-        onBlur={() => {
-          expr.handleBlurExpression();
-          setActiveSourceId(null);
-        }}
+        accessoryID={shared.accessoryID}
+        sharedInputRef={shared.sharedInputRef}
+        selfRef={shared.selfRef}
+        value={shared.currentInputValue}
+        onChangeText={shared.handleChangeText}
+        onBlur={shared.handleBlur}
       />
     </>
   );

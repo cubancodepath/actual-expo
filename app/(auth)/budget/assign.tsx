@@ -1,5 +1,5 @@
-import { useEffect, useId, useImperativeHandle, useMemo, useRef, useState } from "react";
-import { Alert, Keyboard, Pressable, SectionList, TextInput, View } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Alert, Keyboard, Pressable, SectionList, View } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
@@ -9,16 +9,10 @@ import { useBudgetStore } from "@/stores/budgetStore";
 import { Text } from "@/presentation/components/atoms/Text";
 import { IconButton } from "@/presentation/components/atoms/IconButton";
 import { Button } from "@/presentation/components/atoms/Button";
-import { CurrencySymbol } from "@/presentation/components/atoms/CurrencySymbol";
 import { Amount } from "@/presentation/components/atoms/Amount";
 import { SharedAmountInput } from "@/presentation/components/transaction/SharedAmountInput";
-import { useCursorBlink } from "@/presentation/hooks/useCursorBlink";
-import { useExpressionMode } from "@/presentation/hooks/useExpressionMode";
-import { useKeyboardBlur } from "@/presentation/hooks/useKeyboardBlur";
-import { usePreferencesStore } from "@/stores/preferencesStore";
-import { formatAmountParts } from "@/lib/format";
-import { formatCents, formatExpression, MAX_CENTS } from "@/lib/currency";
-import type { CurrencyInputRef } from "@/presentation/components/currency-input";
+import { CurrencyAmountDisplay } from "@/presentation/components/currency-input/CurrencyAmountDisplay";
+import { useSharedAmountInput } from "@/presentation/hooks/useSharedAmountInput";
 
 import { getGoalProgress } from "@/goals/progress";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
@@ -42,7 +36,7 @@ export default function AssignBudgetScreen() {
   const buffered = data?.buffered ?? 0;
   const groups = data?.groups ?? [];
 
-  // Local edits: categoryId → cents
+  // Local edits: categoryId -> cents
   const [edits, setEdits] = useState<Record<string, number>>({});
   const [saving, setSaving] = useState(false);
   const hapticFiredRef = useRef(false);
@@ -50,57 +44,30 @@ export default function AssignBudgetScreen() {
   // Shared hidden input state
   const [activeEditCatId, setActiveEditCatId] = useState<string | null>(null);
   const activeAmount = activeEditCatId ? (edits[activeEditCatId] ?? 0) : 0;
-  const accessoryID = useId();
-  const sharedInputRef = useRef<TextInput>(null);
-  const selfRef = useRef<CurrencyInputRef>(null);
 
-  const expr = useExpressionMode({
-    value: activeAmount,
-    onChangeValue: (cents) => {
+  const shared = useSharedAmountInput({
+    activeAmount,
+    isActive: activeEditCatId !== null,
+    onAmountChange: (cents) => {
       if (!activeEditCatId) return;
       setEdits((prev) => ({ ...prev, [activeEditCatId]: cents }));
     },
-  });
-
-  useKeyboardBlur(activeEditCatId !== null, () => {
-    expr.handleBlurExpression();
-    setActiveEditCatId(null);
-  });
-
-  useImperativeHandle(selfRef, () => ({
-    focus: () => sharedInputRef.current?.focus(),
-    injectOperator: (op: string) => expr.injectOperator(op, () => sharedInputRef.current?.focus()),
-    evaluate: () => expr.evaluate(),
-    deleteBackward: () => {
-      if (expr.expressionMode) {
-        expr.handleKeyPress({ nativeEvent: { key: "Backspace" } });
-      } else if (activeEditCatId) {
+    onBlur: () => setActiveEditCatId(null),
+    onClear: () => {
+      if (activeEditCatId) {
         setEdits((prev) => ({ ...prev, [activeEditCatId]: 0 }));
       }
     },
-  }));
-
-  const currentInputValue = expr.expressionMode ? expr.expressionInputValue : String(activeAmount);
-
-  function handleChangeText(text: string) {
-    if (!activeEditCatId) return;
-    if (expr.expressionMode) {
-      expr.handleChangeTextOperand(text);
-    } else {
-      const digits = text.replace(/\D/g, "");
-      const newCents = Math.min(parseInt(digits || "0", 10), MAX_CENTS);
-      setEdits((prev) => ({ ...prev, [activeEditCatId]: newCents }));
-    }
-  }
+  });
 
   function handleRowPress(cat: BudgetCategory) {
     if (activeEditCatId === cat.id) {
-      sharedInputRef.current?.blur();
+      shared.blur();
       return;
     }
-    if (activeEditCatId) expr.handleBlurExpression();
+    if (activeEditCatId) shared.expr.handleBlurExpression();
     setActiveEditCatId(cat.id);
-    setTimeout(() => sharedInputRef.current?.focus(), 50);
+    shared.focus();
   }
 
   // Initialize edits from current budget data (re-run when groups change, e.g. month switch)
@@ -117,7 +84,7 @@ export default function AssignBudgetScreen() {
     setEdits(initial);
   }, [groups]);
 
-  // Sections for expense groups only — pass full BudgetCategory
+  // Sections for expense groups only -- pass full BudgetCategory
   const sections = useMemo<CategorySection[]>(
     () =>
       groups
@@ -238,7 +205,7 @@ export default function AssignBudgetScreen() {
     router.back();
   }
 
-  // ── Color state — matches ReadyToAssignPill ──
+  // -- Color state -- matches ReadyToAssignPill --
   const isPositive = remaining > 0;
   const isNegative = remaining < 0;
 
@@ -282,7 +249,7 @@ export default function AssignBudgetScreen() {
           }}
         />
 
-        {/* Summary Card — fixed above the list */}
+        {/* Summary Card -- fixed above the list */}
         <View
           style={{
             marginHorizontal: spacing.lg,
@@ -309,7 +276,7 @@ export default function AssignBudgetScreen() {
           )}
         </View>
 
-        {/* Quick Actions — fixed */}
+        {/* Quick Actions -- fixed */}
         <View
           style={{
             flexDirection: "row",
@@ -383,8 +350,8 @@ export default function AssignBudgetScreen() {
                 isLast={isLast}
                 isEdited={isEdited}
                 isActive={activeEditCatId === cat.id}
-                expressionMode={activeEditCatId === cat.id && expr.expressionMode}
-                fullExpression={activeEditCatId === cat.id ? expr.fullExpression : ""}
+                expressionMode={activeEditCatId === cat.id && shared.expr.expressionMode}
+                fullExpression={activeEditCatId === cat.id ? shared.expr.fullExpression : ""}
                 onPress={() => handleRowPress(cat)}
               />
             );
@@ -393,7 +360,7 @@ export default function AssignBudgetScreen() {
           scrollIndicatorInsets={{ bottom: 120 }}
         />
 
-        {/* Save button — fixed at bottom */}
+        {/* Save button -- fixed at bottom */}
         {hasChanges && (
           <View
             style={{
@@ -424,21 +391,18 @@ export default function AssignBudgetScreen() {
       </View>
 
       <SharedAmountInput
-        accessoryID={accessoryID}
-        sharedInputRef={sharedInputRef}
-        selfRef={selfRef}
-        value={currentInputValue}
-        onChangeText={handleChangeText}
-        onBlur={() => {
-          expr.handleBlurExpression();
-          setActiveEditCatId(null);
-        }}
+        accessoryID={shared.accessoryID}
+        sharedInputRef={shared.sharedInputRef}
+        selfRef={shared.selfRef}
+        value={shared.currentInputValue}
+        onChangeText={shared.handleChangeText}
+        onBlur={shared.handleBlur}
       />
     </>
   );
 }
 
-// ── Category row with goal progress bar ─────────────────────────────────────
+// -- Category row with goal progress bar --
 
 function CategoryAmountRow({
   cat,
@@ -466,13 +430,6 @@ function CategoryAmountRow({
   const { t } = useTranslation("budget");
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const goalsEnabled = useFeatureFlag("goalTemplatesEnabled");
-  const { renderCursor } = useCursorBlink(isActive);
-
-  // Subscribe to currency preferences so display re-renders on changes
-  usePreferencesStore(
-    (s) =>
-      `${s.numberFormat}:${s.hideFraction}:${s.defaultCurrencyCode}:${s.defaultCurrencyCustomSymbol}:${s.currencySymbolPosition}:${s.currencySpaceBetweenAmountAndSymbol}`,
-  );
 
   const hasGoal = goalsEnabled && cat.goal != null && cat.goal > 0;
 
@@ -525,59 +482,14 @@ function CategoryAmountRow({
         <Text variant="body" style={{ flex: 1 }} numberOfLines={1}>
           {cat.name}
         </Text>
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          {isActive && expressionMode ? (
-            <Text
-              variant="body"
-              style={{ fontWeight: "600", fontVariant: ["tabular-nums"], color: colors.primary }}
-              numberOfLines={1}
-            >
-              {formatExpression(fullExpression)}
-            </Text>
-          ) : (
-            (() => {
-              const parts = formatAmountParts(Math.abs(value), false);
-              const fontSize = 14;
-              return (
-                <>
-                  {parts.svgSymbol && parts.position === "before" && (
-                    <>
-                      <CurrencySymbol
-                        symbol={parts.symbol}
-                        svgSymbol={parts.svgSymbol}
-                        fontSize={fontSize}
-                        color={displayColor}
-                      />
-                      {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
-                    </>
-                  )}
-                  <Text
-                    variant="body"
-                    style={{
-                      fontWeight: "600",
-                      fontVariant: ["tabular-nums"],
-                      color: displayColor,
-                    }}
-                  >
-                    {parts.svgSymbol ? parts.number : formatCents(Math.abs(value))}
-                  </Text>
-                  {parts.svgSymbol && parts.position === "after" && (
-                    <>
-                      {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
-                      <CurrencySymbol
-                        symbol={parts.symbol}
-                        svgSymbol={parts.svgSymbol}
-                        fontSize={fontSize}
-                        color={displayColor}
-                      />
-                    </>
-                  )}
-                </>
-              );
-            })()
-          )}
-          {renderCursor({ width: 1.5, height: 16, marginLeft: 1, borderRadius: 1 }, colors.primary)}
-        </View>
+        <CurrencyAmountDisplay
+          amount={value}
+          isActive={isActive}
+          expressionMode={expressionMode}
+          fullExpression={fullExpression}
+          color={displayColor}
+          primaryColor={colors.primary}
+        />
       </View>
 
       {/* Line 2: Progress bar */}

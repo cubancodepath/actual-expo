@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { Pressable, ScrollView, View } from "react-native";
+import { useEffect, useId, useImperativeHandle, useRef, useState } from "react";
+import { Pressable, ScrollView, TextInput, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -20,11 +20,16 @@ import { Text } from "@/presentation/components/atoms/Text";
 import { Amount } from "@/presentation/components/atoms/Amount";
 import { Button } from "@/presentation/components/atoms/Button";
 import { IconButton } from "@/presentation/components/atoms/IconButton";
-import {
-  CompactCurrencyInput,
-  type CompactCurrencyInputRef,
-} from "@/presentation/components/currency-input";
 import { GlassButton } from "@/presentation/components/atoms/GlassButton";
+import { SharedAmountInput } from "@/presentation/components/transaction/SharedAmountInput";
+import { CurrencySymbol } from "@/presentation/components/atoms/CurrencySymbol";
+import { useCursorBlink } from "@/presentation/hooks/useCursorBlink";
+import { useExpressionMode } from "@/presentation/hooks/useExpressionMode";
+import { useKeyboardBlur } from "@/presentation/hooks/useKeyboardBlur";
+import { usePreferencesStore } from "@/stores/preferencesStore";
+import { formatAmountParts } from "@/lib/format";
+import { formatCents, formatExpression, MAX_CENTS } from "@/lib/currency";
+import type { CurrencyInputRef } from "@/presentation/components/currency-input";
 
 type SourceEntry = {
   id: string;
@@ -36,29 +41,45 @@ type SourceEntry = {
 
 type MoveDirection = "to" | "from";
 
+// ---------------------------------------------------------------------------
+// Source Row — display only
+// ---------------------------------------------------------------------------
+
 function SourceRow({
   source,
   direction,
-  onAmountChange,
+  isActive,
+  expressionMode,
+  fullExpression,
   onRemove,
-  onInputFocus,
+  onPress,
 }: {
   source: SourceEntry;
   direction: MoveDirection;
-  onAmountChange: (id: string, cents: number) => void;
+  isActive: boolean;
+  expressionMode: boolean;
+  fullExpression: string;
   onRemove: (id: string) => void;
-  onInputFocus?: (ref: CompactCurrencyInputRef) => void;
+  onPress: () => void;
 }) {
   const { colors, spacing } = useTheme();
-  const inputRef = useRef<CompactCurrencyInputRef>(null);
-  // "to" → picked categories give money (balance decreases)
-  // "from" → picked categories receive money (balance increases)
+  const { renderCursor } = useCursorBlink(isActive);
+  usePreferencesStore(
+    (s) =>
+      `${s.numberFormat}:${s.hideFraction}:${s.defaultCurrencyCode}:${s.defaultCurrencyCustomSymbol}:${s.currencySymbolPosition}:${s.currencySpaceBetweenAmountAndSymbol}`,
+  );
+
+  const displayColor = isActive
+    ? colors.primary
+    : source.amount > 0
+      ? colors.textPrimary
+      : colors.textMuted;
   const remainingBalance =
     direction === "to" ? source.balance - source.amount : source.balance + source.amount;
 
   return (
     <Pressable
-      onPress={() => inputRef.current?.focus()}
+      onPress={onPress}
       style={{
         flexDirection: "row",
         alignItems: "center",
@@ -72,14 +93,55 @@ function SourceRow({
         {source.name}
       </Text>
 
-      <CompactCurrencyInput
-        ref={inputRef}
-        value={source.amount}
-        onChangeValue={(cents) => onAmountChange(source.id, cents)}
-        onFocus={() => {
-          if (inputRef.current) onInputFocus?.(inputRef.current);
-        }}
-      />
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        {isActive && expressionMode ? (
+          <Text
+            variant="body"
+            style={{ fontWeight: "600", fontVariant: ["tabular-nums"], color: colors.primary }}
+            numberOfLines={1}
+          >
+            {formatExpression(fullExpression)}
+          </Text>
+        ) : (
+          (() => {
+            const parts = formatAmountParts(Math.abs(source.amount), false);
+            const fontSize = 14;
+            return (
+              <>
+                {parts.svgSymbol && parts.position === "before" && (
+                  <>
+                    <CurrencySymbol
+                      symbol={parts.symbol}
+                      svgSymbol={parts.svgSymbol}
+                      fontSize={fontSize}
+                      color={displayColor}
+                    />
+                    {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
+                  </>
+                )}
+                <Text
+                  variant="body"
+                  style={{ fontWeight: "600", fontVariant: ["tabular-nums"], color: displayColor }}
+                >
+                  {parts.svgSymbol ? parts.number : formatCents(Math.abs(source.amount))}
+                </Text>
+                {parts.svgSymbol && parts.position === "after" && (
+                  <>
+                    {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
+                    <CurrencySymbol
+                      symbol={parts.symbol}
+                      svgSymbol={parts.svgSymbol}
+                      fontSize={fontSize}
+                      color={displayColor}
+                    />
+                  </>
+                )}
+              </>
+            );
+          })()
+        )}
+        {renderCursor({ width: 1.5, height: 16, marginLeft: 1, borderRadius: 1 }, colors.primary)}
+      </View>
 
       <View
         style={{
@@ -111,13 +173,13 @@ function SourceRow({
 }
 
 // ---------------------------------------------------------------------------
-// Direction Toggle (Apple-style switch with arrow icon)
+// Direction Toggle
 // ---------------------------------------------------------------------------
 
 const TRACK_WIDTH = 32;
 const TRACK_HEIGHT = 56;
 const THUMB_SIZE = 26;
-const THUMB_TRAVEL = TRACK_HEIGHT - THUMB_SIZE - 6; // 3px padding top/bottom
+const THUMB_TRAVEL = TRACK_HEIGHT - THUMB_SIZE - 6;
 
 function DirectionToggle({
   direction,
@@ -218,15 +280,76 @@ export default function MoveMoneyScreen() {
   const [direction, setDirection] = useState<MoveDirection>("to");
   const [sources, setSources] = useState<SourceEntry[]>([]);
   const [saving, setSaving] = useState(false);
-  const focusedInputRef = useRef<CompactCurrencyInputRef | null>(null);
+
+  const [activeSourceId, setActiveSourceId] = useState<string | null>(null);
+  const activeAmount = activeSourceId
+    ? (sources.find((s) => s.id === activeSourceId)?.amount ?? 0)
+    : 0;
+
+  // Shared hidden input
+  const accessoryID = useId();
+  const sharedInputRef = useRef<TextInput>(null);
+  const selfRef = useRef<CurrencyInputRef>(null);
+
+  const expr = useExpressionMode({
+    value: activeAmount,
+    onChangeValue: (cents) => {
+      if (!activeSourceId) return;
+      setSources((prev) =>
+        prev.map((s) => (s.id === activeSourceId ? { ...s, amount: cents } : s)),
+      );
+    },
+  });
+
+  useKeyboardBlur(activeSourceId !== null, () => {
+    expr.handleBlurExpression();
+    setActiveSourceId(null);
+  });
+
+  useImperativeHandle(selfRef, () => ({
+    focus: () => sharedInputRef.current?.focus(),
+    injectOperator: (op: string) => expr.injectOperator(op, () => sharedInputRef.current?.focus()),
+    evaluate: () => expr.evaluate(),
+    deleteBackward: () => {
+      if (expr.expressionMode) {
+        expr.handleKeyPress({ nativeEvent: { key: "Backspace" } });
+      } else if (activeSourceId) {
+        setSources((prev) => prev.map((s) => (s.id === activeSourceId ? { ...s, amount: 0 } : s)));
+      }
+    },
+  }));
+
+  const currentInputValue = expr.expressionMode ? expr.expressionInputValue : String(activeAmount);
+
+  function handleChangeText(text: string) {
+    if (!activeSourceId) return;
+    if (expr.expressionMode) {
+      expr.handleChangeTextOperand(text);
+    } else {
+      const digits = text.replace(/\D/g, "");
+      const newCents = Math.min(parseInt(digits || "0", 10), MAX_CENTS);
+      setSources((prev) =>
+        prev.map((s) => (s.id === activeSourceId ? { ...s, amount: newCents } : s)),
+      );
+    }
+  }
+
+  function handleRowPress(id: string) {
+    if (activeSourceId === id) {
+      sharedInputRef.current?.blur();
+      return;
+    }
+    if (activeSourceId) expr.handleBlurExpression();
+    setActiveSourceId(id);
+    setTimeout(() => sharedInputRef.current?.focus(), 50);
+  }
 
   const balanceCents = Number(balance);
   const totalAmount = sources.reduce((sum, s) => sum + s.amount, 0);
-  // Projected balance: adding money (to) increases it, moving out (from) decreases it
   const projectedBalance =
     direction === "to" ? balanceCents + totalAmount : balanceCents - totalAmount;
 
-  // Open picker after mount transition completes
+  // Open picker after mount
   const [didAutoOpen, setDidAutoOpen] = useState(false);
   useEffect(() => {
     if (!didAutoOpen && sources.length === 0) {
@@ -236,7 +359,6 @@ export default function MoveMoneyScreen() {
     }
   }, []);
 
-  // Pick up category selected from picker form sheet
   useEffect(() => {
     if (coverTarget) {
       const { catId: srcId, catName: srcName, balance: srcBalance } = coverTarget;
@@ -251,10 +373,7 @@ export default function MoveMoneyScreen() {
 
   function handleRemoveSource(id: string) {
     setSources((prev) => prev.filter((s) => s.id !== id));
-  }
-
-  function handleAmountChange(id: string, cents: number) {
-    setSources((prev) => prev.map((s) => (s.id === id ? { ...s, amount: cents } : s)));
+    if (activeSourceId === id) setActiveSourceId(null);
   }
 
   function handleAddCategory() {
@@ -285,7 +404,6 @@ export default function MoveMoneyScreen() {
     }
   }
 
-  // Header color reflects budget health of the category
   const headerBg =
     projectedBalance > 0
       ? colors.positiveFill
@@ -303,7 +421,6 @@ export default function MoveMoneyScreen() {
       >
         <Stack.Screen options={{ headerShown: false }} />
 
-        {/* Custom header with rounded bottom corners */}
         <View
           style={{
             backgroundColor: headerBg,
@@ -316,7 +433,6 @@ export default function MoveMoneyScreen() {
             gap: spacing.sm,
           }}
         >
-          {/* Close button — top left */}
           <View style={{ position: "absolute", top: 16, left: spacing.md }}>
             <GlassButton icon="xmark" onPress={() => router.back()} color={headerText} />
           </View>
@@ -325,7 +441,6 @@ export default function MoveMoneyScreen() {
             {catName}
           </Text>
 
-          {/* Balance pill — shows projected balance after move */}
           <View
             style={{
               backgroundColor: "rgba(255,255,255,0.2)",
@@ -337,7 +452,6 @@ export default function MoveMoneyScreen() {
             <Amount value={projectedBalance} variant="body" color={headerText} weight="700" />
           </View>
 
-          {/* Animated direction toggle */}
           <DirectionToggle
             direction={direction}
             onToggle={() => setDirection((d) => (d === "to" ? "from" : "to"))}
@@ -346,7 +460,6 @@ export default function MoveMoneyScreen() {
           />
         </View>
 
-        {/* Source card — overlaps header bottom edge */}
         <View style={{ marginTop: -20, zIndex: 1, paddingHorizontal: spacing.lg }}>
           <View
             style={{
@@ -357,30 +470,27 @@ export default function MoveMoneyScreen() {
               overflow: "hidden",
             }}
           >
-            {sources.map((source, index) => (
+            {sources.map((source) => (
               <View key={source.id}>
                 <SourceRow
                   source={source}
                   direction={direction}
-                  onAmountChange={handleAmountChange}
+                  isActive={activeSourceId === source.id}
+                  expressionMode={activeSourceId === source.id && expr.expressionMode}
+                  fullExpression={activeSourceId === source.id ? expr.fullExpression : ""}
                   onRemove={handleRemoveSource}
-                  onInputFocus={(ref) => {
-                    focusedInputRef.current = ref;
+                  onPress={() => handleRowPress(source.id)}
+                />
+                <View
+                  style={{
+                    height: bw.thin,
+                    backgroundColor: colors.divider,
+                    marginHorizontal: spacing.md,
                   }}
                 />
-                {(index < sources.length - 1 || true) && (
-                  <View
-                    style={{
-                      height: bw.thin,
-                      backgroundColor: colors.divider,
-                      marginHorizontal: spacing.md,
-                    }}
-                  />
-                )}
               </View>
             ))}
 
-            {/* Add another */}
             <Pressable
               onPress={handleAddCategory}
               style={({ pressed }) => [
@@ -402,7 +512,6 @@ export default function MoveMoneyScreen() {
           </View>
         </View>
 
-        {/* Move button */}
         <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.xl }}>
           <Button
             title={saving ? t("movingEllipsis") : t("move")}
@@ -414,6 +523,18 @@ export default function MoveMoneyScreen() {
           />
         </View>
       </ScrollView>
+
+      <SharedAmountInput
+        accessoryID={accessoryID}
+        sharedInputRef={sharedInputRef}
+        selfRef={selfRef}
+        value={currentInputValue}
+        onChangeText={handleChangeText}
+        onBlur={() => {
+          expr.handleBlurExpression();
+          setActiveSourceId(null);
+        }}
+      />
     </>
   );
 }

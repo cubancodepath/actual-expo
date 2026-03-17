@@ -211,23 +211,18 @@ export default function CoverSourceScreen() {
 
   useImperativeHandle(selfRef, () => ({
     focus: () => sharedInputRef.current?.focus(),
-    injectOperator: (op: string) =>
-      expr.injectOperator(op, () => sharedInputRef.current?.focus()),
+    injectOperator: (op: string) => expr.injectOperator(op, () => sharedInputRef.current?.focus()),
     evaluate: () => expr.evaluate(),
     deleteBackward: () => {
       if (expr.expressionMode) {
         expr.handleKeyPress({ nativeEvent: { key: "Backspace" } });
       } else if (activeSourceId) {
-        setSources((prev) =>
-          prev.map((s) => (s.id === activeSourceId ? { ...s, amount: 0 } : s)),
-        );
+        setSources((prev) => prev.map((s) => (s.id === activeSourceId ? { ...s, amount: 0 } : s)));
       }
     },
   }));
 
-  const currentInputValue = expr.expressionMode
-    ? expr.expressionInputValue
-    : String(activeAmount);
+  const currentInputValue = expr.expressionMode ? expr.expressionInputValue : String(activeAmount);
 
   function handleChangeText(text: string) {
     if (!activeSourceId) return;

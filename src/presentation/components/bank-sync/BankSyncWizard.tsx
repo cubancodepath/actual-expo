@@ -19,7 +19,7 @@ import {
   getGoCardlessAccounts,
   getSimpleFinAccounts,
 } from "../../../bank-sync/service";
-import { linkAccount } from "../../../bank-sync";
+import { linkAccount, syncAccount } from "../../../bank-sync";
 import { formatBalance } from "../../../lib/format";
 import { useTranslation } from "react-i18next";
 import type { GoCardlessBank, GoCardlessAccount, SimpleFinAccount } from "../../../bank-sync/types";
@@ -228,6 +228,8 @@ export function BankSyncWizard({
     try {
       const acctId = await resolveAccountId(account.name ?? account.id);
       await linkAccount(acctId, "goCardless", account.id, institution?.name, requisitionId!);
+      // Sync immediately after linking (same as Actual web)
+      await syncAccount(acctId).catch(() => {}); // non-blocking — don't fail the link if sync fails
       await useAccountsStore.getState().load();
       if (mode === "create") onAccountCreated?.(acctId);
       onClose();
@@ -242,6 +244,8 @@ export function BankSyncWizard({
     try {
       const acctId = await resolveAccountId(account.name);
       await linkAccount(acctId, "simpleFin", account.id, account.org.name);
+      // Sync immediately after linking (same as Actual web)
+      await syncAccount(acctId).catch(() => {});
       await useAccountsStore.getState().load();
       if (mode === "create") onAccountCreated?.(acctId);
       onClose();

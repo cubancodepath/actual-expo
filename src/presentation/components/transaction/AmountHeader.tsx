@@ -21,6 +21,7 @@ interface AmountHeaderProps {
   onChangeType: (t: TransactionType) => void;
   spacing: Theme["spacing"];
   primaryColor: string;
+  children?: ReactNode;
 }
 
 export const AmountHeader = memo(function AmountHeader({
@@ -36,6 +37,7 @@ export const AmountHeader = memo(function AmountHeader({
   onChangeType,
   spacing,
   primaryColor,
+  children,
 }: AmountHeaderProps) {
   // Subscribe to format prefs for reactivity
   usePreferencesStore(
@@ -122,6 +124,7 @@ export const AmountHeader = memo(function AmountHeader({
           )}
         </View>
       </Pressable>
+      {children}
     </View>
   );
 });

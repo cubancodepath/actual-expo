@@ -368,13 +368,13 @@ export default function ScheduleDetailScreen() {
           onChangeType={setType}
           spacing={spacing}
           primaryColor={colors.primary}
-        />
-        {status && (
-          <View style={{ marginTop: -spacing.lg, alignItems: "center", zIndex: 1 }}>
-            <ScheduleStatusBadge status={status} />
-          </View>
-        )}
-
+        >
+          {status && (
+            <View style={{ alignItems: "center", marginTop: spacing.xs }}>
+              <ScheduleStatusBadge status={status} />
+            </View>
+          )}
+        </AmountHeader>
         {/* ── Details card ── */}
         <View style={{ marginTop: -20, zIndex: 1, paddingHorizontal: spacing.lg }}>
           <View style={cardStyle}>

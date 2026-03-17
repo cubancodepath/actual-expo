@@ -1,4 +1,4 @@
-import { useImperativeHandle, useRef, useState } from "react";
+import { useId, useImperativeHandle, useRef, useState } from "react";
 import { TextInput } from "react-native";
 import { usePreferencesStore } from "@/stores/preferencesStore";
 import { MAX_CENTS } from "@/lib/currency";
@@ -7,9 +7,8 @@ import { useCursorBlink } from "@/presentation/hooks/useCursorBlink";
 import { useKeyboardBlur } from "@/presentation/hooks/useKeyboardBlur";
 import type { CurrencyInputRef } from "@/presentation/components/currency-input";
 
-export const AMOUNT_ACCESSORY_ID = "txnAmountCalc";
-
 export function useAmountInput(initialCents = 0) {
+  const accessoryID = useId();
   const [cents, setCents] = useState(initialCents);
   const [amountFocused, setAmountFocused] = useState(false);
   const [buffer, setBuffer] = useState(() => String(initialCents));
@@ -88,6 +87,6 @@ export function useAmountInput(initialCents = 0) {
     currentAmountInputValue,
     handleAmountChangeText,
     handleAmountBlur,
-    AMOUNT_ACCESSORY_ID,
+    AMOUNT_ACCESSORY_ID: accessoryID,
   };
 }

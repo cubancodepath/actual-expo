@@ -27,6 +27,7 @@ import {
   initiateOpenIdLogin,
   type LoginMethod,
 } from "@/services/authService";
+import { getServerInfo } from "@/services/serverInfo";
 import { usePrefsStore } from "@/stores/prefsStore";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
 import { Text } from "@/presentation/components/atoms/Text";
@@ -118,6 +119,9 @@ export default function LoginScreen() {
       const token = await login(urlRef.current, password.trim());
       setPrefs({ serverUrl: urlRef.current });
       await saveToken(token);
+      getServerInfo(urlRef.current).then((info) => {
+        usePrefsStore.getState().setServerVersion(info.version);
+      });
       router.replace("/(files)/files");
     });
     setLoading(false);
@@ -151,6 +155,9 @@ export default function LoginScreen() {
 
       setPrefs({ serverUrl });
       await saveToken(token);
+      getServerInfo(serverUrl).then((info) => {
+        usePrefsStore.getState().setServerVersion(info.version);
+      });
       router.replace("/(files)/files");
     });
     setLoading(false);

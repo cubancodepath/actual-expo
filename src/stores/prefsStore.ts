@@ -4,6 +4,7 @@ import { createMMKV } from "react-native-mmkv";
 import * as SecureStore from "expo-secure-store";
 import { clearAllKeys as clearEncryptionKeys } from "../services/encryptionKeyStorage";
 import { unloadAllKeys } from "../encryption";
+import { resolveFeatures, type ServerFeatures } from "../services/serverFeatures";
 
 // ---------------------------------------------------------------------------
 // Storage adapters
@@ -40,6 +41,7 @@ type PrefsState = {
   isLocalOnly: boolean;
   themeMode: "system" | "light" | "dark";
   language: "system" | "en" | "es";
+  serverVersion: string;
   payeeLocationsEnabled: boolean;
 
   // Token — in-memory only; persisted in iOS Keychain / Android Keystore
@@ -48,6 +50,7 @@ type PrefsState = {
   // Derived
   hasToken: boolean;
   isConfigured: boolean;
+  serverFeatures: ServerFeatures;
 
   // Actions
   setPrefs(
@@ -63,6 +66,7 @@ type PrefsState = {
   toggleProgressBars(): void;
   toggleHideReconciled(): void;
   toggleShowHiddenCategories(): void;
+  setServerVersion(version: string): void;
   togglePayeeLocations(): void;
   markOnboardingSeen(): void;
   /** Full logout: wipe MMKV + SecureStore and reset state. */
@@ -97,9 +101,11 @@ export const usePrefsStore = create<PrefsState>()(
       isLocalOnly: false,
       themeMode: "system",
       language: "system",
+      serverVersion: "0.0.0",
       payeeLocationsEnabled: false,
       hasToken: false,
       isConfigured: false,
+      serverFeatures: resolveFeatures("0.0.0"),
 
       setPrefs(prefs) {
         set((state) => {
@@ -128,6 +134,10 @@ export const usePrefsStore = create<PrefsState>()(
 
       toggleShowHiddenCategories() {
         set((state) => ({ showHiddenCategories: !state.showHiddenCategories }));
+      },
+
+      setServerVersion(version: string) {
+        set({ serverVersion: version, serverFeatures: resolveFeatures(version) });
       },
 
       togglePayeeLocations() {
@@ -175,9 +185,11 @@ export const usePrefsStore = create<PrefsState>()(
           showProgressBars: true,
           hideReconciled: false,
           showHiddenCategories: false,
+          serverVersion: "0.0.0",
           isLocalOnly: false,
           hasToken: false,
           isConfigured: false,
+          serverFeatures: resolveFeatures("0.0.0"),
           hasSeenOnboarding,
           themeMode,
           language,
@@ -201,6 +213,7 @@ export const usePrefsStore = create<PrefsState>()(
         hideReconciled: state.hideReconciled,
         showHiddenCategories: state.showHiddenCategories,
         hasSeenOnboarding: state.hasSeenOnboarding,
+        serverVersion: state.serverVersion,
         isLocalOnly: state.isLocalOnly,
         themeMode: state.themeMode,
         language: state.language,

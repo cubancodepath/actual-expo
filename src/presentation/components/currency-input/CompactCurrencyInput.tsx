@@ -196,7 +196,7 @@ export function CompactCurrencyInput({
 
       <TextInput
         ref={ci.inputRef}
-        style={{ position: "absolute", opacity: 0, height: 0, width: 0 }}
+        style={{ position: "absolute", opacity: 0, height: 1, width: 1, pointerEvents: "none" }}
         keyboardType="number-pad"
         autoFocus={autoFocus}
         caretHidden

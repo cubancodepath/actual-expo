@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Alert, useColorScheme, View } from "react-native";
+import { InputAccessoryView, Platform, TextInput, View, useColorScheme } from "react-native";
 import { useTranslation } from "react-i18next";
-import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import Animated, {
   useAnimatedScrollHandler,
   useAnimatedStyle,
@@ -9,47 +8,23 @@ import Animated, {
   interpolate,
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
-import { useAccountsStore } from "@/stores/accountsStore";
-import { useTransactionsStore } from "@/stores/transactionsStore";
-import { useCategoriesStore } from "@/stores/categoriesStore";
-import { usePickerStore } from "@/stores/pickerStore";
-import { useRulesStore } from "@/stores/rulesStore";
-import { useSchedulesStore } from "@/stores/schedulesStore";
-import { getTransactionById, getChildTransactions } from "@/transactions";
-import { saveTransaction } from "@/transactions/save";
-import { getRecurringDescription } from "@/schedules";
-import type { RecurConfig } from "@/schedules/types";
-import { extractTagsFromNotes } from "@/tags";
-import { suggestCategoryForPayee, applyRulesToForm } from "@/rules/apply";
-import { findPayeeByName } from "@/payees";
-import { todayStr, todayInt, strToInt, intToStr } from "@/lib/date";
 import { withOpacity } from "@/lib/colors";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { Button } from "@/presentation/components/atoms/Button";
 import { ErrorBanner } from "@/presentation/components/molecules/ErrorBanner";
-import { useErrorHandler } from "@/presentation/hooks/useErrorHandler";
-import {
-  CurrencyInput,
-  type CurrencyInputRef,
-} from "@/presentation/components/currency-input";
-import { TypeToggle, type TransactionType } from "@/presentation/components/transaction/TypeToggle";
-import { DetailRow } from "@/presentation/components/transaction/DetailRow";
-import { DatePickerField } from "@/presentation/components/transaction/DatePickerField";
-import { NotesField } from "@/presentation/components/transaction/NotesField";
 import { Text } from "@/presentation/components/atoms/Text";
 import { GlassButton } from "@/presentation/components/atoms/GlassButton";
+import { NotesField } from "@/presentation/components/transaction/NotesField";
 import { ClearedToggle } from "@/presentation/components/transaction/ClearedToggle";
+import { DetailRow } from "@/presentation/components/transaction/DetailRow";
+import { CalculatorPill } from "@/presentation/components/currency-input/CalculatorPill";
+import { AmountHeader } from "@/presentation/components/transaction/AmountHeader";
+import { TransactionDetailsCard } from "@/presentation/components/transaction/TransactionDetailsCard";
+import { useAmountInput } from "@/presentation/components/transaction/useAmountInput";
+import { useTransactionForm } from "@/presentation/components/transaction/useTransactionForm";
 
 export default function NewTransactionScreen() {
-  const {
-    accountId,
-    accountName: accountNameParam,
-    categoryId: categoryIdParam,
-    categoryName: categoryNameParam,
-    amount: amountParam,
-    payeeName: payeeNameParam,
-    transactionId,
-  } = useLocalSearchParams<{
+  const params = useLocalSearchParams<{
     accountId: string;
     accountName?: string;
     categoryId?: string;
@@ -58,322 +33,28 @@ export default function NewTransactionScreen() {
     payeeName?: string;
     transactionId?: string;
   }>();
-  const isEdit = !!transactionId;
   const { t } = useTranslation("transactions");
   const router = useRouter();
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
-  const { accounts, load: loadAccounts } = useAccountsStore();
-  const { delete_ } = useTransactionsStore();
-  const { groups, categories, load: loadCategories } = useCategoriesStore();
-  const rules = useRulesStore((s) => s.rules);
 
-  // Picker store subscriptions
-  const selectedPayee = usePickerStore((s) => s.selectedPayee);
-  const selectedCategory = usePickerStore((s) => s.selectedCategory);
-  const selectedAccount = usePickerStore((s) => s.selectedAccount);
-  const selectedTags = usePickerStore((s) => s.selectedTags);
-  const selectedRecurConfig = usePickerStore((s) => s.selectedRecurConfig);
-  const splitCategories = usePickerStore((s) => s.splitCategories);
-  const setSplitCategories = usePickerStore((s) => s.setSplitCategories);
-  const clearPicker = usePickerStore((s) => s.clear);
+  // ── Hooks ──
+  const amountInput = useAmountInput(params.amount ? Number(params.amount) : 0);
+  const form = useTransactionForm(params, amountInput);
 
-  const isSplit = splitCategories !== null && splitCategories.length > 1;
-
-  // Resolve initial account from param
-  const initialAccount = accounts.find((a) => a.id === accountId);
-
-  const [type, setType] = useState<TransactionType>("expense");
-  const [cents, setCents] = useState(amountParam ? Number(amountParam) : 0);
-  const [acctId, setAcctId] = useState<string | null>(accountId ?? null);
-  const [acctName, setAcctName] = useState(accountNameParam ?? initialAccount?.name ?? "");
-  const [payeeId, setPayeeId] = useState<string | null>(null);
-  const [payeeName, setPayeeName] = useState(payeeNameParam ?? "");
-  const [isTransfer, setIsTransfer] = useState(false);
-  const [categoryId, setCategoryId] = useState<string | null>(categoryIdParam ?? null);
-  const [categoryName, setCategoryName] = useState(categoryNameParam ?? "");
-  const [dateInt, setDateInt] = useState(todayInt());
-  const [dateStr, setDateStr] = useState(todayStr());
-  const [notes, setNotes] = useState("");
-  const [cleared, setCleared] = useState(false);
-  const [reconciled, setReconciled] = useState(false);
-  const [recurConfig, setRecurConfig] = useState<RecurConfig | null>(null);
-  const [loading, setLoading] = useState(false);
-  const { error, handleError, setValidationError, dismissError } = useErrorHandler();
-  const currencyInputRef = useRef<CurrencyInputRef>(null);
-  const isInitialMount = useRef(true);
-  // Track fields explicitly set by URL params or manual picks — rules won't override these
-  const userOverrides = useRef<Set<string>>(new Set());
   const scrollY = useSharedValue(0);
-
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
       scrollY.value = event.contentOffset.y;
     },
   });
-
   const blurContainerStyle = useAnimatedStyle(() => ({
     opacity: interpolate(scrollY.value, [0, 50], [0, 1], "clamp"),
   }));
 
-  // Reset form state only on initial mount (not when returning from pickers)
-  useFocusEffect(
-    useCallback(() => {
-      if (!isInitialMount.current) return;
-      isInitialMount.current = false;
-
-      clearPicker();
-      if (groups.length === 0) loadCategories();
-
-      if (isEdit) {
-        getTransactionById(transactionId).then(async (txn) => {
-          if (!txn) return;
-          setType(txn.amount < 0 ? "expense" : "income");
-          setCents(Math.abs(txn.amount));
-          setAcctId(txn.acct);
-          const txnAccount = accounts.find((a) => a.id === txn.acct);
-          setAcctName(txnAccount?.name ?? "");
-          setPayeeId(txn.description);
-          setPayeeName(txn.payeeName ?? "");
-          setCategoryId(txn.category ?? null);
-          setCategoryName(txn.categoryName ?? "");
-          setDateInt(txn.date);
-          setDateStr(intToStr(txn.date));
-          setNotes(txn.notes ?? "");
-          setCleared(txn.cleared);
-          setReconciled(txn.reconciled);
-
-          // Load split children for parent transactions
-          if (txn.isParent) {
-            const children = await getChildTransactions(transactionId);
-            if (children.length > 0) {
-              setSplitCategories(
-                children.map((c) => ({
-                  id: c.id,
-                  categoryId: c.category,
-                  categoryName: c.categoryName ?? "",
-                  amount: Math.abs(c.amount),
-                })),
-              );
-            }
-          }
-        });
-      } else {
-        // Reset to defaults for new transaction
-        userOverrides.current = new Set();
-        if (categoryIdParam) userOverrides.current.add("category");
-        if (accountId) userOverrides.current.add("account");
-        setType("expense");
-        setCents(amountParam ? Number(amountParam) : 0);
-        setAcctId(accountId ?? null);
-        setAcctName(accountNameParam ?? initialAccount?.name ?? "");
-        setPayeeId(null);
-        setPayeeName(payeeNameParam ?? "");
-        setIsTransfer(false);
-        setCategoryId(categoryIdParam ?? null);
-        setCategoryName(categoryNameParam ?? "");
-        setDateInt(todayInt());
-        setDateStr(todayStr());
-        setNotes("");
-        setCleared(false);
-        setReconciled(false);
-        setRecurConfig(null);
-        dismissError();
-      }
-    }, [transactionId]),
-  );
-
-  // When payeeName comes from a shortcut (no payeeId yet), look up the existing
-  // payee in the DB so rules can suggest a category before the user saves.
-  useEffect(() => {
-    if (!payeeNameParam || payeeId || isEdit || userOverrides.current.has("category")) return;
-
-    (async () => {
-      const existingId = await findPayeeByName(payeeNameParam);
-      if (!existingId) return; // New payee — no rules to apply
-
-      setPayeeId(existingId);
-      const suggestedId = suggestCategoryForPayee(rules, existingId, acctId);
-      if (suggestedId) {
-        const cat = categories.find((c) => c.id === suggestedId);
-        if (cat) {
-          setCategoryId(suggestedId);
-          setCategoryName(cat.name);
-        }
-      }
-    })();
-  }, [payeeNameParam, rules]);
-
-  // React to picker selections
-  useEffect(() => {
-    if (selectedPayee) {
-      setPayeeId(selectedPayee.id);
-      setPayeeName(selectedPayee.name);
-      setIsTransfer(!!selectedPayee.transferAcct);
-
-      // Auto-suggest category when payee changes (skip for transfers and user overrides)
-      if (!selectedPayee.transferAcct && !userOverrides.current.has("category")) {
-        const suggestedId = suggestCategoryForPayee(rules, selectedPayee.id, acctId);
-        if (suggestedId) {
-          const cat = categories.find((c) => c.id === suggestedId);
-          if (cat) {
-            setCategoryId(suggestedId);
-            setCategoryName(cat.name);
-          }
-        }
-      }
-    }
-  }, [selectedPayee]);
-
-  useEffect(() => {
-    if (selectedCategory) {
-      setCategoryId(selectedCategory.id);
-      setCategoryName(selectedCategory.name);
-      userOverrides.current.add("category");
-      // If user picks a single category, clear any split
-      usePickerStore.getState().setSplitCategories(null);
-    }
-  }, [selectedCategory]);
-
-  useEffect(() => {
-    if (!splitCategories || splitCategories.length === 0) return;
-
-    const splitTotal = splitCategories.reduce((sum, l) => sum + l.amount, 0);
-
-    if (splitCategories.length === 1) {
-      // Single line — treat as normal single-category transaction
-      setCategoryId(splitCategories[0].categoryId);
-      setCategoryName(splitCategories[0].categoryName);
-      if (cents === 0 && splitTotal > 0) setCents(splitTotal);
-      usePickerStore.getState().setSplitCategories(null);
-    } else {
-      // Multiple lines — update amount from split total if not set
-      if (cents === 0 && splitTotal > 0) setCents(splitTotal);
-    }
-  }, [splitCategories]);
-
-  useEffect(() => {
-    if (selectedAccount) {
-      setAcctId(selectedAccount.id);
-      setAcctName(selectedAccount.name);
-      userOverrides.current.add("account");
-    }
-  }, [selectedAccount]);
-
-  useEffect(() => {
-    if (selectedTags) {
-      const plainNotes = notes.replace(/\s?(?<!#)#([^#\s]+)/g, "").trim();
-      const tagSuffix = selectedTags.map((t) => `#${t}`).join(" ");
-      setNotes(plainNotes ? `${plainNotes} ${tagSuffix}` : tagSuffix);
-    }
-  }, [selectedTags]);
-
-  useEffect(() => {
-    if (selectedRecurConfig) {
-      setRecurConfig(selectedRecurConfig);
-    }
-  }, [selectedRecurConfig]);
-
-  // Apply rules when amount/type changes (e.g. account rules based on amount)
-  useEffect(() => {
-    if (isEdit || rules.length === 0 || cents === 0) return;
-    const signedAmount = type === "expense" ? -cents : cents;
-    const result = applyRulesToForm(rules, {
-      acct: acctId,
-      payeeId,
-      categoryId,
-      amount: signedAmount,
-      date: dateInt,
-      notes,
-      cleared,
-    });
-    if (result.acctId && result.acctId !== acctId && !userOverrides.current.has("account")) {
-      const acc = accounts.find((a) => a.id === result.acctId);
-      if (acc) {
-        setAcctId(result.acctId);
-        setAcctName(acc.name);
-      }
-    }
-  }, [cents, type]);
-
-  async function performSave() {
-    setLoading(true);
-    await handleError(async () => {
-      await saveTransaction(
-        {
-          transactionId: isEdit ? transactionId : undefined,
-          acct: acctId!,
-          date: strToInt(dateStr) ?? dateInt,
-          amount: cents,
-          type,
-          payeeId,
-          payeeName,
-          categoryId,
-          notes: notes.trim() || null,
-          cleared,
-          splitCategories: isSplit ? splitCategories : null,
-          recurConfig: !isEdit ? recurConfig : undefined,
-        },
-        rules,
-      );
-      await loadAccounts();
-      if (recurConfig) {
-        useSchedulesStore.getState().load();
-      }
-      router.dismiss();
-    });
-    setLoading(false);
-  }
-
-  function handleSave() {
-    if (cents === 0) {
-      setValidationError(t("enterAmount"));
-      return;
-    }
-    if (!isEdit && !acctId) {
-      setValidationError(t("selectAccount"));
-      return;
-    }
-
-    if (reconciled) {
-      Alert.alert(t("editReconciledTitle"), t("editReconciledMessage"), [
-        { text: t("cancel"), style: "cancel" },
-        { text: t("saveAnyway"), style: "destructive", onPress: performSave },
-      ]);
-      return;
-    }
-
-    if (!categoryId && !isSplit && !isTransfer) {
-      Alert.alert(t("noCategoryTitle"), t("noCategoryMessage"), [
-        { text: t("cancel"), style: "cancel" },
-        { text: t("save"), onPress: performSave },
-      ]);
-      return;
-    }
-
-    performSave();
-  }
-
-  function handleDelete() {
-    const message = reconciled ? t("deleteReconciledMessage") : t("deleteConfirm");
-
-    Alert.alert(t("deleteTitle"), message, [
-      { text: t("cancel"), style: "cancel" },
-      {
-        text: t("delete"),
-        style: "destructive",
-        onPress: async () => {
-          await delete_(transactionId!);
-          await loadAccounts();
-          router.dismiss();
-        },
-      },
-    ]);
-  }
-
   // ── Header colors based on transaction type ──
-  const isExpense = type === "expense";
+  const isExpense = form.type === "expense";
   const headerBg = isExpense
     ? isDark
       ? withOpacity(colors.negative, 0.18)
@@ -409,158 +90,78 @@ export default function NewTransactionScreen() {
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingBottom: spacing.xxxl }}
         keyboardShouldPersistTaps="handled"
-        automaticallyAdjustKeyboardInsets
         onScroll={scrollHandler}
         scrollEventThrottle={16}
       >
         {/* ── Colored header ── */}
-        <View
-          style={{
-            backgroundColor: headerBg,
-            paddingTop: 56,
-            paddingBottom: spacing.xxxl,
-            paddingHorizontal: spacing.lg,
-            borderBottomLeftRadius: br.lg,
-            borderBottomRightRadius: br.lg,
-            alignItems: "center",
-            gap: spacing.md,
-          }}
-        >
-          <View style={{ alignSelf: "stretch", marginTop: spacing.lg }}>
-            <TypeToggle type={type} onChangeType={setType} />
-          </View>
-
-          <CurrencyInput
-            ref={currencyInputRef}
-            value={cents}
-            onChangeValue={(v) => {
-              setCents(v);
-              dismissError();
-            }}
-            type={type}
-            autoFocus={!isEdit}
-            color={headerText}
-            style={{ paddingVertical: spacing.sm, alignSelf: "stretch" }}
-          />
-        </View>
+        <AmountHeader
+          type={form.type}
+          cents={amountInput.cents}
+          headerBg={headerBg}
+          headerText={headerText}
+          expressionMode={amountInput.expr.expressionMode}
+          fullExpression={amountInput.expr.fullExpression}
+          amountFocused={amountInput.amountFocused}
+          renderCursor={amountInput.renderCursor}
+          onFocusAmount={() => amountInput.sharedInputRef.current?.focus()}
+          onChangeType={form.setType}
+          spacing={spacing}
+          primaryColor={colors.primary}
+        />
 
         {/* ── Main details card (overlaps header) ── */}
-        <View style={{ marginTop: -20, zIndex: 1, paddingHorizontal: spacing.lg }}>
-          <View style={cardStyle}>
-            <DetailRow
-              icon="wallet-outline"
-              label={acctName}
-              placeholder={t("account")}
-              onPress={() =>
-                router.push({ pathname: "./account-picker", params: { selectedId: acctId ?? "" } })
-              }
-            />
-            <View style={dividerStyle} />
-
-            <DetailRow
-              icon="person-outline"
-              label={payeeName}
-              placeholder={t("payee")}
-              onPress={() =>
-                router.push({
-                  pathname: "./payee-picker",
-                  params: {
-                    selectedId: payeeId ?? "",
-                    selectedName: payeeName,
-                    accountId: acctId ?? "",
-                  },
-                })
-              }
-            />
-            <View style={dividerStyle} />
-
-            <DetailRow
-              icon={isSplit ? "git-branch-outline" : "folder-outline"}
-              label={
-                isTransfer
-                  ? ""
-                  : isSplit
-                    ? t("splitCategories", { count: splitCategories!.length })
-                    : categoryId
-                      ? categoryName
-                      : ""
-              }
-              placeholder={isTransfer ? t("noCategoryNeeded") : t("category")}
-              onClear={
-                isEdit && categoryId && !isSplit && !isTransfer
-                  ? () => {
-                      setCategoryId(null);
-                      setCategoryName("");
-                    }
-                  : undefined
-              }
-              onPress={() => {
-                if (isTransfer) {
-                  Alert.alert(t("transferTitle"), t("transferNoCategoryMessage"));
-                  return;
+        <TransactionDetailsCard
+          acctId={form.acctId}
+          acctName={form.acctName}
+          payeeId={form.payeeId}
+          payeeName={form.payeeName}
+          isTransfer={form.isTransfer}
+          categoryId={form.categoryId}
+          categoryName={form.categoryName}
+          isSplit={form.isSplit}
+          splitCount={form.splitCategories?.length ?? 0}
+          dateInt={form.dateInt}
+          dateStr={form.dateStr}
+          cents={amountInput.cents}
+          transactionId={params.transactionId}
+          isEdit={form.isEdit}
+          onDateChange={(newInt) => form.setDateInt(newInt)}
+          onClearCategory={
+            form.isEdit && form.categoryId && !form.isSplit && !form.isTransfer
+              ? () => {
+                  form.setCategoryId(null);
+                  form.setCategoryName("");
                 }
-                if (isSplit) {
-                  router.push({
-                    pathname: "./split",
-                    params: {
-                      amount: String(cents),
-                      payeeId: payeeId ?? "",
-                      payeeName,
-                      transactionId: transactionId ?? "",
-                    },
-                  });
-                } else {
-                  const month = dateStr.slice(0, 7);
-                  router.push({
-                    pathname: "./category-picker",
-                    params: {
-                      month,
-                      selectedId: categoryId ?? "",
-                      amount: String(cents),
-                      payeeId: payeeId ?? "",
-                      payeeName,
-                      transactionId: transactionId ?? "",
-                    },
-                  });
-                }
-              }}
-            />
-            <View style={dividerStyle} />
-
-            <DatePickerField
-              dateInt={dateInt}
-              dateStr={dateStr}
-              onDateChange={(newInt, newStr) => {
-                setDateInt(newInt);
-                setDateStr(newStr);
-              }}
-            />
-          </View>
-        </View>
+              : undefined
+          }
+          cardStyle={cardStyle}
+          dividerStyle={dividerStyle}
+          spacing={spacing}
+        />
 
         {/* ── Notes card ── */}
         <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.md }}>
           <View style={cardStyle}>
-            <NotesField value={notes} onChangeText={setNotes} />
+            <NotesField value={form.notes} onChangeText={form.setNotes} />
           </View>
         </View>
 
         {/* ── Status card (cleared + tags) ── */}
         <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.md }}>
           <View style={cardStyle}>
-            <ClearedToggle value={cleared} onValueChange={setCleared} />
-            {!isEdit && (
+            <ClearedToggle value={form.cleared} onValueChange={form.setCleared} />
+            {!form.isEdit && (
               <>
                 <View style={dividerStyle} />
                 <DetailRow
                   icon="repeat"
-                  label={recurConfig ? getRecurringDescription(recurConfig) : ""}
+                  label={form.recurConfig ? form.getRecurringDescription(form.recurConfig) : ""}
                   placeholder={t("repeat")}
-                  onClear={recurConfig ? () => setRecurConfig(null) : undefined}
+                  onClear={form.recurConfig ? () => form.setRecurConfig(null) : undefined}
                   onPress={() => {
                     router.push({
                       pathname: "./recurrence",
-                      params: recurConfig ? { config: JSON.stringify(recurConfig) } : {},
+                      params: form.recurConfig ? { config: JSON.stringify(form.recurConfig) } : {},
                     });
                   }}
                 />
@@ -570,9 +171,9 @@ export default function NewTransactionScreen() {
             <DetailRow
               icon="pricetags-outline"
               label={
-                extractTagsFromNotes(notes).length > 0
-                  ? extractTagsFromNotes(notes)
-                      .map((t) => `#${t}`)
+                form.extractTagsFromNotes(form.notes).length > 0
+                  ? form.extractTagsFromNotes(form.notes)
+                      .map((tag) => `#${tag}`)
                       .join(", ")
                   : ""
               }
@@ -580,7 +181,7 @@ export default function NewTransactionScreen() {
               onPress={() => {
                 router.push({
                   pathname: "./tags",
-                  params: { mode: "picker", currentNotes: notes },
+                  params: { mode: "picker", currentNotes: form.notes },
                 });
               }}
             />
@@ -589,31 +190,53 @@ export default function NewTransactionScreen() {
 
         {/* ── Error banner ── */}
         <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.md }}>
-          <ErrorBanner error={error} onDismiss={dismissError} />
+          <ErrorBanner error={form.error} onDismiss={form.dismissError} />
         </View>
 
         {/* ── Action buttons ── */}
         <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.xl }}>
           <Button
-            title={isEdit ? t("saveChanges") : t("addTransaction")}
-            onPress={handleSave}
+            title={form.isEdit ? t("saveChanges") : t("addTransaction")}
+            onPress={form.handleSave}
             size="lg"
-            loading={loading}
-            disabled={cents === 0 || (!isEdit && !acctId)}
+            loading={form.loading}
+            disabled={amountInput.cents === 0 || (!form.isEdit && !form.acctId)}
           />
 
-          {isEdit && (
+          {form.isEdit && (
             <Button
               title={t("deleteTransaction")}
               icon="trash-outline"
               variant="ghost"
               textColor={colors.negative}
-              onPress={handleDelete}
+              onPress={form.handleDelete}
               style={{ marginTop: spacing.sm }}
             />
           )}
         </View>
       </Animated.ScrollView>
+
+      {/* InputAccessoryView registered BEFORE TextInput — iOS needs it available at focus time */}
+      {Platform.OS === "ios" && (
+        <InputAccessoryView nativeID={amountInput.AMOUNT_ACCESSORY_ID} backgroundColor="transparent">
+          <CalculatorPill inputRef={amountInput.selfRef} />
+        </InputAccessoryView>
+      )}
+
+      {/* Shared hidden TextInput — outside ScrollView for reliable focus */}
+      <TextInput
+        ref={amountInput.sharedInputRef}
+        value={amountInput.currentAmountInputValue}
+        onChangeText={amountInput.handleAmountChangeText}
+        onFocus={() => amountInput.setAmountFocused(true)}
+        onBlur={amountInput.handleAmountBlur}
+        keyboardType="number-pad"
+        autoFocus={!form.isEdit}
+        caretHidden
+        contextMenuHidden
+        inputAccessoryViewID={Platform.OS === "ios" ? amountInput.AMOUNT_ACCESSORY_ID : undefined}
+        style={{ position: "absolute", opacity: 0, height: 1, width: 1, pointerEvents: "none" }}
+      />
 
       {/* ── Fixed top blur: fades in on scroll like Apple nav bars ── */}
       <Animated.View
@@ -655,7 +278,7 @@ export default function NewTransactionScreen() {
         }}
       >
         <Text variant="body" color={colors.textPrimary} style={{ fontWeight: "600" }}>
-          {isEdit ? t("editTransaction") : t("addTransaction")}
+          {form.isEdit ? t("editTransaction") : t("addTransaction")}
         </Text>
       </View>
 

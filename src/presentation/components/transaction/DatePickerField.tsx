@@ -44,14 +44,14 @@ function intToDate(d: number): Date {
 
 interface DatePickerFieldProps {
   dateInt: number;
-  dateStr: string;
-  onDateChange: (dateInt: number, dateStr: string) => void;
+  onDateChange: (dateInt: number) => void;
 }
 
-export function DatePickerField({ dateInt, dateStr, onDateChange }: DatePickerFieldProps) {
+export function DatePickerField({ dateInt, onDateChange }: DatePickerFieldProps) {
   const theme = useTheme();
   const styles = useThemedStyles(createStyles);
   const [showPicker, setShowPicker] = useState(false);
+  const dateStr = intToStr(dateInt);
 
   return (
     <>
@@ -76,8 +76,7 @@ export function DatePickerField({ dateInt, dateStr, onDateChange }: DatePickerFi
                   ...(tintMod ? [tintMod(theme.colors.primary)] : []),
                 ]}
                 onDateChange={(d) => {
-                  const newInt = dateToInt(d);
-                  onDateChange(newInt, intToStr(newInt));
+                  onDateChange(dateToInt(d));
                   setShowPicker(false);
                 }}
               />
@@ -93,7 +92,7 @@ export function DatePickerField({ dateInt, dateStr, onDateChange }: DatePickerFi
               onChangeText={(v) => {
                 const formatted = formatInputDate(v);
                 const parsed = strToInt(formatted);
-                onDateChange(parsed ?? dateInt, formatted);
+                if (parsed) onDateChange(parsed);
               }}
               keyboardType="number-pad"
               maxLength={10}

@@ -576,28 +576,37 @@ export default function GoalEditorScreen() {
           {t(TYPE_DESCRIPTION_KEYS[goalType] as any)}
         </Text>
 
+        {/* ── Shared amount input (always mounted for types that need it) ── */}
+        {["simple", "goal", "by", "periodic", "spend", "limit"].includes(goalType) && (
+          <Card style={{ padding: 0, overflow: "hidden" as const, marginBottom: spacing.sm }}>
+            <View style={{ padding: spacing.md }}>
+              <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.xs }}>
+                {goalType === "simple"
+                  ? simpleRefill ? t("refillTo") : t("monthlyAmount")
+                  : goalType === "goal"
+                    ? t("targetBalance")
+                    : goalType === "limit"
+                      ? t("maximumSpending")
+                      : goalType === "periodic"
+                        ? t("amountPerOccurrence")
+                        : t("targetAmount")}
+              </Text>
+              <CurrencyInput
+                ref={currencyInputRef}
+                value={amountCents}
+                onChangeValue={setAmountCents}
+                type="income"
+                autoFocus
+              />
+            </View>
+          </Card>
+        )}
+
         {/* ── Type-specific fields ───────────────────────────────── */}
         <Card style={{ padding: 0, overflow: "hidden" as const }}>
           {/* Simple */}
           {goalType === "simple" && (
             <View>
-              <View style={{ padding: spacing.md }}>
-                <Text
-                  variant="caption"
-                  color={colors.textMuted}
-                  style={{ marginBottom: spacing.xs }}
-                >
-                  {simpleRefill ? t("refillTo") : t("monthlyAmount")}
-                </Text>
-                <CurrencyInput
-                  ref={currencyInputRef}
-                  value={amountCents}
-                  onChangeValue={setAmountCents}
-                  type="income"
-                  autoFocus
-                />
-              </View>
-              <Divider />
               <ToggleRow
                 label={t("refillMode")}
                 value={simpleRefill}
@@ -639,41 +648,12 @@ export default function GoalEditorScreen() {
             </View>
           )}
 
-          {/* Goal */}
-          {goalType === "goal" && (
-            <View style={{ padding: spacing.md }}>
-              <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.xs }}>
-                {t("targetBalance")}
-              </Text>
-              <CurrencyInput
-                value={amountCents}
-                onChangeValue={setAmountCents}
-                type="income"
-                autoFocus
-              />
-            </View>
-          )}
+          {/* Goal — no extra fields, amount input is shared above */}
+          {goalType === "goal" && null}
 
           {/* By */}
           {goalType === "by" && (
             <View>
-              <View style={{ padding: spacing.md }}>
-                <Text
-                  variant="caption"
-                  color={colors.textMuted}
-                  style={{ marginBottom: spacing.xs }}
-                >
-                  {t("targetAmount")}
-                </Text>
-                <CurrencyInput
-                  ref={currencyInputRef}
-                  value={amountCents}
-                  onChangeValue={setAmountCents}
-                  type="income"
-                  autoFocus
-                />
-              </View>
-              <Divider />
               <DateRow
                 label={t("targetDate")}
                 date={targetDate}
@@ -724,23 +704,6 @@ export default function GoalEditorScreen() {
           {/* Periodic */}
           {goalType === "periodic" && (
             <View>
-              <View style={{ padding: spacing.md }}>
-                <Text
-                  variant="caption"
-                  color={colors.textMuted}
-                  style={{ marginBottom: spacing.xs }}
-                >
-                  {t("amountPerOccurrence")}
-                </Text>
-                <CurrencyInput
-                  ref={currencyInputRef}
-                  value={amountCents}
-                  onChangeValue={setAmountCents}
-                  type="income"
-                  autoFocus
-                />
-              </View>
-              <Divider />
               <MenuPickerRow
                 label={t("frequency")}
                 selection={periodicPeriod}
@@ -784,23 +747,6 @@ export default function GoalEditorScreen() {
           {/* Spend */}
           {goalType === "spend" && (
             <View>
-              <View style={{ padding: spacing.md }}>
-                <Text
-                  variant="caption"
-                  color={colors.textMuted}
-                  style={{ marginBottom: spacing.xs }}
-                >
-                  {t("targetAmount")}
-                </Text>
-                <CurrencyInput
-                  ref={currencyInputRef}
-                  value={amountCents}
-                  onChangeValue={setAmountCents}
-                  type="income"
-                  autoFocus
-                />
-              </View>
-              <Divider />
               <DateRow
                 label={t("startingFrom")}
                 date={spendFromDate}
@@ -874,23 +820,6 @@ export default function GoalEditorScreen() {
           {/* Limit */}
           {goalType === "limit" && (
             <View>
-              <View style={{ padding: spacing.md }}>
-                <Text
-                  variant="caption"
-                  color={colors.textMuted}
-                  style={{ marginBottom: spacing.xs }}
-                >
-                  {t("maximumSpending")}
-                </Text>
-                <CurrencyInput
-                  ref={currencyInputRef}
-                  value={amountCents}
-                  onChangeValue={setAmountCents}
-                  type="income"
-                  autoFocus
-                />
-              </View>
-              <Divider />
               <View style={{ padding: spacing.md }}>
                 <Text
                   variant="caption"

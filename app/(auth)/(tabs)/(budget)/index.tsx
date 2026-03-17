@@ -471,7 +471,7 @@ export default function BudgetScreen() {
         caretHidden
         contextMenuHidden
         inputAccessoryViewID={Platform.OS === "ios" ? BUDGET_ACCESSORY_ID : undefined}
-        style={{ position: "absolute", opacity: 0, height: 0, width: 0 }}
+        style={{ position: "absolute", opacity: 0, height: 1, width: 1, pointerEvents: "none" }}
       />
 
       {/* Single InputAccessoryView — calculator pill */}

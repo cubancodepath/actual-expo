@@ -262,7 +262,8 @@ const createStyles = (theme: Theme) => ({
   hiddenInput: {
     position: "absolute" as const,
     opacity: 0,
-    height: 0,
-    width: 0,
+    height: 1,
+    width: 1,
+    pointerEvents: "none" as const,
   },
 });

@@ -48,6 +48,7 @@ import { usePreviewTransactions } from "@/presentation/hooks/usePreviewTransacti
 import { useLiveQuery } from "@/presentation/hooks/useQuery";
 import { q } from "@/queries";
 import type { TransactionDisplay } from "@/transactions/types";
+import { useBankSyncStore } from "@/stores/bankSyncStore";
 
 export default function AccountTransactionsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -58,9 +59,13 @@ export default function AccountTransactionsScreen() {
   const { t } = useTranslation("accounts");
   const { t: tc } = useTranslation("common");
   const { t: tt } = useTranslation("transactions");
+  const { t: tb } = useTranslation("bankSync");
   const { accounts } = useAccounts();
+  const { syncAccount, syncStatus } = useBankSyncStore();
   const account = accounts.find((a) => a.id === id);
   const balance = useAccountBalance(id);
+  const isLinked = !!account?.accountSyncSource;
+  const isSyncing = syncStatus[id] === "syncing";
   const { hideReconciled, toggleHideReconciled } = usePrefsStore();
   usePrivacyStore();
   const { tags } = useTags();
@@ -469,6 +474,16 @@ export default function AccountTransactionsScreen() {
             }
           />
           <Stack.Toolbar.Menu icon="ellipsis">
+            {isLinked && (
+              <Stack.Toolbar.MenuAction
+                icon="arrow.triangle.2.circlepath"
+                onPress={async () => {
+                  await syncAccount(id);
+                }}
+              >
+                {isSyncing ? tb("syncing") : tb("syncNow")}
+              </Stack.Toolbar.MenuAction>
+            )}
             <Stack.Toolbar.MenuAction
               icon="lock"
               onPress={() =>

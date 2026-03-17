@@ -59,9 +59,14 @@ function AccountRow({
     <ContextMenu>
       <ContextMenu.Trigger>
         <Pressable style={styles.accountRow} onPress={onPress}>
-          <Text variant="body" color={theme.colors.textPrimary} style={styles.accountName}>
-            {account.name}
-          </Text>
+          <View style={styles.accountNameRow}>
+            {account.accountSyncSource != null && (
+              <Icon name="linkOutline" size={14} color={theme.colors.textMuted} />
+            )}
+            <Text variant="body" color={theme.colors.textPrimary} style={styles.accountName}>
+              {account.name}
+            </Text>
+          </View>
           <Amount value={balance} variant="body" />
           <Icon name="chevronForward" size={16} color={theme.colors.textMuted} />
           {!isLast && <RowSeparator insetLeft={theme.spacing.md} insetRight={theme.spacing.md} />}
@@ -342,6 +347,12 @@ const createStyles = (theme: Theme) => ({
     paddingVertical: theme.spacing.lg,
     minHeight: 44,
     gap: theme.spacing.sm,
+  },
+  accountNameRow: {
+    flex: 1,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: theme.spacing.xs,
   },
   accountName: {
     flex: 1,

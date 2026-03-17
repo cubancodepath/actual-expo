@@ -138,6 +138,8 @@ export function makeChild(parent: Transaction, data: Partial<Transaction> = {}):
     starting_balance_flag: parent.starting_balance_flag,
     schedule: parent.schedule,
     tombstone: false,
+    financialId: null,
+    importedDescription: null,
   };
 }
 

@@ -66,6 +66,8 @@ function rowToDisplay(r: RawDisplayRow): TransactionDisplay {
     starting_balance_flag: r.starting_balance_flag === 1,
     schedule: r.schedule ?? null,
     tombstone: r.tombstone === 1,
+    financialId: r.financial_id ?? null,
+    importedDescription: r.imported_description ?? null,
     payeeName: r.payee_name,
     categoryName: r.category_name,
     accountName: r.account_name,

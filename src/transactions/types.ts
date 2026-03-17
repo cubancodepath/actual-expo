@@ -16,6 +16,9 @@ export type Transaction = {
   starting_balance_flag: boolean;
   schedule: string | null;
   tombstone: boolean;
+  // Bank sync fields
+  financialId: string | null; // unique ID from bank provider (for dedup)
+  importedDescription: string | null; // raw payee name from bank
 };
 
 export type SplitTransactionError = {

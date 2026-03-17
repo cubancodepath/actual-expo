@@ -26,6 +26,10 @@ function rowToAccount(r: AccountWithBalance): Account {
     balance: r.balance ?? 0,
     clearedBalance: r.clearedBalance ?? 0,
     unclearedBalance: r.unclearedBalance ?? 0,
+    accountSyncSource: (r.account_sync_source as Account["accountSyncSource"]) ?? null,
+    bankId: r.bank ?? null,
+    accountId: r.account_id ?? null,
+    lastSync: r.last_sync ?? null,
   };
 }
 
@@ -258,6 +262,11 @@ export const updateAccount = undoable(async function updateAccount(
   if (fields.closed !== undefined) dbFields.closed = fields.closed ? 1 : 0;
   if (fields.sort_order !== undefined) dbFields.sort_order = fields.sort_order;
   if (fields.lastReconciled !== undefined) dbFields.last_reconciled = fields.lastReconciled;
+  if (fields.accountSyncSource !== undefined)
+    dbFields.account_sync_source = fields.accountSyncSource;
+  if (fields.bankId !== undefined) dbFields.bank = fields.bankId;
+  if (fields.accountId !== undefined) dbFields.account_id = fields.accountId;
+  if (fields.lastSync !== undefined) dbFields.last_sync = fields.lastSync;
 
   if (Object.keys(dbFields).length === 0) return;
 

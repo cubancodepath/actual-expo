@@ -30,6 +30,8 @@ function rowToTransaction(r: TransactionRow): Transaction {
     starting_balance_flag: r.starting_balance_flag === 1,
     schedule: r.schedule ?? null,
     tombstone: r.tombstone === 1,
+    financialId: r.financial_id ?? null,
+    importedDescription: r.imported_description ?? null,
   };
 }
 

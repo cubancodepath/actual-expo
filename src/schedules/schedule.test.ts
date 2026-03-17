@@ -378,6 +378,8 @@ describe("buildListData", () => {
       starting_balance_flag: false,
       schedule: null,
       tombstone: false,
+      financialId: null,
+      importedDescription: null,
       payeeName: null,
       categoryName: null,
       accountName: "Checking",

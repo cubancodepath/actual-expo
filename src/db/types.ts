@@ -8,6 +8,10 @@ export type AccountRow = {
   sort_order: number | null;
   last_reconciled: string | null;
   tombstone: 0 | 1;
+  account_sync_source: string | null;
+  bank: string | null;
+  account_id: string | null;
+  last_sync: string | null;
 };
 
 export type TransactionRow = {
@@ -28,6 +32,9 @@ export type TransactionRow = {
   starting_balance_flag: 0 | 1;
   schedule: string | null;
   tombstone: 0 | 1;
+  financial_id: string | null;
+  imported_description: string | null;
+  raw_synced_data: string | null;
 };
 
 export type CategoryGroupRow = {

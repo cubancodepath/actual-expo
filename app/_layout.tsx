@@ -18,6 +18,7 @@ import { ThemeProvider } from "@/presentation/providers/ThemeProvider";
 import { usePrefsStore } from "@/stores/prefsStore";
 import { listen } from "@/sync/syncEvents";
 import { fullSync, isSwitchingBudget } from "@/sync";
+import { useBankSyncStore } from "@/stores/bankSyncStore";
 import { ensureBudgetsDir, budgetExists } from "@/services/budgetMetadata";
 import { openBudget } from "@/services/budgetfiles";
 import { updateAppBadge } from "@/lib/badge";
@@ -80,6 +81,11 @@ function RootLayout() {
       }
 
       syncShortcutCache();
+
+      // Check bank sync provider availability (non-blocking)
+      if (usePrefsStore.getState().isConfigured && !usePrefsStore.getState().isLocalOnly) {
+        useBankSyncStore.getState().checkProviders().catch(() => {});
+      }
     }
     bootstrap()
       .catch(console.error)
@@ -190,10 +196,12 @@ function RootLayout() {
     // Single AppState listener for both sync and shortcut check
     const sub = AppState.addEventListener("change", (nextState) => {
       if (nextState !== "active") return;
-      // Sync on foreground
+      // Sync on foreground: CRDT first, then bank sync
       const p = usePrefsStore.getState();
       if (p.isConfigured && !p.isLocalOnly && !isSwitchingBudget()) {
-        fullSync().catch(console.warn);
+        fullSync()
+          .then(() => useBankSyncStore.getState().syncAllLinkedAccounts())
+          .catch(console.warn);
       }
       // Check shortcut action with debounced timer
       if (pendingTimer) clearTimeout(pendingTimer);

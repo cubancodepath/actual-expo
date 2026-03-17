@@ -1,4 +1,4 @@
-import { Alert, Pressable, View } from "react-native";
+import { Pressable, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../../providers/ThemeProvider";
@@ -9,7 +9,7 @@ import { withOpacity } from "../../../lib/colors";
 import { formatPrivacyAware } from "../../../lib/format";
 
 interface ReadyToAssignPillProps {
-  /** Budget balance in cents. Positive = money available, negative = overassigned. */
+  /** Budget balance in cents. Positive = money available, negative = overbudgeted. */
   amount: number;
   /** When provided, the pill becomes tappable. */
   onPress?: () => void;
@@ -66,7 +66,7 @@ export function ReadyToAssignPill({
       <InfoPill
         backgroundColor={backgroundColor}
         onPress={onPress}
-        accessibilityLabel={`${formatPrivacyAware(amount)} ${label}. Tap to assign budget.`}
+        accessibilityLabel={`${formatPrivacyAware(amount)} ${label}. Tap to edit budget.`}
         left={
           <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs }}>
             <Ionicons name={icon} size={15} color={textColor} />
@@ -103,7 +103,7 @@ export function ReadyToAssignPill({
       }}
       accessibilityLabel={`${formatPrivacyAware(amount)} ${label}. ${t("holding")}${formatPrivacyAware(holdAmount)}${t("nextMonth")}.`}
     >
-      {/* Top row: Ready to Assign / Overassigned / Fully Assigned */}
+      {/* Top row: To Budget / Overbudgeted / Fully Budgeted */}
       <Pressable
         onPress={onPress}
         style={({ pressed }) => ({
@@ -187,7 +187,7 @@ export function ReadyToAssignPill({
             </Text>
           </Pressable>
           <Text variant="captionSm" color={textColor} style={{ opacity: 0.3 }}>
-            ·
+            {"\u00B7"}
           </Text>
           <Pressable onPress={onClearHold} hitSlop={8}>
             <Text variant="captionSm" color={textColor} style={{ fontWeight: "600", opacity: 0.7 }}>

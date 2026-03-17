@@ -13,7 +13,7 @@
   "showHiddenCategories": "Mostrar categorías ocultas",
 
   "releaseHoldTitle": "Liberar reserva",
-  "releaseHoldMessage": "¿Liberar los fondos reservados de vuelta a \"Listo para asignar\"?",
+  "releaseHoldMessage": "¿Liberar los fondos reservados de vuelta a \"Por presupuestar\"?",
   "release": "Liberar",
   "cancel": "Cancelar",
 
@@ -113,17 +113,17 @@
   "errorTitle": "Error",
   "couldNotRemoveTarget": "No se pudo eliminar la meta. Por favor, inténtalo de nuevo.",
 
-  "readyToAssign": "Listo para asignar",
-  "overassigned": "Sobreasignado",
-  "fullyAssigned": "Totalmente asignado",
+  "readyToAssign": "Por presupuestar",
+  "overassigned": "Sobrepresupuestado",
+  "fullyAssigned": "Todo presupuestado",
   "toFullyFundGoals": " necesario para financiar todas las metas",
   "reserve": "Reservar",
-  "autoAssign": "Auto-asignar",
+  "autoAssign": "Aplicar plantillas",
   "noChangesTitle": "Sin cambios",
   "noChangesMessage": "Ninguna categoría con plantillas necesitó presupuesto. Establece metas en tus categorías primero.",
-  "autoAssignError": "No se pudieron auto-asignar los presupuestos. Verifica que tus categorías tengan metas configuradas.",
+  "autoAssignError": "No se pudieron aplicar las plantillas de presupuesto. Verifica que tus categorías tengan metas configuradas.",
   "savingEllipsis": "Guardando...",
-  "saveAssignment": "Guardar asignación",
+  "saveAssignment": "Guardar presupuesto",
 
   "editBudget": "Editar presupuesto",
   "neededToFundGoals": "necesario para financiar todas las metas",
@@ -153,7 +153,7 @@
   "addGroup": "Agregar grupo",
 
   "fromMonth": "De {{month}}",
-  "assignedForMonth": "Asignado para {{month}}",
+  "assignedForMonth": "Presupuestado para {{month}}",
   "activityInMonth": "Actividad en {{month}}",
   "available": "Disponible",
   "target": "Meta",
@@ -188,7 +188,7 @@
   "coverOverspendingAccessibility": "Cubrir sobregasto de {{name}}",
 
   "coverOverspendingFrom": "Cubrir sobregasto con",
-  "readyToAssignLabel": "Listo para asignar",
+  "readyToAssignLabel": "Por presupuestar",
   "noCategoriesWithBalance": "Sin categorías con saldo positivo",
 
   "moveFrom": "Mover desde",
@@ -203,7 +203,7 @@
   "coveringEllipsis": "Cubriendo...",
   "cover": "Cubrir",
 
-  "reserveDescription": "Reserva dinero de Listo para asignar para llevarlo al próximo mes.",
+  "reserveDescription": "Reserva dinero de Por presupuestar para llevarlo al próximo mes.",
   "availableToHold": "Disponible para reservar: ",
   "hold": "Reservar",
 
@@ -230,7 +230,7 @@
   "noTransactionsForCategory": "Sin transacciones para {{name}} este mes",
   "select": "Seleccionar",
 
-  "assign": "Asignar",
+  "assign": "Presupuestar",
 
   "uncategorizedBanner_one": "{{count}} transacción sin categorizar — {{total}} necesita una categoría",
   "uncategorizedBanner_other": "{{count}} transacciones sin categorizar — {{total}} necesitan una categoría",

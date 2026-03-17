@@ -13,7 +13,7 @@
   "showHiddenCategories": "Show Hidden Categories",
 
   "releaseHoldTitle": "Release Hold",
-  "releaseHoldMessage": "Release held funds back to \"Ready to Assign\"?",
+  "releaseHoldMessage": "Release held funds back to \"To Budget\"?",
   "release": "Release",
   "cancel": "Cancel",
 
@@ -113,17 +113,17 @@
   "errorTitle": "Error",
   "couldNotRemoveTarget": "Could not remove the target. Please try again.",
 
-  "readyToAssign": "Ready to Assign",
-  "overassigned": "Overassigned",
-  "fullyAssigned": "Fully Assigned",
+  "readyToAssign": "To Budget",
+  "overassigned": "Overbudgeted",
+  "fullyAssigned": "Fully Budgeted",
   "toFullyFundGoals": " needed to fund all goals",
   "reserve": "Reserve",
-  "autoAssign": "Auto-assign",
+  "autoAssign": "Apply Templates",
   "noChangesTitle": "No Changes",
   "noChangesMessage": "No categories with templates needed budgeting. Set goal targets on your categories first.",
-  "autoAssignError": "Could not auto-assign budgets. Check that your categories have goals configured.",
+  "autoAssignError": "Could not apply budget templates. Check that your categories have goals configured.",
   "savingEllipsis": "Saving...",
-  "saveAssignment": "Save Assignment",
+  "saveAssignment": "Save Budget",
 
   "editBudget": "Edit Budget",
   "neededToFundGoals": "needed to fund all goals",
@@ -153,7 +153,7 @@
   "addGroup": "Add Group",
 
   "fromMonth": "From {{month}}",
-  "assignedForMonth": "Assigned for {{month}}",
+  "assignedForMonth": "Budgeted for {{month}}",
   "activityInMonth": "Activity in {{month}}",
   "available": "Available",
   "target": "Target",
@@ -188,7 +188,7 @@
   "coverOverspendingAccessibility": "Cover overspending for {{name}}",
 
   "coverOverspendingFrom": "Cover overspending from",
-  "readyToAssignLabel": "Ready to Assign",
+  "readyToAssignLabel": "To Budget",
   "noCategoriesWithBalance": "No categories with positive balance",
 
   "moveFrom": "Move from",
@@ -203,7 +203,7 @@
   "coveringEllipsis": "Covering...",
   "cover": "Cover",
 
-  "reserveDescription": "Reserve money from Ready to Assign to carry it into next month.",
+  "reserveDescription": "Reserve money from To Budget to carry it into next month.",
   "availableToHold": "Available to hold: ",
   "hold": "Hold",
 
@@ -230,7 +230,7 @@
   "noTransactionsForCategory": "No transactions for {{name}} this month",
   "select": "Select",
 
-  "assign": "Assign",
+  "assign": "Budget",
 
   "uncategorizedBanner_one": "{{count}} uncategorized transaction — {{total}} needs a category",
   "uncategorizedBanner_other": "{{count}} uncategorized transactions — {{total}} needs a category",

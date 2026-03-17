@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { ActivityIndicator, Alert, Pressable, ScrollView, Switch, View } from "react-native";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, Alert, Pressable, ScrollView, Switch, TextInput, View } from "react-native";
 
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useAccounts } from "@/presentation/hooks/useAccounts";
@@ -31,6 +31,11 @@ export default function AccountSettingsScreen() {
   const isLinked = !!account?.accountSyncSource;
   const accountSyncStatus = syncStatus[id] ?? "idle";
   const accountSyncResult = syncResults[id];
+
+  // Refresh provider status when screen opens
+  useEffect(() => {
+    useBankSyncStore.getState().checkProviders();
+  }, []);
 
   const [name, setName] = useState(account?.name ?? "");
   const [offbudget, setOffbudget] = useState(account?.offbudget ?? false);
@@ -205,7 +210,9 @@ export default function AccountSettingsScreen() {
         ) : (
           <Button
             title={tb("link")}
-            onPress={() => router.push("/(auth)/bank-sync/provider")}
+            onPress={() => {
+              router.push({ pathname: "/(auth)/bank-sync", params: { localAccountId: id } });
+            }}
             variant="secondary"
             icon="link-outline"
             disabled={saving || (providersChecked && !goCardlessConfigured && !simpleFinConfigured)}

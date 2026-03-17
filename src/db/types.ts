@@ -132,6 +132,15 @@ export type ScheduleJsonPathsRow = {
   date: string | null;
 };
 
+export type PayeeLocationRow = {
+  id: string;
+  payee_id: string;
+  latitude: number;
+  longitude: number;
+  created_at: number;
+  tombstone: 0 | 1;
+};
+
 export type RuleRow = {
   id: string;
   stage: string | null;

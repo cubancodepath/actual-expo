@@ -66,5 +66,9 @@
   "syncing": "Syncing...",
   "syncEnabled": "Synced to Server",
   "connectToServer": "Connect to Server",
-  "connectToServerDescription": "Sign in to sync budgets across devices"
+  "connectToServerDescription": "Sign in to sync budgets across devices",
+  "locationServices": "Nearby Payees",
+  "locationServicesDescription": "Shows nearby payees when adding a transaction",
+  "locationPermissionTitle": "Location Access Needed",
+  "locationPermissionMessage": "To suggest nearby payees, allow location access in your device Settings."
 }

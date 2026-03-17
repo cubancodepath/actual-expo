@@ -13,6 +13,7 @@ import { usePrefsStore } from "@/stores/prefsStore";
 import { resetAllStores } from "@/stores/resetStores";
 import { useSyncStore } from "@/stores/syncStore";
 import { usePrivacyStore } from "@/stores/privacyStore";
+import { useLocationPermission } from "@/presentation/hooks/useLocationPermission";
 import { resetSyncState, clearSwitchingFlag, loadClock } from "@/sync";
 import { clearLocalData } from "@/db";
 import { closeBudget } from "@/services/budgetfiles";
@@ -84,6 +85,9 @@ export default function SettingsScreen() {
   } = usePrefsStore();
   const lastSync = useSyncStore((s) => s.lastSync);
   const { privacyMode, toggle: togglePrivacy } = usePrivacyStore();
+  const payeeLocationsEnabled = usePrefsStore((s) => s.payeeLocationsEnabled);
+  const togglePayeeLocations = usePrefsStore((s) => s.togglePayeeLocations);
+  const { status: locationStatus, request: requestLocation } = useLocationPermission();
   const [loggingOut, setLoggingOut] = useState(false);
 
   const lastSyncText = lastSync
@@ -235,6 +239,57 @@ export default function SettingsScreen() {
               onValueChange={togglePrivacy}
               trackColor={{ true: colors.primary }}
               accessibilityLabel={t("hideAmounts")}
+            />
+          }
+          showSeparator
+          separatorInsetLeft={spacing.lg + ICON_SIZE + spacing.md}
+        />
+        <ListItem
+          title={t("locationServices")}
+          subtitle={t("locationServicesDescription")}
+          left={
+            <SettingsIcon
+              sfSymbol="location"
+              ionIcon="location-outline"
+              color={colors.textMuted}
+            />
+          }
+          onPress={async () => {
+            if (!payeeLocationsEnabled) {
+              // Turning ON — request permission first
+              if (locationStatus !== "granted") {
+                const granted = await requestLocation();
+                if (!granted) {
+                  Alert.alert(
+                    t("locationPermissionTitle"),
+                    t("locationPermissionMessage"),
+                  );
+                  return;
+                }
+              }
+            }
+            togglePayeeLocations();
+          }}
+          right={
+            <Switch
+              value={payeeLocationsEnabled}
+              onValueChange={async () => {
+                if (!payeeLocationsEnabled) {
+                  if (locationStatus !== "granted") {
+                    const granted = await requestLocation();
+                    if (!granted) {
+                      Alert.alert(
+                        t("locationPermissionTitle"),
+                        t("locationPermissionMessage"),
+                      );
+                      return;
+                    }
+                  }
+                }
+                togglePayeeLocations();
+              }}
+              trackColor={{ true: colors.primary }}
+              accessibilityLabel={t("locationServices")}
             />
           }
         />

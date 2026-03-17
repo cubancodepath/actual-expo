@@ -4,10 +4,27 @@
     "correctness": "warn"
   },
   "plugins": ["typescript", "react", "unicorn"],
+  "jsPlugins": ["eslint-plugin-i18next"],
   "rules": {
     "no-unused-vars": "warn",
     "no-console": "warn",
-    "typescript/no-explicit-any": "warn"
+    "typescript/no-explicit-any": "warn",
+    "i18next/no-literal-string": ["warn", {
+      "mode": "jsx-text-only",
+      "jsx-attributes": {
+        "include": ["title", "subtitle", "placeholder", "label", "accessibilityLabel"],
+        "exclude": ["className", "styleName", "style", "type", "key", "id", "width", "height", "testID", "name", "icon", "sfSymbol", "ionIcon", "variant", "pathname"]
+      },
+      "jsx-components": {
+        "exclude": ["SymbolView"]
+      },
+      "words": {
+        "exclude": ["[0-9!-/:-@\\[-`{-~]+", "[A-Z_-]+"]
+      },
+      "callees": {
+        "exclude": ["i18n(ext)?", "t", "tc", "require", "console\\.\\w+", "addEventListener", "removeEventListener", "Error", "styled", "router\\.push", "router\\.replace"]
+      }
+    }]
   },
   "ignorePatterns": ["node_modules", "ios", "android", ".expo"]
 }

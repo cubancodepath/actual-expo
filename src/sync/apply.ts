@@ -28,6 +28,7 @@ const ALLOWED_TABLES = new Set([
   "rules",
   "schedules",
   "schedules_next_date",
+  "payee_locations",
 ]);
 
 export async function applyMessages(messages: SyncMessage[]): Promise<OldData> {

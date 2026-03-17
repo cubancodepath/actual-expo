@@ -64,6 +64,7 @@ export async function clearLocalData(): Promise<void> {
     "payees",
     "zero_budgets",
     "zero_budget_months",
+    "payee_locations",
     "messages_crdt",
     "messages_clock",
     "payee_mapping",

@@ -68,8 +68,8 @@
   "connectToServer": "Conectar al Servidor",
   "connectToServerDescription": "Inicia sesión para sincronizar entre dispositivos",
   "locationServices": "Beneficiarios Cercanos",
-  "locationServicesDescription": "Muestra beneficiarios cercanos al agregar una transacción",
-  "locationPermissionTitle": "Acceso a Ubicación Necesario",
-  "locationPermissionMessage": "Para sugerir beneficiarios cercanos, permite el acceso a la ubicación en los Ajustes del dispositivo.",
+  "locationServicesDescription": "Sugiere beneficiarios cercanos al agregar una transacción",
+  "locationPermissionTitle": "Se Requiere Acceso a Ubicación",
+  "locationPermissionMessage": "Para ver beneficiarios cercanos, ve a Ajustes y permite el acceso a la ubicación para Actual.",
   "openSettings": "Abrir Ajustes"
 }

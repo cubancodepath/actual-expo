@@ -73,8 +73,8 @@
   "changeAnyway": "Cambiar de Todos Modos",
 
   "searchPayees": "Buscar beneficiarios o cuentas...",
-  "nearbyPayees": "CERCANOS",
-  "enableLocationAccess": "Habilitar acceso a ubicación",
+  "nearbyPayees": "BENEFICIARIOS CERCANOS",
+  "enableLocationAccess": "Permitir acceso a ubicación",
   "transferToAccount": "TRANSFERIR A CUENTA",
   "payees": "BENEFICIARIOS",
   "noPayee": "Sin beneficiario",

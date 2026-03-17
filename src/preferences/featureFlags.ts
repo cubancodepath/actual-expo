@@ -35,5 +35,8 @@ export const FEATURE_FLAG_LABELS: Record<FeatureFlag, { title: string; subtitle?
   crossoverReport: { title: "Crossover Report" },
   customThemes: { title: "Custom Themes" },
   budgetAnalysisReport: { title: "Budget Analysis Report" },
-  payeeLocations: { title: "Payee Locations" },
+  payeeLocations: {
+    title: "Nearby Payees",
+    subtitle: "Suggests payees near you when adding a transaction",
+  },
 };

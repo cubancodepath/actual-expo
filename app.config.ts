@@ -28,6 +28,8 @@ const config = ({ config }: ConfigContext): ExpoConfig => ({
     infoPlist: {
       NSLocalNetworkUsageDescription:
         "Actual Budget needs access to your local network to connect to your self-hosted budget server.",
+      NSLocationWhenInUseUsageDescription:
+        "Actual uses your location to suggest nearby payees when you add a transaction.",
       ITSAppUsesNonExemptEncryption: false,
     },
   },

@@ -197,6 +197,7 @@ export default function AuthLayout() {
         options={{ headerShown: false, presentation: "fullScreenModal" }}
       />
       <Stack.Screen name="new-budget" options={{ headerShown: false }} />
+      <Stack.Screen name="bank-sync" options={{ headerShown: false, ...modal }} />
     </Stack>
   );
 }

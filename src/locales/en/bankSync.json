@@ -1,0 +1,80 @@
+{
+  "title": "Bank Sync",
+  "link": "Link Bank Account",
+  "unlinkAccount": "Unlink Bank Account",
+  "syncNow": "Sync Now",
+  "lastSynced": "Last synced: {{date}}",
+  "neverSynced": "Never synced",
+  "syncing": "Syncing…",
+  "syncSuccess": "Synced — {{added}} added, {{updated}} updated",
+  "syncSuccessNoChanges": "Synced — no new transactions",
+
+  "provider": {
+    "title": "Choose Provider",
+    "goCardless": "GoCardless",
+    "goCardlessDescription": "European banks via Open Banking",
+    "simpleFin": "SimpleFin",
+    "simpleFinDescription": "North American banks"
+  },
+
+  "country": {
+    "title": "Select Country",
+    "searchPlaceholder": "Search countries…"
+  },
+
+  "institution": {
+    "title": "Select Bank",
+    "searchPlaceholder": "Search banks…",
+    "loading": "Loading banks…",
+    "noResults": "No banks found",
+    "noResultsDescription": "Try a different search term or check the country selection"
+  },
+
+  "consent": {
+    "title": "Authorize Access",
+    "description": "You'll be redirected to your bank to authorize access to your account data.",
+    "openBank": "Open Bank Authorization",
+    "waiting": "Waiting for authorization…",
+    "waitingDescription": "Complete the authorization in your bank's website, then return here.",
+    "checkStatus": "Check Status",
+    "authorized": "Authorization complete!",
+    "expired": "Authorization expired. Please try again.",
+    "rejected": "Authorization was rejected."
+  },
+
+  "accounts": {
+    "title": "Select Account",
+    "description": "Choose which bank account to link:",
+    "noAccounts": "No accounts found",
+    "noAccountsDescription": "No accounts were found for this connection."
+  },
+
+  "linkAccount": {
+    "title": "Link to Account",
+    "description": "Link this bank account to a local account:",
+    "existingAccount": "Existing account",
+    "newAccount": "Create new account",
+    "selectAccount": "Select an account…",
+    "linked": "Account linked successfully!"
+  },
+
+  "simplefin": {
+    "title": "SimpleFin Accounts",
+    "description": "Select a SimpleFin account to link:",
+    "balance": "Balance: {{amount}}"
+  },
+
+  "unlink": {
+    "title": "Unlink Bank Account",
+    "message": "Unlink this account from {{provider}}? Existing transactions won't be affected.",
+    "confirm": "Unlink"
+  },
+
+  "errors": {
+    "notConfigured": "Bank sync is not configured on the server",
+    "expired": "Bank authorization has expired. Please reconnect.",
+    "rateLimited": "Too many requests. Please wait a moment and try again.",
+    "syncFailed": "Sync failed: {{message}}",
+    "linkFailed": "Could not link account: {{message}}"
+  }
+}

@@ -4,11 +4,14 @@ import { ActivityIndicator, Alert, Pressable, ScrollView, Switch, View } from "r
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useAccounts } from "@/presentation/hooks/useAccounts";
 import { updateAccount } from "@/accounts";
+import { useBankSyncStore } from "@/stores/bankSyncStore";
+import { unlinkAccount } from "@/bank-sync";
 import { Icon } from "@/presentation/components/atoms/Icon";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
 import { Input } from "@/presentation/components/atoms/Input";
+import { Divider } from "@/presentation/components/atoms/Divider";
 import { ErrorBanner } from "@/presentation/components/molecules/ErrorBanner";
 import { useErrorHandler } from "@/presentation/hooks/useErrorHandler";
 import { useTranslation } from "react-i18next";
@@ -21,8 +24,13 @@ export default function AccountSettingsScreen() {
   const styles = useThemedStyles(createStyles);
   const { t } = useTranslation("accounts");
   const { t: tc } = useTranslation("common");
+  const { t: tb } = useTranslation("bankSync");
   const { accounts } = useAccounts();
+  const { syncAccount, syncStatus, syncResults, providersChecked, goCardlessConfigured, simpleFinConfigured } = useBankSyncStore();
   const account = accounts.find((a) => a.id === id);
+  const isLinked = !!account?.accountSyncSource;
+  const accountSyncStatus = syncStatus[id] ?? "idle";
+  const accountSyncResult = syncResults[id];
 
   const [name, setName] = useState(account?.name ?? "");
   const [offbudget, setOffbudget] = useState(account?.offbudget ?? false);
@@ -135,6 +143,76 @@ export default function AccountSettingsScreen() {
           />
         </View>
 
+        {/* Bank Sync */}
+        <Divider style={styles.divider} />
+        <Text variant="caption" color={theme.colors.textSecondary} style={styles.label}>
+          {tb("title")}
+        </Text>
+
+        {isLinked ? (
+          <>
+            <View style={styles.toggleRow}>
+              <View style={styles.toggleText}>
+                <Text variant="body" color={theme.colors.textPrimary}>
+                  {account!.accountSyncSource === "goCardless" ? "GoCardless" : "SimpleFin"}
+                </Text>
+                <Text variant="captionSm" color={theme.colors.textMuted}>
+                  {account!.lastSync
+                    ? tb("lastSynced", { date: new Date(account!.lastSync).toLocaleDateString() })
+                    : tb("neverSynced")}
+                </Text>
+                {accountSyncStatus === "success" && accountSyncResult && (
+                  <Text variant="captionSm" color={theme.colors.positive}>
+                    {accountSyncResult.added + accountSyncResult.updated > 0
+                      ? tb("syncSuccess", {
+                          added: accountSyncResult.added,
+                          updated: accountSyncResult.updated,
+                        })
+                      : tb("syncSuccessNoChanges")}
+                  </Text>
+                )}
+              </View>
+            </View>
+            <Button
+              title={tb("syncNow")}
+              onPress={() => syncAccount(id)}
+              variant="secondary"
+              icon="sync-outline"
+              loading={accountSyncStatus === "syncing"}
+              disabled={saving || accountSyncStatus === "syncing"}
+              style={styles.bankSyncButton}
+            />
+            <Button
+              title={tb("unlinkAccount")}
+              onPress={() => {
+                Alert.alert(tb("unlink.title"), tb("unlink.message", { provider: account!.accountSyncSource }), [
+                  { text: tc("cancel"), style: "cancel" },
+                  {
+                    text: tb("unlink.confirm"),
+                    style: "destructive",
+                    onPress: async () => {
+                      await unlinkAccount(id);
+                    },
+                  },
+                ]);
+              }}
+              variant="ghost"
+              icon="unlink-outline"
+              textColor={theme.colors.negative}
+              disabled={saving}
+            />
+          </>
+        ) : (
+          <Button
+            title={tb("link")}
+            onPress={() => router.push("/(auth)/bank-sync/provider")}
+            variant="secondary"
+            icon="link-outline"
+            disabled={saving || (providersChecked && !goCardlessConfigured && !simpleFinConfigured)}
+            style={styles.bankSyncButton}
+          />
+        )}
+
         {/* Error */}
         <ErrorBanner error={error} onDismiss={dismissError} />
 
@@ -202,6 +280,12 @@ const createStyles = (theme: Theme) => ({
     marginTop: theme.spacing.xxl,
   },
   closeButton: {
+    marginTop: theme.spacing.sm,
+  },
+  divider: {
+    marginTop: theme.spacing.xl,
+  },
+  bankSyncButton: {
     marginTop: theme.spacing.sm,
   },
 });

@@ -10,6 +10,7 @@ import type schedules from "../locales/en/schedules.json";
 import type budget from "../locales/en/budget.json";
 import type setup from "../locales/en/setup.json";
 import type errors from "../locales/en/errors.json";
+import type bankSync from "../locales/en/bankSync.json";
 
 declare module "i18next" {
   interface CustomTypeOptions {
@@ -25,6 +26,7 @@ declare module "i18next" {
       budget: typeof budget;
       setup: typeof setup;
       errors: typeof errors;
+      bankSync: typeof bankSync;
     };
   }
 }

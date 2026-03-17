@@ -1,0 +1,80 @@
+{
+  "title": "Sincronización Bancaria",
+  "link": "Vincular Cuenta Bancaria",
+  "unlinkAccount": "Desvincular Cuenta Bancaria",
+  "syncNow": "Sincronizar Ahora",
+  "lastSynced": "Última sincronización: {{date}}",
+  "neverSynced": "Nunca sincronizada",
+  "syncing": "Sincronizando…",
+  "syncSuccess": "Sincronizado — {{added}} agregadas, {{updated}} actualizadas",
+  "syncSuccessNoChanges": "Sincronizado — sin nuevas transacciones",
+
+  "provider": {
+    "title": "Elegir Proveedor",
+    "goCardless": "GoCardless",
+    "goCardlessDescription": "Bancos europeos vía Open Banking",
+    "simpleFin": "SimpleFin",
+    "simpleFinDescription": "Bancos norteamericanos"
+  },
+
+  "country": {
+    "title": "Seleccionar País",
+    "searchPlaceholder": "Buscar países…"
+  },
+
+  "institution": {
+    "title": "Seleccionar Banco",
+    "searchPlaceholder": "Buscar bancos…",
+    "loading": "Cargando bancos…",
+    "noResults": "No se encontraron bancos",
+    "noResultsDescription": "Intenta con otro término de búsqueda o verifica el país seleccionado"
+  },
+
+  "consent": {
+    "title": "Autorizar Acceso",
+    "description": "Serás redirigido a tu banco para autorizar el acceso a tus datos de cuenta.",
+    "openBank": "Abrir Autorización Bancaria",
+    "waiting": "Esperando autorización…",
+    "waitingDescription": "Completa la autorización en el sitio web de tu banco, luego regresa aquí.",
+    "checkStatus": "Verificar Estado",
+    "authorized": "¡Autorización completada!",
+    "expired": "La autorización expiró. Intenta de nuevo.",
+    "rejected": "La autorización fue rechazada."
+  },
+
+  "accounts": {
+    "title": "Seleccionar Cuenta",
+    "description": "Elige qué cuenta bancaria vincular:",
+    "noAccounts": "No se encontraron cuentas",
+    "noAccountsDescription": "No se encontraron cuentas para esta conexión."
+  },
+
+  "linkAccount": {
+    "title": "Vincular a Cuenta",
+    "description": "Vincula esta cuenta bancaria a una cuenta local:",
+    "existingAccount": "Cuenta existente",
+    "newAccount": "Crear nueva cuenta",
+    "selectAccount": "Selecciona una cuenta…",
+    "linked": "¡Cuenta vinculada exitosamente!"
+  },
+
+  "simplefin": {
+    "title": "Cuentas SimpleFin",
+    "description": "Selecciona una cuenta SimpleFin para vincular:",
+    "balance": "Saldo: {{amount}}"
+  },
+
+  "unlink": {
+    "title": "Desvincular Cuenta Bancaria",
+    "message": "¿Desvincular esta cuenta de {{provider}}? Las transacciones existentes no se verán afectadas.",
+    "confirm": "Desvincular"
+  },
+
+  "errors": {
+    "notConfigured": "La sincronización bancaria no está configurada en el servidor",
+    "expired": "La autorización bancaria ha expirado. Por favor reconecta.",
+    "rateLimited": "Demasiadas solicitudes. Espera un momento e intenta de nuevo.",
+    "syncFailed": "Sincronización fallida: {{message}}",
+    "linkFailed": "No se pudo vincular la cuenta: {{message}}"
+  }
+}

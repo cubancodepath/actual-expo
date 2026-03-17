@@ -74,8 +74,8 @@ const createStyles = (theme: Theme) => ({
   container: {
     alignItems: "center" as const,
     paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.md,
-    paddingBottom: theme.spacing.lg,
+    paddingTop: theme.spacing.sm,
+    paddingBottom: theme.spacing.sm,
   },
   subtitleRow: {
     flexDirection: "row" as const,

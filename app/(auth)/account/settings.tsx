@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, ScrollView, Switch, TextInput, View } from "react-native";
 
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { EaseView } from "react-native-ease";
+import { GoCardlessIcon } from "@/presentation/components/atoms/GoCardlessIcon";
 import { useAccounts } from "@/presentation/hooks/useAccounts";
 import { updateAccount } from "@/accounts";
 import { useBankSyncStore } from "@/stores/bankSyncStore";
@@ -31,11 +34,26 @@ export default function AccountSettingsScreen() {
   const isLinked = !!account?.accountSyncSource;
   const accountSyncStatus = syncStatus[id] ?? "idle";
   const accountSyncResult = syncResults[id];
+  const [syncResultVisible, setSyncResultVisible] = useState(false);
+  const [syncResultText, setSyncResultText] = useState("");
 
-  // Refresh provider status when screen opens
   useEffect(() => {
     useBankSyncStore.getState().checkProviders();
   }, []);
+
+  // Show sync result briefly, then animate out
+  useEffect(() => {
+    if (accountSyncStatus === "success" && accountSyncResult) {
+      const text =
+        accountSyncResult.added + accountSyncResult.updated > 0
+          ? tb("syncSuccess", { added: accountSyncResult.added, updated: accountSyncResult.updated })
+          : tb("syncSuccessNoChanges");
+      setSyncResultText(text);
+      setSyncResultVisible(true);
+      const timer = setTimeout(() => setSyncResultVisible(false), 3500);
+      return () => clearTimeout(timer);
+    }
+  }, [accountSyncStatus, accountSyncResult]);
 
   const [name, setName] = useState(account?.name ?? "");
   const [offbudget, setOffbudget] = useState(account?.offbudget ?? false);
@@ -160,26 +178,40 @@ export default function AccountSettingsScreen() {
 
         {isLinked ? (
           <>
-            <View style={styles.syncInfo}>
-              <Text variant="body" color={theme.colors.textPrimary}>
-                {account!.accountSyncSource === "goCardless" ? "GoCardless" : "SimpleFin"}
-              </Text>
+            <View style={styles.syncRow}>
+              <View style={styles.syncRowLeft}>
+                {account.accountSyncSource === "goCardless" ? (
+                  <GoCardlessIcon size={18} />
+                ) : (
+                  <Ionicons name="card-outline" size={16} color={theme.colors.primary} />
+                )}
+                <Text variant="body" color={theme.colors.textPrimary}>
+                  {account.accountSyncSource === "goCardless" ? "GoCardless" : "SimpleFin"}
+                </Text>
+              </View>
               <Text variant="captionSm" color={theme.colors.textMuted}>
-                {account!.lastSync
-                  ? tb("lastSynced", { date: new Date(account!.lastSync).toLocaleDateString() })
+                {account.lastSync
+                  ? new Date(account.lastSync).toLocaleDateString()
                   : tb("neverSynced")}
               </Text>
-              {accountSyncStatus === "success" && accountSyncResult && (
-                <Text variant="captionSm" color={theme.colors.positive}>
-                  {accountSyncResult.added + accountSyncResult.updated > 0
-                    ? tb("syncSuccess", {
-                        added: accountSyncResult.added,
-                        updated: accountSyncResult.updated,
-                      })
-                    : tb("syncSuccessNoChanges")}
-                </Text>
-              )}
             </View>
+
+            <EaseView
+              animate={{
+                opacity: syncResultVisible ? 1 : 0,
+                translateY: syncResultVisible ? 0 : -4,
+                scale: syncResultVisible ? 1 : 0.95,
+              }}
+              transition={{ type: "timing", duration: 250, easing: "easeOut" }}
+              style={styles.syncResult}
+              pointerEvents="none"
+            >
+              <Ionicons name="checkmark-circle" size={14} color={theme.colors.positive} />
+              <Text variant="captionSm" color={theme.colors.positive}>
+                {syncResultText || " "}
+              </Text>
+            </EaseView>
+
             <Button
               title={tb("syncNow")}
               onPress={() => syncAccount(id)}
@@ -188,27 +220,7 @@ export default function AccountSettingsScreen() {
               size="lg"
               loading={accountSyncStatus === "syncing"}
               disabled={saving || accountSyncStatus === "syncing"}
-              style={styles.bankSyncButton}
-            />
-            <Button
-              title={tb("unlinkAccount")}
-              onPress={() => {
-                Alert.alert(tb("unlink.title"), tb("unlink.message", { provider: account!.accountSyncSource }), [
-                  { text: tc("cancel"), style: "cancel" },
-                  {
-                    text: tb("unlink.confirm"),
-                    style: "destructive",
-                    onPress: async () => {
-                      await unlinkAccount(id);
-                    },
-                  },
-                ]);
-              }}
-              variant="ghost"
-              icon="unlink-outline"
-              textColor={theme.colors.negative}
-              disabled={saving}
-              style={styles.bankSyncButton}
+              style={styles.syncButton}
             />
           </>
         ) : (
@@ -221,7 +233,6 @@ export default function AccountSettingsScreen() {
             icon="link-outline"
             size="lg"
             disabled={saving || (providersChecked && !goCardlessConfigured && !simpleFinConfigured)}
-            style={styles.bankSyncButton}
           />
         )}
 
@@ -238,15 +249,38 @@ export default function AccountSettingsScreen() {
           style={styles.saveButton}
         />
 
-        <Button
-          title={account.closed ? t("contextMenu.reopenAccount") : t("contextMenu.closeAccount")}
-          onPress={handleClose}
-          buttonStyle="borderless"
-          icon={account.closed ? "arrowUndoOutline" : "trashOutline"}
-          danger={!account.closed}
-          disabled={saving}
-          style={styles.closeButton}
-        />
+        {/* Danger zone — bottom, isolated */}
+        <View style={styles.dangerZone}>
+          {isLinked && (
+            <Button
+              title={tb("unlinkAccount")}
+              onPress={() => {
+                Alert.alert(tb("unlink.title"), tb("unlink.message", { provider: account.accountSyncSource }), [
+                  { text: tc("cancel"), style: "cancel" },
+                  {
+                    text: tb("unlink.confirm"),
+                    style: "destructive",
+                    onPress: async () => {
+                      await unlinkAccount(id);
+                    },
+                  },
+                ]);
+              }}
+              variant="ghost"
+              icon="unlink-outline"
+              textColor={theme.colors.negative}
+              disabled={saving}
+            />
+          )}
+          <Button
+            title={account.closed ? t("contextMenu.reopenAccount") : t("contextMenu.closeAccount")}
+            onPress={handleClose}
+            variant="ghost"
+            icon={account.closed ? "arrow-undo-outline" : "trash-outline"}
+            textColor={account.closed ? undefined : theme.colors.negative}
+            disabled={saving}
+          />
+        </View>
       </ScrollView>
     </>
   );
@@ -286,21 +320,36 @@ const createStyles = (theme: Theme) => ({
     flex: 1,
     marginRight: theme.spacing.md,
   },
-  syncInfo: {
-    paddingHorizontal: theme.spacing.xs,
-    gap: 2,
-  },
-  saveButton: {
-    marginTop: theme.spacing.xxl,
-  },
-  closeButton: {
-    marginTop: theme.spacing.xl,
-  },
   divider: {
     marginTop: theme.spacing.xl,
     marginBottom: theme.spacing.sm,
   },
-  bankSyncButton: {
+  syncRow: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
+    paddingHorizontal: theme.spacing.xs,
+  },
+  syncRowLeft: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: theme.spacing.xs,
+  },
+  syncResult: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    gap: theme.spacing.xs,
+    height: 20,
+  },
+  syncButton: {
     marginTop: theme.spacing.sm,
+  },
+  saveButton: {
+    marginTop: theme.spacing.xxl,
+  },
+  dangerZone: {
+    marginTop: theme.spacing.xxl * 2,
+    gap: theme.spacing.xs,
   },
 });

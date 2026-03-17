@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useSharedValue } from "react-native-reanimated";
 import { ActivityIndicator, Alert, LayoutAnimation, RefreshControl, View } from "react-native";
+import { EaseView } from "react-native-ease";
+import { Ionicons } from "@expo/vector-icons";
+import { GoCardlessIcon } from "@/presentation/components/atoms/GoCardlessIcon";
 import { LegendList } from "@legendapp/list";
 import { Stack, useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
@@ -13,7 +16,7 @@ import {
 } from "@/transactions";
 import { useAccounts, useAccountBalance } from "@/presentation/hooks/useAccounts";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
-import { EmptyState } from "@/presentation/components";
+import { EmptyState, Text } from "@/presentation/components";
 import type { Theme } from "@/theme";
 import { BalanceSummary } from "@/presentation/components/account/BalanceSummary";
 import { TransactionRow } from "@/presentation/components/account/TransactionRow";
@@ -61,11 +64,35 @@ export default function AccountTransactionsScreen() {
   const { t: tt } = useTranslation("transactions");
   const { t: tb } = useTranslation("bankSync");
   const { accounts } = useAccounts();
-  const { syncAccount, syncStatus } = useBankSyncStore();
+  const { syncAccount, syncStatus, syncResults } = useBankSyncStore();
   const account = accounts.find((a) => a.id === id);
   const balance = useAccountBalance(id);
   const isLinked = !!account?.accountSyncSource;
   const isSyncing = syncStatus[id] === "syncing";
+
+  // Sync result toast — only show for syncs triggered while on this screen
+  const [syncToastVisible, setSyncToastVisible] = useState(false);
+  const [syncToastText, setSyncToastText] = useState("");
+  const syncResult = syncResults[id];
+  const prevSyncStatusRef = useRef(syncStatus[id]);
+
+  useEffect(() => {
+    const current = syncStatus[id];
+    const prev = prevSyncStatusRef.current;
+    prevSyncStatusRef.current = current;
+
+    // Only show toast when transitioning from "syncing" to "success"
+    if (prev === "syncing" && current === "success" && syncResult) {
+      const text =
+        syncResult.added + syncResult.updated > 0
+          ? tb("syncSuccess", { added: syncResult.added, updated: syncResult.updated })
+          : tb("syncSuccessNoChanges");
+      setSyncToastText(text);
+      setSyncToastVisible(true);
+      const timer = setTimeout(() => setSyncToastVisible(false), 3500);
+      return () => clearTimeout(timer);
+    }
+  }, [syncStatus[id], syncResult]);
   const { hideReconciled, toggleHideReconciled } = usePrefsStore();
   usePrivacyStore();
   const { tags } = useTags();
@@ -326,6 +353,44 @@ export default function AccountTransactionsScreen() {
         lastReconciled={account?.lastReconciled}
       />
 
+      {isLinked && (
+        <View style={styles.syncToast}>
+          {isSyncing ? (
+            <EaseView
+              initialAnimate={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ type: "timing", duration: 200 }}
+              style={styles.syncToastRow}
+            >
+              <ActivityIndicator size="small" color={colors.primary} />
+              <Text variant="captionSm" color={colors.textMuted}>{tb("syncing")}</Text>
+            </EaseView>
+          ) : syncToastVisible ? (
+            <EaseView
+              animate={{ opacity: 1, translateY: 0 }}
+              initialAnimate={{ opacity: 0, translateY: -4 }}
+              transition={{ type: "timing", duration: 200, easing: "easeOut" }}
+              style={styles.syncToastRow}
+            >
+              <Ionicons name="checkmark-circle" size={14} color={colors.positive} />
+              <Text variant="captionSm" color={colors.positive}>{syncToastText}</Text>
+            </EaseView>
+          ) : (
+            <View style={styles.syncToastRow}>
+              {account?.accountSyncSource === "goCardless" ? (
+                <GoCardlessIcon size={14} />
+              ) : (
+                <Ionicons name="card-outline" size={12} color={colors.textMuted} />
+              )}
+              <Text variant="captionSm" color={colors.textMuted}>
+                {account?.accountSyncSource === "goCardless" ? "GoCardless" : "SimpleFin"}
+                {account?.lastSync ? ` · ${new Date(account.lastSync).toLocaleDateString()}` : ""}
+              </Text>
+            </View>
+          )}
+        </View>
+      )}
+
       {unclearedCount > 0 && (
         <UnclearedPill
           count={unclearedCount}
@@ -519,5 +584,14 @@ const createScreenStyles = (theme: Theme) => ({
   container: {
     flex: 1,
     backgroundColor: theme.colors.pageBackground,
+  },
+  syncToast: {
+    paddingVertical: theme.spacing.xs,
+  },
+  syncToastRow: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    gap: theme.spacing.xs,
   },
 });

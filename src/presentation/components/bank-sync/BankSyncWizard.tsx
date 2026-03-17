@@ -4,6 +4,7 @@ import * as WebBrowser from "expo-web-browser";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Text } from "../atoms/Text";
+import { GoCardlessIcon } from "../atoms/GoCardlessIcon";
 import { Button } from "../atoms/Button";
 import { ListItem } from "../molecules/ListItem";
 import { SearchBar } from "../molecules/SearchBar";
@@ -282,7 +283,7 @@ export function BankSyncWizard({
           <ListItem
             title={t("provider.goCardless")}
             subtitle={t("provider.goCardlessDescription")}
-            left={<Ionicons name="globe-outline" size={24} color={theme.colors.textSecondary} />}
+            left={<GoCardlessIcon size={24} />}
             showChevron
             onPress={() => goTo("country")}
           />

@@ -16,7 +16,7 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
   { icon, error, containerStyle, style, placeholderTextColor, ...rest },
   ref,
 ) {
-  const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
+  const { colors, spacing, borderRadius: br, borderWidth: bw, sizes } = useTheme();
 
   const baseContainer: ViewStyle = {
     flexDirection: "row",
@@ -26,7 +26,7 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
     borderWidth: bw.default,
     borderColor: error ? colors.errorText : colors.inputBorder,
     paddingHorizontal: spacing.md,
-    minHeight: 48,
+    minHeight: sizes.control,
     gap: spacing.sm,
   };
 

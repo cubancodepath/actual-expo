@@ -24,8 +24,6 @@ type GlassButtonProps = {
   hitSlop?: number;
 };
 
-const SIZE = 48;
-
 export function GlassButton({
   onPress,
   icon,
@@ -40,7 +38,8 @@ export function GlassButton({
   style,
   hitSlop = 8,
 }: GlassButtonProps) {
-  const { colors } = useTheme();
+  const { colors, sizes } = useTheme();
+  const SIZE = sizes.control;
   const isCircle = !!icon && !label;
   const fill = tintColor ?? colors.primary;
 

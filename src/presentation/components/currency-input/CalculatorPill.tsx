@@ -1,16 +1,18 @@
 import type { RefObject } from "react";
-import { Pressable, View } from "react-native";
+import { View } from "react-native";
 import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
 import { BlurView } from "expo-blur";
 import { useTheme } from "../../providers/ThemeProvider";
-import { Text } from "../atoms/Text";
+import { GlassButton } from "../atoms/GlassButton";
 import { PillButton } from "./PillButton";
 import { PillDivider } from "./PillDivider";
 import type { CurrencyInputRef } from "./CurrencyInput";
 
 const glass = isLiquidGlassAvailable();
 
-const PILL_HEIGHT = 44;
+import { sizes } from "../../../theme";
+
+const PILL_HEIGHT = sizes.control;
 
 const pillStyle = {
   flexDirection: "row" as const,
@@ -37,43 +39,6 @@ interface CalculatorPillProps {
   onDone?: () => void;
 }
 
-function DonePill({ onPress }: { onPress: () => void }) {
-  const { colors } = useTheme();
-
-  const content = (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => ({
-        height: PILL_HEIGHT,
-        paddingHorizontal: 20,
-        justifyContent: "center",
-        alignItems: "center",
-        opacity: pressed ? 0.7 : 1,
-      })}
-      accessibilityRole="button"
-      accessibilityLabel="Done editing"
-    >
-      <Text variant="body" color={colors.primary} style={{ fontWeight: "600" }}>
-        Done
-      </Text>
-    </Pressable>
-  );
-
-  if (glass) {
-    return (
-      <GlassView style={{ borderRadius: PILL_HEIGHT / 2, overflow: "hidden" }}>{content}</GlassView>
-    );
-  }
-  return (
-    <BlurView
-      tint="systemChromeMaterial"
-      intensity={100}
-      style={{ borderRadius: PILL_HEIGHT / 2, overflow: "hidden" }}
-    >
-      {content}
-    </BlurView>
-  );
-}
 
 export function CalculatorPill({ inputRef, onDone }: CalculatorPillProps) {
   const { colors, spacing } = useTheme();
@@ -119,7 +84,7 @@ export function CalculatorPill({ inputRef, onDone }: CalculatorPillProps) {
       }}
     >
       {pill}
-      {onDone && <DonePill onPress={onDone} />}
+      {onDone && <GlassButton label="Done" variant="tinted" onPress={onDone} />}
     </View>
   );
 }

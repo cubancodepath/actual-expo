@@ -4,6 +4,7 @@ import type { IconName } from "./iconRegistry";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Text } from "./Text";
 import { triggerHaptic, type HapticType } from "./haptics";
+import { sizes } from "../../../theme";
 import type { Theme } from "../../../theme";
 
 type ButtonStyle = "borderedProminent" | "bordered" | "borderedSecondary" | "borderless";
@@ -26,9 +27,9 @@ export interface ButtonProps {
 }
 
 const sizeConfig = {
-  sm: { height: 30, fontSize: 13, iconSize: 15, paddingH: 12, gap: 4 },
-  md: { height: 36, fontSize: 15, iconSize: 17, paddingH: 16, gap: 6 },
-  lg: { height: 48, fontSize: 17, iconSize: 19, paddingH: 24, gap: 8 },
+  sm: { height: sizes.controlSm, fontSize: 13, iconSize: 15, paddingH: 12, gap: 4 },
+  md: { height: sizes.controlMd, fontSize: 15, iconSize: 17, paddingH: 16, gap: 6 },
+  lg: { height: sizes.control, fontSize: 17, iconSize: 19, paddingH: 24, gap: 8 },
 } as const;
 
 function getButtonColors(

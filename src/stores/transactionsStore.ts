@@ -15,7 +15,7 @@ type TransactionsState = {
   load(accountId?: string, opts?: Omit<GetTransactionsOptions, "accountId">): Promise<void>;
   add(
     txn: Omit<Partial<Transaction>, "id" | "tombstone"> & {
-      acct: string;
+      account: string;
       date: number;
       amount: number;
     },

@@ -102,10 +102,10 @@ export function useTransactionForm(params: RouteParams, amountInput: AmountInput
           if (!txn) return;
           setType(txn.amount < 0 ? "expense" : "income");
           setCents(Math.abs(txn.amount));
-          setAcctId(txn.acct);
-          const txnAccount = accounts.find((a) => a.id === txn.acct);
+          setAcctId(txn.account);
+          const txnAccount = accounts.find((a) => a.id === txn.account);
           setAcctName(txnAccount?.name ?? "");
-          setPayeeId(txn.description);
+          setPayeeId(txn.payee);
           setPayeeName(txn.payeeName ?? "");
           setCategoryId(txn.category ?? null);
           setCategoryName(txn.categoryName ?? "");
@@ -115,7 +115,7 @@ export function useTransactionForm(params: RouteParams, amountInput: AmountInput
           setReconciled(txn.reconciled);
 
           // Load split children for parent transactions
-          if (txn.isParent) {
+          if (txn.is_parent) {
             const children = await getChildTransactions(transactionId!);
             if (children.length > 0) {
               setSplitCategories(
@@ -272,7 +272,7 @@ export function useTransactionForm(params: RouteParams, amountInput: AmountInput
     saveTransaction(
       {
         transactionId: isEdit ? transactionId : undefined,
-        acct: acctId!,
+        account: acctId!,
         date: strToInt(dateStr) ?? dateInt,
         amount: cents,
         type,

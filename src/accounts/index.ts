@@ -407,10 +407,10 @@ export const closeAccount = undoable(async function closeAccount(
     }
 
     await addTransaction({
-      acct: id,
+      account: id,
       amount: -balance,
       date: todayInt(),
-      description: transferPayee.id,
+      payee: transferPayee.id,
       notes: "Closing account",
       category: categoryId ?? undefined,
     });

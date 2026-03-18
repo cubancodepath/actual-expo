@@ -122,16 +122,16 @@ export function makeChild(parent: Transaction, data: Partial<Transaction> = {}):
 
   return {
     id: data.id ?? prefix + randomUUID(),
-    isParent: false,
-    isChild: true,
+    is_parent: false,
+    is_child: true,
     parent_id: parent.id,
-    acct: parent.acct,
+    account: parent.account,
     date: parent.date,
     amount: data.amount ?? 0,
     category: data.category !== undefined ? data.category : parent.category,
-    description: data.description !== undefined ? data.description : parent.description,
+    payee: data.payee !== undefined ? data.payee : parent.payee,
     notes: data.notes ?? null,
-    transferred_id: data.transferred_id ?? null,
+    transfer_id: data.transfer_id ?? null,
     cleared: data.cleared !== undefined ? data.cleared : parent.cleared,
     reconciled: data.reconciled !== undefined ? data.reconciled : parent.reconciled,
     sort_order: data.sort_order ?? null,
@@ -193,7 +193,7 @@ export type ReplaceResult = {
 
 function findParentIndex(transactions: readonly Transaction[], idx: number): number | null {
   while (idx >= 0) {
-    if (transactions[idx].isParent) return idx;
+    if (transactions[idx].is_parent) return idx;
     idx--;
   }
   return null;
@@ -202,7 +202,7 @@ function findParentIndex(transactions: readonly Transaction[], idx: number): num
 function getSplit(transactions: readonly Transaction[], parentIndex: number): Transaction[] {
   const split = [transactions[parentIndex]];
   let curr = parentIndex + 1;
-  while (curr < transactions.length && transactions[curr].isChild) {
+  while (curr < transactions.length && transactions[curr].is_child) {
     split.push(transactions[curr]);
     curr++;
   }
@@ -222,7 +222,7 @@ function replaceTransactions(
   const trans = transactions[idx];
   const transactionsCopy = [...transactions];
 
-  if (trans.isParent || trans.isChild) {
+  if (trans.is_parent || trans.is_child) {
     const parentIndex = findParentIndex(transactions, idx);
     if (parentIndex == null) {
       return {
@@ -280,13 +280,13 @@ export function splitTransaction(
   createSubtransactions?: (parent: Transaction) => Transaction[],
 ): ReplaceResult {
   return replaceTransactions(transactions, id, (trans) => {
-    if (trans.isParent || trans.isChild) return trans;
+    if (trans.is_parent || trans.is_child) return trans;
 
     const subtransactions = createSubtransactions?.(trans) || [makeChild(trans)];
 
     return recalculateSplit({
       ...trans,
-      isParent: true,
+      is_parent: true,
       category: null,
       subtransactions: subtransactions.map((t) => ({
         ...t,
@@ -302,7 +302,7 @@ export function addSplitTransaction(
   id: string,
 ): ReplaceResult {
   return replaceTransactions(transactions, id, (trans) => {
-    if (!trans.isParent) return trans;
+    if (!trans.is_parent) return trans;
 
     const prevSub = last(trans.subtransactions || []);
     const newChild = makeChild(trans, {
@@ -322,7 +322,7 @@ export function updateTransaction(
   transaction: Transaction,
 ): ReplaceResult {
   return replaceTransactions(transactions, transaction.id, (trans) => {
-    if (trans.isParent) {
+    if (trans.is_parent) {
       const parent = trans.id === transaction.id ? transaction : trans;
       const originalSubtransactions =
         (parent as TransactionWithSubtransactions).subtransactions ?? trans.subtransactions;
@@ -331,19 +331,19 @@ export function updateTransaction(
         let child = t;
         if (trans.id === transaction.id) {
           // Parent was updated — propagate payee change to children
-          const newDescription =
-            t.description === trans.description ? transaction.description : t.description;
-          child = { ...t, description: newDescription };
+          const newPayee =
+            t.payee === trans.payee ? transaction.payee : t.payee;
+          child = { ...t, payee: newPayee };
         } else if (t.id === transaction.id) {
           child = transaction;
         }
-        return makeChild({ ...parent, isParent: true, isChild: false } as Transaction, child);
+        return makeChild({ ...parent, is_parent: true, is_child: false } as Transaction, child);
       });
 
       return recalculateSplit({
         ...parent,
-        isParent: true,
-        isChild: false,
+        is_parent: true,
+        is_child: false,
         subtransactions: sub || [],
         error: null,
       });
@@ -355,7 +355,7 @@ export function updateTransaction(
 
 export function deleteTransaction(transactions: Transaction[], id: string): ReplaceResult {
   return replaceTransactions(transactions, id, (trans) => {
-    if (trans.isParent) {
+    if (trans.is_parent) {
       if (trans.id === id) {
         // Delete the entire split
         return null;
@@ -363,7 +363,7 @@ export function deleteTransaction(transactions: Transaction[], id: string): Repl
         // Only one child left — convert back to normal transaction
         return {
           ...trans,
-          isParent: false,
+          is_parent: false,
           subtransactions: [],
           error: null,
         };
@@ -379,7 +379,7 @@ export function deleteTransaction(transactions: Transaction[], id: string): Repl
 }
 
 export function realizeTempTransactions(transactions: Transaction[]): Transaction[] {
-  const parent = transactions.find((t) => !t.isChild);
+  const parent = transactions.find((t) => !t.is_child);
   if (!parent) return transactions;
 
   const newParent: Transaction = {
@@ -388,7 +388,7 @@ export function realizeTempTransactions(transactions: Transaction[]): Transactio
     sort_order: Date.now(),
   };
 
-  const children = transactions.filter((t) => t.isChild);
+  const children = transactions.filter((t) => t.is_child);
   return [
     newParent,
     ...children.map((child) => ({

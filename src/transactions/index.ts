@@ -14,16 +14,16 @@ export type { TransactionDisplay } from "./types";
 function rowToTransaction(r: TransactionRow): Transaction {
   return {
     id: r.id,
-    isParent: r.isParent === 1,
-    isChild: r.isChild === 1,
-    acct: r.acct,
+    is_parent: r.isParent === 1,
+    is_child: r.isChild === 1,
+    account: r.acct,
     date: r.date,
     amount: r.amount,
     category: r.category,
-    description: r.description,
+    payee: r.description,
     notes: r.notes,
     parent_id: r.parent_id ?? null,
-    transferred_id: r.transferred_id,
+    transfer_id: r.transferred_id,
     cleared: r.cleared === 1,
     reconciled: r.reconciled === 1,
     sort_order: r.sort_order,
@@ -63,24 +63,25 @@ export async function getTransactions(opts: GetTransactionsOptions = {}): Promis
 
 export const addTransaction = undoable(async function addTransaction(
   fields: Omit<Partial<Transaction>, "id" | "tombstone"> & {
-    acct: string;
+    account: string;
     date: number;
     amount: number;
   },
 ): Promise<string> {
   const id = randomUUID();
 
+  // Map public field names → DB column names for CRDT messages
   const dbFields: Record<string, unknown> = {
-    acct: fields.acct,
+    acct: fields.account,
     date: fields.date,
     amount: fields.amount,
-    isParent: fields.isParent ? 1 : 0,
-    isChild: fields.isChild ? 1 : 0,
+    isParent: fields.is_parent ? 1 : 0,
+    isChild: fields.is_child ? 1 : 0,
     category: fields.category ?? null,
-    description: fields.description ?? null,
+    description: fields.payee ?? null,
     notes: fields.notes ?? null,
     parent_id: fields.parent_id ?? null,
-    transferred_id: fields.transferred_id ?? null,
+    transferred_id: fields.transfer_id ?? null,
     cleared: fields.cleared ? 1 : 0,
     reconciled: fields.reconciled ? 1 : 0,
     sort_order: fields.sort_order ?? Date.now(),
@@ -101,10 +102,10 @@ export const addTransaction = undoable(async function addTransaction(
   // Transfer hook: if payee is a transfer payee, create the paired transaction
   await onInsert({
     id,
-    acct: fields.acct,
+    acct: fields.account,
     amount: fields.amount,
     date: fields.date,
-    description: fields.description ?? null,
+    description: fields.payee ?? null,
     notes: fields.notes ?? null,
   });
 
@@ -119,11 +120,11 @@ export const duplicateTransaction = undoable(async function duplicateTransaction
   if (!original) return null;
 
   return addTransaction({
-    acct: original.acct,
+    account: original.account,
     date: original.date,
     amount: original.amount,
     category: original.category,
-    description: original.description,
+    payee: original.payee,
     notes: original.notes,
     cleared: false,
     reconciled: false,
@@ -140,32 +141,37 @@ export const updateTransaction = undoable(async function updateTransaction(
     [id],
   );
 
+  // Map public field names → DB column names for CRDT messages
   const dbFields: Record<string, unknown> = {};
-  const boolFields = [
-    "isParent",
-    "isChild",
-    "cleared",
-    "reconciled",
-    "starting_balance_flag",
-  ] as const;
-  const directFields = [
-    "acct",
-    "date",
-    "amount",
-    "category",
-    "description",
-    "notes",
-    "parent_id",
-    "transferred_id",
-    "sort_order",
-    "schedule",
-  ] as const;
 
-  for (const f of boolFields) {
-    if (fields[f] !== undefined) dbFields[f] = fields[f] ? 1 : 0;
+  // Boolean fields: public name → DB column name
+  const boolMap: Array<[keyof Transaction, string]> = [
+    ["is_parent", "isParent"],
+    ["is_child", "isChild"],
+    ["cleared", "cleared"],
+    ["reconciled", "reconciled"],
+    ["starting_balance_flag", "starting_balance_flag"],
+  ];
+  // Direct fields: public name → DB column name
+  const directMap: Array<[keyof Transaction, string]> = [
+    ["account", "acct"],
+    ["date", "date"],
+    ["amount", "amount"],
+    ["category", "category"],
+    ["payee", "description"],
+    ["notes", "notes"],
+    ["parent_id", "parent_id"],
+    ["transfer_id", "transferred_id"],
+    ["sort_order", "sort_order"],
+    ["schedule", "schedule"],
+  ];
+
+  const f = fields as Record<string, unknown>;
+  for (const [pub, db] of boolMap) {
+    if (f[pub] !== undefined) dbFields[db] = f[pub] ? 1 : 0;
   }
-  for (const f of directFields) {
-    if (fields[f] !== undefined) dbFields[f] = fields[f] ?? null;
+  for (const [pub, db] of directMap) {
+    if (f[pub] !== undefined) dbFields[db] = f[pub] ?? null;
   }
 
   if (Object.keys(dbFields).length === 0) return;
@@ -181,6 +187,7 @@ export const updateTransaction = undoable(async function updateTransaction(
   );
 
   // Transfer hook: sync changes to the paired transaction if needed
+  // Transfer module works with DB column names internally
   if (prev) {
     await onUpdate(
       {
@@ -193,10 +200,10 @@ export const updateTransaction = undoable(async function updateTransaction(
         transferred_id: prev.transferred_id,
       },
       {
-        acct: fields.acct,
+        acct: fields.account,
         amount: fields.amount,
         date: fields.date,
-        description: fields.description,
+        description: fields.payee,
         notes: fields.notes,
       },
     );
@@ -316,7 +323,7 @@ export const reconcileAccount = undoable(async function reconcileAccount(
   await batchMessages(async () => {
     if (diff !== 0) {
       await addTransaction({
-        acct: accountId,
+        account: accountId,
         date: todayInt(),
         amount: diff,
         cleared: true,
@@ -586,7 +593,7 @@ export async function getTransactionWithChildren(
   id: string,
 ): Promise<{ parent: TransactionDisplay; children: TransactionDisplay[] } | null> {
   const parent = await getTransactionById(id);
-  if (!parent || !parent.isParent) return null;
+  if (!parent || !parent.is_parent) return null;
 
   const children = await getChildTransactions(id);
   return { parent, children };

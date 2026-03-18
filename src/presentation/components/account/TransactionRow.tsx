@@ -109,7 +109,7 @@ export const TransactionRow = memo(function TransactionRow({
         {/* Top row: payee + amount */}
         <View style={styles.topRow}>
           <View style={styles.payeeRow}>
-            {item.transferred_id != null && (
+            {item.transfer_id != null && (
               <Icon
                 name="swapHorizontal"
                 size={14}
@@ -145,7 +145,7 @@ export const TransactionRow = memo(function TransactionRow({
         </View>
 
         {/* Category + account name row */}
-        {item.isParent && item.splitCategoryNames ? (
+        {item.is_parent && item.splitCategoryNames ? (
           <>
             {(() => {
               const names = item.splitCategoryNames.split("||");

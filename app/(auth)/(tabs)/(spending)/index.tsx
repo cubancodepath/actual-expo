@@ -207,7 +207,7 @@ export default function SpendingScreen() {
     if (pendingMoveRef.current) {
       const txnId = pendingMoveRef.current;
       pendingMoveRef.current = null;
-      updateTransaction(txnId, { acct: selectedAccount.id });
+      updateTransaction(txnId, { account: selectedAccount.id });
       clearPicker();
     } else if (bulkMovePendingRef.current) {
       bulkMovePendingRef.current = false;

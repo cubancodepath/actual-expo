@@ -182,7 +182,7 @@ export default function SearchScreen() {
       loadAccounts,
       optimisticBulkMove: (prev, ids, targetAccountId, targetAccountName) =>
         prev.map((t) =>
-          ids.has(t.id) ? { ...t, acct: targetAccountId, accountName: targetAccountName } : t,
+          ids.has(t.id) ? { ...t, account: targetAccountId, accountName: targetAccountName } : t,
         ),
     });
 
@@ -416,10 +416,10 @@ export default function SearchScreen() {
       clearPicker();
       setResults((prev) =>
         prev.map((t) =>
-          t.id === txnId ? { ...t, acct: targetAccountId, accountName: targetName } : t,
+          t.id === txnId ? { ...t, account: targetAccountId, accountName: targetName } : t,
         ),
       );
-      updateTransaction(txnId, { acct: targetAccountId });
+      updateTransaction(txnId, { account: targetAccountId });
     }
   }, [selectedAccount, clearPicker]);
 

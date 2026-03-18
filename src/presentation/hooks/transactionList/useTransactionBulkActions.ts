@@ -139,7 +139,7 @@ export function useTransactionBulkActions({
             await undoable(async () => {
               await batchMessages(async () => {
                 for (const txnId of ids) {
-                  await updateTransaction(txnId, { acct: targetAccountId });
+                  await updateTransaction(txnId, { account: targetAccountId });
                 }
               });
             })();

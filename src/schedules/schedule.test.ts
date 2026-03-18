@@ -317,7 +317,7 @@ describe("advanceSchedules", () => {
 
     expect(mockAddTransaction).toHaveBeenCalledWith(
       expect.objectContaining({
-        acct: "acct-1",
+        account: "acct-1",
         amount: -5000,
         schedule: "sched-2",
       }),
@@ -363,15 +363,15 @@ describe("buildListData", () => {
     overrides: Partial<TransactionDisplay> & { id: string; date: number },
   ): TransactionDisplay {
     return {
-      isParent: false,
-      isChild: false,
-      acct: "acct-1",
+      is_parent: false,
+      is_child: false,
+      account: "acct-1",
       amount: -5000,
       category: null,
-      description: null,
+      payee: null,
       notes: null,
       parent_id: null,
-      transferred_id: null,
+      transfer_id: null,
       cleared: true,
       reconciled: false,
       sort_order: null,

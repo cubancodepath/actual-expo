@@ -1,15 +1,15 @@
 export type Transaction = {
   id: string;
-  isParent: boolean;
-  isChild: boolean;
-  acct: string; // account id
+  is_parent: boolean;
+  is_child: boolean;
+  account: string;
   date: number; // YYYYMMDD integer
   amount: number; // cents (negative = expense)
   category: string | null;
-  description: string | null; // payee id
+  payee: string | null;
   notes: string | null;
   parent_id: string | null;
-  transferred_id: string | null;
+  transfer_id: string | null;
   cleared: boolean;
   reconciled: boolean;
   sort_order: number | null;

@@ -396,7 +396,7 @@ export default function AccountSearchScreen() {
       pendingMoveRef.current = null;
       clearPicker();
       setResults((prev) => prev.filter((t) => t.id !== txnId));
-      updateTransaction(txnId, { acct: selectedAccount.id });
+      updateTransaction(txnId, { account: selectedAccount.id });
     }
   }, [selectedAccount, clearPicker]);
 

@@ -20,10 +20,6 @@ export async function executeQuery<T = Record<string, unknown>>(
 ): Promise<QueryResult<T>> {
   const state = "serialize" in query ? query.serialize() : query;
   const compiled = compile(state);
-  if (__DEV__) {
-    console.log("[AQL]", compiled.sql.replace(/\n/g, " ").replace(/\s+/g, " ").trim());
-    console.log("[AQL] params:", compiled.params);
-  }
   return executeCompiled<T>(compiled);
 }
 

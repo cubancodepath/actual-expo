@@ -125,7 +125,7 @@ export function useTransactionBatchActions({
             await undoable(async () => {
               await batchMessages(async () => {
                 for (const id of ids) {
-                  await updateTransaction(id, { acct: targetAccountId });
+                  await updateTransaction(id, { account: targetAccountId });
                 }
               });
             })();

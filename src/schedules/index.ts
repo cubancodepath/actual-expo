@@ -472,10 +472,10 @@ export const postTransactionForSchedule = undoable(async function postTransactio
   const date = schedule.next_date ? toDateRepr(schedule.next_date) : todayInt();
 
   await addTransaction({
-    acct: schedule._account,
+    account: schedule._account,
     date,
     amount,
-    description: schedule._payee ?? undefined,
+    payee: schedule._payee ?? undefined,
     category: schedule._category ?? undefined,
     cleared: false,
     schedule: id,
@@ -491,10 +491,10 @@ export const postTransactionForScheduleToday = undoable(
     const amount = getScheduledAmount(schedule._amount);
 
     await addTransaction({
-      acct: schedule._account,
+      account: schedule._account,
       date: todayInt(),
       amount,
-      description: schedule._payee ?? undefined,
+      payee: schedule._payee ?? undefined,
       category: schedule._category ?? undefined,
       cleared: false,
       schedule: id,

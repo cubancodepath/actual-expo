@@ -469,7 +469,7 @@ export function useTransactionList({
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             await undoable(async () => {
               await batchMessages(async () => {
-                for (const txnId of ids) await updateTransaction(txnId, { acct: targetAccountId });
+                for (const txnId of ids) await updateTransaction(txnId, { account: targetAccountId });
               });
             })();
           },
@@ -539,10 +539,10 @@ export function useTransactionList({
         dispatch({
           type: "UPDATE",
           txnId,
-          fields: { acct: selectedAccount.id, accountName: selectedAccount.name },
+          fields: { account: selectedAccount.id, accountName: selectedAccount.name },
         });
       }
-      updateTransaction(txnId, { acct: selectedAccount.id });
+      updateTransaction(txnId, { account: selectedAccount.id });
       clearPicker();
     } else if (bulkMovePendingRef.current) {
       bulkMovePendingRef.current = false;

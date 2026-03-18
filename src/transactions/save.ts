@@ -35,7 +35,7 @@ export type SplitLine = {
 export type SaveTransactionInput = {
   /** If provided, this is an edit. Otherwise, a new transaction. */
   transactionId?: string;
-  acct: string;
+  account: string;
   date: number;
   /** Always positive cents. Sign is determined by `type`. */
   amount: number;
@@ -74,7 +74,7 @@ export async function saveTransaction(
     splitCategories,
     recurConfig,
   } = input;
-  let { acct, categoryId } = input;
+  let { account, categoryId } = input;
 
   const isEdit = !!transactionId;
   const isSplit = splitCategories !== null && splitCategories.length > 1;
@@ -87,7 +87,7 @@ export async function saveTransaction(
   let effectiveNotes = notes;
   if (rules && rules.length > 0 && !isEdit && !isSplit) {
     const result = applyRulesToForm(rules, {
-      acct,
+      acct: account,
       payeeId: resolvedPayeeId,
       categoryId,
       amount: finalAmount,
@@ -95,8 +95,8 @@ export async function saveTransaction(
       notes,
       cleared,
     });
-    if (result.acctId && result.acctId !== acct) {
-      acct = result.acctId;
+    if (result.acctId && result.acctId !== account) {
+      account = result.acctId;
     }
     if (!categoryId && result.categoryId) {
       categoryId = result.categoryId;
@@ -110,14 +110,14 @@ export async function saveTransaction(
     // Edit split: update parent, delete old children, create new children
     await batchMessages(async () => {
       await updateTransaction(transactionId, {
-        acct,
+        account,
         date,
         amount: finalAmount,
-        description: resolvedPayeeId,
+        payee: resolvedPayeeId,
         category: null,
         notes,
         cleared,
-        isParent: true,
+        is_parent: true,
       });
 
       const oldChildren = await getChildTransactions(transactionId);
@@ -127,14 +127,14 @@ export async function saveTransaction(
 
       for (const line of splitCategories!) {
         await addTransaction({
-          acct,
+          account,
           date,
           amount: sign * line.amount,
-          description: resolvedPayeeId,
+          payee: resolvedPayeeId,
           category: line.categoryId,
           notes: null,
           cleared,
-          isChild: true,
+          is_child: true,
           parent_id: transactionId,
         });
       }
@@ -147,26 +147,26 @@ export async function saveTransaction(
     let parentId = "";
     await batchMessages(async () => {
       parentId = await addTransaction({
-        acct,
+        account,
         date,
         amount: finalAmount,
-        description: resolvedPayeeId,
+        payee: resolvedPayeeId,
         category: null,
         notes,
         cleared,
-        isParent: true,
+        is_parent: true,
       });
 
       for (const line of splitCategories!) {
         await addTransaction({
-          acct,
+          account,
           date,
           amount: sign * line.amount,
-          description: resolvedPayeeId,
+          payee: resolvedPayeeId,
           category: line.categoryId,
           notes: null,
           cleared,
-          isChild: true,
+          is_child: true,
           parent_id: parentId,
         });
       }
@@ -177,10 +177,10 @@ export async function saveTransaction(
   if (isEdit) {
     // Simple edit
     await updateTransaction(transactionId, {
-      acct,
+      account,
       date,
       amount: finalAmount,
-      description: resolvedPayeeId,
+      payee: resolvedPayeeId,
       category: categoryId,
       notes,
       cleared,
@@ -190,10 +190,10 @@ export async function saveTransaction(
 
   // Simple new
   const newId = await addTransaction({
-    acct,
+    account,
     date,
     amount: finalAmount,
-    description: resolvedPayeeId,
+    payee: resolvedPayeeId,
     category: categoryId,
     notes: effectiveNotes,
     cleared,
@@ -201,7 +201,7 @@ export async function saveTransaction(
 
   // Create a linked schedule if recurrence was configured
   if (recurConfig) {
-    await linkSchedule(newId, recurConfig, resolvedPayeeId, acct, finalAmount);
+    await linkSchedule(newId, recurConfig, resolvedPayeeId, account, finalAmount);
   }
 
   // Save current location for the payee (fire-and-forget)
@@ -219,12 +219,12 @@ async function linkSchedule(
   txnId: string,
   recurConfig: RecurConfig,
   payeeId: string | null,
-  acct: string,
+  account: string,
   amount: number,
 ): Promise<void> {
   const conditions: RuleCondition[] = [
     { field: "payee", op: "is", value: payeeId },
-    { field: "account", op: "is", value: acct },
+    { field: "account", op: "is", value: account },
     { field: "amount", op: "isapprox", value: amount },
     { field: "date", op: "isapprox", value: recurConfig },
   ];

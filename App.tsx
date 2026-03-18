@@ -266,7 +266,7 @@ async function runDbTests(): Promise<TestResult[]> {
     if (accounts.length === 0) throw new Error("no accounts");
     const acctId = accounts[0].id;
     const txId = await addTransaction({
-      acct: acctId,
+      account: acctId,
       date: 20250302,
       amount: -5000,
     });

@@ -6,6 +6,7 @@ import { useSyncStore } from "./syncStore";
 import { useRulesStore } from "./rulesStore";
 import { useSchedulesStore } from "./schedulesStore";
 import { useTransactionsStore } from "./transactionsStore";
+import { clearQueryCache } from "../queries/queryCache";
 import { currentMonth } from "../lib/date";
 import { PREFERENCE_DEFAULTS } from "../preferences/types";
 import { FEATURE_FLAG_DEFAULTS } from "../preferences/featureFlags";
@@ -16,6 +17,7 @@ import { FEATURE_FLAG_DEFAULTS } from "../preferences/featureFlags";
  * from the previous budget leaking into the UI.
  */
 export function resetAllStores(): void {
+  clearQueryCache();
   useBudgetStore.setState({ month: currentMonth(), data: null, loading: false });
   // categoriesStore no longer used — liveQuery handles data in components
   // payeesStore no longer used — liveQuery handles data via usePayees hook

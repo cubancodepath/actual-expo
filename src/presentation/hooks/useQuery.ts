@@ -19,7 +19,7 @@
 import { useEffect, useMemo, useRef, useState, type DependencyList } from "react";
 import type { Query } from "@/queries/query";
 import { liveQuery, type LiveQueryInstance } from "@/queries/liveQuery";
-import { consumeQueryCache } from "@/queries/queryCache";
+import { getQueryCache } from "@/queries/queryCache";
 import { pagedQuery, type PagedQueryInstance } from "@/queries/pagedQuery";
 
 // ---------------------------------------------------------------------------
@@ -42,7 +42,7 @@ export function useLiveQuery<T = Record<string, unknown>>(
   const initialCache = useRef<T[] | null | undefined>(undefined);
   if (initialCache.current === undefined) {
     const key = query?.serializeAsString() ?? "";
-    const cached = key ? consumeQueryCache(key) : null;
+    const cached = key ? getQueryCache(key) : null;
     initialCache.current = cached as T[] | null;
   }
   // Start with cached data if available, otherwise [] (placeholderData pattern)

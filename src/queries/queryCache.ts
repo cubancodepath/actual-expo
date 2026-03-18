@@ -15,16 +15,12 @@ export function setQueryCache(key: string, data: unknown[]): void {
 }
 
 /**
- * Get and consume cached data for a query key.
- * Returns null if no cache exists. Deletes the entry after reading.
+ * Get cached data for a query key.
+ * Does NOT delete — components may remount and need the cache again.
+ * Cache is cleared on budget switch via clearQueryCache().
  */
-export function consumeQueryCache(key: string): unknown[] | null {
-  const data = cache.get(key);
-  if (data !== undefined) {
-    cache.delete(key);
-    return data;
-  }
-  return null;
+export function getQueryCache(key: string): unknown[] | null {
+  return cache.get(key) ?? null;
 }
 
 /** Clear all cached data (called on budget switch). */

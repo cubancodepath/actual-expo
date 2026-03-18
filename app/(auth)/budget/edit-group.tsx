@@ -3,11 +3,10 @@ import { Alert, ScrollView } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { useCategoriesStore } from "@/stores/categoriesStore";
 import { useBudgetStore } from "@/stores/budgetStore";
 import { useUndoStore } from "@/stores/undoStore";
-import { mutate } from "@/stores/mutate";
-import { updateCategoryGroup } from "@/categories";
+import { updateCategoryGroup, deleteCategoryGroup } from "@/categories";
+import { useCategories } from "@/presentation/hooks/useCategories";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
 import { Input } from "@/presentation/components/atoms/Input";
@@ -17,7 +16,7 @@ export default function EditGroupScreen() {
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const router = useRouter();
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
-  const groups = useCategoriesStore((s) => s.groups);
+  const { groups } = useCategories();
   const group = groups.find((g) => g.id === groupId);
 
   const [name, setName] = useState("");
@@ -35,9 +34,7 @@ export default function EditGroupScreen() {
       router.back();
       return;
     }
-    mutate.update(useCategoriesStore, "groups", groupId, { name: trimmed },
-      () => updateCategoryGroup(groupId, { name: trimmed }),
-    );
+    updateCategoryGroup(groupId, { name: trimmed });
     router.back();
   }
 
@@ -49,7 +46,7 @@ export default function EditGroupScreen() {
         text: t("delete"),
         style: "destructive",
         onPress: async () => {
-          await useCategoriesStore.getState().deleteCategoryGroup(groupId);
+          await deleteCategoryGroup(groupId);
           useUndoStore.getState().showUndo(t("categoryGroupDeleted"));
           router.back();
         },
@@ -106,9 +103,7 @@ export default function EditGroupScreen() {
           style={{ alignSelf: "stretch", marginTop: spacing.md }}
           onPress={() => {
             if (!groupId) return;
-            mutate.update(useCategoriesStore, "groups", groupId, { hidden: !group.hidden },
-              () => updateCategoryGroup(groupId, { hidden: !group.hidden }),
-            );
+            updateCategoryGroup(groupId, { hidden: !group.hidden });
           }}
         />
       )}

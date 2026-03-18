@@ -3,11 +3,10 @@ import { Alert, Pressable, ScrollView, type TextInput, View } from "react-native
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { useCategoriesStore } from "@/stores/categoriesStore";
 import { useBudgetStore } from "@/stores/budgetStore";
 import { useUndoStore } from "@/stores/undoStore";
-import { mutate } from "@/stores/mutate";
-import { updateCategory } from "@/categories";
+import { updateCategory, deleteCategory } from "@/categories";
+import { useCategories } from "@/presentation/hooks/useCategories";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
 import { Input } from "@/presentation/components/atoms/Input";
@@ -23,7 +22,7 @@ export default function QuickEditCategoryScreen() {
   const router = useRouter();
   const { categoryId } = useLocalSearchParams<{ categoryId: string }>();
 
-  const categories = useCategoriesStore((s) => s.categories);
+  const { categories } = useCategories();
   const category = categories.find((c) => c.id === categoryId);
   const coverTarget = useBudgetStore((s) => s.coverTarget);
   const setCoverTarget = useBudgetStore((s) => s.setCoverTarget);
@@ -53,9 +52,7 @@ export default function QuickEditCategoryScreen() {
       setName(category?.name ?? "");
       return;
     }
-    mutate.update(useCategoriesStore, "categories", categoryId, { name: trimmed },
-      () => updateCategory(categoryId, { name: trimmed }),
-    );
+    updateCategory(categoryId, { name: trimmed });
   }
 
   function handleDelete() {
@@ -87,9 +84,7 @@ export default function QuickEditCategoryScreen() {
     if (!pendingDelete || !coverTarget || !categoryId) return;
     (async () => {
       try {
-        await useCategoriesStore
-          .getState()
-          .deleteCategory(categoryId, coverTarget.catId);
+        await deleteCategory(categoryId, coverTarget.catId);
         useUndoStore.getState().showUndo(t("categoryDeleted"));
         setCoverTarget(null);
         setPendingDelete(false);
@@ -231,18 +226,14 @@ export default function QuickEditCategoryScreen() {
                 {
                   text: t("hide"),
                   onPress: () => {
-                    mutate.update(useCategoriesStore, "categories", categoryId, { hidden: true },
-                      () => updateCategory(categoryId, { hidden: true }),
-                    );
+                    updateCategory(categoryId, { hidden: true });
                     router.back();
                   },
                 },
               ],
             );
           } else {
-            mutate.update(useCategoriesStore, "categories", categoryId, { hidden: false },
-              () => updateCategory(categoryId, { hidden: false }),
-            );
+            updateCategory(categoryId, { hidden: false });
             router.back();
           }
         }}

@@ -12,11 +12,10 @@ import Animated, {
   Extrapolation,
 } from "react-native-reanimated";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { useCategoriesStore } from "@/stores/categoriesStore";
 import { useBudgetStore } from "@/stores/budgetStore";
 import { useUndoStore } from "@/stores/undoStore";
-import { mutate } from "@/stores/mutate";
-import { updateCategory } from "@/categories";
+import { updateCategory, deleteCategory } from "@/categories";
+import { useCategories } from "@/presentation/hooks/useCategories";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
 import { Amount } from "@/presentation/components/atoms/Amount";
@@ -199,7 +198,7 @@ export default function CategoryDetailsScreen() {
   const { month, data } = useBudgetStore();
   const coverTarget = useBudgetStore((s) => s.coverTarget);
   const setCoverTarget = useBudgetStore((s) => s.setCoverTarget);
-  const categories = useCategoriesStore((s) => s.categories);
+  const { categories } = useCategories();
   const category = categories.find((c) => c.id === categoryId);
   const budgetCat = data?.groups.flatMap((g) => g.categories).find((c) => c.id === categoryId);
 
@@ -275,7 +274,7 @@ export default function CategoryDetailsScreen() {
     (async () => {
       setDeleting(true);
       try {
-        await useCategoriesStore.getState().deleteCategory(categoryId, coverTarget.catId);
+        await deleteCategory(categoryId, coverTarget.catId);
         useUndoStore.getState().showUndo(t("categoryDeleted"));
         setCoverTarget(null);
         setPendingDelete(false);
@@ -655,18 +654,14 @@ export default function CategoryDetailsScreen() {
                   {
                     text: t("hideCategory"),
                     onPress: () => {
-                      mutate.update(useCategoriesStore, "categories", categoryId, { hidden: true },
-                        () => updateCategory(categoryId, { hidden: true }),
-                      );
+                      updateCategory(categoryId, { hidden: true });
                       router.back();
                     },
                   },
                 ],
               );
             } else {
-              mutate.update(useCategoriesStore, "categories", categoryId, { hidden: false },
-                () => updateCategory(categoryId, { hidden: false }),
-              );
+              updateCategory(categoryId, { hidden: false });
             }
           }}
         />

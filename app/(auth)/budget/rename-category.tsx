@@ -3,8 +3,6 @@ import { View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { useCategoriesStore } from "@/stores/categoriesStore";
-import { mutate } from "@/stores/mutate";
 import { updateCategory } from "@/categories";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
@@ -25,9 +23,7 @@ export default function RenameCategoryScreen() {
 
   function handleSave() {
     if (!canSave || !categoryId) return;
-    mutate.update(useCategoriesStore, "categories", categoryId, { name: trimmed },
-      () => updateCategory(categoryId, { name: trimmed }),
-    );
+    updateCategory(categoryId, { name: trimmed });
     router.back();
   }
 

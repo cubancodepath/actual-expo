@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Alert } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { useAccountsStore } from "@/stores/accountsStore";
+import { useAccounts } from "@/presentation/hooks/useAccounts";
 import { useTransactionsStore } from "@/stores/transactionsStore";
 import { useCategories } from "@/presentation/hooks/useCategories";
 import { usePickerStore } from "@/stores/pickerStore";
@@ -49,7 +49,7 @@ export function useTransactionForm(params: RouteParams, amountInput: AmountInput
   const isEdit = !!transactionId;
   const { t } = useTranslation("transactions");
   const router = useRouter();
-  const { accounts, load: loadAccounts } = useAccountsStore();
+  const { accounts } = useAccounts();
   const { delete_ } = useTransactionsStore();
   const { groups, categories } = useCategories();
   const rules = useRulesStore((s) => s.rules);
@@ -287,7 +287,6 @@ export function useTransactionForm(params: RouteParams, amountInput: AmountInput
       rules,
     )
       .then(() => {
-        loadAccounts();
         if (recurConfig) useSchedulesStore.getState().load();
       })
       .catch((err) => {
@@ -334,7 +333,7 @@ export function useTransactionForm(params: RouteParams, amountInput: AmountInput
         style: "destructive",
         onPress: () => {
           router.dismiss();
-          delete_(transactionId!).then(() => loadAccounts());
+          delete_(transactionId!);
         },
       },
     ]);

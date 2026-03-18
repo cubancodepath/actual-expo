@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useMemo } from "react";
 import { Pressable, RefreshControl, ScrollView, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
@@ -8,7 +8,8 @@ import Animated, {
 } from "react-native-reanimated";
 import { Stack, useRouter } from "expo-router";
 import { ContextMenu } from "@/presentation/components/atoms/ContextMenu";
-import { useAccountsStore } from "@/stores/accountsStore";
+import { useAccounts, useAccountBalance, useAccountGroupBalance } from "@/presentation/hooks/useAccounts";
+import { updateAccount } from "@/accounts";
 import { Icon } from "@/presentation/components/atoms/Icon";
 import { useRefreshControl } from "@/presentation/hooks/useRefreshControl";
 import { groupAccounts, type AccountGroup } from "@/accounts";
@@ -49,6 +50,7 @@ function AccountRow({
 }) {
   const theme = useTheme();
   const { t } = useTranslation("accounts");
+  const balance = useAccountBalance(account.id);
 
   return (
     <ContextMenu>
@@ -57,7 +59,7 @@ function AccountRow({
           <Text variant="body" color={theme.colors.textPrimary} style={styles.accountName}>
             {account.name}
           </Text>
-          <Amount value={account.balance ?? 0} variant="body" />
+          <Amount value={balance} variant="body" />
           <Icon name="chevronForward" size={16} color={theme.colors.textMuted} />
           {!isLast && <RowSeparator insetLeft={theme.spacing.md} insetRight={theme.spacing.md} />}
         </Pressable>
@@ -139,6 +141,8 @@ function AccountSection({
   const { t } = useTranslation("accounts");
 
   const groupLabel = group.type === "budget" ? t("groups.budgetAccounts") : t("groups.offBudget");
+  const accountIds = useMemo(() => group.accounts.map((a) => a.id), [group.accounts]);
+  const groupTotal = useAccountGroupBalance(accountIds);
 
   const isExpanded = useSharedValue(true);
   const height = useSharedValue(0);
@@ -172,7 +176,7 @@ function AccountSection({
         <Text variant="body" color={theme.colors.textPrimary} style={styles.sectionLabel}>
           {groupLabel}
         </Text>
-        <Amount value={group.total} variant="body" style={styles.sectionTotal} />
+        <Amount value={groupTotal} variant="body" style={styles.sectionTotal} />
       </Pressable>
 
       {/* Hidden measurer — always keeps natural height */}
@@ -216,14 +220,10 @@ export default function AccountsScreen() {
   const router = useRouter();
   const theme = useTheme();
   const styles = useThemedStyles(createStyles);
-  const { accounts, loading, load, update } = useAccountsStore();
+  const { accounts, isLoading } = useAccounts();
   const { refreshControlProps } = useRefreshControl();
   const commonActions = useCommonMenuActions();
   const { t } = useTranslation("accounts");
-
-  useEffect(() => {
-    load();
-  }, []);
 
   const groups = groupAccounts(accounts);
 
@@ -240,10 +240,10 @@ export default function AccountsScreen() {
   }
 
   function handleReopenAccount(account: Account) {
-    update(account.id, { closed: false }).then(() => load());
+    updateAccount(account.id, { closed: false });
   }
 
-  if (loading && accounts.length === 0) {
+  if (isLoading && accounts.length === 0) {
     return (
       <View style={styles.content}>
         <AccountListSkeleton />

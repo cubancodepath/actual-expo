@@ -2,7 +2,6 @@ import { useState } from "react";
 import { View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { useAccountsStore } from "@/stores/accountsStore";
 import { lockTransactions, getClearedBalance } from "@/transactions";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
@@ -26,7 +25,6 @@ export default function ReconcileConfirmScreen() {
     setLoading(true);
     try {
       await lockTransactions(accountId);
-      await useAccountsStore.getState().load();
       router.dismiss();
     } finally {
       setLoading(false);

@@ -10,7 +10,6 @@ import Animated, {
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { useAccountsStore } from "@/stores/accountsStore";
 import { reconcileAccount } from "@/transactions";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
@@ -181,7 +180,6 @@ export default function ReconcileAmountScreen() {
     setLoading(true);
     try {
       await reconcileAccount(accountId, bankBalance);
-      await useAccountsStore.getState().load();
       router.dismiss(2);
     } finally {
       setLoading(false);

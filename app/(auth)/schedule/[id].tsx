@@ -9,7 +9,7 @@ import Animated, {
   interpolate,
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
-import { useAccountsStore } from "@/stores/accountsStore";
+import { useAccounts } from "@/presentation/hooks/useAccounts";
 import { usePayees } from "@/presentation/hooks/usePayees";
 import { useCategories } from "@/presentation/hooks/useCategories";
 import { useSchedulesStore } from "@/stores/schedulesStore";
@@ -46,7 +46,7 @@ export default function ScheduleDetailScreen() {
 
   const { update, delete_, skip, postTransaction, load } = useSchedulesStore();
   const { payees } = usePayees();
-  const accounts = useAccountsStore((s) => s.accounts);
+  const { accounts } = useAccounts();
   const { groups: categoryGroups } = useCategories();
 
   // Picker store

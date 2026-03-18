@@ -1,6 +1,6 @@
 import { Pressable, ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useAccountsStore } from "@/stores/accountsStore";
+import { useAccounts, useAccountBalance } from "@/presentation/hooks/useAccounts";
 import { Icon } from "@/presentation/components/atoms/Icon";
 import { usePickerStore } from "@/stores/pickerStore";
 import { groupAccounts } from "@/accounts";
@@ -8,14 +8,58 @@ import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvide
 import { Text } from "@/presentation/components/atoms/Text";
 import { GlassButton } from "@/presentation/components/atoms/GlassButton";
 import { Amount } from "@/presentation/components/atoms/Amount";
+import type { Account } from "@/accounts/types";
 import type { Theme } from "@/theme";
+
+function AccountPickerRow({
+  account,
+  isSelected,
+  isLast,
+  onSelect,
+  styles,
+}: {
+  account: Account;
+  isSelected: boolean;
+  isLast: boolean;
+  onSelect: () => void;
+  styles: ReturnType<typeof createStyles>;
+}) {
+  const { colors, spacing, borderWidth: bw } = useTheme();
+  const balance = useAccountBalance(account.id);
+  return (
+    <Pressable
+      style={({ pressed }) => [styles.item, pressed && styles.pressed]}
+      onPress={onSelect}
+    >
+      <View style={styles.checkSlot}>
+        {isSelected && <Icon name="checkmark" size={20} color={colors.primary} />}
+      </View>
+      <Text variant="body" color={colors.textPrimary} style={styles.itemLabel}>
+        {account.name}
+      </Text>
+      <Amount value={balance} variant="bodySm" />
+      {!isLast && (
+        <View
+          style={{
+            position: "absolute",
+            bottom: 0,
+            left: spacing.lg,
+            right: spacing.lg,
+            height: bw.thin,
+            backgroundColor: colors.divider,
+          }}
+        />
+      )}
+    </Pressable>
+  );
+}
 
 export default function AccountPickerScreen() {
   const { selectedId } = useLocalSearchParams<{ selectedId?: string }>();
   const router = useRouter();
   const { colors, spacing, borderWidth: bw } = useTheme();
   const styles = useThemedStyles(createStyles);
-  const { accounts } = useAccountsStore();
+  const { accounts } = useAccounts();
   const setAccount = usePickerStore((s) => s.setAccount);
 
   const groups = groupAccounts(accounts);
@@ -53,37 +97,16 @@ export default function AccountPickerScreen() {
               </Text>
             </View>
             <View style={styles.groupCard}>
-              {group.accounts.map((a, i) => {
-                const isSelected = a.id === selectedId;
-                const isLast = i === group.accounts.length - 1;
-                return (
-                  <Pressable
-                    key={a.id}
-                    style={({ pressed }) => [styles.item, pressed && styles.pressed]}
-                    onPress={() => select(a.id, a.name)}
-                  >
-                    <View style={styles.checkSlot}>
-                      {isSelected && <Icon name="checkmark" size={20} color={colors.primary} />}
-                    </View>
-                    <Text variant="body" color={colors.textPrimary} style={styles.itemLabel}>
-                      {a.name}
-                    </Text>
-                    <Amount value={a.balance ?? 0} variant="bodySm" />
-                    {!isLast && (
-                      <View
-                        style={{
-                          position: "absolute",
-                          bottom: 0,
-                          left: spacing.lg,
-                          right: spacing.lg,
-                          height: bw.thin,
-                          backgroundColor: colors.divider,
-                        }}
-                      />
-                    )}
-                  </Pressable>
-                );
-              })}
+              {group.accounts.map((a, i) => (
+                <AccountPickerRow
+                  key={a.id}
+                  account={a}
+                  isSelected={a.id === selectedId}
+                  isLast={i === group.accounts.length - 1}
+                  onSelect={() => select(a.id, a.name)}
+                  styles={styles}
+                />
+              ))}
             </View>
           </View>
         ))}

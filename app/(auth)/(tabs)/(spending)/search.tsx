@@ -24,7 +24,7 @@ import {
 } from "@/transactions";
 import { useUndoStore } from "@/stores/undoStore";
 import type { SearchToken } from "@/transactions/types";
-import { useAccountsStore } from "@/stores/accountsStore";
+import { useAccounts } from "@/presentation/hooks/useAccounts";
 import { useCategories } from "@/presentation/hooks/useCategories";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { EmptyState } from "@/presentation/components";
@@ -123,7 +123,7 @@ export default function SearchScreen() {
   const { initialFilter } = useLocalSearchParams<{ initialFilter?: string }>();
   const { colors } = useTheme();
   const { t } = useTranslation();
-  const { accounts, load: loadAccounts } = useAccountsStore();
+  const { accounts } = useAccounts();
   const { categories } = useCategories();
   const { tags } = useTags();
   const setTabBarHidden = useTabBarStore((s) => s.setHidden);
@@ -179,7 +179,7 @@ export default function SearchScreen() {
       setTransactions: setResults,
       refreshIdRef,
       resetSelection,
-      loadAccounts,
+      loadAccounts: () => {},
       optimisticBulkMove: (prev, ids, targetAccountId, targetAccountName) =>
         prev.map((t) =>
           ids.has(t.id) ? { ...t, account: targetAccountId, accountName: targetAccountName } : t,

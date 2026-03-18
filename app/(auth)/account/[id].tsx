@@ -11,7 +11,7 @@ import {
   toggleCleared,
   updateTransaction,
 } from "@/transactions";
-import { useAccountsStore } from "@/stores/accountsStore";
+import { useAccounts, useAccountBalance } from "@/presentation/hooks/useAccounts";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
 import { EmptyState } from "@/presentation/components";
 import type { Theme } from "@/theme";
@@ -54,8 +54,9 @@ export default function AccountTransactionsScreen() {
   const { t } = useTranslation("accounts");
   const { t: tc } = useTranslation("common");
   const { t: tt } = useTranslation("transactions");
-  const { accounts } = useAccountsStore();
+  const { accounts } = useAccounts();
   const account = accounts.find((a) => a.id === id);
+  const balance = useAccountBalance(id);
   const { hideReconciled, toggleHideReconciled } = usePrefsStore();
   usePrivacyStore();
   const { tags } = useTags();
@@ -300,7 +301,7 @@ export default function AccountTransactionsScreen() {
   return (
     <View style={styles.container}>
       <BalanceSummary
-        balance={account?.balance ?? 0}
+        balance={balance}
         clearedBalance={clearedBalance}
         lastReconciled={account?.lastReconciled}
       />

@@ -16,7 +16,6 @@ import * as QuickActions from "expo-quick-actions";
 import i18n from "@/i18n/config";
 import { ThemeProvider } from "@/presentation/providers/ThemeProvider";
 import { usePrefsStore } from "@/stores/prefsStore";
-import { useAccountsStore } from "@/stores/accountsStore";
 import { listen } from "@/sync/syncEvents";
 import { useBudgetStore } from "@/stores/budgetStore";
 import { useTransactionsStore } from "@/stores/transactionsStore";

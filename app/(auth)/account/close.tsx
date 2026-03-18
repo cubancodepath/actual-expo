@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, ScrollView, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Icon } from "@/presentation/components/atoms/Icon";
-import { useAccountsStore } from "@/stores/accountsStore";
+import { useAccounts } from "@/presentation/hooks/useAccounts";
+import { closeAccount } from "@/accounts";
 import { useCategories } from "@/presentation/hooks/useCategories";
 import { useUndoStore } from "@/stores/undoStore";
 import { getAccountProperties, groupAccounts } from "@/accounts";
@@ -29,7 +30,7 @@ export default function CloseAccountScreen() {
 
   const { t } = useTranslation("accounts");
   const { t: tc } = useTranslation("common");
-  const { accounts, close, load } = useAccountsStore();
+  const { accounts } = useAccounts();
   const { categories, groups } = useCategories();
   const account = accounts.find((a) => a.id === id);
 
@@ -85,12 +86,11 @@ export default function CloseAccountScreen() {
 
     setSaving(true);
     try {
-      await close({
+      await closeAccount({
         id,
         transferAccountId: transferAccountId ?? undefined,
         categoryId: categoryId ?? undefined,
       });
-      await load();
       useUndoStore
         .getState()
         .showUndo(canDelete ? t("close.accountDeleted") : t("close.accountClosed"));
@@ -109,8 +109,7 @@ export default function CloseAccountScreen() {
         onPress: async () => {
           setSaving(true);
           try {
-            await close({ id, forced: true });
-            await load();
+            await closeAccount({ id, forced: true });
             useUndoStore.getState().showUndo(t("close.accountDeleted"));
             router.dismiss();
           } finally {

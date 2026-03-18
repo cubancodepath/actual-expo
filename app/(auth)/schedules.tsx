@@ -15,7 +15,7 @@ import { Icon } from "@/presentation/components/atoms/Icon";
 import { SwipeableRow } from "@/presentation/components";
 import { useSchedulesStore } from "@/stores/schedulesStore";
 import { usePayees } from "@/presentation/hooks/usePayees";
-import { useAccountsStore } from "@/stores/accountsStore";
+import { useAccounts } from "@/presentation/hooks/useAccounts";
 import { useUndoStore } from "@/stores/undoStore";
 import { getStatus, getScheduledAmount, getRecurringDescription } from "@/schedules";
 import type { Schedule, ScheduleStatus, RecurConfig } from "@/schedules/types";
@@ -138,7 +138,7 @@ export default function SchedulesScreen() {
 
   const { schedules, load, delete_ } = useSchedulesStore();
   const { payees } = usePayees();
-  const accounts = useAccountsStore((s) => s.accounts);
+  const { accounts } = useAccounts();
 
   useFocusEffect(
     useCallback(() => {

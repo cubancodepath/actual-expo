@@ -9,7 +9,8 @@ import {
 } from "react-native";
 
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { useAccountsStore } from "@/stores/accountsStore";
+import { useAccounts } from "@/presentation/hooks/useAccounts";
+import { updateAccount } from "@/accounts";
 import { Icon } from "@/presentation/components/atoms/Icon";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
 import { Text } from "@/presentation/components/atoms/Text";
@@ -27,7 +28,7 @@ export default function AccountSettingsScreen() {
   const styles = useThemedStyles(createStyles);
   const { t } = useTranslation("accounts");
   const { t: tc } = useTranslation("common");
-  const { accounts, update, load } = useAccountsStore();
+  const { accounts } = useAccounts();
   const account = accounts.find((a) => a.id === id);
 
   const [name, setName] = useState(account?.name ?? "");
@@ -58,8 +59,7 @@ export default function AccountSettingsScreen() {
       if (trimmed !== account!.name) changes.name = trimmed;
       if (offbudget !== account!.offbudget) changes.offbudget = offbudget;
       if (Object.keys(changes).length > 0) {
-        await update(id, changes);
-        await load();
+        await updateAccount(id, changes);
       }
       router.back();
     });
@@ -76,8 +76,7 @@ export default function AccountSettingsScreen() {
           onPress: async () => {
             setSaving(true);
             try {
-              await update(id, { closed: false });
-              await load();
+              await updateAccount(id, { closed: false });
             } finally {
               setSaving(false);
             }

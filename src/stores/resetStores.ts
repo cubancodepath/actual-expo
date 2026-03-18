@@ -1,4 +1,3 @@
-import { useAccountsStore } from "./accountsStore";
 import { useBudgetStore } from "./budgetStore";
 import { useFeatureFlagsStore } from "./featureFlagsStore";
 import { usePickerStore } from "./pickerStore";
@@ -17,7 +16,6 @@ import { FEATURE_FLAG_DEFAULTS } from "../preferences/featureFlags";
  * from the previous budget leaking into the UI.
  */
 export function resetAllStores(): void {
-  useAccountsStore.setState({ accounts: [], loading: false });
   useBudgetStore.setState({ month: currentMonth(), data: null, loading: false });
   // categoriesStore no longer used — liveQuery handles data in components
   // payeesStore no longer used — liveQuery handles data via usePayees hook

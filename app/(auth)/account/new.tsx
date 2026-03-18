@@ -3,7 +3,7 @@ import { Platform, Pressable, ScrollView, Switch, View } from "react-native";
 import { Input } from "@/presentation/components/atoms/Input";
 import { Stack, useRouter } from "expo-router";
 import { Icon } from "@/presentation/components/atoms/Icon";
-import { useAccountsStore } from "@/stores/accountsStore";
+import { createAccount } from "@/accounts";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
@@ -24,7 +24,6 @@ export default function NewAccountScreen() {
   const router = useRouter();
   const theme = useTheme();
   const styles = useThemedStyles(createStyles);
-  const { create, load } = useAccountsStore();
 
   const { t } = useTranslation("accounts");
   const [name, setName] = useState("");
@@ -43,8 +42,7 @@ export default function NewAccountScreen() {
     setLoading(true);
     await handleError(async () => {
       const startingBalance = parseToCents(balanceStr);
-      await create({ name: trimmed, offbudget, closed: false }, startingBalance);
-      await load();
+      await createAccount({ name: trimmed, offbudget, closed: false }, startingBalance);
       router.back();
     });
     setLoading(false);

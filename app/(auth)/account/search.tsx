@@ -22,7 +22,7 @@ import {
   type TransactionDisplay,
 } from "@/transactions";
 import { useUndoStore } from "@/stores/undoStore";
-import { useAccountsStore } from "@/stores/accountsStore";
+import { useAccounts } from "@/presentation/hooks/useAccounts";
 import type { SearchToken } from "@/transactions/types";
 import { useCategories } from "@/presentation/hooks/useCategories";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
@@ -129,7 +129,7 @@ export default function AccountSearchScreen() {
   const { colors } = useTheme();
   const { t } = useTranslation("accounts");
   const { t: tc } = useTranslation("common");
-  const { accounts } = useAccountsStore();
+  const { accounts } = useAccounts();
   const { categories } = useCategories();
   const { tags } = useTags();
 
@@ -177,7 +177,7 @@ export default function AccountSearchScreen() {
       setTransactions: setResults,
       refreshIdRef,
       resetSelection,
-      loadAccounts: () => useAccountsStore.getState().load(),
+      loadAccounts: () => {},
     });
 
   const { triggerCategoryPicker } = useBulkCategoryPicker(handleBulkChangeCategory);

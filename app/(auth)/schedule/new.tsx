@@ -8,7 +8,7 @@ import Animated, {
   interpolate,
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
-import { useAccountsStore } from "@/stores/accountsStore";
+import { useAccounts } from "@/presentation/hooks/useAccounts";
 import { useSchedulesStore } from "@/stores/schedulesStore";
 import { usePickerStore } from "@/stores/pickerStore";
 // categories no longer needed from store — picker handles selection
@@ -35,7 +35,7 @@ export default function NewScheduleScreen() {
   const isDark = colorScheme === "dark";
 
   const { create, load } = useSchedulesStore();
-  const accounts = useAccountsStore((s) => s.accounts);
+  const { accounts } = useAccounts();
 
   // Picker store
   const selectedPayee = usePickerStore((s) => s.selectedPayee);

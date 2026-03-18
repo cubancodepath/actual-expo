@@ -219,7 +219,7 @@ export default function AccountsScreen() {
   const router = useRouter();
   const theme = useTheme();
   const styles = useThemedStyles(createStyles);
-  const { accounts } = useAccounts();
+  const { accounts, hasLoaded } = useAccounts();
   const { refreshControlProps } = useRefreshControl();
   const commonActions = useCommonMenuActions();
   const { t } = useTranslation("accounts");
@@ -253,7 +253,7 @@ export default function AccountsScreen() {
       >
         <Stack.Screen.Title large>{t("title")}</Stack.Screen.Title>
 
-        {groups.length > 0 ? (
+        {groups.length > 0 || !hasLoaded ? (
           <>
             {groups.map((group) => (
               <AccountSection

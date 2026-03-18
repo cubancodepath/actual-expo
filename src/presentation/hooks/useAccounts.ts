@@ -15,11 +15,11 @@ import type { Account } from "@/accounts/types";
  * Reactive list of all accounts (without balances).
  */
 export function useAccounts() {
-  const { data, isLoading } = useLiveQuery<Account>(
+  const { data, isLoading, hasLoaded } = useLiveQuery<Account>(
     () => q("accounts"),
     [],
   );
-  return { accounts: data ?? [], isLoading };
+  return { accounts: data ?? [], isLoading, hasLoaded };
 }
 
 /**

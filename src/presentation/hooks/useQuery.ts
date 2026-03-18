@@ -28,6 +28,8 @@ import { pagedQuery, type PagedQueryInstance } from "@/queries/pagedQuery";
 export interface UseLiveQueryResult<T> {
   data: T[] | null;
   isLoading: boolean;
+  /** True after the first successful data fetch. Use to distinguish placeholder [] from real empty. */
+  hasLoaded: boolean;
 }
 
 export function useLiveQuery<T = Record<string, unknown>>(
@@ -39,6 +41,7 @@ export function useLiveQuery<T = Record<string, unknown>>(
   // Components always receive an array, never null. No loading flash.
   const [data, setData] = useState<T[] | null>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const isUnmounted = useRef(false);
 
   useEffect(() => {
@@ -54,6 +57,7 @@ export function useLiveQuery<T = Record<string, unknown>>(
         if (!isUnmounted.current) {
           setData(newData);
           setIsLoading(false);
+          setHasLoaded(true);
         }
       },
       onError: (err) => {
@@ -70,7 +74,7 @@ export function useLiveQuery<T = Record<string, unknown>>(
     };
   }, [query]);
 
-  return { data, isLoading };
+  return { data, isLoading, hasLoaded };
 }
 
 // ---------------------------------------------------------------------------

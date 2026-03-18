@@ -20,37 +20,37 @@ You are an expert in `react-native-ease`, a lightweight declarative animation li
 `EaseView` is a drop-in replacement for `View` that animates property changes. Set target values in `animate`, and the component smoothly transitions using native platform animations. Think CSS transitions for React Native.
 
 ```tsx
-import { EaseView } from 'react-native-ease';
+import { EaseView } from "react-native-ease";
 ```
 
 ## When to Use react-native-ease vs Alternatives
 
-| Need | Library |
-|------|---------|
+| Need                                                  | Library               |
+| ----------------------------------------------------- | --------------------- |
 | State-driven transitions (fade, slide, scale, rotate) | **react-native-ease** |
-| Enter/mount animations | **react-native-ease** |
-| Looping animations (pulse, blink, marquee) | **react-native-ease** |
-| Background color or border radius animations | **react-native-ease** |
-| Gesture-driven animations (pan, pinch, drag) | Reanimated |
-| Shared values across components | Reanimated |
-| Layout animations (width/height, entering/exiting) | Reanimated |
-| Shared element transitions | Reanimated |
-| Complex interpolation chains or worklets | Reanimated |
+| Enter/mount animations                                | **react-native-ease** |
+| Looping animations (pulse, blink, marquee)            | **react-native-ease** |
+| Background color or border radius animations          | **react-native-ease** |
+| Gesture-driven animations (pan, pinch, drag)          | Reanimated            |
+| Shared values across components                       | Reanimated            |
+| Layout animations (width/height, entering/exiting)    | Reanimated            |
+| Shared element transitions                            | Reanimated            |
+| Complex interpolation chains or worklets              | Reanimated            |
 
 **Rule**: If it's a simple state -> visual change, use react-native-ease. If it involves gestures, shared values, or layout changes, use Reanimated.
 
 ## EaseView Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `animate` | `AnimateProps` | — | Target values for animated properties |
-| `initialAnimate` | `AnimateProps` | — | Starting values for enter animations (animates to `animate` on mount) |
-| `transition` | `Transition` | `{ type: 'timing' }` | Animation configuration |
-| `onTransitionEnd` | `(e: { finished: boolean }) => void` | — | Fires when animation completes or is interrupted |
-| `transformOrigin` | `{ x?: number; y?: number }` | `{ x: 0.5, y: 0.5 }` | Pivot point for scale/rotation (0-1 fractions) |
-| `useHardwareLayer` | `boolean` | `false` | Android: GPU rasterization during animations |
-| `style` | `ViewStyle` | — | Non-animated styles |
-| `children` | `ReactNode` | — | Child elements |
+| Prop               | Type                                 | Default              | Description                                                           |
+| ------------------ | ------------------------------------ | -------------------- | --------------------------------------------------------------------- |
+| `animate`          | `AnimateProps`                       | —                    | Target values for animated properties                                 |
+| `initialAnimate`   | `AnimateProps`                       | —                    | Starting values for enter animations (animates to `animate` on mount) |
+| `transition`       | `Transition`                         | `{ type: 'timing' }` | Animation configuration                                               |
+| `onTransitionEnd`  | `(e: { finished: boolean }) => void` | —                    | Fires when animation completes or is interrupted                      |
+| `transformOrigin`  | `{ x?: number; y?: number }`         | `{ x: 0.5, y: 0.5 }` | Pivot point for scale/rotation (0-1 fractions)                        |
+| `useHardwareLayer` | `boolean`                            | `false`              | Android: GPU rasterization during animations                          |
+| `style`            | `ViewStyle`                          | —                    | Non-animated styles                                                   |
+| `children`         | `ReactNode`                          | —                    | Child elements                                                        |
 
 Plus all standard `ViewProps`.
 
@@ -58,19 +58,19 @@ Plus all standard `ViewProps`.
 
 All properties are **flat** — no transform array. Unspecified properties keep their identity values.
 
-| Property | Type | Default | Unit |
-|----------|------|---------|------|
-| `opacity` | `number` | `1` | 0-1 |
-| `translateX` | `number` | `0` | pixels |
-| `translateY` | `number` | `0` | pixels |
-| `scale` | `number` | `1` | factor (shorthand for scaleX + scaleY) |
-| `scaleX` | `number` | `1` | factor (overrides scale for X) |
-| `scaleY` | `number` | `1` | factor (overrides scale for Y) |
-| `rotate` | `number` | `0` | degrees (Z-axis) |
-| `rotateX` | `number` | `0` | degrees (3D) |
-| `rotateY` | `number` | `0` | degrees (3D) |
-| `borderRadius` | `number` | `0` | pixels (hardware-accelerated, clips children) |
-| `backgroundColor` | `ColorValue` | `'transparent'` | any RN color value |
+| Property          | Type         | Default         | Unit                                          |
+| ----------------- | ------------ | --------------- | --------------------------------------------- |
+| `opacity`         | `number`     | `1`             | 0-1                                           |
+| `translateX`      | `number`     | `0`             | pixels                                        |
+| `translateY`      | `number`     | `0`             | pixels                                        |
+| `scale`           | `number`     | `1`             | factor (shorthand for scaleX + scaleY)        |
+| `scaleX`          | `number`     | `1`             | factor (overrides scale for X)                |
+| `scaleY`          | `number`     | `1`             | factor (overrides scale for Y)                |
+| `rotate`          | `number`     | `0`             | degrees (Z-axis)                              |
+| `rotateX`         | `number`     | `0`             | degrees (3D)                                  |
+| `rotateY`         | `number`     | `0`             | degrees (3D)                                  |
+| `borderRadius`    | `number`     | `0`             | pixels (hardware-accelerated, clips children) |
+| `backgroundColor` | `ColorValue` | `'transparent'` | any RN color value                            |
 
 ## Transitions
 
@@ -100,6 +100,7 @@ transition={{
 ```
 
 **Spring presets:**
+
 - Snappy (no bounce): `{ damping: 20, stiffness: 300, mass: 1 }`
 - Gentle bounce: `{ damping: 12, stiffness: 120, mass: 1 }`
 - Bouncy: `{ damping: 8, stiffness: 200, mass: 1 }`
@@ -119,7 +120,7 @@ transition={{ type: 'none' }}
 <EaseView
   initialAnimate={{ opacity: 0 }}
   animate={{ opacity: 1 }}
-  transition={{ type: 'timing', duration: 300 }}
+  transition={{ type: "timing", duration: 300 }}
 >
   {children}
 </EaseView>
@@ -131,7 +132,7 @@ transition={{ type: 'none' }}
 <EaseView
   initialAnimate={{ opacity: 0, translateY: 20 }}
   animate={{ opacity: 1, translateY: 0 }}
-  transition={{ type: 'spring', damping: 15, stiffness: 120, mass: 1 }}
+  transition={{ type: "spring", damping: 15, stiffness: 120, mass: 1 }}
 >
   {children}
 </EaseView>
@@ -142,7 +143,7 @@ transition={{ type: 'none' }}
 ```tsx
 <EaseView
   animate={{ opacity: isVisible ? 1 : 0 }}
-  transition={{ type: 'timing', duration: 300, easing: 'easeOut' }}
+  transition={{ type: "timing", duration: 300, easing: "easeOut" }}
   style={styles.card}
 >
   {children}
@@ -155,7 +156,7 @@ transition={{ type: 'none' }}
 <EaseView
   initialAnimate={{ opacity: 0.3 }}
   animate={{ opacity: 1 }}
-  transition={{ type: 'timing', duration: 1000, easing: 'easeInOut', loop: 'reverse' }}
+  transition={{ type: "timing", duration: 1000, easing: "easeInOut", loop: "reverse" }}
 />
 ```
 
@@ -164,7 +165,7 @@ transition={{ type: 'none' }}
 ```tsx
 <EaseView
   animate={{ scale: isPressed ? 0.95 : 1 }}
-  transition={{ type: 'spring', damping: 12, stiffness: 200, mass: 1 }}
+  transition={{ type: "spring", damping: 12, stiffness: 200, mass: 1 }}
 >
   {children}
 </EaseView>
@@ -174,8 +175,8 @@ transition={{ type: 'none' }}
 
 ```tsx
 <EaseView
-  animate={{ backgroundColor: isActive ? '#3B82F6' : '#E5E7EB' }}
-  transition={{ type: 'timing', duration: 300 }}
+  animate={{ backgroundColor: isActive ? "#3B82F6" : "#E5E7EB" }}
+  transition={{ type: "timing", duration: 300 }}
   style={styles.card}
 >
   {children}
@@ -188,7 +189,7 @@ transition={{ type: 'none' }}
 <EaseView
   initialAnimate={{ opacity: 0, translateY: 30, scale: 0.9 }}
   animate={{ opacity: 1, translateY: 0, scale: 1 }}
-  transition={{ type: 'spring', damping: 15, stiffness: 120, mass: 1 }}
+  transition={{ type: "spring", damping: 15, stiffness: 120, mass: 1 }}
 >
   {children}
 </EaseView>
@@ -200,7 +201,7 @@ transition={{ type: 'none' }}
 <EaseView
   animate={{ rotate: isOpen ? 180 : 0 }}
   transformOrigin={{ x: 0.5, y: 0.5 }}
-  transition={{ type: 'timing', duration: 300, easing: 'easeInOut' }}
+  transition={{ type: "timing", duration: 300, easing: "easeInOut" }}
 >
   <ChevronIcon />
 </EaseView>
@@ -217,17 +218,19 @@ const [mounted, setMounted] = useState(true);
 // Trigger exit:
 const handleClose = () => setVisible(false);
 
-{mounted && (
-  <EaseView
-    animate={{ opacity: visible ? 1 : 0, translateY: visible ? 0 : 20 }}
-    transition={{ type: 'timing', duration: 300 }}
-    onTransitionEnd={({ finished }) => {
-      if (finished && !visible) setMounted(false);
-    }}
-  >
-    {children}
-  </EaseView>
-)}
+{
+  mounted && (
+    <EaseView
+      animate={{ opacity: visible ? 1 : 0, translateY: visible ? 0 : 20 }}
+      transition={{ type: "timing", duration: 300 }}
+      onTransitionEnd={({ finished }) => {
+        if (finished && !visible) setMounted(false);
+      }}
+    >
+      {children}
+    </EaseView>
+  );
+}
 ```
 
 ### Marquee / ticker scroll
@@ -236,7 +239,7 @@ const handleClose = () => setVisible(false);
 <EaseView
   initialAnimate={{ translateX: 0 }}
   animate={{ translateX: -300 }}
-  transition={{ type: 'timing', duration: 3000, easing: 'linear', loop: 'repeat' }}
+  transition={{ type: "timing", duration: 3000, easing: "linear", loop: "repeat" }}
 >
   <Text>Scrolling text content here</Text>
 </EaseView>
@@ -247,25 +250,21 @@ const handleClose = () => setVisible(false);
 Always respect the user's reduced motion preference. When reduced motion is enabled, render a plain `View` with the final state instead of animating.
 
 ```tsx
-import { View } from 'react-native';
-import { useReducedMotion } from 'react-native-reanimated';
-import { EaseView } from 'react-native-ease';
+import { View } from "react-native";
+import { useReducedMotion } from "react-native-reanimated";
+import { EaseView } from "react-native-ease";
 
 function AnimatedCard({ visible, children }) {
   const reducedMotion = useReducedMotion();
 
   if (reducedMotion) {
-    return (
-      <View style={[styles.card, { opacity: visible ? 1 : 0 }]}>
-        {children}
-      </View>
-    );
+    return <View style={[styles.card, { opacity: visible ? 1 : 0 }]}>{children}</View>;
   }
 
   return (
     <EaseView
       animate={{ opacity: visible ? 1 : 0 }}
-      transition={{ type: 'timing', duration: 300 }}
+      transition={{ type: "timing", duration: 300 }}
       style={styles.card}
     >
       {children}

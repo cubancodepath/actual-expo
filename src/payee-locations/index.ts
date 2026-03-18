@@ -28,10 +28,7 @@ export async function getLocationsForPayee(payeeId: string): Promise<PayeeLocati
   return rows.map(rowToPayeeLocation);
 }
 
-export async function createPayeeLocation(
-  payeeId: string,
-  coords: Coordinates,
-): Promise<string> {
+export async function createPayeeLocation(payeeId: string, coords: Coordinates): Promise<string> {
   if (coords.latitude < -90 || coords.latitude > 90) {
     throw new Error(`Invalid latitude: ${coords.latitude}`);
   }
@@ -43,11 +40,41 @@ export async function createPayeeLocation(
   const now = Date.now();
 
   await sendMessages([
-    { timestamp: Timestamp.send()!, dataset: "payee_locations", row: id, column: "payee_id", value: payeeId },
-    { timestamp: Timestamp.send()!, dataset: "payee_locations", row: id, column: "latitude", value: coords.latitude },
-    { timestamp: Timestamp.send()!, dataset: "payee_locations", row: id, column: "longitude", value: coords.longitude },
-    { timestamp: Timestamp.send()!, dataset: "payee_locations", row: id, column: "created_at", value: now },
-    { timestamp: Timestamp.send()!, dataset: "payee_locations", row: id, column: "tombstone", value: 0 },
+    {
+      timestamp: Timestamp.send()!,
+      dataset: "payee_locations",
+      row: id,
+      column: "payee_id",
+      value: payeeId,
+    },
+    {
+      timestamp: Timestamp.send()!,
+      dataset: "payee_locations",
+      row: id,
+      column: "latitude",
+      value: coords.latitude,
+    },
+    {
+      timestamp: Timestamp.send()!,
+      dataset: "payee_locations",
+      row: id,
+      column: "longitude",
+      value: coords.longitude,
+    },
+    {
+      timestamp: Timestamp.send()!,
+      dataset: "payee_locations",
+      row: id,
+      column: "created_at",
+      value: now,
+    },
+    {
+      timestamp: Timestamp.send()!,
+      dataset: "payee_locations",
+      row: id,
+      column: "tombstone",
+      value: 0,
+    },
   ]);
 
   return id;
@@ -55,7 +82,13 @@ export async function createPayeeLocation(
 
 export async function deletePayeeLocation(id: string): Promise<void> {
   await sendMessages([
-    { timestamp: Timestamp.send()!, dataset: "payee_locations", row: id, column: "tombstone", value: 1 },
+    {
+      timestamp: Timestamp.send()!,
+      dataset: "payee_locations",
+      row: id,
+      column: "tombstone",
+      value: 1,
+    },
   ]);
 }
 

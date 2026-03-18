@@ -10,7 +10,9 @@ export async function requestLocationPermission(): Promise<boolean> {
   return status === "granted";
 }
 
-export async function getLocationPermissionStatus(): Promise<"granted" | "denied" | "undetermined"> {
+export async function getLocationPermissionStatus(): Promise<
+  "granted" | "denied" | "undetermined"
+> {
   const { status } = await Location.getForegroundPermissionsAsync();
   if (status === "granted") return "granted";
   if (status === "denied") return "denied";

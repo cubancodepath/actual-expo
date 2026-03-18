@@ -38,13 +38,17 @@ export function useLiveQuery<T = Record<string, unknown>>(
   deps: DependencyList,
 ): UseLiveQueryResult<T> {
   const query = useMemo(makeQuery, deps);
-  // Check pre-loaded cache (populated during bootstrap while splash screen is visible)
-  const cacheKey = query?.serializeAsString() ?? "";
-  const cached = useMemo(() => (cacheKey ? consumeQueryCache(cacheKey) : null), []);
+  // Check pre-loaded cache on first render (populated during bootstrap)
+  const initialCache = useRef<T[] | null | undefined>(undefined);
+  if (initialCache.current === undefined) {
+    const key = query?.serializeAsString() ?? "";
+    const cached = key ? consumeQueryCache(key) : null;
+    initialCache.current = cached as T[] | null;
+  }
   // Start with cached data if available, otherwise [] (placeholderData pattern)
-  const [data, setData] = useState<T[] | null>((cached as T[] | null) ?? []);
+  const [data, setData] = useState<T[] | null>(initialCache.current ?? []);
   const [isLoading, setIsLoading] = useState(false);
-  const [hasLoaded, setHasLoaded] = useState(cached != null);
+  const [hasLoaded, setHasLoaded] = useState(initialCache.current != null);
   const isUnmounted = useRef(false);
 
   useEffect(() => {

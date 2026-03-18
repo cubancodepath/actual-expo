@@ -1,130 +1,146 @@
-import { ActivityIndicator, Pressable, StyleSheet, type ViewStyle } from "react-native";
+import { ActivityIndicator, Pressable, type ViewStyle } from "react-native";
 import { Icon } from "./Icon";
 import type { IconName } from "./iconRegistry";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Text } from "./Text";
 import type { Theme } from "../../../theme";
 
-type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+type ButtonStyle = "borderedProminent" | "bordered" | "borderedSecondary" | "borderless";
 type ButtonSize = "sm" | "md" | "lg";
 
 export interface ButtonProps {
-  title: string;
-  onPress: () => void;
-  variant?: ButtonVariant;
-  size?: ButtonSize;
+  title?: string;
   icon?: IconName;
+  onPress: () => void;
+  buttonStyle?: ButtonStyle;
+  size?: ButtonSize;
+  danger?: boolean;
   loading?: boolean;
   disabled?: boolean;
-  textColor?: string;
+  color?: string;
   style?: ViewStyle;
+  hitSlop?: number;
+  accessibilityLabel?: string;
 }
 
-const sizeMap = {
-  sm: { paddingVertical: 6, paddingHorizontal: 12, fontSize: 13 as const },
-  md: { paddingVertical: 10, paddingHorizontal: 16, fontSize: 14 as const },
-  lg: { paddingVertical: 14, paddingHorizontal: 24, fontSize: 16 as const },
+const sizeConfig = {
+  sm: { height: 30, fontSize: 13, iconSize: 15, paddingH: 12, gap: 4 },
+  md: { height: 36, fontSize: 15, iconSize: 17, paddingH: 16, gap: 6 },
+  lg: { height: 48, fontSize: 17, iconSize: 19, paddingH: 24, gap: 8 },
 } as const;
 
-const radiusMap: Record<ButtonSize, keyof Theme["borderRadius"]> = {
-  sm: "full",
-  md: "full",
-  lg: "full",
-};
-
-function getVariantStyles(theme: Theme, variant: ButtonVariant, size: ButtonSize) {
+function getButtonColors(
+  theme: Theme,
+  buttonStyle: ButtonStyle,
+  danger: boolean,
+): { bg: string; text: string; border?: string } {
   const { colors } = theme;
-  const borderRadius = theme.borderRadius[radiusMap[size]];
-  switch (variant) {
-    case "primary":
-      return {
-        container: { backgroundColor: colors.primary, borderRadius },
-        text: colors.primaryText,
-      };
-    case "secondary":
-      return {
-        container: { backgroundColor: colors.buttonSecondaryBackground, borderRadius },
-        text: colors.buttonSecondaryText,
-      };
-    case "ghost":
-      return {
-        container: { backgroundColor: "transparent", borderRadius },
-        text: colors.primary,
-      };
-    case "danger":
-      return {
-        container: { backgroundColor: colors.buttonDangerBackground, borderRadius },
-        text: colors.buttonDangerText,
-      };
+
+  if (danger) {
+    switch (buttonStyle) {
+      case "borderedProminent":
+        return { bg: colors.negative, text: colors.primaryText };
+      case "bordered":
+        return {
+          bg: colors.buttonDangerBackground,
+          text: colors.buttonDangerText,
+          border: colors.buttonDangerText,
+        };
+      case "borderedSecondary":
+        return { bg: colors.buttonDangerBackground, text: colors.buttonDangerText };
+      case "borderless":
+        return { bg: "transparent", text: colors.buttonDangerText };
+    }
+  }
+
+  switch (buttonStyle) {
+    case "borderedProminent":
+      return { bg: colors.primary, text: colors.primaryText };
+    case "bordered":
+      return { bg: colors.primarySubtle, text: colors.primary, border: colors.primary };
+    case "borderedSecondary":
+      return { bg: colors.buttonSecondaryBackground, text: colors.buttonSecondaryText };
+    case "borderless":
+      return { bg: "transparent", text: colors.primary };
   }
 }
 
 export function Button({
   title,
-  onPress,
-  variant = "primary",
-  size = "md",
   icon,
+  onPress,
+  buttonStyle = "borderedProminent",
+  size = "md",
+  danger = false,
   loading = false,
   disabled = false,
-  textColor,
+  color: colorOverride,
   style,
+  hitSlop = 8,
+  accessibilityLabel,
 }: ButtonProps) {
   const theme = useTheme();
-  const variantStyles = getVariantStyles(theme, variant, size);
-  const sizeStyles = sizeMap[size];
-  const color = textColor ?? variantStyles.text;
+  const { bg, text, border } = getButtonColors(theme, buttonStyle, danger);
+  const tint = colorOverride ?? text;
+  const cfg = sizeConfig[size];
+  const isIconOnly = !title && !!icon;
   const contentOpacity = disabled ? 0.4 : 1;
+
+  const containerStyle: ViewStyle = isIconOnly
+    ? {
+        width: cfg.height,
+        height: cfg.height,
+        borderRadius: cfg.height / 2,
+        backgroundColor: bg,
+        alignItems: "center",
+        justifyContent: "center",
+        ...(border ? { borderWidth: theme.borderWidth.default, borderColor: border } : {}),
+      }
+    : {
+        height: cfg.height,
+        paddingHorizontal: cfg.paddingH,
+        borderRadius: theme.borderRadius.full,
+        backgroundColor: bg,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: cfg.gap,
+        ...(border ? { borderWidth: theme.borderWidth.default, borderColor: border } : {}),
+      };
 
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled || loading}
+      hitSlop={hitSlop}
       accessibilityRole="button"
-      accessibilityLabel={title}
+      accessibilityLabel={accessibilityLabel ?? title}
       accessibilityState={{ disabled: disabled || loading, busy: loading }}
-      style={({ pressed }) => [
-        styles.base,
-        variantStyles.container,
-        {
-          paddingVertical: sizeStyles.paddingVertical,
-          paddingHorizontal: sizeStyles.paddingHorizontal,
-        },
-        pressed && styles.pressed,
-        style,
-      ]}
+      style={({ pressed }) => [containerStyle, pressed && { opacity: 0.8 }, style]}
     >
       {loading ? (
-        <ActivityIndicator size="small" color={color} style={{ opacity: contentOpacity }} />
+        <ActivityIndicator size="small" color={tint} style={{ opacity: contentOpacity }} />
       ) : (
         <>
           {icon && (
             <Icon
               name={icon}
-              size={sizeStyles.fontSize + 4}
-              color={color}
-              style={{ marginRight: 6, opacity: contentOpacity }}
+              size={cfg.iconSize}
+              color={tint}
+              style={{ opacity: contentOpacity }}
             />
           )}
-          <Text
-            variant="bodyLg"
-            color={color}
-            style={{ fontSize: sizeStyles.fontSize, fontWeight: "600", opacity: contentOpacity }}
-          >
-            {title}
-          </Text>
+          {title && (
+            <Text
+              variant="body"
+              color={tint}
+              style={{ fontSize: cfg.fontSize, fontWeight: "600", opacity: contentOpacity }}
+            >
+              {title}
+            </Text>
+          )}
         </>
       )}
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  base: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 44,
-  },
-  pressed: { opacity: 0.8 },
-});

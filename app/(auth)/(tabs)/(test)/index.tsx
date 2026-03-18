@@ -6,6 +6,8 @@ import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { Text } from "@/presentation/components/atoms/Text";
+import { Button } from "@/presentation/components/atoms/Button";
+import { GlassButton } from "@/presentation/components/atoms/GlassButton";
 import { CurrencySymbol } from "@/presentation/components/atoms/CurrencySymbol";
 import { useCursorBlink } from "@/presentation/hooks/useCursorBlink";
 import { useExpressionMode } from "@/presentation/hooks/useExpressionMode";
@@ -400,6 +402,366 @@ export default function TestPlayground() {
               )}
             </View>
           ))}
+        </View>
+
+        {/* ── Button Showcase ─────────────────────────────────────── */}
+
+        <Text
+          variant="captionSm"
+          color={colors.textMuted}
+          style={{
+            fontWeight: "700",
+            letterSpacing: 0.8,
+            marginBottom: spacing.sm,
+            marginTop: spacing.xxxl,
+          }}
+        >
+          BUTTONS — STYLES x SIZES
+        </Text>
+
+        {(["borderedProminent", "bordered", "borderedSecondary", "borderless"] as const).map(
+          (bs) => (
+            <View key={bs} style={{ marginBottom: spacing.xl }}>
+              <Text
+                variant="caption"
+                color={colors.textSecondary}
+                style={{ marginBottom: spacing.sm }}
+              >
+                {bs}
+              </Text>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: spacing.sm,
+                  flexWrap: "wrap",
+                }}
+              >
+                <Button
+                  title="Play"
+                  icon="playSkipForwardOutline"
+                  buttonStyle={bs}
+                  size="sm"
+                  onPress={() => {}}
+                />
+                <Button
+                  title="Play"
+                  icon="playSkipForwardOutline"
+                  buttonStyle={bs}
+                  size="md"
+                  onPress={() => {}}
+                />
+                <Button
+                  title="Play"
+                  icon="playSkipForwardOutline"
+                  buttonStyle={bs}
+                  size="lg"
+                  onPress={() => {}}
+                />
+              </View>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: spacing.sm,
+                  marginTop: spacing.sm,
+                }}
+              >
+                <Button icon="checkmark" buttonStyle={bs} size="sm" onPress={() => {}} />
+                <Button icon="checkmark" buttonStyle={bs} size="md" onPress={() => {}} />
+                <Button icon="checkmark" buttonStyle={bs} size="lg" onPress={() => {}} />
+              </View>
+            </View>
+          ),
+        )}
+
+        <Text
+          variant="captionSm"
+          color={colors.textMuted}
+          style={{
+            fontWeight: "700",
+            letterSpacing: 0.8,
+            marginBottom: spacing.sm,
+            marginTop: spacing.lg,
+          }}
+        >
+          BUTTONS — DANGER
+        </Text>
+
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: spacing.sm,
+            flexWrap: "wrap",
+            marginBottom: spacing.lg,
+          }}
+        >
+          <Button
+            title="Delete"
+            icon="trashOutline"
+            buttonStyle="borderedProminent"
+            danger
+            onPress={() => {}}
+          />
+          <Button
+            title="Delete"
+            icon="trashOutline"
+            buttonStyle="bordered"
+            danger
+            onPress={() => {}}
+          />
+          <Button
+            title="Delete"
+            icon="trashOutline"
+            buttonStyle="borderedSecondary"
+            danger
+            onPress={() => {}}
+          />
+          <Button
+            title="Delete"
+            icon="trashOutline"
+            buttonStyle="borderless"
+            danger
+            onPress={() => {}}
+          />
+        </View>
+
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: spacing.sm,
+            marginBottom: spacing.lg,
+          }}
+        >
+          <Button
+            icon="trashOutline"
+            buttonStyle="borderedProminent"
+            danger
+            size="md"
+            onPress={() => {}}
+          />
+          <Button icon="trashOutline" buttonStyle="bordered" danger size="md" onPress={() => {}} />
+          <Button
+            icon="trashOutline"
+            buttonStyle="borderedSecondary"
+            danger
+            size="md"
+            onPress={() => {}}
+          />
+          <Button
+            icon="trashOutline"
+            buttonStyle="borderless"
+            danger
+            size="md"
+            onPress={() => {}}
+          />
+        </View>
+
+        <Text
+          variant="captionSm"
+          color={colors.textMuted}
+          style={{
+            fontWeight: "700",
+            letterSpacing: 0.8,
+            marginBottom: spacing.sm,
+            marginTop: spacing.lg,
+          }}
+        >
+          BUTTONS — STATES
+        </Text>
+
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: spacing.sm,
+            flexWrap: "wrap",
+            marginBottom: spacing.lg,
+          }}
+        >
+          <Button title="Loading" buttonStyle="borderedProminent" loading onPress={() => {}} />
+          <Button title="Disabled" buttonStyle="borderedProminent" disabled onPress={() => {}} />
+          <Button title="Loading" buttonStyle="bordered" loading onPress={() => {}} />
+          <Button title="Disabled" buttonStyle="bordered" disabled onPress={() => {}} />
+        </View>
+
+        <Text
+          variant="captionSm"
+          color={colors.textMuted}
+          style={{
+            fontWeight: "700",
+            letterSpacing: 0.8,
+            marginBottom: spacing.sm,
+            marginTop: spacing.lg,
+          }}
+        >
+          BUTTONS — LABEL ONLY
+        </Text>
+
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: spacing.sm,
+            flexWrap: "wrap",
+            marginBottom: spacing.lg,
+          }}
+        >
+          <Button title="Label" buttonStyle="borderedProminent" size="sm" onPress={() => {}} />
+          <Button title="Label" buttonStyle="bordered" size="sm" onPress={() => {}} />
+          <Button title="Label" buttonStyle="borderedSecondary" size="sm" onPress={() => {}} />
+          <Button title="Label" buttonStyle="borderless" size="sm" onPress={() => {}} />
+        </View>
+
+        {/* ── GlassButton Showcase ────────────────────────────────── */}
+
+        <Text
+          variant="captionSm"
+          color={colors.textMuted}
+          style={{
+            fontWeight: "700",
+            letterSpacing: 0.8,
+            marginBottom: spacing.sm,
+            marginTop: spacing.xxxl,
+          }}
+        >
+          GLASS BUTTONS — ICON (CIRCULAR)
+        </Text>
+
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: spacing.md,
+            marginBottom: spacing.lg,
+          }}
+        >
+          <GlassButton icon="close" onPress={() => {}} />
+          <GlassButton icon="checkmark" onPress={() => {}} />
+          <GlassButton icon="add" onPress={() => {}} />
+          <GlassButton icon="search" onPress={() => {}} />
+        </View>
+
+        <Text
+          variant="captionSm"
+          color={colors.textMuted}
+          style={{
+            fontWeight: "700",
+            letterSpacing: 0.8,
+            marginBottom: spacing.sm,
+            marginTop: spacing.lg,
+          }}
+        >
+          GLASS BUTTONS — LABEL (OVAL)
+        </Text>
+
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: spacing.md,
+            flexWrap: "wrap",
+            marginBottom: spacing.lg,
+          }}
+        >
+          <GlassButton label="Split" onPress={() => {}} />
+          <GlassButton label="Done" onPress={() => {}} />
+          <GlassButton label="Cancel" onPress={() => {}} />
+        </View>
+
+        <Text
+          variant="captionSm"
+          color={colors.textMuted}
+          style={{
+            fontWeight: "700",
+            letterSpacing: 0.8,
+            marginBottom: spacing.sm,
+            marginTop: spacing.lg,
+          }}
+        >
+          GLASS BUTTONS — TINTED (PRIMARY BG)
+        </Text>
+
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: spacing.md,
+            flexWrap: "wrap",
+            marginBottom: spacing.lg,
+          }}
+        >
+          <GlassButton icon="close" variant="tinted" onPress={() => {}} />
+          <GlassButton icon="checkmark" variant="tinted" onPress={() => {}} />
+          <GlassButton label="Save" variant="tinted" onPress={() => {}} />
+          <GlassButton label="Done" variant="tinted" onPress={() => {}} />
+        </View>
+
+        <Text
+          variant="captionSm"
+          color={colors.textMuted}
+          style={{
+            fontWeight: "700",
+            letterSpacing: 0.8,
+            marginBottom: spacing.sm,
+            marginTop: spacing.lg,
+          }}
+        >
+          GLASS BUTTONS — CUSTOM COLORS
+        </Text>
+
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: spacing.md,
+            flexWrap: "wrap",
+            marginBottom: spacing.lg,
+          }}
+        >
+          <GlassButton icon="trashOutline" color={colors.negative} onPress={() => {}} />
+          <GlassButton icon="checkmark" color={colors.positive} onPress={() => {}} />
+          <GlassButton
+            label="Delete"
+            variant="tinted"
+            tintColor={colors.negative}
+            onPress={() => {}}
+          />
+          <GlassButton
+            label="Confirm"
+            variant="tinted"
+            tintColor={colors.positive}
+            onPress={() => {}}
+          />
+        </View>
+
+        <Text
+          variant="captionSm"
+          color={colors.textMuted}
+          style={{
+            fontWeight: "700",
+            letterSpacing: 0.8,
+            marginBottom: spacing.sm,
+            marginTop: spacing.lg,
+          }}
+        >
+          GLASS BUTTONS — GLASS EFFECT STYLES
+        </Text>
+
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: spacing.md,
+            marginBottom: spacing.lg,
+          }}
+        >
+          <GlassButton icon="add" glassEffectStyle="regular" onPress={() => {}} />
+          <GlassButton icon="add" glassEffectStyle="clear" onPress={() => {}} />
+          <GlassButton label="Regular" glassEffectStyle="regular" onPress={() => {}} />
+          <GlassButton label="Clear" glassEffectStyle="clear" onPress={() => {}} />
         </View>
       </ScrollView>
 

@@ -6,7 +6,6 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  TextInput,
   View,
 } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -16,7 +15,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import { Icon } from "@/presentation/components/atoms/Icon";
+import { Input } from "@/presentation/components/atoms/Input";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import Constants from "expo-constants";
@@ -195,32 +194,27 @@ export default function LoginScreen() {
               {t("serverUrl")}
             </Text>
             <View style={styles.urlRow}>
-              <View
-                style={[
+              <Input
+                testID="server-url-input"
+                icon="serverOutline"
+                placeholder={t("serverUrlPlaceholder")}
+                value={serverUrl}
+                onChangeText={(v) => {
+                  setServerUrl(v);
+                  setStep("idle");
+                  dismissError();
+                }}
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="url"
+                returnKeyType="go"
+                onSubmitEditing={step === "idle" ? handleProbe : undefined}
+                editable={step === "idle" || step === "probing"}
+                containerStyle={[
                   styles.inputContainer,
                   step !== "idle" && step !== "probing" && styles.inputLocked,
                 ]}
-              >
-                <Icon name="serverOutline" size={18} color={theme.colors.textMuted} />
-                <TextInput
-                  testID="server-url-input"
-                  style={[styles.input, { color: theme.colors.textPrimary }]}
-                  placeholder={t("serverUrlPlaceholder")}
-                  placeholderTextColor={theme.colors.textMuted}
-                  value={serverUrl}
-                  onChangeText={(v) => {
-                    setServerUrl(v);
-                    setStep("idle");
-                    dismissError();
-                  }}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  keyboardType="url"
-                  returnKeyType="go"
-                  onSubmitEditing={step === "idle" ? handleProbe : undefined}
-                  editable={step === "idle" || step === "probing"}
-                />
-              </View>
+              />
               {step !== "idle" && step !== "probing" && (
                 <Pressable style={styles.changeBtn} onPress={handleChangeServer} hitSlop={8}>
                   <Text variant="bodySm" color={theme.colors.primary} style={{ fontWeight: "600" }}>
@@ -246,32 +240,23 @@ export default function LoginScreen() {
                 <Text variant="caption" color={theme.colors.textSecondary} style={styles.label}>
                   {t("password")}
                 </Text>
-                <View
-                  style={[
-                    styles.inputContainer,
-                    error?.category === "validation" && {
-                      borderColor: theme.colors.errorText,
-                    },
-                  ]}
-                >
-                  <Icon name="lockClosedOutline" size={18} color={theme.colors.textMuted} />
-                  <TextInput
-                    testID="password-input"
-                    style={[styles.input, { color: theme.colors.textPrimary }]}
-                    placeholder={t("passwordPlaceholder")}
-                    placeholderTextColor={theme.colors.textMuted}
-                    value={password}
-                    onChangeText={(v) => {
-                      setPassword(v);
-                      dismissError();
-                    }}
-                    secureTextEntry
-                    autoCapitalize="none"
-                    autoFocus
-                    returnKeyType="go"
-                    onSubmitEditing={handlePasswordLogin}
-                  />
-                </View>
+                <Input
+                  testID="password-input"
+                  icon="lockClosedOutline"
+                  placeholder={t("passwordPlaceholder")}
+                  value={password}
+                  onChangeText={(v) => {
+                    setPassword(v);
+                    dismissError();
+                  }}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoFocus
+                  returnKeyType="go"
+                  onSubmitEditing={handlePasswordLogin}
+                  error={error?.category === "validation"}
+                  containerStyle={styles.inputContainer}
+                />
                 {error?.category === "validation" && (
                   <Text variant="captionSm" color={theme.colors.errorText}>
                     {error.message}
@@ -417,11 +402,6 @@ const createStyles = (theme: Theme) => ({
   },
   inputLocked: {
     opacity: 0.5,
-  },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    paddingVertical: theme.spacing.md,
   },
 
   urlRow: {

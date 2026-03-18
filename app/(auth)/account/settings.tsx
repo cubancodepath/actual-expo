@@ -5,7 +5,6 @@ import {
   Pressable,
   ScrollView,
   Switch,
-  TextInput,
   View,
 } from "react-native";
 
@@ -15,6 +14,7 @@ import { Icon } from "@/presentation/components/atoms/Icon";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
+import { Input } from "@/presentation/components/atoms/Input";
 import { ErrorBanner } from "@/presentation/components/molecules/ErrorBanner";
 import { useErrorHandler } from "@/presentation/hooks/useErrorHandler";
 import { useTranslation } from "react-i18next";
@@ -111,10 +111,8 @@ export default function AccountSettingsScreen() {
         <Text variant="caption" color={theme.colors.textSecondary} style={styles.label}>
           {t("settings.accountNameLabel")}
         </Text>
-        <TextInput
-          style={styles.input}
+        <Input
           placeholder={t("settings.accountNamePlaceholder")}
-          placeholderTextColor={theme.colors.textMuted}
           value={name}
           onChangeText={(t) => {
             setName(t);
@@ -192,16 +190,6 @@ const createStyles = (theme: Theme) => ({
     marginTop: theme.spacing.lg,
     marginLeft: theme.spacing.xs,
     marginBottom: theme.spacing.xs,
-  },
-  input: {
-    backgroundColor: theme.colors.inputBackground,
-    color: theme.colors.textPrimary,
-    borderRadius: theme.borderRadius.lg,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.md,
-    fontSize: 16,
-    borderWidth: theme.borderWidth.default,
-    borderColor: theme.colors.inputBorder,
   },
   toggleRow: {
     flexDirection: "row" as const,

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { TextInput, View } from "react-native";
+import { View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
@@ -7,6 +7,7 @@ import { useCategoriesStore } from "@/stores/categoriesStore";
 import { useBudgetStore } from "@/stores/budgetStore";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
+import { Input } from "@/presentation/components/atoms/Input";
 
 export default function RenameCategoryScreen() {
   const { t } = useTranslation("budget");
@@ -63,23 +64,13 @@ export default function RenameCategoryScreen() {
       <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.xs }}>
         {t("categoryNameLabel")}
       </Text>
-      <TextInput
+      <Input
         value={name}
         onChangeText={setName}
         placeholder={t("categoryNamePlaceholder")}
-        placeholderTextColor={colors.textMuted}
         autoFocus
         returnKeyType="done"
         onSubmitEditing={handleSave}
-        style={{
-          backgroundColor: colors.cardBackground,
-          color: colors.textPrimary,
-          fontSize: 16,
-          padding: spacing.md,
-          borderRadius: br.full,
-          borderWidth: bw.thin,
-          borderColor: colors.divider,
-        }}
       />
     </View>
   );

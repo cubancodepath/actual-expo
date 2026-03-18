@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Platform, Pressable, ScrollView, Switch, TextInput, View } from "react-native";
+import { Input } from "@/presentation/components/atoms/Input";
 import { Stack, useRouter } from "expo-router";
 import { Icon } from "@/presentation/components/atoms/Icon";
 import { useAccountsStore } from "@/stores/accountsStore";
@@ -83,10 +84,8 @@ export default function NewAccountScreen() {
         <Text variant="caption" color={theme.colors.textSecondary} style={styles.label}>
           {t("newAccount.accountNameLabel")}
         </Text>
-        <TextInput
-          style={styles.input}
+        <Input
           placeholder={t("newAccount.accountNamePlaceholder")}
-          placeholderTextColor={theme.colors.textMuted}
           value={name}
           onChangeText={(text) => {
             setName(text);
@@ -169,16 +168,6 @@ const createStyles = (theme: Theme) => ({
     marginTop: theme.spacing.lg,
     marginLeft: theme.spacing.xs,
     marginBottom: theme.spacing.xs,
-  },
-  input: {
-    backgroundColor: theme.colors.inputBackground,
-    color: theme.colors.textPrimary,
-    borderRadius: theme.borderRadius.lg,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.md,
-    fontSize: 16,
-    borderWidth: theme.borderWidth.default,
-    borderColor: theme.colors.inputBorder,
   },
   balanceInputRow: {
     flexDirection: "row" as const,

@@ -1,6 +1,7 @@
 import { useImperativeHandle, useRef, useState } from "react";
 import { Alert, InputAccessoryView, Platform, Pressable, ScrollView, TextInput, View } from "react-native";
 import { ContextMenu } from "@/presentation/components/atoms/ContextMenu";
+import { Input } from "@/presentation/components/atoms/Input";
 import { SymbolView } from "expo-symbols";
 import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
 import { BlurView } from "expo-blur";
@@ -485,6 +486,23 @@ export default function TestPlayground() {
             </View>
           ))}
         </View>
+
+        {/* ── 6. Input ─────────────────────────────────────────── */}
+
+        <SectionTitle>INPUT — BASIC</SectionTitle>
+        <Input placeholder="Account name" containerStyle={{ marginBottom: spacing.md }} />
+        <Input placeholder="https://your-server.com" icon="serverOutline" containerStyle={{ marginBottom: spacing.md }} />
+        <Input placeholder="Password" icon="lockClosedOutline" secureTextEntry containerStyle={{ marginBottom: spacing.md }} />
+
+        <SectionTitle>INPUT — ERROR STATE</SectionTitle>
+        <Input placeholder="Invalid input" icon="alertCircle" error containerStyle={{ marginBottom: spacing.md }} />
+
+        <SectionTitle>INPUT — DISABLED</SectionTitle>
+        <Input value="Read only value" editable={false} containerStyle={{ marginBottom: spacing.md, opacity: 0.5 }} />
+
+        <SectionTitle>INPUT — KEYBOARD TYPES</SectionTitle>
+        <Input placeholder="https://your-server.com" icon="serverOutline" keyboardType="url" autoCapitalize="none" containerStyle={{ marginBottom: spacing.md }} />
+        <Input placeholder="email@example.com" icon="personOutline" keyboardType="email-address" autoCapitalize="none" />
       </ScrollView>
 
       {/* Hidden shared TextInput for currency input demo */}

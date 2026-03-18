@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pressable, TextInput, View } from "react-native";
+import { Pressable, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
@@ -7,6 +7,7 @@ import { useCategoriesStore } from "@/stores/categoriesStore";
 import { useBudgetStore } from "@/stores/budgetStore";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
+import { Input } from "@/presentation/components/atoms/Input";
 
 export default function NewCategoryScreen() {
   const { t } = useTranslation("budget");
@@ -59,23 +60,13 @@ export default function NewCategoryScreen() {
       <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.xs }}>
         {t("categoryNameLabel")}
       </Text>
-      <TextInput
+      <Input
         value={name}
         onChangeText={setName}
         placeholder={t("newCategoryPlaceholder")}
-        placeholderTextColor={colors.textMuted}
         autoFocus
         returnKeyType="done"
         onSubmitEditing={handleSave}
-        style={{
-          backgroundColor: colors.cardBackground,
-          color: colors.textPrimary,
-          fontSize: 16,
-          padding: spacing.md,
-          borderRadius: br.md,
-          borderWidth: bw.thin,
-          borderColor: colors.divider,
-        }}
       />
     </View>
   );

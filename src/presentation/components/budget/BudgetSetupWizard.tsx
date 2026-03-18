@@ -24,6 +24,7 @@ import { Text } from "../atoms/Text";
 import { Button } from "../atoms/Button";
 import { Card } from "../atoms/Card";
 import { Icon } from "../atoms/Icon";
+import { Input } from "../atoms/Input";
 import { CurrencyInput, type CurrencyInputRef } from "../currency-input";
 import { Banner } from "../molecules/Banner";
 import { usePrefsStore } from "../../../stores/prefsStore";
@@ -424,19 +425,15 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
         <Text variant="bodySm" color={theme.colors.textSecondary} style={styles.subtext}>
           {t("name.subtext")}
         </Text>
-        <View style={styles.inputContainer}>
-          <Icon name="documentTextOutline" size={18} color={theme.colors.textMuted} />
-          <TextInput
-            style={[styles.input, { color: theme.colors.textPrimary }]}
-            value={budgetName}
-            onChangeText={setBudgetName}
-            placeholder={t("name.placeholder")}
-            placeholderTextColor={theme.colors.textMuted}
-            autoFocus
-            returnKeyType="next"
-            onSubmitEditing={() => goTo("account")}
-          />
-        </View>
+        <Input
+          icon="documentTextOutline"
+          value={budgetName}
+          onChangeText={setBudgetName}
+          placeholder={t("name.placeholder")}
+          autoFocus
+          returnKeyType="next"
+          onSubmitEditing={() => goTo("account")}
+        />
         <Button
           title={t("continue")}
           onPress={() => goTo("account")}
@@ -461,18 +458,14 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
         <Text variant="caption" color={theme.colors.textSecondary} style={styles.label}>
           {t("account.nameLabel")}
         </Text>
-        <View style={styles.inputContainer}>
-          <Icon name="wallet" size={18} color={theme.colors.textMuted} />
-          <TextInput
-            style={[styles.input, { color: theme.colors.textPrimary }]}
-            value={accountName}
-            onChangeText={setAccountName}
-            placeholder={t("account.placeholder")}
-            placeholderTextColor={theme.colors.textMuted}
-            autoFocus
-            returnKeyType="next"
-          />
-        </View>
+        <Input
+          icon="wallet"
+          value={accountName}
+          onChangeText={setAccountName}
+          placeholder={t("account.placeholder")}
+          autoFocus
+          returnKeyType="next"
+        />
         <Text variant="caption" color={theme.colors.textSecondary} style={styles.label}>
           {t("account.balanceLabel")}
         </Text>

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Modal, View, TextInput, KeyboardAvoidingView, Platform, Pressable } from "react-native";
+import { Input } from "../atoms/Input";
 import { create } from "zustand";
 import { useTranslation } from "react-i18next";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
@@ -182,19 +183,11 @@ export function EncryptionPasswordPrompt() {
             {description}
           </Text>
 
-          <TextInput
+          <Input
             ref={inputRef}
-            style={[
-              styles.input,
-              {
-                borderColor: error ? colors.errorText : colors.inputBorder,
-                color: colors.textPrimary,
-                backgroundColor: colors.inputBackground,
-              },
-            ]}
+            icon="lockClosedOutline"
             secureTextEntry
             placeholder={t("encryption.passwordPlaceholder")}
-            placeholderTextColor={colors.textMuted}
             value={password}
             onChangeText={setPassword}
             onSubmitEditing={isEnable ? undefined : handleSubmit}
@@ -202,22 +195,14 @@ export function EncryptionPasswordPrompt() {
             editable={!loading}
             autoCapitalize="none"
             autoCorrect={false}
+            error={!!error}
           />
 
           {isEnable && (
-            <TextInput
-              style={[
-                styles.input,
-                {
-                  marginTop: 12,
-                  borderColor: error ? colors.errorText : colors.inputBorder,
-                  color: colors.textPrimary,
-                  backgroundColor: colors.inputBackground,
-                },
-              ]}
+            <Input
+              icon="lockClosedOutline"
               secureTextEntry
               placeholder={t("encryption.confirmPasswordPlaceholder")}
-              placeholderTextColor={colors.textMuted}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               onSubmitEditing={handleSubmit}
@@ -225,6 +210,8 @@ export function EncryptionPasswordPrompt() {
               editable={!loading}
               autoCapitalize="none"
               autoCorrect={false}
+              error={!!error}
+              containerStyle={{ marginTop: 12 }}
             />
           )}
 
@@ -285,13 +272,6 @@ const createStyles = (theme: Theme) => ({
   },
   description: {
     marginBottom: theme.spacing.lg,
-  },
-  input: {
-    height: 48,
-    borderWidth: 1,
-    borderRadius: theme.borderRadius.md,
-    paddingHorizontal: theme.spacing.md,
-    fontSize: 16,
   },
   error: {
     marginTop: theme.spacing.sm,

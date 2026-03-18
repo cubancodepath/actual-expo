@@ -3,12 +3,18 @@ import { useSharedValue } from "react-native-reanimated";
 import { ActivityIndicator, Alert, LayoutAnimation, RefreshControl, View } from "react-native";
 import { LegendList } from "@legendapp/list";
 import { Stack, useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from "expo-router";
+import * as Haptics from "expo-haptics";
+import { useTranslation } from "react-i18next";
+import {
+  deleteTransaction,
+  duplicateTransaction,
+  toggleCleared,
+  updateTransaction,
+} from "@/transactions";
 import { useAccountsStore } from "@/stores/accountsStore";
-import { getClearedBalance, getTransactionsForAccount, getUnclearedCount } from "@/transactions";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
 import { EmptyState } from "@/presentation/components";
 import type { Theme } from "@/theme";
-
 import { BalanceSummary } from "@/presentation/components/account/BalanceSummary";
 import { TransactionRow } from "@/presentation/components/account/TransactionRow";
 import { DateSectionHeader } from "@/presentation/components/account/DateSectionHeader";
@@ -21,15 +27,9 @@ import { usePrivacyStore } from "@/stores/privacyStore";
 import { useUndoStore } from "@/stores/undoStore";
 import { useCommonMenuActions } from "@/presentation/hooks/useCommonMenuItems";
 import { useTagsStore } from "@/stores/tagsStore";
-import { TransactionListSkeleton } from "@/presentation/components/skeletons/TransactionListSkeleton";
-import {
-  buildListData,
-  useSelectModeHeader,
-  useTransactionList,
-  type ListItem,
-} from "@/presentation/hooks/transactionList";
+import { usePickerStore } from "@/stores/pickerStore";
+import { buildListData, useSelectModeHeader, type ListItem } from "@/presentation/hooks/transactionList";
 import { SelectModeToolbar } from "@/presentation/components/transaction/SelectModeToolbar";
-import { getPreviewTransactionsForAccount, type PreviewTransaction } from "@/schedules/preview";
 import {
   skipNextDate,
   postTransactionForSchedule,
@@ -37,8 +37,13 @@ import {
   deleteSchedule,
   updateSchedule,
 } from "@/schedules";
-import { useSchedulesStore } from "@/stores/schedulesStore";
-import { useTranslation } from "react-i18next";
+import { useTransactions } from "@/presentation/hooks/useTransactions";
+import { useSelectionMode } from "@/presentation/hooks/useSelectionMode";
+import { useTransactionBatchActions } from "@/presentation/hooks/useTransactionBatchActions";
+import { usePreviewTransactions } from "@/presentation/hooks/usePreviewTransactions";
+import { useLiveQuery } from "@/presentation/hooks/useQuery";
+import { q } from "@/queries";
+import type { TransactionDisplay } from "@/transactions/types";
 
 export default function AccountTransactionsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -48,95 +53,83 @@ export default function AccountTransactionsScreen() {
   const styles = useThemedStyles(createScreenStyles);
   const { t } = useTranslation("accounts");
   const { t: tc } = useTranslation("common");
-  const { accounts, load: loadAccounts } = useAccountsStore();
+  const { t: tt } = useTranslation("transactions");
+  const { accounts } = useAccountsStore();
   const account = accounts.find((a) => a.id === id);
-
-  const [clearedBalance, setClearedBalance] = useState(0);
-  const [unclearedCount, setUnclearedCount] = useState(0);
   const { hideReconciled, toggleHideReconciled } = usePrefsStore();
-  const { privacyMode } = usePrivacyStore();
-  const canUndo = useUndoStore((s) => s.canUndo);
-  const undoVersion = useUndoStore((s) => s.undoVersion);
+  usePrivacyStore();
   const tags = useTagsStore((s) => s.tags);
 
-  // ---- Upcoming scheduled transactions ----
+  // ---- Upcoming (reactive via liveQuery) ----
   const [upcomingExpanded, setUpcomingExpanded] = useState(false);
-  const [previewTransactions, setPreviewTransactions] = useState<PreviewTransaction[]>([]);
+  const previewTransactions = usePreviewTransactions({ accountId: id });
 
-  // ---- Consolidated transaction list ----
-  const fetchTransactions = useCallback(
-    (limit: number, offset: number) => {
-      const hide = usePrefsStore.getState().hideReconciled;
-      return getTransactionsForAccount(id, { limit, offset, hideReconciled: hide });
+  // ---- Transaction data (AQL + React Query + sync-event auto-refresh) ----
+  const txnQuery = useMemo(
+    () => {
+      let query = q("transactions").filter({ acct: id }).select(["*"]);
+      if (hideReconciled) query = query.filter({ reconciled: false });
+      return query;
     },
-    [id],
+    [id, hideReconciled],
   );
-
-  const txnList = useTransactionList({
-    fetchTransactions,
-    moveMode: "remove",
-    onDelete: (txn) => {
-      if (!txn.cleared && !txn.reconciled) {
-        setUnclearedCount((c) => Math.max(0, c - 1));
-      }
-      loadAccounts();
-    },
-    onDuplicate: () => {
-      setUnclearedCount((c) => c + 1);
-      loadAccounts();
-    },
-    onToggleCleared: (txn) => {
-      if (!txn.reconciled) {
-        setUnclearedCount((c) => Math.max(0, c + (txn.cleared ? 1 : -1)));
-      }
-      const delta = txn.cleared ? -txn.amount : txn.amount;
-      setClearedBalance((prev) => prev + delta);
-    },
-    onBulkToggleCleared: (_ids, targetVal, affectedTxns) => {
-      let balanceDelta = 0;
-      for (const t of affectedTxns) {
-        balanceDelta += t.cleared ? -t.amount : t.amount;
-      }
-      setClearedBalance((prev) => prev + balanceDelta);
-      const unclearedDelta = affectedTxns.filter((t) => !t.cleared).length;
-      setUnclearedCount((c) => Math.max(0, targetVal ? c - unclearedDelta : c + unclearedDelta));
-    },
+  const { transactions, fetchNextPage, hasNextPage, isFetchingNextPage, refetch } = useTransactions({
+    query: txnQuery,
+    options: { pageSize: 25, key: `account-${id}` },
   });
 
-  // Load previews, balance, and uncleared count BEFORE transactions
-  // so everything is ready when the list first renders.
-  const loadWithClearedBalance = useCallback(async () => {
-    const [previews, cleared, uncleared] = await Promise.all([
-      getPreviewTransactionsForAccount(id),
-      getClearedBalance(id),
-      getUnclearedCount(id),
-    ]);
-    setPreviewTransactions(previews);
-    setClearedBalance(cleared);
-    setUnclearedCount(uncleared);
-    await txnList.loadAll();
-  }, [txnList.loadAll, id]);
+  // ---- Cleared balance (reactive via liveQuery) ----
+  const clearedBalanceQuery = useMemo(
+    () => q("transactions").filter({ acct: id, cleared: true }).calculate({ $sum: "$amount" }),
+    [id],
+  );
+  const { data: clearedBalanceData } = useLiveQuery<{ result: number }>(
+    () => clearedBalanceQuery,
+    [clearedBalanceQuery],
+  );
+  const clearedBalance = clearedBalanceData?.[0]?.result ?? 0;
 
-  const silentRefreshWithBalance = useCallback(async () => {
-    const [previews, cleared, uncleared] = await Promise.all([
-      getPreviewTransactionsForAccount(id),
-      getClearedBalance(id),
-      getUnclearedCount(id),
-      loadAccounts(),
-    ]);
-    setPreviewTransactions(previews);
-    setClearedBalance(cleared);
-    setUnclearedCount(uncleared);
-    await txnList.silentRefresh();
-  }, [txnList.silentRefresh, id, loadAccounts]);
+  // ---- Uncleared count (reactive via liveQuery) ----
+  const unclearedCountQuery = useMemo(
+    () => q("transactions").filter({ acct: id, cleared: false, reconciled: false }).calculate({ $count: "$id" }),
+    [id],
+  );
+  const { data: unclearedCountData } = useLiveQuery<{ result: number }>(
+    () => unclearedCountQuery,
+    [unclearedCountQuery],
+  );
+  const unclearedCount = unclearedCountData?.[0]?.result ?? 0;
+
+  // ---- Selection mode ----
+  const selection = useSelectionMode<TransactionDisplay>();
+
+  const selectedTransactions = useMemo(
+    () => transactions.filter((txn) => selection.selectedIds.has(txn.id)),
+    [transactions, selection.selectedIds],
+  );
+  const allCleared = useMemo(() => {
+    const nonReconciled = selectedTransactions.filter((t) => !t.reconciled);
+    return nonReconciled.length > 0 && nonReconciled.every((t) => t.cleared);
+  }, [selectedTransactions]);
+  const selectedTotal = useMemo(
+    () => selectedTransactions.reduce((sum, t) => sum + (t.amount as number), 0),
+    [selectedTransactions],
+  );
+
+  // ---- Bulk actions ----
+  const batchActions = useTransactionBatchActions({
+    selectedIds: selection.selectedIds,
+    transactions: transactions as TransactionDisplay[],
+    onDone: selection.exit,
+  });
 
   // ---- Select mode header ----
   useSelectModeHeader({
-    isSelectMode: txnList.isSelectMode,
-    selectedCount: txnList.selectedIds.size,
-    selectedTotal: txnList.selectedTotal,
-    onSelectAll: txnList.handleSelectAll,
-    onDoneSelection: txnList.handleDoneSelection,
+    isSelectMode: selection.isSelectMode,
+    selectedCount: selection.selectedIds.size,
+    selectedTotal,
+    onSelectAll: () => selection.selectAll(transactions as TransactionDisplay[], (t) => !t.reconciled),
+    onDoneSelection: selection.exit,
   });
 
   // ---- Scroll-driven FAB collapse ----
@@ -145,134 +138,165 @@ export default function AccountTransactionsScreen() {
     fabCollapsed.value = e.nativeEvent.contentOffset.y > 100;
   }, []);
 
-  // ---- Data loading ----
+  // Reset selection on blur
   useFocusEffect(
     useCallback(() => {
-      if (!txnList.hasLoaded.current) {
-        loadWithClearedBalance();
-        txnList.hasLoaded.current = true;
-      } else {
-        silentRefreshWithBalance();
-      }
       return () => {
-        txnList.resetSelection();
+        if (!bulkMovePendingRef.current && !bulkCategoryPendingRef.current) {
+          selection.exit();
+        }
       };
-    }, [loadWithClearedBalance, silentRefreshWithBalance, txnList.resetSelection]),
+    }, []),
   );
 
-  // Refresh local list after undo restores data in DB
-  useEffect(() => {
-    if (undoVersion > 0) {
-      setTimeout(() => {
-        txnList.restoreDeleted();
-        txnList.restoreBulkDeleted();
-        silentRefreshWithBalance();
-      }, 0);
-    }
-  }, [undoVersion]);
+  // ---- Single-transaction actions ----
 
-  // ---- Account-specific handlers ----
-
-  function handleToggleHideReconciled() {
-    toggleHideReconciled();
-    loadWithClearedBalance();
+  function handleEditTransaction(txnId: string) {
+    router.push({ pathname: "/(auth)/transaction/new", params: { transactionId: txnId } });
   }
 
-  // ---- Upcoming actions ----
-  const handlePostSchedule = useCallback(
-    async (scheduleId: string) => {
-      await postTransactionForSchedule(scheduleId);
-      await Promise.all([silentRefreshWithBalance(), useSchedulesStore.getState().load()]);
-    },
-    [silentRefreshWithBalance],
-  );
-
-  const handleSkipSchedule = useCallback(
-    async (scheduleId: string) => {
-      await skipNextDate(scheduleId);
-      const [previews] = await Promise.all([
-        getPreviewTransactionsForAccount(id),
-        useSchedulesStore.getState().load(),
-      ]);
-      setPreviewTransactions(previews);
-    },
-    [id],
-  );
-
-  const handlePostScheduleToday = useCallback(
-    async (scheduleId: string) => {
-      await postTransactionForScheduleToday(scheduleId);
-      await Promise.all([silentRefreshWithBalance(), useSchedulesStore.getState().load()]);
-    },
-    [silentRefreshWithBalance],
-  );
-
-  const handleCompleteSchedule = useCallback(
-    async (scheduleId: string) => {
-      await updateSchedule({ schedule: { id: scheduleId, completed: true } });
-      const [previews] = await Promise.all([
-        getPreviewTransactionsForAccount(id),
-        useSchedulesStore.getState().load(),
-      ]);
-      setPreviewTransactions(previews);
-    },
-    [id],
-  );
-
-  const handleDeleteSchedule = useCallback(
-    (scheduleId: string) => {
-      Alert.alert(t("detail.deleteScheduleTitle"), t("detail.deleteScheduleMessage"), [
-        { text: tc("cancel"), style: "cancel" },
-        {
-          text: tc("delete"),
-          style: "destructive",
-          onPress: async () => {
-            await deleteSchedule(scheduleId);
-            const [previews] = await Promise.all([
-              getPreviewTransactionsForAccount(id),
-              useSchedulesStore.getState().load(),
-            ]);
-            setPreviewTransactions(previews);
-          },
+  function handleDelete(txnId: string) {
+    Alert.alert(tt("deleteTitle"), tt("deleteConfirm"), [
+      { text: tt("cancel"), style: "cancel" },
+      {
+        text: tt("delete"),
+        style: "destructive",
+        onPress: async () => {
+          await deleteTransaction(txnId);
+          useUndoStore.getState().showUndo(tt("deleteTransaction"));
         },
-      ]);
-    },
-    [id],
-  );
+      },
+    ]);
+  }
+
+  function handleToggleCleared(txnId: string) {
+    toggleCleared(txnId);
+  }
+
+  async function handleDuplicate(txnId: string) {
+    await duplicateTransaction(txnId);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  }
+
+  function handleAddTag(txnId: string) {
+    router.push({ pathname: "/(auth)/transaction/tags", params: { transactionId: txnId, mode: "direct" } });
+  }
+
+  // ---- Picker integration ----
+  const pendingMoveRef = useRef<string | null>(null);
+  const pendingCategoryRef = useRef<string | null>(null);
+  const bulkMovePendingRef = useRef(false);
+  const bulkCategoryPendingRef = useRef(false);
+
+  const selectedAccount = usePickerStore((s) => s.selectedAccount);
+  const selectedCategory = usePickerStore((s) => s.selectedCategory);
+  const clearPicker = usePickerStore((s) => s.clear);
+
+  function handleMove(txnId: string) {
+    pendingMoveRef.current = txnId;
+    router.push({ pathname: "/(auth)/transaction/account-picker", params: { selectedId: "" } });
+  }
+
+  function handleSetCategory(txnId: string) {
+    pendingCategoryRef.current = txnId;
+    router.push({ pathname: "/(auth)/transaction/category-picker", params: { hideSplit: "1" } });
+  }
+
+  function triggerAccountPicker() {
+    bulkMovePendingRef.current = true;
+    router.push({ pathname: "/(auth)/transaction/account-picker", params: { selectedId: "" } });
+  }
+
+  function triggerCategoryPicker() {
+    bulkCategoryPendingRef.current = true;
+    router.push({ pathname: "/(auth)/transaction/category-picker", params: { hideSplit: "1" } });
+  }
+
+  // Apply picker results
+  useEffect(() => {
+    if (!selectedAccount) return;
+    if (pendingMoveRef.current) {
+      const txnId = pendingMoveRef.current;
+      pendingMoveRef.current = null;
+      updateTransaction(txnId, { account: selectedAccount.id });
+      clearPicker();
+    } else if (bulkMovePendingRef.current) {
+      bulkMovePendingRef.current = false;
+      batchActions.handleBulkMove(selectedAccount.id, selectedAccount.name);
+      clearPicker();
+    }
+  }, [selectedAccount, clearPicker, batchActions.handleBulkMove]);
+
+  useEffect(() => {
+    if (!selectedCategory) return;
+    if (pendingCategoryRef.current) {
+      const txnId = pendingCategoryRef.current;
+      pendingCategoryRef.current = null;
+      if (selectedCategory.id) updateTransaction(txnId, { category: selectedCategory.id });
+      clearPicker();
+    } else if (bulkCategoryPendingRef.current) {
+      bulkCategoryPendingRef.current = false;
+      if (selectedCategory.id) batchActions.handleBulkChangeCategory(selectedCategory.id);
+      clearPicker();
+    }
+  }, [selectedCategory, clearPicker, batchActions.handleBulkChangeCategory]);
+
+  // ---- Upcoming actions (sync-event auto-refreshes via liveQuery) ----
+  const handlePostSchedule = useCallback(async (scheduleId: string) => {
+    await postTransactionForSchedule(scheduleId);
+  }, []);
+
+  const handleSkipSchedule = useCallback(async (scheduleId: string) => {
+    await skipNextDate(scheduleId);
+  }, []);
+
+  const handlePostScheduleToday = useCallback(async (scheduleId: string) => {
+    await postTransactionForScheduleToday(scheduleId);
+  }, []);
+
+  const handleCompleteSchedule = useCallback(async (scheduleId: string) => {
+    await updateSchedule({ schedule: { id: scheduleId, completed: true } });
+  }, []);
+
+  const handleDeleteSchedule = useCallback((scheduleId: string) => {
+    Alert.alert(t("detail.deleteScheduleTitle"), t("detail.deleteScheduleMessage"), [
+      { text: tc("cancel"), style: "cancel" },
+      {
+        text: tc("delete"),
+        style: "destructive",
+        onPress: async () => {
+          await deleteSchedule(scheduleId);
+        },
+      },
+    ]);
+  }, []);
 
   const handlePressSchedule = useCallback(
-    (scheduleId: string) => {
-      router.push({ pathname: "/(auth)/schedule/[id]", params: { id: scheduleId } });
-    },
+    (scheduleId: string) => router.push({ pathname: "/(auth)/schedule/[id]", params: { id: scheduleId } }),
     [router],
   );
 
-  // ---- Merged list data (transactions + upcoming) ----
+  // ---- Merged list data ----
   const mergedListData = useMemo(
-    () =>
-      buildListData(txnList.transactions, {
-        previewTransactions,
-        upcomingExpanded,
-      }),
-    [txnList.transactions, previewTransactions, upcomingExpanded],
+    () => buildListData(transactions as TransactionDisplay[], { previewTransactions, upcomingExpanded }),
+    [transactions, previewTransactions, upcomingExpanded],
   );
 
-  // ---- Common menu actions (JSX) ----
+  // ---- Common menu actions ----
   const commonActions = useCommonMenuActions();
 
   // ---- Normal-mode header ----
   useLayoutEffect(() => {
-    if (txnList.isSelectMode) return;
+    if (selection.isSelectMode) return;
     navigation.setOptions({
       title: account?.name ?? t("detail.defaultTitle"),
       headerTitle: undefined,
       headerLeft: undefined,
       headerRight: undefined,
     });
-  }, [account?.name, txnList.isSelectMode]);
+  }, [account?.name, selection.isSelectMode]);
 
   // ---- Render ----
-
   return (
     <View style={styles.container}>
       <BalanceSummary
@@ -297,113 +321,118 @@ export default function AccountTransactionsScreen() {
         />
       )}
 
-      {txnList.loading ? (
-        <TransactionListSkeleton />
-      ) : (
-        <LegendList
-          data={mergedListData}
-          keyExtractor={(item) => item.key}
-          getItemType={(item) => item.type}
-          extraData={`${txnList.isSelectMode}-${txnList.selectedIds.size}`}
-          onScroll={handleScroll}
-          scrollEventThrottle={16}
-          renderItem={({ item }) => {
-            if (item.type === "upcoming-header") {
-              return (
-                <UpcomingSectionHeader
-                  count={item.count}
-                  expanded={item.expanded}
-                  onToggle={() => {
-                    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                    setUpcomingExpanded((v) => !v);
-                  }}
-                />
-              );
-            }
-            if (item.type === "upcoming") {
-              return (
-                <UpcomingScheduleRow
-                  item={item.data}
-                  onPost={handlePostSchedule}
-                  onPostToday={handlePostScheduleToday}
-                  onSkip={handleSkipSchedule}
-                  onComplete={handleCompleteSchedule}
-                  onDelete={handleDeleteSchedule}
-                  onPress={handlePressSchedule}
-                  isFirst={item.isFirst}
-                  isLast={item.isLast}
-                />
-              );
-            }
-            if (item.type === "date") {
-              return <DateSectionHeader date={item.date} />;
-            }
+      <LegendList
+        data={mergedListData}
+        keyExtractor={(item: ListItem) => item.key}
+        getItemType={(item: ListItem) => item.type}
+        extraData={`${selection.isSelectMode}-${selection.selectedIds.size}`}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        renderItem={({ item }: { item: ListItem }) => {
+          if (item.type === "upcoming-header") {
             return (
-              <TransactionRow
-                item={item.data}
-                onPress={txnList.handleEditTransaction}
-                onDelete={txnList.handleDelete}
-                onToggleCleared={txnList.handleToggleCleared}
-                onLongPress={txnList.handleLongPress}
-                onDuplicate={txnList.handleDuplicate}
-                onMove={txnList.handleMove}
-                onSetCategory={txnList.handleSetCategory}
-                onAddTag={txnList.handleAddTag}
-                tags={tags}
-                isFirst={item.isFirst}
-                isLast={item.isLast}
-                isSelectMode={txnList.isSelectMode}
-                isSelected={txnList.selectedIds.has(item.data.id)}
+              <UpcomingSectionHeader
+                count={item.count}
+                expanded={item.expanded}
+                onToggle={() => {
+                  LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                  setUpcomingExpanded((v) => !v);
+                }}
               />
             );
-          }}
-          ListFooterComponent={
-            txnList.loadingMore ? (
-              <ActivityIndicator color={colors.primary} style={{ paddingVertical: 20 }} />
-            ) : null
           }
-          ListEmptyComponent={
-            hideReconciled ? (
-              <EmptyState
-                icon="lockClosedOutline"
-                title={t("detail.allReconciled.title")}
-                description={t("detail.allReconciled.description")}
-                actionLabel={t("detail.allReconciled.showAll")}
-                onAction={handleToggleHideReconciled}
+          if (item.type === "upcoming") {
+            return (
+              <UpcomingScheduleRow
+                item={item.data}
+                onPost={handlePostSchedule}
+                onPostToday={handlePostScheduleToday}
+                onSkip={handleSkipSchedule}
+                onComplete={handleCompleteSchedule}
+                onDelete={handleDeleteSchedule}
+                onPress={handlePressSchedule}
+                isFirst={item.isFirst}
+                isLast={item.isLast}
               />
-            ) : (
-              <EmptyState
-                icon="receiptOutline"
-                title={t("detail.noTransactions.title")}
-                description={t("detail.noTransactions.description")}
-              />
-            )
+            );
           }
-          onEndReached={txnList.loadMore}
-          onEndReachedThreshold={0.3}
-          contentContainerStyle={{ paddingBottom: 80 }}
-          refreshControl={<RefreshControl {...txnList.refreshControlProps} />}
-        />
-      )}
+          if (item.type === "date") {
+            return <DateSectionHeader date={item.date} />;
+          }
+          if (item.type !== "transaction") return null;
+          return (
+            <TransactionRow
+              item={item.data}
+              onPress={handleEditTransaction}
+              onDelete={handleDelete}
+              onToggleCleared={handleToggleCleared}
+              onLongPress={(txnId: string) => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                selection.longPress(txnId);
+              }}
+              onDuplicate={handleDuplicate}
+              onMove={handleMove}
+              onSetCategory={handleSetCategory}
+              onAddTag={handleAddTag}
+              tags={tags}
+              isFirst={item.isFirst}
+              isLast={item.isLast}
+              isSelectMode={selection.isSelectMode}
+              isSelected={selection.selectedIds.has(item.data.id)}
+            />
+          );
+        }}
+        ListFooterComponent={
+          isFetchingNextPage ? (
+            <ActivityIndicator color={colors.primary} style={{ paddingVertical: 20 }} />
+          ) : null
+        }
+        ListEmptyComponent={
+          hideReconciled ? (
+            <EmptyState
+              icon="lockClosedOutline"
+              title={t("detail.allReconciled.title")}
+              description={t("detail.allReconciled.description")}
+              actionLabel={t("detail.allReconciled.showAll")}
+              onAction={toggleHideReconciled}
+            />
+          ) : (
+            <EmptyState
+              icon="receiptOutline"
+              title={t("detail.noTransactions.title")}
+              description={t("detail.noTransactions.description")}
+            />
+          )
+        }
+        onEndReached={() => { if (hasNextPage) fetchNextPage(); }}
+        onEndReachedThreshold={0.3}
+        contentContainerStyle={{ paddingBottom: 80 }}
+        refreshControl={<RefreshControl refreshing={false} onRefresh={() => refetch()} tintColor={colors.primary} />}
+      />
 
-      {!txnList.isSelectMode && (
+      {!selection.isSelectMode && (
         <AddTransactionButton accountId={id as string} bottom={28} collapsed={fabCollapsed} />
       )}
 
-      {txnList.isSelectMode && (
+      {selection.isSelectMode && (
         <SelectModeToolbar
-          allCleared={txnList.allCleared}
-          selectedCount={txnList.selectedIds.size}
-          onToggleCleared={txnList.handleBulkToggleCleared}
-          onDelete={txnList.handleBulkDelete}
-          onMove={txnList.triggerAccountPicker}
-          onSetCategory={txnList.triggerCategoryPicker}
+          allCleared={allCleared}
+          selectedCount={selection.selectedIds.size}
+          onToggleCleared={batchActions.handleBulkToggleCleared}
+          onDelete={batchActions.handleBulkDelete}
+          onMove={triggerAccountPicker}
+          onSetCategory={triggerCategoryPicker}
         />
       )}
 
-      {!txnList.isSelectMode && (
+      {!selection.isSelectMode && (
         <Stack.Toolbar placement="right">
-          <Stack.Toolbar.Button onPress={txnList.enterSelectMode}>
+          <Stack.Toolbar.Button
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              selection.enter();
+            }}
+          >
             {t("detail.select")}
           </Stack.Toolbar.Button>
           <Stack.Toolbar.Button
@@ -429,7 +458,7 @@ export default function AccountTransactionsScreen() {
             </Stack.Toolbar.MenuAction>
             <Stack.Toolbar.MenuAction
               icon={hideReconciled ? "checkmark.circle" : "checkmark.circle.badge.xmark"}
-              onPress={handleToggleHideReconciled}
+              onPress={toggleHideReconciled}
             >
               {hideReconciled ? t("detail.showReconciled") : t("detail.hideReconciled")}
             </Stack.Toolbar.MenuAction>

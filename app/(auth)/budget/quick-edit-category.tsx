@@ -6,6 +6,8 @@ import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { useCategoriesStore } from "@/stores/categoriesStore";
 import { useBudgetStore } from "@/stores/budgetStore";
 import { useUndoStore } from "@/stores/undoStore";
+import { optimistic } from "@/stores/optimistic";
+import { updateCategory } from "@/categories";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
 import { Input } from "@/presentation/components/atoms/Input";
@@ -28,7 +30,6 @@ export default function QuickEditCategoryScreen() {
 
   const [name, setName] = useState("");
   const [editing, setEditing] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(false);
   const inputRef = useRef<TextInput>(null);
 
@@ -37,7 +38,7 @@ export default function QuickEditCategoryScreen() {
   }, [category?.id]);
 
   const trimmed = name.trim();
-  const canSave = trimmed.length > 0 && trimmed !== category?.name && !saving;
+  const canSave = trimmed.length > 0 && trimmed !== category?.name;
 
   // Goal description
   const templates = parseGoalDef(category?.goal_def ?? null);
@@ -45,21 +46,18 @@ export default function QuickEditCategoryScreen() {
     templates.length > 0 ? describeTemplate(templates[0], i18n.language) : null;
   const goalDescription = goalDesc ? translateDescription(goalDesc, t) : null;
 
-  async function handleSaveName() {
+  function handleSaveName() {
     setEditing(false);
-    if (!categoryId || saving) return;
+    if (!categoryId) return;
     if (!trimmed || trimmed === category?.name) {
       setName(category?.name ?? "");
       return;
     }
-    setSaving(true);
-    try {
-      await useCategoriesStore
-        .getState()
-        .updateCategory(categoryId, { name: trimmed });
-    } finally {
-      setSaving(false);
-    }
+    optimistic(
+      useCategoriesStore,
+      (s) => ({ categories: s.categories.map((c) => (c.id === categoryId ? { ...c, name: trimmed } : c)) }),
+      () => updateCategory(categoryId, { name: trimmed }),
+    );
   }
 
   function handleDelete() {
@@ -235,19 +233,23 @@ export default function QuickEditCategoryScreen() {
                 {
                   text: t("hide"),
                   onPress: () => {
+                    optimistic(
+                      useCategoriesStore,
+                      (s) => ({ categories: s.categories.map((c) => (c.id === categoryId ? { ...c, hidden: true } : c)) }),
+                      () => updateCategory(categoryId, { hidden: true }),
+                    );
                     router.back();
-                    useCategoriesStore
-                      .getState()
-                      .updateCategory(categoryId, { hidden: true });
                   },
                 },
               ],
             );
           } else {
+            optimistic(
+              useCategoriesStore,
+              (s) => ({ categories: s.categories.map((c) => (c.id === categoryId ? { ...c, hidden: false } : c)) }),
+              () => updateCategory(categoryId, { hidden: false }),
+            );
             router.back();
-            useCategoriesStore
-              .getState()
-              .updateCategory(categoryId, { hidden: false });
           }
         }}
       />

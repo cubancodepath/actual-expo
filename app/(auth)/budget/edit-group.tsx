@@ -6,6 +6,8 @@ import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { useCategoriesStore } from "@/stores/categoriesStore";
 import { useBudgetStore } from "@/stores/budgetStore";
 import { useUndoStore } from "@/stores/undoStore";
+import { optimistic } from "@/stores/optimistic";
+import { updateCategoryGroup } from "@/categories";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
 import { Input } from "@/presentation/components/atoms/Input";
@@ -19,28 +21,26 @@ export default function EditGroupScreen() {
   const group = groups.find((g) => g.id === groupId);
 
   const [name, setName] = useState("");
-  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (group) setName(group.name);
   }, [group?.id]);
 
   const trimmed = name.trim();
-  const canSave = trimmed.length > 0 && trimmed !== group?.name && !saving;
+  const canSave = trimmed.length > 0 && trimmed !== group?.name;
 
-  async function handleSave() {
-    if (!trimmed || !groupId || saving) return;
+  function handleSave() {
+    if (!trimmed || !groupId) return;
     if (trimmed === group?.name) {
       router.back();
       return;
     }
-    setSaving(true);
-    try {
-      await useCategoriesStore.getState().updateCategoryGroup(groupId, { name: trimmed });
-      router.back();
-    } finally {
-      setSaving(false);
-    }
+    optimistic(
+      useCategoriesStore,
+      (s) => ({ groups: s.groups.map((g) => (g.id === groupId ? { ...g, name: trimmed } : g)) }),
+      () => updateCategoryGroup(groupId, { name: trimmed }),
+    );
+    router.back();
   }
 
   function handleDelete() {
@@ -106,9 +106,13 @@ export default function EditGroupScreen() {
           size="lg"
           icon={group.hidden ? "eyeOutline" : "eyeOffOutline"}
           style={{ alignSelf: "stretch", marginTop: spacing.md }}
-          onPress={async () => {
+          onPress={() => {
             if (!groupId) return;
-            await useCategoriesStore.getState().updateCategoryGroup(groupId, { hidden: !group.hidden });
+            optimistic(
+              useCategoriesStore,
+              (s) => ({ groups: s.groups.map((g) => (g.id === groupId ? { ...g, hidden: !group.hidden } : g)) }),
+              () => updateCategoryGroup(groupId, { hidden: !group.hidden }),
+            );
           }}
         />
       )}

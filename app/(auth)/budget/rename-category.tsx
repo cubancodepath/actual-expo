@@ -4,7 +4,8 @@ import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { useCategoriesStore } from "@/stores/categoriesStore";
-import { useBudgetStore } from "@/stores/budgetStore";
+import { optimistic } from "@/stores/optimistic";
+import { updateCategory } from "@/categories";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
 import { Input } from "@/presentation/components/atoms/Input";
@@ -18,20 +19,18 @@ export default function RenameCategoryScreen() {
     currentName: string;
   }>();
   const [name, setName] = useState(currentName ?? "");
-  const [saving, setSaving] = useState(false);
 
   const trimmed = name.trim();
-  const canSave = trimmed.length > 0 && trimmed !== currentName && !saving;
+  const canSave = trimmed.length > 0 && trimmed !== currentName;
 
-  async function handleSave() {
+  function handleSave() {
     if (!canSave || !categoryId) return;
-    setSaving(true);
-    try {
-      await useCategoriesStore.getState().updateCategory(categoryId, { name: trimmed });
-      router.back();
-    } finally {
-      setSaving(false);
-    }
+    optimistic(
+      useCategoriesStore,
+      (s) => ({ categories: s.categories.map((c) => (c.id === categoryId ? { ...c, name: trimmed } : c)) }),
+      () => updateCategory(categoryId, { name: trimmed }),
+    );
+    router.back();
   }
 
   return (

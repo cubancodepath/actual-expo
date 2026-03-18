@@ -15,6 +15,8 @@ import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { useCategoriesStore } from "@/stores/categoriesStore";
 import { useBudgetStore } from "@/stores/budgetStore";
 import { useUndoStore } from "@/stores/undoStore";
+import { optimistic } from "@/stores/optimistic";
+import { updateCategory } from "@/categories";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
 import { Amount } from "@/presentation/components/atoms/Amount";
@@ -652,21 +654,23 @@ export default function CategoryDetailsScreen() {
                   { text: t("cancel"), style: "cancel" },
                   {
                     text: t("hideCategory"),
-                    onPress: async () => {
-                      await useCategoriesStore
-                        .getState()
-                        .updateCategory(categoryId, { hidden: true });
+                    onPress: () => {
+                      optimistic(
+                        useCategoriesStore,
+                        (s) => ({ categories: s.categories.map((c) => (c.id === categoryId ? { ...c, hidden: true } : c)) }),
+                        () => updateCategory(categoryId, { hidden: true }),
+                      );
                       router.back();
                     },
                   },
                 ],
               );
             } else {
-              (async () => {
-                await useCategoriesStore
-                  .getState()
-                  .updateCategory(categoryId, { hidden: false });
-              })();
+              optimistic(
+                useCategoriesStore,
+                (s) => ({ categories: s.categories.map((c) => (c.id === categoryId ? { ...c, hidden: false } : c)) }),
+                () => updateCategory(categoryId, { hidden: false }),
+              );
             }
           }}
         />

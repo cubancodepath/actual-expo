@@ -16,7 +16,6 @@ import { openDatabase } from "./src/db";
 import { loadClock } from "./src/sync";
 import { usePrefsStore } from "./src/stores/prefsStore";
 import { useAccountsStore } from "./src/stores/accountsStore";
-import { useCategoriesStore } from "./src/stores/categoriesStore";
 import { useBudgetStore } from "./src/stores/budgetStore";
 
 type TestResult = {

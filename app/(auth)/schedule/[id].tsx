@@ -11,7 +11,7 @@ import Animated, {
 import { LinearGradient } from "expo-linear-gradient";
 import { useAccountsStore } from "@/stores/accountsStore";
 import { usePayeesStore } from "@/stores/payeesStore";
-import { useCategoriesStore } from "@/stores/categoriesStore";
+import { useCategories } from "@/presentation/hooks/useCategories";
 import { useSchedulesStore } from "@/stores/schedulesStore";
 import { usePickerStore } from "@/stores/pickerStore";
 import { useUndoStore } from "@/stores/undoStore";
@@ -47,7 +47,7 @@ export default function ScheduleDetailScreen() {
   const { update, delete_, skip, postTransaction, load } = useSchedulesStore();
   const payees = usePayeesStore((s) => s.payees);
   const accounts = useAccountsStore((s) => s.accounts);
-  const { groups: categoryGroups } = useCategoriesStore();
+  const { groups: categoryGroups } = useCategories();
 
   // Picker store
   const selectedPayee = usePickerStore((s) => s.selectedPayee);

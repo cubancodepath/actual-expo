@@ -15,7 +15,7 @@
 
 import type { Query } from "./query";
 import { executeQuery } from "./execute";
-import { registerQuery, unregisterQuery } from "./queryRegistry";
+import { listen } from "../sync/syncEvents";
 
 let _nextId = 0;
 
@@ -46,15 +46,14 @@ export function liveQuery<T = Record<string, unknown>>(
   let inflightId = 0;
   let isUnsubscribed = false;
 
-  function updateDependencies(deps: string[]) {
-    // Re-register with new dependencies if they changed
-    if (deps.join(",") !== dependencies.join(",")) {
-      dependencies = deps;
-      registerQuery(id, dependencies, () => {
-        if (!isUnsubscribed) run();
-      });
+  // Subscribe to sync events — re-run when dependent tables change
+  const unlisten = listen((event) => {
+    if (isUnsubscribed) return;
+    const tables = new Set(event.tables);
+    if (dependencies.some((d) => tables.has(d))) {
+      run();
     }
-  }
+  });
 
   async function run() {
     if (isUnsubscribed) return;
@@ -67,7 +66,7 @@ export function liveQuery<T = Record<string, unknown>>(
 
       prevData = data;
       data = result.data;
-      updateDependencies(result.dependencies);
+      dependencies = result.dependencies;
       options.onData(data, prevData);
     } catch (err) {
       if (inflightId !== currentId || isUnsubscribed) return;
@@ -87,13 +86,11 @@ export function liveQuery<T = Record<string, unknown>>(
 
   function unsubscribe() {
     isUnsubscribed = true;
-    unregisterQuery(id);
+    unlisten();
   }
 
-  // Auto-start: register with empty deps initially, run() will update
-  registerQuery(id, [query.serialize().table], () => {
-    if (!isUnsubscribed) run();
-  });
+  // Auto-start: set initial dependencies from query table, then run
+  dependencies = [query.serialize().table];
   run();
 
   return {

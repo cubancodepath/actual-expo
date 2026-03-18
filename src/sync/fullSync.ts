@@ -10,7 +10,7 @@ import { encode, decode } from "./encoder";
 import { postBinary } from "../post";
 import { PostError, SyncError, toAppError } from "../errors";
 import { applyMessages, getMessagesSince } from "./apply";
-import { refreshStoresForDatasets } from "../stores/storeRegistry";
+import { emit } from "./syncEvents";
 import { getSyncGeneration, isSwitchingBudget, setActiveSyncPromise } from "./lifecycle";
 
 async function _fullSync(attempt = 0): Promise<void> {
@@ -90,8 +90,8 @@ async function _fullSync(attempt = 0): Promise<void> {
       if (gen !== getSyncGeneration()) return;
       await applyMessages(serverMessages);
       if (gen !== getSyncGeneration()) return;
-      const affectedDatasets = new Set(serverMessages.map((m) => m.dataset));
-      await refreshStoresForDatasets(affectedDatasets);
+      const tables = [...new Set(serverMessages.map((m) => m.dataset))];
+      emit({ type: "success", tables });
     }
 
     if (gen !== getSyncGeneration()) return;

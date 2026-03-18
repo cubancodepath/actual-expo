@@ -1,3 +1,5 @@
+import { listen } from "../sync/syncEvents";
+
 type StoreEntry = {
   datasets: string[];
   load: () => Promise<void>;
@@ -37,3 +39,8 @@ export async function refreshAllRegisteredStores(): Promise<void> {
     }
   }
 }
+
+// Auto-subscribe to sync events — stores refresh when any sync event fires
+listen((event) => {
+  refreshStoresForDatasets(new Set(event.tables));
+});

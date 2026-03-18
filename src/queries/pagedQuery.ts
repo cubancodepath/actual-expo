@@ -18,7 +18,7 @@
 
 import type { Query } from "./query";
 import { executeQuery, executeCount } from "./execute";
-import { registerQuery, unregisterQuery } from "./queryRegistry";
+import { listen } from "../sync/syncEvents";
 
 let _nextId = 0;
 
@@ -65,14 +65,14 @@ export function pagedQuery<T = Record<string, unknown>>(
   let fetchNextPromise: Promise<void> | null = null;
   let isUnsubscribed = false;
 
-  function updateDependencies(deps: string[]) {
-    if (deps.join(",") !== dependencies.join(",")) {
-      dependencies = deps;
-      registerQuery(id, dependencies, () => {
-        if (!isUnsubscribed) run();
-      });
+  // Subscribe to sync events — re-run when dependent tables change
+  const unlisten = listen((event) => {
+    if (isUnsubscribed) return;
+    const tables = new Set(event.tables);
+    if (dependencies.some((d) => tables.has(d))) {
+      run();
     }
-  }
+  });
 
   async function run() {
     if (isUnsubscribed) return;
@@ -92,7 +92,7 @@ export function pagedQuery<T = Record<string, unknown>>(
       data = result.data;
       totalCount = count;
       hasMore = data.length < totalCount;
-      updateDependencies(result.dependencies);
+      dependencies = result.dependencies;
       options.onData(data, prevData);
     } catch (err) {
       if (inflightId !== currentId || isUnsubscribed) return;
@@ -149,13 +149,11 @@ export function pagedQuery<T = Record<string, unknown>>(
 
   function unsubscribe() {
     isUnsubscribed = true;
-    unregisterQuery(id);
+    unlisten();
   }
 
   // Auto-start
-  registerQuery(id, [query.serialize().table], () => {
-    if (!isUnsubscribed) run();
-  });
+  dependencies = [query.serialize().table];
   run();
 
   return {

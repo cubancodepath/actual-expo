@@ -10,8 +10,7 @@ import type { SyncMessage } from "./encoder";
 import type { OldData } from "./undo";
 import { appendMessages as undoAppendMessages } from "./undo";
 import { applyMessages } from "./apply";
-import { refreshStoresForDatasets } from "../stores/storeRegistry";
-import { refreshQueriesForDatasets } from "../queries/queryRegistry";
+import { emit } from "./syncEvents";
 import { isSwitchingBudget, clearSyncTimeout, setSyncTimeout, getSyncTimeout } from "./lifecycle";
 
 const FULL_SYNC_DELAY = 1000; // ms
@@ -86,9 +85,8 @@ export async function batchMessages(fn: () => Promise<void>): Promise<void> {
 async function _applyAndRecord(messages: SyncMessage[]): Promise<void> {
   const oldData: OldData = await applyMessages(messages);
   undoAppendMessages(messages, oldData);
-  // Refresh affected stores and live queries so UI updates immediately
-  const affectedDatasets = new Set(messages.map((m) => m.dataset));
-  await refreshStoresForDatasets(affectedDatasets);
-  refreshQueriesForDatasets(affectedDatasets);
+  // Notify all listeners (stores, live queries) about changed tables
+  const tables = [...new Set(messages.map((m) => m.dataset))];
+  emit({ type: "applied", tables });
   scheduleFullSync(); // upload local changes to server after every mutation
 }

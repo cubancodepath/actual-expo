@@ -1,58 +1,58 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { registerQuery, unregisterQuery, refreshQueriesForDatasets } from "../queryRegistry";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { listen, emit } from "../../sync/syncEvents";
 
-beforeEach(() => {
-  // Clean up registry between tests
-  unregisterQuery("test-1");
-  unregisterQuery("test-2");
-  unregisterQuery("test-3");
-});
+describe("syncEvents", () => {
+  let unsubscribers: Array<() => void> = [];
 
-describe("registerQuery + refreshQueriesForDatasets", () => {
-  it("notifies queries whose datasets match", () => {
-    const cb1 = vi.fn();
-    const cb2 = vi.fn();
-
-    registerQuery("test-1", ["transactions"], cb1);
-    registerQuery("test-2", ["categories"], cb2);
-
-    refreshQueriesForDatasets(new Set(["transactions"]));
-
-    expect(cb1).toHaveBeenCalledTimes(1);
-    expect(cb2).not.toHaveBeenCalled();
+  afterEach(() => {
+    for (const unsub of unsubscribers) unsub();
+    unsubscribers = [];
   });
 
-  it("notifies multiple queries for overlapping datasets", () => {
+  it("notifies listeners when emit is called", () => {
+    const cb = vi.fn();
+    unsubscribers.push(listen(cb));
+
+    emit({ type: "applied", tables: ["transactions"] });
+
+    expect(cb).toHaveBeenCalledTimes(1);
+    expect(cb).toHaveBeenCalledWith({ type: "applied", tables: ["transactions"] });
+  });
+
+  it("notifies multiple listeners", () => {
     const cb1 = vi.fn();
     const cb2 = vi.fn();
+    unsubscribers.push(listen(cb1));
+    unsubscribers.push(listen(cb2));
 
-    registerQuery("test-1", ["transactions", "payees"], cb1);
-    registerQuery("test-2", ["transactions", "categories"], cb2);
-
-    refreshQueriesForDatasets(new Set(["transactions"]));
+    emit({ type: "success", tables: ["categories"] });
 
     expect(cb1).toHaveBeenCalledTimes(1);
     expect(cb2).toHaveBeenCalledTimes(1);
   });
 
-  it("does not notify for unrelated datasets", () => {
+  it("unsubscribe stops notifications", () => {
     const cb = vi.fn();
-    registerQuery("test-1", ["accounts"], cb);
+    const unsub = listen(cb);
 
-    refreshQueriesForDatasets(new Set(["transactions"]));
+    emit({ type: "applied", tables: ["transactions"] });
+    expect(cb).toHaveBeenCalledTimes(1);
 
-    expect(cb).not.toHaveBeenCalled();
+    unsub();
+
+    emit({ type: "applied", tables: ["transactions"] });
+    expect(cb).toHaveBeenCalledTimes(1); // still 1
   });
-});
 
-describe("unregisterQuery", () => {
-  it("removes the query so it no longer receives notifications", () => {
+  it("passes event type correctly", () => {
     const cb = vi.fn();
-    registerQuery("test-1", ["transactions"], cb);
-    unregisterQuery("test-1");
+    unsubscribers.push(listen(cb));
 
-    refreshQueriesForDatasets(new Set(["transactions"]));
+    emit({ type: "applied", tables: ["transactions"] });
+    emit({ type: "success", tables: ["categories", "accounts"] });
 
-    expect(cb).not.toHaveBeenCalled();
+    expect(cb.mock.calls[0][0].type).toBe("applied");
+    expect(cb.mock.calls[1][0].type).toBe("success");
+    expect(cb.mock.calls[1][0].tables).toEqual(["categories", "accounts"]);
   });
 });

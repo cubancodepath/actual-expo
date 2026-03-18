@@ -6,7 +6,7 @@ vi.mock("../../db", () => ({
 
 import { runQuery } from "../../db";
 import { liveQuery } from "../liveQuery";
-import { refreshQueriesForDatasets, unregisterQuery } from "../queryRegistry";
+import { emit } from "../../sync/syncEvents";
 import { q } from "../query";
 
 const mockRunQuery = vi.mocked(runQuery);
@@ -68,7 +68,7 @@ describe("liveQuery", () => {
     await vi.waitFor(() => expect(onData).toHaveBeenCalledTimes(1));
 
     // Simulate a mutation that touches "categories" dataset
-    refreshQueriesForDatasets(new Set(["categories"]));
+    emit({ type: "applied", tables: ["categories"] });
 
     await vi.waitFor(() => expect(onData).toHaveBeenCalledTimes(2));
     expect(onData.mock.calls[1][0]).toHaveLength(2); // second call has 2 items
@@ -87,7 +87,7 @@ describe("liveQuery", () => {
     live.unsubscribe();
 
     // This should NOT trigger a refresh
-    refreshQueriesForDatasets(new Set(["categories"]));
+    emit({ type: "applied", tables: ["categories"] });
 
     // Give it time — onData should not be called again
     await new Promise((r) => setTimeout(r, 50));

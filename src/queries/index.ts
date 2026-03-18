@@ -21,7 +21,5 @@ export type { LiveQueryInstance, LiveQueryOptions } from "./liveQuery";
 export { pagedQuery } from "./pagedQuery";
 export type { PagedQueryInstance, PagedQueryOptions } from "./pagedQuery";
 
-export { registerQuery, unregisterQuery, refreshQueriesForDatasets } from "./queryRegistry";
-
 export { schema } from "./schema";
 export type { Schema, TableDef, FieldDef, FieldType } from "./schema";

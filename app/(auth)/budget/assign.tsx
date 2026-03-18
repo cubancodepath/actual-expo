@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { useBudgetStore } from "@/stores/budgetStore";
+import { batchMessages } from "@/sync/batch";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
 import { Amount } from "@/presentation/components/atoms/Amount";
@@ -192,15 +193,17 @@ export default function AssignBudgetScreen() {
 
   async function handleSave() {
     setSaving(true);
-    for (const g of groups) {
-      if (g.is_income) continue;
-      for (const cat of g.categories) {
-        const newCents = edits[cat.id] ?? 0;
-        if (newCents !== cat.budgeted) {
-          await setAmount(cat.id, newCents);
+    await batchMessages(async () => {
+      for (const g of groups) {
+        if (g.is_income) continue;
+        for (const cat of g.categories) {
+          const newCents = edits[cat.id] ?? 0;
+          if (newCents !== cat.budgeted) {
+            await setAmount(cat.id, newCents);
+          }
         }
       }
-    }
+    });
     router.back();
   }
 
@@ -289,7 +292,7 @@ export default function AssignBudgetScreen() {
               title={t("reserve")}
               icon="calendarOutline"
               buttonStyle="borderedSecondary"
-              size="sm"
+              size="md"
               onPress={() => {
                 Keyboard.dismiss();
                 router.push({
@@ -305,7 +308,7 @@ export default function AssignBudgetScreen() {
               <Button
                 title={t("autoAssign")}
                 icon="sparkles"
-                size="sm"
+                size="md"
                 onPress={() => handleAutoAssign()}
                 style={{ borderRadius: br.full }}
               />

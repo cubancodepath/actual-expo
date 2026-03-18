@@ -385,6 +385,18 @@ export async function openBudget(budgetId: string): Promise<void> {
   setQueryCache(q("payees").serializeAsString(), payees.data);
   setQueryCache(q("tags").serializeAsString(), tags.data);
 
+  // Pre-fetch account balances (one per account, in parallel)
+  const accountIds = (accounts.data as Array<{ id: string }>).map((a) => a.id);
+  if (accountIds.length > 0) {
+    const balanceQueries = accountIds.map((id) => {
+      const balanceQuery = q("transactions").filter({ acct: id }).calculate({ $sum: "$amount" });
+      return executeQuery(balanceQuery).then((result) => {
+        setQueryCache(balanceQuery.serializeAsString(), result.data);
+      });
+    });
+    await Promise.all(balanceQueries);
+  }
+
   // Load remaining stores from the newly opened DB
   await Promise.allSettled([
     useBudgetStore.getState().load(),

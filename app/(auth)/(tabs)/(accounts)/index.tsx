@@ -24,7 +24,6 @@ import { AddTransactionButton } from "@/presentation/components/molecules/AddTra
 import type { Theme } from "@/theme";
 import { useCommonMenuActions } from "@/presentation/hooks/useCommonMenuItems";
 import { useTranslation } from "react-i18next";
-import { AccountListSkeleton } from "@/presentation/components/skeletons/AccountListSkeleton";
 import type { Account } from "@/accounts/types";
 
 // ---------------------------------------------------------------------------
@@ -220,7 +219,7 @@ export default function AccountsScreen() {
   const router = useRouter();
   const theme = useTheme();
   const styles = useThemedStyles(createStyles);
-  const { accounts, isLoading } = useAccounts();
+  const { accounts } = useAccounts();
   const { refreshControlProps } = useRefreshControl();
   const commonActions = useCommonMenuActions();
   const { t } = useTranslation("accounts");
@@ -243,13 +242,7 @@ export default function AccountsScreen() {
     updateAccount(account.id, { closed: false });
   }
 
-  if (isLoading && accounts.length === 0) {
-    return (
-      <View style={styles.content}>
-        <AccountListSkeleton />
-      </View>
-    );
-  }
+  // No skeleton — liveQuery loads in ~5ms, data appears instantly
 
   return (
     <>

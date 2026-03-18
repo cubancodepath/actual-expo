@@ -15,7 +15,7 @@ import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { useCategoriesStore } from "@/stores/categoriesStore";
 import { useBudgetStore } from "@/stores/budgetStore";
 import { useUndoStore } from "@/stores/undoStore";
-import { optimistic } from "@/stores/optimistic";
+import { mutate } from "@/stores/mutate";
 import { updateCategory } from "@/categories";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
@@ -655,9 +655,7 @@ export default function CategoryDetailsScreen() {
                   {
                     text: t("hideCategory"),
                     onPress: () => {
-                      optimistic(
-                        useCategoriesStore,
-                        (s) => ({ categories: s.categories.map((c) => (c.id === categoryId ? { ...c, hidden: true } : c)) }),
+                      mutate.update(useCategoriesStore, "categories", categoryId, { hidden: true },
                         () => updateCategory(categoryId, { hidden: true }),
                       );
                       router.back();
@@ -666,9 +664,7 @@ export default function CategoryDetailsScreen() {
                 ],
               );
             } else {
-              optimistic(
-                useCategoriesStore,
-                (s) => ({ categories: s.categories.map((c) => (c.id === categoryId ? { ...c, hidden: false } : c)) }),
+              mutate.update(useCategoriesStore, "categories", categoryId, { hidden: false },
                 () => updateCategory(categoryId, { hidden: false }),
               );
             }

@@ -6,7 +6,7 @@ import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { useCategoriesStore } from "@/stores/categoriesStore";
 import { useBudgetStore } from "@/stores/budgetStore";
 import { useUndoStore } from "@/stores/undoStore";
-import { optimistic } from "@/stores/optimistic";
+import { mutate } from "@/stores/mutate";
 import { updateCategoryGroup } from "@/categories";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
@@ -35,9 +35,7 @@ export default function EditGroupScreen() {
       router.back();
       return;
     }
-    optimistic(
-      useCategoriesStore,
-      (s) => ({ groups: s.groups.map((g) => (g.id === groupId ? { ...g, name: trimmed } : g)) }),
+    mutate.update(useCategoriesStore, "groups", groupId, { name: trimmed },
       () => updateCategoryGroup(groupId, { name: trimmed }),
     );
     router.back();
@@ -108,9 +106,7 @@ export default function EditGroupScreen() {
           style={{ alignSelf: "stretch", marginTop: spacing.md }}
           onPress={() => {
             if (!groupId) return;
-            optimistic(
-              useCategoriesStore,
-              (s) => ({ groups: s.groups.map((g) => (g.id === groupId ? { ...g, hidden: !group.hidden } : g)) }),
+            mutate.update(useCategoriesStore, "groups", groupId, { hidden: !group.hidden },
               () => updateCategoryGroup(groupId, { hidden: !group.hidden }),
             );
           }}

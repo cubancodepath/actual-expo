@@ -47,7 +47,8 @@ export default function CoverOverspentScreen() {
   return (
     <ScrollView
       style={{ backgroundColor: colors.pageBackground }}
-      contentContainerStyle={{ paddingTop: 72, paddingBottom: spacing.xl }}
+      contentContainerStyle={{ paddingBottom: spacing.xl }}
+      contentInsetAdjustmentBehavior="automatic"
     >
       <Stack.Screen
         options={{

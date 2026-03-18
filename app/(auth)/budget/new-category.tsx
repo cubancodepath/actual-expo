@@ -1,12 +1,11 @@
 import { useState } from "react";
-import { Pressable, View } from "react-native";
+import { ScrollView, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { useCategoriesStore } from "@/stores/categoriesStore";
 import { useBudgetStore } from "@/stores/budgetStore";
 import { Text } from "@/presentation/components/atoms/Text";
-import { Button } from "@/presentation/components/atoms/Button";
 import { Input } from "@/presentation/components/atoms/Input";
 
 export default function NewCategoryScreen() {
@@ -23,8 +22,6 @@ export default function NewCategoryScreen() {
     setSaving(true);
     try {
       await useCategoriesStore.getState().createCategory(trimmed, groupId);
-      await useCategoriesStore.getState().load();
-      await useBudgetStore.getState().load();
       router.back();
     } finally {
       setSaving(false);
@@ -32,30 +29,29 @@ export default function NewCategoryScreen() {
   }
 
   return (
-    <View style={{ backgroundColor: colors.pageBackground, padding: spacing.lg, paddingTop: 72 }}>
-      <Stack.Screen
-        options={{
-          headerLeft: () => (
-            <Button
-              icon="close"
-              buttonStyle="borderless"
-              color={colors.headerText}
-              onPress={() => router.back()}
-            />
-          ),
-          headerRight: () => (
-            <Pressable onPress={handleSave} hitSlop={8} disabled={!name.trim() || saving}>
-              <Text
-                variant="body"
-                color={name.trim() && !saving ? colors.primary : colors.textMuted}
-                style={{ fontWeight: "600", fontSize: 17 }}
-              >
-                {t("save")}
-              </Text>
-            </Pressable>
-          ),
-        }}
-      />
+    <ScrollView
+      style={{ backgroundColor: colors.pageBackground }}
+      contentContainerStyle={{ padding: spacing.lg }}
+      contentInsetAdjustmentBehavior="automatic"
+      keyboardShouldPersistTaps="handled"
+    >
+      <Stack.Screen options={{}} />
+      <Stack.Toolbar placement="left">
+        <Stack.Toolbar.Button
+          icon="xmark"
+          onPress={() => router.back()}
+        />
+      </Stack.Toolbar>
+      <Stack.Toolbar placement="right">
+        <Stack.Toolbar.Button
+          variant="done"
+          tintColor={colors.primary}
+          onPress={handleSave}
+          disabled={!name.trim() || saving}
+        >
+          {t("save")}
+        </Stack.Toolbar.Button>
+      </Stack.Toolbar>
 
       <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.xs }}>
         {t("categoryNameLabel")}
@@ -68,6 +64,6 @@ export default function NewCategoryScreen() {
         returnKeyType="done"
         onSubmitEditing={handleSave}
       />
-    </View>
+    </ScrollView>
   );
 }

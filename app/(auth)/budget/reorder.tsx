@@ -267,18 +267,15 @@ export default function ReorderBudgetScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.pageBackground }}>
-      <Stack.Screen
-        options={{
-          headerRight: () => (
-            <Button
-              icon="checkmark"
-              buttonStyle="borderless"
-              color={colors.headerText}
-              onPress={() => router.back()}
-            />
-          ),
-        }}
-      />
+      <Stack.Screen options={{}} />
+      <Stack.Toolbar placement="right">
+        <Stack.Toolbar.Button
+          variant="done"
+          tintColor={colors.primary}
+          icon="checkmark"
+          onPress={() => router.back()}
+        />
+      </Stack.Toolbar>
 
       <Animated.View entering={FadeIn.duration(300)} style={{ flex: 1 }}>
         <ScrollView

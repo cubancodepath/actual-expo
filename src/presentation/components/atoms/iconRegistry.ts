@@ -76,6 +76,7 @@ export const iconRegistry = {
   globeOutline: { ionicon: "globe-outline", sfSymbol: "globe" },
   serverOutline: { ionicon: "server-outline", sfSymbol: "server.rack" },
   settingsOutline: { ionicon: "settings-outline", sfSymbol: "gearshape" },
+  optionsOutline: { ionicon: "options-outline", sfSymbol: "slider.horizontal.3" },
   phonePortraitOutline: { ionicon: "phone-portrait-outline", sfSymbol: "iphone" },
   colorPaletteOutline: { ionicon: "color-palette-outline", sfSymbol: "paintbrush" },
   codeSlash: { ionicon: "code-slash", sfSymbol: "chevron.left.forwardslash.chevron.right" },

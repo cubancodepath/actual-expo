@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Alert, Pressable, Switch, View } from "react-native";
+import { Alert, ScrollView } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
@@ -25,8 +25,10 @@ export default function EditGroupScreen() {
     if (group) setName(group.name);
   }, [group?.id]);
 
+  const trimmed = name.trim();
+  const canSave = trimmed.length > 0 && trimmed !== group?.name && !saving;
+
   async function handleSave() {
-    const trimmed = name.trim();
     if (!trimmed || !groupId || saving) return;
     if (trimmed === group?.name) {
       router.back();
@@ -35,8 +37,6 @@ export default function EditGroupScreen() {
     setSaving(true);
     try {
       await useCategoriesStore.getState().updateCategoryGroup(groupId, { name: trimmed });
-      await useCategoriesStore.getState().load();
-      await useBudgetStore.getState().load();
       router.back();
     } finally {
       setSaving(false);
@@ -52,8 +52,6 @@ export default function EditGroupScreen() {
         style: "destructive",
         onPress: async () => {
           await useCategoriesStore.getState().deleteCategoryGroup(groupId);
-          await useCategoriesStore.getState().load();
-          await useBudgetStore.getState().load();
           useUndoStore.getState().showUndo(t("categoryGroupDeleted"));
           router.back();
         },
@@ -62,32 +60,33 @@ export default function EditGroupScreen() {
   }
 
   return (
-    <View style={{ backgroundColor: colors.pageBackground, padding: spacing.lg, paddingTop: 72 }}>
-      <Stack.Screen
-        options={{
-          headerLeft: () => (
-            <Button
-              icon="close"
-              buttonStyle="borderless"
-              color={colors.headerText}
-              onPress={() => router.back()}
-            />
-          ),
-          headerRight: () => (
-            <Pressable onPress={handleSave} hitSlop={8} disabled={!name.trim() || saving}>
-              <Text
-                variant="body"
-                color={name.trim() && !saving ? colors.primary : colors.textMuted}
-                style={{ fontWeight: "600", fontSize: 17 }}
-              >
-                {t("save")}
-              </Text>
-            </Pressable>
-          ),
-        }}
-      />
+    <ScrollView
+      style={{ backgroundColor: colors.pageBackground }}
+      contentContainerStyle={{ padding: spacing.lg }}
+      contentInsetAdjustmentBehavior="automatic"
+      keyboardShouldPersistTaps="handled"
+    >
+      <Stack.Screen options={{}} />
+      <Stack.Toolbar placement="left">
+        <Stack.Toolbar.Button icon="xmark" onPress={() => router.back()} />
+      </Stack.Toolbar>
+      <Stack.Toolbar placement="right">
+        <Stack.Toolbar.Button
+          variant="done"
+          tintColor={colors.primary}
+          onPress={handleSave}
+          disabled={!canSave}
+        >
+          {t("save")}
+        </Stack.Toolbar.Button>
+      </Stack.Toolbar>
 
-      <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.xs }}>
+      {/* Group Name */}
+      <Text
+        variant="caption"
+        color={colors.textMuted}
+        style={{ marginBottom: spacing.xs, textTransform: "uppercase", letterSpacing: 0.5 }}
+      >
         {t("groupNameLabel")}
       </Text>
       <Input
@@ -101,44 +100,28 @@ export default function EditGroupScreen() {
 
       {/* Hidden toggle — not shown for income groups */}
       {group && !group.is_income && (
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-            backgroundColor: colors.cardBackground,
-            borderRadius: br.md,
-            borderWidth: bw.thin,
-            borderColor: colors.divider,
-            paddingVertical: spacing.sm,
-            paddingHorizontal: spacing.md,
-            marginTop: spacing.lg,
+        <Button
+          title={group.hidden ? t("showGroup") : t("hideGroup")}
+          buttonStyle="borderedSecondary"
+          size="lg"
+          icon={group.hidden ? "eyeOutline" : "eyeOffOutline"}
+          style={{ alignSelf: "stretch", marginTop: spacing.md }}
+          onPress={async () => {
+            if (!groupId) return;
+            await useCategoriesStore.getState().updateCategoryGroup(groupId, { hidden: !group.hidden });
           }}
-        >
-          <Text variant="body" color={colors.textPrimary}>
-            {t("hidden")}
-          </Text>
-          <Switch
-            value={group.hidden}
-            onValueChange={async (val) => {
-              if (!groupId) return;
-              await useCategoriesStore.getState().updateCategoryGroup(groupId, { hidden: val });
-              await useCategoriesStore.getState().load();
-              await useBudgetStore.getState().load();
-            }}
-            trackColor={{ true: colors.primary }}
-          />
-        </View>
+        />
       )}
 
+      {/* Delete — separated per HIG */}
       <Button
         title={t("deleteGroup")}
-        buttonStyle="borderedSecondary"
+        buttonStyle="borderless"
         danger
         icon="trashOutline"
         onPress={handleDelete}
-        style={{ marginTop: spacing.sm, borderRadius: 999 }}
+        style={{ marginTop: spacing.lg }}
       />
-    </View>
+    </ScrollView>
   );
 }

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Alert, Pressable, type TextInput, View } from "react-native";
+import { Alert, Pressable, ScrollView, type TextInput, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
@@ -41,7 +41,8 @@ export default function QuickEditCategoryScreen() {
 
   // Goal description
   const templates = parseGoalDef(category?.goal_def ?? null);
-  const goalDesc = templates.length > 0 ? describeTemplate(templates[0], i18n.language) : null;
+  const goalDesc =
+    templates.length > 0 ? describeTemplate(templates[0], i18n.language) : null;
   const goalDescription = goalDesc ? translateDescription(goalDesc, t) : null;
 
   async function handleSaveName() {
@@ -53,9 +54,9 @@ export default function QuickEditCategoryScreen() {
     }
     setSaving(true);
     try {
-      await useCategoriesStore.getState().updateCategory(categoryId, { name: trimmed });
-      await useCategoriesStore.getState().load();
-      await useBudgetStore.getState().load();
+      await useCategoriesStore
+        .getState()
+        .updateCategory(categoryId, { name: trimmed });
     } finally {
       setSaving(false);
     }
@@ -65,7 +66,9 @@ export default function QuickEditCategoryScreen() {
     if (!categoryId) return;
     Alert.alert(
       t("deleteCategoryTitle"),
-      t("deleteCategoryWithTransfers", { name: category?.name ?? t("category") }),
+      t("deleteCategoryWithTransfers", {
+        name: category?.name ?? t("category"),
+      }),
       [
         { text: t("cancel"), style: "cancel" },
         {
@@ -88,9 +91,9 @@ export default function QuickEditCategoryScreen() {
     if (!pendingDelete || !coverTarget || !categoryId) return;
     (async () => {
       try {
-        await useCategoriesStore.getState().deleteCategory(categoryId, coverTarget.catId);
-        await useCategoriesStore.getState().load();
-        await useBudgetStore.getState().load();
+        await useCategoriesStore
+          .getState()
+          .deleteCategory(categoryId, coverTarget.catId);
         useUndoStore.getState().showUndo(t("categoryDeleted"));
         setCoverTarget(null);
         setPendingDelete(false);
@@ -110,19 +113,26 @@ export default function QuickEditCategoryScreen() {
   };
 
   return (
-    <View style={{ backgroundColor: colors.pageBackground, padding: spacing.lg, paddingTop: 72 }}>
-      <Stack.Screen
-        options={{
-          headerLeft: () => (
-            <Button
-              icon="close"
-              buttonStyle="borderless"
-              color={colors.headerText}
-              onPress={() => router.back()}
-            />
-          ),
-        }}
-      />
+    <ScrollView
+      style={{ backgroundColor: colors.pageBackground }}
+      contentContainerStyle={{ padding: spacing.lg }}
+      contentInsetAdjustmentBehavior="automatic"
+      keyboardShouldPersistTaps="handled"
+    >
+      <Stack.Screen options={{}} />
+      <Stack.Toolbar placement="left">
+        <Stack.Toolbar.Button icon="xmark" onPress={() => router.back()} />
+      </Stack.Toolbar>
+      <Stack.Toolbar placement="right">
+        <Stack.Toolbar.Button
+          variant="done"
+          tintColor={colors.primary}
+          onPress={handleSaveName}
+          disabled={!canSave}
+        >
+          {t("save")}
+        </Stack.Toolbar.Button>
+      </Stack.Toolbar>
 
       {/* Category Name */}
       <Text variant="caption" color={colors.textMuted} style={labelStyle}>
@@ -191,14 +201,14 @@ export default function QuickEditCategoryScreen() {
             <Button
               title={goalDescription ? t("editTarget") : t("setTarget")}
               buttonStyle="borderedSecondary"
-              size="md"
+              size="lg"
               style={{ alignSelf: "stretch" }}
               icon="flagOutline"
               onPress={() => {
                 if (categoryId) {
                   router.navigate({
                     pathname: "/(auth)/budget/goal",
-                    params: { categoryId },
+                    params: { categoryId, dismissCount: "2" },
                   });
                 }
               }}
@@ -207,33 +217,50 @@ export default function QuickEditCategoryScreen() {
         </>
       )}
 
-      {/* Hide + Delete side by side */}
-      <View style={{ flexDirection: "row", gap: spacing.sm, marginTop: spacing.md }}>
-        <Button
-          title={category?.hidden ? t("show") : t("hide")}
-          buttonStyle="borderedSecondary"
-          size="md"
-          icon={category?.hidden ? "eyeOutline" : "eyeOffOutline"}
-          style={{ flex: 1 }}
-          onPress={async () => {
-            if (!categoryId) return;
-            await useCategoriesStore
+      {/* Hide */}
+      <Button
+        title={category?.hidden ? t("show") : t("hide")}
+        buttonStyle="borderedSecondary"
+        size="lg"
+        icon={category?.hidden ? "eyeOutline" : "eyeOffOutline"}
+        style={{ alignSelf: "stretch", marginTop: spacing.md }}
+        onPress={() => {
+          if (!categoryId) return;
+          if (!category?.hidden) {
+            Alert.alert(
+              t("categoryHiddenTitle"),
+              t("categoryHiddenMessage"),
+              [
+                { text: t("cancel"), style: "cancel" },
+                {
+                  text: t("hide"),
+                  onPress: () => {
+                    router.back();
+                    useCategoriesStore
+                      .getState()
+                      .updateCategory(categoryId, { hidden: true });
+                  },
+                },
+              ],
+            );
+          } else {
+            router.back();
+            useCategoriesStore
               .getState()
-              .updateCategory(categoryId, { hidden: !category?.hidden });
-            await useCategoriesStore.getState().load();
-            await useBudgetStore.getState().load();
-          }}
-        />
-        <Button
-          title={t("delete")}
-          buttonStyle="borderedSecondary"
-          danger
-          size="md"
-          icon="trashOutline"
-          style={{ flex: 1 }}
-          onPress={handleDelete}
-        />
-      </View>
-    </View>
+              .updateCategory(categoryId, { hidden: false });
+          }
+        }}
+      />
+
+      {/* Delete — separated per HIG */}
+      <Button
+        title={t("deleteCategory")}
+        buttonStyle="borderless"
+        danger
+        icon="trashOutline"
+        onPress={handleDelete}
+        style={{ marginTop: spacing.lg }}
+      />
+    </ScrollView>
   );
 }

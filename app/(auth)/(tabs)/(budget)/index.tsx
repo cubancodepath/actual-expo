@@ -69,18 +69,38 @@ function matchesFilter(cat: BudgetCategory, filter: BudgetFilter): boolean {
   }
 }
 
+const HIDDEN_GROUP_ID = "__hidden__";
+
 function filterBudgetGroups(
   groups: BudgetGroup[],
   filter: BudgetFilter,
-  showHidden: boolean,
-): BudgetGroup[] {
-  return groups
-    .filter((g) => showHidden || !g.hidden)
-    .map((g) => ({
-      ...g,
-      categories: g.categories.filter((c) => (showHidden || !c.hidden) && matchesFilter(c, filter)),
-    }))
+): { visible: BudgetGroup[]; hidden: BudgetCategory[] } {
+  const hiddenCats: BudgetCategory[] = [];
+
+  const visible = groups
+    .filter((g) => !g.hidden)
+    .map((g) => {
+      const visibleCats: BudgetCategory[] = [];
+      for (const c of g.categories) {
+        if (c.hidden) {
+          hiddenCats.push(c);
+        } else if (matchesFilter(c, filter)) {
+          visibleCats.push(c);
+        }
+      }
+      return { ...g, categories: visibleCats };
+    })
     .filter((g) => filter === "all" || g.categories.length > 0);
+
+  // Also collect categories from hidden groups
+  for (const g of groups) {
+    if (!g.hidden) continue;
+    for (const c of g.categories) {
+      hiddenCats.push(c);
+    }
+  }
+
+  return { visible, hidden: hiddenCats };
 }
 
 // ---------------------------------------------------------------------------
@@ -93,7 +113,7 @@ export default function BudgetScreen() {
   const router = useRouter();
   const { month, data, loading, load, setAmount, setCarryover, resetHold } = useBudgetStore();
   const { refreshControlProps } = useRefreshControl();
-  const { showProgressBars, toggleProgressBars, showHiddenCategories, toggleShowHiddenCategories } =
+  const { showProgressBars, toggleProgressBars } =
     usePrefsStore();
   const goalsEnabled = useFeatureFlag("goalTemplatesEnabled");
   const commonActions = useCommonMenuActions();
@@ -111,7 +131,7 @@ export default function BudgetScreen() {
   }, []);
 
   const [filter, setFilter] = useState<BudgetFilter>("all");
-  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set([HIDDEN_GROUP_ID]));
 
   // -- Shared hidden input: editing state --
   const [editingCatId, setEditingCatId] = useState<string | null>(null);
@@ -225,9 +245,9 @@ export default function BudgetScreen() {
   }, [month]);
 
   // -- Sections (filtered) --
-  const filteredGroups = useMemo(
-    () => filterBudgetGroups(data?.groups ?? [], filter, showHiddenCategories),
-    [data?.groups, filter, showHiddenCategories],
+  const { visible: filteredGroups, hidden: hiddenCategories } = useMemo(
+    () => filterBudgetGroups(data?.groups ?? [], filter),
+    [data?.groups, filter],
   );
   const sections: BudgetSection[] = filteredGroups.map((g) => ({
     key: g.id,
@@ -235,6 +255,16 @@ export default function BudgetScreen() {
     group: g,
     data: collapsedGroups.has(g.id) ? [] : g.categories,
   }));
+
+  // Append hidden categories as a virtual group at the bottom
+  if (hiddenCategories.length > 0) {
+    sections.push({
+      key: HIDDEN_GROUP_ID,
+      title: t("hiddenCategories"),
+      group: { id: HIDDEN_GROUP_ID, name: t("hiddenCategories"), is_income: false, hidden: false, budgeted: 0, spent: 0, balance: 0, categories: hiddenCategories },
+      data: collapsedGroups.has(HIDDEN_GROUP_ID) ? [] : hiddenCategories,
+    });
+  }
 
   // -- Move money --
   function handleMoveMoney(cat: BudgetCategory) {
@@ -501,18 +531,12 @@ export default function BudgetScreen() {
         <Stack.Toolbar.Menu icon="ellipsis">
           {goalsEnabled && (
             <Stack.Toolbar.MenuAction
-              icon={showProgressBars ? "line.3.horizontal" : "line.3.horizontal"}
+              icon={showProgressBars ? "chart.line.text.clipboard.fill" : "chart.line.text.clipboard"}
               onPress={toggleProgressBars}
             >
               {showProgressBars ? t("hideProgress") : t("showProgress")}
             </Stack.Toolbar.MenuAction>
           )}
-          <Stack.Toolbar.MenuAction
-            icon={showHiddenCategories ? "square.stack.3d.up.slash" : "square.stack.3d.up"}
-            onPress={toggleShowHiddenCategories}
-          >
-            {showHiddenCategories ? t("hideHiddenCategories") : t("showHiddenCategories")}
-          </Stack.Toolbar.MenuAction>
           {commonActions}
         </Stack.Toolbar.Menu>
       </Stack.Toolbar>

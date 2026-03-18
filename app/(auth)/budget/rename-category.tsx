@@ -28,8 +28,6 @@ export default function RenameCategoryScreen() {
     setSaving(true);
     try {
       await useCategoriesStore.getState().updateCategory(categoryId, { name: trimmed });
-      await useCategoriesStore.getState().load();
-      await useBudgetStore.getState().load();
       router.back();
     } finally {
       setSaving(false);

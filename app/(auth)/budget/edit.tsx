@@ -11,7 +11,6 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { SymbolView } from "expo-symbols";
-import { Icon } from "@/presentation/components/atoms/Icon";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { useCategoriesStore } from "@/stores/categoriesStore";
@@ -22,6 +21,7 @@ import { Amount } from "@/presentation/components/atoms/Amount";
 import { Button } from "@/presentation/components/atoms/Button";
 import { SwipeableRow } from "@/presentation/components/molecules/SwipeableRow";
 import { GlassButton } from "@/presentation/components/atoms/GlassButton";
+import { RowSeparator } from "@/presentation/components/atoms/RowSeparator";
 import { parseGoalDef } from "@/goals";
 import { describeTemplate, translateDescription } from "@/goals/describe";
 import i18n from "@/i18n/config";
@@ -221,18 +221,28 @@ export default function EditBudgetScreen() {
     [groups],
   );
 
-  const categoriesByGroup = useMemo(() => {
+  const { categoriesByGroup, hiddenCategories } = useMemo(() => {
     const map = new Map<string, Category[]>();
+    const hidden: Category[] = [];
     for (const g of [...expenseGroups, ...incomeGroups]) {
-      map.set(
-        g.id,
-        categories
-          .filter((c) => c.cat_group === g.id && !c.hidden)
-          .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)),
-      );
+      const visible: Category[] = [];
+      for (const c of categories.filter((c) => c.cat_group === g.id).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))) {
+        if (c.hidden) {
+          hidden.push(c);
+        } else {
+          visible.push(c);
+        }
+      }
+      map.set(g.id, visible);
     }
-    return map;
-  }, [expenseGroups, incomeGroups, categories]);
+    // Also collect from hidden groups
+    for (const g of groups.filter((g) => g.hidden)) {
+      for (const c of categories.filter((c) => c.cat_group === g.id)) {
+        hidden.push(c);
+      }
+    }
+    return { categoriesByGroup: map, hiddenCategories: hidden };
+  }, [expenseGroups, incomeGroups, categories, groups]);
 
   // Build sections for SectionList
   const sections = useMemo<GroupSection[]>(() => {
@@ -255,23 +265,25 @@ export default function EditBudgetScreen() {
         });
       }
     }
-    if (incomeGroups.length > 0) {
+    // Income groups — no super-header, just the group directly
+    for (const g of incomeGroups) {
       out.push({
-        key: "__income__",
+        key: g.id,
+        groupId: g.id,
+        group: g,
+        isIncome: true,
+        data: categoriesByGroup.get(g.id) ?? [],
+      });
+    }
+    // Hidden categories group at the bottom
+    if (hiddenCategories.length > 0) {
+      out.push({
+        key: "__hidden__",
         groupId: null,
         group: null,
-        isIncome: true,
-        data: [],
+        isIncome: false,
+        data: hiddenCategories,
       });
-      for (const g of incomeGroups) {
-        out.push({
-          key: g.id,
-          groupId: g.id,
-          group: g,
-          isIncome: true,
-          data: categoriesByGroup.get(g.id) ?? [],
-        });
-      }
     }
     return out;
   }, [expenseGroups, incomeGroups, categoriesByGroup]);
@@ -334,8 +346,6 @@ export default function EditBudgetScreen() {
         style: "destructive",
         onPress: async () => {
           await useCategoriesStore.getState().deleteCategoryGroup(group.id);
-          await useCategoriesStore.getState().load();
-          await useBudgetStore.getState().load();
           useUndoStore.getState().showUndo(t("categoryGroupDeleted"));
         },
       },
@@ -352,8 +362,6 @@ export default function EditBudgetScreen() {
         style: "destructive",
         onPress: async () => {
           await useCategoriesStore.getState().deleteCategory(cat.id);
-          await useCategoriesStore.getState().load();
-          await useBudgetStore.getState().load();
           useUndoStore.getState().showUndo(t("categoryDeleted"));
         },
       },
@@ -364,14 +372,16 @@ export default function EditBudgetScreen() {
 
   const renderSectionHeader = useCallback(
     ({ section }: { section: GroupSection }) => {
-      // Super-headers (EXPENSES / INCOME labels)
+      // Super-headers (EXPENSES label) or Hidden Categories
       if (!section.group) {
+        const label = section.key === "__hidden__" ? t("hiddenCategories") : t("expenses");
         return (
           <View
             style={{
               paddingHorizontal: spacing.lg,
-              paddingTop: section.isIncome ? spacing.xl : spacing.md,
+              paddingTop: section.key === "__expenses__" ? spacing.md : spacing.xl,
               paddingBottom: spacing.sm,
+              opacity: section.key === "__hidden__" ? 0.5 : 1,
             }}
           >
             <Text
@@ -383,7 +393,7 @@ export default function EditBudgetScreen() {
                 fontWeight: "700",
               }}
             >
-              {section.isIncome ? t("income") : t("expenses")}
+              {label}
             </Text>
           </View>
         );
@@ -420,33 +430,31 @@ export default function EditBudgetScreen() {
               {group.name}
             </Text>
           </Pressable>
-          <Pressable
+          <Button
+            icon="addCircle"
+            buttonStyle="borderless"
+            size="sm"
             onPress={() =>
               router.push({
                 pathname: "/(auth)/budget/new-category",
                 params: { groupId: group.id },
               })
             }
-            hitSlop={12}
-            accessibilityRole="button"
             accessibilityLabel={t("addGroupAccessibility", { name: group.name })}
-          >
-            <Icon name="addCircle" size={18} color={colors.primary} />
-          </Pressable>
-          <Pressable
+          />
+          <Button
+            icon="ellipsisHorizontalCircleOutline"
+            buttonStyle="borderless"
+            size="sm"
+            color={colors.textMuted}
             onPress={() =>
               router.push({
                 pathname: "/(auth)/budget/edit-group",
                 params: { groupId: group.id },
               })
             }
-            hitSlop={12}
-            style={{ marginLeft: spacing.sm }}
-            accessibilityRole="button"
             accessibilityLabel={t("editGroupAccessibility", { name: group.name })}
-          >
-            <Icon name="ellipsisHorizontalCircleOutline" size={18} color={colors.textMuted} />
-          </Pressable>
+          />
         </View>
       );
     },
@@ -463,84 +471,64 @@ export default function EditBudgetScreen() {
       const hasGoal = templates.length > 0;
       const goalDesc = hasGoal ? describeTemplate(templates[0], i18n.language) : null;
       const goalDescription = goalDesc ? translateDescription(goalDesc, t) : null;
+      const isHiddenSection = section.key === "__hidden__";
 
       return (
-        <View
-          style={{
-            marginHorizontal: spacing.lg,
-            borderLeftWidth: bw.thin,
-            borderRightWidth: bw.thin,
-            borderTopWidth: isFirst ? bw.thin : 0,
-            borderBottomWidth: bw.thin,
-            borderColor: colors.cardBorder,
-            borderTopLeftRadius: isFirst ? br.lg : 0,
-            borderTopRightRadius: isFirst ? br.lg : 0,
-            borderBottomLeftRadius: isLast ? br.lg : 0,
-            borderBottomRightRadius: isLast ? br.lg : 0,
-            overflow: "hidden",
-          }}
+        <SwipeableRow
+          onDelete={() => handleDeleteCategory(item)}
+          isFirst={isFirst}
+          isLast={isLast}
+          style={{ marginHorizontal: spacing.lg, opacity: isHiddenSection ? 0.5 : 1 }}
         >
-          <SwipeableRow
-            onDelete={() => handleDeleteCategory(item)}
-            isFirst={isFirst}
-            isLast={isLast}
+          <Pressable
+            onPress={() =>
+              router.push({
+                pathname: "/(auth)/budget/quick-edit-category",
+                params: { categoryId: item.id },
+              })
+            }
+            style={({ pressed }) => ({
+              flexDirection: "row",
+              alignItems: "center",
+              paddingHorizontal: spacing.lg,
+              paddingVertical: spacing.md,
+              minHeight: 44,
+              backgroundColor: pressed ? colors.elevatedBackground : colors.cardBackground,
+              borderTopLeftRadius: isFirst ? br.lg : 0,
+              borderTopRightRadius: isFirst ? br.lg : 0,
+              borderBottomLeftRadius: isLast ? br.lg : 0,
+              borderBottomRightRadius: isLast ? br.lg : 0,
+            })}
           >
-            <Pressable
-              onPress={() =>
-                router.push({
-                  pathname: "/(auth)/budget/quick-edit-category",
-                  params: { categoryId: item.id },
-                })
-              }
-              style={({ pressed }) => ({
-                paddingHorizontal: spacing.lg,
-                paddingTop: 12,
-                paddingBottom: hasGoal ? 10 : 12,
-                minHeight: 44,
-                backgroundColor: pressed ? colors.elevatedBackground : colors.cardBackground,
-                borderTopWidth: isFirst ? 0 : bw.thin,
-                borderTopColor: colors.divider,
-              })}
-              accessibilityRole="button"
-              accessibilityLabel={
-                hasGoal
-                  ? t("categoryTargetAccessibility", { name: item.name, target: goalDescription })
-                  : item.name
-              }
-              accessibilityHint={t("editCategoryHint")}
-            >
-              {/* Line 1: Name + Goal description or Add Target */}
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Text variant="body" style={{ flex: 1 }} numberOfLines={1}>
-                  {item.name}
-                </Text>
-                {hasGoal && goalDescription ? (
-                  <Text
-                    variant="captionSm"
-                    color={colors.textSecondary}
-                    numberOfLines={1}
-                    style={{ flexShrink: 1, marginLeft: spacing.sm }}
-                  >
-                    {goalDescription}
-                  </Text>
-                ) : goalsEnabled ? (
-                  <Button
-                    title={t("addTarget")}
-                    icon="addCircle"
-                    buttonStyle="borderless"
-                    size="sm"
-                    onPress={() => {
-                      router.push({
-                        pathname: "/(auth)/budget/goal",
-                        params: { categoryId: item.id },
-                      });
-                    }}
-                  />
-                ) : null}
-              </View>
-            </Pressable>
-          </SwipeableRow>
-        </View>
+            <Text variant="body" style={{ flex: 1 }} numberOfLines={1}>
+              {item.name}
+            </Text>
+            {!section.isIncome && hasGoal && goalDescription ? (
+              <Text
+                variant="captionSm"
+                color={colors.textSecondary}
+                numberOfLines={1}
+                style={{ flexShrink: 1, marginLeft: spacing.sm }}
+              >
+                {goalDescription}
+              </Text>
+            ) : !section.isIncome && goalsEnabled ? (
+              <Button
+                title={t("addTarget")}
+                icon="addCircle"
+                buttonStyle="borderless"
+                size="sm"
+                onPress={() => {
+                  router.push({
+                    pathname: "/(auth)/budget/goal",
+                    params: { categoryId: item.id },
+                  });
+                }}
+              />
+            ) : null}
+            {!isLast && <RowSeparator insetLeft={spacing.lg} />}
+          </Pressable>
+        </SwipeableRow>
       );
     },
     [colors, spacing, br, bw, router],
@@ -683,36 +671,20 @@ export default function EditBudgetScreen() {
           title={t("reorder")}
           icon="reorderThreeOutline"
           buttonStyle="borderedSecondary"
-          size="sm"
+          size="lg"
           onPress={() => router.push("/(auth)/budget/reorder")}
           style={{ borderRadius: br.full }}
         />
       </View>
       <View style={{ flex: 1 }}>
-        <Pressable
+        <Button
+          title={t("addGroup")}
+          icon="folderOutline"
+          buttonStyle="borderedSecondary"
+          size="lg"
           onPress={() => router.push("/(auth)/budget/new-group")}
-          style={({ pressed }) => ({
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 6,
-            paddingVertical: 6,
-            paddingHorizontal: 12,
-            minHeight: 44,
-            borderRadius: br.full,
-            backgroundColor: colors.buttonSecondaryBackground,
-            opacity: pressed ? 0.8 : 1,
-          })}
-        >
-          <SymbolView name="folder.badge.plus" size={17} tintColor={colors.buttonSecondaryText} />
-          <Text
-            variant="bodyLg"
-            color={colors.buttonSecondaryText}
-            style={{ fontSize: 13, fontWeight: "600" }}
-          >
-            {t("addGroup")}
-          </Text>
-        </Pressable>
+          style={{ borderRadius: br.full }}
+        />
       </View>
     </View>
   );

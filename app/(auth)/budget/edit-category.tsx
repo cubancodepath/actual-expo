@@ -274,8 +274,6 @@ export default function CategoryDetailsScreen() {
       setDeleting(true);
       try {
         await useCategoriesStore.getState().deleteCategory(categoryId, coverTarget.catId);
-        await useCategoriesStore.getState().load();
-        await useBudgetStore.getState().load();
         useUndoStore.getState().showUndo(t("categoryDeleted"));
         setCoverTarget(null);
         setPendingDelete(false);
@@ -502,7 +500,7 @@ export default function CategoryDetailsScreen() {
                     </View>
                     <Button
                       title={t("assign")}
-                      size="md"
+                      size="lg"
                       style={{
                         backgroundColor: colors.budgetCaution,
                         alignSelf: "stretch",
@@ -514,7 +512,6 @@ export default function CategoryDetailsScreen() {
                           await useBudgetStore
                             .getState()
                             .setAmount(budgetCat.id, budgetCat.budgeted + needed);
-                          await useBudgetStore.getState().load();
                         }
                       }}
                     />
@@ -555,7 +552,7 @@ export default function CategoryDetailsScreen() {
                 <Button
                   title={t("editTarget")}
                   buttonStyle="borderedSecondary"
-                  size="md"
+                  size="lg"
                   icon="flagOutline"
                   style={{ alignSelf: "stretch" }}
                   onPress={() => {
@@ -605,7 +602,7 @@ export default function CategoryDetailsScreen() {
                 </Text>
                 <Button
                   title={t("createTarget")}
-                  size="md"
+                  size="lg"
                   style={{ alignSelf: "stretch" }}
                   onPress={() => {
                     if (categoryId) {
@@ -626,7 +623,7 @@ export default function CategoryDetailsScreen() {
         <Button
           title={t("renameCategory")}
           buttonStyle="borderedSecondary"
-          size="md"
+          size="lg"
           icon="pencilOutline"
           style={{ alignSelf: "stretch" }}
           onPress={() => {
@@ -642,16 +639,35 @@ export default function CategoryDetailsScreen() {
         <Button
           title={category?.hidden ? t("showCategory") : t("hideCategory")}
           buttonStyle="borderedSecondary"
-          size="md"
+          size="lg"
           icon={category?.hidden ? "eyeOutline" : "eyeOffOutline"}
           style={{ alignSelf: "stretch" }}
-          onPress={async () => {
+          onPress={() => {
             if (!categoryId) return;
-            await useCategoriesStore
-              .getState()
-              .updateCategory(categoryId, { hidden: !category?.hidden });
-            await useCategoriesStore.getState().load();
-            await useBudgetStore.getState().load();
+            if (!category?.hidden) {
+              Alert.alert(
+                t("categoryHiddenTitle"),
+                t("categoryHiddenMessage"),
+                [
+                  { text: t("cancel"), style: "cancel" },
+                  {
+                    text: t("hideCategory"),
+                    onPress: async () => {
+                      await useCategoriesStore
+                        .getState()
+                        .updateCategory(categoryId, { hidden: true });
+                      router.back();
+                    },
+                  },
+                ],
+              );
+            } else {
+              (async () => {
+                await useCategoriesStore
+                  .getState()
+                  .updateCategory(categoryId, { hidden: false });
+              })();
+            }
           }}
         />
         <Button

@@ -148,7 +148,8 @@ export default function GoalEditorScreen() {
   const { t } = useTranslation("budget");
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const router = useRouter();
-  const { categoryId } = useLocalSearchParams<{ categoryId: string }>();
+  const { categoryId, dismissCount } = useLocalSearchParams<{ categoryId: string; dismissCount?: string }>();
+  const dismiss = () => router.dismiss(Number(dismissCount) || 1);
 
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -423,8 +424,7 @@ export default function GoalEditorScreen() {
       });
       // Update goal indicator AFTER batchMessages so it reads the fresh goal_def
       await updateGoalIndicator(useBudgetStore.getState().month, categoryId);
-      await useBudgetStore.getState().load();
-      router.back();
+      dismiss();
     } catch {
       Alert.alert(t("couldNotSaveTitle"), t("couldNotSaveMessage"));
     } finally {
@@ -442,9 +442,7 @@ export default function GoalEditorScreen() {
         onPress: async () => {
           try {
             await setGoalTemplates(categoryId, []);
-            await useCategoriesStore.getState().load();
-            await useBudgetStore.getState().load();
-            router.back();
+            dismiss();
           } catch {
             Alert.alert(t("errorTitle"), t("couldNotRemoveTarget"));
           }
@@ -534,21 +532,14 @@ export default function GoalEditorScreen() {
     <>
       <ScrollView
         style={{ backgroundColor: colors.pageBackground }}
-        contentContainerStyle={{ padding: spacing.lg, paddingTop: 72 }}
+        contentContainerStyle={{ padding: spacing.lg }}
+        contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
       >
-        <Stack.Screen
-          options={{
-            headerLeft: () => (
-              <Button
-                icon="close"
-                buttonStyle="borderless"
-                color={colors.headerText}
-                onPress={() => router.back()}
-              />
-            ),
-          }}
-        />
+        <Stack.Screen options={{}} />
+        <Stack.Toolbar placement="left">
+          <Stack.Toolbar.Button icon="xmark" onPress={() => dismiss()} />
+        </Stack.Toolbar>
 
         {/* ── Type selector ──────────────────────────────────────── */}
         <Card style={{ padding: 0, overflow: "hidden" as const, marginBottom: spacing.sm }}>
@@ -614,7 +605,7 @@ export default function GoalEditorScreen() {
               />
               {!simpleRefill && (
                 <>
-                  <Divider />
+                  <Divider inset />
                   <ToggleRow
                     label={t("balanceCap")}
                     value={capEnabled}
@@ -622,7 +613,7 @@ export default function GoalEditorScreen() {
                   />
                   {capEnabled && (
                     <>
-                      <Divider />
+                      <Divider inset />
                       <ListItem
                         title={t("maximumBalance")}
                         right={
@@ -655,7 +646,7 @@ export default function GoalEditorScreen() {
                 onToggle={() => setShowDatePicker(!showDatePicker)}
                 onDateChange={setTargetDate}
               />
-              <Divider />
+              <Divider inset />
               <ToggleRow label={t("repeatAnnually")} value={byRepeat} onValueChange={setByRepeat} />
             </View>
           )}
@@ -707,7 +698,7 @@ export default function GoalEditorScreen() {
                 }))}
                 onSelectionChange={setPeriodicPeriod}
               />
-              <Divider />
+              <Divider inset />
               <MenuPickerRow
                 label={t("every")}
                 selection={periodicInterval}
@@ -717,7 +708,7 @@ export default function GoalEditorScreen() {
                 }))}
                 onSelectionChange={setPeriodicInterval}
               />
-              <Divider />
+              <Divider inset />
               <DateRow
                 label={t("startingDate")}
                 date={periodicStart ?? new Date()}
@@ -748,7 +739,7 @@ export default function GoalEditorScreen() {
                 onToggle={() => setShowSpendFromPicker(!showSpendFromPicker)}
                 onDateChange={setSpendFromDate}
               />
-              <Divider />
+              <Divider inset />
               <DateRow
                 label={t("spendBy")}
                 date={spendToDate}
@@ -756,7 +747,7 @@ export default function GoalEditorScreen() {
                 onToggle={() => setShowSpendToPicker(!showSpendToPicker)}
                 onDateChange={setSpendToDate}
               />
-              <Divider />
+              <Divider inset />
               <ToggleRow
                 label={t("repeatAnnually")}
                 value={spendRepeat}
@@ -777,7 +768,7 @@ export default function GoalEditorScreen() {
                 }))}
                 onSelectionChange={setPercent}
               />
-              <Divider />
+              <Divider inset />
               <MenuPickerRow
                 label={t("ofIncomeFrom")}
                 selection={percentCategory}
@@ -787,7 +778,7 @@ export default function GoalEditorScreen() {
                 ]}
                 onSelectionChange={setPercentCategory}
               />
-              <Divider />
+              <Divider inset />
               <ToggleRow
                 label={t("useLastMonth")}
                 value={percentPrevious}
@@ -836,7 +827,7 @@ export default function GoalEditorScreen() {
                   </Picker>
                 </Host>
               </View>
-              <Divider />
+              <Divider inset />
               <ToggleRow label={t("keepSurplus")} value={limitHold} onValueChange={setLimitHold} />
             </View>
           )}
@@ -907,25 +898,26 @@ export default function GoalEditorScreen() {
           </Text>
         )}
 
-        {/* ── Save / Delete ──────────────────────────────────────── */}
+        {/* ── Save ──────────────────────────────────────────────── */}
         <Button
           title={isEditing ? t("saveTarget") : t("addTarget")}
           onPress={handleSave}
+          size="lg"
           disabled={!canSave}
           loading={saving}
           style={{ marginTop: spacing.xl, borderRadius: 999 }}
         />
 
+        {/* ── Delete — separated per HIG ──────────────────────── */}
         {isEditing && (
-          <View style={{ marginTop: spacing.xl }}>
-            <Button
-              title={t("removeTarget")}
-              buttonStyle="borderless"
-              icon="trashOutline"
-              danger
-              onPress={handleDelete}
-            />
-          </View>
+          <Button
+            title={t("removeTarget")}
+            buttonStyle="borderless"
+            icon="trashOutline"
+            danger
+            onPress={handleDelete}
+            style={{ marginTop: spacing.lg }}
+          />
         )}
       </ScrollView>
     </>

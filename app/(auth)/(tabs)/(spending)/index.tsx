@@ -61,6 +61,7 @@ export default function SpendingScreen() {
   // ---- Upcoming scheduled transactions ----
   const [upcomingExpanded, setUpcomingExpanded] = useState(false);
   const [previewTransactions, setPreviewTransactions] = useState<PreviewTransaction[]>([]);
+  const [screenReady, setScreenReady] = useState(false);
 
   // ---- Transaction data (AQL + React Query + sync-event auto-refresh) ----
   const txnQuery = useMemo(() => q("transactions").select(["*", "accountName"]), []);
@@ -68,6 +69,17 @@ export default function SpendingScreen() {
     query: txnQuery,
     options: { pageSize: 25 },
   });
+
+  // Wait for transactions, then load previews + uncleared in one batch
+  const hasTransactions = transactions.length > 0;
+  useEffect(() => {
+    if (!hasTransactions || screenReady) return;
+    Promise.all([getAllPreviewTransactions(), getUnclearedCount()]).then(([p, u]) => {
+      setPreviewTransactions(p);
+      setUnclearedCount(u);
+      setScreenReady(true);
+    });
+  }, [hasTransactions, screenReady]);
 
   // ---- Selection mode ----
   const selection = useSelectionMode<TransactionDisplay>();
@@ -113,26 +125,23 @@ export default function SpendingScreen() {
     fabCollapsed.value = e.nativeEvent.contentOffset.y > 100;
   }, []);
 
-  // ---- Load previews + uncleared (non-reactive, loaded on focus) ----
-  const loadPreviews = useCallback(async () => {
-    const [previews, uncleared] = await Promise.all([
-      getAllPreviewTransactions(),
-      getUnclearedCount(),
-    ]);
-    setPreviewTransactions(previews);
-    setUnclearedCount(uncleared);
-  }, []);
-
+  // Reset selection on blur (unless a bulk picker is pending)
   useFocusEffect(
     useCallback(() => {
-      loadPreviews();
+      // Refresh previews on re-focus
+      if (screenReady) {
+        Promise.all([getAllPreviewTransactions(), getUnclearedCount()]).then(([p, u]) => {
+          setPreviewTransactions(p);
+          setUnclearedCount(u);
+        });
+      }
       return () => {
         if (!bulkMovePendingRef.current && !bulkCategoryPendingRef.current) {
           selection.exit();
           setTabBarHidden(false);
         }
       };
-    }, [loadPreviews]),
+    }, [screenReady]),
   );
 
   // ---- Single-transaction actions ----
@@ -231,27 +240,31 @@ export default function SpendingScreen() {
   }, [selectedCategory, clearPicker, batchActions.handleBulkChangeCategory]);
 
   // ---- Upcoming actions ----
+  const refreshPreviews = useCallback(async () => {
+    const [p, u] = await Promise.all([getAllPreviewTransactions(), getUnclearedCount()]);
+    setPreviewTransactions(p);
+    setUnclearedCount(u);
+  }, []);
+
   const handlePostSchedule = useCallback(async (scheduleId: string) => {
     await postTransactionForSchedule(scheduleId);
-    await Promise.all([loadPreviews(), useSchedulesStore.getState().load()]);
-  }, [loadPreviews]);
+    await Promise.all([refreshPreviews(), useSchedulesStore.getState().load()]);
+  }, [refreshPreviews]);
 
   const handleSkipSchedule = useCallback(async (scheduleId: string) => {
     await skipNextDate(scheduleId);
-    const [previews] = await Promise.all([getAllPreviewTransactions(), useSchedulesStore.getState().load()]);
-    setPreviewTransactions(previews);
-  }, []);
+    await Promise.all([refreshPreviews(), useSchedulesStore.getState().load()]);
+  }, [refreshPreviews]);
 
   const handlePostScheduleToday = useCallback(async (scheduleId: string) => {
     await postTransactionForScheduleToday(scheduleId);
-    await Promise.all([loadPreviews(), useSchedulesStore.getState().load()]);
-  }, [loadPreviews]);
+    await Promise.all([refreshPreviews(), useSchedulesStore.getState().load()]);
+  }, [refreshPreviews]);
 
   const handleCompleteSchedule = useCallback(async (scheduleId: string) => {
     await updateSchedule({ schedule: { id: scheduleId, completed: true } });
-    const [previews] = await Promise.all([getAllPreviewTransactions(), useSchedulesStore.getState().load()]);
-    setPreviewTransactions(previews);
-  }, []);
+    await Promise.all([refreshPreviews(), useSchedulesStore.getState().load()]);
+  }, [refreshPreviews]);
 
   const handleDeleteSchedule = useCallback((scheduleId: string) => {
     Alert.alert(t("spending.deleteScheduleTitle"), t("spending.deleteScheduleConfirm"), [
@@ -261,22 +274,23 @@ export default function SpendingScreen() {
         style: "destructive",
         onPress: async () => {
           await deleteSchedule(scheduleId);
-          const [previews] = await Promise.all([getAllPreviewTransactions(), useSchedulesStore.getState().load()]);
-          setPreviewTransactions(previews);
+          await Promise.all([refreshPreviews(), useSchedulesStore.getState().load()]);
         },
       },
     ]);
-  }, []);
+  }, [refreshPreviews]);
 
   const handlePressSchedule = useCallback(
     (scheduleId: string) => router.push({ pathname: "/(auth)/schedule/[id]", params: { id: scheduleId } }),
     [router],
   );
 
-  // ---- Merged list data ----
+  // ---- Merged list data (only built when screen is ready to avoid scroll jump) ----
   const mergedListData = useMemo(
-    () => buildListData(transactions as TransactionDisplay[], { previewTransactions, upcomingExpanded }),
-    [transactions, previewTransactions, upcomingExpanded],
+    () => screenReady
+      ? buildListData(transactions as TransactionDisplay[], { previewTransactions, upcomingExpanded })
+      : [],
+    [screenReady, transactions, previewTransactions, upcomingExpanded],
   );
 
   // ---- Common menu actions ----
@@ -386,11 +400,13 @@ export default function SpendingScreen() {
           ) : null
         }
         ListEmptyComponent={
-          <EmptyState
-            icon="receiptOutline"
-            title={t("spending.noTransactionsYet")}
-            description={t("spending.noTransactionsDescription")}
-          />
+          !screenReady ? null : (
+            <EmptyState
+              icon="receiptOutline"
+              title={t("spending.noTransactionsYet")}
+              description={t("spending.noTransactionsDescription")}
+            />
+          )
         }
         onEndReached={() => { if (hasNextPage) fetchNextPage(); }}
         onEndReachedThreshold={0.3}

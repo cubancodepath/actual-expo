@@ -10,7 +10,7 @@ import {
   DarkTheme,
   DefaultTheme,
 } from "@react-navigation/native";
-import { Stack, useNavigationContainerRef, useRouter } from "expo-router";
+import { SplashScreen, Stack, useNavigationContainerRef, useRouter } from "expo-router";
 import { isRunningInExpoGo } from "expo";
 import * as QuickActions from "expo-quick-actions";
 import i18n from "@/i18n/config";
@@ -30,6 +30,9 @@ import { useShakeUndo } from "@/presentation/hooks/useShakeUndo";
 import { loadAllPersistedKeys } from "@/services/encryptionService";
 
 const queryClient = new QueryClient();
+
+// Keep splash screen visible until bootstrap + data pre-load completes
+SplashScreen.preventAutoHideAsync();
 
 const navigationIntegration = Sentry.reactNavigationIntegration({
   enableTimeToInitialDisplay: !isRunningInExpoGo(),
@@ -82,7 +85,10 @@ function RootLayout() {
     }
     bootstrap()
       .catch(console.error)
-      .finally(() => setReady(true));
+      .finally(() => {
+        setReady(true);
+        SplashScreen.hideAsync();
+      });
   }, []);
 
   // Keep shortcut cache in sync when accounts or categories change

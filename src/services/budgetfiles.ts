@@ -366,8 +366,26 @@ export async function openBudget(budgetId: string): Promise<void> {
 
   await loadClock();
 
-  // Load all stores from the newly opened DB
-  // Note: categoriesStore no longer loaded here — uses liveQuery in components
+  // Pre-fetch core queries while splash screen is visible.
+  // Results are cached and consumed by useLiveQuery as initialData.
+  const { executeQuery } = await import("../queries/execute");
+  const { q } = await import("../queries/query");
+  const { setQueryCache } = await import("../queries/queryCache");
+
+  const [accounts, categories, groups, payees, tags] = await Promise.all([
+    executeQuery(q("accounts")),
+    executeQuery(q("categories")),
+    executeQuery(q("category_groups")),
+    executeQuery(q("payees")),
+    executeQuery(q("tags")),
+  ]);
+  setQueryCache(q("accounts").serializeAsString(), accounts.data);
+  setQueryCache(q("categories").serializeAsString(), categories.data);
+  setQueryCache(q("category_groups").serializeAsString(), groups.data);
+  setQueryCache(q("payees").serializeAsString(), payees.data);
+  setQueryCache(q("tags").serializeAsString(), tags.data);
+
+  // Load remaining stores from the newly opened DB
   await Promise.allSettled([
     useBudgetStore.getState().load(),
     usePreferencesStore.getState().load(),

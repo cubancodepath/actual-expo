@@ -19,6 +19,7 @@
 import { useEffect, useMemo, useRef, useState, type DependencyList } from "react";
 import type { Query } from "@/queries/query";
 import { liveQuery, type LiveQueryInstance } from "@/queries/liveQuery";
+import { consumeQueryCache } from "@/queries/queryCache";
 import { pagedQuery, type PagedQueryInstance } from "@/queries/pagedQuery";
 
 // ---------------------------------------------------------------------------
@@ -37,11 +38,13 @@ export function useLiveQuery<T = Record<string, unknown>>(
   deps: DependencyList,
 ): UseLiveQueryResult<T> {
   const query = useMemo(makeQuery, deps);
-  // Start with [] (not null) — matches Actual's placeholderData: [] pattern.
-  // Components always receive an array, never null. No loading flash.
-  const [data, setData] = useState<T[] | null>([]);
+  // Check pre-loaded cache (populated during bootstrap while splash screen is visible)
+  const cacheKey = query?.serializeAsString() ?? "";
+  const cached = useMemo(() => (cacheKey ? consumeQueryCache(cacheKey) : null), []);
+  // Start with cached data if available, otherwise [] (placeholderData pattern)
+  const [data, setData] = useState<T[] | null>((cached as T[] | null) ?? []);
   const [isLoading, setIsLoading] = useState(false);
-  const [hasLoaded, setHasLoaded] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(cached != null);
   const isUnmounted = useRef(false);
 
   useEffect(() => {

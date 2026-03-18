@@ -33,7 +33,7 @@ import { DateSectionHeader } from "@/presentation/components/account/DateSection
 import { TokenSearchBar } from "@/presentation/components/transaction/TokenSearchBar";
 import { SearchSuggestions } from "@/presentation/components/transaction/SearchSuggestions";
 import { useTags } from "@/presentation/hooks/useTags";
-import { usePayeesStore } from "@/stores/payeesStore";
+import { usePayees } from "@/presentation/hooks/usePayees";
 import { GlassButton } from "@/presentation/components/atoms/GlassButton";
 import {
   useTransactionSelection,
@@ -127,7 +127,7 @@ export default function SearchScreen() {
   const { categories } = useCategories();
   const { tags } = useTags();
   const setTabBarHidden = useTabBarStore((s) => s.setHidden);
-  const payees = usePayeesStore((s) => s.payees);
+  const { payees } = usePayees();
   // Search state
   const searchInputRef = useRef<TextInput>(null);
   const [searchText, setSearchText] = useState("");

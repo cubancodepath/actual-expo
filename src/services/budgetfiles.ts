@@ -18,7 +18,6 @@ import { resetAllStores } from "../stores/resetStores";
 import { usePrefsStore } from "../stores/prefsStore";
 import { useAccountsStore } from "../stores/accountsStore";
 import { useBudgetStore } from "../stores/budgetStore";
-import { usePayeesStore } from "../stores/payeesStore";
 import { usePreferencesStore } from "../stores/preferencesStore";
 import { useSchedulesStore } from "../stores/schedulesStore";
 import { useFeatureFlagsStore } from "../stores/featureFlagsStore";
@@ -373,7 +372,6 @@ export async function openBudget(budgetId: string): Promise<void> {
   await Promise.allSettled([
     useAccountsStore.getState().load(),
     useBudgetStore.getState().load(),
-    usePayeesStore.getState().load(),
     usePreferencesStore.getState().load(),
     useSchedulesStore.getState().load(),
     useFeatureFlagsStore.getState().load(),

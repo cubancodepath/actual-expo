@@ -8,7 +8,7 @@
 
 import { useMemo } from "react";
 import { useSchedules } from "./useSchedules";
-import { usePayeesStore } from "@/stores/payeesStore";
+import { usePayees } from "./usePayees";
 import { computePreviewTransactions, type PreviewTransaction } from "@/schedules/computePreview";
 
 export type { PreviewTransaction } from "@/schedules/computePreview";
@@ -18,7 +18,7 @@ export function usePreviewTransactions(opts?: {
   upcomingDays?: number;
 }): PreviewTransaction[] {
   const { schedules, statuses } = useSchedules();
-  const payees = usePayeesStore((s) => s.payees);
+  const { payees } = usePayees();
 
   // Build payee name map from store (reactive — updates when payees change)
   const payeeNames = useMemo(() => {

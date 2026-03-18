@@ -4,7 +4,6 @@ import { Input } from "@/presentation/components/atoms/Input";
 import { Stack, useRouter } from "expo-router";
 import { Icon } from "@/presentation/components/atoms/Icon";
 import { useAccountsStore } from "@/stores/accountsStore";
-import { usePayeesStore } from "@/stores/payeesStore";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
@@ -26,7 +25,6 @@ export default function NewAccountScreen() {
   const theme = useTheme();
   const styles = useThemedStyles(createStyles);
   const { create, load } = useAccountsStore();
-  const loadPayees = usePayeesStore((s) => s.load);
 
   const { t } = useTranslation("accounts");
   const [name, setName] = useState("");
@@ -46,7 +44,7 @@ export default function NewAccountScreen() {
     await handleError(async () => {
       const startingBalance = parseToCents(balanceStr);
       await create({ name: trimmed, offbudget, closed: false }, startingBalance);
-      await Promise.all([load(), loadPayees()]);
+      await load();
       router.back();
     });
     setLoading(false);

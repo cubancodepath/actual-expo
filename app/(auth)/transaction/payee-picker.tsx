@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { SymbolView } from "expo-symbols";
 import { Icon } from "@/presentation/components/atoms/Icon";
-import { usePayeesStore } from "@/stores/payeesStore";
+import { usePayees } from "@/presentation/hooks/usePayees";
 import { usePickerStore } from "@/stores/pickerStore";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
 import { Text } from "@/presentation/components/atoms/Text";
@@ -25,7 +25,7 @@ export default function PayeePickerScreen() {
   const { t } = useTranslation("transactions");
   const { colors, spacing, borderWidth: bw } = useTheme();
   const styles = useThemedStyles(createStyles);
-  const { payees, load } = usePayeesStore();
+  const { payees } = usePayees();
   const setPayee = usePickerStore((s) => s.setPayee);
   const [search, setSearch] = useState(selectedName ?? "");
   const {
@@ -37,7 +37,6 @@ export default function PayeePickerScreen() {
   const { status: locationStatus } = useLocationPermission();
 
   useEffect(() => {
-    if (payees.length === 0) load();
     refreshNearby();
   }, []);
 

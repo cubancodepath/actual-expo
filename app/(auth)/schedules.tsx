@@ -14,7 +14,7 @@ import {
 import { Icon } from "@/presentation/components/atoms/Icon";
 import { SwipeableRow } from "@/presentation/components";
 import { useSchedulesStore } from "@/stores/schedulesStore";
-import { usePayeesStore } from "@/stores/payeesStore";
+import { usePayees } from "@/presentation/hooks/usePayees";
 import { useAccountsStore } from "@/stores/accountsStore";
 import { useUndoStore } from "@/stores/undoStore";
 import { getStatus, getScheduledAmount, getRecurringDescription } from "@/schedules";
@@ -137,7 +137,7 @@ export default function SchedulesScreen() {
   const { t } = useTranslation(["schedules", "common"]);
 
   const { schedules, load, delete_ } = useSchedulesStore();
-  const payees = usePayeesStore((s) => s.payees);
+  const { payees } = usePayees();
   const accounts = useAccountsStore((s) => s.accounts);
 
   useFocusEffect(

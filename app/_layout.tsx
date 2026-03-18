@@ -1,5 +1,6 @@
 import "@/i18n/config";
 import * as Sentry from "@sentry/react-native";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { AppState, Settings, useColorScheme } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -28,6 +29,8 @@ import { UndoToast } from "@/presentation/components";
 import { ErrorBoundary } from "@/presentation/components/ErrorBoundary";
 import { useShakeUndo } from "@/presentation/hooks/useShakeUndo";
 import { loadAllPersistedKeys } from "@/services/encryptionService";
+
+const queryClient = new QueryClient();
 
 const navigationIntegration = Sentry.reactNavigationIntegration({
   enableTimeToInitialDisplay: !isRunningInExpoGo(),
@@ -215,10 +218,11 @@ function RootLayout() {
 
   return (
     <ErrorBoundary>
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <KeyboardProvider>
-          <NavigationThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-            <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <KeyboardProvider>
+            <NavigationThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+              <ThemeProvider>
               <Stack>
                 <Stack.Protected guard={!hasToken && !isLocalOnly}>
                   <Stack.Screen name="(public)" options={{ headerShown: false }} />
@@ -231,10 +235,11 @@ function RootLayout() {
                 </Stack.Protected>
               </Stack>
               <UndoToast />
-            </ThemeProvider>
-          </NavigationThemeProvider>
-        </KeyboardProvider>
-      </GestureHandlerRootView>
+              </ThemeProvider>
+            </NavigationThemeProvider>
+          </KeyboardProvider>
+        </GestureHandlerRootView>
+      </QueryClientProvider>
     </ErrorBoundary>
   );
 }

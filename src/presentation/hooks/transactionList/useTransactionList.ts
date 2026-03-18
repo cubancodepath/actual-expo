@@ -249,7 +249,6 @@ export function useTransactionList({
 
   const loadAll = useCallback(async () => {
     const id = ++refreshIdRef.current;
-    dispatch({ type: "SET_LOADING", loading: true });
     offsetRef.current = 0;
     const txns = await fetchRef.current(pageSize, 0);
     if (refreshIdRef.current !== id) return;

@@ -17,7 +17,7 @@ import i18n from "@/i18n/config";
 import { ThemeProvider } from "@/presentation/providers/ThemeProvider";
 import { usePrefsStore } from "@/stores/prefsStore";
 import { useAccountsStore } from "@/stores/accountsStore";
-import { useCategoriesStore } from "@/stores/categoriesStore";
+import { listen } from "@/sync/syncEvents";
 import { useBudgetStore } from "@/stores/budgetStore";
 import { useTransactionsStore } from "@/stores/transactionsStore";
 import { fullSync, isSwitchingBudget } from "@/sync";
@@ -89,12 +89,12 @@ function RootLayout() {
   // Keep shortcut cache in sync when accounts or categories change
   useEffect(() => {
     if (!ready) return;
-    const unsubAccounts = useAccountsStore.subscribe(() => syncShortcutCache());
-    const unsubCategories = useCategoriesStore.subscribe(() => syncShortcutCache());
-    return () => {
-      unsubAccounts();
-      unsubCategories();
-    };
+    return listen((event) => {
+      const tables = new Set(event.tables);
+      if (tables.has("accounts") || tables.has("categories") || tables.has("category_groups")) {
+        syncShortcutCache();
+      }
+    });
   }, [ready]);
 
   useEffect(() => {

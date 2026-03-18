@@ -1,8 +1,8 @@
 import { Platform } from "react-native";
 import { ExtensionStorage } from "@bacons/apple-targets";
 import Constants from "expo-constants";
-import { useAccountsStore } from "../stores/accountsStore";
-import { useCategoriesStore } from "../stores/categoriesStore";
+import { getAccounts } from "../accounts";
+import { getCategories, getCategoryGroups } from "../categories";
 
 const APP_GROUP =
   Constants.expoConfig?.ios?.entitlements?.["com.apple.security.application-groups"]?.[0] ??
@@ -15,24 +15,27 @@ function getStorage(): ExtensionStorage {
   return storage;
 }
 
-export function syncShortcutCache(): void {
+export async function syncShortcutCache(): Promise<void> {
   if (Platform.OS !== "ios") return;
 
   try {
     const s = getStorage();
 
-    const accounts = useAccountsStore
-      .getState()
-      .accounts.filter((a) => !a.closed && !a.tombstone)
+    const [allAccounts, allCategories, allGroups] = await Promise.all([
+      getAccounts(),
+      getCategories(),
+      getCategoryGroups(),
+    ]);
+
+    const accounts = allAccounts
+      .filter((a) => !a.closed && !a.tombstone)
       .map((a) => ({ id: a.id, name: a.name ?? "" }));
 
-    const { categories, groups } = useCategoriesStore.getState();
-
-    const filteredCategories = categories
+    const filteredCategories = allCategories
       .filter((c) => !c.hidden && !c.tombstone && !c.is_income)
       .map((c) => ({ id: c.id, name: c.name ?? "", groupId: c.cat_group ?? "" }));
 
-    const filteredGroups = groups
+    const filteredGroups = allGroups
       .filter((g) => !g.hidden && !g.tombstone && !g.is_income)
       .map((g) => ({ id: g.id, name: g.name ?? "" }));
 

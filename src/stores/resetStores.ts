@@ -1,6 +1,5 @@
 import { useAccountsStore } from "./accountsStore";
 import { useBudgetStore } from "./budgetStore";
-import { useCategoriesStore } from "./categoriesStore";
 import { useFeatureFlagsStore } from "./featureFlagsStore";
 import { usePayeesStore } from "./payeesStore";
 import { usePickerStore } from "./pickerStore";
@@ -22,7 +21,7 @@ import { FEATURE_FLAG_DEFAULTS } from "../preferences/featureFlags";
 export function resetAllStores(): void {
   useAccountsStore.setState({ accounts: [], loading: false });
   useBudgetStore.setState({ month: currentMonth(), data: null, loading: false });
-  useCategoriesStore.setState({ groups: [], categories: [], loading: false });
+  // categoriesStore no longer used — liveQuery handles data in components
   usePayeesStore.setState({ payees: [], loading: false });
   usePickerStore.getState().clear();
   usePreferencesStore.setState({ ...PREFERENCE_DEFAULTS });

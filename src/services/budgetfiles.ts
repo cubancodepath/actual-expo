@@ -17,7 +17,6 @@ import {
 import { resetAllStores } from "../stores/resetStores";
 import { usePrefsStore } from "../stores/prefsStore";
 import { useAccountsStore } from "../stores/accountsStore";
-import { useCategoriesStore } from "../stores/categoriesStore";
 import { useBudgetStore } from "../stores/budgetStore";
 import { usePayeesStore } from "../stores/payeesStore";
 import { usePreferencesStore } from "../stores/preferencesStore";
@@ -371,9 +370,9 @@ export async function openBudget(budgetId: string): Promise<void> {
   await loadClock();
 
   // Load all stores from the newly opened DB
+  // Note: categoriesStore no longer loaded here — uses liveQuery in components
   await Promise.allSettled([
     useAccountsStore.getState().load(),
-    useCategoriesStore.getState().load(),
     useBudgetStore.getState().load(),
     usePayeesStore.getState().load(),
     usePreferencesStore.getState().load(),

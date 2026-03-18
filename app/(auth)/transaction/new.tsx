@@ -200,7 +200,6 @@ export default function NewTransactionScreen() {
             title={form.isEdit ? t("saveChanges") : t("addTransaction")}
             onPress={form.handleSave}
             size="lg"
-            loading={form.loading}
             disabled={amountInput.cents === 0 || (!form.isEdit && !form.acctId)}
           />
 

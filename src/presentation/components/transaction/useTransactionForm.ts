@@ -82,8 +82,7 @@ export function useTransactionForm(params: RouteParams, amountInput: AmountInput
   const [cleared, setCleared] = useState(false);
   const [reconciled, setReconciled] = useState(false);
   const [recurConfig, setRecurConfig] = useState<RecurConfig | null>(null);
-  const [loading, setLoading] = useState(false);
-  const { error, handleError, setValidationError, dismissError } = useErrorHandler();
+  const { error, setValidationError, dismissError } = useErrorHandler();
   const isInitialMount = useRef(true);
   const userOverrides = useRef<Set<string>>(new Set());
 
@@ -267,33 +266,33 @@ export function useTransactionForm(params: RouteParams, amountInput: AmountInput
     }
   }, [cents, type]);
 
-  async function performSave() {
-    setLoading(true);
-    await handleError(async () => {
-      await saveTransaction(
-        {
-          transactionId: isEdit ? transactionId : undefined,
-          acct: acctId!,
-          date: strToInt(dateStr) ?? dateInt,
-          amount: cents,
-          type,
-          payeeId,
-          payeeName,
-          categoryId,
-          notes: notes.trim() || null,
-          cleared,
-          splitCategories: isSplit ? splitCategories : null,
-          recurConfig: !isEdit ? recurConfig : undefined,
-        },
-        rules,
-      );
-      await loadAccounts();
-      if (recurConfig) {
-        useSchedulesStore.getState().load();
-      }
-      router.dismiss();
-    });
-    setLoading(false);
+  function performSave() {
+    router.dismiss();
+    // Fire-and-forget: DB write + store refresh in background
+    saveTransaction(
+      {
+        transactionId: isEdit ? transactionId : undefined,
+        acct: acctId!,
+        date: strToInt(dateStr) ?? dateInt,
+        amount: cents,
+        type,
+        payeeId,
+        payeeName,
+        categoryId,
+        notes: notes.trim() || null,
+        cleared,
+        splitCategories: isSplit ? splitCategories : null,
+        recurConfig: !isEdit ? recurConfig : undefined,
+      },
+      rules,
+    )
+      .then(() => {
+        loadAccounts();
+        if (recurConfig) useSchedulesStore.getState().load();
+      })
+      .catch((err) => {
+        if (__DEV__) console.warn("[performSave] failed:", err);
+      });
   }
 
   function handleSave() {
@@ -333,10 +332,9 @@ export function useTransactionForm(params: RouteParams, amountInput: AmountInput
       {
         text: t("delete"),
         style: "destructive",
-        onPress: async () => {
-          await delete_(transactionId!);
-          await loadAccounts();
+        onPress: () => {
           router.dismiss();
+          delete_(transactionId!).then(() => loadAccounts());
         },
       },
     ]);
@@ -376,7 +374,6 @@ export function useTransactionForm(params: RouteParams, amountInput: AmountInput
     // Error
     error,
     dismissError,
-    loading,
     // Tags helper
     extractTagsFromNotes,
     // Schedule helper

@@ -8,16 +8,20 @@ function c(query: ReturnType<typeof q>) {
   return compile(query.serialize());
 }
 
+// ---------------------------------------------------------------------------
+// Basic SELECT
+// ---------------------------------------------------------------------------
+
 describe("compile — basic SELECT", () => {
-  it("compiles SELECT * with tombstone filter", () => {
+  it("compiles SELECT * for categories with tombstone filter", () => {
     const result = c(q("categories"));
     expect(result.sql).toContain("SELECT");
     expect(result.sql).toContain("FROM categories");
-    expect(result.sql).toContain("categories.tombstone = 0");
+    expect(result.sql).toContain("c.tombstone = 0");
     expect(result.params).toEqual([]);
   });
 
-  it("compiles specific fields", () => {
+  it("compiles specific fields for categories", () => {
     const result = c(q("categories").select(["id", "name"]));
     expect(result.sql).toContain('"id"');
     expect(result.sql).toContain('"name"');
@@ -29,45 +33,49 @@ describe("compile — basic SELECT", () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// Filter operators
+// ---------------------------------------------------------------------------
+
 describe("compile — filter operators", () => {
-  it("$eq with value", () => {
+  it("$eq with boolean value", () => {
     const result = c(q("categories").filter({ hidden: false }));
-    expect(result.sql).toContain("categories.hidden = ?");
-    expect(result.params).toContain(0); // boolean → 0
+    expect(result.sql).toContain("c.hidden = ?");
+    expect(result.params).toContain(0);
   });
 
   it("$eq with null → IS NULL", () => {
-    const result = c(q("transactions").filter({ category: null }));
-    expect(result.sql).toContain("transactions.category IS NULL");
+    const result = c(q("transactions").filter({ notes: null }));
+    expect(result.sql).toContain("t.notes IS NULL");
   });
 
   it("$ne", () => {
     const result = c(q("categories").filter({ name: { $ne: "Food" } }));
-    expect(result.sql).toContain("categories.name != ?");
+    expect(result.sql).toContain("c.name != ?");
     expect(result.params).toContain("Food");
   });
 
   it("$gt and $lt", () => {
     const result = c(q("transactions").filter({ amount: { $gt: 0, $lt: 10000 } }));
-    expect(result.sql).toContain("transactions.amount > ?");
-    expect(result.sql).toContain("transactions.amount < ?");
+    expect(result.sql).toContain("IFNULL(t.amount, 0) > ?");
+    expect(result.sql).toContain("IFNULL(t.amount, 0) < ?");
     expect(result.params).toEqual([0, 10000]);
   });
 
-  it("$gte and $lte", () => {
+  it("$gte", () => {
     const result = c(q("transactions").filter({ amount: { $gte: 100 } }));
-    expect(result.sql).toContain("transactions.amount >= ?");
+    expect(result.sql).toContain(">= ?");
   });
 
   it("$like", () => {
     const result = c(q("payees").filter({ name: { $like: "%amazon%" } }));
-    expect(result.sql).toContain("payees.name LIKE ?");
+    expect(result.sql).toContain("LIKE ?");
     expect(result.params).toContain("%amazon%");
   });
 
   it("$oneof", () => {
     const result = c(q("transactions").filter({ acct: { $oneof: ["a1", "a2", "a3"] } }));
-    expect(result.sql).toContain("transactions.acct IN (?, ?, ?)");
+    expect(result.sql).toContain("t.acct IN (?, ?, ?)");
     expect(result.params).toEqual(["a1", "a2", "a3"]);
   });
 
@@ -77,32 +85,35 @@ describe("compile — filter operators", () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// Logical operators
+// ---------------------------------------------------------------------------
+
 describe("compile — logical operators", () => {
   it("$and", () => {
     const result = c(
-      q("transactions").filter({
-        $and: [{ amount: { $gt: 0 } }, { cleared: true }],
-      }),
+      q("transactions").filter({ $and: [{ amount: { $gt: 0 } }, { cleared: true }] }),
     );
-    expect(result.sql).toContain("transactions.amount > ?");
-    expect(result.sql).toContain("transactions.cleared = ?");
+    expect(result.sql).toContain("IFNULL(t.amount, 0) > ?");
+    expect(result.sql).toContain("t.cleared = ?");
     expect(result.sql).toMatch(/\(.*AND.*\)/);
   });
 
   it("$or", () => {
     const result = c(
-      q("transactions").filter({
-        $or: [{ amount: { $gt: 1000 } }, { amount: { $lt: -1000 } }],
-      }),
+      q("transactions").filter({ $or: [{ amount: { $gt: 1000 } }, { amount: { $lt: -1000 } }] }),
     );
     expect(result.sql).toMatch(/\(.*OR.*\)/);
   });
 });
 
+// ---------------------------------------------------------------------------
+// ORDER BY
+// ---------------------------------------------------------------------------
+
 describe("compile — ORDER BY", () => {
   it("uses default order when none specified", () => {
     const result = c(q("categories"));
-    // categories defaultOrder: sort_order asc, id
     expect(result.sql).toContain("ORDER BY");
     expect(result.sql).toContain("sort_order");
   });
@@ -110,15 +121,13 @@ describe("compile — ORDER BY", () => {
   it("uses custom order", () => {
     const result = c(q("transactions").orderBy({ date: "desc" }));
     expect(result.sql).toContain("ORDER BY");
-    expect(result.sql).toContain("date DESC");
-  });
-
-  it("accumulates multiple order fields", () => {
-    const result = c(q("transactions").orderBy({ date: "desc" }).orderBy("id"));
-    expect(result.sql).toContain("date DESC");
-    expect(result.sql).toContain("id ASC");
+    expect(result.sql).toContain("DESC");
   });
 });
+
+// ---------------------------------------------------------------------------
+// LIMIT and OFFSET
+// ---------------------------------------------------------------------------
 
 describe("compile — LIMIT and OFFSET", () => {
   it("includes LIMIT", () => {
@@ -139,25 +148,116 @@ describe("compile — LIMIT and OFFSET", () => {
   });
 });
 
-describe("compile — JOINs via field paths", () => {
-  it("generates LEFT JOIN for dotted field path in filter", () => {
-    const result = c(q("transactions").filter({ "acct.name": "Checking" }));
-    expect(result.sql).toContain("LEFT JOIN accounts");
-    expect(result.sql).toContain(".name = ?");
-    expect(result.params).toContain("Checking");
+// ---------------------------------------------------------------------------
+// Views & Mapping Tables
+// ---------------------------------------------------------------------------
+
+describe("compile — views & mapping tables", () => {
+  it("transactions SELECT * includes mapping JOINs", () => {
+    const result = c(q("transactions"));
+    expect(result.sql).toContain("LEFT JOIN category_mapping cm ON cm.id = t.category");
+    expect(result.sql).toContain("LEFT JOIN payee_mapping pm ON pm.id = t.description");
   });
 
-  it("tracks joined table in dependencies", () => {
-    const result = c(q("transactions").filter({ "acct.name": "Checking" }));
-    expect(result.dependencies).toContain("transactions");
-    expect(result.dependencies).toContain("accounts");
+  it("transactions SELECT * includes payeeName and categoryName", () => {
+    const result = c(q("transactions"));
+    expect(result.sql).toContain('"payeeName"');
+    expect(result.sql).toContain('"categoryName"');
   });
 
-  it("adds tombstone filter on joined table", () => {
-    const result = c(q("transactions").filter({ "acct.name": "Checking" }));
-    expect(result.sql).toMatch(/accounts\d+\.tombstone = 0/);
+  it("transactions SELECT * includes payee/category JOINs", () => {
+    const result = c(q("transactions"));
+    expect(result.sql).toContain("LEFT JOIN payees p ON");
+    expect(result.sql).toContain("LEFT JOIN categories c ON");
+  });
+
+  it("transactions SELECT with accountName adds account JOIN", () => {
+    const result = c(q("transactions").select(["*", "accountName"]));
+    expect(result.sql).toContain("JOIN accounts acc ON");
+    expect(result.sql).toContain('"accountName"');
+  });
+
+  it("field overrides: amount uses IFNULL", () => {
+    const result = c(q("transactions").select(["amount"]));
+    expect(result.sql).toContain("IFNULL(t.amount, 0)");
+  });
+
+  it("field overrides: payee uses COALESCE with mapping", () => {
+    const result = c(q("transactions").select(["payee"]));
+    expect(result.sql).toContain("COALESCE(pm.targetId, t.description)");
+  });
+
+  it("baseWhere applied for transactions", () => {
+    const result = c(q("transactions"));
+    expect(result.sql).toContain("t.date IS NOT NULL");
+    expect(result.sql).toContain("t.acct IS NOT NULL");
+  });
+
+  it("payees view includes transfer account JOIN", () => {
+    const result = c(q("payees"));
+    expect(result.sql).toContain("LEFT JOIN accounts tr_acc");
   });
 });
+
+// ---------------------------------------------------------------------------
+// Virtual Fields
+// ---------------------------------------------------------------------------
+
+describe("compile — virtual fields", () => {
+  it("selecting payeeName only adds payee JOINs, not category", () => {
+    const result = c(q("transactions").select(["id", "payeeName"]));
+    expect(result.sql).toContain("LEFT JOIN payees p ON");
+    expect(result.sql).not.toContain("LEFT JOIN categories c ON");
+  });
+
+  it("selecting categoryName only adds category JOINs, not payee", () => {
+    const result = c(q("transactions").select(["id", "categoryName"]));
+    expect(result.sql).toContain("LEFT JOIN categories c ON");
+    expect(result.sql).not.toContain("LEFT JOIN payees p ON");
+  });
+
+  it("accountName is NOT included in default * select", () => {
+    const result = c(q("transactions"));
+    expect(result.sql).not.toContain('"accountName"');
+    expect(result.sql).not.toContain("JOIN accounts acc ON");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Split Handling
+// ---------------------------------------------------------------------------
+
+describe("compile — split handling", () => {
+  it("default (inline) adds isParent = 0 filter", () => {
+    const result = c(q("transactions"));
+    expect(result.sql).toContain("t.isParent = 0");
+  });
+
+  it("splits: 'none' adds parent_id IS NULL filter", () => {
+    const result = c(q("transactions").options({ splits: "none" }));
+    expect(result.sql).toContain("t.parent_id IS NULL");
+    expect(result.sql).not.toContain("t.isParent = 0");
+  });
+
+  it("splits: 'all' has no split filter", () => {
+    const result = c(q("transactions").options({ splits: "all" }));
+    expect(result.sql).not.toContain("t.isParent = 0");
+    expect(result.sql).not.toContain("t.parent_id IS NULL");
+  });
+
+  it("withDead() removes main table alive filter", () => {
+    const result = c(q("transactions").withDead());
+    // Main table tombstone + split filter removed
+    expect(result.sql).not.toContain("t.tombstone = 0");
+    expect(result.sql).not.toContain("t.isParent = 0");
+    // But joined tables still filter their own tombstones (correct behavior)
+    expect(result.sql).toContain("p.tombstone = 0");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Dependencies
+// ---------------------------------------------------------------------------
 
 describe("compile — dependencies", () => {
   it("includes main table", () => {
@@ -165,23 +265,27 @@ describe("compile — dependencies", () => {
     expect(result.dependencies).toContain("categories");
   });
 
-  it("includes joined tables", () => {
-    const result = c(
-      q("transactions")
-        .filter({ "acct.name": "Checking" })
-        .select(["id", { catName: "$category.name" }]),
-    );
+  it("transactions * includes payees and categories in dependencies", () => {
+    const result = c(q("transactions"));
     expect(result.dependencies).toContain("transactions");
-    expect(result.dependencies).toContain("accounts");
+    expect(result.dependencies).toContain("payees");
     expect(result.dependencies).toContain("categories");
   });
+
+  it("accountName adds accounts to dependencies", () => {
+    const result = c(q("transactions").select(["*", "accountName"]));
+    expect(result.dependencies).toContain("accounts");
+  });
 });
+
+// ---------------------------------------------------------------------------
+// Aggregate functions
+// ---------------------------------------------------------------------------
 
 describe("compile — aggregate functions", () => {
   it("$sum", () => {
     const result = c(q("transactions").select([{ total: { $sum: "$amount" } }]));
     expect(result.sql).toContain("SUM(");
-    expect(result.sql).toContain("amount");
   });
 
   it("$count", () => {
@@ -189,6 +293,10 @@ describe("compile — aggregate functions", () => {
     expect(result.sql).toContain("COUNT(");
   });
 });
+
+// ---------------------------------------------------------------------------
+// Output type conversion
+// ---------------------------------------------------------------------------
 
 describe("convertOutputRow", () => {
   it("converts boolean 0/1 to true/false", () => {

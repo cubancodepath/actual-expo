@@ -4,14 +4,20 @@ import { ActivityIndicator, Alert, LayoutAnimation, RefreshControl } from "react
 import { LegendList } from "@legendapp/list";
 import { Stack, useFocusEffect, useNavigation, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { getAllTransactions, getUnclearedCount } from "@/transactions";
+import * as Haptics from "expo-haptics";
+import {
+  deleteTransaction,
+  duplicateTransaction,
+  toggleCleared,
+  updateTransaction,
+  getUnclearedCount,
+} from "@/transactions";
 import { usePrivacyStore } from "@/stores/privacyStore";
 import { useUndoStore } from "@/stores/undoStore";
 import { useCommonMenuActions } from "@/presentation/hooks/useCommonMenuItems";
 import { useTabBarStore } from "@/stores/tabBarStore";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { EmptyState } from "@/presentation/components";
-import { TransactionListSkeleton } from "@/presentation/components/skeletons/TransactionListSkeleton";
 import { UnclearedPill } from "@/presentation/components/transaction/UnclearedPill";
 import { TransactionRow } from "@/presentation/components/account/TransactionRow";
 import { DateSectionHeader } from "@/presentation/components/account/DateSectionHeader";
@@ -19,12 +25,8 @@ import { UpcomingSectionHeader } from "@/presentation/components/account/Upcomin
 import { UpcomingScheduleRow } from "@/presentation/components/account/UpcomingScheduleRow";
 import { AddTransactionButton } from "@/presentation/components/molecules/AddTransactionButton";
 import { useTagsStore } from "@/stores/tagsStore";
-import {
-  buildListData,
-  useSelectModeHeader,
-  useTransactionList,
-  type ListItem,
-} from "@/presentation/hooks/transactionList";
+import { usePickerStore } from "@/stores/pickerStore";
+import { buildListData, useSelectModeHeader, type ListItem } from "@/presentation/hooks/transactionList";
 import { SelectModeToolbar } from "@/presentation/components/transaction/SelectModeToolbar";
 import { getAllPreviewTransactions, type PreviewTransaction } from "@/schedules/preview";
 import {
@@ -35,15 +37,23 @@ import {
   updateSchedule,
 } from "@/schedules";
 import { useSchedulesStore } from "@/stores/schedulesStore";
+import { useTransactions } from "@/presentation/hooks/useTransactions";
+import { q } from "@/queries";
+import { useSelectionMode } from "@/presentation/hooks/useSelectionMode";
+import { useTransactionBatchActions } from "@/presentation/hooks/useTransactionBatchActions";
+import type { TransactionDisplay } from "@/transactions/types";
+
+// ---------------------------------------------------------------------------
+// Screen
+// ---------------------------------------------------------------------------
 
 export default function SpendingScreen() {
   const navigation = useNavigation();
   const router = useRouter();
   const { colors } = useTheme();
   const { t } = useTranslation();
-  const { privacyMode } = usePrivacyStore();
-  const canUndo = useUndoStore((s) => s.canUndo);
-  const undoVersion = useUndoStore((s) => s.undoVersion);
+  const { t: tt } = useTranslation("transactions");
+  usePrivacyStore(); // subscribe to re-render on privacy mode change
   const setTabBarHidden = useTabBarStore((s) => s.setHidden);
   const tags = useTagsStore((s) => s.tags);
   const [unclearedCount, setUnclearedCount] = useState(0);
@@ -52,47 +62,49 @@ export default function SpendingScreen() {
   const [upcomingExpanded, setUpcomingExpanded] = useState(false);
   const [previewTransactions, setPreviewTransactions] = useState<PreviewTransaction[]>([]);
 
-  // ---- Consolidated transaction list ----
-  const fetchTransactions = useCallback(
-    (limit: number, offset: number) => getAllTransactions({ limit, offset }),
-    [],
+  // ---- Transaction data (AQL + React Query + sync-event auto-refresh) ----
+  const txnQuery = useMemo(() => q("transactions").select(["*", "accountName"]), []);
+  const { transactions, fetchNextPage, hasNextPage, isFetchingNextPage, refetch } = useTransactions({
+    query: txnQuery,
+    options: { pageSize: 25 },
+  });
+
+  // ---- Selection mode ----
+  const selection = useSelectionMode<TransactionDisplay>();
+
+  const selectedTransactions = useMemo(
+    () => transactions.filter((txn) => selection.selectedIds.has(txn.id)),
+    [transactions, selection.selectedIds],
+  );
+  const allCleared = useMemo(() => {
+    const nonReconciled = selectedTransactions.filter((t) => !t.reconciled);
+    return nonReconciled.length > 0 && nonReconciled.every((t) => t.cleared);
+  }, [selectedTransactions]);
+  const selectedTotal = useMemo(
+    () => selectedTransactions.reduce((sum, t) => sum + (t.amount as number), 0),
+    [selectedTransactions],
   );
 
-  const txnList = useTransactionList({
-    fetchTransactions,
-    moveMode: "remap",
-    onEnterSelectMode: () => setTabBarHidden(true),
-    onExitSelectMode: () => setTabBarHidden(false),
-    onDelete: (txn) => {
-      if (!txn.cleared && !txn.reconciled) {
-        setUnclearedCount((c) => Math.max(0, c - 1));
-      }
-    },
-    onDuplicate: () => {
-      setUnclearedCount((c) => c + 1);
-    },
-    onToggleCleared: (txn) => {
-      if (!txn.reconciled) {
-        setUnclearedCount((c) => Math.max(0, c + (txn.cleared ? 1 : -1)));
-      }
-    },
-    optimisticBulkMove: (prev, ids, targetAccountId, targetAccountName) =>
-      prev.map((t) =>
-        ids.has(t.id) ? { ...t, acct: targetAccountId, accountName: targetAccountName } : t,
-      ),
-    onBulkToggleCleared: (_ids, targetVal, affectedTxns) => {
-      const delta = affectedTxns.filter((t) => !t.cleared).length;
-      setUnclearedCount((c) => Math.max(0, targetVal ? c - delta : c + delta));
+  // ---- Bulk actions ----
+  const batchActions = useTransactionBatchActions({
+    selectedIds: selection.selectedIds,
+    transactions: transactions as TransactionDisplay[],
+    onDone: () => {
+      selection.exit();
+      setTabBarHidden(false);
     },
   });
 
   // ---- Select mode header ----
   useSelectModeHeader({
-    isSelectMode: txnList.isSelectMode,
-    selectedCount: txnList.selectedIds.size,
-    selectedTotal: txnList.selectedTotal,
-    onSelectAll: txnList.handleSelectAll,
-    onDoneSelection: txnList.handleDoneSelection,
+    isSelectMode: selection.isSelectMode,
+    selectedCount: selection.selectedIds.size,
+    selectedTotal,
+    onSelectAll: () => selection.selectAll(transactions as TransactionDisplay[], (t) => !t.reconciled),
+    onDoneSelection: () => {
+      selection.exit();
+      setTabBarHidden(false);
+    },
   });
 
   // ---- Scroll-driven FAB collapse ----
@@ -101,84 +113,143 @@ export default function SpendingScreen() {
     fabCollapsed.value = e.nativeEvent.contentOffset.y > 100;
   }, []);
 
-  // ---- Data loading ----
-  const loadWithPreviews = useCallback(async () => {
+  // ---- Load previews + uncleared (non-reactive, loaded on focus) ----
+  const loadPreviews = useCallback(async () => {
     const [previews, uncleared] = await Promise.all([
       getAllPreviewTransactions(),
       getUnclearedCount(),
     ]);
     setPreviewTransactions(previews);
     setUnclearedCount(uncleared);
-    await txnList.loadAll();
-  }, [txnList.loadAll]);
-
-  const silentRefreshWithPreviews = useCallback(async () => {
-    const [previews, uncleared] = await Promise.all([
-      getAllPreviewTransactions(),
-      getUnclearedCount(),
-    ]);
-    setPreviewTransactions(previews);
-    setUnclearedCount(uncleared);
-    await txnList.silentRefresh();
-  }, [txnList.silentRefresh]);
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
-      if (!txnList.hasLoaded.current) {
-        loadWithPreviews();
-        txnList.hasLoaded.current = true;
-      } else {
-        silentRefreshWithPreviews();
-      }
+      loadPreviews();
       return () => {
-        txnList.resetSelection();
+        if (!bulkMovePendingRef.current && !bulkCategoryPendingRef.current) {
+          selection.exit();
+          setTabBarHidden(false);
+        }
       };
-    }, [loadWithPreviews, silentRefreshWithPreviews, txnList.resetSelection]),
+    }, [loadPreviews]),
   );
 
-  // Refresh local list after undo restores data in DB
+  // ---- Single-transaction actions ----
+
+  function handleEditTransaction(txnId: string) {
+    router.push({ pathname: "/(auth)/transaction/new", params: { transactionId: txnId } });
+  }
+
+  function handleDelete(txnId: string) {
+    Alert.alert(tt("deleteTitle"), tt("deleteConfirm"), [
+      { text: tt("cancel"), style: "cancel" },
+      {
+        text: tt("delete"),
+        style: "destructive",
+        onPress: async () => {
+          await deleteTransaction(txnId);
+          useUndoStore.getState().showUndo(tt("deleteTransaction"));
+          // sync-event auto-refreshes
+        },
+      },
+    ]);
+  }
+
+  function handleToggleCleared(txnId: string) {
+    toggleCleared(txnId);
+    // sync-event auto-refreshes
+  }
+
+  async function handleDuplicate(txnId: string) {
+    await duplicateTransaction(txnId);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    // sync-event auto-refreshes
+  }
+
+  function handleAddTag(txnId: string) {
+    router.push({ pathname: "/(auth)/transaction/tags", params: { transactionId: txnId, mode: "direct" } });
+  }
+
+  // ---- Picker integration (single + bulk) ----
+  const pendingMoveRef = useRef<string | null>(null);
+  const pendingCategoryRef = useRef<string | null>(null);
+  const bulkMovePendingRef = useRef(false);
+  const bulkCategoryPendingRef = useRef(false);
+
+  const selectedAccount = usePickerStore((s) => s.selectedAccount);
+  const selectedCategory = usePickerStore((s) => s.selectedCategory);
+  const clearPicker = usePickerStore((s) => s.clear);
+
+  function handleMove(txnId: string) {
+    pendingMoveRef.current = txnId;
+    router.push({ pathname: "/(auth)/transaction/account-picker", params: { selectedId: "" } });
+  }
+
+  function handleSetCategory(txnId: string) {
+    pendingCategoryRef.current = txnId;
+    router.push({ pathname: "/(auth)/transaction/category-picker", params: { hideSplit: "1" } });
+  }
+
+  function triggerAccountPicker() {
+    bulkMovePendingRef.current = true;
+    router.push({ pathname: "/(auth)/transaction/account-picker", params: { selectedId: "" } });
+  }
+
+  function triggerCategoryPicker() {
+    bulkCategoryPendingRef.current = true;
+    router.push({ pathname: "/(auth)/transaction/category-picker", params: { hideSplit: "1" } });
+  }
+
+  // Apply picker results
   useEffect(() => {
-    if (undoVersion > 0) {
-      setTimeout(() => {
-        txnList.restoreDeleted();
-        txnList.restoreBulkDeleted();
-        silentRefreshWithPreviews();
-      }, 0);
+    if (!selectedAccount) return;
+    if (pendingMoveRef.current) {
+      const txnId = pendingMoveRef.current;
+      pendingMoveRef.current = null;
+      updateTransaction(txnId, { acct: selectedAccount.id });
+      clearPicker();
+    } else if (bulkMovePendingRef.current) {
+      bulkMovePendingRef.current = false;
+      batchActions.handleBulkMove(selectedAccount.id, selectedAccount.name);
+      clearPicker();
     }
-  }, [undoVersion]);
+  }, [selectedAccount, clearPicker, batchActions.handleBulkMove]);
+
+  useEffect(() => {
+    if (!selectedCategory) return;
+    if (pendingCategoryRef.current) {
+      const txnId = pendingCategoryRef.current;
+      pendingCategoryRef.current = null;
+      if (selectedCategory.id) updateTransaction(txnId, { category: selectedCategory.id });
+      clearPicker();
+    } else if (bulkCategoryPendingRef.current) {
+      bulkCategoryPendingRef.current = false;
+      if (selectedCategory.id) batchActions.handleBulkChangeCategory(selectedCategory.id);
+      clearPicker();
+    }
+  }, [selectedCategory, clearPicker, batchActions.handleBulkChangeCategory]);
 
   // ---- Upcoming actions ----
-  const handlePostSchedule = useCallback(
-    async (scheduleId: string) => {
-      await postTransactionForSchedule(scheduleId);
-      await Promise.all([silentRefreshWithPreviews(), useSchedulesStore.getState().load()]);
-    },
-    [silentRefreshWithPreviews],
-  );
+  const handlePostSchedule = useCallback(async (scheduleId: string) => {
+    await postTransactionForSchedule(scheduleId);
+    await Promise.all([loadPreviews(), useSchedulesStore.getState().load()]);
+  }, [loadPreviews]);
 
   const handleSkipSchedule = useCallback(async (scheduleId: string) => {
     await skipNextDate(scheduleId);
-    const [previews] = await Promise.all([
-      getAllPreviewTransactions(),
-      useSchedulesStore.getState().load(),
-    ]);
+    const [previews] = await Promise.all([getAllPreviewTransactions(), useSchedulesStore.getState().load()]);
     setPreviewTransactions(previews);
   }, []);
 
-  const handlePostScheduleToday = useCallback(
-    async (scheduleId: string) => {
-      await postTransactionForScheduleToday(scheduleId);
-      await Promise.all([silentRefreshWithPreviews(), useSchedulesStore.getState().load()]);
-    },
-    [silentRefreshWithPreviews],
-  );
+  const handlePostScheduleToday = useCallback(async (scheduleId: string) => {
+    await postTransactionForScheduleToday(scheduleId);
+    await Promise.all([loadPreviews(), useSchedulesStore.getState().load()]);
+  }, [loadPreviews]);
 
   const handleCompleteSchedule = useCallback(async (scheduleId: string) => {
     await updateSchedule({ schedule: { id: scheduleId, completed: true } });
-    const [previews] = await Promise.all([
-      getAllPreviewTransactions(),
-      useSchedulesStore.getState().load(),
-    ]);
+    const [previews] = await Promise.all([getAllPreviewTransactions(), useSchedulesStore.getState().load()]);
     setPreviewTransactions(previews);
   }, []);
 
@@ -190,10 +261,7 @@ export default function SpendingScreen() {
         style: "destructive",
         onPress: async () => {
           await deleteSchedule(scheduleId);
-          const [previews] = await Promise.all([
-            getAllPreviewTransactions(),
-            useSchedulesStore.getState().load(),
-          ]);
+          const [previews] = await Promise.all([getAllPreviewTransactions(), useSchedulesStore.getState().load()]);
           setPreviewTransactions(previews);
         },
       },
@@ -201,28 +269,22 @@ export default function SpendingScreen() {
   }, []);
 
   const handlePressSchedule = useCallback(
-    (scheduleId: string) => {
-      router.push({ pathname: "/(auth)/schedule/[id]", params: { id: scheduleId } });
-    },
+    (scheduleId: string) => router.push({ pathname: "/(auth)/schedule/[id]", params: { id: scheduleId } }),
     [router],
   );
 
   // ---- Merged list data ----
   const mergedListData = useMemo(
-    () =>
-      buildListData(txnList.transactions, {
-        previewTransactions,
-        upcomingExpanded,
-      }),
-    [txnList.transactions, previewTransactions, upcomingExpanded],
+    () => buildListData(transactions as TransactionDisplay[], { previewTransactions, upcomingExpanded }),
+    [transactions, previewTransactions, upcomingExpanded],
   );
 
-  // ---- Common menu actions (JSX) ----
+  // ---- Common menu actions ----
   const commonActions = useCommonMenuActions();
 
   // ---- Normal-mode header ----
   useLayoutEffect(() => {
-    if (txnList.isSelectMode) return;
+    if (selection.isSelectMode) return;
     navigation.setOptions({
       headerStyle: undefined,
       title: t("spending.title"),
@@ -230,23 +292,22 @@ export default function SpendingScreen() {
       headerLeft: undefined,
       headerRight: undefined,
     });
-  }, [txnList.isSelectMode]);
+  }, [selection.isSelectMode]);
 
   // ---- Render ----
-
   return (
     <>
       <LegendList
-        data={txnList.loading ? [] : mergedListData}
-        keyExtractor={(item) => item.key}
-        getItemType={(item) => item.type}
-        extraData={`${txnList.isSelectMode}-${txnList.selectedIds.size}`}
+        data={mergedListData}
+        keyExtractor={(item: ListItem) => item.key}
+        getItemType={(item: ListItem) => item.type}
+        extraData={`${selection.isSelectMode}-${selection.selectedIds.size}`}
         onScroll={handleScroll}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
         contentInsetAdjustmentBehavior="automatic"
         ListHeaderComponent={
-          !txnList.isSelectMode ? (
+          !selection.isSelectMode ? (
             <>
               <Stack.Screen.Title large>{t("spending.title")}</Stack.Screen.Title>
               {unclearedCount > 0 && (
@@ -263,7 +324,7 @@ export default function SpendingScreen() {
             </>
           ) : null
         }
-        renderItem={({ item }) => {
+        renderItem={({ item }: { item: ListItem }) => {
           if (item.type === "upcoming-header") {
             return (
               <UpcomingSectionHeader
@@ -298,61 +359,67 @@ export default function SpendingScreen() {
           return (
             <TransactionRow
               item={item.data}
-              onPress={txnList.handleEditTransaction}
-              onDelete={txnList.handleDelete}
-              onToggleCleared={txnList.handleToggleCleared}
-              onLongPress={txnList.handleLongPress}
-              onDuplicate={txnList.handleDuplicate}
-              onMove={txnList.handleMove}
-              onSetCategory={txnList.handleSetCategory}
-              onAddTag={txnList.handleAddTag}
+              onPress={handleEditTransaction}
+              onDelete={handleDelete}
+              onToggleCleared={handleToggleCleared}
+              onLongPress={(txnId: string) => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                if (!selection.isSelectMode) setTabBarHidden(true);
+                selection.longPress(txnId);
+              }}
+              onDuplicate={handleDuplicate}
+              onMove={handleMove}
+              onSetCategory={handleSetCategory}
+              onAddTag={handleAddTag}
               showAccountName
               tags={tags}
               isFirst={item.isFirst}
               isLast={item.isLast}
-              isSelectMode={txnList.isSelectMode}
-              isSelected={txnList.selectedIds.has(item.data.id)}
+              isSelectMode={selection.isSelectMode}
+              isSelected={selection.selectedIds.has(item.data.id)}
             />
           );
         }}
         ListFooterComponent={
-          txnList.loadingMore && !txnList.loading ? (
+          isFetchingNextPage ? (
             <ActivityIndicator color={colors.primary} style={{ paddingVertical: 20 }} />
           ) : null
         }
         ListEmptyComponent={
-          txnList.loading ? (
-            <TransactionListSkeleton />
-          ) : (
-            <EmptyState
-              icon="receiptOutline"
-              title={t("spending.noTransactionsYet")}
-              description={t("spending.noTransactionsDescription")}
-            />
-          )
+          <EmptyState
+            icon="receiptOutline"
+            title={t("spending.noTransactionsYet")}
+            description={t("spending.noTransactionsDescription")}
+          />
         }
-        onEndReached={txnList.loadMore}
+        onEndReached={() => { if (hasNextPage) fetchNextPage(); }}
         onEndReachedThreshold={0.3}
-        refreshControl={<RefreshControl {...txnList.refreshControlProps} />}
+        refreshControl={<RefreshControl refreshing={false} onRefresh={() => refetch()} tintColor={colors.primary} />}
         contentContainerStyle={{ paddingBottom: 80, backgroundColor: colors.pageBackground }}
       />
 
-      {!txnList.isSelectMode && <AddTransactionButton collapsed={fabCollapsed} />}
+      {!selection.isSelectMode && <AddTransactionButton collapsed={fabCollapsed} />}
 
-      {txnList.isSelectMode && (
+      {selection.isSelectMode && (
         <SelectModeToolbar
-          allCleared={txnList.allCleared}
-          selectedCount={txnList.selectedIds.size}
-          onToggleCleared={txnList.handleBulkToggleCleared}
-          onDelete={txnList.handleBulkDelete}
-          onMove={txnList.triggerAccountPicker}
-          onSetCategory={txnList.triggerCategoryPicker}
+          allCleared={allCleared}
+          selectedCount={selection.selectedIds.size}
+          onToggleCleared={batchActions.handleBulkToggleCleared}
+          onDelete={batchActions.handleBulkDelete}
+          onMove={triggerAccountPicker}
+          onSetCategory={triggerCategoryPicker}
         />
       )}
 
-      {!txnList.isSelectMode && (
+      {!selection.isSelectMode && (
         <Stack.Toolbar placement="right">
-          <Stack.Toolbar.Button onPress={txnList.enterSelectMode}>
+          <Stack.Toolbar.Button
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setTabBarHidden(true);
+              selection.enter();
+            }}
+          >
             {t("select")}
           </Stack.Toolbar.Button>
           <Stack.Toolbar.Button

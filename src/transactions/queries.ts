@@ -1,30 +1,45 @@
 /**
  * React Query options for transaction queries.
  *
- * Ported from Actual Budget's desktop-client/src/transactions/queries.ts.
- * Uses our AQL compiler + expo-sqlite executor instead of IPC to server.
+ * Supports both AQL queries (compiled to SQL with views/mappings) and
+ * raw fetchFn for backwards compatibility during migration.
  */
 
 import { infiniteQueryOptions, keepPreviousData } from "@tanstack/react-query";
 import { executeQuery } from "@/queries/execute";
 import type { Query } from "@/queries/query";
+import type { TransactionDisplay } from "./types";
+
+type FetchFn = (limit: number, offset: number) => Promise<TransactionDisplay[]>;
 
 export const transactionQueries = {
   all: () => ["transactions"] as const,
 
-  aql: ({ query, pageSize = 50 }: { query?: Query; pageSize?: number }) =>
-    infiniteQueryOptions({
-      queryKey: [...transactionQueries.all(), "aql", query?.serializeAsString(), pageSize],
+  /** AQL-based query — uses the compiler with views/mappings. */
+  aql: ({ query, pageSize = 25 }: { query: Query; pageSize?: number }) =>
+    infiniteQueryOptions<TransactionDisplay[]>({
+      queryKey: [...transactionQueries.all(), "aql", query.serializeAsString(), pageSize],
       queryFn: async ({ pageParam }) => {
-        if (!query) throw new Error("No query provided");
         const paged = query.offset((pageParam as number) * pageSize).limit(pageSize);
-        const { data } = await executeQuery(paged);
-        return data as Record<string, unknown>[];
+        const { data } = await executeQuery<TransactionDisplay>(paged);
+        return data;
       },
       placeholderData: keepPreviousData,
       initialPageParam: 0,
-      getNextPageParam: (lastPage: unknown[], pages: unknown[][]) =>
+      getNextPageParam: (lastPage, pages) =>
         lastPage.length < pageSize ? undefined : pages.length,
-      enabled: !!query,
+    }),
+
+  /** Raw fetchFn query — for screens not yet migrated to AQL. */
+  list: ({ fetchFn, pageSize = 25, key }: { fetchFn: FetchFn; pageSize?: number; key?: string }) =>
+    infiniteQueryOptions<TransactionDisplay[]>({
+      queryKey: [...transactionQueries.all(), "list", key ?? "all", pageSize],
+      queryFn: async ({ pageParam }) => {
+        return fetchFn(pageSize, (pageParam as number) * pageSize);
+      },
+      placeholderData: keepPreviousData,
+      initialPageParam: 0,
+      getNextPageParam: (lastPage, pages) =>
+        lastPage.length < pageSize ? undefined : pages.length,
     }),
 };

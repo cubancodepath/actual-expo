@@ -1,12 +1,13 @@
 /**
  * AQL Compiler — compiles QueryState into SQL + params for expo-sqlite.
  *
- * Ported from Actual Budget's loot-core server AQL compiler, adapted to
- * execute directly against expo-sqlite instead of IPC to a server.
+ * Supports view definitions (mapping tables, virtual fields), split handling,
+ * and automatic JOIN generation. Ported from Actual Budget's loot-core compiler.
  */
 
 import type { QueryState, ObjectExpression } from "./query";
-import { schema, getMappingJoin, type FieldDef, type FieldType, type Schema } from "./schema";
+import { schema, type FieldDef, type FieldType, type Schema } from "./schema";
+import { views, type ViewDef, type VirtualFieldDef } from "./views";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -25,43 +26,27 @@ type TypedExpr = {
   literal?: boolean;
 };
 
-type PathInfo = {
-  tableName: string;
-  tableId: string;
-  joinField: string;
-  joinTable: string;
-};
-
 type CompilerState = {
   schema: Schema;
   table: string;
-  tableId: string;
-  paths: Map<string, PathInfo>;
+  /** Table alias (e.g., "t" for transactions, or table name if no view) */
+  alias: string;
+  view: ViewDef | undefined;
   params: unknown[];
   dependencies: Set<string>;
   outputTypes: Map<string, FieldType>;
-  uidCounters: Map<string, number>;
+  /** Track which virtual field JOINs have been added (avoid duplicates) */
+  addedVirtualJoins: Set<string>;
+  /** Extra JOINs accumulated from virtual fields */
+  extraJoins: string[];
 };
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function uid(state: CompilerState, name: string): string {
-  const count = (state.uidCounters.get(name) ?? 0) + 1;
-  state.uidCounters.set(name, count);
-  return `${name}${count}`;
-}
-
 function quoteAlias(name: string): string {
   return `"${name}"`;
-}
-
-function addTombstone(tableDef: { fields: Record<string, FieldDef> } | undefined, tableId: string): string {
-  if (tableDef?.fields.tombstone) {
-    return `${tableId}.tombstone = 0`;
-  }
-  return "";
 }
 
 function convertInputValue(value: unknown, type: FieldType): unknown {
@@ -71,7 +56,6 @@ function convertInputValue(value: unknown, type: FieldType): unknown {
       return value ? 1 : 0;
     case "date": {
       if (typeof value === "string") {
-        // "2024-03-19" → 20240319
         return parseInt(value.replace(/-/g, ""), 10);
       }
       return value;
@@ -89,73 +73,40 @@ function resolveField(
   state: CompilerState,
   field: string,
 ): { sql: string; type: FieldType; table: string } {
-  // Handle dotted paths: "payee.name" → join payees, return payees.name
-  const parts = field.split(".");
+  // Check virtual fields first (payeeName, categoryName, accountName)
+  const vf = state.view?.virtualFields?.[field];
+  if (vf) {
+    addVirtualFieldJoins(state, field, vf);
+    return { sql: vf.sql, type: vf.type, table: state.table };
+  }
 
-  if (parts.length === 1) {
-    // Simple field on the main table
+  // Check field overrides from view (mapping resolution)
+  const override = state.view?.fieldOverrides?.[field];
+  if (override) {
     const fieldDef = state.schema[state.table]?.fields[field];
-    if (!fieldDef) {
-      throw new Error(`Unknown field "${field}" on table "${state.table}"`);
+    return { sql: override, type: fieldDef?.type ?? "string", table: state.table };
+  }
+
+  // Simple field on the main table
+  const fieldDef = state.schema[state.table]?.fields[field];
+  if (fieldDef) {
+    return { sql: `${state.alias}.${field}`, type: fieldDef.type, table: state.table };
+  }
+
+  throw new Error(`Unknown field "${field}" on table "${state.table}"`);
+}
+
+function addVirtualFieldJoins(state: CompilerState, name: string, vf: VirtualFieldDef): void {
+  if (state.addedVirtualJoins.has(name)) return;
+  state.addedVirtualJoins.add(name);
+  for (const join of vf.joins) {
+    state.extraJoins.push(join);
+  }
+  if (vf.dependencies) {
+    for (const dep of vf.dependencies) {
+      state.dependencies.add(dep);
     }
-    return { sql: `${state.tableId}.${field}`, type: fieldDef.type, table: state.table };
   }
-
-  // Dotted path — resolve through joins
-  let currentTable = state.table;
-  let currentTableId = state.tableId;
-
-  for (let i = 0; i < parts.length - 1; i++) {
-    const segment = parts[i];
-    const pathKey = `${currentTable}.${segment}`;
-
-    let pathInfo = state.paths.get(pathKey);
-    if (!pathInfo) {
-      const fieldDef = state.schema[currentTable]?.fields[segment];
-      if (!fieldDef?.ref) {
-        throw new Error(`Field "${segment}" on "${currentTable}" has no ref for join`);
-      }
-
-      // Check for mapping table (payee_mapping, category_mapping)
-      const mapping = getMappingJoin(segment);
-      const targetTable = fieldDef.ref;
-      const targetTableId = uid(state, targetTable);
-
-      pathInfo = {
-        tableName: targetTable,
-        tableId: targetTableId,
-        joinField: segment,
-        joinTable: currentTableId,
-      };
-      state.paths.set(pathKey, pathInfo);
-      state.dependencies.add(targetTable);
-
-      // If there's a mapping table, add it too
-      if (mapping) {
-        const mappingId = uid(state, mapping.mappingTable);
-        state.paths.set(`${pathKey}__mapping`, {
-          tableName: mapping.mappingTable,
-          tableId: mappingId,
-          joinField: segment,
-          joinTable: currentTableId,
-        });
-        // The actual join field uses COALESCE(mapping.targetId, original)
-        pathInfo.joinField = `COALESCE(${mappingId}.${mapping.column}, ${currentTableId}.${segment})`;
-      }
-    }
-
-    currentTable = pathInfo.tableName;
-    currentTableId = pathInfo.tableId;
-  }
-
-  // Final field on the resolved table
-  const finalField = parts[parts.length - 1];
-  const finalFieldDef = state.schema[currentTable]?.fields[finalField];
-  if (!finalFieldDef) {
-    throw new Error(`Unknown field "${finalField}" on table "${currentTable}"`);
-  }
-
-  return { sql: `${currentTableId}.${finalField}`, type: finalFieldDef.type, table: currentTable };
 }
 
 // ---------------------------------------------------------------------------
@@ -166,22 +117,18 @@ function compileValue(state: CompilerState, value: unknown, contextType: FieldTy
   if (value === null || value === undefined) {
     return { value: "NULL", type: "null", literal: true };
   }
-
   if (Array.isArray(value)) {
-    // For $oneof
     const items = value.map((v) => {
       state.params.push(convertInputValue(v, contextType));
       return "?";
     });
     return { value: `(${items.join(", ")})`, type: "array", literal: true };
   }
-
   state.params.push(convertInputValue(value, contextType));
   return { value: "?", type: contextType };
 }
 
 function compileFieldRef(state: CompilerState, ref: string): TypedExpr {
-  // Field refs start with $ in expressions: "$amount", "$payee.name"
   const fieldName = ref.startsWith("$") ? ref.slice(1) : ref;
   const resolved = resolveField(state, fieldName);
   return { value: resolved.sql, type: resolved.type, literal: true };
@@ -191,30 +138,22 @@ function compileExpression(state: CompilerState, expr: unknown): TypedExpr {
   if (expr === null || expr === undefined) {
     return { value: "NULL", type: "null", literal: true };
   }
-
   if (typeof expr === "string") {
-    if (expr.startsWith("$")) {
-      return compileFieldRef(state, expr);
-    }
-    // Literal string value
+    if (expr.startsWith("$")) return compileFieldRef(state, expr);
     state.params.push(expr);
     return { value: "?", type: "string" };
   }
-
   if (typeof expr === "number") {
     state.params.push(expr);
     return { value: "?", type: "integer" };
   }
-
   if (typeof expr === "boolean") {
     state.params.push(expr ? 1 : 0);
     return { value: "?", type: "boolean" };
   }
-
   if (typeof expr === "object" && !Array.isArray(expr)) {
     return compileFunction(state, expr as ObjectExpression);
   }
-
   state.params.push(expr);
   return { value: "?", type: "string" };
 }
@@ -224,7 +163,6 @@ function compileFunction(state: CompilerState, expr: ObjectExpression): TypedExp
   if (keys.length !== 1) {
     throw new Error(`Function expression must have exactly one key: ${JSON.stringify(expr)}`);
   }
-
   const fn = keys[0];
   const arg = expr[fn];
 
@@ -271,75 +209,36 @@ function compileCondition(state: CompilerState, field: string, condition: unknow
   const left = resolved.sql;
   const fieldType = resolved.type;
 
-  // Simple equality: { field: value }
   if (condition === null || condition === undefined) {
     return `${left} IS NULL`;
   }
-
   if (typeof condition !== "object" || Array.isArray(condition)) {
     const rhs = compileValue(state, condition, fieldType);
     return `${left} = ${rhs.value}`;
   }
 
-  // Operator object: { $gt: value }
   const ops = condition as Record<string, unknown>;
   const clauses: string[] = [];
 
   for (const [op, value] of Object.entries(ops)) {
     switch (op) {
       case "$eq":
-        if (value === null) {
-          clauses.push(`${left} IS NULL`);
-        } else {
-          const rhs = compileValue(state, value, fieldType);
-          clauses.push(`${left} = ${rhs.value}`);
-        }
+        if (value === null) clauses.push(`${left} IS NULL`);
+        else { const rhs = compileValue(state, value, fieldType); clauses.push(`${left} = ${rhs.value}`); }
         break;
       case "$ne":
-        if (value === null) {
-          clauses.push(`${left} IS NOT NULL`);
-        } else {
-          const rhs = compileValue(state, value, fieldType);
-          clauses.push(`${left} != ${rhs.value}`);
-        }
+        if (value === null) clauses.push(`${left} IS NOT NULL`);
+        else { const rhs = compileValue(state, value, fieldType); clauses.push(`${left} != ${rhs.value}`); }
         break;
-      case "$gt": {
-        const rhs = compileValue(state, value, fieldType);
-        clauses.push(`${left} > ${rhs.value}`);
-        break;
-      }
-      case "$gte": {
-        const rhs = compileValue(state, value, fieldType);
-        clauses.push(`${left} >= ${rhs.value}`);
-        break;
-      }
-      case "$lt": {
-        const rhs = compileValue(state, value, fieldType);
-        clauses.push(`${left} < ${rhs.value}`);
-        break;
-      }
-      case "$lte": {
-        const rhs = compileValue(state, value, fieldType);
-        clauses.push(`${left} <= ${rhs.value}`);
-        break;
-      }
-      case "$like": {
-        const rhs = compileValue(state, value, "string");
-        clauses.push(`${left} LIKE ${rhs.value}`);
-        break;
-      }
-      case "$notlike": {
-        const rhs = compileValue(state, value, "string");
-        clauses.push(`${left} NOT LIKE ${rhs.value}`);
-        break;
-      }
+      case "$gt": { const rhs = compileValue(state, value, fieldType); clauses.push(`${left} > ${rhs.value}`); break; }
+      case "$gte": { const rhs = compileValue(state, value, fieldType); clauses.push(`${left} >= ${rhs.value}`); break; }
+      case "$lt": { const rhs = compileValue(state, value, fieldType); clauses.push(`${left} < ${rhs.value}`); break; }
+      case "$lte": { const rhs = compileValue(state, value, fieldType); clauses.push(`${left} <= ${rhs.value}`); break; }
+      case "$like": { const rhs = compileValue(state, value, "string"); clauses.push(`${left} LIKE ${rhs.value}`); break; }
+      case "$notlike": { const rhs = compileValue(state, value, "string"); clauses.push(`${left} NOT LIKE ${rhs.value}`); break; }
       case "$oneof": {
-        if (!Array.isArray(value) || value.length === 0) {
-          clauses.push("0"); // empty IN → always false
-        } else {
-          const rhs = compileValue(state, value, fieldType);
-          clauses.push(`${left} IN ${rhs.value}`);
-        }
+        if (!Array.isArray(value) || value.length === 0) clauses.push("0");
+        else { const rhs = compileValue(state, value, fieldType); clauses.push(`${left} IN ${rhs.value}`); }
         break;
       }
       default:
@@ -352,21 +251,17 @@ function compileCondition(state: CompilerState, field: string, condition: unknow
 
 function compileFilterExpr(state: CompilerState, expr: ObjectExpression): string {
   const clauses: string[] = [];
-
   for (const [key, value] of Object.entries(expr)) {
     if (key === "$and") {
-      const subExprs = value as ObjectExpression[];
-      const subClauses = subExprs.map((e) => compileFilterExpr(state, e));
+      const subClauses = (value as ObjectExpression[]).map((e) => compileFilterExpr(state, e));
       clauses.push(`(${subClauses.join(" AND ")})`);
     } else if (key === "$or") {
-      const subExprs = value as ObjectExpression[];
-      const subClauses = subExprs.map((e) => compileFilterExpr(state, e));
+      const subClauses = (value as ObjectExpression[]).map((e) => compileFilterExpr(state, e));
       clauses.push(`(${subClauses.join(" OR ")})`);
     } else {
       clauses.push(compileCondition(state, key, value));
     }
   }
-
   return clauses.length === 1 ? clauses[0] : clauses.join(" AND ");
 }
 
@@ -376,33 +271,61 @@ function compileFilterExpr(state: CompilerState, expr: ObjectExpression): string
 
 function compileSelect(state: CompilerState, queryState: QueryState): string {
   const exprs = queryState.selectExpressions;
+  const hasStar = exprs.length === 0 || exprs.includes("*");
 
-  if (exprs.length === 0 || (exprs.length === 1 && exprs[0] === "*")) {
-    // SELECT * — expand all fields from the main table
+  if (hasStar) {
     const tableDef = state.schema[state.table];
-    if (!tableDef) return `${state.tableId}.*`;
+    if (!tableDef) return `${state.alias}.*`;
 
-    const fields = Object.keys(tableDef.fields).map((f) => {
-      state.outputTypes.set(f, tableDef.fields[f].type);
-      return `${state.tableId}.${f} AS ${quoteAlias(f)}`;
-    });
-    return fields.join(", ");
+    const parts: string[] = [];
+
+    // All schema fields (with view overrides)
+    for (const [f, def] of Object.entries(tableDef.fields)) {
+      state.outputTypes.set(f, def.type);
+      const override = state.view?.fieldOverrides?.[f];
+      if (override) {
+        parts.push(`${override} AS ${quoteAlias(f)}`);
+      } else {
+        parts.push(`${state.alias}.${f} AS ${quoteAlias(f)}`);
+      }
+    }
+
+    // Default virtual fields for * (payeeName, categoryName — but NOT accountName unless requested)
+    const defaultVirtuals = state.table === "transactions" ? ["payeeName", "categoryName"] : [];
+    for (const vName of defaultVirtuals) {
+      const vf = state.view?.virtualFields?.[vName];
+      if (vf) {
+        addVirtualFieldJoins(state, vName, vf);
+        state.outputTypes.set(vName, vf.type);
+        parts.push(`${vf.sql} AS ${quoteAlias(vName)}`);
+      }
+    }
+
+    // Also include explicitly requested non-* fields
+    for (const expr of exprs) {
+      if (expr === "*") continue;
+      if (typeof expr === "string") {
+        // Check if it's a virtual field
+        const vf = state.view?.virtualFields?.[expr];
+        if (vf) {
+          addVirtualFieldJoins(state, expr, vf);
+          state.outputTypes.set(expr, vf.type);
+          parts.push(`${vf.sql} AS ${quoteAlias(expr)}`);
+        }
+      }
+    }
+
+    return parts.join(", ");
   }
 
+  // Explicit field list (no *)
   const parts: string[] = [];
-
   for (const expr of exprs) {
     if (typeof expr === "string") {
-      if (expr === "*") {
-        parts.push(`${state.tableId}.*`);
-        continue;
-      }
-      // Simple field reference
       const resolved = resolveField(state, expr);
       state.outputTypes.set(expr, resolved.type);
       parts.push(`${resolved.sql} AS ${quoteAlias(expr)}`);
     } else if (typeof expr === "object") {
-      // Named expression: { alias: expression }
       for (const [alias, value] of Object.entries(expr as Record<string, unknown>)) {
         const compiled = compileExpression(state, value);
         state.outputTypes.set(alias, compiled.type as FieldType);
@@ -410,38 +333,7 @@ function compileSelect(state: CompilerState, queryState: QueryState): string {
       }
     }
   }
-
   return parts.join(", ");
-}
-
-// ---------------------------------------------------------------------------
-// JOIN Compilation
-// ---------------------------------------------------------------------------
-
-function compileJoins(state: CompilerState): string {
-  const joins: string[] = [];
-
-  for (const [key, pathInfo] of state.paths) {
-    if (key.endsWith("__mapping")) {
-      // Mapping table join: LEFT JOIN payee_mapping ON payee_mapping.id = transactions.description
-      joins.push(
-        `LEFT JOIN ${pathInfo.tableName} ${pathInfo.tableId} ON ${pathInfo.tableId}.id = ${pathInfo.joinTable}.${pathInfo.joinField}`,
-      );
-    } else {
-      // Regular ref join with optional tombstone
-      const tableDef = state.schema[pathInfo.tableName];
-      const tombstone = addTombstone(tableDef, pathInfo.tableId);
-      const joinField = pathInfo.joinField;
-      // If joinField contains COALESCE, it was set up by mapping resolution
-      const onClause = joinField.includes("COALESCE")
-        ? `${pathInfo.tableId}.id = ${joinField}`
-        : `${pathInfo.tableId}.id = ${pathInfo.joinTable}.${joinField}`;
-      const tombstoneClause = tombstone ? ` AND ${tombstone}` : "";
-      joins.push(`LEFT JOIN ${pathInfo.tableName} ${pathInfo.tableId} ON ${onClause}${tombstoneClause}`);
-    }
-  }
-
-  return joins.join("\n");
 }
 
 // ---------------------------------------------------------------------------
@@ -451,18 +343,14 @@ function compileJoins(state: CompilerState): string {
 function compileOrderBy(state: CompilerState, queryState: QueryState): string {
   let orderExprs = queryState.orderExpressions;
 
-  // Apply default order if none specified
   if (orderExprs.length === 0) {
     const tableDef = state.schema[state.table];
-    if (tableDef?.defaultOrder) {
-      orderExprs = tableDef.defaultOrder;
-    }
+    if (tableDef?.defaultOrder) orderExprs = tableDef.defaultOrder;
   }
 
   if (orderExprs.length === 0) return "";
 
   const parts: string[] = [];
-
   for (const expr of orderExprs) {
     if (typeof expr === "string") {
       const resolved = resolveField(state, expr);
@@ -484,9 +372,7 @@ function compileOrderBy(state: CompilerState, queryState: QueryState): string {
 
 function compileGroupBy(state: CompilerState, queryState: QueryState): string {
   if (queryState.groupExpressions.length === 0) return "";
-
   const parts: string[] = [];
-
   for (const expr of queryState.groupExpressions) {
     if (typeof expr === "string") {
       const resolved = resolveField(state, expr);
@@ -496,7 +382,6 @@ function compileGroupBy(state: CompilerState, queryState: QueryState): string {
       parts.push(compiled.value);
     }
   }
-
   return parts.length > 0 ? `GROUP BY ${parts.join(", ")}` : "";
 }
 
@@ -510,17 +395,19 @@ export function compile(queryState: QueryState): CompiledQuery {
     throw new Error(`Unknown table: "${queryState.table}"`);
   }
 
-  const sqlTable = tableDef.sqlTable ?? queryState.table;
+  const view = views[queryState.table];
+  const alias = view?.alias ?? queryState.table;
 
   const state: CompilerState = {
     schema,
     table: queryState.table,
-    tableId: sqlTable,
-    paths: new Map(),
+    alias,
+    view,
     params: [],
     dependencies: new Set([queryState.table]),
     outputTypes: new Map(),
-    uidCounters: new Map(),
+    addedVirtualJoins: new Set(),
+    extraJoins: [],
   };
 
   // Compile SELECT
@@ -528,35 +415,64 @@ export function compile(queryState: QueryState): CompiledQuery {
 
   // Compile WHERE
   const whereClauses: string[] = [];
+
+  // View baseWhere (e.g., date IS NOT NULL for transactions)
+  if (view?.baseWhere) {
+    whereClauses.push(view.baseWhere);
+  }
+
+  // User filters
   for (const filterExpr of queryState.filterExpressions) {
     whereClauses.push(compileFilterExpr(state, filterExpr));
   }
 
-  // Auto-add tombstone filter
+  // Alive filter (tombstone + split handling)
   if (!queryState.withDead) {
-    const tombstone = addTombstone(tableDef, state.tableId);
-    if (tombstone) whereClauses.push(tombstone);
+    if (view?.aliveFilter) {
+      // Use view's alive filter which includes tombstone + split
+      const splitType = (queryState.tableOptions?.splits as string) ?? "inline";
+      const splitFilter = view.splitFilters?.[splitType];
+
+      // Add tombstone filter
+      if (tableDef.fields.tombstone) {
+        whereClauses.push(`${alias}.tombstone = 0`);
+      }
+
+      // Add split-specific filter
+      if (splitFilter) {
+        whereClauses.push(splitFilter);
+      }
+    } else {
+      // Simple tombstone filter for non-view tables
+      if (tableDef.fields.tombstone) {
+        whereClauses.push(`${alias}.tombstone = 0`);
+      }
+    }
   }
 
   const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
 
-  // Compile JOINs (after filters/selects so paths are populated)
-  const joinsSql = compileJoins(state);
+  // Compile JOINs: view joins + virtual field joins
+  const allJoins: string[] = [];
+  if (view?.joins) {
+    allJoins.push(...view.joins);
+  }
+  allJoins.push(...state.extraJoins);
 
-  // Compile GROUP BY
+  const joinsSql = allJoins.join("\n");
+
+  // Compile GROUP BY and ORDER BY
   const groupBySql = compileGroupBy(state, queryState);
-
-  // Compile ORDER BY
   const orderBySql = compileOrderBy(state, queryState);
 
-  // Compile LIMIT / OFFSET
+  // LIMIT / OFFSET
   const limitSql = queryState.limit != null ? `LIMIT ${queryState.limit}` : "";
   const offsetSql = queryState.offset != null ? `OFFSET ${queryState.offset}` : "";
 
   // Assemble SQL
   const parts = [
     `SELECT ${selectSql}`,
-    `FROM ${sqlTable} ${state.tableId}`,
+    `FROM ${queryState.table} ${alias}`,
     joinsSql,
     whereSql,
     groupBySql,
@@ -596,11 +512,7 @@ export function convertOutputRow(row: Record<string, unknown>, outputTypes: Map<
         break;
       case "json":
         if (typeof value === "string") {
-          try {
-            result[key] = JSON.parse(value);
-          } catch {
-            result[key] = null;
-          }
+          try { result[key] = JSON.parse(value); } catch { result[key] = null; }
         } else {
           result[key] = value;
         }

@@ -23,3 +23,6 @@ export type { PagedQueryInstance, PagedQueryOptions } from "./pagedQuery";
 
 export { schema } from "./schema";
 export type { Schema, TableDef, FieldDef, FieldType } from "./schema";
+
+export { views } from "./views";
+export type { ViewDef, VirtualFieldDef } from "./views";

@@ -11,7 +11,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useAccountsStore } from "@/stores/accountsStore";
 import { useSchedulesStore } from "@/stores/schedulesStore";
 import { usePickerStore } from "@/stores/pickerStore";
-import { useCategoriesStore } from "@/stores/categoriesStore";
+// categories no longer needed from store — picker handles selection
 import { getRecurringDescription } from "@/schedules";
 import { todayStr } from "@/lib/date";
 import { withOpacity } from "@/lib/colors";

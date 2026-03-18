@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useCategoriesStore } from "@/stores/categoriesStore";
+import { useCategories } from "@/presentation/hooks/useCategories";
 import { Icon } from "@/presentation/components/atoms/Icon";
 import { usePickerStore } from "@/stores/pickerStore";
 import { getCategoryBalancesForMonth } from "@/budgets";
@@ -25,14 +25,13 @@ export default function CategoryPickerScreen() {
     }>();
   const router = useRouter();
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
-  const { groups, categories, load } = useCategoriesStore();
+  const { groups, categories } = useCategories();
   const setCategory = usePickerStore((s) => s.setCategory);
   const [balanceMap, setBalanceMap] = useState<Map<string, number>>(new Map());
 
   const displayMonth = month || currentMonth();
 
   useEffect(() => {
-    if (groups.length === 0) load();
     getCategoryBalancesForMonth(displayMonth)
       .then(setBalanceMap)
       .catch(() => {});

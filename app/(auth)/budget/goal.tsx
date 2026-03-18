@@ -6,7 +6,7 @@ import { Host, DatePicker, Picker, Text as SwiftText } from "@expo/ui/swift-ui";
 import { useTranslation } from "react-i18next";
 import { datePickerStyle, frame, pickerStyle, tag, tint } from "@expo/ui/swift-ui/modifiers";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { useCategoriesStore } from "@/stores/categoriesStore";
+import { useCategories } from "@/presentation/hooks/useCategories";
 import { useBudgetStore } from "@/stores/budgetStore";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
@@ -201,8 +201,7 @@ export default function GoalEditorScreen() {
   const [limitRefill, setLimitRefill] = useState(false);
 
   // Income categories for percentage picker
-  const categories = useCategoriesStore((s) => s.categories);
-  const groups = useCategoriesStore((s) => s.groups);
+  const { categories, groups } = useCategories();
   const incomeCategories = categories.filter((c) => {
     const group = groups.find((g) => g.id === c.cat_group);
     return group?.is_income && !c.tombstone;

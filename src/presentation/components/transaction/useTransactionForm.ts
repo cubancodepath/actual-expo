@@ -4,7 +4,7 @@ import { useRouter, useFocusEffect } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useAccountsStore } from "@/stores/accountsStore";
 import { useTransactionsStore } from "@/stores/transactionsStore";
-import { useCategoriesStore } from "@/stores/categoriesStore";
+import { useCategories } from "@/presentation/hooks/useCategories";
 import { usePickerStore } from "@/stores/pickerStore";
 import { useRulesStore } from "@/stores/rulesStore";
 import { useSchedulesStore } from "@/stores/schedulesStore";
@@ -51,7 +51,7 @@ export function useTransactionForm(params: RouteParams, amountInput: AmountInput
   const router = useRouter();
   const { accounts, load: loadAccounts } = useAccountsStore();
   const { delete_ } = useTransactionsStore();
-  const { groups, categories, load: loadCategories } = useCategoriesStore();
+  const { groups, categories } = useCategories();
   const rules = useRulesStore((s) => s.rules);
 
   // Picker store subscriptions
@@ -95,7 +95,7 @@ export function useTransactionForm(params: RouteParams, amountInput: AmountInput
       isInitialMount.current = false;
 
       clearPicker();
-      if (groups.length === 0) loadCategories();
+      // liveQuery auto-loads categories/groups
 
       if (isEdit) {
         getTransactionById(transactionId!).then(async (txn) => {

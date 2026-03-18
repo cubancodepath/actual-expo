@@ -13,7 +13,8 @@ import Animated, {
 import { SymbolView } from "expo-symbols";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { useCategoriesStore } from "@/stores/categoriesStore";
+import { useCategories } from "@/presentation/hooks/useCategories";
+import { deleteCategory as deleteCategoryFn, deleteCategoryGroup } from "@/categories";
 import { useBudgetStore } from "@/stores/budgetStore";
 import { useUndoStore } from "@/stores/undoStore";
 import { Text } from "@/presentation/components/atoms/Text";
@@ -169,7 +170,7 @@ export default function EditBudgetScreen() {
   const goalsEnabled = useFeatureFlag("goalTemplatesEnabled");
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { groups, categories, load } = useCategoriesStore();
+  const { groups, categories } = useCategories();
   const budgetData = useBudgetStore((s) => s.data);
   const budgetMonth = useBudgetStore((s) => s.month);
   const monthName = useMemo(() => {
@@ -177,9 +178,7 @@ export default function EditBudgetScreen() {
     return new Date(y, m - 1, 1).toLocaleDateString(i18n.language, { month: "long" });
   }, [budgetMonth]);
 
-  useEffect(() => {
-    load();
-  }, []);
+  // liveQuery auto-loads categories/groups
 
   // ---------- Budget overview calculations ----------
 
@@ -345,7 +344,7 @@ export default function EditBudgetScreen() {
         text: t("delete"),
         style: "destructive",
         onPress: async () => {
-          await useCategoriesStore.getState().deleteCategoryGroup(group.id);
+          await deleteCategoryGroup(group.id);
           useUndoStore.getState().showUndo(t("categoryGroupDeleted"));
         },
       },
@@ -361,7 +360,7 @@ export default function EditBudgetScreen() {
         text: t("delete"),
         style: "destructive",
         onPress: async () => {
-          await useCategoriesStore.getState().deleteCategory(cat.id);
+          await deleteCategoryFn(cat.id);
           useUndoStore.getState().showUndo(t("categoryDeleted"));
         },
       },

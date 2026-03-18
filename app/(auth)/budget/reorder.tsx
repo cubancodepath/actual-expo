@@ -8,7 +8,8 @@ import Sortable from "react-native-sortables";
 import { Icon } from "@/presentation/components/atoms/Icon";
 import * as Haptics from "expo-haptics";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { useCategoriesStore } from "@/stores/categoriesStore";
+import { useCategories } from "@/presentation/hooks/useCategories";
+import { moveCategory, moveCategoryGroup } from "@/categories";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
 import type { Category, CategoryGroup } from "@/categories/types";
@@ -24,11 +25,7 @@ export default function ReorderBudgetScreen() {
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const router = useRouter();
   const scrollableRef = useAnimatedRef<ScrollView>();
-  const groups = useCategoriesStore((s) => s.groups);
-  const categories = useCategoriesStore((s) => s.categories);
-  const load = useCategoriesStore((s) => s.load);
-  const moveCategoryGroup = useCategoriesStore((s) => s.moveCategoryGroup);
-  const moveCategory = useCategoriesStore((s) => s.moveCategory);
+  const { groups, categories } = useCategories();
 
   const expenseGroups = useMemo(
     () =>
@@ -88,7 +85,6 @@ export default function ReorderBudgetScreen() {
     const idx = newOrder.indexOf(movedKey);
     const targetId = idx + 1 < newOrder.length ? newOrder[idx + 1] : null;
     await moveCategoryGroup(movedKey, targetId);
-    await load();
   }
 
   async function handleCategoryDragEnd(groupId: string, movedKey: string, data: Category[]) {
@@ -97,7 +93,6 @@ export default function ReorderBudgetScreen() {
     const idx = data.findIndex((c) => c.id === movedKey);
     const targetId = idx + 1 < data.length ? data[idx + 1].id : null;
     await moveCategory(movedKey, groupId, targetId);
-    await load();
   }
 
   // ---------- Move category between groups ----------
@@ -118,7 +113,6 @@ export default function ReorderBudgetScreen() {
         async (idx) => {
           if (idx < otherGroups.length) {
             await moveCategory(cat.id, otherGroups[idx].id, null);
-            await load();
           }
         },
       );
@@ -128,7 +122,6 @@ export default function ReorderBudgetScreen() {
           text: g.name,
           onPress: async () => {
             await moveCategory(cat.id, g.id, null);
-            await load();
           },
         })),
         { text: t("cancel"), style: "cancel" as const },

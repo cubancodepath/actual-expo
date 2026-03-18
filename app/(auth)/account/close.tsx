@@ -3,7 +3,7 @@ import { ActivityIndicator, Alert, Pressable, ScrollView, View } from "react-nat
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Icon } from "@/presentation/components/atoms/Icon";
 import { useAccountsStore } from "@/stores/accountsStore";
-import { useCategoriesStore } from "@/stores/categoriesStore";
+import { useCategories } from "@/presentation/hooks/useCategories";
 import { useUndoStore } from "@/stores/undoStore";
 import { getAccountProperties, groupAccounts } from "@/accounts";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
@@ -30,7 +30,7 @@ export default function CloseAccountScreen() {
   const { t } = useTranslation("accounts");
   const { t: tc } = useTranslation("common");
   const { accounts, close, load } = useAccountsStore();
-  const { categories, groups } = useCategoriesStore();
+  const { categories, groups } = useCategories();
   const account = accounts.find((a) => a.id === id);
 
   const [loading, setLoading] = useState(true);

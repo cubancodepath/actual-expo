@@ -25,7 +25,7 @@ import {
 import { useUndoStore } from "@/stores/undoStore";
 import type { SearchToken } from "@/transactions/types";
 import { useAccountsStore } from "@/stores/accountsStore";
-import { useCategoriesStore } from "@/stores/categoriesStore";
+import { useCategories } from "@/presentation/hooks/useCategories";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { EmptyState } from "@/presentation/components";
 import { TransactionRow } from "@/presentation/components/account/TransactionRow";
@@ -124,7 +124,7 @@ export default function SearchScreen() {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const { accounts, load: loadAccounts } = useAccountsStore();
-  const { categories } = useCategoriesStore();
+  const { categories } = useCategories();
   const tags = useTagsStore((s) => s.tags);
   const setTabBarHidden = useTabBarStore((s) => s.setHidden);
   const payees = usePayeesStore((s) => s.payees);

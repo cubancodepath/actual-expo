@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Pressable, SafeAreaView, ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useCategoriesStore } from "@/stores/categoriesStore";
+import { useCategories } from "@/presentation/hooks/useCategories";
 import { Icon } from "@/presentation/components/atoms/Icon";
 import { usePickerStore } from "@/stores/pickerStore";
 import { getCategoryBalancesForMonth } from "@/budgets";
@@ -20,12 +20,11 @@ export default function SplitCategoryPickerScreen() {
   const router = useRouter();
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const styles = useThemedStyles(createStyles);
-  const { groups, categories, load } = useCategoriesStore();
+  const { groups, categories } = useCategories();
   const setSplitCategorySelection = usePickerStore((s) => s.setSplitCategorySelection);
   const [balanceMap, setBalanceMap] = useState<Map<string, number>>(new Map());
 
   useEffect(() => {
-    if (groups.length === 0) load();
     getCategoryBalancesForMonth(currentMonth())
       .then(setBalanceMap)
       .catch(() => {});

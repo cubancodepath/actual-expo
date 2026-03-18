@@ -24,7 +24,7 @@ import {
 import { useUndoStore } from "@/stores/undoStore";
 import { useAccountsStore } from "@/stores/accountsStore";
 import type { SearchToken } from "@/transactions/types";
-import { useCategoriesStore } from "@/stores/categoriesStore";
+import { useCategories } from "@/presentation/hooks/useCategories";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { EmptyState } from "@/presentation/components";
 import { TransactionRow } from "@/presentation/components/account/TransactionRow";
@@ -130,7 +130,7 @@ export default function AccountSearchScreen() {
   const { t } = useTranslation("accounts");
   const { t: tc } = useTranslation("common");
   const { accounts } = useAccountsStore();
-  const { categories } = useCategoriesStore();
+  const { categories } = useCategories();
   const tags = useTagsStore((s) => s.tags);
 
   // Search state

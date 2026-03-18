@@ -35,19 +35,19 @@ export function useLiveQuery<T = Record<string, unknown>>(
   deps: DependencyList,
 ): UseLiveQueryResult<T> {
   const query = useMemo(makeQuery, deps);
-  const [data, setData] = useState<T[] | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // Start with [] (not null) — matches Actual's placeholderData: [] pattern.
+  // Components always receive an array, never null. No loading flash.
+  const [data, setData] = useState<T[] | null>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const isUnmounted = useRef(false);
 
   useEffect(() => {
     isUnmounted.current = false;
     if (!query) {
-      setData(null);
+      setData([]);
       setIsLoading(false);
       return;
     }
-
-    setIsLoading(true);
 
     const live: LiveQueryInstance<T> = liveQuery<T>(query, {
       onData: (newData) => {

@@ -51,6 +51,7 @@ export const iconRegistry = {
   lockShieldOutline: { ionicon: "shield-checkmark-outline", sfSymbol: "lock.shield" },
 
   // Finance / Domain
+  cashOutline: { ionicon: "cash-outline", sfSymbol: "dollarsign" },
   wallet: { ionicon: "wallet-outline", sfSymbol: "creditcard" },
   lockClosed: { ionicon: "lock-closed", sfSymbol: "lock.fill" },
   lockClosedOutline: { ionicon: "lock-closed-outline", sfSymbol: "lock" },

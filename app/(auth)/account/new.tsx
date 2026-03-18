@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Platform, Pressable, ScrollView, Switch, TextInput, View } from "react-native";
+import { Platform, Pressable, ScrollView, Switch, View } from "react-native";
 import { Input } from "@/presentation/components/atoms/Input";
 import { Stack, useRouter } from "expo-router";
 import { Icon } from "@/presentation/components/atoms/Icon";
@@ -99,21 +99,15 @@ export default function NewAccountScreen() {
         <Text variant="caption" color={theme.colors.textSecondary} style={styles.label}>
           {t("newAccount.startingBalanceLabel")}
         </Text>
-        <View style={styles.balanceInputRow}>
-          <Text variant="body" color={theme.colors.textSecondary} style={styles.currencyPrefix}>
-            $
-          </Text>
-          <TextInput
-            style={styles.balanceInput}
-            placeholder="0.00"
-            placeholderTextColor={theme.colors.textMuted}
-            value={balanceStr}
-            onChangeText={setBalanceStr}
-            keyboardType={Platform.OS === "ios" ? "numbers-and-punctuation" : "numeric"}
-            returnKeyType="done"
-            onSubmitEditing={handleCreate}
-          />
-        </View>
+        <Input
+          icon="cashOutline"
+          placeholder="0.00"
+          value={balanceStr}
+          onChangeText={setBalanceStr}
+          keyboardType={Platform.OS === "ios" ? "numbers-and-punctuation" : "numeric"}
+          returnKeyType="done"
+          onSubmitEditing={handleCreate}
+        />
         <Text variant="captionSm" color={theme.colors.textMuted} style={styles.hint}>
           {t("newAccount.startingBalanceHint")}
         </Text>
@@ -168,25 +162,6 @@ const createStyles = (theme: Theme) => ({
     marginTop: theme.spacing.lg,
     marginLeft: theme.spacing.xs,
     marginBottom: theme.spacing.xs,
-  },
-  balanceInputRow: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    backgroundColor: theme.colors.inputBackground,
-    borderRadius: theme.borderRadius.lg,
-    borderWidth: theme.borderWidth.default,
-    borderColor: theme.colors.inputBorder,
-    paddingHorizontal: theme.spacing.md,
-  },
-  currencyPrefix: {
-    fontWeight: "600" as const,
-    marginRight: theme.spacing.xs,
-  },
-  balanceInput: {
-    flex: 1,
-    color: theme.colors.textPrimary,
-    fontSize: 16,
-    paddingVertical: theme.spacing.md,
   },
   hint: {
     lineHeight: 18,

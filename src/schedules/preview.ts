@@ -13,16 +13,9 @@ import { getNextOccurrence, getDateWithSkippedWeekend, parseDate, dayFromDate } 
 import { todayStr, strToInt } from "../lib/date";
 import { runQuery } from "../db";
 import type { Schedule, RecurConfig, ScheduleStatus } from "./types";
+import type { PreviewTransaction } from "./computePreview";
 
-export type PreviewTransaction = {
-  id: string; // 'preview/{scheduleId}/{dateInt}'
-  scheduleId: string;
-  payeeName: string;
-  amount: number;
-  date: number; // YYYYMMDD int
-  status: ScheduleStatus;
-  isRecurring: boolean;
-};
+export type { PreviewTransaction } from "./computePreview";
 
 /**
  * Compute upcoming preview transactions for a given account.
@@ -90,11 +83,15 @@ async function buildPreviews(
     previews.push({
       id: `preview/${schedule.id}/${dateInt}`,
       scheduleId: schedule.id,
+      payee: schedule._payee ?? null,
       payeeName: payeeNames.get(schedule._payee ?? "") ?? "(no payee)",
+      account: schedule._account ?? null,
       amount,
       date: dateInt,
+      dateStr: nextDate,
       status,
       isRecurring,
+      forceUpcoming: false,
     });
   }
 

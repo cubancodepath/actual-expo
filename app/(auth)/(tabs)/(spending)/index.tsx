@@ -10,7 +10,6 @@ import {
   duplicateTransaction,
   toggleCleared,
   updateTransaction,
-  getUnclearedCount,
 } from "@/transactions";
 import { usePrivacyStore } from "@/stores/privacyStore";
 import { useUndoStore } from "@/stores/undoStore";
@@ -28,7 +27,6 @@ import { useTagsStore } from "@/stores/tagsStore";
 import { usePickerStore } from "@/stores/pickerStore";
 import { buildListData, useSelectModeHeader, type ListItem } from "@/presentation/hooks/transactionList";
 import { SelectModeToolbar } from "@/presentation/components/transaction/SelectModeToolbar";
-import { getAllPreviewTransactions, type PreviewTransaction } from "@/schedules/preview";
 import {
   skipNextDate,
   postTransactionForSchedule,
@@ -36,10 +34,11 @@ import {
   deleteSchedule,
   updateSchedule,
 } from "@/schedules";
-import { useSchedulesStore } from "@/stores/schedulesStore";
 import { useTransactions } from "@/presentation/hooks/useTransactions";
 import { q } from "@/queries";
 import { useSelectionMode } from "@/presentation/hooks/useSelectionMode";
+import { usePreviewTransactions } from "@/presentation/hooks/usePreviewTransactions";
+import { useLiveQuery } from "@/presentation/hooks/useQuery";
 import { useTransactionBatchActions } from "@/presentation/hooks/useTransactionBatchActions";
 import type { TransactionDisplay } from "@/transactions/types";
 
@@ -56,12 +55,10 @@ export default function SpendingScreen() {
   usePrivacyStore(); // subscribe to re-render on privacy mode change
   const setTabBarHidden = useTabBarStore((s) => s.setHidden);
   const tags = useTagsStore((s) => s.tags);
-  const [unclearedCount, setUnclearedCount] = useState(0);
 
-  // ---- Upcoming scheduled transactions ----
+  // ---- Upcoming scheduled transactions (reactive, derived from liveQuery) ----
   const [upcomingExpanded, setUpcomingExpanded] = useState(false);
-  const [previewTransactions, setPreviewTransactions] = useState<PreviewTransaction[]>([]);
-  const [screenReady, setScreenReady] = useState(false);
+  const previewTransactions = usePreviewTransactions();
 
   // ---- Transaction data (AQL + React Query + sync-event auto-refresh) ----
   const txnQuery = useMemo(() => q("transactions").select(["*", "accountName"]), []);
@@ -70,16 +67,16 @@ export default function SpendingScreen() {
     options: { pageSize: 25 },
   });
 
-  // Wait for transactions, then load previews + uncleared in one batch
-  const hasTransactions = transactions.length > 0;
-  useEffect(() => {
-    if (!hasTransactions || screenReady) return;
-    Promise.all([getAllPreviewTransactions(), getUnclearedCount()]).then(([p, u]) => {
-      setPreviewTransactions(p);
-      setUnclearedCount(u);
-      setScreenReady(true);
-    });
-  }, [hasTransactions, screenReady]);
+  // Uncleared count — reactive via liveQuery
+  const unclearedQuery = useMemo(
+    () => q("transactions").filter({ cleared: false, reconciled: false }).calculate({ $count: "$id" }),
+    [],
+  );
+  const { data: unclearedData } = useLiveQuery<{ result: number }>(
+    () => unclearedQuery,
+    [unclearedQuery],
+  );
+  const unclearedCount = unclearedData?.[0]?.result ?? 0;
 
   // ---- Selection mode ----
   const selection = useSelectionMode<TransactionDisplay>();
@@ -128,20 +125,13 @@ export default function SpendingScreen() {
   // Reset selection on blur (unless a bulk picker is pending)
   useFocusEffect(
     useCallback(() => {
-      // Refresh previews on re-focus
-      if (screenReady) {
-        Promise.all([getAllPreviewTransactions(), getUnclearedCount()]).then(([p, u]) => {
-          setPreviewTransactions(p);
-          setUnclearedCount(u);
-        });
-      }
       return () => {
         if (!bulkMovePendingRef.current && !bulkCategoryPendingRef.current) {
           selection.exit();
           setTabBarHidden(false);
         }
       };
-    }, [screenReady]),
+    }, []),
   );
 
   // ---- Single-transaction actions ----
@@ -239,32 +229,23 @@ export default function SpendingScreen() {
     }
   }, [selectedCategory, clearPicker, batchActions.handleBulkChangeCategory]);
 
-  // ---- Upcoming actions ----
-  const refreshPreviews = useCallback(async () => {
-    const [p, u] = await Promise.all([getAllPreviewTransactions(), getUnclearedCount()]);
-    setPreviewTransactions(p);
-    setUnclearedCount(u);
-  }, []);
-
+  // ---- Upcoming actions (sync-event auto-refreshes previews via liveQuery) ----
   const handlePostSchedule = useCallback(async (scheduleId: string) => {
     await postTransactionForSchedule(scheduleId);
-    await Promise.all([refreshPreviews(), useSchedulesStore.getState().load()]);
-  }, [refreshPreviews]);
+    // sync-event → liveQuery refetch → previews recomputed automatically
+  }, []);
 
   const handleSkipSchedule = useCallback(async (scheduleId: string) => {
     await skipNextDate(scheduleId);
-    await Promise.all([refreshPreviews(), useSchedulesStore.getState().load()]);
-  }, [refreshPreviews]);
+  }, []);
 
   const handlePostScheduleToday = useCallback(async (scheduleId: string) => {
     await postTransactionForScheduleToday(scheduleId);
-    await Promise.all([refreshPreviews(), useSchedulesStore.getState().load()]);
-  }, [refreshPreviews]);
+  }, []);
 
   const handleCompleteSchedule = useCallback(async (scheduleId: string) => {
     await updateSchedule({ schedule: { id: scheduleId, completed: true } });
-    await Promise.all([refreshPreviews(), useSchedulesStore.getState().load()]);
-  }, [refreshPreviews]);
+  }, []);
 
   const handleDeleteSchedule = useCallback((scheduleId: string) => {
     Alert.alert(t("spending.deleteScheduleTitle"), t("spending.deleteScheduleConfirm"), [
@@ -274,23 +255,20 @@ export default function SpendingScreen() {
         style: "destructive",
         onPress: async () => {
           await deleteSchedule(scheduleId);
-          await Promise.all([refreshPreviews(), useSchedulesStore.getState().load()]);
         },
       },
     ]);
-  }, [refreshPreviews]);
+  }, []);
 
   const handlePressSchedule = useCallback(
     (scheduleId: string) => router.push({ pathname: "/(auth)/schedule/[id]", params: { id: scheduleId } }),
     [router],
   );
 
-  // ---- Merged list data (only built when screen is ready to avoid scroll jump) ----
+  // ---- Merged list data ----
   const mergedListData = useMemo(
-    () => screenReady
-      ? buildListData(transactions as TransactionDisplay[], { previewTransactions, upcomingExpanded })
-      : [],
-    [screenReady, transactions, previewTransactions, upcomingExpanded],
+    () => buildListData(transactions as TransactionDisplay[], { previewTransactions, upcomingExpanded }),
+    [transactions, previewTransactions, upcomingExpanded],
   );
 
   // ---- Common menu actions ----
@@ -400,13 +378,11 @@ export default function SpendingScreen() {
           ) : null
         }
         ListEmptyComponent={
-          !screenReady ? null : (
-            <EmptyState
-              icon="receiptOutline"
-              title={t("spending.noTransactionsYet")}
-              description={t("spending.noTransactionsDescription")}
-            />
-          )
+          <EmptyState
+            icon="receiptOutline"
+            title={t("spending.noTransactionsYet")}
+            description={t("spending.noTransactionsDescription")}
+          />
         }
         onEndReached={() => { if (hasNextPage) fetchNextPage(); }}
         onEndReachedThreshold={0.3}

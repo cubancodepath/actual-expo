@@ -414,20 +414,28 @@ describe("buildListData", () => {
     {
       id: "preview/s1/20260310",
       scheduleId: "s1",
+      payee: "p1",
       payeeName: "Rent",
+      account: "a1",
       amount: -100000,
       date: 20260310,
+      dateStr: "2026-03-10",
       status: "upcoming",
       isRecurring: true,
+      forceUpcoming: false,
     },
     {
       id: "preview/s2/20260311",
       scheduleId: "s2",
+      payee: "p2",
       payeeName: "Electric",
+      account: "a1",
       amount: -5000,
       date: 20260311,
+      dateStr: "2026-03-11",
       status: "upcoming",
       isRecurring: true,
+      forceUpcoming: false,
     },
   ];
 

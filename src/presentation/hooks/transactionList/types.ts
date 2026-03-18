@@ -1,5 +1,5 @@
 import type { TransactionDisplay } from "../../../transactions";
-import type { PreviewTransaction } from "../../../schedules/preview";
+import type { PreviewTransaction } from "../../../schedules/computePreview";
 
 export type DateHeader = { type: "date"; date: number; key: string };
 export type TransactionItem = {

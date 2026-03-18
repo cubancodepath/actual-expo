@@ -208,8 +208,8 @@ export default function NewTransactionScreen() {
             <Button
               title={t("deleteTransaction")}
               icon="trashOutline"
-              variant="ghost"
-              textColor={colors.negative}
+              buttonStyle="borderless"
+              danger
               onPress={form.handleDelete}
               style={{ marginTop: spacing.sm }}
             />

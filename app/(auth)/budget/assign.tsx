@@ -7,7 +7,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { useBudgetStore } from "@/stores/budgetStore";
 import { Text } from "@/presentation/components/atoms/Text";
-import { IconButton } from "@/presentation/components/atoms/IconButton";
 import { Button } from "@/presentation/components/atoms/Button";
 import { Amount } from "@/presentation/components/atoms/Amount";
 import { SharedAmountInput } from "@/presentation/components/transaction/SharedAmountInput";
@@ -239,9 +238,9 @@ export default function AssignBudgetScreen() {
         <Stack.Screen
           options={{
             headerLeft: () => (
-              <IconButton
-                name="close"
-                size={22}
+              <Button
+                icon="close"
+                buttonStyle="borderless"
                 color={colors.headerText}
                 onPress={() => router.back()}
               />
@@ -289,7 +288,7 @@ export default function AssignBudgetScreen() {
             <Button
               title={t("reserve")}
               icon="calendarOutline"
-              variant="secondary"
+              buttonStyle="borderedSecondary"
               size="sm"
               onPress={() => {
                 Keyboard.dismiss();
@@ -306,7 +305,6 @@ export default function AssignBudgetScreen() {
               <Button
                 title={t("autoAssign")}
                 icon="sparkles"
-                variant="primary"
                 size="sm"
                 onPress={() => handleAutoAssign()}
                 style={{ borderRadius: br.full }}
@@ -380,7 +378,6 @@ export default function AssignBudgetScreen() {
             <Button
               title={saving ? t("savingEllipsis") : t("saveAssignment")}
               icon="checkmark"
-              variant="primary"
               size="lg"
               loading={saving}
               onPress={handleSave}

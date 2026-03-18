@@ -527,7 +527,7 @@ export default function EditBudgetScreen() {
                   <Button
                     title={t("addTarget")}
                     icon="addCircle"
-                    variant="ghost"
+                    buttonStyle="borderless"
                     size="sm"
                     onPress={() => {
                       router.push({
@@ -682,7 +682,7 @@ export default function EditBudgetScreen() {
         <Button
           title={t("reorder")}
           icon="reorderThreeOutline"
-          variant="secondary"
+          buttonStyle="borderedSecondary"
           size="sm"
           onPress={() => router.push("/(auth)/budget/reorder")}
           style={{ borderRadius: br.full }}

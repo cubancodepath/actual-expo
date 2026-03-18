@@ -6,7 +6,7 @@ import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { useCategoriesStore } from "@/stores/categoriesStore";
 import { useBudgetStore } from "@/stores/budgetStore";
 import { Text } from "@/presentation/components/atoms/Text";
-import { IconButton } from "@/presentation/components/atoms/IconButton";
+import { Button } from "@/presentation/components/atoms/Button";
 
 export default function NewGroupScreen() {
   const { t } = useTranslation("budget");
@@ -34,9 +34,9 @@ export default function NewGroupScreen() {
       <Stack.Screen
         options={{
           headerLeft: () => (
-            <IconButton
-              name="close"
-              size={22}
+            <Button
+              icon="close"
+              buttonStyle="borderless"
               color={colors.headerText}
               onPress={() => router.back()}
             />

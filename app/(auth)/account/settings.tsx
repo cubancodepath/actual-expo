@@ -136,7 +136,10 @@ export default function AccountSettingsScreen() {
           <Switch
             value={offbudget}
             onValueChange={setOffbudget}
-            trackColor={{ false: theme.colors.inputBorder, true: theme.colors.primary }}
+            trackColor={{
+              false: theme.colors.inputBorder,
+              true: theme.colors.primary,
+            }}
             thumbColor={theme.colors.cardBackground}
             ios_backgroundColor={theme.colors.inputBorder}
           />
@@ -158,9 +161,9 @@ export default function AccountSettingsScreen() {
         <Button
           title={account.closed ? t("contextMenu.reopenAccount") : t("contextMenu.closeAccount")}
           onPress={handleClose}
-          variant="ghost"
+          buttonStyle="borderless"
           icon={account.closed ? "arrowUndoOutline" : "trashOutline"}
-          textColor={account.closed ? undefined : theme.colors.negative}
+          danger={!account.closed}
           disabled={saving}
           style={styles.closeButton}
         />

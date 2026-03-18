@@ -6,7 +6,7 @@ import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { useBudgetStore } from "@/stores/budgetStore";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Amount } from "@/presentation/components/atoms/Amount";
-import { IconButton } from "@/presentation/components/atoms/IconButton";
+import { Button } from "@/presentation/components/atoms/Button";
 
 type OverspentCategory = {
   id: string;
@@ -52,9 +52,9 @@ export default function CoverOverspentScreen() {
       <Stack.Screen
         options={{
           headerLeft: () => (
-            <IconButton
-              name="close"
-              size={22}
+            <Button
+              icon="close"
+              buttonStyle="borderless"
               color={colors.headerText}
               onPress={() => router.back()}
             />

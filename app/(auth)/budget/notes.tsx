@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { Text } from "@/presentation/components/atoms/Text";
 import { RowSeparator } from "@/presentation/components/atoms/RowSeparator";
-import { IconButton } from "@/presentation/components/atoms/IconButton";
+import { Button } from "@/presentation/components/atoms/Button";
 import { useBudgetStore } from "@/stores/budgetStore";
 import { first } from "@/db";
 
@@ -90,9 +90,9 @@ export default function BudgetNotesScreen() {
       <Stack.Screen
         options={{
           headerLeft: () => (
-            <IconButton
-              name="close"
-              size={22}
+            <Button
+              icon="close"
+              buttonStyle="borderless"
               color={colors.headerText}
               onPress={() => router.back()}
             />

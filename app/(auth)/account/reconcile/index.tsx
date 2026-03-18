@@ -7,7 +7,6 @@ import { lockTransactions, getClearedBalance } from "@/transactions";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
 import { Amount } from "@/presentation/components/atoms/Amount";
-import { IconButton } from "@/presentation/components/atoms/IconButton";
 import { useTranslation } from "react-i18next";
 
 export default function ReconcileConfirmScreen() {
@@ -46,9 +45,9 @@ export default function ReconcileConfirmScreen() {
       <Stack.Screen
         options={{
           headerLeft: () => (
-            <IconButton
-              name="close"
-              size={22}
+            <Button
+              icon="close"
+              buttonStyle="borderless"
               color={colors.headerText}
               onPress={() => router.dismiss()}
             />
@@ -71,14 +70,13 @@ export default function ReconcileConfirmScreen() {
       <View style={{ gap: spacing.sm }}>
         <Button
           title={t("reconcile.yesMatches")}
-          variant="primary"
           onPress={handleMatch}
           loading={loading}
           style={{ borderRadius: br.full }}
         />
         <Button
           title={t("reconcile.noEnterBalance")}
-          variant="secondary"
+          buttonStyle="borderedSecondary"
           onPress={handleEnterBalance}
           style={{ borderRadius: br.full }}
         />

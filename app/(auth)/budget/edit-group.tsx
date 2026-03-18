@@ -8,7 +8,6 @@ import { useBudgetStore } from "@/stores/budgetStore";
 import { useUndoStore } from "@/stores/undoStore";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
-import { IconButton } from "@/presentation/components/atoms/IconButton";
 
 export default function EditGroupScreen() {
   const { t } = useTranslation("budget");
@@ -66,9 +65,9 @@ export default function EditGroupScreen() {
       <Stack.Screen
         options={{
           headerLeft: () => (
-            <IconButton
-              name="close"
-              size={22}
+            <Button
+              icon="close"
+              buttonStyle="borderless"
               color={colors.headerText}
               onPress={() => router.back()}
             />
@@ -143,7 +142,8 @@ export default function EditGroupScreen() {
 
       <Button
         title={t("deleteGroup")}
-        variant="danger"
+        buttonStyle="borderedSecondary"
+        danger
         icon="trashOutline"
         onPress={handleDelete}
         style={{ marginTop: spacing.sm, borderRadius: 999 }}

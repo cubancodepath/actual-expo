@@ -304,7 +304,7 @@ export default function AccountsScreen() {
 
             <Button
               title={t("addAccount")}
-              variant="ghost"
+              buttonStyle="borderless"
               icon="addCircleOutline"
               onPress={() => router.push("/(auth)/account/new")}
               style={styles.addButton}

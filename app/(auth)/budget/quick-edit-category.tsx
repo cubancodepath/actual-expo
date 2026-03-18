@@ -8,7 +8,6 @@ import { useBudgetStore } from "@/stores/budgetStore";
 import { useUndoStore } from "@/stores/undoStore";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
-import { IconButton } from "@/presentation/components/atoms/IconButton";
 import { parseGoalDef } from "@/goals";
 import { describeTemplate, translateDescription } from "@/goals/describe";
 import i18n from "@/i18n/config";
@@ -114,9 +113,9 @@ export default function QuickEditCategoryScreen() {
       <Stack.Screen
         options={{
           headerLeft: () => (
-            <IconButton
-              name="close"
-              size={22}
+            <Button
+              icon="close"
+              buttonStyle="borderless"
               color={colors.headerText}
               onPress={() => router.back()}
             />
@@ -200,7 +199,7 @@ export default function QuickEditCategoryScreen() {
             </Text>
             <Button
               title={goalDescription ? t("editTarget") : t("setTarget")}
-              variant="secondary"
+              buttonStyle="borderedSecondary"
               size="md"
               style={{ alignSelf: "stretch" }}
               icon="flagOutline"
@@ -221,7 +220,7 @@ export default function QuickEditCategoryScreen() {
       <View style={{ flexDirection: "row", gap: spacing.sm, marginTop: spacing.md }}>
         <Button
           title={category?.hidden ? t("show") : t("hide")}
-          variant="secondary"
+          buttonStyle="borderedSecondary"
           size="md"
           icon={category?.hidden ? "eyeOutline" : "eyeOffOutline"}
           style={{ flex: 1 }}
@@ -236,7 +235,8 @@ export default function QuickEditCategoryScreen() {
         />
         <Button
           title={t("delete")}
-          variant="danger"
+          buttonStyle="borderedSecondary"
+          danger
           size="md"
           icon="trashOutline"
           style={{ flex: 1 }}

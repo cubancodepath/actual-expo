@@ -10,7 +10,7 @@ import * as Haptics from "expo-haptics";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { useCategoriesStore } from "@/stores/categoriesStore";
 import { Text } from "@/presentation/components/atoms/Text";
-import { IconButton } from "@/presentation/components/atoms/IconButton";
+import { Button } from "@/presentation/components/atoms/Button";
 import type { Category, CategoryGroup } from "@/categories/types";
 
 type GroupWithCats = {
@@ -270,9 +270,9 @@ export default function ReorderBudgetScreen() {
       <Stack.Screen
         options={{
           headerRight: () => (
-            <IconButton
-              name="checkmark"
-              size={22}
+            <Button
+              icon="checkmark"
+              buttonStyle="borderless"
               color={colors.headerText}
               onPress={() => router.back()}
             />

@@ -9,7 +9,6 @@ import { getAccountProperties, groupAccounts } from "@/accounts";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
-import { IconButton } from "@/presentation/components/atoms/IconButton";
 import { formatBalance } from "@/lib/format";
 import { Divider } from "@/presentation/components/atoms/Divider";
 import type { Account } from "@/accounts/types";
@@ -132,9 +131,9 @@ export default function CloseAccountScreen() {
       <Stack.Screen
         options={{
           headerLeft: () => (
-            <IconButton
-              name="close"
-              size={22}
+            <Button
+              icon="close"
+              buttonStyle="borderless"
               color={theme.colors.headerText}
               onPress={() => router.back()}
             />
@@ -236,13 +235,14 @@ export default function CloseAccountScreen() {
       <View style={styles.buttonRow}>
         <Button
           title={tc("cancel")}
-          variant="secondary"
+          buttonStyle="borderedSecondary"
           onPress={() => router.back()}
           style={styles.buttonFlex}
         />
         <Button
           title={t("close.title")}
-          variant="danger"
+          buttonStyle="borderedSecondary"
+          danger
           onPress={handleSubmit}
           loading={saving}
           style={styles.buttonFlex}

@@ -503,12 +503,11 @@ export default function CategoryDetailsScreen() {
                     <Button
                       title={t("assign")}
                       size="md"
-                      variant="primary"
                       style={{
                         backgroundColor: colors.budgetCaution,
                         alignSelf: "stretch",
                       }}
-                      textColor="#000"
+                      color="#000"
                       onPress={async () => {
                         const needed = budgetCat.goal! - budgetCat.budgeted;
                         if (needed > 0) {
@@ -555,7 +554,7 @@ export default function CategoryDetailsScreen() {
                 {/* Edit Target — full width pill */}
                 <Button
                   title={t("editTarget")}
-                  variant="secondary"
+                  buttonStyle="borderedSecondary"
                   size="md"
                   icon="flagOutline"
                   style={{ alignSelf: "stretch" }}
@@ -606,7 +605,6 @@ export default function CategoryDetailsScreen() {
                 </Text>
                 <Button
                   title={t("createTarget")}
-                  variant="primary"
                   size="md"
                   style={{ alignSelf: "stretch" }}
                   onPress={() => {
@@ -627,7 +625,7 @@ export default function CategoryDetailsScreen() {
         <View style={{ height: spacing.lg }} />
         <Button
           title={t("renameCategory")}
-          variant="secondary"
+          buttonStyle="borderedSecondary"
           size="md"
           icon="pencilOutline"
           style={{ alignSelf: "stretch" }}
@@ -643,7 +641,7 @@ export default function CategoryDetailsScreen() {
         <View style={{ height: spacing.sm }} />
         <Button
           title={category?.hidden ? t("showCategory") : t("hideCategory")}
-          variant="secondary"
+          buttonStyle="borderedSecondary"
           size="md"
           icon={category?.hidden ? "eyeOutline" : "eyeOffOutline"}
           style={{ alignSelf: "stretch" }}
@@ -658,9 +656,9 @@ export default function CategoryDetailsScreen() {
         />
         <Button
           title={t("deleteCategory")}
-          variant="ghost"
+          buttonStyle="borderless"
           icon="trashOutline"
-          textColor={colors.negative}
+          danger
           onPress={handleDelete}
           disabled={deleting}
           loading={deleting}

@@ -13,7 +13,7 @@ import { useKeyboardHeight } from "@/presentation/hooks/useKeyboardHeight";
 import { useSharedAmountInput } from "@/presentation/hooks/useSharedAmountInput";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Amount } from "@/presentation/components/atoms/Amount";
-import { IconButton } from "@/presentation/components/atoms/IconButton";
+import { Button } from "@/presentation/components/atoms/Button";
 import { GlassButton } from "@/presentation/components/atoms/GlassButton";
 import { SharedAmountInput } from "@/presentation/components/transaction/SharedAmountInput";
 import { CurrencyAmountDisplay } from "@/presentation/components/currency-input/CurrencyAmountDisplay";
@@ -98,9 +98,9 @@ function SplitRow({
         />
       </Pressable>
 
-      <IconButton
-        name="closeCircle"
-        size={18}
+      <Button
+        icon="closeCircle"
+        buttonStyle="borderless"
         color={colors.textMuted}
         onPress={() => onRemove(line.id)}
         style={{ marginLeft: spacing.xxs }}

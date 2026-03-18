@@ -255,8 +255,8 @@ export default function SettingsScreen() {
           <Button
             title={t("disconnectFromServer")}
             icon="logOutOutline"
-            variant="ghost"
-            textColor={colors.negative}
+            buttonStyle="borderless"
+            danger
             onPress={handleLogout}
             style={{ marginTop: spacing.md }}
           />

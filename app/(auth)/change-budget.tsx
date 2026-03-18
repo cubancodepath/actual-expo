@@ -8,7 +8,7 @@ import {
   Text,
   Card,
   SectionHeader,
-  IconButton,
+  Button,
   ErrorBanner,
   EmptyState,
   BudgetFileRow,
@@ -63,9 +63,9 @@ export default function ChangeBudgetScreen() {
       <Stack.Screen
         options={{
           headerLeft: () => (
-            <IconButton
-              name="close"
-              size={22}
+            <Button
+              icon="close"
+              buttonStyle="borderless"
               color={colors.headerText}
               onPress={() => router.back()}
             />

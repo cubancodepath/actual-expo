@@ -6,7 +6,6 @@ import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { useBudgetStore } from "@/stores/budgetStore";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
-import { IconButton } from "@/presentation/components/atoms/IconButton";
 import { Amount } from "@/presentation/components/atoms/Amount";
 import { HiddenAmountInput } from "@/presentation/components/transaction/HiddenAmountInput";
 import { useAmountInput } from "@/presentation/components/transaction/useAmountInput";
@@ -79,9 +78,9 @@ export default function HoldScreen() {
         <Stack.Screen
           options={{
             headerLeft: () => (
-              <IconButton
-                name="close"
-                size={22}
+              <Button
+                icon="close"
+                buttonStyle="borderless"
                 color={colors.headerText}
                 onPress={() => router.back()}
               />
@@ -123,7 +122,6 @@ export default function HoldScreen() {
 
         <Button
           title={t("hold")}
-          variant="primary"
           onPress={handleSave}
           disabled={amountInput.cents <= 0}
           loading={saving}

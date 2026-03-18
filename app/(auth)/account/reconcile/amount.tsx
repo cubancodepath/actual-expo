@@ -236,7 +236,6 @@ export default function ReconcileAmountScreen() {
 
         <Button
           title={t("reconcile.reconcileButton")}
-          variant="primary"
           onPress={handleReconcile}
           loading={loading}
           disabled={amountInput.cents === 0}

@@ -125,7 +125,7 @@ function EncryptionSection() {
         </Text>
         <Button
           title={isEncrypted ? t("generateNewKey") : t("enableEncryption")}
-          variant="ghost"
+          buttonStyle="borderless"
           onPress={() => promptToEnableEncryption()}
           style={{ marginHorizontal: spacing.lg, marginBottom: spacing.lg }}
         />
@@ -485,8 +485,8 @@ export default function BudgetSettingsScreen() {
       <Button
         title={t("deleteBudget")}
         icon="trashOutline"
-        variant="ghost"
-        textColor={colors.negative}
+        buttonStyle="borderless"
+        danger
         onPress={handleDeleteBudget}
         style={{ marginTop: spacing.xl }}
       />

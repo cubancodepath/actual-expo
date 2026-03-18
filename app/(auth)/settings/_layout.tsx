@@ -2,7 +2,7 @@ import { Stack, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { themedScreenOptions } from "@/presentation/navigation/screenOptions";
-import { IconButton, EncryptionPasswordPrompt } from "@/presentation/components";
+import { Button, EncryptionPasswordPrompt } from "@/presentation/components";
 
 export default function SettingsLayout() {
   const theme = useTheme();
@@ -18,9 +18,9 @@ export default function SettingsLayout() {
           options={{
             title: t("title"),
             headerLeft: () => (
-              <IconButton
-                name="close"
-                size={22}
+              <Button
+                icon="close"
+                buttonStyle="borderless"
                 color={theme.colors.headerText}
                 onPress={() => router.dismissAll()}
               />

@@ -4,7 +4,7 @@ import type { IconName } from "../atoms/iconRegistry";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../../providers/ThemeProvider";
 import { ListItem } from "./ListItem";
-import { IconButton } from "../atoms/IconButton";
+import { Button } from "../atoms/Button";
 import type { ReconciledBudgetFile, BudgetFileState } from "../../../services/budgetfiles";
 
 export interface BudgetFileRowProps {
@@ -71,9 +71,9 @@ export function BudgetFileRow({
     right = (
       <>
         <Icon name="checkmark" size={20} color={colors.primary} />
-        <IconButton
-          name="ellipsisHorizontal"
-          size={18}
+        <Button
+          icon="ellipsisHorizontal"
+          buttonStyle="borderless"
           color={colors.textMuted}
           onPress={onActionPress}
           accessibilityLabel="Budget actions"
@@ -84,9 +84,9 @@ export function BudgetFileRow({
     right = <Icon name="checkmark" size={20} color={colors.primary} />;
   } else if (onActionPress) {
     right = (
-      <IconButton
-        name="ellipsisHorizontal"
-        size={18}
+      <Button
+        icon="ellipsisHorizontal"
+        buttonStyle="borderless"
         color={colors.textMuted}
         onPress={onActionPress}
         accessibilityLabel="Budget actions"

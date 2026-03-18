@@ -6,7 +6,7 @@ import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvide
 import { useTagsStore } from "@/stores/tagsStore";
 import { usePickerStore } from "@/stores/pickerStore";
 import { Text } from "@/presentation/components/atoms/Text";
-import { IconButton } from "@/presentation/components/atoms/IconButton";
+import { Button } from "@/presentation/components/atoms/Button";
 import { TagPill } from "@/presentation/components/atoms/TagPill";
 import { SearchBar } from "@/presentation/components/molecules/SearchBar";
 import { getTransactionById, updateTransaction } from "@/transactions";
@@ -135,9 +135,9 @@ export default function TransactionTagsScreen() {
         options={{
           title: "Tags",
           headerLeft: () => (
-            <IconButton
-              name="close"
-              size={22}
+            <Button
+              icon="close"
+              buttonStyle="borderless"
               color={colors.headerText}
               onPress={() => router.back()}
             />

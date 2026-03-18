@@ -1,10 +1,16 @@
-import { View } from "react-native";
+import { Pressable, View } from "react-native";
 import Animated, { useAnimatedStyle, withTiming, type SharedValue } from "react-native-reanimated";
-import { Icon } from "../atoms/Icon";
+import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
+import { BlurView } from "expo-blur";
 import { useRouter } from "expo-router";
 import { useTheme } from "../../providers/ThemeProvider";
+import { Icon } from "../atoms/Icon";
 import { Text } from "../atoms/Text";
-import { GlassButton } from "../atoms/GlassButton";
+
+const glass = isLiquidGlassAvailable();
+
+const AnimatedGlassView = Animated.createAnimatedComponent(GlassView);
+const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
 
 interface AddTransactionButtonProps {
   accountId?: string;
@@ -24,7 +30,6 @@ export function AddTransactionButton({
   const router = useRouter();
   const { colors, spacing, borderRadius: br } = useTheme();
 
-  // Pill padding when expanded, circular padding when collapsed
   const circularPadding = (SIZE - ICON_SIZE) / 2;
 
   const containerStyle = useAnimatedStyle(() => {
@@ -51,30 +56,54 @@ export function AddTransactionButton({
     };
   });
 
+  function handlePress() {
+    router.push({
+      pathname: "/(auth)/transaction/new",
+      params: accountId ? { accountId } : undefined,
+    });
+  }
+
+  const content = (
+    <>
+      <Icon name="add" size={ICON_SIZE} color={colors.textPrimary} />
+      <Animated.View style={[{ overflow: "hidden" }, labelStyle]}>
+        <Text
+          variant="body"
+          color={colors.textPrimary}
+          style={{ fontWeight: "600" }}
+          numberOfLines={1}
+        >
+          Transaction
+        </Text>
+      </Animated.View>
+    </>
+  );
+
+  const baseInner = {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    height: SIZE,
+  };
+
   return (
     <View style={{ position: "absolute", bottom, right: 20 }}>
-      <GlassButton
-        onPress={() =>
-          router.push({
-            pathname: "/(auth)/transaction/new",
-            params: accountId ? { accountId } : undefined,
-          })
-        }
-        animatedContainerStyle={containerStyle}
-        animatedInnerStyle={innerStyle}
-      >
-        <Icon name="add" size={ICON_SIZE} color={colors.textPrimary} />
-        <Animated.View style={[{ overflow: "hidden" }, labelStyle]}>
-          <Text
-            variant="body"
-            color={colors.textPrimary}
-            style={{ fontWeight: "600" }}
-            numberOfLines={1}
-          >
-            Transaction
-          </Text>
-        </Animated.View>
-      </GlassButton>
+      <Animated.View style={[{ overflow: "hidden" }, containerStyle]}>
+        <Pressable onPress={handlePress}>
+          {glass ? (
+            <AnimatedGlassView isInteractive style={[{ ...baseInner }, innerStyle]}>
+              {content}
+            </AnimatedGlassView>
+          ) : (
+            <AnimatedBlurView
+              tint="systemChromeMaterial"
+              intensity={100}
+              style={[baseInner, innerStyle]}
+            >
+              {content}
+            </AnimatedBlurView>
+          )}
+        </Pressable>
+      </Animated.View>
     </View>
   );
 }

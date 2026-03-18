@@ -19,7 +19,6 @@ import { transferMultipleCategories } from "@/budgets";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Amount } from "@/presentation/components/atoms/Amount";
 import { Button } from "@/presentation/components/atoms/Button";
-import { IconButton } from "@/presentation/components/atoms/IconButton";
 import { GlassButton } from "@/presentation/components/atoms/GlassButton";
 import { SharedAmountInput } from "@/presentation/components/transaction/SharedAmountInput";
 import { EditableAmountRow } from "@/presentation/components/currency-input/EditableAmountRow";
@@ -87,9 +86,9 @@ function SourceRow({
         />
       </View>
 
-      <IconButton
-        name="closeCircle"
-        size={18}
+      <Button
+        icon="closeCircle"
+        buttonStyle="borderless"
         color={colors.textMuted}
         onPress={() => onRemove(source.id)}
         style={{ marginLeft: spacing.xxs }}
@@ -410,7 +409,6 @@ export default function MoveMoneyScreen() {
         <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.xl }}>
           <Button
             title={saving ? t("movingEllipsis") : t("move")}
-            variant="primary"
             loading={saving}
             disabled={totalAmount === 0}
             onPress={handleMove}

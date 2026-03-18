@@ -5,7 +5,7 @@ import { Stack, useFocusEffect, useLocalSearchParams, useNavigation, useRouter }
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { EmptyState } from "@/presentation/components";
-import { IconButton } from "@/presentation/components/atoms/IconButton";
+import { Button } from "@/presentation/components/atoms/Button";
 import { TransactionRow } from "@/presentation/components/account/TransactionRow";
 import { DateSectionHeader } from "@/presentation/components/account/DateSectionHeader";
 import { SelectModeToolbar } from "@/presentation/components/transaction/SelectModeToolbar";
@@ -92,9 +92,9 @@ export default function CategoryTransactionsScreen() {
     navigation.setOptions({
       title: categoryName ?? t("transactions"),
       headerLeft: () => (
-        <IconButton
-          name="close"
-          size={22}
+        <Button
+          icon="close"
+          buttonStyle="borderless"
           color={colors.headerText}
           onPress={() => router.back()}
         />

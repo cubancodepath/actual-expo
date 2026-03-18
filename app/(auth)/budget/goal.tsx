@@ -10,7 +10,6 @@ import { useCategoriesStore } from "@/stores/categoriesStore";
 import { useBudgetStore } from "@/stores/budgetStore";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
-import { IconButton } from "@/presentation/components/atoms/IconButton";
 import { Card } from "@/presentation/components/atoms/Card";
 import { ListItem } from "@/presentation/components/molecules/ListItem";
 import { Divider } from "@/presentation/components/atoms/Divider";
@@ -541,9 +540,9 @@ export default function GoalEditorScreen() {
         <Stack.Screen
           options={{
             headerLeft: () => (
-              <IconButton
-                name="close"
-                size={22}
+              <Button
+                icon="close"
+                buttonStyle="borderless"
                 color={colors.headerText}
                 onPress={() => router.back()}
               />
@@ -911,7 +910,6 @@ export default function GoalEditorScreen() {
         {/* ── Save / Delete ──────────────────────────────────────── */}
         <Button
           title={isEditing ? t("saveTarget") : t("addTarget")}
-          variant="primary"
           onPress={handleSave}
           disabled={!canSave}
           loading={saving}
@@ -922,9 +920,9 @@ export default function GoalEditorScreen() {
           <View style={{ marginTop: spacing.xl }}>
             <Button
               title={t("removeTarget")}
-              variant="ghost"
+              buttonStyle="borderless"
               icon="trashOutline"
-              textColor={colors.negative}
+              danger
               onPress={handleDelete}
             />
           </View>

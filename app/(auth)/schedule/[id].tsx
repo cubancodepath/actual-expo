@@ -510,7 +510,7 @@ export default function ScheduleDetailScreen() {
             <Button
               title={t("skipNextDate")}
               icon="playForwardOutline"
-              variant="ghost"
+              buttonStyle="borderless"
               onPress={handleSkip}
             />
           )}
@@ -518,7 +518,7 @@ export default function ScheduleDetailScreen() {
           <Button
             title={t("postTransactionNow")}
             icon="checkmarkCircleOutline"
-            variant="ghost"
+            buttonStyle="borderless"
             onPress={handlePostNow}
           />
 
@@ -526,7 +526,7 @@ export default function ScheduleDetailScreen() {
             <Button
               title={t("completeSchedule")}
               icon="flagOutline"
-              variant="ghost"
+              buttonStyle="borderless"
               onPress={handleComplete}
             />
           )}
@@ -534,8 +534,8 @@ export default function ScheduleDetailScreen() {
           <Button
             title={t("deleteSchedule")}
             icon="trashOutline"
-            variant="ghost"
-            textColor={colors.negative}
+            buttonStyle="borderless"
+            danger
             onPress={handleDelete}
           />
         </View>

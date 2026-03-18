@@ -237,14 +237,13 @@ export function EncryptionPasswordPrompt() {
           <View style={styles.buttons}>
             <Button
               title={t("cancel")}
-              variant="ghost"
+              buttonStyle="borderless"
               onPress={handleCancel}
               disabled={loading}
               style={{ flex: 1 }}
             />
             <Button
               title={submitLabel}
-              variant="primary"
               onPress={handleSubmit}
               loading={loading}
               disabled={!canSubmit || loading}

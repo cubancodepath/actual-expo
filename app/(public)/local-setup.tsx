@@ -115,14 +115,14 @@ export default function LocalSetupScreen() {
 
       <Button
         title={t("createNewBudget")}
-        variant="secondary"
+        buttonStyle="borderedSecondary"
         onPress={() => setScreen("wizard")}
         style={{ marginHorizontal: spacing.lg }}
       />
 
       <Button
         title={tc("back")}
-        variant="ghost"
+        buttonStyle="borderless"
         onPress={() => router.back()}
         style={{ marginTop: spacing.sm, marginHorizontal: spacing.lg }}
       />

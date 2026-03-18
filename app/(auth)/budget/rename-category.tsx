@@ -7,7 +7,6 @@ import { useCategoriesStore } from "@/stores/categoriesStore";
 import { useBudgetStore } from "@/stores/budgetStore";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
-import { IconButton } from "@/presentation/components/atoms/IconButton";
 
 export default function RenameCategoryScreen() {
   const { t } = useTranslation("budget");
@@ -41,9 +40,9 @@ export default function RenameCategoryScreen() {
       <Stack.Screen
         options={{
           headerLeft: () => (
-            <IconButton
-              name="close"
-              size={22}
+            <Button
+              icon="close"
+              buttonStyle="borderless"
               color={colors.headerText}
               onPress={() => router.back()}
             />
@@ -51,9 +50,9 @@ export default function RenameCategoryScreen() {
           headerRight: () => (
             <Button
               title={t("save")}
-              variant="ghost"
+              buttonStyle="borderless"
               size="sm"
-              textColor={canSave ? colors.textPrimary : colors.textMuted}
+              color={canSave ? colors.textPrimary : colors.textMuted}
               onPress={handleSave}
               disabled={!canSave}
             />

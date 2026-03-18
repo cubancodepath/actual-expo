@@ -1,7 +1,6 @@
 // Atoms
 export { Text, type TextProps } from "./atoms/Text";
 export { Button, type ButtonProps } from "./atoms/Button";
-export { IconButton, type IconButtonProps } from "./atoms/IconButton";
 export { Card, type CardProps } from "./atoms/Card";
 export { Divider, type DividerProps } from "./atoms/Divider";
 export { Badge, type BadgeProps } from "./atoms/Badge";

@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { Platform, Pressable, View } from "react-native";
 import { Icon } from "../atoms/Icon";
-import * as ContextMenu from "zeego/context-menu";
+import { ContextMenu } from "../atoms/ContextMenu";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Text, Amount } from "..";
 import { ScheduleStatusBadge } from "../atoms/ScheduleStatusBadge";
@@ -99,7 +99,7 @@ export const UpcomingScheduleRow = memo(function UpcomingScheduleRow({
 
   if (Platform.OS === "ios") {
     return (
-      <ContextMenu.Root>
+      <ContextMenu>
         <ContextMenu.Trigger>{swipeableContent}</ContextMenu.Trigger>
         <ContextMenu.Content>
           <ContextMenu.Item key="edit" onSelect={() => onPress(item.scheduleId)}>
@@ -130,7 +130,7 @@ export const UpcomingScheduleRow = memo(function UpcomingScheduleRow({
             <ContextMenu.ItemIcon ios={{ name: "trash" }} />
           </ContextMenu.Item>
         </ContextMenu.Content>
-      </ContextMenu.Root>
+      </ContextMenu>
     );
   }
 

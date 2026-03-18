@@ -10,7 +10,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { Icon } from "../atoms/Icon";
-import * as ContextMenu from "zeego/context-menu";
+import { ContextMenu } from "../atoms/ContextMenu";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Text, Amount, NotesWithTags, RowSeparator } from "..";
 import { formatAmount } from "../../../lib/format";
@@ -237,7 +237,7 @@ export const TransactionRow = memo(function TransactionRow({
   // Wrap in zeego ContextMenu on iOS
   if (Platform.OS === "ios") {
     return (
-      <ContextMenu.Root>
+      <ContextMenu>
         <ContextMenu.Trigger>{swipeableContent}</ContextMenu.Trigger>
         <ContextMenu.Content>
           {!item.reconciled && (
@@ -272,7 +272,7 @@ export const TransactionRow = memo(function TransactionRow({
             <ContextMenu.ItemIcon ios={{ name: "trash" }} />
           </ContextMenu.Item>
         </ContextMenu.Content>
-      </ContextMenu.Root>
+      </ContextMenu>
     );
   }
 

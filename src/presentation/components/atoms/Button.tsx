@@ -3,6 +3,7 @@ import { Icon } from "./Icon";
 import type { IconName } from "./iconRegistry";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Text } from "./Text";
+import { triggerHaptic, type HapticType } from "./haptics";
 import type { Theme } from "../../../theme";
 
 type ButtonStyle = "borderedProminent" | "bordered" | "borderedSecondary" | "borderless";
@@ -18,6 +19,7 @@ export interface ButtonProps {
   loading?: boolean;
   disabled?: boolean;
   color?: string;
+  haptic?: HapticType;
   style?: ViewStyle;
   hitSlop?: number;
   accessibilityLabel?: string;
@@ -75,6 +77,7 @@ export function Button({
   loading = false,
   disabled = false,
   color: colorOverride,
+  haptic,
   style,
   hitSlop = 8,
   accessibilityLabel,
@@ -91,6 +94,7 @@ export function Button({
         width: cfg.height,
         height: cfg.height,
         borderRadius: cfg.height / 2,
+        borderCurve: "continuous",
         backgroundColor: bg,
         alignItems: "center",
         justifyContent: "center",
@@ -100,6 +104,7 @@ export function Button({
         height: cfg.height,
         paddingHorizontal: cfg.paddingH,
         borderRadius: theme.borderRadius.full,
+        borderCurve: "continuous",
         backgroundColor: bg,
         flexDirection: "row",
         alignItems: "center",
@@ -110,7 +115,10 @@ export function Button({
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => {
+        if (haptic) triggerHaptic(haptic);
+        onPress();
+      }}
       disabled={disabled || loading}
       hitSlop={hitSlop}
       accessibilityRole="button"

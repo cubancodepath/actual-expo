@@ -17,6 +17,7 @@ export { NotesWithTags, type NotesWithTagsProps } from "./atoms/NotesWithTags";
 export { KeyboardDoneButton } from "./atoms/KeyboardDoneButton";
 export { ScheduleStatusBadge } from "./atoms/ScheduleStatusBadge";
 export { GlassButton } from "./atoms/GlassButton";
+export { ContextMenu } from "./atoms/ContextMenu";
 export { CircularProgress } from "./atoms/CircularProgress";
 export { Skeleton } from "./atoms/Skeleton";
 

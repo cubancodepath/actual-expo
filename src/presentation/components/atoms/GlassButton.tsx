@@ -5,6 +5,7 @@ import { useTheme } from "../../providers/ThemeProvider";
 import { Icon } from "./Icon";
 import type { IconName } from "./iconRegistry";
 import { Text } from "./Text";
+import { triggerHaptic, type HapticType } from "./haptics";
 
 const glass = isLiquidGlassAvailable();
 
@@ -17,6 +18,7 @@ type GlassButtonProps = {
   variant?: "glass" | "tinted";
   tintColor?: string;
   glassEffectStyle?: GlassStyle;
+  haptic?: HapticType;
   disabled?: boolean;
   style?: ViewStyle;
   hitSlop?: number;
@@ -33,6 +35,7 @@ export function GlassButton({
   variant = "glass",
   tintColor,
   glassEffectStyle = "regular",
+  haptic,
   disabled = false,
   style,
   hitSlop = 8,
@@ -52,6 +55,11 @@ export function GlassButton({
     </Text>
   ) : null;
 
+  function handlePress() {
+    if (haptic) triggerHaptic(haptic);
+    onPress?.();
+  }
+
   const innerStyle: ViewStyle = isCircle
     ? { width: SIZE, height: SIZE, alignItems: "center", justifyContent: "center" }
     : { height: SIZE, paddingHorizontal: 16, alignItems: "center", justifyContent: "center" };
@@ -60,9 +68,9 @@ export function GlassButton({
 
   if (variant === "tinted") {
     return (
-      <View style={[{ borderRadius: radius, overflow: "hidden" }, style]}>
+      <View style={[{ borderRadius: radius, borderCurve: "continuous", overflow: "hidden" }, style]}>
         <Pressable
-          onPress={onPress}
+          onPress={handlePress}
           disabled={disabled}
           hitSlop={hitSlop}
           style={({ pressed }) => [
@@ -79,7 +87,7 @@ export function GlassButton({
   }
 
   return (
-    <View style={[{ borderRadius: radius, overflow: "hidden" }, style]}>
+    <View style={[{ borderRadius: radius, borderCurve: "continuous", overflow: "hidden" }, style]}>
       <Pressable
         onPress={onPress}
         disabled={disabled}

@@ -1,7 +1,7 @@
 import { memo } from "react";
-import { Platform, Pressable, View } from "react-native";
-import * as ContextMenu from "zeego/context-menu";
+import { Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
+import { ContextMenu } from "../atoms/ContextMenu";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Text } from "../atoms/Text";
 import { Amount } from "../atoms/Amount";
@@ -26,7 +26,6 @@ interface BudgetCategoryRowProps {
   isIncome: boolean;
   isFirst?: boolean;
   isLast?: boolean;
-  onLongPress: (cat: BudgetCategory) => void;
   onCategoryDetails?: (cat: BudgetCategory) => void;
   onMoveMoney?: (cat: BudgetCategory) => void;
   onToggleCarryover?: (cat: BudgetCategory) => void;
@@ -53,7 +52,6 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
   isIncome,
   isFirst = false,
   isLast = false,
-  onLongPress,
   onCategoryDetails,
   onMoveMoney,
   onToggleCarryover,
@@ -270,11 +268,8 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
         paddingTop: 12,
         paddingBottom: 10,
         minHeight: 44,
-        ...insetStyle,
       }}
       onPress={onPress}
-      onLongPress={Platform.OS === "android" ? () => onLongPress(cat) : undefined}
-      delayLongPress={400}
     >
       {/* Line 1: Name + Budget input + Available pill */}
       <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -435,42 +430,35 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
     </Pressable>
   );
 
-  if (Platform.OS === "ios") {
-    const carryoverLabel = cat.carryover
-      ? t("removeOverspendingRollover")
-      : t("rolloverOverspending");
-    return (
-      <ContextMenu.Root>
-        <ContextMenu.Trigger>{pressableContent}</ContextMenu.Trigger>
-        <ContextMenu.Content>
-          <ContextMenu.Item key="category-details" onSelect={() => onCategoryDetails?.(cat)}>
-            <ContextMenu.ItemTitle>{t("categoryDetails")}</ContextMenu.ItemTitle>
-            <ContextMenu.ItemIcon ios={{ name: "info.circle" }} />
-          </ContextMenu.Item>
-          <ContextMenu.Item key="move-money" onSelect={() => onMoveMoney?.(cat)}>
-            <ContextMenu.ItemTitle>{t("moveMoney")}</ContextMenu.ItemTitle>
-            <ContextMenu.ItemIcon ios={{ name: "arrow.left.arrow.right" }} />
-          </ContextMenu.Item>
-          <ContextMenu.Item key="toggle-carryover" onSelect={() => onToggleCarryover?.(cat)}>
-            <ContextMenu.ItemTitle>{carryoverLabel}</ContextMenu.ItemTitle>
-            <ContextMenu.ItemIcon
-              ios={{ name: cat.carryover ? "arrow.uturn.backward" : "arrow.clockwise" }}
-            />
-          </ContextMenu.Item>
-          <ContextMenu.Item key="view-transactions" onSelect={() => onViewTransactions?.(cat)}>
-            <ContextMenu.ItemTitle>{t("viewTransactions")}</ContextMenu.ItemTitle>
-            <ContextMenu.ItemIcon ios={{ name: "chart.line.uptrend.xyaxis" }} />
-          </ContextMenu.Item>
-          <ContextMenu.Item key="budget-notes" onSelect={() => onBudgetNotes?.(cat)}>
-            <ContextMenu.ItemTitle>{t("budgetMovements")}</ContextMenu.ItemTitle>
-            <ContextMenu.ItemIcon
-              ios={{ name: "clock.arrow.trianglehead.counterclockwise.rotate.90" }}
-            />
-          </ContextMenu.Item>
-        </ContextMenu.Content>
-      </ContextMenu.Root>
-    );
-  }
+  const carryoverLabel = cat.carryover
+    ? t("removeOverspendingRollover")
+    : t("rolloverOverspending");
 
-  return pressableContent;
+  return (
+    <ContextMenu style={insetStyle}>
+      <ContextMenu.Trigger>{pressableContent}</ContextMenu.Trigger>
+      <ContextMenu.Content>
+        <ContextMenu.Item key="details" onSelect={() => onCategoryDetails?.(cat)}>
+          <ContextMenu.ItemTitle>{t("categoryDetails")}</ContextMenu.ItemTitle>
+          <ContextMenu.ItemIcon ios={{ name: "info.circle" }} />
+        </ContextMenu.Item>
+        <ContextMenu.Item key="move" onSelect={() => onMoveMoney?.(cat)}>
+          <ContextMenu.ItemTitle>{t("moveMoney")}</ContextMenu.ItemTitle>
+          <ContextMenu.ItemIcon ios={{ name: "arrow.left.arrow.right" }} />
+        </ContextMenu.Item>
+        <ContextMenu.Item key="carryover" onSelect={() => onToggleCarryover?.(cat)}>
+          <ContextMenu.ItemTitle>{carryoverLabel}</ContextMenu.ItemTitle>
+          <ContextMenu.ItemIcon ios={{ name: cat.carryover ? "arrow.uturn.backward" : "arrow.clockwise" }} />
+        </ContextMenu.Item>
+        <ContextMenu.Item key="transactions" onSelect={() => onViewTransactions?.(cat)}>
+          <ContextMenu.ItemTitle>{t("viewTransactions")}</ContextMenu.ItemTitle>
+          <ContextMenu.ItemIcon ios={{ name: "chart.line.uptrend.xyaxis" }} />
+        </ContextMenu.Item>
+        <ContextMenu.Item key="notes" onSelect={() => onBudgetNotes?.(cat)}>
+          <ContextMenu.ItemTitle>{t("budgetMovements")}</ContextMenu.ItemTitle>
+          <ContextMenu.ItemIcon ios={{ name: "clock.arrow.trianglehead.counterclockwise.rotate.90" }} />
+        </ContextMenu.Item>
+      </ContextMenu.Content>
+    </ContextMenu>
+  );
 });

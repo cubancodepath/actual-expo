@@ -1,13 +1,13 @@
 import { useEffect } from "react";
-import { Alert, Platform, Pressable, RefreshControl, ScrollView, View } from "react-native";
+import { Pressable, RefreshControl, ScrollView, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useDerivedValue,
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import * as ContextMenu from "zeego/context-menu";
 import { Stack, useRouter } from "expo-router";
+import { ContextMenu } from "@/presentation/components/atoms/ContextMenu";
 import { useAccountsStore } from "@/stores/accountsStore";
 import { Icon } from "@/presentation/components/atoms/Icon";
 import { useRefreshControl } from "@/presentation/hooks/useRefreshControl";
@@ -49,71 +49,42 @@ function AccountRow({
 }) {
   const theme = useTheme();
   const { t } = useTranslation("accounts");
-  const { t: tc } = useTranslation("common");
 
-  const row = (
-    <Pressable
-      style={styles.accountRow}
-      onPress={onPress}
-      onLongPress={
-        Platform.OS === "android"
-          ? () => {
-              const items = [
-                { text: t("contextMenu.viewTransactions"), onPress },
-                { text: t("contextMenu.editAccount"), onPress: onEdit },
-                account.closed
-                  ? { text: t("contextMenu.reopenAccount"), onPress: onReopen }
-                  : {
-                      text: t("contextMenu.closeAccount"),
-                      style: "destructive" as const,
-                      onPress: onClose,
-                    },
-                { text: tc("cancel"), style: "cancel" as const },
-              ];
-              Alert.alert(account.name, undefined, items);
-            }
-          : undefined
-      }
-    >
-      <Text variant="body" color={theme.colors.textPrimary} style={styles.accountName}>
-        {account.name}
-      </Text>
-      <Amount value={account.balance ?? 0} variant="body" />
-      <Icon name="chevronForward" size={16} color={theme.colors.textMuted} />
-      {!isLast && <RowSeparator insetLeft={theme.spacing.md} insetRight={theme.spacing.md} />}
-    </Pressable>
+  return (
+    <ContextMenu>
+      <ContextMenu.Trigger>
+        <Pressable style={styles.accountRow} onPress={onPress}>
+          <Text variant="body" color={theme.colors.textPrimary} style={styles.accountName}>
+            {account.name}
+          </Text>
+          <Amount value={account.balance ?? 0} variant="body" />
+          <Icon name="chevronForward" size={16} color={theme.colors.textMuted} />
+          {!isLast && <RowSeparator insetLeft={theme.spacing.md} insetRight={theme.spacing.md} />}
+        </Pressable>
+      </ContextMenu.Trigger>
+      <ContextMenu.Content>
+        <ContextMenu.Item key="view" onSelect={onPress}>
+          <ContextMenu.ItemTitle>{t("contextMenu.viewTransactions")}</ContextMenu.ItemTitle>
+          <ContextMenu.ItemIcon ios={{ name: "list.bullet" }} />
+        </ContextMenu.Item>
+        <ContextMenu.Item key="edit" onSelect={onEdit}>
+          <ContextMenu.ItemTitle>{t("contextMenu.editAccount")}</ContextMenu.ItemTitle>
+          <ContextMenu.ItemIcon ios={{ name: "pencil" }} />
+        </ContextMenu.Item>
+        {account.closed ? (
+          <ContextMenu.Item key="reopen" onSelect={onReopen}>
+            <ContextMenu.ItemTitle>{t("contextMenu.reopenAccount")}</ContextMenu.ItemTitle>
+            <ContextMenu.ItemIcon ios={{ name: "arrow.counterclockwise" }} />
+          </ContextMenu.Item>
+        ) : (
+          <ContextMenu.Item key="close" destructive onSelect={onClose}>
+            <ContextMenu.ItemTitle>{t("contextMenu.closeAccount")}</ContextMenu.ItemTitle>
+            <ContextMenu.ItemIcon ios={{ name: "trash" }} />
+          </ContextMenu.Item>
+        )}
+      </ContextMenu.Content>
+    </ContextMenu>
   );
-
-  if (Platform.OS === "ios") {
-    return (
-      <ContextMenu.Root>
-        <ContextMenu.Trigger>{row}</ContextMenu.Trigger>
-        <ContextMenu.Content>
-          <ContextMenu.Item key="view" onSelect={onPress}>
-            <ContextMenu.ItemTitle>{t("contextMenu.viewTransactions")}</ContextMenu.ItemTitle>
-            <ContextMenu.ItemIcon ios={{ name: "list.bullet" }} />
-          </ContextMenu.Item>
-          <ContextMenu.Item key="edit" onSelect={onEdit}>
-            <ContextMenu.ItemTitle>{t("contextMenu.editAccount")}</ContextMenu.ItemTitle>
-            <ContextMenu.ItemIcon ios={{ name: "pencil" }} />
-          </ContextMenu.Item>
-          {account.closed ? (
-            <ContextMenu.Item key="reopen" onSelect={onReopen}>
-              <ContextMenu.ItemTitle>{t("contextMenu.reopenAccount")}</ContextMenu.ItemTitle>
-              <ContextMenu.ItemIcon ios={{ name: "arrow.counterclockwise" }} />
-            </ContextMenu.Item>
-          ) : (
-            <ContextMenu.Item key="close" destructive onSelect={onClose}>
-              <ContextMenu.ItemTitle>{t("contextMenu.closeAccount")}</ContextMenu.ItemTitle>
-              <ContextMenu.ItemIcon ios={{ name: "trash" }} />
-            </ContextMenu.Item>
-          )}
-        </ContextMenu.Content>
-      </ContextMenu.Root>
-    );
-  }
-
-  return row;
 }
 
 function AccountContent({

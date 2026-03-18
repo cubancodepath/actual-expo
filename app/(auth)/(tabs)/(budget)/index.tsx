@@ -269,19 +269,6 @@ export default function BudgetScreen() {
     });
   }
 
-  function handleCategoryLongPress(cat: BudgetCategory) {
-    // Android fallback — iOS uses zeego context menu in BudgetCategoryRow
-    const toggleLabel = cat.carryover ? t("removeOverspendingRollover") : t("rolloverOverspending");
-    Alert.alert(cat.name, undefined, [
-      { text: t("categoryDetails"), onPress: () => handleCategoryDetails(cat) },
-      { text: t("moveMoney"), onPress: () => handleMoveMoney(cat) },
-      { text: toggleLabel, onPress: () => handleToggleCarryover(cat) },
-      { text: t("viewTransactions"), onPress: () => handleViewTransactions(cat) },
-      { text: t("budgetMovements"), onPress: () => handleBudgetNotes(cat) },
-      { text: t("cancel"), style: "cancel" },
-    ]);
-  }
-
   // -- Budget assignment balance --
   const toBudget = data?.toBudget ?? 0;
 
@@ -343,7 +330,6 @@ export default function BudgetScreen() {
           isIncome={section.group.is_income}
           isFirst={index === 0}
           isLast={index === section.data.length - 1}
-          onLongPress={handleCategoryLongPress}
           onCategoryDetails={handleCategoryDetails}
           onMoveMoney={handleMoveMoney}
           onToggleCarryover={handleToggleCarryover}

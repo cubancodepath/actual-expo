@@ -7,11 +7,10 @@ export default function TestStack() {
   return (
     <Stack
       screenOptions={{
-        headerShown: false,
         contentStyle: { backgroundColor: colors.pageBackground },
       }}
     >
-      <Stack.Screen name="index" />
+      <Stack.Screen name="index" options={{ headerShown: false }} />
     </Stack>
   );
 }

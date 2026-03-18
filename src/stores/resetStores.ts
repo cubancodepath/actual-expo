@@ -7,7 +7,6 @@ import { usePreferencesStore } from "./preferencesStore";
 import { useSyncStore } from "./syncStore";
 import { useRulesStore } from "./rulesStore";
 import { useSchedulesStore } from "./schedulesStore";
-import { useTagsStore } from "./tagsStore";
 import { useTransactionsStore } from "./transactionsStore";
 import { currentMonth } from "../lib/date";
 import { PREFERENCE_DEFAULTS } from "../preferences/types";
@@ -27,7 +26,6 @@ export function resetAllStores(): void {
   usePreferencesStore.setState({ ...PREFERENCE_DEFAULTS });
   useFeatureFlagsStore.setState({ ...FEATURE_FLAG_DEFAULTS });
   useSyncStore.setState({ status: "idle", error: null, lastSync: null });
-  useTagsStore.setState({ tags: [], loading: false });
   useTransactionsStore.setState({ transactions: [], accountId: null, loading: false });
   useRulesStore.setState({ rules: [], loading: false });
   useSchedulesStore.setState({ schedules: [], loading: false });

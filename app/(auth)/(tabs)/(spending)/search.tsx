@@ -32,7 +32,7 @@ import { TransactionRow } from "@/presentation/components/account/TransactionRow
 import { DateSectionHeader } from "@/presentation/components/account/DateSectionHeader";
 import { TokenSearchBar } from "@/presentation/components/transaction/TokenSearchBar";
 import { SearchSuggestions } from "@/presentation/components/transaction/SearchSuggestions";
-import { useTagsStore } from "@/stores/tagsStore";
+import { useTags } from "@/presentation/hooks/useTags";
 import { usePayeesStore } from "@/stores/payeesStore";
 import { GlassButton } from "@/presentation/components/atoms/GlassButton";
 import {
@@ -125,7 +125,7 @@ export default function SearchScreen() {
   const { t } = useTranslation();
   const { accounts, load: loadAccounts } = useAccountsStore();
   const { categories } = useCategories();
-  const tags = useTagsStore((s) => s.tags);
+  const { tags } = useTags();
   const setTabBarHidden = useTabBarStore((s) => s.setHidden);
   const payees = usePayeesStore((s) => s.payees);
   // Search state

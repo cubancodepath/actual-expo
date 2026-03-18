@@ -26,7 +26,7 @@ import { usePrefsStore } from "@/stores/prefsStore";
 import { usePrivacyStore } from "@/stores/privacyStore";
 import { useUndoStore } from "@/stores/undoStore";
 import { useCommonMenuActions } from "@/presentation/hooks/useCommonMenuItems";
-import { useTagsStore } from "@/stores/tagsStore";
+import { useTags } from "@/presentation/hooks/useTags";
 import { usePickerStore } from "@/stores/pickerStore";
 import { buildListData, useSelectModeHeader, type ListItem } from "@/presentation/hooks/transactionList";
 import { SelectModeToolbar } from "@/presentation/components/transaction/SelectModeToolbar";
@@ -58,7 +58,7 @@ export default function AccountTransactionsScreen() {
   const account = accounts.find((a) => a.id === id);
   const { hideReconciled, toggleHideReconciled } = usePrefsStore();
   usePrivacyStore();
-  const tags = useTagsStore((s) => s.tags);
+  const { tags } = useTags();
 
   // ---- Upcoming (reactive via liveQuery) ----
   const [upcomingExpanded, setUpcomingExpanded] = useState(false);

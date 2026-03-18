@@ -23,7 +23,7 @@ import { DateSectionHeader } from "@/presentation/components/account/DateSection
 import { UpcomingSectionHeader } from "@/presentation/components/account/UpcomingSectionHeader";
 import { UpcomingScheduleRow } from "@/presentation/components/account/UpcomingScheduleRow";
 import { AddTransactionButton } from "@/presentation/components/molecules/AddTransactionButton";
-import { useTagsStore } from "@/stores/tagsStore";
+import { useTags } from "@/presentation/hooks/useTags";
 import { usePickerStore } from "@/stores/pickerStore";
 import { buildListData, useSelectModeHeader, type ListItem } from "@/presentation/hooks/transactionList";
 import { SelectModeToolbar } from "@/presentation/components/transaction/SelectModeToolbar";
@@ -54,7 +54,7 @@ export default function SpendingScreen() {
   const { t: tt } = useTranslation("transactions");
   usePrivacyStore(); // subscribe to re-render on privacy mode change
   const setTabBarHidden = useTabBarStore((s) => s.setHidden);
-  const tags = useTagsStore((s) => s.tags);
+  const { tags } = useTags();
 
   // ---- Upcoming scheduled transactions (reactive, derived from liveQuery) ----
   const [upcomingExpanded, setUpcomingExpanded] = useState(false);

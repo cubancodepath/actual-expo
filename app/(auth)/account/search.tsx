@@ -31,7 +31,7 @@ import { TransactionRow } from "@/presentation/components/account/TransactionRow
 import { DateSectionHeader } from "@/presentation/components/account/DateSectionHeader";
 import { TokenSearchBar } from "@/presentation/components/transaction/TokenSearchBar";
 import { SearchSuggestions } from "@/presentation/components/transaction/SearchSuggestions";
-import { useTagsStore } from "@/stores/tagsStore";
+import { useTags } from "@/presentation/hooks/useTags";
 import { GlassButton } from "@/presentation/components/atoms/GlassButton";
 import {
   useTransactionSelection,
@@ -131,7 +131,7 @@ export default function AccountSearchScreen() {
   const { t: tc } = useTranslation("common");
   const { accounts } = useAccountsStore();
   const { categories } = useCategories();
-  const tags = useTagsStore((s) => s.tags);
+  const { tags } = useTags();
 
   // Search state
   const searchInputRef = useRef<TextInput>(null);

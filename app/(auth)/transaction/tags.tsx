@@ -3,7 +3,8 @@ import { Pressable, ScrollView, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Icon } from "@/presentation/components/atoms/Icon";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
-import { useTagsStore } from "@/stores/tagsStore";
+import { useTags } from "@/presentation/hooks/useTags";
+import { createTag } from "@/tags";
 import { usePickerStore } from "@/stores/pickerStore";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
@@ -41,7 +42,7 @@ export default function TransactionTagsScreen() {
   }>();
 
   const isPickerMode = mode === "picker";
-  const { tags, create: createTag, load: loadTags } = useTagsStore();
+  const { tags } = useTags();
   const setPickerTags = usePickerStore((s) => s.setTags);
 
   const [notes, setNotes] = useState("");
@@ -113,7 +114,6 @@ export default function TransactionTagsScreen() {
 
     const color = pickDefaultColor(tags.length);
     await createTag({ tag: tagName, color });
-    await loadTags();
     setSearchText("");
 
     const next = new Set(activeTags);

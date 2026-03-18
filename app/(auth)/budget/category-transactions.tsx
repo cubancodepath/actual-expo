@@ -12,7 +12,7 @@ import { SelectModeToolbar } from "@/presentation/components/transaction/SelectM
 import { transactionQuery } from "@/transactions/query";
 import { useBudgetStore } from "@/stores/budgetStore";
 import { useUndoStore } from "@/stores/undoStore";
-import { useTagsStore } from "@/stores/tagsStore";
+import { useTags } from "@/presentation/hooks/useTags";
 import {
   useSelectModeHeader,
   useTransactionList,
@@ -52,7 +52,7 @@ export default function CategoryTransactionsScreen() {
 
   const month = useBudgetStore((s) => s.month);
   const undoVersion = useUndoStore((s) => s.undoVersion);
-  const tags = useTagsStore((s) => s.tags);
+  const { tags } = useTags();
 
   const startOfMonth = useMemo(() => monthToStartInt(month), [month]);
   const startOfNextMonth = useMemo(() => monthToNextStartInt(month), [month]);

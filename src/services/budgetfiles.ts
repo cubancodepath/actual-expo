@@ -20,7 +20,6 @@ import { useAccountsStore } from "../stores/accountsStore";
 import { useBudgetStore } from "../stores/budgetStore";
 import { usePayeesStore } from "../stores/payeesStore";
 import { usePreferencesStore } from "../stores/preferencesStore";
-import { useTagsStore } from "../stores/tagsStore";
 import { useSchedulesStore } from "../stores/schedulesStore";
 import { useFeatureFlagsStore } from "../stores/featureFlagsStore";
 import type { BudgetFile } from "./authService";
@@ -376,7 +375,6 @@ export async function openBudget(budgetId: string): Promise<void> {
     useBudgetStore.getState().load(),
     usePayeesStore.getState().load(),
     usePreferencesStore.getState().load(),
-    useTagsStore.getState().load(),
     useSchedulesStore.getState().load(),
     useFeatureFlagsStore.getState().load(),
   ]);

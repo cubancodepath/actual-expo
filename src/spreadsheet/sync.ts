@@ -2,8 +2,9 @@
  * Sync integration for the spreadsheet engine.
  *
  * Two refresh paths (matching loot-core's pattern):
- * 1. Granular: triggerBudgetChanges() marks specific cells dirty after
- *    transaction/budget mutations. Dynamic cells re-query via sync SQL.
+ * 1. Granular: triggerBudgetChanges() marks SQL cells (deps=[]) dirty after
+ *    transaction/budget mutations. Formula cells cascade automatically via
+ *    the dependency graph.
  * 2. Structural: Full cell re-creation when categories/groups change.
  */
 
@@ -11,8 +12,6 @@ import { listen } from "../sync/syncEvents";
 import type { SyncMessage } from "../sync/encoder";
 import { getSpreadsheet } from "./instance";
 import { createAllBudgetCells } from "./envelope";
-import { sheetForMonth, envelopeBudget } from "./bindings";
-import { intToStr } from "../lib/date";
 
 /**
  * Initialize the spreadsheet with budget cells for all months.
@@ -27,9 +26,10 @@ export async function initSpreadsheet(): Promise<void> {
 // ── Granular budget invalidation (ported from loot-core/budget/base.ts) ──
 
 /**
- * Inspect CRDT messages and mark affected budget cells dirty.
- * Dynamic cells (catSpent, totalIncome) will re-run their SQL queries
- * on the next computation cycle.
+ * Inspect CRDT messages and mark affected SQL cells (deps=[]) dirty.
+ * Formula cells cascade automatically through the dependency graph:
+ *   catSpent → groupSpent → totalIncome → incomeAvailable → toBudget
+ *   catBudgeted → catBalance → groupBalance → totalBalance → toBudget
  */
 export function triggerBudgetChanges(messages: SyncMessage[]): void {
   const ss = getSpreadsheet();
@@ -37,10 +37,6 @@ export function triggerBudgetChanges(messages: SyncMessage[]): void {
 
   for (const msg of messages) {
     if (msg.dataset === "transactions") {
-      // Transaction changed — need to recompute spent for the affected category/month
-      // We can't easily know which category/month from just the message,
-      // so we mark ALL catSpent cells for the affected months dirty.
-      // The dynamic cells will re-query and only emit changes if values differ.
       if (
         msg.column === "amount" ||
         msg.column === "category" ||
@@ -49,21 +45,23 @@ export function triggerBudgetChanges(messages: SyncMessage[]): void {
         msg.column === "tombstone" ||
         msg.column === "isParent"
       ) {
-        // Mark all months' spent cells + income as needing recompute
-        // The ss.recompute() marks the cell dirty → cascade through dependencies
+        // Mark all catSpent SQL cells dirty (deps=[])
+        // They cascade to: groupSpent → totalIncome → incomeAvailable → toBudget
+        // And: catBalance → groupBalance → totalBalance
         for (const [name, cell] of ss.getCells()) {
           if (
             cell.type === "dynamic" &&
             cell.dependencies.length === 0 &&
-            (name.includes("!sum-amount-") || name.includes("!total-income"))
+            name.includes("!sum-amount-")
           ) {
             affectedCells.add(name);
           }
         }
       }
     } else if (msg.dataset === "zero_budgets") {
-      // Budget amount or carryover changed — recompute affected dynamic cells
       if (msg.column === "amount" || msg.column === "carryover") {
+        // Mark catBudgeted and catCarryover SQL cells dirty (deps=[])
+        // They cascade to: catBalance → groupBudgeted/groupBalance → totals → toBudget
         for (const [name, cell] of ss.getCells()) {
           if (
             cell.type === "dynamic" &&
@@ -75,7 +73,8 @@ export function triggerBudgetChanges(messages: SyncMessage[]): void {
         }
       }
     } else if (msg.dataset === "zero_budget_months") {
-      // Buffered amount changed
+      // Mark buffered SQL cell dirty (deps=[])
+      // Cascades to: bufferedSelected → toBudget
       for (const [name, cell] of ss.getCells()) {
         if (
           cell.type === "dynamic" &&
@@ -124,7 +123,6 @@ async function runStructuralRefresh(): Promise<void> {
 }
 
 listen((event) => {
-  // Structural changes need full re-creation (new/deleted categories/groups)
   if (event.tables.includes("categories") || event.tables.includes("category_groups")) {
     if (refreshing) {
       pendingRefresh = true;

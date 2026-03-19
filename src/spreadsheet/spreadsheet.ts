@@ -104,10 +104,8 @@ export class Spreadsheet {
 
     const existing = this.cells.get(resolved);
     if (existing && existing.type === "dynamic") {
-      // Update existing dynamic cell — keep value, update run + deps
-      existing.dependencies = resolvedDeps;
-      existing.run = opts.run;
-      this.dirtyCells.push(resolved);
+      // Cell already exists — do nothing (idempotent, like loot-core).
+      // Each cell should be created exactly once per month.
       return;
     }
 

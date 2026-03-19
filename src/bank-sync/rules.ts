@@ -7,7 +7,7 @@
 // ---------------------------------------------------------------------------
 
 import { runRules } from "../rules/engine";
-import { useRulesStore } from "../stores/rulesStore";
+import { getRules } from "../rules";
 import type { NormalizedTransaction } from "./normalize";
 
 /**
@@ -20,12 +20,12 @@ import type { NormalizedTransaction } from "./normalize";
  *
  * Rules can set: category, description (payee), notes, cleared, etc.
  */
-export function applyRulesToBankTransaction(
+export async function applyRulesToBankTransaction(
   normalized: NormalizedTransaction,
   acctId: string,
   payeeId: string,
-): { category: string | null; description: string | null } {
-  const rules = useRulesStore.getState().rules;
+): Promise<{ category: string | null; description: string | null }> {
+  const rules = await getRules();
   if (rules.length === 0) return { category: null, description: payeeId };
 
   // Build transaction object using internal field names

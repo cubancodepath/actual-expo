@@ -6,7 +6,7 @@ import { create } from "zustand";
 import { getGoCardlessStatus, getSimpleFinStatus } from "../bank-sync/service";
 import { syncAccount as doSyncAccount, BankSyncError } from "../bank-sync";
 import { runQuery } from "../db";
-import { useAccountsStore } from "./accountsStore";
+// Accounts are now reactive via useLiveQuery — no manual refresh needed
 
 type AccountSyncStatus = "idle" | "syncing" | "success" | "error";
 
@@ -39,10 +39,7 @@ export const useBankSyncStore = create<BankSyncState>((set, get) => ({
 
   async checkProviders() {
     try {
-      const [gc, sf] = await Promise.allSettled([
-        getGoCardlessStatus(),
-        getSimpleFinStatus(),
-      ]);
+      const [gc, sf] = await Promise.allSettled([getGoCardlessStatus(), getSimpleFinStatus()]);
 
       set({
         goCardlessConfigured: gc.status === "fulfilled" && gc.value.configured,
@@ -76,8 +73,7 @@ export const useBankSyncStore = create<BankSyncState>((set, get) => ({
         },
       });
 
-      // Refresh accounts store to pick up balance changes
-      await useAccountsStore.getState().load();
+      // Accounts refresh automatically via liveQuery
     } catch (e: unknown) {
       const message =
         e instanceof BankSyncError

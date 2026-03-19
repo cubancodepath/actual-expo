@@ -12,7 +12,6 @@ import { EmptyState } from "../molecules/EmptyState";
 import { Banner } from "../molecules/Banner";
 import { WizardShell, useWizardTransition, type WizardDirection } from "../wizard";
 import { useBankSyncStore } from "../../../stores/bankSyncStore";
-import { useAccountsStore } from "../../../stores/accountsStore";
 import { createAccount } from "../../../accounts";
 import {
   getGoCardlessBanks,
@@ -37,20 +36,34 @@ type Step = (typeof ALL_STEPS)[number];
 
 // Country data
 const COUNTRIES = [
-  { code: "AT", name: "Austria" }, { code: "BE", name: "Belgium" },
-  { code: "BG", name: "Bulgaria" }, { code: "HR", name: "Croatia" },
-  { code: "CZ", name: "Czech Republic" }, { code: "DK", name: "Denmark" },
-  { code: "EE", name: "Estonia" }, { code: "FI", name: "Finland" },
-  { code: "FR", name: "France" }, { code: "DE", name: "Germany" },
-  { code: "GR", name: "Greece" }, { code: "HU", name: "Hungary" },
-  { code: "IS", name: "Iceland" }, { code: "IE", name: "Ireland" },
-  { code: "IT", name: "Italy" }, { code: "LV", name: "Latvia" },
-  { code: "LT", name: "Lithuania" }, { code: "LU", name: "Luxembourg" },
-  { code: "NL", name: "Netherlands" }, { code: "NO", name: "Norway" },
-  { code: "PL", name: "Poland" }, { code: "PT", name: "Portugal" },
-  { code: "RO", name: "Romania" }, { code: "SK", name: "Slovakia" },
-  { code: "SI", name: "Slovenia" }, { code: "ES", name: "Spain" },
-  { code: "SE", name: "Sweden" }, { code: "GB", name: "United Kingdom" },
+  { code: "AT", name: "Austria" },
+  { code: "BE", name: "Belgium" },
+  { code: "BG", name: "Bulgaria" },
+  { code: "HR", name: "Croatia" },
+  { code: "CZ", name: "Czech Republic" },
+  { code: "DK", name: "Denmark" },
+  { code: "EE", name: "Estonia" },
+  { code: "FI", name: "Finland" },
+  { code: "FR", name: "France" },
+  { code: "DE", name: "Germany" },
+  { code: "GR", name: "Greece" },
+  { code: "HU", name: "Hungary" },
+  { code: "IS", name: "Iceland" },
+  { code: "IE", name: "Ireland" },
+  { code: "IT", name: "Italy" },
+  { code: "LV", name: "Latvia" },
+  { code: "LT", name: "Lithuania" },
+  { code: "LU", name: "Luxembourg" },
+  { code: "NL", name: "Netherlands" },
+  { code: "NO", name: "Norway" },
+  { code: "PL", name: "Poland" },
+  { code: "PT", name: "Portugal" },
+  { code: "RO", name: "Romania" },
+  { code: "SK", name: "Slovakia" },
+  { code: "SI", name: "Slovenia" },
+  { code: "ES", name: "Spain" },
+  { code: "SE", name: "Sweden" },
+  { code: "GB", name: "United Kingdom" },
 ];
 
 // ---------------------------------------------------------------------------
@@ -231,7 +244,7 @@ export function BankSyncWizard({
       await linkAccount(acctId, "goCardless", account.id, institution?.name, requisitionId!);
       // Sync immediately after linking (same as Actual web)
       await syncAccount(acctId).catch(() => {}); // non-blocking — don't fail the link if sync fails
-      await useAccountsStore.getState().load();
+      // liveQuery auto-refreshes accounts
       if (mode === "create") onAccountCreated?.(acctId);
       onClose();
     } catch (e) {
@@ -247,7 +260,7 @@ export function BankSyncWizard({
       await linkAccount(acctId, "simpleFin", account.id, account.org.name);
       // Sync immediately after linking (same as Actual web)
       await syncAccount(acctId).catch(() => {});
-      await useAccountsStore.getState().load();
+      // liveQuery auto-refreshes accounts
       if (mode === "create") onAccountCreated?.(acctId);
       onClose();
     } catch (e) {
@@ -267,12 +280,18 @@ export function BankSyncWizard({
 
   function renderStep(s: Step): ReactNode {
     switch (s) {
-      case "provider": return renderProvider();
-      case "country": return renderCountry();
-      case "institution": return renderInstitution();
-      case "consent": return renderConsent();
-      case "bank-accounts": return renderBankAccounts();
-      case "sf-accounts": return renderSimpleFinAccounts();
+      case "provider":
+        return renderProvider();
+      case "country":
+        return renderCountry();
+      case "institution":
+        return renderInstitution();
+      case "consent":
+        return renderConsent();
+      case "bank-accounts":
+        return renderBankAccounts();
+      case "sf-accounts":
+        return renderSimpleFinAccounts();
     }
   }
 
@@ -309,7 +328,11 @@ export function BankSyncWizard({
     return (
       <View style={styles.flex}>
         <View style={styles.searchWrapper}>
-          <SearchBar value={search} onChangeText={setSearch} placeholder={t("country.searchPlaceholder")} />
+          <SearchBar
+            value={search}
+            onChangeText={setSearch}
+            placeholder={t("country.searchPlaceholder")}
+          />
         </View>
         <FlatList
           data={filtered}
@@ -348,7 +371,11 @@ export function BankSyncWizard({
     return (
       <View style={styles.flex}>
         <View style={styles.searchWrapper}>
-          <SearchBar value={search} onChangeText={setSearch} placeholder={t("institution.searchPlaceholder")} />
+          <SearchBar
+            value={search}
+            onChangeText={setSearch}
+            placeholder={t("institution.searchPlaceholder")}
+          />
         </View>
         <FlatList
           data={filtered}
@@ -365,7 +392,11 @@ export function BankSyncWizard({
             />
           )}
           ListEmptyComponent={
-            <EmptyState icon="business-outline" title={t("institution.noResults")} description={t("institution.noResultsDescription")} />
+            <EmptyState
+              icon="businessOutline"
+              title={t("institution.noResults")}
+              description={t("institution.noResultsDescription")}
+            />
           }
           contentContainerStyle={styles.list}
         />
@@ -383,16 +414,29 @@ export function BankSyncWizard({
             {institution?.name ?? "Bank"}
           </Text>
           <Text variant="body" color={theme.colors.textSecondary} style={styles.consentDescription}>
-            {consentState === "waiting" ? t("consent.waitingDescription") : t("consent.description")}
+            {consentState === "waiting"
+              ? t("consent.waitingDescription")
+              : t("consent.description")}
           </Text>
           {isChecking && <ActivityIndicator size="large" color={theme.colors.primary} />}
         </View>
         <View style={styles.consentActions}>
           {consentState === "idle" && !requisitionId && (
-            <Button title={t("consent.openBank")} onPress={() => startConsent(institution!)} size="lg" icon="open-outline" loading={loading} />
+            <Button
+              title={t("consent.openBank")}
+              onPress={() => startConsent(institution!)}
+              size="lg"
+              icon="openOutline"
+              loading={loading}
+            />
           )}
           {(consentState === "waiting" || (consentState === "idle" && requisitionId)) && (
-            <Button title={t("consent.checkStatus")} onPress={checkConsentStatus} size="lg" icon="refresh-outline" />
+            <Button
+              title={t("consent.checkStatus")}
+              onPress={checkConsentStatus}
+              size="lg"
+              icon="refreshOutline"
+            />
           )}
         </View>
       </View>
@@ -426,7 +470,11 @@ export function BankSyncWizard({
             />
           )}
           ListEmptyComponent={
-            <EmptyState icon="wallet-outline" title={t("accounts.noAccounts")} description={t("accounts.noAccountsDescription")} />
+            <EmptyState
+              icon="walletOutline"
+              title={t("accounts.noAccounts")}
+              description={t("accounts.noAccountsDescription")}
+            />
           }
           contentContainerStyle={styles.list}
         />
@@ -461,7 +509,11 @@ export function BankSyncWizard({
             />
           )}
           ListEmptyComponent={
-            <EmptyState icon="wallet-outline" title={t("accounts.noAccounts")} description={t("accounts.noAccountsDescription")} />
+            <EmptyState
+              icon="walletOutline"
+              title={t("accounts.noAccounts")}
+              description={t("accounts.noAccountsDescription")}
+            />
           }
           contentContainerStyle={styles.list}
         />
@@ -510,7 +562,12 @@ const createStyles = (theme: Theme) => ({
   list: { paddingHorizontal: theme.spacing.md, paddingBottom: 80 },
   errorWrapper: { paddingHorizontal: theme.spacing.xl, paddingBottom: theme.spacing.sm },
   consentContainer: { flex: 1, padding: theme.spacing.xl },
-  consentContent: { flex: 1, alignItems: "center" as const, justifyContent: "center" as const, gap: theme.spacing.sm },
+  consentContent: {
+    flex: 1,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    gap: theme.spacing.sm,
+  },
   consentTitle: { fontWeight: "600" as const, textAlign: "center" as const },
   consentDescription: { textAlign: "center" as const },
   consentActions: { paddingBottom: theme.spacing.xl },

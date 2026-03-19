@@ -147,8 +147,8 @@ export default function NewAccountScreen() {
         </Text>
         <Button
           title={t("newAccount.linkToBank")}
-          variant="secondary"
-          icon="link-outline"
+          buttonStyle="bordered"
+          icon="linkOutline"
           size="lg"
           onPress={() =>
             router.push({

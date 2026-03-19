@@ -1,5 +1,13 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, ScrollView, Switch, TextInput, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  Switch,
+  TextInput,
+  View,
+} from "react-native";
 
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -29,7 +37,14 @@ export default function AccountSettingsScreen() {
   const { t: tc } = useTranslation("common");
   const { t: tb } = useTranslation("bankSync");
   const { accounts } = useAccounts();
-  const { syncAccount, syncStatus, syncResults, providersChecked, goCardlessConfigured, simpleFinConfigured } = useBankSyncStore();
+  const {
+    syncAccount,
+    syncStatus,
+    syncResults,
+    providersChecked,
+    goCardlessConfigured,
+    simpleFinConfigured,
+  } = useBankSyncStore();
   const account = accounts.find((a) => a.id === id);
   const isLinked = !!account?.accountSyncSource;
   const accountSyncStatus = syncStatus[id] ?? "idle";
@@ -46,7 +61,10 @@ export default function AccountSettingsScreen() {
     if (accountSyncStatus === "success" && accountSyncResult) {
       const text =
         accountSyncResult.added + accountSyncResult.updated > 0
-          ? tb("syncSuccess", { added: accountSyncResult.added, updated: accountSyncResult.updated })
+          ? tb("syncSuccess", {
+              added: accountSyncResult.added,
+              updated: accountSyncResult.updated,
+            })
           : tb("syncSuccessNoChanges");
       setSyncResultText(text);
       setSyncResultVisible(true);
@@ -215,8 +233,8 @@ export default function AccountSettingsScreen() {
             <Button
               title={tb("syncNow")}
               onPress={() => syncAccount(id)}
-              variant="secondary"
-              icon="sync-outline"
+              buttonStyle="bordered"
+              icon="syncOutline"
               size="lg"
               loading={accountSyncStatus === "syncing"}
               disabled={saving || accountSyncStatus === "syncing"}
@@ -229,8 +247,8 @@ export default function AccountSettingsScreen() {
             onPress={() => {
               router.push({ pathname: "/(auth)/bank-sync", params: { localAccountId: id } });
             }}
-            variant="secondary"
-            icon="link-outline"
+            buttonStyle="bordered"
+            icon="linkOutline"
             size="lg"
             disabled={saving || (providersChecked && !goCardlessConfigured && !simpleFinConfigured)}
           />
@@ -255,29 +273,33 @@ export default function AccountSettingsScreen() {
             <Button
               title={tb("unlinkAccount")}
               onPress={() => {
-                Alert.alert(tb("unlink.title"), tb("unlink.message", { provider: account.accountSyncSource }), [
-                  { text: tc("cancel"), style: "cancel" },
-                  {
-                    text: tb("unlink.confirm"),
-                    style: "destructive",
-                    onPress: async () => {
-                      await unlinkAccount(id);
+                Alert.alert(
+                  tb("unlink.title"),
+                  tb("unlink.message", { provider: account.accountSyncSource }),
+                  [
+                    { text: tc("cancel"), style: "cancel" },
+                    {
+                      text: tb("unlink.confirm"),
+                      style: "destructive",
+                      onPress: async () => {
+                        await unlinkAccount(id);
+                      },
                     },
-                  },
-                ]);
+                  ],
+                );
               }}
-              variant="ghost"
-              icon="unlink-outline"
-              textColor={theme.colors.negative}
+              buttonStyle="borderless"
+              icon="unlinkOutline"
+              danger
               disabled={saving}
             />
           )}
           <Button
             title={account.closed ? t("contextMenu.reopenAccount") : t("contextMenu.closeAccount")}
             onPress={handleClose}
-            variant="ghost"
-            icon={account.closed ? "arrow-undo-outline" : "trash-outline"}
-            textColor={account.closed ? undefined : theme.colors.negative}
+            buttonStyle="borderless"
+            icon={account.closed ? "arrowUndoOutline" : "trashOutline"}
+            danger={!account.closed}
             disabled={saving}
           />
         </View>

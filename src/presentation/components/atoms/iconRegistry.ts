@@ -29,6 +29,9 @@ export const iconRegistry = {
   syncOutline: { ionicon: "sync-outline", sfSymbol: "arrow.triangle.2.circlepath" },
   cloudDownloadOutline: { ionicon: "cloud-download-outline", sfSymbol: "icloud.and.arrow.down" },
   linkOutline: { ionicon: "link-outline", sfSymbol: "link" },
+  unlinkOutline: { ionicon: "unlink-outline", sfSymbol: "link.badge.plus" },
+  openOutline: { ionicon: "open-outline", sfSymbol: "arrow.up.right.square" },
+  refreshOutline: { ionicon: "refresh-outline", sfSymbol: "arrow.clockwise" },
   ellipsisHorizontal: { ionicon: "ellipsis-horizontal", sfSymbol: "ellipsis" },
   ellipsisHorizontalCircleOutline: {
     ionicon: "ellipsis-horizontal-circle-outline",
@@ -53,6 +56,8 @@ export const iconRegistry = {
   // Finance / Domain
   cashOutline: { ionicon: "cash-outline", sfSymbol: "dollarsign" },
   wallet: { ionicon: "wallet-outline", sfSymbol: "creditcard" },
+  walletOutline: { ionicon: "wallet-outline", sfSymbol: "creditcard" },
+  businessOutline: { ionicon: "business-outline", sfSymbol: "building.2" },
   lockClosed: { ionicon: "lock-closed", sfSymbol: "lock.fill" },
   lockClosedOutline: { ionicon: "lock-closed-outline", sfSymbol: "lock" },
   lockOpen: { ionicon: "lock-open", sfSymbol: "lock.open" },

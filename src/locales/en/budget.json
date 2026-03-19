@@ -180,6 +180,8 @@
   "groupNamePlaceholder": "Group name",
   "save": "Save",
   "hidden": "Hidden",
+  "showGroup": "Show Group",
+  "hideGroup": "Hide Group",
 
   "newGroupPlaceholder": "e.g. Bills, Savings, Fun",
 

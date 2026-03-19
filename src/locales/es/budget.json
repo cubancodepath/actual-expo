@@ -180,6 +180,8 @@
   "groupNamePlaceholder": "Nombre del grupo",
   "save": "Guardar",
   "hidden": "Oculto",
+  "showGroup": "Mostrar grupo",
+  "hideGroup": "Ocultar grupo",
 
   "newGroupPlaceholder": "ej. Facturas, Ahorros, Diversión",
 

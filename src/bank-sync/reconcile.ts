@@ -49,7 +49,7 @@ export async function reconcileTransactions(
 
   for (const norm of normalized) {
     const payeeId = await resolvePayee(norm.payee_name);
-    const ruleResult = applyRulesToBankTransaction(norm, acctId, payeeId);
+    const ruleResult = await applyRulesToBankTransaction(norm, acctId, payeeId);
 
     withPayees.push({
       ...norm.trans,

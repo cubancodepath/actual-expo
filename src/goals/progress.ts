@@ -1,4 +1,5 @@
 import { parseGoalDef } from "./parse";
+import { isGoalFunded } from "./progressBar";
 import type { BudgetCategory } from "../budgets/types";
 
 // ---------------------------------------------------------------------------
@@ -73,12 +74,7 @@ export function getGoalProgress(cat: BudgetCategory): ProgressSegment[] {
     return [{ key: "budget:progress.spent" }, { amount: absSpent }];
   }
 
-  // Determine if funded:
-  // - longGoal (#goal): balance-based → funded when balance >= goal
-  // - templates: budgeted-based → funded when budgeted >= goal
-  const funded = cat.longGoal
-    ? cat.balance >= cat.goal && cat.goal > 0
-    : cat.budgeted >= cat.goal && cat.goal > 0;
+  const funded = isGoalFunded(cat);
 
   const remaining = cat.longGoal ? cat.goal - cat.balance : cat.goal - cat.budgeted;
 

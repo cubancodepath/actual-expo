@@ -145,14 +145,18 @@ export default function BudgetScreen() {
         .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
 
       const budgetCats: BudgetCategory[] = groupCats.map((c) => {
-        const goalInfo = c.goal_def ? inferGoalFromDef(c.goal_def) : null;
+        const budgeted = num(ss.getValue(sheet, envelopeBudget.catBudgeted(c.id)));
+        const spent = num(ss.getValue(sheet, envelopeBudget.catSpent(c.id)));
+        const balance = num(ss.getValue(sheet, envelopeBudget.catBalance(c.id)));
+        const carryIn = balance - budgeted - spent;
+        const goalInfo = c.goal_def ? inferGoalFromDef(c.goal_def, month, carryIn) : null;
         return {
           id: c.id,
           name: c.name,
-          budgeted: num(ss.getValue(sheet, envelopeBudget.catBudgeted(c.id))),
-          spent: num(ss.getValue(sheet, envelopeBudget.catSpent(c.id))),
-          balance: num(ss.getValue(sheet, envelopeBudget.catBalance(c.id))),
-          carryIn: 0,
+          budgeted,
+          spent,
+          balance,
+          carryIn,
           carryover:
             ss.getValue(sheet, envelopeBudget.catCarryover(c.id)) === true ||
             ss.getValue(sheet, envelopeBudget.catCarryover(c.id)) === 1,

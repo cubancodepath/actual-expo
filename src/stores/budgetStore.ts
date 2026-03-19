@@ -88,6 +88,20 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
       // Try to build from spreadsheet first
       let data = buildBudgetMonthFromSpreadsheet(month);
 
+      if (__DEV__ && data) {
+        const ss = getSpreadsheet();
+        const sheet = sheetForMonth(month);
+        console.log(`[budgetStore] ${month}:`, {
+          toBudget: ss.getValue(sheet, envelopeBudget.toBudget),
+          totalIncome: ss.getValue(sheet, envelopeBudget.totalIncome),
+          totalBudgeted: ss.getValue(sheet, envelopeBudget.totalBudgeted),
+          fromLastMonth: ss.getValue(sheet, envelopeBudget.fromLastMonth),
+          incomeAvailable: ss.getValue(sheet, envelopeBudget.incomeAvailable),
+          lastMonthOverspent: ss.getValue(sheet, envelopeBudget.lastMonthOverspent),
+          buffered: ss.getValue(sheet, envelopeBudget.buffered),
+        });
+      }
+
       if (data) {
         // Populate groups from categories
         const [cats, groups] = await Promise.all([getCategories(), getCategoryGroups()]);

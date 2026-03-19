@@ -40,7 +40,7 @@ interface BudgetCategoryRowProps {
   /** Expression string (left operand + operator, e.g. "56.00+"). */
   expression?: string;
   /** Called when the row is tapped (to start/toggle editing). */
-  onPress: () => void;
+  onPress: (pageY: number) => void;
   /** Whether to show progress bars and goal text (default true). */
   showProgressBar?: boolean;
   /** Whether to show the budgeted column (Amount or input). */
@@ -147,7 +147,7 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
         paddingBottom: 10,
         minHeight: 44,
       }}
-      onPress={onPress}
+      onPress={(e) => onPress(e.nativeEvent.pageY)}
     >
       {/* Line 1: Name + Budget input + Available pill */}
       <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -169,7 +169,7 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
             </Text>
           )}
         </View>
-        {showBudgetedColumn ? (
+        {showBudgetedColumn || isEditing ? (
           <View style={{ width: BUDGET_COLUMNS.budgeted, alignItems: "flex-end" }}>
             {isEditing && expressionMode ? (
               <>

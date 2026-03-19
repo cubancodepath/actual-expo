@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { useFocusEffect } from "expo-router";
-import { Alert, Keyboard, RefreshControl, SectionList, TextInput, View } from "react-native";
+import {
+  Alert,
+  Dimensions,
+  Keyboard,
+  RefreshControl,
+  SectionList,
+  TextInput,
+  View,
+} from "react-native";
 import { Icon } from "@/presentation/components/atoms/Icon";
 import { Stack, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
@@ -189,9 +197,6 @@ export default function BudgetScreen() {
 
   const fabCollapsed = useSharedValue(false);
   const COLLAPSE_THRESHOLD = 100;
-  const handleScroll = useCallback((e: { nativeEvent: { contentOffset: { y: number } } }) => {
-    fabCollapsed.value = e.nativeEvent.contentOffset.y > COLLAPSE_THRESHOLD;
-  }, []);
 
   const [filter, setFilter] = useState<BudgetFilter>("all");
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set([HIDDEN_GROUP_ID]));
@@ -201,7 +206,10 @@ export default function BudgetScreen() {
   const [editValue, setEditValue] = useState(0);
   const sharedInputRef = useRef<TextInput>(null);
   const sectionListRef = useRef<SectionList<BudgetCategory, BudgetSection>>(null);
-  const expr = useExpressionMode({ value: editValue, onChangeValue: setEditValue });
+  const expr = useExpressionMode({
+    value: editValue,
+    onChangeValue: setEditValue,
+  });
 
   // Imperative ref for the calculator pill (conforms to CurrencyInputRef)
   const selfRef = useRef<CurrencyInputRef>(null);
@@ -218,33 +226,41 @@ export default function BudgetScreen() {
     },
   }));
 
-  function handleRowPress(cat: BudgetCategory) {
+  // Track scroll offset for smart keyboard scrolling
+  const scrollOffsetRef = useRef(0);
+  const handleScrollForOffset = useCallback(
+    (e: { nativeEvent: { contentOffset: { y: number } } }) => {
+      scrollOffsetRef.current = e.nativeEvent.contentOffset.y;
+      fabCollapsed.value = e.nativeEvent.contentOffset.y > COLLAPSE_THRESHOLD;
+    },
+    [],
+  );
+
+  function handleRowPress(cat: BudgetCategory, pageY: number) {
     if (editingCatId === cat.id) {
       sharedInputRef.current?.blur();
       return;
     }
-    // If switching rows, commit current first
     if (editingCatId) {
       commitEdit();
     }
     setEditingCatId(cat.id);
     setEditValue(cat.budgeted);
-    setTimeout(() => {
-      sharedInputRef.current?.focus();
-      // Scroll to the edited row so it's visible above the keyboard
-      for (let si = 0; si < sections.length; si++) {
-        const ii = sections[si].data.findIndex((c) => c.id === cat.id);
-        if (ii !== -1) {
-          sectionListRef.current?.scrollToLocation({
-            sectionIndex: si,
-            itemIndex: ii,
-            viewOffset: 120, // offset from top to keep row visible above keyboard
-            animated: true,
-          });
-          break;
-        }
-      }
-    }, 100);
+    sharedInputRef.current?.focus();
+
+    // If the tapped cell is in the lower half of the screen, it'll be behind
+    // the keyboard (~340pt). Scroll just enough to keep it visible.
+    const screenHeight = Dimensions.get("window").height;
+    const keyboardTop = screenHeight - 340; // approximate
+    if (pageY > keyboardTop - 60) {
+      const scrollBy = pageY - keyboardTop + 100;
+      setTimeout(() => {
+        (sectionListRef.current as any)?.getScrollResponder()?.scrollTo({
+          y: scrollOffsetRef.current + scrollBy,
+          animated: true,
+        });
+      }, 50);
+    }
   }
 
   function commitEdit() {
@@ -344,7 +360,11 @@ export default function BudgetScreen() {
   function handleMoveMoney(cat: BudgetCategory) {
     router.push({
       pathname: "/(auth)/budget/move-money",
-      params: { catId: cat.id, catName: cat.name, balance: String(cat.balance) },
+      params: {
+        catId: cat.id,
+        catName: cat.name,
+        balance: String(cat.balance),
+      },
     });
   }
 
@@ -380,7 +400,12 @@ export default function BudgetScreen() {
       .flatMap((g) =>
         g.categories
           .filter((c) => c.balance < 0 && !c.carryover)
-          .map((c) => ({ id: c.id, name: c.name, balance: c.balance, groupName: g.name })),
+          .map((c) => ({
+            id: c.id,
+            name: c.name,
+            balance: c.balance,
+            groupName: g.name,
+          })),
       );
   }, [budgetGroups]);
   const overspentCount = overspentCategories.length;
@@ -390,7 +415,7 @@ export default function BudgetScreen() {
   }
 
   // -- Column header visibility --
-  const showBudgetedColumn = !goalsEnabled || editingCatId !== null || !showProgressBars;
+  const showBudgetedColumn = !goalsEnabled || !showProgressBars;
 
   // -- Render helpers --
   function dismissEdit() {
@@ -439,9 +464,9 @@ export default function BudgetScreen() {
           editValue={editingCatId === cat.id ? editValue : undefined}
           expressionMode={editingCatId === cat.id && expr.expressionMode}
           expression={editingCatId === cat.id ? expr.expression : ""}
-          onPress={() => handleRowPress(cat)}
+          onPress={(pageY) => handleRowPress(cat, pageY)}
           showProgressBar={goalsEnabled && showProgressBars}
-          showBudgetedColumn={!goalsEnabled || editingCatId !== null || !showProgressBars}
+          showBudgetedColumn={showBudgetedColumn}
         />
       </View>
     );
@@ -469,7 +494,11 @@ export default function BudgetScreen() {
               onClearHold={() =>
                 Alert.alert(t("releaseHoldTitle"), t("releaseHoldMessage"), [
                   { text: t("cancel"), style: "cancel" },
-                  { text: t("release"), style: "destructive", onPress: () => resetHoldFn(month) },
+                  {
+                    text: t("release"),
+                    style: "destructive",
+                    onPress: () => resetHoldFn(month),
+                  },
                 ])
               }
             />
@@ -489,14 +518,18 @@ export default function BudgetScreen() {
             renderItem={renderItem}
             renderSectionHeader={renderSectionHeader}
             stickySectionHeadersEnabled
-            onScroll={handleScroll}
+            onScroll={handleScrollForOffset}
             onScrollBeginDrag={() => Keyboard.dismiss()}
             scrollEventThrottle={16}
-            extraData={`${collapsedGroups.size}-${editingCatId}`}
+            extraData={collapsedGroups.size}
             ListHeaderComponent={
               dataReady && (overspentCount > 0 || uncategorizedCount > 0) ? (
                 <View
-                  style={{ paddingTop: spacing.xs, paddingBottom: spacing.xs, gap: spacing.xs }}
+                  style={{
+                    paddingTop: spacing.xs,
+                    paddingBottom: spacing.xs,
+                    gap: spacing.xs,
+                  }}
                 >
                   {overspentCount > 0 && (
                     <OverspentPill count={overspentCount} onPress={handleOverspentPress} />
@@ -540,7 +573,7 @@ export default function BudgetScreen() {
                 </View>
               )
             }
-            contentContainerStyle={{ paddingBottom: 80 }}
+            contentContainerStyle={{ paddingBottom: 200 }}
           />
         )}
 

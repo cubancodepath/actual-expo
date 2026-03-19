@@ -93,6 +93,9 @@ export class DependencyGraph {
       }
     }
 
+    // Post-order DFS produces dependents before dependencies.
+    // Reverse to get dependencies-first order (correct for computation).
+    result.reverse();
     return result;
   }
 }

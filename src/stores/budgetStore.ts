@@ -88,20 +88,6 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
       // Try to build from spreadsheet first
       let data = buildBudgetMonthFromSpreadsheet(month);
 
-      if (__DEV__ && data) {
-        const ss = getSpreadsheet();
-        const sheet = sheetForMonth(month);
-        console.log(`[budgetStore] ${month}:`, {
-          toBudget: ss.getValue(sheet, envelopeBudget.toBudget),
-          totalIncome: ss.getValue(sheet, envelopeBudget.totalIncome),
-          totalBudgeted: ss.getValue(sheet, envelopeBudget.totalBudgeted),
-          fromLastMonth: ss.getValue(sheet, envelopeBudget.fromLastMonth),
-          incomeAvailable: ss.getValue(sheet, envelopeBudget.incomeAvailable),
-          lastMonthOverspent: ss.getValue(sheet, envelopeBudget.lastMonthOverspent),
-          buffered: ss.getValue(sheet, envelopeBudget.buffered),
-        });
-      }
-
       if (data) {
         // Populate groups from categories
         const [cats, groups] = await Promise.all([getCategories(), getCategoryGroups()]);
@@ -109,7 +95,13 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
         const sheet = sheetForMonth(month);
         const num = (v: unknown) => (typeof v === "number" ? v : 0);
 
-        data.groups = groups.map((g) => {
+        // Sort: expense groups by sort_order first, income group last
+        const sortedGroups = [...groups].sort((a, b) => {
+          if (a.is_income !== b.is_income) return a.is_income ? 1 : -1;
+          return (a.sort_order ?? 0) - (b.sort_order ?? 0);
+        });
+
+        data.groups = sortedGroups.map((g) => {
           const groupCats = cats.filter((c) => c.cat_group === g.id);
           const categories: BudgetCategory[] = groupCats.map((c) => {
             const goalInfo = c.goal_def ? inferGoalFromDef(c.goal_def) : null;

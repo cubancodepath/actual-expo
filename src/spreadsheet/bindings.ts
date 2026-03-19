@@ -31,6 +31,8 @@ export const envelopeBudget = {
   fromLastMonth: "from-last-month",
   lastMonthOverspent: "last-month-overspent",
   buffered: "buffered",
+  bufferedAuto: "buffered-auto",
+  bufferedSelected: "buffered-selected",
 
   // ---- Group-level (one per group per month) ----
   groupBudgeted: field("group-budget"),

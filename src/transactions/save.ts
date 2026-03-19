@@ -11,7 +11,7 @@ import { batchMessages } from "../sync";
 import { getCurrentPosition } from "../services/locationService";
 import { usePrefsStore } from "../stores/prefsStore";
 import { getAllFeatureFlags } from "../preferences";
-import { usePayeeLocationsStore } from "../stores/payeeLocationsStore";
+import { createPayeeLocation } from "../payee-locations";
 import {
   addTransaction,
   updateTransaction,
@@ -255,7 +255,7 @@ function savePayeeLocationIfEnabled(payeeId: string): void {
 
       return getCurrentPosition().then((coords) => {
         if (coords) {
-          return usePayeeLocationsStore.getState().saveLocation(payeeId, coords);
+          return createPayeeLocation(payeeId, coords);
         }
       });
     })

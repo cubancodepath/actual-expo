@@ -130,6 +130,14 @@ export const schema: Schema = {
     },
     defaultOrder: ["id"],
   },
+
+  preferences: {
+    fields: {
+      id: { type: "id" },
+      value: { type: "string" },
+    },
+    defaultOrder: ["id"],
+  },
 };
 
 /** Mapping tables that resolve IDs to target IDs (payee_mapping, category_mapping). */

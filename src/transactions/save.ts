@@ -10,7 +10,7 @@ import { findOrCreatePayee } from "../payees";
 import { batchMessages } from "../sync";
 import { getCurrentPosition } from "../services/locationService";
 import { usePrefsStore } from "../stores/prefsStore";
-import { useFeatureFlagsStore } from "../stores/featureFlagsStore";
+import { getAllFeatureFlags } from "../preferences";
 import { usePayeeLocationsStore } from "../stores/payeeLocationsStore";
 import {
   addTransaction,
@@ -246,16 +246,18 @@ async function linkSchedule(
 }
 
 function savePayeeLocationIfEnabled(payeeId: string): void {
-  if (!useFeatureFlagsStore.getState().payeeLocations) return;
+  getAllFeatureFlags()
+    .then((flags) => {
+      if (!flags.payeeLocations) return;
 
-  const { isLocalOnly, serverFeatures } = usePrefsStore.getState();
-  if (!isLocalOnly && !serverFeatures.payeeLocations) return;
+      const { isLocalOnly, serverFeatures } = usePrefsStore.getState();
+      if (!isLocalOnly && !serverFeatures.payeeLocations) return;
 
-  getCurrentPosition()
-    .then((coords) => {
-      if (coords) {
-        return usePayeeLocationsStore.getState().saveLocation(payeeId, coords);
-      }
+      return getCurrentPosition().then((coords) => {
+        if (coords) {
+          return usePayeeLocationsStore.getState().saveLocation(payeeId, coords);
+        }
+      });
     })
     .catch(() => {
       // Silently ignore — location is best-effort

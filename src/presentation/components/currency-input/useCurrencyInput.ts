@@ -3,7 +3,7 @@ import { TextInput, type ViewStyle } from "react-native";
 import { useExpressionMode } from "../../hooks/useExpressionMode";
 import { useCursorBlink } from "../../hooks/useCursorBlink";
 import { useKeyboardBlur } from "../../hooks/useKeyboardBlur";
-import { usePreferencesStore } from "../../../stores/preferencesStore";
+import { useSyncedPref } from "../../hooks/useSyncedPref";
 import { MAX_CENTS } from "../../../lib/currency";
 
 interface UseCurrencyInputOptions {
@@ -37,10 +37,12 @@ export function useCurrencyInput({
   const inputRef = useRef<TextInput>(null);
 
   // Subscribe to format prefs for reactivity (formatCents reads module-level config)
-  usePreferencesStore(
-    (s) =>
-      `${s.numberFormat}:${s.hideFraction}:${s.defaultCurrencyCode}:${s.defaultCurrencyCustomSymbol}:${s.currencySymbolPosition}:${s.currencySpaceBetweenAmountAndSymbol}`,
-  );
+  useSyncedPref("numberFormat");
+  useSyncedPref("hideFraction");
+  useSyncedPref("defaultCurrencyCode");
+  useSyncedPref("defaultCurrencyCustomSymbol");
+  useSyncedPref("currencySymbolPosition");
+  useSyncedPref("currencySpaceBetweenAmountAndSymbol");
 
   const expr = useExpressionMode({ value, onChangeValue });
   const { renderCursor } = useCursorBlink(focused);

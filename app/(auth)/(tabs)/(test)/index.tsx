@@ -23,7 +23,7 @@ import { CurrencySymbol } from "@/presentation/components/atoms/CurrencySymbol";
 import { useCursorBlink } from "@/presentation/hooks/useCursorBlink";
 import { useExpressionMode } from "@/presentation/hooks/useExpressionMode";
 import { useKeyboardBlur } from "@/presentation/hooks/useKeyboardBlur";
-import { usePreferencesStore } from "@/stores/preferencesStore";
+import { useSyncedPref } from "@/presentation/hooks/useSyncedPref";
 import { MAX_CENTS, formatCents, formatExpression } from "@/lib/currency";
 import { formatAmountParts } from "@/lib/format";
 
@@ -255,10 +255,12 @@ function CategoryRow({
 }) {
   const { colors, spacing } = useTheme();
   const { renderCursor } = useCursorBlink(isActive);
-  usePreferencesStore(
-    (s) =>
-      `${s.numberFormat}:${s.hideFraction}:${s.defaultCurrencyCode}:${s.defaultCurrencyCustomSymbol}:${s.currencySymbolPosition}:${s.currencySpaceBetweenAmountAndSymbol}`,
-  );
+  useSyncedPref("numberFormat");
+  useSyncedPref("hideFraction");
+  useSyncedPref("defaultCurrencyCode");
+  useSyncedPref("defaultCurrencyCustomSymbol");
+  useSyncedPref("currencySymbolPosition");
+  useSyncedPref("currencySpaceBetweenAmountAndSymbol");
 
   const displayColor = isActive
     ? colors.primary
@@ -370,10 +372,12 @@ export default function TestPlayground() {
 
   const sharedInputRef = useRef<TextInput>(null);
   const expr = useExpressionMode({ value: activeValue, onChangeValue: handleChangeValue });
-  usePreferencesStore(
-    (s) =>
-      `${s.numberFormat}:${s.hideFraction}:${s.defaultCurrencyCode}:${s.defaultCurrencyCustomSymbol}:${s.currencySymbolPosition}:${s.currencySpaceBetweenAmountAndSymbol}`,
-  );
+  useSyncedPref("numberFormat");
+  useSyncedPref("hideFraction");
+  useSyncedPref("defaultCurrencyCode");
+  useSyncedPref("defaultCurrencyCustomSymbol");
+  useSyncedPref("currencySymbolPosition");
+  useSyncedPref("currencySpaceBetweenAmountAndSymbol");
 
   function handleBlur() {
     expr.handleBlurExpression();

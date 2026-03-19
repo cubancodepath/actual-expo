@@ -17,8 +17,6 @@ import {
 import { resetAllStores } from "../stores/resetStores";
 import { usePrefsStore } from "../stores/prefsStore";
 import { useBudgetStore } from "../stores/budgetStore";
-import { usePreferencesStore } from "../stores/preferencesStore";
-import { useFeatureFlagsStore } from "../stores/featureFlagsStore";
 import type { BudgetFile } from "./authService";
 import {
   type BudgetMetadata,
@@ -396,12 +394,11 @@ export async function openBudget(budgetId: string): Promise<void> {
     await Promise.all(balanceQueries);
   }
 
-  // Load remaining stores from the newly opened DB
-  await Promise.allSettled([
-    useBudgetStore.getState().load(),
-    usePreferencesStore.getState().load(),
-    useFeatureFlagsStore.getState().load(),
-  ]);
+  // Load synced prefs store (includes format config + feature flags)
+  const { useSyncedPrefsStore } = await import("../presentation/hooks/useSyncedPref");
+  await useSyncedPrefsStore.getState().load();
+
+  await Promise.allSettled([useBudgetStore.getState().load()]);
 
   // Update global prefs with active budget info
   usePrefsStore.getState().setPrefs({

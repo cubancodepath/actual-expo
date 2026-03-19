@@ -2,7 +2,7 @@ import { View } from "react-native";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Text } from "..";
 import { formatDateLong } from "../../../lib/date";
-import { usePreferencesStore } from "../../../stores/preferencesStore";
+import { useSyncedPref } from "../../hooks/useSyncedPref";
 
 interface DateSectionHeaderProps {
   date: number;
@@ -11,7 +11,7 @@ interface DateSectionHeaderProps {
 export function DateSectionHeader({ date }: DateSectionHeaderProps) {
   const { colors, spacing } = useTheme();
   // Subscribe to dateFormat so component re-renders when it changes
-  usePreferencesStore((s) => s.dateFormat);
+  useSyncedPref("dateFormat");
 
   return (
     <View

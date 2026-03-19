@@ -1,6 +1,7 @@
-import { useFeatureFlagsStore } from "../stores/featureFlagsStore";
+import { useSyncedPref } from "../presentation/hooks/useSyncedPref";
 import type { FeatureFlag } from "../preferences/featureFlags";
 
 export function useFeatureFlag(name: FeatureFlag): boolean {
-  return useFeatureFlagsStore((s) => s[name]);
+  const [value] = useSyncedPref(`flags.${name}`);
+  return value === "true";
 }

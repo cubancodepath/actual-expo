@@ -2,7 +2,7 @@ import { StyleSheet, View } from "react-native";
 import { Text } from "@/presentation/components/atoms/Text";
 import { CurrencySymbol } from "@/presentation/components/atoms/CurrencySymbol";
 import { useCursorBlink } from "@/presentation/hooks/useCursorBlink";
-import { usePreferencesStore } from "@/stores/preferencesStore";
+import { useSyncedPref } from "@/presentation/hooks/useSyncedPref";
 import { formatAmountParts } from "@/lib/format";
 import { formatCents, formatExpression } from "@/lib/currency";
 
@@ -33,10 +33,13 @@ export function CurrencyAmountDisplay({
 }: CurrencyAmountDisplayProps) {
   const { renderCursor } = useCursorBlink(isActive);
 
-  usePreferencesStore(
-    (s) =>
-      `${s.numberFormat}:${s.hideFraction}:${s.defaultCurrencyCode}:${s.defaultCurrencyCustomSymbol}:${s.currencySymbolPosition}:${s.currencySpaceBetweenAmountAndSymbol}`,
-  );
+  // Subscribe to format prefs for reactivity (re-render when any format pref changes)
+  useSyncedPref("numberFormat");
+  useSyncedPref("hideFraction");
+  useSyncedPref("defaultCurrencyCode");
+  useSyncedPref("defaultCurrencyCustomSymbol");
+  useSyncedPref("currencySymbolPosition");
+  useSyncedPref("currencySpaceBetweenAmountAndSymbol");
 
   const isHero = fontSize >= 32;
   const parts = isActive && expressionMode ? null : formatAmountParts(Math.abs(amount), false);

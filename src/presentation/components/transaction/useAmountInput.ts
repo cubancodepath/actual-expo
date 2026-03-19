@@ -1,6 +1,6 @@
 import { useId, useImperativeHandle, useRef, useState } from "react";
 import { TextInput } from "react-native";
-import { usePreferencesStore } from "@/stores/preferencesStore";
+import { useSyncedPref } from "@/presentation/hooks/useSyncedPref";
 import { MAX_CENTS } from "@/lib/currency";
 import { useExpressionMode } from "@/presentation/hooks/useExpressionMode";
 import { useCursorBlink } from "@/presentation/hooks/useCursorBlink";
@@ -15,11 +15,13 @@ export function useAmountInput(initialCents = 0) {
   const sharedInputRef = useRef<TextInput>(null);
   const selfRef = useRef<CurrencyInputRef>(null);
 
-  // Subscribe to format prefs for reactivity
-  usePreferencesStore(
-    (s) =>
-      `${s.numberFormat}:${s.hideFraction}:${s.defaultCurrencyCode}:${s.defaultCurrencyCustomSymbol}:${s.currencySymbolPosition}:${s.currencySpaceBetweenAmountAndSymbol}`,
-  );
+  // Subscribe to format prefs for reactivity (re-render when any format pref changes)
+  useSyncedPref("numberFormat");
+  useSyncedPref("hideFraction");
+  useSyncedPref("defaultCurrencyCode");
+  useSyncedPref("defaultCurrencyCustomSymbol");
+  useSyncedPref("currencySymbolPosition");
+  useSyncedPref("currencySpaceBetweenAmountAndSymbol");
 
   // Expression mode
   const expr = useExpressionMode({

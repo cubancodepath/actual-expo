@@ -14,10 +14,13 @@ import {
   promptToEnableEncryption,
 } from "@/presentation/components";
 import { useErrorHandler } from "@/presentation/hooks/useErrorHandler";
-import { usePreferencesStore } from "@/stores/preferencesStore";
+import { useSyncedPref, useFeatureFlag } from "@/presentation/hooks/useSyncedPref";
 import { usePrefsStore } from "@/stores/prefsStore";
-import { useFeatureFlagsStore } from "@/stores/featureFlagsStore";
-import { ALL_FEATURE_FLAGS, FEATURE_FLAG_LABELS } from "@/preferences/featureFlags";
+import {
+  ALL_FEATURE_FLAGS,
+  FEATURE_FLAG_LABELS,
+  type FeatureFlag,
+} from "@/preferences/featureFlags";
 import {
   DATE_FORMAT_OPTIONS,
   NUMBER_FORMAT_OPTIONS,
@@ -104,6 +107,26 @@ function PickerRow({
   return <ListItem title={label} right={picker} showSeparator={showSeparator} />;
 }
 
+function FeatureFlagRow({ flag, showSeparator }: { flag: FeatureFlag; showSeparator: boolean }) {
+  const { colors } = useTheme();
+  const [enabled, setEnabled] = useFeatureFlag(flag);
+  return (
+    <ListItem
+      title={FEATURE_FLAG_LABELS[flag].title}
+      subtitle={FEATURE_FLAG_LABELS[flag].subtitle}
+      onPress={() => setEnabled(!enabled)}
+      right={
+        <Switch
+          value={enabled}
+          onValueChange={(v) => setEnabled(v)}
+          trackColor={{ true: colors.primary }}
+        />
+      }
+      showSeparator={showSeparator}
+    />
+  );
+}
+
 function EncryptionSection() {
   const { t } = useTranslation("settings");
   const { colors, spacing } = useTheme();
@@ -144,19 +167,21 @@ export default function BudgetSettingsScreen() {
 
   const { activeBudgetId, budgetName, isLocalOnly, groupId, fileId, serverUrl, token } =
     usePrefsStore();
-  const prefs = usePreferencesStore();
-  const {
-    dateFormat,
-    numberFormat,
-    firstDayOfWeekIdx,
-    hideFraction,
-    defaultCurrencyCode,
-    currencySymbolPosition,
-    currencySpaceBetweenAmountAndSymbol,
-    defaultCurrencyCustomSymbol,
-    set,
-  } = prefs;
-  const featureFlags = useFeatureFlagsStore();
+
+  const [dateFormat, setDateFormat] = useSyncedPref("dateFormat");
+  const [numberFormat, setNumberFormat] = useSyncedPref("numberFormat");
+  const [firstDayOfWeekIdx, setFirstDayOfWeekIdx] = useSyncedPref("firstDayOfWeekIdx");
+  const [hideFraction, setHideFraction] = useSyncedPref("hideFraction");
+  const [defaultCurrencyCode, setDefaultCurrencyCode] = useSyncedPref("defaultCurrencyCode");
+  const [currencySymbolPosition, setCurrencySymbolPosition] =
+    useSyncedPref("currencySymbolPosition");
+  const [currencySpaceBetweenAmountAndSymbol, setCurrencySpaceBetweenAmountAndSymbol] =
+    useSyncedPref("currencySpaceBetweenAmountAndSymbol");
+  const [defaultCurrencyCustomSymbol, setDefaultCurrencyCustomSymbol] = useSyncedPref(
+    "defaultCurrencyCustomSymbol",
+  );
+
+  const [currencyFlagEnabled] = useFeatureFlag("currency");
 
   const isSynced = !isLocalOnly && !!groupId;
   const hasServer = !!serverUrl && !!token;
@@ -288,23 +313,23 @@ export default function BudgetSettingsScreen() {
           label={t("dateFormat")}
           selection={dateFormat}
           options={dateOptions}
-          onSelectionChange={(v) => set("dateFormat", v)}
+          onSelectionChange={(v) => setDateFormat(v)}
           showSeparator
         />
         <PickerRow
           label={t("numberFormat")}
           selection={numberFormat}
           options={numberOptions}
-          onSelectionChange={(v) => set("numberFormat", v)}
+          onSelectionChange={(v) => setNumberFormat(v)}
           showSeparator
         />
         <ListItem
           title={t("hideDecimalPlaces")}
-          onPress={() => set("hideFraction", hideFraction === "true" ? "false" : "true")}
+          onPress={() => setHideFraction(hideFraction === "true" ? "false" : "true")}
           right={
             <Switch
               value={hideFraction === "true"}
-              onValueChange={(v) => set("hideFraction", v ? "true" : "false")}
+              onValueChange={(v) => setHideFraction(v ? "true" : "false")}
               trackColor={{ true: colors.primary }}
               accessibilityLabel={t("hideDecimalPlaces")}
             />
@@ -313,7 +338,7 @@ export default function BudgetSettingsScreen() {
       </Card>
 
       {/* Currency — gated by feature flag */}
-      {featureFlags.currency && (
+      {currencyFlagEnabled && (
         <>
           <SectionHeader title={t("currency")} style={{ marginTop: spacing.xl }} />
           <Card>
@@ -326,13 +351,13 @@ export default function BudgetSettingsScreen() {
               }))}
               onSelectionChange={(code) => {
                 const cur = getCurrency(code);
-                set("defaultCurrencyCode", code);
+                setDefaultCurrencyCode(code);
                 if (code) {
-                  set("numberFormat", cur.numberFormat);
-                  set("hideFraction", cur.decimalPlaces === 0 ? "true" : "false");
-                  set("currencySymbolPosition", cur.symbolFirst ? "before" : "after");
-                  set("currencySpaceBetweenAmountAndSymbol", cur.symbolFirst ? "false" : "true");
-                  set("defaultCurrencyCustomSymbol", "");
+                  setNumberFormat(cur.numberFormat);
+                  setHideFraction(cur.decimalPlaces === 0 ? "true" : "false");
+                  setCurrencySymbolPosition(cur.symbolFirst ? "before" : "after");
+                  setCurrencySpaceBetweenAmountAndSymbol(cur.symbolFirst ? "false" : "true");
+                  setDefaultCurrencyCustomSymbol("");
                 }
               }}
               showSeparator={hasCurrency}
@@ -346,14 +371,13 @@ export default function BudgetSettingsScreen() {
                     { value: "before", label: t("symbolBefore") },
                     { value: "after", label: t("symbolAfter") },
                   ]}
-                  onSelectionChange={(v) => set("currencySymbolPosition", v)}
+                  onSelectionChange={(v) => setCurrencySymbolPosition(v)}
                   showSeparator
                 />
                 <ListItem
                   title={t("spaceBetween")}
                   onPress={() =>
-                    set(
-                      "currencySpaceBetweenAmountAndSymbol",
+                    setCurrencySpaceBetweenAmountAndSymbol(
                       currencySpaceBetweenAmountAndSymbol === "true" ? "false" : "true",
                     )
                   }
@@ -361,7 +385,7 @@ export default function BudgetSettingsScreen() {
                     <Switch
                       value={currencySpaceBetweenAmountAndSymbol === "true"}
                       onValueChange={(v) =>
-                        set("currencySpaceBetweenAmountAndSymbol", v ? "true" : "false")
+                        setCurrencySpaceBetweenAmountAndSymbol(v ? "true" : "false")
                       }
                       trackColor={{ true: colors.primary }}
                     />
@@ -374,7 +398,7 @@ export default function BudgetSettingsScreen() {
                     <View style={{ flexDirection: "row", alignItems: "center" }}>
                       <TextInput
                         value={defaultCurrencyCustomSymbol}
-                        onChangeText={(v) => set("defaultCurrencyCustomSymbol", v)}
+                        onChangeText={(v) => setDefaultCurrencyCustomSymbol(v)}
                         placeholder={getCurrency(defaultCurrencyCode).symbol}
                         placeholderTextColor={colors.textMuted}
                         style={{
@@ -411,7 +435,7 @@ export default function BudgetSettingsScreen() {
           label={t("firstDayOfWeek")}
           selection={firstDayOfWeekIdx}
           options={DAY_OF_WEEK_OPTIONS}
-          onSelectionChange={(v) => set("firstDayOfWeekIdx", v)}
+          onSelectionChange={(v) => setFirstDayOfWeekIdx(v)}
         />
       </Card>
 
@@ -457,18 +481,9 @@ export default function BudgetSettingsScreen() {
       <SectionHeader title={t("experimentalFeatures")} style={{ marginTop: spacing.xl }} />
       <Card>
         {ALL_FEATURE_FLAGS.map((flag, index) => (
-          <ListItem
+          <FeatureFlagRow
             key={flag}
-            title={FEATURE_FLAG_LABELS[flag].title}
-            subtitle={FEATURE_FLAG_LABELS[flag].subtitle}
-            onPress={() => featureFlags.set(flag, !featureFlags[flag])}
-            right={
-              <Switch
-                value={featureFlags[flag]}
-                onValueChange={(v) => featureFlags.set(flag, v)}
-                trackColor={{ true: colors.primary }}
-              />
-            }
+            flag={flag}
             showSeparator={index < ALL_FEATURE_FLAGS.length - 1}
           />
         ))}

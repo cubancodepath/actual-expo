@@ -22,8 +22,9 @@ export default function QuickEditCategoryScreen() {
   const router = useRouter();
   const { categoryId } = useLocalSearchParams<{ categoryId: string }>();
 
-  const { categories } = useCategories();
+  const { categories, groups } = useCategories();
   const category = categories.find((c) => c.id === categoryId);
+  const isIncome = groups.find((g) => g.id === category?.cat_group)?.is_income ?? false;
   const coverTarget = useBudgetUIStore((s) => s.coverTarget);
   const setCoverTarget = useBudgetUIStore((s) => s.setCoverTarget);
 
@@ -159,8 +160,8 @@ export default function QuickEditCategoryScreen() {
         </Pressable>
       )}
 
-      {/* Target */}
-      {goalsEnabled && (
+      {/* Target (not for income categories) */}
+      {goalsEnabled && !isIncome && (
         <>
           <Text
             variant="caption"

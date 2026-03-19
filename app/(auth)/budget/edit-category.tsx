@@ -202,8 +202,9 @@ export default function CategoryDetailsScreen() {
   const month = useBudgetUIStore((s) => s.month);
   const coverTarget = useBudgetUIStore((s) => s.coverTarget);
   const setCoverTarget = useBudgetUIStore((s) => s.setCoverTarget);
-  const { categories } = useCategories();
+  const { categories, groups } = useCategories();
   const category = categories.find((c) => c.id === categoryId);
+  const isIncome = groups.find((g) => g.id === category?.cat_group)?.is_income ?? false;
   const sheet = sheetForMonth(month);
   const budgeted = useSheetValueNumber(sheet, envelopeBudget.catBudgeted(categoryId ?? ""));
   const spent = useSheetValueNumber(sheet, envelopeBudget.catSpent(categoryId ?? ""));
@@ -456,8 +457,8 @@ export default function CategoryDetailsScreen() {
           </View>
         )}
 
-        {/* ── Target Section ── */}
-        {goalsEnabled && (
+        {/* ── Target Section (not for income categories) ── */}
+        {goalsEnabled && !isIncome && (
           <>
             <Text variant="caption" color={colors.textMuted} style={sectionLabelStyle}>
               {t("target")}

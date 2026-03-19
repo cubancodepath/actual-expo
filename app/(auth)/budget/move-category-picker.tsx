@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useBudgetStore } from "@/stores/budgetStore";
+import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { Amount } from "@/presentation/components/atoms/Amount";
 import { CategoryPickerList, type GroupedCategory } from "@/presentation/components";
 
@@ -14,7 +15,7 @@ export default function MoveCategoryPickerScreen() {
     direction: string;
   }>();
   const data = useBudgetStore((s) => s.data);
-  const setCoverTarget = useBudgetStore((s) => s.setCoverTarget);
+  const setCoverTarget = useBudgetUIStore((s) => s.setCoverTarget);
 
   const excludeSet = useMemo(
     () => new Set([...(excludeIds?.split(",") ?? []), moveCatId].filter(Boolean)),

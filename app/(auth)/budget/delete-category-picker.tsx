@@ -3,6 +3,7 @@ import { Alert, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useBudgetStore } from "@/stores/budgetStore";
+import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { Amount } from "@/presentation/components/atoms/Amount";
 import { Text } from "@/presentation/components/atoms/Text";
@@ -18,7 +19,7 @@ export default function DeleteCategoryPickerScreen() {
     moveCatId: string;
   }>();
   const data = useBudgetStore((s) => s.data);
-  const setCoverTarget = useBudgetStore((s) => s.setCoverTarget);
+  const setCoverTarget = useBudgetUIStore((s) => s.setCoverTarget);
 
   const excludeSet = useMemo(
     () => new Set([...(excludeIds?.split(",") ?? []), moveCatId].filter(Boolean)),

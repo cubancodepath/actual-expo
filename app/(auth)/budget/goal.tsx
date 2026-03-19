@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import { datePickerStyle, frame, pickerStyle, tag, tint } from "@expo/ui/swift-ui/modifiers";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { useCategories } from "@/presentation/hooks/useCategories";
-import { useBudgetStore } from "@/stores/budgetStore";
+import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
 import { Card } from "@/presentation/components/atoms/Card";
@@ -425,7 +425,7 @@ export default function GoalEditorScreen() {
         await setGoalTemplates(categoryId, buildTemplates(), catNames);
       });
       // Update goal indicator AFTER batchMessages so it reads the fresh goal_def
-      await updateGoalIndicator(useBudgetStore.getState().month, categoryId);
+      await updateGoalIndicator(useBudgetUIStore.getState().month, categoryId);
       dismiss();
     } catch {
       Alert.alert(t("couldNotSaveTitle"), t("couldNotSaveMessage"));

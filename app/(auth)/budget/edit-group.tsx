@@ -3,7 +3,6 @@ import { Alert, ScrollView } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { useBudgetStore } from "@/stores/budgetStore";
 import { useUndoStore } from "@/stores/undoStore";
 import { updateCategoryGroup, deleteCategoryGroup } from "@/categories";
 import { useCategories } from "@/presentation/hooks/useCategories";

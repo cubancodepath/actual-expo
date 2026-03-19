@@ -7,7 +7,7 @@ import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { Text } from "@/presentation/components/atoms/Text";
 import { RowSeparator } from "@/presentation/components/atoms/RowSeparator";
 import { Button } from "@/presentation/components/atoms/Button";
-import { useBudgetStore } from "@/stores/budgetStore";
+import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { first } from "@/db";
 
 // ---------------------------------------------------------------------------
@@ -58,7 +58,7 @@ export default function BudgetNotesScreen() {
   const { colors, spacing, borderRadius: br } = useTheme();
   const router = useRouter();
   const { categoryName } = useLocalSearchParams<{ categoryName?: string }>();
-  const month = useBudgetStore((s) => s.month);
+  const month = useBudgetUIStore((s) => s.month);
 
   const [sections, setSections] = useState<NoteSection[]>([]);
   const [loading, setLoading] = useState(true);

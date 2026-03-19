@@ -15,7 +15,6 @@ import { encode, decode } from "./src/sync/encoder";
 import { openDatabase } from "./src/db";
 import { loadClock } from "./src/sync";
 import { usePrefsStore } from "./src/stores/prefsStore";
-import { useBudgetStore } from "./src/stores/budgetStore";
 
 type TestResult = {
   name: string;

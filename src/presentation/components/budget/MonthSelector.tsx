@@ -10,7 +10,7 @@ import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { Icon } from "../atoms/Icon";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../../providers/ThemeProvider";
-import { useBudgetStore } from "../../../stores/budgetStore";
+import { useBudgetUIStore } from "../../../stores/budgetUIStore";
 import { addMonths, formatMonth } from "../../../lib/date";
 
 const SWIPE_THRESHOLD = 50;
@@ -18,8 +18,8 @@ const SWIPE_THRESHOLD = 50;
 export function MonthSelector() {
   const { i18n } = useTranslation();
   const { colors, spacing } = useTheme();
-  const month = useBudgetStore((s) => s.month);
-  const setMonth = useBudgetStore((s) => s.setMonth);
+  const month = useBudgetUIStore((s) => s.month);
+  const setMonth = useBudgetUIStore((s) => s.setMonth);
 
   const translateX = useSharedValue(0);
   const opacity = useSharedValue(1);

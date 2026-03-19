@@ -13,6 +13,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { useBudgetStore } from "@/stores/budgetStore";
+import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { useUndoStore } from "@/stores/undoStore";
 import { updateCategory, deleteCategory } from "@/categories";
 import { useCategories } from "@/presentation/hooks/useCategories";
@@ -195,9 +196,10 @@ export default function CategoryDetailsScreen() {
   const goalsEnabled = useFeatureFlag("goalTemplatesEnabled");
 
   // Data
-  const { month, data } = useBudgetStore();
-  const coverTarget = useBudgetStore((s) => s.coverTarget);
-  const setCoverTarget = useBudgetStore((s) => s.setCoverTarget);
+  const month = useBudgetUIStore((s) => s.month);
+  const data = useBudgetStore((s) => s.data);
+  const coverTarget = useBudgetUIStore((s) => s.coverTarget);
+  const setCoverTarget = useBudgetUIStore((s) => s.setCoverTarget);
   const { categories } = useCategories();
   const category = categories.find((c) => c.id === categoryId);
   const budgetCat = data?.groups.flatMap((g) => g.categories).find((c) => c.id === categoryId);

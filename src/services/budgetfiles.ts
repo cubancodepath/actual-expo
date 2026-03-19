@@ -16,7 +16,6 @@ import {
 } from "../sync";
 import { resetAllStores } from "../stores/resetStores";
 import { usePrefsStore } from "../stores/prefsStore";
-import { useBudgetStore } from "../stores/budgetStore";
 import type { BudgetFile } from "./authService";
 import {
   type BudgetMetadata,
@@ -402,7 +401,9 @@ export async function openBudget(budgetId: string): Promise<void> {
   const { initSpreadsheet } = await import("../spreadsheet/sync");
   await initSpreadsheet();
 
-  await Promise.allSettled([useBudgetStore.getState().load()]);
+  // Build BudgetMonth from spreadsheet data for the bridge store
+  const { useBudgetStore } = await import("../stores/budgetStore");
+  await useBudgetStore.getState().load();
 
   // Update global prefs with active budget info
   usePrefsStore.getState().setPrefs({

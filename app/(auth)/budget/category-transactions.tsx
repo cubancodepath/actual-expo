@@ -10,7 +10,7 @@ import { TransactionRow } from "@/presentation/components/account/TransactionRow
 import { DateSectionHeader } from "@/presentation/components/account/DateSectionHeader";
 import { SelectModeToolbar } from "@/presentation/components/transaction/SelectModeToolbar";
 import { transactionQuery } from "@/transactions/query";
-import { useBudgetStore } from "@/stores/budgetStore";
+import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { useUndoStore } from "@/stores/undoStore";
 import { useTags } from "@/presentation/hooks/useTags";
 import {
@@ -50,7 +50,7 @@ export default function CategoryTransactionsScreen() {
     categoryName: string;
   }>();
 
-  const month = useBudgetStore((s) => s.month);
+  const month = useBudgetUIStore((s) => s.month);
   const undoVersion = useUndoStore((s) => s.undoVersion);
   const { tags } = useTags();
 

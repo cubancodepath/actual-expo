@@ -17,7 +17,6 @@ import i18n from "@/i18n/config";
 import { ThemeProvider } from "@/presentation/providers/ThemeProvider";
 import { usePrefsStore } from "@/stores/prefsStore";
 import { listen } from "@/sync/syncEvents";
-import { useBudgetStore } from "@/stores/budgetStore";
 import { fullSync, isSwitchingBudget } from "@/sync";
 import { ensureBudgetsDir, budgetExists } from "@/services/budgetMetadata";
 import { openBudget } from "@/services/budgetfiles";
@@ -106,29 +105,22 @@ function RootLayout() {
 
     updateAppBadge();
 
-    // Debounce badge updates to coalesce rapid store changes (e.g. during sync)
+    // Debounce badge updates to coalesce rapid changes (e.g. during sync)
     let badgeTimer: ReturnType<typeof setTimeout> | null = null;
     const debouncedBadge = () => {
       if (badgeTimer) clearTimeout(badgeTimer);
       badgeTimer = setTimeout(updateAppBadge, 500);
     };
 
-    let prevBudget = useBudgetStore.getState().data;
-    const unsubBudget = useBudgetStore.subscribe((state) => {
-      if (state.data !== prevBudget) {
-        prevBudget = state.data;
-        debouncedBadge();
-      }
-    });
-    const unsubTxns = listen((event) => {
-      if (event.tables.includes("transactions")) {
+    const unsubEvents = listen((event) => {
+      const tables = new Set(event.tables);
+      if (tables.has("transactions") || tables.has("spreadsheet_cells")) {
         debouncedBadge();
       }
     });
     return () => {
       if (badgeTimer) clearTimeout(badgeTimer);
-      unsubBudget();
-      unsubTxns();
+      unsubEvents();
     };
   }, [ready, isConfigured]);
 

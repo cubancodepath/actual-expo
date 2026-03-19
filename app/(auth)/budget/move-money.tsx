@@ -14,7 +14,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { palette } from "@/theme/colors";
-import { useBudgetStore } from "@/stores/budgetStore";
+import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { transferMultipleCategories } from "@/budgets";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Amount } from "@/presentation/components/atoms/Amount";
@@ -197,10 +197,9 @@ export default function MoveMoneyScreen() {
     balance: string;
   }>();
 
-  const month = useBudgetStore((s) => s.month);
-  const loadBudget = useBudgetStore((s) => s.load);
-  const coverTarget = useBudgetStore((s) => s.coverTarget);
-  const setCoverTarget = useBudgetStore((s) => s.setCoverTarget);
+  const month = useBudgetUIStore((s) => s.month);
+  const coverTarget = useBudgetUIStore((s) => s.coverTarget);
+  const setCoverTarget = useBudgetUIStore((s) => s.setCoverTarget);
 
   const [direction, setDirection] = useState<MoveDirection>("to");
   const [sources, setSources] = useState<SourceEntry[]>([]);
@@ -291,7 +290,6 @@ export default function MoveMoneyScreen() {
         direction === "to" ? "to" : "from",
         catName,
       );
-      await loadBudget();
       router.back();
     } finally {
       setSaving(false);

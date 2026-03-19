@@ -16,6 +16,7 @@ import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { useCategories } from "@/presentation/hooks/useCategories";
 import { deleteCategory as deleteCategoryFn, deleteCategoryGroup } from "@/categories";
 import { useBudgetStore } from "@/stores/budgetStore";
+import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { useUndoStore } from "@/stores/undoStore";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Amount } from "@/presentation/components/atoms/Amount";
@@ -172,7 +173,7 @@ export default function EditBudgetScreen() {
   const insets = useSafeAreaInsets();
   const { groups, categories } = useCategories();
   const budgetData = useBudgetStore((s) => s.data);
-  const budgetMonth = useBudgetStore((s) => s.month);
+  const budgetMonth = useBudgetUIStore((s) => s.month);
   const monthName = useMemo(() => {
     const [y, m] = budgetMonth.split("-").map(Number);
     return new Date(y, m - 1, 1).toLocaleDateString(i18n.language, { month: "long" });

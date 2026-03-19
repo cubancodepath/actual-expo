@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { palette } from "@/theme/colors";
 import { useBudgetStore } from "@/stores/budgetStore";
+import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { transferMultipleCategories } from "@/budgets";
 import { TO_BUDGET_ID } from "./cover-category-picker";
 import { Text } from "@/presentation/components/atoms/Text";
@@ -99,10 +100,9 @@ export default function CoverSourceScreen() {
     balance: string;
   }>();
 
-  const month = useBudgetStore((s) => s.month);
-  const loadBudget = useBudgetStore((s) => s.load);
-  const coverTarget = useBudgetStore((s) => s.coverTarget);
-  const setCoverTarget = useBudgetStore((s) => s.setCoverTarget);
+  const month = useBudgetUIStore((s) => s.month);
+  const coverTarget = useBudgetUIStore((s) => s.coverTarget);
+  const setCoverTarget = useBudgetUIStore((s) => s.setCoverTarget);
 
   const balanceCents = Math.abs(Number(balance));
   const [sources, setSources] = useState<SourceEntry[]>([]);
@@ -204,7 +204,6 @@ export default function CoverSourceScreen() {
         );
       }
 
-      await loadBudget();
       router.dismiss(2);
     } finally {
       setSaving(false);

@@ -3,7 +3,7 @@ import { Alert, Pressable, ScrollView, type TextInput, View } from "react-native
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { useBudgetStore } from "@/stores/budgetStore";
+import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { useUndoStore } from "@/stores/undoStore";
 import { updateCategory, deleteCategory } from "@/categories";
 import { useCategories } from "@/presentation/hooks/useCategories";
@@ -24,8 +24,8 @@ export default function QuickEditCategoryScreen() {
 
   const { categories } = useCategories();
   const category = categories.find((c) => c.id === categoryId);
-  const coverTarget = useBudgetStore((s) => s.coverTarget);
-  const setCoverTarget = useBudgetStore((s) => s.setCoverTarget);
+  const coverTarget = useBudgetUIStore((s) => s.coverTarget);
+  const setCoverTarget = useBudgetUIStore((s) => s.setCoverTarget);
 
   const [name, setName] = useState("");
   const [editing, setEditing] = useState(false);

@@ -10,6 +10,8 @@ import { AddTransactionButton } from "@/presentation/components/molecules/AddTra
 import { SharedAmountInput } from "@/presentation/components/transaction/SharedAmountInput";
 import type { CurrencyInputRef } from "@/presentation/components/currency-input/CurrencyInput";
 import { useBudgetStore } from "@/stores/budgetStore";
+import { useBudgetUIStore } from "@/stores/budgetUIStore";
+import { setCategoryCarryover, resetHold as resetHoldFn } from "@/budgets";
 import { useCommonMenuActions } from "@/presentation/hooks/useCommonMenuItems";
 import { useRefreshControl } from "@/presentation/hooks/useRefreshControl";
 import { useKeyboardHeight } from "@/presentation/hooks/useKeyboardHeight";
@@ -111,7 +113,8 @@ export default function BudgetScreen() {
   const { t } = useTranslation("budget");
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const router = useRouter();
-  const { month, data, loading, load, setAmount, setCarryover, resetHold } = useBudgetStore();
+  const month = useBudgetUIStore((s) => s.month);
+  const { data, setAmount } = useBudgetStore();
   const { refreshControlProps } = useRefreshControl();
   const { showProgressBars, toggleProgressBars } = usePrefsStore();
   const goalsEnabled = useFeatureFlag("goalTemplatesEnabled");
@@ -283,7 +286,7 @@ export default function BudgetScreen() {
   }
 
   function handleToggleCarryover(cat: BudgetCategory) {
-    setCarryover(cat.id, !cat.carryover);
+    setCategoryCarryover(month, cat.id, !cat.carryover);
   }
 
   function handleCategoryDetails(cat: BudgetCategory) {
@@ -407,7 +410,7 @@ export default function BudgetScreen() {
               onClearHold={() =>
                 Alert.alert(t("releaseHoldTitle"), t("releaseHoldMessage"), [
                   { text: t("cancel"), style: "cancel" },
-                  { text: t("release"), style: "destructive", onPress: () => resetHold() },
+                  { text: t("release"), style: "destructive", onPress: () => resetHoldFn(month) },
                 ])
               }
             />
@@ -415,7 +418,7 @@ export default function BudgetScreen() {
         )}
 
         {/* Budget list */}
-        {loading && !data ? (
+        {!data ? (
           <BudgetListSkeleton />
         ) : (
           <SectionList

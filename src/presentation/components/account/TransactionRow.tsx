@@ -1,14 +1,15 @@
-import { memo, useEffect } from "react";
+import { memo, useEffect, useRef } from "react";
 import { Platform, Pressable, View } from "react-native";
 import Animated, {
   Easing,
-  FadeIn,
-  FadeOut,
   interpolate,
   useAnimatedStyle,
+  useReducedMotion,
   useSharedValue,
+  withSpring,
   withTiming,
 } from "react-native-reanimated";
+import { EaseView } from "react-native-ease";
 import { Icon } from "../atoms/Icon";
 import { ContextMenu } from "../atoms/ContextMenu";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
@@ -37,6 +38,20 @@ interface TransactionRowProps {
   isSelected?: boolean;
 }
 
+// EaseView transitions (state-driven visual animations)
+const TIMING_BG = { type: "timing" as const, duration: 180, easing: "easeOut" as const };
+const SPRING_PULSE = { type: "spring" as const, damping: 18, stiffness: 300, mass: 0.8 };
+const TIMING_CHECK_IN = { type: "timing" as const, duration: 450, easing: "easeOut" as const };
+const TIMING_CHECK_OUT = { type: "timing" as const, duration: 350, easing: "easeOut" as const };
+const NONE = { type: "none" as const };
+
+// Reanimated timing for layout animation (checkbox width) — no bounce
+const LAYOUT_ENTER = { duration: 500, easing: Easing.bezier(0.25, 0.1, 0.25, 1) };
+const LAYOUT_EXIT = { duration: 400, easing: Easing.bezier(0.25, 0.1, 0.25, 1) };
+
+// Checkbox: 22px icon + 8px marginRight = 30px total
+const CHECKBOX_WIDTH = 30;
+
 export const TransactionRow = memo(function TransactionRow({
   item,
   onPress,
@@ -56,79 +71,102 @@ export const TransactionRow = memo(function TransactionRow({
 }: TransactionRowProps) {
   const { colors, spacing } = useTheme();
   const styles = useThemedStyles(createStyles);
+  const reducedMotion = useReducedMotion();
+  const noAnim = reducedMotion ?? false;
 
-  // Select mode micro-animation: gentle shift when entering
-  const selectAnim = useSharedValue(0);
+  // Track exit for instant background clear
+  const wasSelectMode = useRef(isSelectMode);
+  const justExited = !isSelectMode && wasSelectMode.current;
   useEffect(() => {
-    selectAnim.value = withTiming(isSelectMode ? 1 : 0, {
-      duration: 300,
-      easing: Easing.inOut(Easing.ease),
-    });
-  }, [isSelectMode]);
+    wasSelectMode.current = isSelectMode;
+  });
 
-  const selectModeStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: interpolate(selectAnim.value, [0, 1], [0, 2]) }],
+  // Layout animation: checkbox container width (Reanimated — can't do layout with EaseView)
+  const checkboxAnim = useSharedValue(isSelectMode ? 1 : 0);
+  useEffect(() => {
+    if (noAnim) {
+      checkboxAnim.value = isSelectMode ? 1 : 0;
+      return;
+    }
+    checkboxAnim.value = isSelectMode ? withTiming(1, LAYOUT_ENTER) : withTiming(0, LAYOUT_EXIT);
+  }, [isSelectMode, noAnim]);
+
+  const checkboxContainerStyle = useAnimatedStyle(() => ({
+    width: interpolate(checkboxAnim.value, [0, 1], [0, CHECKBOX_WIDTH]),
+    marginRight: interpolate(checkboxAnim.value, [0, 1], [0, 8]),
+    overflow: "hidden" as const,
   }));
 
-  const rowContent = (
-    <Pressable
-      style={({ pressed }) => [
-        styles.row,
-        pressed && styles.pressed,
-        isSelected && { backgroundColor: colors.primarySubtle },
-      ]}
-      onPress={() => {
-        if (isSelectMode) {
-          onLongPress?.(item.id);
-        } else {
-          onPress(item.id);
-        }
-      }}
-      onLongPress={
-        // On iOS, ContextMenu handles long-press natively (when not in select mode)
-        // On Android, keep long-press for select mode
-        Platform.OS === "android" || isSelectMode ? () => onLongPress?.(item.id) : undefined
-      }
-    >
-      {/* Selection checkbox */}
-      {isSelectMode && (
-        <Animated.View
-          entering={FadeIn.duration(180).easing(Easing.out(Easing.quad))}
-          exiting={FadeOut.duration(150).easing(Easing.in(Easing.quad))}
-          style={styles.checkbox}
-        >
-          <Icon
-            name={isSelected ? "checkmarkCircle" : "ellipseOutline"}
-            size={22}
-            color={isSelected ? colors.primary : colors.textMuted}
-          />
-        </Animated.View>
-      )}
+  const bgTransition = noAnim || justExited ? NONE : TIMING_BG;
+  const checkVisualTransition = noAnim ? NONE : isSelectMode ? TIMING_CHECK_IN : TIMING_CHECK_OUT;
+  const pulseTransition = noAnim ? NONE : SPRING_PULSE;
 
-      <View style={styles.content}>
-        {/* Top row: payee + amount */}
-        <View style={styles.topRow}>
-          <View style={styles.payeeRow}>
-            {item.transfer_id != null && (
+  const rowContent = (
+    <EaseView
+      animate={{
+        backgroundColor: isSelectMode && isSelected ? colors.primarySubtle : colors.cardBackground,
+      }}
+      transition={bgTransition}
+    >
+      <Pressable
+        style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+        onPress={() => {
+          if (isSelectMode) {
+            onLongPress?.(item.id);
+          } else {
+            onPress(item.id);
+          }
+        }}
+        onLongPress={
+          Platform.OS === "android" || isSelectMode ? () => onLongPress?.(item.id) : undefined
+        }
+      >
+        {/* Checkbox — Reanimated for layout (width), EaseView for visuals (opacity/scale) */}
+        <Animated.View style={[styles.checkboxContainer, checkboxContainerStyle]}>
+          <EaseView
+            animate={{
+              opacity: isSelectMode ? 1 : 0,
+              scale: isSelectMode ? 1 : 0.5,
+            }}
+            transition={checkVisualTransition}
+          >
+            <EaseView animate={{ scale: isSelected ? 1 : 0.92 }} transition={pulseTransition}>
               <Icon
-                name="swapHorizontal"
-                size={14}
-                color={colors.primary}
-                style={{ marginRight: spacing.xs }}
+                name={isSelected ? "checkmarkCircle" : "ellipseOutline"}
+                size={22}
+                color={isSelected ? colors.primary : colors.textMuted}
               />
-            )}
-            <Text variant="body" numberOfLines={1} style={{ flex: 1, fontWeight: "500" as const }}>
-              {item.payeeName ?? "(no payee)"}
-            </Text>
-          </View>
-          <View style={styles.amountRow}>
-            <Amount
-              value={item.amount}
-              variant="body"
-              showSign
-              style={{ fontWeight: "600" as const }}
-            />
-            {!isSelectMode && (
+            </EaseView>
+          </EaseView>
+        </Animated.View>
+
+        <View style={styles.content}>
+          {/* Top row: payee + amount */}
+          <View style={styles.topRow}>
+            <View style={styles.payeeRow}>
+              {item.transfer_id != null && (
+                <Icon
+                  name="swapHorizontal"
+                  size={14}
+                  color={colors.primary}
+                  style={{ marginRight: spacing.xs }}
+                />
+              )}
+              <Text
+                variant="body"
+                numberOfLines={1}
+                style={{ flex: 1, fontWeight: "500" as const }}
+              >
+                {item.payeeName ?? "(no payee)"}
+              </Text>
+            </View>
+            <View style={styles.amountRow}>
+              <Amount
+                value={item.amount}
+                variant="body"
+                showSign
+                style={{ fontWeight: "600" as const }}
+              />
               <View style={{ marginLeft: spacing.sm }}>
                 {item.reconciled ? (
                   <Icon name="lockClosed" size={14} color={colors.primary} />
@@ -140,92 +178,92 @@ export const TransactionRow = memo(function TransactionRow({
                   />
                 )}
               </View>
-            )}
+            </View>
           </View>
-        </View>
 
-        {/* Category + account name row */}
-        {item.is_parent && item.splitCategoryNames ? (
-          <>
-            {(() => {
-              const names = item.splitCategoryNames.split("||");
-              const amounts = item.splitCategoryAmounts?.split("||") ?? [];
-              return names.map((name, i) => (
-                <View key={i} style={styles.splitLineRow}>
+          {/* Category + account name row */}
+          {item.is_parent && item.splitCategoryNames ? (
+            <>
+              {(() => {
+                const names = item.splitCategoryNames.split("||");
+                const amounts = item.splitCategoryAmounts?.split("||") ?? [];
+                return names.map((name, i) => (
+                  <View key={i} style={styles.splitLineRow}>
+                    <View style={styles.categoryPill}>
+                      <Text variant="captionSm" color={colors.textSecondary} numberOfLines={1}>
+                        {name || "No category"}
+                      </Text>
+                    </View>
+                    <Text
+                      variant="captionSm"
+                      color={colors.textMuted}
+                      style={{ fontVariant: ["tabular-nums"] }}
+                    >
+                      {formatAmount(Math.abs(Number(amounts[i]) || 0))}
+                    </Text>
+                    {i === 0 && showAccountName && item.accountName && (
+                      <>
+                        <View style={{ flex: 1 }} />
+                        <Text
+                          variant="captionSm"
+                          color={colors.textMuted}
+                          numberOfLines={1}
+                          style={{ flexShrink: 0 }}
+                        >
+                          {item.accountName}
+                        </Text>
+                      </>
+                    )}
+                  </View>
+                ));
+              })()}
+            </>
+          ) : (
+            (item.categoryName ||
+              item.transfer_id != null ||
+              (showAccountName && item.accountName)) && (
+              <View style={styles.metaRow}>
+                {item.transfer_id != null ? (
                   <View style={styles.categoryPill}>
-                    <Text variant="captionSm" color={colors.textSecondary} numberOfLines={1}>
-                      {name || "No category"}
+                    <Text variant="captionSm" color={colors.primary} numberOfLines={1}>
+                      Transfer
                     </Text>
                   </View>
+                ) : item.categoryName ? (
+                  <View style={styles.categoryPill}>
+                    <Text variant="captionSm" color={colors.textSecondary} numberOfLines={1}>
+                      {item.categoryName}
+                    </Text>
+                  </View>
+                ) : (
+                  <View />
+                )}
+                {showAccountName && item.accountName && (
                   <Text
                     variant="captionSm"
                     color={colors.textMuted}
-                    style={{ fontVariant: ["tabular-nums"] }}
+                    numberOfLines={1}
+                    style={{ flexShrink: 0 }}
                   >
-                    {formatAmount(Math.abs(Number(amounts[i]) || 0))}
+                    {item.accountName}
                   </Text>
-                  {i === 0 && showAccountName && item.accountName && (
-                    <>
-                      <View style={{ flex: 1 }} />
-                      <Text
-                        variant="captionSm"
-                        color={colors.textMuted}
-                        numberOfLines={1}
-                        style={{ flexShrink: 0 }}
-                      >
-                        {item.accountName}
-                      </Text>
-                    </>
-                  )}
-                </View>
-              ));
-            })()}
-          </>
-        ) : (
-          (item.categoryName ||
-            item.transfer_id != null ||
-            (showAccountName && item.accountName)) && (
-            <View style={styles.metaRow}>
-              {item.transfer_id != null ? (
-                <View style={styles.categoryPill}>
-                  <Text variant="captionSm" color={colors.primary} numberOfLines={1}>
-                    Transfer
-                  </Text>
-                </View>
-              ) : item.categoryName ? (
-                <View style={styles.categoryPill}>
-                  <Text variant="captionSm" color={colors.textSecondary} numberOfLines={1}>
-                    {item.categoryName}
-                  </Text>
-                </View>
-              ) : (
-                <View />
-              )}
-              {showAccountName && item.accountName && (
-                <Text
-                  variant="captionSm"
-                  color={colors.textMuted}
-                  numberOfLines={1}
-                  style={{ flexShrink: 0 }}
-                >
-                  {item.accountName}
-                </Text>
-              )}
-            </View>
-          )
-        )}
+                )}
+              </View>
+            )
+          )}
 
-        {/* Notes with inline tag pills */}
-        {item.notes && <NotesWithTags notes={item.notes} tags={tags} />}
-      </View>
+          {/* Notes with inline tag pills */}
+          {item.notes && <NotesWithTags notes={item.notes} tags={tags} />}
+        </View>
 
-      {!isLast && <RowSeparator />}
-    </Pressable>
+        {!isLast && <RowSeparator />}
+      </Pressable>
+    </EaseView>
   );
 
   // In select mode, no SwipeableRow and no ContextMenu
   if (isSelectMode) {
-    return <Animated.View style={selectModeStyle}>{rowContent}</Animated.View>;
+    return rowContent;
   }
 
   const swipeableContent = (
@@ -236,7 +274,6 @@ export const TransactionRow = memo(function TransactionRow({
       swipeRightColor={item.cleared ? colors.textMuted : colors.positive}
       isFirst={isFirst}
       isLast={isLast}
-      style={{ marginHorizontal: spacing.lg }}
     >
       {rowContent}
     </SwipeableRow>
@@ -291,7 +328,6 @@ const createStyles = (theme: Theme) => ({
   row: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
-    backgroundColor: theme.colors.cardBackground,
     paddingVertical: theme.spacing.md,
     paddingLeft: theme.spacing.lg,
     paddingRight: theme.spacing.md,
@@ -299,8 +335,9 @@ const createStyles = (theme: Theme) => ({
   pressed: {
     opacity: 0.7,
   },
-  checkbox: {
-    marginRight: theme.spacing.sm,
+  checkboxContainer: {
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
   content: {
     flex: 1,

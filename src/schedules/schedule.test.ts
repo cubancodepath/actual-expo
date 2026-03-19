@@ -419,6 +419,8 @@ describe("buildListData", () => {
       payee: "p1",
       payeeName: "Rent",
       account: "a1",
+      accountName: null,
+      categoryName: null,
       amount: -100000,
       date: 20260310,
       dateStr: "2026-03-10",
@@ -432,6 +434,8 @@ describe("buildListData", () => {
       payee: "p2",
       payeeName: "Electric",
       account: "a1",
+      accountName: null,
+      categoryName: null,
       amount: -5000,
       date: 20260311,
       dateStr: "2026-03-11",
@@ -467,40 +471,47 @@ describe("buildListData", () => {
     expect(items.filter((i) => i.type === "upcoming")).toHaveLength(0);
   });
 
-  it("previews + expanded → UpcomingHeader + UpcomingItems + regular items", () => {
+  it("previews + expanded → UpcomingHeader + date-grouped UpcomingItems + regular items", () => {
     const items = buildListData(txns, {
       previewTransactions: previews,
       upcomingExpanded: true,
     });
     expect(items[0].type).toBe("upcoming-header");
-    expect(items[1].type).toBe("upcoming");
+    // Two different dates → two upcoming-date headers
+    expect(items[1].type).toBe("upcoming-date");
     expect(items[2].type).toBe("upcoming");
+    expect(items[3].type).toBe("upcoming-date");
+    expect(items[4].type).toBe("upcoming");
     // Then regular date groups
-    expect(items[3].type).toBe("date");
+    expect(items[5].type).toBe("date");
   });
 
-  it("empty transactions + previews → header + previews only", () => {
+  it("empty transactions + previews → header + date-grouped previews only", () => {
     const items = buildListData([], {
       previewTransactions: previews,
       upcomingExpanded: true,
     });
-    expect(items).toHaveLength(3); // header + 2 upcoming
+    // header + 2 date headers + 2 upcoming items = 5
+    expect(items).toHaveLength(5);
     expect(items[0].type).toBe("upcoming-header");
-    expect(items[1].type).toBe("upcoming");
+    expect(items[1].type).toBe("upcoming-date");
     expect(items[2].type).toBe("upcoming");
+    expect(items[3].type).toBe("upcoming-date");
+    expect(items[4].type).toBe("upcoming");
   });
 
-  it("isFirst/isLast flags correct on upcoming items", () => {
+  it("isFirst/isLast flags correct on upcoming items (each is alone in its date group)", () => {
     const items = buildListData([], {
       previewTransactions: previews,
       upcomingExpanded: true,
     });
     const upcomingItems = items.filter((i) => i.type === "upcoming");
     expect(upcomingItems).toHaveLength(2);
+    // Each preview has a different date, so each is first AND last in its group
     if (upcomingItems[0].type === "upcoming" && upcomingItems[1].type === "upcoming") {
       expect(upcomingItems[0].isFirst).toBe(true);
-      expect(upcomingItems[0].isLast).toBe(false);
-      expect(upcomingItems[1].isFirst).toBe(false);
+      expect(upcomingItems[0].isLast).toBe(true);
+      expect(upcomingItems[1].isFirst).toBe(true);
       expect(upcomingItems[1].isLast).toBe(true);
     }
   });

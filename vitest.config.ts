@@ -9,8 +9,6 @@ export default defineConfig({
       deps: {
         // Prevent vitest from trying to parse react-native's Flow syntax
         external: [/react-native(?!-mmkv)/, /@react-native/],
-        // Force aliased mocks through vitest's transform pipeline
-        inline: ["react-native-mmkv"],
       },
     },
   },

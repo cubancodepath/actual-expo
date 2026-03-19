@@ -16,6 +16,6 @@ export class MMKV {
   }
 }
 
-export function createMMKV() {
+export function createMMKV(_opts?: { id?: string }) {
   return new MMKV();
 }

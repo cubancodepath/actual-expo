@@ -66,6 +66,24 @@ export async function setFeatureFlag(name: FeatureFlag, enabled: boolean): Promi
   ]);
 }
 
+/** Read/write arbitrary preferences (e.g. per-account settings like hide-cleared-{id}). */
+export async function getArbitraryPref(key: string): Promise<string | null> {
+  const row = await first<{ value: string }>("SELECT value FROM preferences WHERE id = ?", [key]);
+  return row?.value ?? null;
+}
+
+export async function setArbitraryPref(key: string, value: string): Promise<void> {
+  await sendMessages([
+    {
+      timestamp: Timestamp.send()!,
+      dataset: "preferences",
+      row: key,
+      column: "value",
+      value,
+    },
+  ]);
+}
+
 export {
   type FeatureFlag,
   ALL_FEATURE_FLAGS,

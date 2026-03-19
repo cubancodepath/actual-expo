@@ -16,6 +16,7 @@ import { listen } from "@/sync/syncEvents";
 import {
   getAllPreferences,
   setPreference,
+  setArbitraryPref,
   getAllFeatureFlags,
   setFeatureFlag,
 } from "@/preferences";
@@ -44,11 +45,24 @@ export const useSyncedPrefsStore = create<SyncedPrefsState>((set) => ({
   loaded: false,
 
   async load() {
-    const [prefs, flags] = await Promise.all([getAllPreferences(), getAllFeatureFlags()]);
+    const [prefs, flags, allRows] = await Promise.all([
+      getAllPreferences(),
+      getAllFeatureFlags(),
+      // Load ALL preferences (including per-account keys like hide-cleared-xxx)
+      import("@/db").then(({ runQuery }) =>
+        runQuery<{ id: string; value: string }>("SELECT id, value FROM preferences"),
+      ),
+    ]);
 
     const merged: Record<string, string> = { ...INITIAL_PREFS, ...prefs };
     for (const [flag, val] of Object.entries(flags)) {
       merged[`flags.${flag}`] = String(val);
+    }
+    // Merge arbitrary prefs (per-account settings, etc.)
+    for (const row of allRows) {
+      if (!(row.id in merged)) {
+        merged[row.id] = row.value;
+      }
     }
 
     set({ prefs: merged, loaded: true });
@@ -79,7 +93,11 @@ export function useSyncedPref(key: string): [string, (value: string) => Promise<
       // Apply format config immediately for format-related prefs
       applyFormatConfig(useSyncedPrefsStore.getState().prefs as any);
       // Persist to DB (syncEvent → store.load() confirms)
-      await setPreference(key as PreferenceKey, val);
+      if (key in PREFERENCE_DEFAULTS) {
+        await setPreference(key as PreferenceKey, val);
+      } else {
+        await setArbitraryPref(key, val);
+      }
     },
     [key],
   );

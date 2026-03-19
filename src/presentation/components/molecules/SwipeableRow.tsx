@@ -53,7 +53,7 @@ export function SwipeableRow({
   style,
 }: SwipeableRowProps) {
   const { t } = useTranslation();
-  const { colors, borderRadius: br } = useTheme();
+  const { colors } = useTheme();
   const reducedMotion = useReducedMotion();
   const translateX = useSharedValue(0);
   const contextX = useSharedValue(0);
@@ -121,7 +121,7 @@ export function SwipeableRow({
   }
 
   const pan = Gesture.Pan()
-    .activeOffsetX([-10, 10])
+    .activeOffsetX([-25, 25])
     .failOffsetY([-15, 15])
     .onStart(() => {
       contextX.value = translateX.value;
@@ -291,15 +291,8 @@ export function SwipeableRow({
     return { transform: [{ translateX: shift }] };
   });
 
-  const containerRadius = {
-    borderTopLeftRadius: isFirst ? br.lg : 0,
-    borderTopRightRadius: isFirst ? br.lg : 0,
-    borderBottomLeftRadius: isLast ? br.lg : 0,
-    borderBottomRightRadius: isLast ? br.lg : 0,
-  };
-
   return (
-    <View style={[styles.container, containerRadius, style]}>
+    <View style={[styles.container, style]}>
       {/* Right-swipe action behind the row (left side) */}
       {hasRightAction && (
         <Animated.View style={[styles.rightArea, rightAreaStyle]}>

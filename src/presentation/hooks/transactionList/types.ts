@@ -15,6 +15,11 @@ export type UpcomingHeader = {
   count: number;
   expanded: boolean;
 };
+export type UpcomingDateHeader = {
+  type: "upcoming-date";
+  date: number;
+  key: string;
+};
 export type UpcomingItem = {
   type: "upcoming";
   data: PreviewTransaction;
@@ -23,7 +28,12 @@ export type UpcomingItem = {
   isLast: boolean;
 };
 
-export type ListItem = DateHeader | TransactionItem | UpcomingHeader | UpcomingItem;
+export type ListItem =
+  | DateHeader
+  | TransactionItem
+  | UpcomingHeader
+  | UpcomingDateHeader
+  | UpcomingItem;
 
 export function buildListData(
   transactions: TransactionDisplay[],
@@ -46,14 +56,37 @@ export function buildListData(
     });
 
     if (expanded) {
+      let lastDate: number | null = null;
+
       for (let i = 0; i < previews.length; i++) {
+        const preview = previews[i];
+        const isNewDate = preview.date !== lastDate;
+
+        if (isNewDate) {
+          if (items.length > 0) {
+            const prev = items[items.length - 1];
+            if (prev.type === "upcoming") prev.isLast = true;
+          }
+          items.push({
+            type: "upcoming-date",
+            date: preview.date,
+            key: `upcoming-date-${preview.date}`,
+          });
+          lastDate = preview.date;
+        }
+
         items.push({
           type: "upcoming",
-          data: previews[i],
-          key: previews[i].id,
-          isFirst: i === 0,
-          isLast: i === previews.length - 1,
+          data: preview,
+          key: preview.id,
+          isFirst: isNewDate,
+          isLast: false,
         });
+      }
+
+      if (items.length > 1) {
+        const last = items[items.length - 1];
+        if (last.type === "upcoming") last.isLast = true;
       }
     }
   }

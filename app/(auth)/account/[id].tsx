@@ -22,10 +22,11 @@ import { BalanceSummary } from "@/presentation/components/account/BalanceSummary
 import { TransactionRow } from "@/presentation/components/account/TransactionRow";
 import { DateSectionHeader } from "@/presentation/components/account/DateSectionHeader";
 import { UpcomingSectionHeader } from "@/presentation/components/account/UpcomingSectionHeader";
+import { UpcomingDateHeader } from "@/presentation/components/account/UpcomingDateHeader";
 import { UpcomingScheduleRow } from "@/presentation/components/account/UpcomingScheduleRow";
 import { AddTransactionButton } from "@/presentation/components/molecules/AddTransactionButton";
 import { UnclearedPill } from "@/presentation/components/transaction/UnclearedPill";
-import { usePrefsStore } from "@/stores/prefsStore";
+import { useAccountPref } from "@/presentation/hooks/useAccountPref";
 import { usePrivacyStore } from "@/stores/privacyStore";
 import { useUndoStore } from "@/stores/undoStore";
 import { useCommonMenuActions } from "@/presentation/hooks/useCommonMenuItems";
@@ -93,7 +94,7 @@ export default function AccountTransactionsScreen() {
       return () => clearTimeout(timer);
     }
   }, [syncStatus[id], syncResult]);
-  const { hideReconciled, toggleHideReconciled } = usePrefsStore();
+  const [hideReconciled, toggleHideReconciled] = useAccountPref(id, "hide-reconciled");
   usePrivacyStore();
   const { tags } = useTags();
 
@@ -363,7 +364,9 @@ export default function AccountTransactionsScreen() {
               style={styles.syncToastRow}
             >
               <ActivityIndicator size="small" color={colors.primary} />
-              <Text variant="captionSm" color={colors.textMuted}>{tb("syncing")}</Text>
+              <Text variant="captionSm" color={colors.textMuted}>
+                {tb("syncing")}
+              </Text>
             </EaseView>
           ) : syncToastVisible ? (
             <EaseView
@@ -373,7 +376,9 @@ export default function AccountTransactionsScreen() {
               style={styles.syncToastRow}
             >
               <Ionicons name="checkmark-circle" size={14} color={colors.positive} />
-              <Text variant="captionSm" color={colors.positive}>{syncToastText}</Text>
+              <Text variant="captionSm" color={colors.positive}>
+                {syncToastText}
+              </Text>
             </EaseView>
           ) : (
             <View style={styles.syncToastRow}>
@@ -426,6 +431,9 @@ export default function AccountTransactionsScreen() {
                 }}
               />
             );
+          }
+          if (item.type === "upcoming-date") {
+            return <UpcomingDateHeader date={item.date} />;
           }
           if (item.type === "upcoming") {
             return (
@@ -561,7 +569,11 @@ export default function AccountTransactionsScreen() {
               {t("detail.reconcile")}
             </Stack.Toolbar.MenuAction>
             <Stack.Toolbar.MenuAction
-              icon={hideReconciled ? "checkmark.circle" : "checkmark.circle.badge.xmark"}
+              icon={
+                hideReconciled
+                  ? "line.3.horizontal.decrease.circle"
+                  : "line.3.horizontal.decrease.circle.fill"
+              }
               onPress={toggleHideReconciled}
             >
               {hideReconciled ? t("detail.showReconciled") : t("detail.hideReconciled")}

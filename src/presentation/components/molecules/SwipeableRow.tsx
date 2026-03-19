@@ -121,7 +121,7 @@ export function SwipeableRow({
   }
 
   const pan = Gesture.Pan()
-    .activeOffsetX([-10, 10])
+    .activeOffsetX([-25, 25])
     .failOffsetY([-15, 15])
     .onStart(() => {
       contextX.value = translateX.value;

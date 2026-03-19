@@ -182,9 +182,17 @@ export const TransactionRow = memo(function TransactionRow({
             })()}
           </>
         ) : (
-          (item.categoryName || (showAccountName && item.accountName)) && (
+          (item.categoryName ||
+            item.transfer_id != null ||
+            (showAccountName && item.accountName)) && (
             <View style={styles.metaRow}>
-              {item.categoryName ? (
+              {item.transfer_id != null ? (
+                <View style={styles.categoryPill}>
+                  <Text variant="captionSm" color={colors.primary} numberOfLines={1}>
+                    Transfer
+                  </Text>
+                </View>
+              ) : item.categoryName ? (
                 <View style={styles.categoryPill}>
                   <Text variant="captionSm" color={colors.textSecondary} numberOfLines={1}>
                     {item.categoryName}

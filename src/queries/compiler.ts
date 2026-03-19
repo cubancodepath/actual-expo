@@ -312,14 +312,16 @@ function compileSelect(state: CompilerState, queryState: QueryState): string {
 
     const parts: string[] = [];
 
-    // All schema fields (with view overrides)
+    // All schema fields (with view overrides + column renames)
+    const renames = state.view?.columnRenames ?? {};
     for (const [f, def] of Object.entries(tableDef.fields)) {
-      state.outputTypes.set(f, def.type);
+      const outputName = renames[f] ?? f;
+      state.outputTypes.set(outputName, def.type);
       const override = state.view?.fieldOverrides?.[f];
       if (override) {
-        parts.push(`${override} AS ${quoteAlias(f)}`);
+        parts.push(`${override} AS ${quoteAlias(outputName)}`);
       } else {
-        parts.push(`${state.alias}.${f} AS ${quoteAlias(f)}`);
+        parts.push(`${state.alias}.${f} AS ${quoteAlias(outputName)}`);
       }
     }
 

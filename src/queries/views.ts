@@ -28,6 +28,8 @@ export type ViewDef = {
   alias: string;
   /** Schema field → SQL expression overrides (mapping table resolution) */
   fieldOverrides?: Record<string, string>;
+  /** DB column name → public API name (like Actual's v_transactions_internal renames) */
+  columnRenames?: Record<string, string>;
   /** Extra JOINs always added when querying this table */
   joins?: string[];
   /** Extra WHERE conditions always applied */
@@ -48,6 +50,17 @@ export const views: Record<string, ViewDef> = {
       category: "CASE WHEN t.isParent = 1 THEN NULL ELSE COALESCE(cm.transferId, t.category) END",
       amount: "IFNULL(t.amount, 0)",
       parent_id: "CASE WHEN t.isChild = 0 THEN NULL ELSE t.parent_id END",
+    },
+    /**
+     * Column rename: DB column → public API name (like Actual's v_transactions_internal).
+     * When SELECT * expands, these DB columns are output with their public names.
+     */
+    columnRenames: {
+      transferred_id: "transfer_id",
+      isParent: "is_parent",
+      isChild: "is_child",
+      acct: "account",
+      description: "payee",
     },
     joins: [
       "LEFT JOIN category_mapping cm ON cm.id = t.category",

@@ -18,7 +18,6 @@ import { ThemeProvider } from "@/presentation/providers/ThemeProvider";
 import { usePrefsStore } from "@/stores/prefsStore";
 import { listen } from "@/sync/syncEvents";
 import { useBudgetStore } from "@/stores/budgetStore";
-import { useTransactionsStore } from "@/stores/transactionsStore";
 import { fullSync, isSwitchingBudget } from "@/sync";
 import { ensureBudgetsDir, budgetExists } from "@/services/budgetMetadata";
 import { openBudget } from "@/services/budgetfiles";
@@ -121,10 +120,8 @@ function RootLayout() {
         debouncedBadge();
       }
     });
-    let prevTxns = useTransactionsStore.getState().transactions;
-    const unsubTxns = useTransactionsStore.subscribe((state) => {
-      if (state.transactions !== prevTxns) {
-        prevTxns = state.transactions;
+    const unsubTxns = listen((event) => {
+      if (event.tables.includes("transactions")) {
         debouncedBadge();
       }
     });

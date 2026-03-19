@@ -3,7 +3,7 @@ import { Alert } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useAccounts } from "@/presentation/hooks/useAccounts";
-import { useTransactionsStore } from "@/stores/transactionsStore";
+import { deleteTransaction } from "@/transactions";
 import { useCategories } from "@/presentation/hooks/useCategories";
 import { usePickerStore } from "@/stores/pickerStore";
 import { useRulesStore } from "@/stores/rulesStore";
@@ -50,7 +50,6 @@ export function useTransactionForm(params: RouteParams, amountInput: AmountInput
   const { t } = useTranslation("transactions");
   const router = useRouter();
   const { accounts } = useAccounts();
-  const { delete_ } = useTransactionsStore();
   const { groups, categories } = useCategories();
   const rules = useRulesStore((s) => s.rules);
 
@@ -333,7 +332,7 @@ export function useTransactionForm(params: RouteParams, amountInput: AmountInput
         style: "destructive",
         onPress: () => {
           router.dismiss();
-          delete_(transactionId!);
+          deleteTransaction(transactionId!);
         },
       },
     ]);

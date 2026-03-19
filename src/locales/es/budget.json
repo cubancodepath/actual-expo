@@ -170,6 +170,8 @@
   "renameCategory": "Renombrar categoría",
   "hideCategory": "Ocultar categoría",
   "showCategory": "Mostrar categoría",
+  "showGroup": "Mostrar grupo",
+  "hideGroup": "Ocultar grupo",
   "deleteCategoryTitle": "Eliminar categoría",
   "deleteCategoryWithTransfers": "¿Estás seguro de que quieres eliminar \"{{name}}\"? Necesitarás seleccionar una categoría para mover sus transacciones.",
   "selectCategory": "Seleccionar categoría",

@@ -24,6 +24,7 @@ import { UpcomingScheduleRow } from "@/presentation/components/account/UpcomingS
 import { AddTransactionButton } from "@/presentation/components/molecules/AddTransactionButton";
 import { UnclearedPill } from "@/presentation/components/transaction/UnclearedPill";
 import { usePrefsStore } from "@/stores/prefsStore";
+import { useAccountPref } from "@/presentation/hooks/useAccountPref";
 import { usePrivacyStore } from "@/stores/privacyStore";
 import { useUndoStore } from "@/stores/undoStore";
 import { useCommonMenuActions } from "@/presentation/hooks/useCommonMenuItems";
@@ -62,7 +63,7 @@ export default function AccountTransactionsScreen() {
   const { accounts } = useAccounts();
   const account = accounts.find((a) => a.id === id);
   const balance = useAccountBalance(id);
-  const { hideReconciled, toggleHideReconciled } = usePrefsStore();
+  const [hideReconciled, toggleHideReconciled] = useAccountPref(id, "hide-reconciled");
   usePrivacyStore();
   const { tags } = useTags();
 
@@ -485,7 +486,11 @@ export default function AccountTransactionsScreen() {
               {t("detail.reconcile")}
             </Stack.Toolbar.MenuAction>
             <Stack.Toolbar.MenuAction
-              icon={hideReconciled ? "checkmark.circle" : "checkmark.circle.badge.xmark"}
+              icon={
+                hideReconciled
+                  ? "line.3.horizontal.decrease.circle"
+                  : "line.3.horizontal.decrease.circle.fill"
+              }
               onPress={toggleHideReconciled}
             >
               {hideReconciled ? t("detail.showReconciled") : t("detail.hideReconciled")}

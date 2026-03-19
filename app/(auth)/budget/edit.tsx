@@ -225,7 +225,9 @@ export default function EditBudgetScreen() {
     const hidden: Category[] = [];
     for (const g of [...expenseGroups, ...incomeGroups]) {
       const visible: Category[] = [];
-      for (const c of categories.filter((c) => c.cat_group === g.id).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))) {
+      for (const c of categories
+        .filter((c) => c.cat_group === g.id)
+        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))) {
         if (c.hidden) {
           hidden.push(c);
         } else {

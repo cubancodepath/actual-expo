@@ -331,8 +331,7 @@ export function updateTransaction(
         let child = t;
         if (trans.id === transaction.id) {
           // Parent was updated — propagate payee change to children
-          const newPayee =
-            t.payee === trans.payee ? transaction.payee : t.payee;
+          const newPayee = t.payee === trans.payee ? transaction.payee : t.payee;
           child = { ...t, payee: newPayee };
         } else if (t.id === transaction.id) {
           child = transaction;

@@ -27,10 +27,7 @@ function AccountPickerRow({
   const { colors, spacing, borderWidth: bw } = useTheme();
   const balance = useAccountBalance(account.id);
   return (
-    <Pressable
-      style={({ pressed }) => [styles.item, pressed && styles.pressed]}
-      onPress={onSelect}
-    >
+    <Pressable style={({ pressed }) => [styles.item, pressed && styles.pressed]} onPress={onSelect}>
       <View style={styles.checkSlot}>
         {isSelected && <Icon name="checkmark" size={20} color={colors.primary} />}
       </View>

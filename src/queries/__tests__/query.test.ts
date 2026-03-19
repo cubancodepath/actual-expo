@@ -95,9 +95,7 @@ describe("select()", () => {
 
 describe("orderBy()", () => {
   it("accumulates order expressions", () => {
-    const query = q("transactions")
-      .orderBy({ date: "desc" })
-      .orderBy("id");
+    const query = q("transactions").orderBy({ date: "desc" }).orderBy("id");
 
     const orders = query.serialize().orderExpressions;
     expect(orders).toEqual([{ date: "desc" }, "id"]);
@@ -149,11 +147,7 @@ describe("chaining", () => {
 
 describe("reset()", () => {
   it("returns a clean query with only the table", () => {
-    const state = q("transactions")
-      .filter({ acct: "abc" })
-      .limit(10)
-      .reset()
-      .serialize();
+    const state = q("transactions").filter({ acct: "abc" }).limit(10).reset().serialize();
 
     expect(state.table).toBe("transactions");
     expect(state.filterExpressions).toEqual([]);

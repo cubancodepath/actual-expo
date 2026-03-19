@@ -1,5 +1,12 @@
 import { forwardRef } from "react";
-import { StyleSheet, TextInput, View, type StyleProp, type TextInputProps, type ViewStyle } from "react-native";
+import {
+  StyleSheet,
+  TextInput,
+  View,
+  type StyleProp,
+  type TextInputProps,
+  type ViewStyle,
+} from "react-native";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Icon, type IconName } from "./Icon";
 

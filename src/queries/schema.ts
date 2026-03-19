@@ -42,7 +42,12 @@ export const schema: Schema = {
       starting_balance_flag: { type: "boolean" },
       tombstone: { type: "boolean" },
     },
-    defaultOrder: [{ date: "desc" }, { starting_balance_flag: "desc" }, { sort_order: "desc" }, "id"],
+    defaultOrder: [
+      { date: "desc" },
+      { starting_balance_flag: "desc" },
+      { sort_order: "desc" },
+      "id",
+    ],
   },
 
   accounts: {

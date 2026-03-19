@@ -448,7 +448,9 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
         </ContextMenu.Item>
         <ContextMenu.Item key="carryover" onSelect={() => onToggleCarryover?.(cat)}>
           <ContextMenu.ItemTitle>{carryoverLabel}</ContextMenu.ItemTitle>
-          <ContextMenu.ItemIcon ios={{ name: cat.carryover ? "arrow.uturn.backward" : "arrow.clockwise" }} />
+          <ContextMenu.ItemIcon
+            ios={{ name: cat.carryover ? "arrow.uturn.backward" : "arrow.clockwise" }}
+          />
         </ContextMenu.Item>
         <ContextMenu.Item key="transactions" onSelect={() => onViewTransactions?.(cat)}>
           <ContextMenu.ItemTitle>{t("viewTransactions")}</ContextMenu.ItemTitle>
@@ -456,7 +458,9 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
         </ContextMenu.Item>
         <ContextMenu.Item key="notes" onSelect={() => onBudgetNotes?.(cat)}>
           <ContextMenu.ItemTitle>{t("budgetMovements")}</ContextMenu.ItemTitle>
-          <ContextMenu.ItemIcon ios={{ name: "clock.arrow.trianglehead.counterclockwise.rotate.90" }} />
+          <ContextMenu.ItemIcon
+            ios={{ name: "clock.arrow.trianglehead.counterclockwise.rotate.90" }}
+          />
         </ContextMenu.Item>
       </ContextMenu.Content>
     </ContextMenu>

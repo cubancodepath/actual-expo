@@ -35,9 +35,7 @@ export function useSelectionMode<T extends { id: string }>(): UseSelectionModeRe
   }, []);
 
   const selectAll = useCallback((items: T[], filter?: (item: T) => boolean) => {
-    const ids = new Set(
-      (filter ? items.filter(filter) : items).map((item) => item.id),
-    );
+    const ids = new Set((filter ? items.filter(filter) : items).map((item) => item.id));
     setSelectedIds(ids);
   }, []);
 
@@ -63,5 +61,15 @@ export function useSelectionMode<T extends { id: string }>(): UseSelectionModeRe
     [selectedIds],
   );
 
-  return { selectedIds, isSelectMode, toggle, selectAll, enter, exit, reset, longPress, selectedItems };
+  return {
+    selectedIds,
+    isSelectMode,
+    toggle,
+    selectAll,
+    enter,
+    exit,
+    reset,
+    longPress,
+    selectedItems,
+  };
 }

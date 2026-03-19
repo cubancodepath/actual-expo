@@ -49,9 +49,7 @@ export function getHasTransactionsQuery(schedules: Schedule[]): Query | null {
 export function isForPreview(schedule: Schedule, statuses: ScheduleStatuses): boolean {
   const status = statuses.get(schedule.id);
   return (
-    !schedule.completed &&
-    status != null &&
-    ["due", "upcoming", "missed", "paid"].includes(status)
+    !schedule.completed && status != null && ["due", "upcoming", "missed", "paid"].includes(status)
   );
 }
 

@@ -469,7 +469,8 @@ export function useTransactionList({
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             await undoable(async () => {
               await batchMessages(async () => {
-                for (const txnId of ids) await updateTransaction(txnId, { account: targetAccountId });
+                for (const txnId of ids)
+                  await updateTransaction(txnId, { account: targetAccountId });
               });
             })();
           },

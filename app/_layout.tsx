@@ -228,18 +228,18 @@ function RootLayout() {
           <KeyboardProvider>
             <NavigationThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
               <ThemeProvider>
-              <Stack>
-                <Stack.Protected guard={!hasToken && !isLocalOnly}>
-                  <Stack.Screen name="(public)" options={{ headerShown: false }} />
-                </Stack.Protected>
-                <Stack.Protected guard={hasToken && !isConfigured}>
-                  <Stack.Screen name="(files)" options={{ headerShown: false }} />
-                </Stack.Protected>
-                <Stack.Protected guard={isConfigured}>
-                  <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-                </Stack.Protected>
-              </Stack>
-              <UndoToast />
+                <Stack>
+                  <Stack.Protected guard={!hasToken && !isLocalOnly}>
+                    <Stack.Screen name="(public)" options={{ headerShown: false }} />
+                  </Stack.Protected>
+                  <Stack.Protected guard={hasToken && !isConfigured}>
+                    <Stack.Screen name="(files)" options={{ headerShown: false }} />
+                  </Stack.Protected>
+                  <Stack.Protected guard={isConfigured}>
+                    <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                  </Stack.Protected>
+                </Stack>
+                <UndoToast />
               </ThemeProvider>
             </NavigationThemeProvider>
           </KeyboardProvider>

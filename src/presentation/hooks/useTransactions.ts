@@ -54,10 +54,7 @@ export function useTransactions({ query, fetchFn, options }: UseTransactionsProp
     });
   }, [refetchOnSync]);
 
-  const transactions = useMemo(
-    () => queryResult.data?.pages.flat() ?? [],
-    [queryResult.data],
-  );
+  const transactions = useMemo(() => queryResult.data?.pages.flat() ?? [], [queryResult.data]);
 
   return { ...queryResult, transactions };
 }

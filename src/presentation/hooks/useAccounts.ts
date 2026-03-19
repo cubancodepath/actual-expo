@@ -15,10 +15,7 @@ import type { Account } from "@/accounts/types";
  * Reactive list of all accounts (without balances).
  */
 export function useAccounts() {
-  const { data, isLoading, hasLoaded } = useLiveQuery<Account>(
-    () => q("accounts"),
-    [],
-  );
+  const { data, isLoading, hasLoaded } = useLiveQuery<Account>(() => q("accounts"), []);
   return { accounts: data ?? [], isLoading, hasLoaded };
 }
 
@@ -28,9 +25,10 @@ export function useAccounts() {
  */
 export function useAccountBalance(accountId: string | undefined): number {
   const { data } = useLiveQuery<{ result: number }>(
-    () => accountId
-      ? q("transactions").filter({ acct: accountId }).calculate({ $sum: "$amount" })
-      : null,
+    () =>
+      accountId
+        ? q("transactions").filter({ acct: accountId }).calculate({ $sum: "$amount" })
+        : null,
     [accountId],
   );
   return data?.[0]?.result ?? 0;
@@ -43,9 +41,12 @@ export function useAccountBalance(accountId: string | undefined): number {
 export function useAccountGroupBalance(accountIds: string[]): number {
   const key = useMemo(() => accountIds.slice().sort().join(","), [accountIds]);
   const { data } = useLiveQuery<{ result: number }>(
-    () => accountIds.length > 0
-      ? q("transactions").filter({ acct: { $oneof: accountIds } }).calculate({ $sum: "$amount" })
-      : null,
+    () =>
+      accountIds.length > 0
+        ? q("transactions")
+            .filter({ acct: { $oneof: accountIds } })
+            .calculate({ $sum: "$amount" })
+        : null,
     [key],
   );
   return data?.[0]?.result ?? 0;

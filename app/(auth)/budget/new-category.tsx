@@ -36,10 +36,7 @@ export default function NewCategoryScreen() {
     >
       <Stack.Screen options={{}} />
       <Stack.Toolbar placement="left">
-        <Stack.Toolbar.Button
-          icon="xmark"
-          onPress={() => router.back()}
-        />
+        <Stack.Toolbar.Button icon="xmark" onPress={() => router.back()} />
       </Stack.Toolbar>
       <Stack.Toolbar placement="right">
         <Stack.Toolbar.Button

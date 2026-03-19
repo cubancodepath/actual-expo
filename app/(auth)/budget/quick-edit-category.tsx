@@ -41,8 +41,7 @@ export default function QuickEditCategoryScreen() {
 
   // Goal description
   const templates = parseGoalDef(category?.goal_def ?? null);
-  const goalDesc =
-    templates.length > 0 ? describeTemplate(templates[0], i18n.language) : null;
+  const goalDesc = templates.length > 0 ? describeTemplate(templates[0], i18n.language) : null;
   const goalDescription = goalDesc ? translateDescription(goalDesc, t) : null;
 
   function handleSaveName() {
@@ -218,20 +217,16 @@ export default function QuickEditCategoryScreen() {
         onPress={() => {
           if (!categoryId) return;
           if (!category?.hidden) {
-            Alert.alert(
-              t("categoryHiddenTitle"),
-              t("categoryHiddenMessage"),
-              [
-                { text: t("cancel"), style: "cancel" },
-                {
-                  text: t("hide"),
-                  onPress: () => {
-                    updateCategory(categoryId, { hidden: true });
-                    router.back();
-                  },
+            Alert.alert(t("categoryHiddenTitle"), t("categoryHiddenMessage"), [
+              { text: t("cancel"), style: "cancel" },
+              {
+                text: t("hide"),
+                onPress: () => {
+                  updateCategory(categoryId, { hidden: true });
+                  router.back();
                 },
-              ],
-            );
+              },
+            ]);
           } else {
             updateCategory(categoryId, { hidden: false });
             router.back();

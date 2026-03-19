@@ -418,7 +418,9 @@ export default function AccountSearchScreen() {
       pendingCategoryRef.current = null;
       clearPicker();
       if (selectedCategory.id) {
-        setResults((prev) => prev.map((t) => (t.id === txnId ? { ...t, category: selectedCategory.id } : t)));
+        setResults((prev) =>
+          prev.map((t) => (t.id === txnId ? { ...t, category: selectedCategory.id } : t)),
+        );
         updateTransaction(txnId, { category: selectedCategory.id });
       }
     } else if (bulkCategoryPendingRef.current) {
@@ -497,7 +499,10 @@ export default function AccountSearchScreen() {
                 onPress={handleEditTransaction}
                 onDelete={handleDelete}
                 onToggleCleared={handleToggleCleared}
-                onLongPress={(txnId: string) => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); selection.longPress(txnId); }}
+                onLongPress={(txnId: string) => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  selection.longPress(txnId);
+                }}
                 onDuplicate={handleDuplicate}
                 onMove={handleMove}
                 onSetCategory={handleSetCategory}

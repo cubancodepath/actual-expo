@@ -28,7 +28,11 @@ import { useUndoStore } from "@/stores/undoStore";
 import { useCommonMenuActions } from "@/presentation/hooks/useCommonMenuItems";
 import { useTags } from "@/presentation/hooks/useTags";
 import { usePickerStore } from "@/stores/pickerStore";
-import { buildListData, useSelectModeHeader, type ListItem } from "@/presentation/hooks/transactionList";
+import {
+  buildListData,
+  useSelectModeHeader,
+  type ListItem,
+} from "@/presentation/hooks/transactionList";
 import { SelectModeToolbar } from "@/presentation/components/transaction/SelectModeToolbar";
 import {
   skipNextDate,
@@ -66,18 +70,17 @@ export default function AccountTransactionsScreen() {
   const previewTransactions = usePreviewTransactions({ accountId: id });
 
   // ---- Transaction data (AQL + React Query + sync-event auto-refresh) ----
-  const txnQuery = useMemo(
-    () => {
-      let query = q("transactions").filter({ acct: id }).select(["*"]);
-      if (hideReconciled) query = query.filter({ reconciled: false });
-      return query;
+  const txnQuery = useMemo(() => {
+    let query = q("transactions").filter({ acct: id }).select(["*"]);
+    if (hideReconciled) query = query.filter({ reconciled: false });
+    return query;
+  }, [id, hideReconciled]);
+  const { transactions, fetchNextPage, hasNextPage, isFetchingNextPage, refetch } = useTransactions(
+    {
+      query: txnQuery,
+      options: { pageSize: 25, key: `account-${id}` },
     },
-    [id, hideReconciled],
   );
-  const { transactions, fetchNextPage, hasNextPage, isFetchingNextPage, refetch } = useTransactions({
-    query: txnQuery,
-    options: { pageSize: 25, key: `account-${id}` },
-  });
 
   // ---- Cleared balance (reactive via liveQuery) ----
   const clearedBalanceQuery = useMemo(
@@ -92,7 +95,10 @@ export default function AccountTransactionsScreen() {
 
   // ---- Uncleared count (reactive via liveQuery) ----
   const unclearedCountQuery = useMemo(
-    () => q("transactions").filter({ acct: id, cleared: false, reconciled: false }).calculate({ $count: "$id" }),
+    () =>
+      q("transactions")
+        .filter({ acct: id, cleared: false, reconciled: false })
+        .calculate({ $count: "$id" }),
     [id],
   );
   const { data: unclearedCountData } = useLiveQuery<{ result: number }>(
@@ -129,7 +135,8 @@ export default function AccountTransactionsScreen() {
     isSelectMode: selection.isSelectMode,
     selectedCount: selection.selectedIds.size,
     selectedTotal,
-    onSelectAll: () => selection.selectAll(transactions as TransactionDisplay[], (t) => !t.reconciled),
+    onSelectAll: () =>
+      selection.selectAll(transactions as TransactionDisplay[], (t) => !t.reconciled),
     onDoneSelection: selection.exit,
   });
 
@@ -180,7 +187,10 @@ export default function AccountTransactionsScreen() {
   }
 
   function handleAddTag(txnId: string) {
-    router.push({ pathname: "/(auth)/transaction/tags", params: { transactionId: txnId, mode: "direct" } });
+    router.push({
+      pathname: "/(auth)/transaction/tags",
+      params: { transactionId: txnId, mode: "direct" },
+    });
   }
 
   // ---- Picker integration ----
@@ -273,13 +283,18 @@ export default function AccountTransactionsScreen() {
   }, []);
 
   const handlePressSchedule = useCallback(
-    (scheduleId: string) => router.push({ pathname: "/(auth)/schedule/[id]", params: { id: scheduleId } }),
+    (scheduleId: string) =>
+      router.push({ pathname: "/(auth)/schedule/[id]", params: { id: scheduleId } }),
     [router],
   );
 
   // ---- Merged list data ----
   const mergedListData = useMemo(
-    () => buildListData(transactions as TransactionDisplay[], { previewTransactions, upcomingExpanded }),
+    () =>
+      buildListData(transactions as TransactionDisplay[], {
+        previewTransactions,
+        upcomingExpanded,
+      }),
     [transactions, previewTransactions, upcomingExpanded],
   );
 
@@ -405,10 +420,18 @@ export default function AccountTransactionsScreen() {
             />
           )
         }
-        onEndReached={() => { if (hasNextPage) fetchNextPage(); }}
+        onEndReached={() => {
+          if (hasNextPage) fetchNextPage();
+        }}
         onEndReachedThreshold={0.3}
         contentContainerStyle={{ paddingBottom: 80 }}
-        refreshControl={<RefreshControl refreshing={false} onRefresh={() => refetch()} tintColor={colors.primary} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={false}
+            onRefresh={() => refetch()}
+            tintColor={colors.primary}
+          />
+        }
       />
 
       {!selection.isSelectMode && (

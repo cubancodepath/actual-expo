@@ -18,8 +18,24 @@ beforeEach(() => {
 describe("liveQuery", () => {
   it("executes query on creation and calls onData", async () => {
     mockRunQuery.mockResolvedValueOnce([
-      { id: "cat1", name: "Food", hidden: 0, tombstone: 0, sort_order: 0, cat_group: "g1", goal_def: null },
-      { id: "cat2", name: "Gas", hidden: 0, tombstone: 0, sort_order: 1, cat_group: "g1", goal_def: null },
+      {
+        id: "cat1",
+        name: "Food",
+        hidden: 0,
+        tombstone: 0,
+        sort_order: 0,
+        cat_group: "g1",
+        goal_def: null,
+      },
+      {
+        id: "cat2",
+        name: "Gas",
+        hidden: 0,
+        tombstone: 0,
+        sort_order: 1,
+        cat_group: "g1",
+        goal_def: null,
+      },
     ]);
 
     const onData = vi.fn();
@@ -36,7 +52,15 @@ describe("liveQuery", () => {
 
   it("optimisticUpdate updates data and calls onData without re-querying", async () => {
     mockRunQuery.mockResolvedValueOnce([
-      { id: "cat1", name: "Food", hidden: 0, tombstone: 0, sort_order: 0, cat_group: "g1", goal_def: null },
+      {
+        id: "cat1",
+        name: "Food",
+        hidden: 0,
+        tombstone: 0,
+        sort_order: 0,
+        cat_group: "g1",
+        goal_def: null,
+      },
     ]);
 
     const onData = vi.fn();
@@ -56,10 +80,36 @@ describe("liveQuery", () => {
 
   it("auto-refreshes when queryRegistry notifies for matching datasets", async () => {
     mockRunQuery
-      .mockResolvedValueOnce([{ id: "cat1", name: "Food", hidden: 0, tombstone: 0, sort_order: 0, cat_group: "g1", goal_def: null }])
       .mockResolvedValueOnce([
-        { id: "cat1", name: "Food", hidden: 0, tombstone: 0, sort_order: 0, cat_group: "g1", goal_def: null },
-        { id: "cat2", name: "Gas", hidden: 0, tombstone: 0, sort_order: 1, cat_group: "g1", goal_def: null },
+        {
+          id: "cat1",
+          name: "Food",
+          hidden: 0,
+          tombstone: 0,
+          sort_order: 0,
+          cat_group: "g1",
+          goal_def: null,
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          id: "cat1",
+          name: "Food",
+          hidden: 0,
+          tombstone: 0,
+          sort_order: 0,
+          cat_group: "g1",
+          goal_def: null,
+        },
+        {
+          id: "cat2",
+          name: "Gas",
+          hidden: 0,
+          tombstone: 0,
+          sort_order: 1,
+          cat_group: "g1",
+          goal_def: null,
+        },
       ]);
 
     const onData = vi.fn();

@@ -1,5 +1,13 @@
 import { useImperativeHandle, useRef, useState } from "react";
-import { Alert, InputAccessoryView, Platform, Pressable, ScrollView, TextInput, View } from "react-native";
+import {
+  Alert,
+  InputAccessoryView,
+  Platform,
+  Pressable,
+  ScrollView,
+  TextInput,
+  View,
+} from "react-native";
 import { ContextMenu } from "@/presentation/components/atoms/ContextMenu";
 import { Input } from "@/presentation/components/atoms/Input";
 import { SymbolView } from "expo-symbols";
@@ -25,15 +33,47 @@ const ACCESSORY_ID = "sharedCalcToolbar";
 // ── Demo Data ─────────────────────────────────────────────────────────
 
 const DEMO_ACCOUNTS = [
-  { id: "demo-1", name: "Checking Account", subtitle: "Main checking", balance: "$4,230.50", icon: "wallet" as const },
-  { id: "demo-2", name: "Savings Account", subtitle: "Emergency fund", balance: "$12,800.00", icon: "wallet" as const },
-  { id: "demo-3", name: "Credit Card", subtitle: "Visa ending 4521", balance: "-$1,340.25", icon: "wallet" as const },
-  { id: "demo-4", name: "Investment", subtitle: "Brokerage", balance: "$45,600.00", icon: "barChartOutline" as const },
+  {
+    id: "demo-1",
+    name: "Checking Account",
+    subtitle: "Main checking",
+    balance: "$4,230.50",
+    icon: "wallet" as const,
+  },
+  {
+    id: "demo-2",
+    name: "Savings Account",
+    subtitle: "Emergency fund",
+    balance: "$12,800.00",
+    icon: "wallet" as const,
+  },
+  {
+    id: "demo-3",
+    name: "Credit Card",
+    subtitle: "Visa ending 4521",
+    balance: "-$1,340.25",
+    icon: "wallet" as const,
+  },
+  {
+    id: "demo-4",
+    name: "Investment",
+    subtitle: "Brokerage",
+    balance: "$45,600.00",
+    icon: "barChartOutline" as const,
+  },
 ];
 
 const CATEGORIES = [
-  "Groceries", "Rent", "Utilities", "Transport", "Entertainment",
-  "Dining Out", "Clothing", "Health", "Insurance", "Savings",
+  "Groceries",
+  "Rent",
+  "Utilities",
+  "Transport",
+  "Entertainment",
+  "Dining Out",
+  "Clothing",
+  "Health",
+  "Insurance",
+  "Savings",
 ];
 
 // ── Section Header ────────────────────────────────────────────────────
@@ -97,58 +137,157 @@ interface SharedInputRef {
   deleteBackward: () => void;
 }
 
-function CalculatorPill({ inputRef, isExpressionMode }: { inputRef: React.RefObject<SharedInputRef | null>; isExpressionMode: boolean }) {
+function CalculatorPill({
+  inputRef,
+  isExpressionMode,
+}: {
+  inputRef: React.RefObject<SharedInputRef | null>;
+  isExpressionMode: boolean;
+}) {
   const { colors, spacing } = useTheme();
-  const pillStyle = { flexDirection: "row" as const, alignItems: "center" as const, height: 44, paddingHorizontal: 12, borderRadius: 22 };
+  const pillStyle = {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    height: 44,
+    paddingHorizontal: 12,
+    borderRadius: 22,
+  };
 
-  function Btn({ icon, color, onPress }: { icon: Parameters<typeof SymbolView>[0]["name"]; color: string; onPress: () => void }) {
+  function Btn({
+    icon,
+    color,
+    onPress,
+  }: {
+    icon: Parameters<typeof SymbolView>[0]["name"];
+    color: string;
+    onPress: () => void;
+  }) {
     return (
       <Pressable
         onPress={onPress}
         hitSlop={8}
-        style={({ pressed }) => ({ paddingHorizontal: 6, paddingVertical: 8, borderRadius: 8, backgroundColor: pressed ? "rgba(255,255,255,0.12)" : "transparent" })}
+        style={({ pressed }) => ({
+          paddingHorizontal: 6,
+          paddingVertical: 8,
+          borderRadius: 8,
+          backgroundColor: pressed ? "rgba(255,255,255,0.12)" : "transparent",
+        })}
       >
         <SymbolView name={icon} size={20} tintColor={color} />
       </Pressable>
     );
   }
 
-  const divider = <View style={{ width: 1, height: 20, backgroundColor: colors.textMuted, opacity: 0.3, marginHorizontal: 4 }} />;
+  const divider = (
+    <View
+      style={{
+        width: 1,
+        height: 20,
+        backgroundColor: colors.textMuted,
+        opacity: 0.3,
+        marginHorizontal: 4,
+      }}
+    />
+  );
   const content = (
     <>
-      {OPERATORS.map(({ icon, value }) => <Btn key={value} icon={icon} color={colors.textPrimary} onPress={() => inputRef.current?.injectOperator(value)} />)}
+      {OPERATORS.map(({ icon, value }) => (
+        <Btn
+          key={value}
+          icon={icon}
+          color={colors.textPrimary}
+          onPress={() => inputRef.current?.injectOperator(value)}
+        />
+      ))}
       {divider}
-      <Btn icon="equal" color={isExpressionMode ? colors.primary : colors.textMuted} onPress={() => inputRef.current?.evaluate()} />
+      <Btn
+        icon="equal"
+        color={isExpressionMode ? colors.primary : colors.textMuted}
+        onPress={() => inputRef.current?.evaluate()}
+      />
       {divider}
-      <Btn icon="delete.backward" color={colors.textMuted} onPress={() => inputRef.current?.deleteBackward()} />
+      <Btn
+        icon="delete.backward"
+        color={colors.textMuted}
+        onPress={() => inputRef.current?.deleteBackward()}
+      />
     </>
   );
 
   return (
-    <View style={{ flexDirection: "row", justifyContent: "flex-end", paddingHorizontal: spacing.md, marginBottom: 6 }}>
-      {glass ? <GlassView style={pillStyle}>{content}</GlassView> : <BlurView tint="systemChromeMaterial" intensity={100} style={pillStyle}>{content}</BlurView>}
+    <View
+      style={{
+        flexDirection: "row",
+        justifyContent: "flex-end",
+        paddingHorizontal: spacing.md,
+        marginBottom: 6,
+      }}
+    >
+      {glass ? (
+        <GlassView style={pillStyle}>{content}</GlassView>
+      ) : (
+        <BlurView tint="systemChromeMaterial" intensity={100} style={pillStyle}>
+          {content}
+        </BlurView>
+      )}
     </View>
   );
 }
 
 // ── Category Row (currency input demo) ────────────────────────────────
 
-function CategoryRow({ name, cents, isActive, expressionMode, fullExpression, previewCents, onPress }: {
-  name: string; cents: number; isActive: boolean; expressionMode: boolean; fullExpression: string; previewCents: number | null; onPress: () => void;
+function CategoryRow({
+  name,
+  cents,
+  isActive,
+  expressionMode,
+  fullExpression,
+  previewCents,
+  onPress,
+}: {
+  name: string;
+  cents: number;
+  isActive: boolean;
+  expressionMode: boolean;
+  fullExpression: string;
+  previewCents: number | null;
+  onPress: () => void;
 }) {
   const { colors, spacing } = useTheme();
   const { renderCursor } = useCursorBlink(isActive);
-  usePreferencesStore((s) => `${s.numberFormat}:${s.hideFraction}:${s.defaultCurrencyCode}:${s.defaultCurrencyCustomSymbol}:${s.currencySymbolPosition}:${s.currencySpaceBetweenAmountAndSymbol}`);
+  usePreferencesStore(
+    (s) =>
+      `${s.numberFormat}:${s.hideFraction}:${s.defaultCurrencyCode}:${s.defaultCurrencyCustomSymbol}:${s.currencySymbolPosition}:${s.currencySpaceBetweenAmountAndSymbol}`,
+  );
 
-  const displayColor = isActive ? colors.primary : cents !== 0 ? colors.textPrimary : colors.textMuted;
+  const displayColor = isActive
+    ? colors.primary
+    : cents !== 0
+      ? colors.textPrimary
+      : colors.textMuted;
 
   return (
-    <Pressable onPress={onPress} style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: spacing.lg, paddingVertical: 12, minHeight: 44 }}>
-      <Text variant="body" style={{ flex: 1 }} numberOfLines={1}>{name}</Text>
+    <Pressable
+      onPress={onPress}
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: spacing.lg,
+        paddingVertical: 12,
+        minHeight: 44,
+      }}
+    >
+      <Text variant="body" style={{ flex: 1 }} numberOfLines={1}>
+        {name}
+      </Text>
       <View style={{ alignItems: "flex-end" }}>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           {isActive && expressionMode ? (
-            <Text variant="body" style={{ fontWeight: "600", fontVariant: ["tabular-nums"], color: colors.primary }} numberOfLines={1}>
+            <Text
+              variant="body"
+              style={{ fontWeight: "600", fontVariant: ["tabular-nums"], color: colors.primary }}
+              numberOfLines={1}
+            >
               {formatExpression(fullExpression)}
             </Text>
           ) : (
@@ -159,17 +298,34 @@ function CategoryRow({ name, cents, isActive, expressionMode, fullExpression, pr
                 <>
                   {parts.svgSymbol && parts.position === "before" && (
                     <>
-                      <CurrencySymbol symbol={parts.symbol} svgSymbol={parts.svgSymbol} fontSize={fontSize} color={displayColor} />
+                      <CurrencySymbol
+                        symbol={parts.symbol}
+                        svgSymbol={parts.svgSymbol}
+                        fontSize={fontSize}
+                        color={displayColor}
+                      />
                       {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
                     </>
                   )}
-                  <Text variant="body" style={{ fontWeight: "600", fontVariant: ["tabular-nums"], color: displayColor }}>
+                  <Text
+                    variant="body"
+                    style={{
+                      fontWeight: "600",
+                      fontVariant: ["tabular-nums"],
+                      color: displayColor,
+                    }}
+                  >
                     {parts.svgSymbol ? parts.number : formatCents(Math.abs(cents))}
                   </Text>
                   {parts.svgSymbol && parts.position === "after" && (
                     <>
                       {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
-                      <CurrencySymbol symbol={parts.symbol} svgSymbol={parts.svgSymbol} fontSize={fontSize} color={displayColor} />
+                      <CurrencySymbol
+                        symbol={parts.symbol}
+                        svgSymbol={parts.svgSymbol}
+                        fontSize={fontSize}
+                        color={displayColor}
+                      />
                     </>
                   )}
                 </>
@@ -179,7 +335,11 @@ function CategoryRow({ name, cents, isActive, expressionMode, fullExpression, pr
           {renderCursor({ width: 1.5, height: 16, marginLeft: 1, borderRadius: 1 }, colors.primary)}
         </View>
         {isActive && expressionMode && previewCents !== null && (
-          <Text variant="captionSm" color={colors.textMuted} style={{ fontVariant: ["tabular-nums"], marginTop: 1 }}>
+          <Text
+            variant="captionSm"
+            color={colors.textMuted}
+            style={{ fontVariant: ["tabular-nums"], marginTop: 1 }}
+          >
             = {formatCents(previewCents)}
           </Text>
         )}
@@ -197,7 +357,9 @@ export default function TestPlayground() {
   const insets = useSafeAreaInsets();
 
   // ── Currency input state ──
-  const [values, setValues] = useState<Record<string, number>>(Object.fromEntries(CATEGORIES.map((c) => [c, 0])));
+  const [values, setValues] = useState<Record<string, number>>(
+    Object.fromEntries(CATEGORIES.map((c) => [c, 0])),
+  );
   const [activeRow, setActiveRow] = useState<string | null>(null);
   const activeValue = activeRow ? (values[activeRow] ?? 0) : 0;
 
@@ -208,7 +370,10 @@ export default function TestPlayground() {
 
   const sharedInputRef = useRef<TextInput>(null);
   const expr = useExpressionMode({ value: activeValue, onChangeValue: handleChangeValue });
-  usePreferencesStore((s) => `${s.numberFormat}:${s.hideFraction}:${s.defaultCurrencyCode}:${s.defaultCurrencyCustomSymbol}:${s.currencySymbolPosition}:${s.currencySpaceBetweenAmountAndSymbol}`);
+  usePreferencesStore(
+    (s) =>
+      `${s.numberFormat}:${s.hideFraction}:${s.defaultCurrencyCode}:${s.defaultCurrencyCustomSymbol}:${s.currencySymbolPosition}:${s.currencySpaceBetweenAmountAndSymbol}`,
+  );
 
   function handleBlur() {
     expr.handleBlurExpression();
@@ -228,27 +393,45 @@ export default function TestPlayground() {
   }));
 
   function handleRowPress(name: string) {
-    if (activeRow === name) { sharedInputRef.current?.blur(); return; }
+    if (activeRow === name) {
+      sharedInputRef.current?.blur();
+      return;
+    }
     if (activeRow && expr.expressionMode) expr.handleBlurExpression();
     setActiveRow(name);
     setTimeout(() => sharedInputRef.current?.focus(), 50);
   }
 
-  const currentInputValue = expr.expressionMode ? expr.expressionInputValue : String(Math.abs(activeValue));
+  const currentInputValue = expr.expressionMode
+    ? expr.expressionInputValue
+    : String(Math.abs(activeValue));
 
   function handleChangeText(text: string) {
     if (!activeRow) return;
-    if (expr.expressionMode) { expr.handleChangeTextOperand(text); return; }
+    if (expr.expressionMode) {
+      expr.handleChangeTextOperand(text);
+      return;
+    }
     const newCents = Math.min(parseInt(text.replace(/\D/g, "") || "0", 10), MAX_CENTS);
     handleChangeValue(newCents);
   }
 
-  const cardStyle = { backgroundColor: colors.cardBackground, borderRadius: br.lg, borderWidth: bw.thin, borderColor: colors.cardBorder, overflow: "hidden" as const };
+  const cardStyle = {
+    backgroundColor: colors.cardBackground,
+    borderRadius: br.lg,
+    borderWidth: bw.thin,
+    borderColor: colors.cardBorder,
+    overflow: "hidden" as const,
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.pageBackground }}>
       <ScrollView
-        contentContainerStyle={{ paddingTop: insets.top + spacing.lg, paddingHorizontal: spacing.lg, paddingBottom: 120 }}
+        contentContainerStyle={{
+          paddingTop: insets.top + spacing.lg,
+          paddingHorizontal: spacing.lg,
+          paddingBottom: 120,
+        }}
         keyboardShouldPersistTaps="handled"
       >
         <Text variant="headingLg" color={colors.textPrimary} style={{ marginBottom: spacing.xs }}>
@@ -276,7 +459,13 @@ export default function TestPlayground() {
                 onPress={() => handleRowPress(name)}
               />
               {i < CATEGORIES.length - 1 && (
-                <View style={{ height: bw.thin, backgroundColor: colors.divider, marginHorizontal: spacing.lg }} />
+                <View
+                  style={{
+                    height: bw.thin,
+                    backgroundColor: colors.divider,
+                    marginHorizontal: spacing.lg,
+                  }}
+                />
               )}
             </View>
           ))}
@@ -286,34 +475,102 @@ export default function TestPlayground() {
 
         <SectionTitle>BUTTONS — STYLES x SIZES</SectionTitle>
 
-        {(["borderedProminent", "bordered", "borderedSecondary", "borderless"] as const).map((bs) => (
-          <View key={bs} style={{ marginBottom: spacing.xl }}>
-            <Text variant="caption" color={colors.textSecondary} style={{ marginBottom: spacing.sm }}>{bs}</Text>
-            <Row>
-              <Button title="Play" icon="playSkipForwardOutline" buttonStyle={bs} size="sm" onPress={() => {}} />
-              <Button title="Play" icon="playSkipForwardOutline" buttonStyle={bs} size="md" onPress={() => {}} />
-              <Button title="Play" icon="playSkipForwardOutline" buttonStyle={bs} size="lg" onPress={() => {}} />
-            </Row>
-            <Row>
-              <Button icon="checkmark" buttonStyle={bs} size="sm" onPress={() => {}} />
-              <Button icon="checkmark" buttonStyle={bs} size="md" onPress={() => {}} />
-              <Button icon="checkmark" buttonStyle={bs} size="lg" onPress={() => {}} />
-            </Row>
-          </View>
-        ))}
+        {(["borderedProminent", "bordered", "borderedSecondary", "borderless"] as const).map(
+          (bs) => (
+            <View key={bs} style={{ marginBottom: spacing.xl }}>
+              <Text
+                variant="caption"
+                color={colors.textSecondary}
+                style={{ marginBottom: spacing.sm }}
+              >
+                {bs}
+              </Text>
+              <Row>
+                <Button
+                  title="Play"
+                  icon="playSkipForwardOutline"
+                  buttonStyle={bs}
+                  size="sm"
+                  onPress={() => {}}
+                />
+                <Button
+                  title="Play"
+                  icon="playSkipForwardOutline"
+                  buttonStyle={bs}
+                  size="md"
+                  onPress={() => {}}
+                />
+                <Button
+                  title="Play"
+                  icon="playSkipForwardOutline"
+                  buttonStyle={bs}
+                  size="lg"
+                  onPress={() => {}}
+                />
+              </Row>
+              <Row>
+                <Button icon="checkmark" buttonStyle={bs} size="sm" onPress={() => {}} />
+                <Button icon="checkmark" buttonStyle={bs} size="md" onPress={() => {}} />
+                <Button icon="checkmark" buttonStyle={bs} size="lg" onPress={() => {}} />
+              </Row>
+            </View>
+          ),
+        )}
 
         <SectionTitle>BUTTONS — DANGER</SectionTitle>
         <Row wrap>
-          <Button title="Delete" icon="trashOutline" buttonStyle="borderedProminent" danger onPress={() => {}} />
-          <Button title="Delete" icon="trashOutline" buttonStyle="bordered" danger onPress={() => {}} />
-          <Button title="Delete" icon="trashOutline" buttonStyle="borderedSecondary" danger onPress={() => {}} />
-          <Button title="Delete" icon="trashOutline" buttonStyle="borderless" danger onPress={() => {}} />
+          <Button
+            title="Delete"
+            icon="trashOutline"
+            buttonStyle="borderedProminent"
+            danger
+            onPress={() => {}}
+          />
+          <Button
+            title="Delete"
+            icon="trashOutline"
+            buttonStyle="bordered"
+            danger
+            onPress={() => {}}
+          />
+          <Button
+            title="Delete"
+            icon="trashOutline"
+            buttonStyle="borderedSecondary"
+            danger
+            onPress={() => {}}
+          />
+          <Button
+            title="Delete"
+            icon="trashOutline"
+            buttonStyle="borderless"
+            danger
+            onPress={() => {}}
+          />
         </Row>
         <Row>
-          <Button icon="trashOutline" buttonStyle="borderedProminent" danger size="md" onPress={() => {}} />
+          <Button
+            icon="trashOutline"
+            buttonStyle="borderedProminent"
+            danger
+            size="md"
+            onPress={() => {}}
+          />
           <Button icon="trashOutline" buttonStyle="bordered" danger size="md" onPress={() => {}} />
-          <Button icon="trashOutline" buttonStyle="borderedSecondary" danger size="md" onPress={() => {}} />
-          <Button icon="trashOutline" buttonStyle="borderless" danger size="md" onPress={() => {}} />
+          <Button
+            icon="trashOutline"
+            buttonStyle="borderedSecondary"
+            danger
+            size="md"
+            onPress={() => {}}
+          />
+          <Button
+            icon="trashOutline"
+            buttonStyle="borderless"
+            danger
+            size="md"
+            onPress={() => {}}
+          />
         </Row>
 
         <SectionTitle>BUTTONS — STATES</SectionTitle>
@@ -334,13 +591,38 @@ export default function TestPlayground() {
 
         <SectionTitle>BUTTONS — HAPTIC FEEDBACK</SectionTitle>
         <Row wrap>
-          <Button title="Light" haptic="light" buttonStyle="borderedSecondary" size="sm" onPress={() => {}} />
-          <Button title="Medium" haptic="medium" buttonStyle="borderedSecondary" size="sm" onPress={() => {}} />
-          <Button title="Heavy" haptic="heavy" buttonStyle="borderedSecondary" size="sm" onPress={() => {}} />
+          <Button
+            title="Light"
+            haptic="light"
+            buttonStyle="borderedSecondary"
+            size="sm"
+            onPress={() => {}}
+          />
+          <Button
+            title="Medium"
+            haptic="medium"
+            buttonStyle="borderedSecondary"
+            size="sm"
+            onPress={() => {}}
+          />
+          <Button
+            title="Heavy"
+            haptic="heavy"
+            buttonStyle="borderedSecondary"
+            size="sm"
+            onPress={() => {}}
+          />
         </Row>
         <Row wrap>
           <Button title="Success" haptic="success" size="sm" onPress={() => {}} />
-          <Button title="Warning" haptic="warning" buttonStyle="borderedSecondary" danger size="sm" onPress={() => {}} />
+          <Button
+            title="Warning"
+            haptic="warning"
+            buttonStyle="borderedSecondary"
+            danger
+            size="sm"
+            onPress={() => {}}
+          />
           <Button title="Error" haptic="error" danger size="sm" onPress={() => {}} />
         </Row>
 
@@ -373,8 +655,18 @@ export default function TestPlayground() {
         <Row wrap>
           <GlassButton icon="trashOutline" color={colors.negative} onPress={() => {}} />
           <GlassButton icon="checkmark" color={colors.positive} onPress={() => {}} />
-          <GlassButton label="Delete" variant="tinted" tintColor={colors.negative} onPress={() => {}} />
-          <GlassButton label="Confirm" variant="tinted" tintColor={colors.positive} onPress={() => {}} />
+          <GlassButton
+            label="Delete"
+            variant="tinted"
+            tintColor={colors.negative}
+            onPress={() => {}}
+          />
+          <GlassButton
+            label="Confirm"
+            variant="tinted"
+            tintColor={colors.positive}
+            onPress={() => {}}
+          />
         </Row>
 
         <SectionTitle>GLASS BUTTONS — EFFECTS</SectionTitle>
@@ -410,25 +702,64 @@ export default function TestPlayground() {
         </Row>
 
         <SectionTitle>ICONS — SCALES</SectionTitle>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xl, marginBottom: spacing.lg }}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: spacing.xl,
+            marginBottom: spacing.lg,
+          }}
+        >
           <Icon name="star" size={28} scale="small" />
           <Icon name="star" size={28} scale="medium" />
           <Icon name="star" size={28} scale="large" />
         </View>
 
         <SectionTitle>ICONS — ANIMATIONS</SectionTitle>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xl, marginBottom: spacing.lg }}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: spacing.xl,
+            marginBottom: spacing.lg,
+          }}
+        >
           <View style={{ alignItems: "center", gap: spacing.xs }}>
-            <Icon name="checkmarkCircle" size={32} color={colors.positive} animationSpec={{ effect: { type: "bounce", direction: "up" }, repeating: true, speed: 2 }} />
-            <Text variant="captionSm" color={colors.textMuted}>bounce</Text>
+            <Icon
+              name="checkmarkCircle"
+              size={32}
+              color={colors.positive}
+              animationSpec={{
+                effect: { type: "bounce", direction: "up" },
+                repeating: true,
+                speed: 2,
+              }}
+            />
+            <Text variant="captionSm" color={colors.textMuted}>
+              bounce
+            </Text>
           </View>
           <View style={{ alignItems: "center", gap: spacing.xs }}>
-            <Icon name="alertCircle" size={32} color={colors.negative} animationSpec={{ effect: { type: "pulse" }, repeating: true, speed: 1.5 }} />
-            <Text variant="captionSm" color={colors.textMuted}>pulse</Text>
+            <Icon
+              name="alertCircle"
+              size={32}
+              color={colors.negative}
+              animationSpec={{ effect: { type: "pulse" }, repeating: true, speed: 1.5 }}
+            />
+            <Text variant="captionSm" color={colors.textMuted}>
+              pulse
+            </Text>
           </View>
           <View style={{ alignItems: "center", gap: spacing.xs }}>
-            <Icon name="search" size={32} color={colors.primary} animationSpec={{ effect: { type: "scale" }, repeating: true, speed: 2 }} />
-            <Text variant="captionSm" color={colors.textMuted}>scale</Text>
+            <Icon
+              name="search"
+              size={32}
+              color={colors.primary}
+              animationSpec={{ effect: { type: "scale" }, repeating: true, speed: 2 }}
+            />
+            <Text variant="captionSm" color={colors.textMuted}>
+              scale
+            </Text>
           </View>
         </View>
 
@@ -437,51 +768,108 @@ export default function TestPlayground() {
         <SectionTitle>CONTEXT MENU</SectionTitle>
         <SectionCaption>Long-press any row for native iOS context menu</SectionCaption>
 
-        <View style={{ backgroundColor: colors.cardBackground, borderRadius: br.lg, borderCurve: "continuous", overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
+        <View
+          style={{
+            backgroundColor: colors.cardBackground,
+            borderRadius: br.lg,
+            borderCurve: "continuous",
+            overflow: "hidden",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+          }}
+        >
           {DEMO_ACCOUNTS.map((account, i) => (
             <View key={account.id}>
               <ContextMenu>
                 <ContextMenu.Trigger>
-                  <Pressable style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", paddingHorizontal: spacing.lg, paddingVertical: 14, gap: spacing.md, opacity: pressed ? 0.7 : 1 })}>
-                    <View style={{ width: 36, height: 36, borderRadius: 10, borderCurve: "continuous", backgroundColor: `${colors.primary}15`, alignItems: "center", justifyContent: "center" }}>
+                  <Pressable
+                    style={({ pressed }) => ({
+                      flexDirection: "row",
+                      alignItems: "center",
+                      paddingHorizontal: spacing.lg,
+                      paddingVertical: 14,
+                      gap: spacing.md,
+                      opacity: pressed ? 0.7 : 1,
+                    })}
+                  >
+                    <View
+                      style={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: 10,
+                        borderCurve: "continuous",
+                        backgroundColor: `${colors.primary}15`,
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
                       <Icon name={account.icon} size={18} color={colors.primary} />
                     </View>
                     <View style={{ flex: 1, gap: 2 }}>
-                      <Text variant="body" style={{ fontWeight: "500" }}>{account.name}</Text>
-                      <Text variant="captionSm" color={colors.textMuted}>{account.subtitle}</Text>
+                      <Text variant="body" style={{ fontWeight: "500" }}>
+                        {account.name}
+                      </Text>
+                      <Text variant="captionSm" color={colors.textMuted}>
+                        {account.subtitle}
+                      </Text>
                     </View>
-                    <Text variant="body" color={account.balance.startsWith("-") ? colors.negative : colors.positive} style={{ fontWeight: "600", fontVariant: ["tabular-nums"] }}>
+                    <Text
+                      variant="body"
+                      color={account.balance.startsWith("-") ? colors.negative : colors.positive}
+                      style={{ fontWeight: "600", fontVariant: ["tabular-nums"] }}
+                    >
                       {account.balance}
                     </Text>
                   </Pressable>
                 </ContextMenu.Trigger>
                 <ContextMenu.Content>
-                  <ContextMenu.Item key="reconcile" onSelect={() => Alert.alert("Reconcile", account.name)}>
+                  <ContextMenu.Item
+                    key="reconcile"
+                    onSelect={() => Alert.alert("Reconcile", account.name)}
+                  >
                     <ContextMenu.ItemTitle>Reconcile</ContextMenu.ItemTitle>
                     <ContextMenu.ItemIcon ios={{ name: "checkmark.circle" }} />
                   </ContextMenu.Item>
-                  <ContextMenu.Item key="search" onSelect={() => Alert.alert("Search", account.name)}>
+                  <ContextMenu.Item
+                    key="search"
+                    onSelect={() => Alert.alert("Search", account.name)}
+                  >
                     <ContextMenu.ItemTitle>Search Transactions</ContextMenu.ItemTitle>
                     <ContextMenu.ItemIcon ios={{ name: "magnifyingglass" }} />
                   </ContextMenu.Item>
                   <ContextMenu.Separator />
-                  <ContextMenu.Item key="rename" onSelect={() => Alert.alert("Rename", account.name)}>
+                  <ContextMenu.Item
+                    key="rename"
+                    onSelect={() => Alert.alert("Rename", account.name)}
+                  >
                     <ContextMenu.ItemTitle>Rename</ContextMenu.ItemTitle>
                     <ContextMenu.ItemIcon ios={{ name: "pencil" }} />
                   </ContextMenu.Item>
-                  <ContextMenu.Item key="settings" onSelect={() => Alert.alert("Settings", account.name)}>
+                  <ContextMenu.Item
+                    key="settings"
+                    onSelect={() => Alert.alert("Settings", account.name)}
+                  >
                     <ContextMenu.ItemTitle>Settings</ContextMenu.ItemTitle>
                     <ContextMenu.ItemIcon ios={{ name: "gearshape" }} />
                   </ContextMenu.Item>
                   <ContextMenu.Separator />
-                  <ContextMenu.Item key="close" destructive onSelect={() => Alert.alert("Close Account", account.name)}>
+                  <ContextMenu.Item
+                    key="close"
+                    destructive
+                    onSelect={() => Alert.alert("Close Account", account.name)}
+                  >
                     <ContextMenu.ItemTitle>Close Account</ContextMenu.ItemTitle>
                     <ContextMenu.ItemIcon ios={{ name: "trash" }} />
                   </ContextMenu.Item>
                 </ContextMenu.Content>
               </ContextMenu>
               {i < DEMO_ACCOUNTS.length - 1 && (
-                <View style={{ height: bw.thin, backgroundColor: colors.divider, marginLeft: spacing.lg + 36 + spacing.md }} />
+                <View
+                  style={{
+                    height: bw.thin,
+                    backgroundColor: colors.divider,
+                    marginLeft: spacing.lg + 36 + spacing.md,
+                  }}
+                />
               )}
             </View>
           ))}
@@ -491,18 +879,47 @@ export default function TestPlayground() {
 
         <SectionTitle>INPUT — BASIC</SectionTitle>
         <Input placeholder="Account name" containerStyle={{ marginBottom: spacing.md }} />
-        <Input placeholder="https://your-server.com" icon="serverOutline" containerStyle={{ marginBottom: spacing.md }} />
-        <Input placeholder="Password" icon="lockClosedOutline" secureTextEntry containerStyle={{ marginBottom: spacing.md }} />
+        <Input
+          placeholder="https://your-server.com"
+          icon="serverOutline"
+          containerStyle={{ marginBottom: spacing.md }}
+        />
+        <Input
+          placeholder="Password"
+          icon="lockClosedOutline"
+          secureTextEntry
+          containerStyle={{ marginBottom: spacing.md }}
+        />
 
         <SectionTitle>INPUT — ERROR STATE</SectionTitle>
-        <Input placeholder="Invalid input" icon="alertCircle" error containerStyle={{ marginBottom: spacing.md }} />
+        <Input
+          placeholder="Invalid input"
+          icon="alertCircle"
+          error
+          containerStyle={{ marginBottom: spacing.md }}
+        />
 
         <SectionTitle>INPUT — DISABLED</SectionTitle>
-        <Input value="Read only value" editable={false} containerStyle={{ marginBottom: spacing.md, opacity: 0.5 }} />
+        <Input
+          value="Read only value"
+          editable={false}
+          containerStyle={{ marginBottom: spacing.md, opacity: 0.5 }}
+        />
 
         <SectionTitle>INPUT — KEYBOARD TYPES</SectionTitle>
-        <Input placeholder="https://your-server.com" icon="serverOutline" keyboardType="url" autoCapitalize="none" containerStyle={{ marginBottom: spacing.md }} />
-        <Input placeholder="email@example.com" icon="personOutline" keyboardType="email-address" autoCapitalize="none" />
+        <Input
+          placeholder="https://your-server.com"
+          icon="serverOutline"
+          keyboardType="url"
+          autoCapitalize="none"
+          containerStyle={{ marginBottom: spacing.md }}
+        />
+        <Input
+          placeholder="email@example.com"
+          icon="personOutline"
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
       </ScrollView>
 
       {/* Hidden shared TextInput for currency input demo */}

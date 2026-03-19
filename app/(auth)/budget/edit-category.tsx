@@ -646,20 +646,16 @@ export default function CategoryDetailsScreen() {
           onPress={() => {
             if (!categoryId) return;
             if (!category?.hidden) {
-              Alert.alert(
-                t("categoryHiddenTitle"),
-                t("categoryHiddenMessage"),
-                [
-                  { text: t("cancel"), style: "cancel" },
-                  {
-                    text: t("hideCategory"),
-                    onPress: () => {
-                      updateCategory(categoryId, { hidden: true });
-                      router.back();
-                    },
+              Alert.alert(t("categoryHiddenTitle"), t("categoryHiddenMessage"), [
+                { text: t("cancel"), style: "cancel" },
+                {
+                  text: t("hideCategory"),
+                  onPress: () => {
+                    updateCategory(categoryId, { hidden: true });
+                    router.back();
                   },
-                ],
-              );
+                },
+              ]);
             } else {
               updateCategory(categoryId, { hidden: false });
             }

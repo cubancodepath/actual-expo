@@ -11,11 +11,7 @@ import { useCallback, useRef } from "react";
 import { Alert } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
-import {
-  deleteTransaction,
-  updateTransaction,
-  setClearedBulk,
-} from "@/transactions";
+import { deleteTransaction, updateTransaction, setClearedBulk } from "@/transactions";
 import { undoable } from "@/sync/undo";
 import { batchMessages } from "@/sync";
 import { useUndoStore } from "@/stores/undoStore";
@@ -52,9 +48,7 @@ export function useTransactionBatchActions({
     const count = ids.size;
     if (count === 0) return;
 
-    const hasReconciled = transactionsRef.current.some(
-      (txn) => ids.has(txn.id) && txn.reconciled,
-    );
+    const hasReconciled = transactionsRef.current.some((txn) => ids.has(txn.id) && txn.reconciled);
     const plural = count === 1 ? "" : "s";
     const message = hasReconciled
       ? t("deleteTransactionsReconciledMessage", { count, plural })
@@ -87,9 +81,7 @@ export function useTransactionBatchActions({
     const ids = selectedIdsRef.current;
     const txns = transactionsRef.current;
 
-    const selected = txns.filter(
-      (txn) => ids.has(txn.id) && !txn.reconciled,
-    );
+    const selected = txns.filter((txn) => ids.has(txn.id) && !txn.reconciled);
     if (selected.length === 0) return;
 
     const targetVal = selected.some((txn) => !txn.cleared);
@@ -130,9 +122,7 @@ export function useTransactionBatchActions({
               });
             })();
 
-            useUndoStore
-              .getState()
-              .showUndo(t("bulkDeleted", { count }));
+            useUndoStore.getState().showUndo(t("bulkDeleted", { count }));
           },
         },
       ]);

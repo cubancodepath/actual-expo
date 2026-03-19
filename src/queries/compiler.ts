@@ -224,21 +224,54 @@ function compileCondition(state: CompilerState, field: string, condition: unknow
     switch (op) {
       case "$eq":
         if (value === null) clauses.push(`${left} IS NULL`);
-        else { const rhs = compileValue(state, value, fieldType); clauses.push(`${left} = ${rhs.value}`); }
+        else {
+          const rhs = compileValue(state, value, fieldType);
+          clauses.push(`${left} = ${rhs.value}`);
+        }
         break;
       case "$ne":
         if (value === null) clauses.push(`${left} IS NOT NULL`);
-        else { const rhs = compileValue(state, value, fieldType); clauses.push(`${left} != ${rhs.value}`); }
+        else {
+          const rhs = compileValue(state, value, fieldType);
+          clauses.push(`${left} != ${rhs.value}`);
+        }
         break;
-      case "$gt": { const rhs = compileValue(state, value, fieldType); clauses.push(`${left} > ${rhs.value}`); break; }
-      case "$gte": { const rhs = compileValue(state, value, fieldType); clauses.push(`${left} >= ${rhs.value}`); break; }
-      case "$lt": { const rhs = compileValue(state, value, fieldType); clauses.push(`${left} < ${rhs.value}`); break; }
-      case "$lte": { const rhs = compileValue(state, value, fieldType); clauses.push(`${left} <= ${rhs.value}`); break; }
-      case "$like": { const rhs = compileValue(state, value, "string"); clauses.push(`${left} LIKE ${rhs.value}`); break; }
-      case "$notlike": { const rhs = compileValue(state, value, "string"); clauses.push(`${left} NOT LIKE ${rhs.value}`); break; }
+      case "$gt": {
+        const rhs = compileValue(state, value, fieldType);
+        clauses.push(`${left} > ${rhs.value}`);
+        break;
+      }
+      case "$gte": {
+        const rhs = compileValue(state, value, fieldType);
+        clauses.push(`${left} >= ${rhs.value}`);
+        break;
+      }
+      case "$lt": {
+        const rhs = compileValue(state, value, fieldType);
+        clauses.push(`${left} < ${rhs.value}`);
+        break;
+      }
+      case "$lte": {
+        const rhs = compileValue(state, value, fieldType);
+        clauses.push(`${left} <= ${rhs.value}`);
+        break;
+      }
+      case "$like": {
+        const rhs = compileValue(state, value, "string");
+        clauses.push(`${left} LIKE ${rhs.value}`);
+        break;
+      }
+      case "$notlike": {
+        const rhs = compileValue(state, value, "string");
+        clauses.push(`${left} NOT LIKE ${rhs.value}`);
+        break;
+      }
       case "$oneof": {
         if (!Array.isArray(value) || value.length === 0) clauses.push("0");
-        else { const rhs = compileValue(state, value, fieldType); clauses.push(`${left} IN ${rhs.value}`); }
+        else {
+          const rhs = compileValue(state, value, fieldType);
+          clauses.push(`${left} IN ${rhs.value}`);
+        }
         break;
       }
       default:
@@ -490,7 +523,10 @@ export function compile(queryState: QueryState): CompiledQuery {
 }
 
 /** Convert a raw DB row's output types (boolean 0/1 → true/false, date int → string, etc.) */
-export function convertOutputRow(row: Record<string, unknown>, outputTypes: Map<string, FieldType>): Record<string, unknown> {
+export function convertOutputRow(
+  row: Record<string, unknown>,
+  outputTypes: Map<string, FieldType>,
+): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(row)) {
     const type = outputTypes.get(key);
@@ -512,7 +548,11 @@ export function convertOutputRow(row: Record<string, unknown>, outputTypes: Map<
         break;
       case "json":
         if (typeof value === "string") {
-          try { result[key] = JSON.parse(value); } catch { result[key] = null; }
+          try {
+            result[key] = JSON.parse(value);
+          } catch {
+            result[key] = null;
+          }
         } else {
           result[key] = value;
         }

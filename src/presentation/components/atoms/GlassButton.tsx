@@ -67,7 +67,9 @@ export function GlassButton({
 
   if (variant === "tinted") {
     return (
-      <View style={[{ borderRadius: radius, borderCurve: "continuous", overflow: "hidden" }, style]}>
+      <View
+        style={[{ borderRadius: radius, borderCurve: "continuous", overflow: "hidden" }, style]}
+      >
         <Pressable
           onPress={handlePress}
           disabled={disabled}

@@ -25,7 +25,11 @@ import { UpcomingScheduleRow } from "@/presentation/components/account/UpcomingS
 import { AddTransactionButton } from "@/presentation/components/molecules/AddTransactionButton";
 import { useTags } from "@/presentation/hooks/useTags";
 import { usePickerStore } from "@/stores/pickerStore";
-import { buildListData, useSelectModeHeader, type ListItem } from "@/presentation/hooks/transactionList";
+import {
+  buildListData,
+  useSelectModeHeader,
+  type ListItem,
+} from "@/presentation/hooks/transactionList";
 import { SelectModeToolbar } from "@/presentation/components/transaction/SelectModeToolbar";
 import {
   skipNextDate,
@@ -62,14 +66,17 @@ export default function SpendingScreen() {
 
   // ---- Transaction data (AQL + React Query + sync-event auto-refresh) ----
   const txnQuery = useMemo(() => q("transactions").select(["*", "accountName"]), []);
-  const { transactions, fetchNextPage, hasNextPage, isFetchingNextPage, refetch } = useTransactions({
-    query: txnQuery,
-    options: { pageSize: 25 },
-  });
+  const { transactions, fetchNextPage, hasNextPage, isFetchingNextPage, refetch } = useTransactions(
+    {
+      query: txnQuery,
+      options: { pageSize: 25 },
+    },
+  );
 
   // Uncleared count — reactive via liveQuery
   const unclearedQuery = useMemo(
-    () => q("transactions").filter({ cleared: false, reconciled: false }).calculate({ $count: "$id" }),
+    () =>
+      q("transactions").filter({ cleared: false, reconciled: false }).calculate({ $count: "$id" }),
     [],
   );
   const { data: unclearedData } = useLiveQuery<{ result: number }>(
@@ -109,7 +116,8 @@ export default function SpendingScreen() {
     isSelectMode: selection.isSelectMode,
     selectedCount: selection.selectedIds.size,
     selectedTotal,
-    onSelectAll: () => selection.selectAll(transactions as TransactionDisplay[], (t) => !t.reconciled),
+    onSelectAll: () =>
+      selection.selectAll(transactions as TransactionDisplay[], (t) => !t.reconciled),
     onDoneSelection: () => {
       selection.exit();
       setTabBarHidden(false);
@@ -167,7 +175,10 @@ export default function SpendingScreen() {
   }
 
   function handleAddTag(txnId: string) {
-    router.push({ pathname: "/(auth)/transaction/tags", params: { transactionId: txnId, mode: "direct" } });
+    router.push({
+      pathname: "/(auth)/transaction/tags",
+      params: { transactionId: txnId, mode: "direct" },
+    });
   }
 
   // ---- Picker integration (single + bulk) ----
@@ -261,13 +272,18 @@ export default function SpendingScreen() {
   }, []);
 
   const handlePressSchedule = useCallback(
-    (scheduleId: string) => router.push({ pathname: "/(auth)/schedule/[id]", params: { id: scheduleId } }),
+    (scheduleId: string) =>
+      router.push({ pathname: "/(auth)/schedule/[id]", params: { id: scheduleId } }),
     [router],
   );
 
   // ---- Merged list data ----
   const mergedListData = useMemo(
-    () => buildListData(transactions as TransactionDisplay[], { previewTransactions, upcomingExpanded }),
+    () =>
+      buildListData(transactions as TransactionDisplay[], {
+        previewTransactions,
+        upcomingExpanded,
+      }),
     [transactions, previewTransactions, upcomingExpanded],
   );
 
@@ -384,9 +400,17 @@ export default function SpendingScreen() {
             description={t("spending.noTransactionsDescription")}
           />
         }
-        onEndReached={() => { if (hasNextPage) fetchNextPage(); }}
+        onEndReached={() => {
+          if (hasNextPage) fetchNextPage();
+        }}
         onEndReachedThreshold={0.3}
-        refreshControl={<RefreshControl refreshing={false} onRefresh={() => refetch()} tintColor={colors.primary} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={false}
+            onRefresh={() => refetch()}
+            tintColor={colors.primary}
+          />
+        }
         contentContainerStyle={{ paddingBottom: 80, backgroundColor: colors.pageBackground }}
       />
 

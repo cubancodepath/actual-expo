@@ -112,9 +112,7 @@ export function pagedQuery<T = Record<string, unknown>>(
     fetchNextPromise = (async () => {
       isLoadingMore = true;
       try {
-        const result = await executeQuery<T>(
-          query.limit(pageCount).offset(data.length),
-        );
+        const result = await executeQuery<T>(query.limit(pageCount).offset(data.length));
         if (isUnsubscribed) return;
 
         if (result.data.length === 0) {
@@ -157,10 +155,18 @@ export function pagedQuery<T = Record<string, unknown>>(
   run();
 
   return {
-    get data() { return data; },
-    get totalCount() { return totalCount; },
-    get hasMore() { return hasMore; },
-    get isLoadingMore() { return isLoadingMore; },
+    get data() {
+      return data;
+    },
+    get totalCount() {
+      return totalCount;
+    },
+    get hasMore() {
+      return hasMore;
+    },
+    get isLoadingMore() {
+      return isLoadingMore;
+    },
     run,
     fetchNext,
     optimisticUpdate,

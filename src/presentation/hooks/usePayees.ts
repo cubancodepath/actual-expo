@@ -8,9 +8,6 @@ import { useLiveQuery } from "./useQuery";
 import type { Payee } from "@/payees/types";
 
 export function usePayees() {
-  const { data, isLoading } = useLiveQuery<Payee>(
-    () => q("payees"),
-    [],
-  );
+  const { data, isLoading } = useLiveQuery<Payee>(() => q("payees"), []);
   return { payees: data ?? [], isLoading };
 }

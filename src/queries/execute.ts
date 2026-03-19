@@ -29,21 +29,25 @@ export async function executeQuery<T = Record<string, unknown>>(
 export async function executeCompiled<T = Record<string, unknown>>(
   compiled: CompiledQuery,
 ): Promise<QueryResult<T>> {
-  const rows = await runQuery<Record<string, unknown>>(compiled.sql, compiled.params as SQLiteBindParams);
+  const rows = await runQuery<Record<string, unknown>>(
+    compiled.sql,
+    compiled.params as SQLiteBindParams,
+  );
   // Convert boolean 0/1 to true/false (SQLite stores booleans as integers)
   const boolFields: string[] = [];
   for (const [key, type] of compiled.outputTypes) {
     if (type === "boolean") boolFields.push(key);
   }
-  const data = boolFields.length > 0
-    ? rows.map((row) => {
-        const r = { ...row };
-        for (const f of boolFields) {
-          if (f in r) r[f] = r[f] === 1 || r[f] === true;
-        }
-        return r as T;
-      })
-    : (rows as T[]);
+  const data =
+    boolFields.length > 0
+      ? rows.map((row) => {
+          const r = { ...row };
+          for (const f of boolFields) {
+            if (f in r) r[f] = r[f] === 1 || r[f] === true;
+          }
+          return r as T;
+        })
+      : (rows as T[]);
   return { data, dependencies: compiled.dependencies };
 }
 

@@ -8,9 +8,6 @@ import { useLiveQuery } from "./useQuery";
 import type { Tag } from "@/tags/types";
 
 export function useTags() {
-  const { data, isLoading } = useLiveQuery<Tag>(
-    () => q("tags"),
-    [],
-  );
+  const { data, isLoading } = useLiveQuery<Tag>(() => q("tags"), []);
   return { tags: data ?? [], isLoading };
 }

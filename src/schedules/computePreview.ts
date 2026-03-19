@@ -68,7 +68,12 @@ export function computePreviewTransactions(
     if (schedule.next_date) {
       dates.push(schedule.next_date);
 
-      if (isRecurring && conds.date?.value && typeof conds.date.value === "object" && "frequency" in conds.date.value) {
+      if (
+        isRecurring &&
+        conds.date?.value &&
+        typeof conds.date.value === "object" &&
+        "frequency" in conds.date.value
+      ) {
         const recurConfig = conds.date.value as import("./types").RecurConfig;
         let day = parseDate(schedule.next_date);
         while (day <= boundary) {

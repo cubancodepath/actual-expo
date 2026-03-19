@@ -113,8 +113,7 @@ export default function BudgetScreen() {
   const router = useRouter();
   const { month, data, loading, load, setAmount, setCarryover, resetHold } = useBudgetStore();
   const { refreshControlProps } = useRefreshControl();
-  const { showProgressBars, toggleProgressBars } =
-    usePrefsStore();
+  const { showProgressBars, toggleProgressBars } = usePrefsStore();
   const goalsEnabled = useFeatureFlag("goalTemplatesEnabled");
   const commonActions = useCommonMenuActions();
   const [uncategorizedCount, setUncategorizedCount] = useState(0);
@@ -261,7 +260,16 @@ export default function BudgetScreen() {
     sections.push({
       key: HIDDEN_GROUP_ID,
       title: t("hiddenCategories"),
-      group: { id: HIDDEN_GROUP_ID, name: t("hiddenCategories"), is_income: false, hidden: false, budgeted: 0, spent: 0, balance: 0, categories: hiddenCategories },
+      group: {
+        id: HIDDEN_GROUP_ID,
+        name: t("hiddenCategories"),
+        is_income: false,
+        hidden: false,
+        budgeted: 0,
+        spent: 0,
+        balance: 0,
+        categories: hiddenCategories,
+      },
       data: collapsedGroups.has(HIDDEN_GROUP_ID) ? [] : hiddenCategories,
     });
   }
@@ -531,7 +539,9 @@ export default function BudgetScreen() {
         <Stack.Toolbar.Menu icon="ellipsis">
           {goalsEnabled && (
             <Stack.Toolbar.MenuAction
-              icon={showProgressBars ? "chart.line.text.clipboard.fill" : "chart.line.text.clipboard"}
+              icon={
+                showProgressBars ? "chart.line.text.clipboard.fill" : "chart.line.text.clipboard"
+              }
               onPress={toggleProgressBars}
             >
               {showProgressBars ? t("hideProgress") : t("showProgress")}

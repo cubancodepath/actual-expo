@@ -39,7 +39,6 @@ interface CalculatorPillProps {
   onDone?: () => void;
 }
 
-
 export function CalculatorPill({ inputRef, onDone }: CalculatorPillProps) {
   const { colors, spacing } = useTheme();
 

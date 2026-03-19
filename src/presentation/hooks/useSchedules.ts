@@ -44,14 +44,9 @@ export function useSchedules(): UseSchedulesResult {
   // 4. Compute statuses (pure derivation)
   const statuses = useMemo<ScheduleStatuses>(() => {
     if (!schedules) return new Map();
-    const hasTrans = new Set(
-      (transRows ?? []).map((r) => r.schedule).filter(Boolean),
-    );
+    const hasTrans = new Set((transRows ?? []).map((r) => r.schedule).filter(Boolean));
     return new Map(
-      schedules.map((s) => [
-        s.id,
-        getStatus(s.next_date, s.completed, hasTrans.has(s.id)),
-      ]),
+      schedules.map((s) => [s.id, getStatus(s.next_date, s.completed, hasTrans.has(s.id))]),
     );
   }, [schedules, transRows]);
 

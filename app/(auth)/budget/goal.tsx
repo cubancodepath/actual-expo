@@ -148,7 +148,10 @@ export default function GoalEditorScreen() {
   const { t } = useTranslation("budget");
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const router = useRouter();
-  const { categoryId, dismissCount } = useLocalSearchParams<{ categoryId: string; dismissCount?: string }>();
+  const { categoryId, dismissCount } = useLocalSearchParams<{
+    categoryId: string;
+    dismissCount?: string;
+  }>();
   const dismiss = () => router.dismiss(Number(dismissCount) || 1);
 
   const [isEditing, setIsEditing] = useState(false);

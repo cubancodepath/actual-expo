@@ -150,7 +150,6 @@ export default function SearchScreen() {
   const [hasMore, setHasMore] = useState(true);
   const offsetRef = useRef(0);
 
-
   // ---- Selection ----
   const selection = useSelectionMode<TransactionDisplay>();
 
@@ -222,7 +221,10 @@ export default function SearchScreen() {
           type: "button" as const,
           label: t("select"),
           disabled: !hasResults,
-          onPress: () => { setTabBarHidden(true); selection.enter(); },
+          onPress: () => {
+            setTabBarHidden(true);
+            selection.enter();
+          },
         },
       ],
     });
@@ -412,7 +414,9 @@ export default function SearchScreen() {
       clearPicker();
       setResults((prev) =>
         prev.map((t) =>
-          t.id === txnId ? { ...t, account: selectedAccount.id, accountName: selectedAccount.name } : t,
+          t.id === txnId
+            ? { ...t, account: selectedAccount.id, accountName: selectedAccount.name }
+            : t,
         ),
       );
       updateTransaction(txnId, { account: selectedAccount.id });
@@ -439,7 +443,9 @@ export default function SearchScreen() {
       pendingCategoryRef.current = null;
       clearPicker();
       if (selectedCategory.id) {
-        setResults((prev) => prev.map((t) => (t.id === txnId ? { ...t, category: selectedCategory.id } : t)));
+        setResults((prev) =>
+          prev.map((t) => (t.id === txnId ? { ...t, category: selectedCategory.id } : t)),
+        );
         updateTransaction(txnId, { category: selectedCategory.id });
       }
     } else if (bulkCategoryPendingRef.current) {
@@ -516,7 +522,11 @@ export default function SearchScreen() {
               onPress={handleEditTransaction}
               onDelete={handleDelete}
               onToggleCleared={handleToggleCleared}
-              onLongPress={(txnId: string) => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); if (!selection.isSelectMode) setTabBarHidden(true); selection.longPress(txnId); }}
+              onLongPress={(txnId: string) => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                if (!selection.isSelectMode) setTabBarHidden(true);
+                selection.longPress(txnId);
+              }}
               onDuplicate={handleDuplicate}
               onMove={handleMove}
               onSetCategory={handleSetCategory}

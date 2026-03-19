@@ -1,12 +1,5 @@
 import { useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  ScrollView,
-  Switch,
-  View,
-} from "react-native";
+import { ActivityIndicator, Alert, Pressable, ScrollView, Switch, View } from "react-native";
 
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useAccounts } from "@/presentation/hooks/useAccounts";

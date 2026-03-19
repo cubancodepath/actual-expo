@@ -76,9 +76,7 @@ export const views: Record<string, ViewDef> = {
       accountName: {
         sql: "acc.name",
         type: "string",
-        joins: [
-          "JOIN accounts acc ON acc.id = t.acct AND acc.tombstone = 0",
-        ],
+        joins: ["JOIN accounts acc ON acc.id = t.acct AND acc.tombstone = 0"],
         dependencies: ["accounts"],
       },
     },
@@ -95,9 +93,7 @@ export const views: Record<string, ViewDef> = {
     fieldOverrides: {
       name: "COALESCE(tr_acc.name, p.name)",
     },
-    joins: [
-      "LEFT JOIN accounts tr_acc ON p.transfer_acct = tr_acc.id AND tr_acc.tombstone = 0",
-    ],
+    joins: ["LEFT JOIN accounts tr_acc ON p.transfer_acct = tr_acc.id AND tr_acc.tombstone = 0"],
     baseWhere: "(p.transfer_acct IS NULL OR tr_acc.id IS NOT NULL)",
   },
 

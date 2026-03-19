@@ -33,10 +33,7 @@ export function useCategories() {
  * Convenience hook — just categories, no groups.
  */
 export function useCategoryList() {
-  const { data: categories } = useLiveQuery<Category>(
-    () => q("categories"),
-    [],
-  );
+  const { data: categories } = useLiveQuery<Category>(() => q("categories"), []);
   return categories ?? [];
 }
 
@@ -44,9 +41,6 @@ export function useCategoryList() {
  * Convenience hook — just groups, no categories.
  */
 export function useCategoryGroups() {
-  const { data: groups } = useLiveQuery<CategoryGroup>(
-    () => q("category_groups"),
-    [],
-  );
+  const { data: groups } = useLiveQuery<CategoryGroup>(() => q("category_groups"), []);
   return groups ?? [];
 }

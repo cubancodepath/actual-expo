@@ -170,6 +170,8 @@
   "renameCategory": "Rename Category",
   "hideCategory": "Hide Category",
   "showCategory": "Show Category",
+  "showGroup": "Show Group",
+  "hideGroup": "Hide Group",
   "deleteCategoryTitle": "Delete Category",
   "deleteCategoryWithTransfers": "Are you sure you want to delete \"{{name}}\"? You'll need to select a category to move its transactions to.",
   "selectCategory": "Select Category",

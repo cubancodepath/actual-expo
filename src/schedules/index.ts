@@ -171,7 +171,11 @@ export async function setNextDate(opts: {
 
     const rule = await getRuleById(schedule.rule);
     if (!rule) throw new Error("No rule found for schedule");
-    conditions = rule.conditions;
+    conditions = rule.conditions.map((c) =>
+      typeof c.serialize === "function"
+        ? (c.serialize() as unknown as RuleCondition)
+        : (c as unknown as RuleCondition),
+    );
   }
 
   const { date: dateCond } = extractScheduleConds(conditions);
@@ -399,14 +403,25 @@ export const updateSchedule = undoable(async function updateSchedule(opts: {
     if (!rule) throw new Error("Rule not found for schedule");
 
     await batchMessages(async () => {
+      // Serialize Rule class instances back to plain objects for merging/saving
+      const existingConds = rule.conditions.map((c) =>
+        typeof c.serialize === "function"
+          ? (c.serialize() as unknown as RuleCondition)
+          : (c as unknown as RuleCondition),
+      );
+      const existingActions = rule.actions.map((a) =>
+        typeof a.serialize === "function"
+          ? (a.serialize() as unknown as RuleAction)
+          : (a as unknown as RuleAction),
+      );
       // Merge old conditions with new
-      const newConditions = mergeConditions(rule.conditions, conditions);
+      const newConditions = mergeConditions(existingConds, conditions);
       // Merge actions: keep link-schedule, replace set actions
       const newActions =
         actions !== undefined
-          ? [...rule.actions.filter((a) => a.op === "link-schedule"), ...actions]
+          ? [...existingActions.filter((a) => a.op === "link-schedule"), ...actions]
           : undefined;
-      await updateRule(rule.id, { conditions: newConditions, actions: newActions });
+      await updateRule(rule.id!, { conditions: newConditions, actions: newActions });
 
       // Recalculate next date if conditions changed or reset requested
       if (resetNextDate) {

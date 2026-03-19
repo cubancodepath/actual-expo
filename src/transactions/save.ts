@@ -22,7 +22,7 @@ import { createSchedule, setNextDate } from "../schedules";
 import { addDays } from "date-fns";
 import { parseDate } from "../schedules/recurrence";
 import type { RecurConfig, RuleCondition } from "../schedules/types";
-import type { ParsedRule } from "../rules/types";
+import type { Rule } from "../rules/rule";
 import { applyRulesToForm } from "../rules/apply";
 
 export type SplitLine = {
@@ -60,7 +60,7 @@ export type SaveTransactionInput = {
  */
 export async function saveTransaction(
   input: SaveTransactionInput,
-  rules?: ParsedRule[],
+  rules?: Rule[],
 ): Promise<string> {
   const {
     transactionId,

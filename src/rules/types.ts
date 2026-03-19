@@ -16,7 +16,9 @@ export type ConditionOp =
   | "gte"
   | "lt"
   | "lte"
-  | "hasTags";
+  | "hasTags"
+  | "onBudget"
+  | "offBudget";
 
 // ── Action operators ──
 

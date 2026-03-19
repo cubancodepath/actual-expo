@@ -132,7 +132,7 @@ export default function AuthLayout() {
           ...screen,
           title: t("nav.overspentCategories"),
           presentation: "formSheet",
-          sheetAllowedDetents: "fitToContents",
+          sheetAllowedDetents: [0.3, 1.0],
           contentStyle: { backgroundColor: theme.colors.pageBackground },
         }}
       />

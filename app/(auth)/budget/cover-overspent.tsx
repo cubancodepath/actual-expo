@@ -7,6 +7,7 @@ import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { useCategories } from "@/presentation/hooks/useCategories";
 import { sheetForMonth, envelopeBudget } from "@/spreadsheet/bindings";
 import { getSpreadsheet } from "@/spreadsheet/instance";
+import { useSpreadsheetVersion } from "@/presentation/hooks/useSheetValue";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Amount } from "@/presentation/components/atoms/Amount";
 import { Button } from "@/presentation/components/atoms/Button";
@@ -25,6 +26,7 @@ export default function CoverOverspentScreen() {
   const month = useBudgetUIStore((s) => s.month);
   const { categories, groups } = useCategories();
   const sheet = sheetForMonth(month);
+  const ssVersion = useSpreadsheetVersion();
 
   const overspentCategories = useMemo<OverspentCategory[]>(() => {
     const ss = getSpreadsheet();
@@ -49,7 +51,7 @@ export default function CoverOverspentScreen() {
       }
     }
     return result;
-  }, [categories, groups, sheet]);
+  }, [categories, groups, sheet, ssVersion]);
 
   const pillBg = colors.cardBackground;
   const pillBorder = colors.cardBorder;

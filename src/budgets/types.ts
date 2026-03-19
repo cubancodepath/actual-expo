@@ -23,6 +23,23 @@ export type BudgetGroup = {
   categories: BudgetCategory[];
 };
 
+/** Structural-only category data (no spreadsheet values). */
+export type BudgetCategoryData = {
+  id: string;
+  name: string;
+  hidden: boolean;
+  goalDef: string | null;
+};
+
+/** Structural-only group data (no spreadsheet values). */
+export type BudgetGroupData = {
+  id: string;
+  name: string;
+  is_income: boolean;
+  hidden: boolean;
+  categories: BudgetCategoryData[];
+};
+
 export type BudgetMonth = {
   month: string; // 'YYYY-MM'
   income: number;

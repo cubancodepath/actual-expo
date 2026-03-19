@@ -10,7 +10,7 @@
 
 import { Spreadsheet, type CellValue } from "./spreadsheet";
 import { sheetForMonth, envelopeBudget } from "./bindings";
-import { runQuery, first } from "../db";
+import { runQuery, first, firstSync } from "../db";
 import { monthToInt, currentMonth, intToStr } from "../lib/date";
 import { ALIVE_TX_FILTER } from "../db/filters";
 import { getCategories, getCategoryGroups } from "../categories";
@@ -44,62 +44,42 @@ export async function createBudgetCells(
   const startDate = monthInt * 100 + 1;
   const endDate = monthInt * 100 + 31;
 
-  // ── Load budget rows from DB ──
-  const budgetRows = await runQuery<{
-    category: string;
-    amount: number;
-    carryover: number;
-  }>("SELECT category, amount, carryover FROM zero_budgets WHERE month = ?", [monthInt]);
-
-  const budgetMap = new Map<string, { amount: number; carryover: boolean }>();
-  for (const r of budgetRows) {
-    budgetMap.set(r.category, { amount: r.amount, carryover: r.carryover === 1 });
-  }
-
-  // ── Load spent amounts per category ──
-  const spentRows = await runQuery<{ category: string; total: number }>(
-    `SELECT COALESCE(cm.transferId, t.category) AS category, SUM(t.amount) AS total
-     FROM transactions t
-     LEFT JOIN category_mapping cm ON cm.id = t.category
-     LEFT JOIN accounts a ON a.id = t.acct
-     WHERE ${ALIVE_TX_FILTER} AND t.date >= ? AND t.date <= ? AND a.offbudget = 0
-     GROUP BY category`,
-    [startDate, endDate],
-  );
-  const spentMap = new Map<string, number>();
-  for (const r of spentRows) {
-    if (r.category) spentMap.set(r.category, r.total);
-  }
-
-  // ── Load buffered amount ──
-  const bufferedRow = await runQuery<{ buffered: number }>(
-    "SELECT buffered FROM zero_budget_months WHERE id = ?",
-    [month],
-  );
-  const bufferedAmount = bufferedRow[0]?.buffered ?? 0;
-
-  // ── Load income ──
-  const incomeRow = await runQuery<{ total: number }>(
-    `SELECT SUM(t.amount) AS total
-     FROM transactions t
-     LEFT JOIN category_mapping cm ON cm.id = t.category
-     LEFT JOIN categories c ON COALESCE(cm.transferId, t.category) = c.id
-     LEFT JOIN category_groups g ON g.id = c.cat_group
-     LEFT JOIN accounts a ON a.id = t.acct
-     WHERE ${ALIVE_TX_FILTER} AND t.date >= ? AND t.date <= ?
-       AND a.offbudget = 0 AND g.is_income = 1`,
-    [startDate, endDate],
-  );
-  const totalIncome = incomeRow[0]?.total ?? 0;
+  // All budget data cells are now dynamic (sync SQL queries on recompute).
+  // No pre-loading needed — cells re-query via triggerBudgetChanges.
 
   // ── Create cells ──
   ss.startTransaction();
 
-  // Buffered
-  ss.createStatic(sheet, envelopeBudget.buffered, bufferedAmount);
+  // Buffered (dynamic — sync SQL)
+  ss.createDynamic(sheet, envelopeBudget.buffered, {
+    dependencies: [],
+    run: () => {
+      const row = firstSync<{ buffered: number }>(
+        "SELECT buffered FROM zero_budget_months WHERE id = ?",
+        [month],
+      );
+      return row?.buffered ?? 0;
+    },
+  });
 
-  // Income
-  ss.createStatic(sheet, envelopeBudget.totalIncome, totalIncome);
+  // Income (dynamic — runs sync SQL on recompute)
+  ss.createDynamic(sheet, envelopeBudget.totalIncome, {
+    dependencies: [],
+    run: () => {
+      const row = firstSync<{ total: number }>(
+        `SELECT SUM(t.amount) AS total
+         FROM transactions t
+         LEFT JOIN category_mapping cm ON cm.id = t.category
+         LEFT JOIN categories c ON COALESCE(cm.transferId, t.category) = c.id
+         LEFT JOIN category_groups g ON g.id = c.cat_group
+         LEFT JOIN accounts a ON a.id = t.acct
+         WHERE ${ALIVE_TX_FILTER} AND t.date >= ? AND t.date <= ?
+           AND a.offbudget = 0 AND g.is_income = 1`,
+        [startDate, endDate],
+      );
+      return row?.total ?? 0;
+    },
+  });
 
   // Per-category cells
   const expenseGroups = groups.filter((g) => !g.is_income);
@@ -110,19 +90,46 @@ export async function createBudgetCells(
     const group = groups.find((g) => g.id === cat.cat_group);
     if (!group || group.is_income) continue; // skip income categories
 
-    const budget = budgetMap.get(cat.id);
-    const budgeted = budget?.amount ?? 0;
-    const spent = spentMap.get(cat.id) ?? 0;
-    const carryover = budget?.carryover ?? false;
+    // Dynamic: budget amount (sync SQL — recomputes on triggerBudgetChanges)
+    ss.createDynamic(sheet, envelopeBudget.catBudgeted(cat.id), {
+      dependencies: [],
+      run: () => {
+        const row = firstSync<{ amount: number }>(
+          "SELECT amount FROM zero_budgets WHERE month = ? AND category = ?",
+          [monthInt, cat.id],
+        );
+        return row?.amount ?? 0;
+      },
+    });
 
-    // Static: user-set budget amount
-    ss.createStatic(sheet, envelopeBudget.catBudgeted(cat.id), budgeted);
+    // Dynamic: spent amount (sync SQL — recomputes on triggerBudgetChanges)
+    ss.createDynamic(sheet, envelopeBudget.catSpent(cat.id), {
+      dependencies: [],
+      run: () => {
+        const row = firstSync<{ total: number }>(
+          `SELECT SUM(t.amount) AS total
+           FROM transactions t
+           LEFT JOIN category_mapping cm ON cm.id = t.category
+           LEFT JOIN accounts a ON a.id = t.acct
+           WHERE ${ALIVE_TX_FILTER} AND t.date >= ? AND t.date <= ? AND a.offbudget = 0
+             AND COALESCE(cm.transferId, t.category) = ?`,
+          [startDate, endDate, cat.id],
+        );
+        return row?.total ?? 0;
+      },
+    });
 
-    // Static: spent amount (from transactions)
-    ss.createStatic(sheet, envelopeBudget.catSpent(cat.id), spent);
-
-    // Static: carryover flag
-    ss.createStatic(sheet, envelopeBudget.catCarryover(cat.id), carryover);
+    // Dynamic: carryover flag (sync SQL)
+    ss.createDynamic(sheet, envelopeBudget.catCarryover(cat.id), {
+      dependencies: [],
+      run: () => {
+        const row = firstSync<{ carryover: number }>(
+          "SELECT carryover FROM zero_budgets WHERE month = ? AND category = ?",
+          [monthInt, cat.id],
+        );
+        return row?.carryover === 1;
+      },
+    });
 
     // Dynamic: balance (leftover) = budgeted + spent + carryIn
     ss.createDynamic(sheet, envelopeBudget.catBalance(cat.id), {
@@ -368,50 +375,59 @@ async function createBudgetCellsInTransaction(
   const startDate = monthInt * 100 + 1;
   const endDate = monthInt * 100 + 31;
 
-  // Load budget rows
-  const budgetRows = await runQuery<{ category: string; amount: number; carryover: number }>(
-    "SELECT category, amount, carryover FROM zero_budgets WHERE month = ?",
-    [monthInt],
-  );
-  const budgetMap = new Map<string, { amount: number; carryover: boolean }>();
-  for (const r of budgetRows) {
-    budgetMap.set(r.category, { amount: r.amount, carryover: r.carryover === 1 });
-  }
+  // Buffered (dynamic — sync SQL)
+  ss.createDynamic(sheet, envelopeBudget.buffered, {
+    dependencies: [],
+    run: () => {
+      const row = firstSync<{ buffered: number }>(
+        "SELECT buffered FROM zero_budget_months WHERE id = ?",
+        [month],
+      );
+      return row?.buffered ?? 0;
+    },
+  });
 
-  // Load spent amounts
-  const spentRows = await runQuery<{ category: string; total: number }>(
-    `SELECT COALESCE(cm.transferId, t.category) AS category, SUM(t.amount) AS total
-     FROM transactions t
-     LEFT JOIN category_mapping cm ON cm.id = t.category
-     LEFT JOIN accounts a ON a.id = t.acct
-     WHERE ${ALIVE_TX_FILTER} AND t.date >= ? AND t.date <= ? AND a.offbudget = 0
-     GROUP BY category`,
-    [startDate, endDate],
-  );
-  const spentMap = new Map<string, number>();
-  for (const r of spentRows) {
-    if (r.category) spentMap.set(r.category, r.total);
-  }
-
-  // Load buffered
-  const bufferedRow = await runQuery<{ buffered: number }>(
-    "SELECT buffered FROM zero_budget_months WHERE id = ?",
-    [month],
-  );
-  const bufferedAmount = bufferedRow[0]?.buffered ?? 0;
-
-  // Create cells (no transaction — caller manages it)
-  ss.createStatic(sheet, envelopeBudget.buffered, bufferedAmount);
+  // Income (dynamic — runs sync SQL on recompute)
+  ss.createDynamic(sheet, envelopeBudget.totalIncome, {
+    dependencies: [],
+    run: () => {
+      const row = firstSync<{ total: number }>(
+        `SELECT SUM(t.amount) AS total
+         FROM transactions t
+         LEFT JOIN category_mapping cm ON cm.id = t.category
+         LEFT JOIN categories c ON COALESCE(cm.transferId, t.category) = c.id
+         LEFT JOIN category_groups g ON g.id = c.cat_group
+         LEFT JOIN accounts a ON a.id = t.acct
+         WHERE ${ALIVE_TX_FILTER} AND t.date >= ? AND t.date <= ?
+           AND a.offbudget = 0 AND g.is_income = 1`,
+        [startDate, endDate],
+      );
+      return row?.total ?? 0;
+    },
+  });
 
   const expenseGroups = groups.filter((g) => !g.is_income);
   const incomeGroup = groups.find((g) => g.is_income);
   const incomeCats = categories.filter((c) => incomeGroup && c.cat_group === incomeGroup.id);
 
   // ── Per-category cells ──
-  // Step 1: Create sum-amount (spent) for ALL categories (income + expense)
+  // Step 1: Create sum-amount (spent) for ALL categories (income + expense) — dynamic with sync SQL
   for (const cat of categories) {
-    const spent = spentMap.get(cat.id) ?? 0;
-    ss.createStatic(sheet, envelopeBudget.catSpent(cat.id), spent);
+    ss.createDynamic(sheet, envelopeBudget.catSpent(cat.id), {
+      dependencies: [],
+      run: () => {
+        const row = firstSync<{ total: number }>(
+          `SELECT SUM(t.amount) AS total
+           FROM transactions t
+           LEFT JOIN category_mapping cm ON cm.id = t.category
+           LEFT JOIN accounts a ON a.id = t.acct
+           WHERE ${ALIVE_TX_FILTER} AND t.date >= ? AND t.date <= ? AND a.offbudget = 0
+             AND COALESCE(cm.transferId, t.category) = ?`,
+          [startDate, endDate, cat.id],
+        );
+        return row?.total ?? 0;
+      },
+    });
   }
 
   // Step 2: Create budget/carryover/balance cells ONLY for expense categories
@@ -419,12 +435,29 @@ async function createBudgetCellsInTransaction(
     const group = groups.find((g) => g.id === cat.cat_group);
     if (!group || group.is_income) continue;
 
-    const budget = budgetMap.get(cat.id);
-    const budgeted = budget?.amount ?? 0;
-    const carryover = budget?.carryover ?? false;
+    // Dynamic: budget amount (sync SQL)
+    ss.createDynamic(sheet, envelopeBudget.catBudgeted(cat.id), {
+      dependencies: [],
+      run: () => {
+        const row = firstSync<{ amount: number }>(
+          "SELECT amount FROM zero_budgets WHERE month = ? AND category = ?",
+          [monthInt, cat.id],
+        );
+        return row?.amount ?? 0;
+      },
+    });
 
-    ss.createStatic(sheet, envelopeBudget.catBudgeted(cat.id), budgeted);
-    ss.createStatic(sheet, envelopeBudget.catCarryover(cat.id), carryover);
+    // Dynamic: carryover flag (sync SQL)
+    ss.createDynamic(sheet, envelopeBudget.catCarryover(cat.id), {
+      dependencies: [],
+      run: () => {
+        const row = firstSync<{ carryover: number }>(
+          "SELECT carryover FROM zero_budgets WHERE month = ? AND category = ?",
+          [monthInt, cat.id],
+        );
+        return row?.carryover === 1;
+      },
+    });
 
     ss.createDynamic(sheet, envelopeBudget.catBalance(cat.id), {
       dependencies: [

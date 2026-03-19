@@ -41,3 +41,20 @@ export function useSheetValueNumber(sheet: string, cellName: string): number {
   const value = useSheetValue(sheet, cellName);
   return typeof value === "number" ? value : 0;
 }
+
+/**
+ * useSpreadsheetVersion — re-renders when any spreadsheet cell changes.
+ * Use as a dependency in useMemo to force recalculation when budget data changes.
+ */
+export function useSpreadsheetVersion(): number {
+  const ss = getSpreadsheet();
+  const [version, setVersion] = useState(() => ss.version);
+
+  useEffect(() => {
+    return ss.onCellsChanged(() => {
+      setVersion(ss.version);
+    });
+  }, [ss]);
+
+  return version;
+}

@@ -82,11 +82,18 @@ export async function batchMessages(fn: () => Promise<void>): Promise<void> {
   }
 }
 
+const BUDGET_TABLES = new Set(["zero_budgets", "zero_budget_months", "transactions"]);
+
 async function _applyAndRecord(messages: SyncMessage[]): Promise<void> {
   const oldData: OldData = await applyMessages(messages);
   undoAppendMessages(messages, oldData);
-  // Notify all listeners (stores, live queries) about changed tables
+  // Granular budget cell invalidation (like loot-core's triggerBudgetChanges)
   const tables = [...new Set(messages.map((m) => m.dataset))];
+  if (tables.some((t) => BUDGET_TABLES.has(t))) {
+    const { triggerBudgetChanges } = await import("../spreadsheet/sync");
+    triggerBudgetChanges(messages);
+  }
+  // Notify all listeners (stores, live queries) about changed tables
   emit({ type: "applied", tables });
   scheduleFullSync(); // upload local changes to server after every mutation
 }

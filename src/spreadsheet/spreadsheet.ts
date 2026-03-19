@@ -64,6 +64,11 @@ export class Spreadsheet {
   private transactionDepth = 0;
   private listeners = new Set<CellChangeListener>();
   private computing = false;
+  /** Cells that were directly set (optimistic) — skip their run() in next computation. */
+  private directlySet = new Set<string>();
+
+  /** Monotonic counter incremented after every computation with changes. */
+  version = 0;
 
   // ---- Cell Creation ----
 
@@ -144,6 +149,10 @@ export class Spreadsheet {
     if (cell.value === value) return; // no change
 
     cell.value = value;
+    // Mark as directly set so runComputations skips re-running this cell's
+    // query (the DB hasn't been updated yet — this is an optimistic update).
+    // Dependents will still be recomputed with the new value.
+    this.directlySet.add(resolvedName);
     this.markDirty(resolvedName);
   }
 
@@ -205,6 +214,13 @@ export class Spreadsheet {
       const cell = this.cells.get(name);
       if (!cell) continue;
 
+      if (this.directlySet.has(name)) {
+        // Cell was optimistically set via set() — value is already correct.
+        // Just propagate to dependents without re-running the query.
+        changed.push(name);
+        continue;
+      }
+
       if (cell.type === "dynamic") {
         // Gather dependency values
         const args = cell.dependencies.map((dep) => this.getResolved(dep));
@@ -213,8 +229,6 @@ export class Spreadsheet {
 
         // Handle async results (SQL queries)
         if (result instanceof Promise) {
-          // For now, we don't support async in the computation loop.
-          // Budget formulas should be synchronous (pure math on cached values).
           if (__DEV__) console.warn(`[spreadsheet] async cell not supported: ${name}`);
           continue;
         }
@@ -229,10 +243,19 @@ export class Spreadsheet {
       }
     }
 
+    this.directlySet.clear();
+
     this.computing = false;
+
+    if (__DEV__ && changed.length > 0) {
+      console.log(
+        `[spreadsheet] runComputations: ${sorted.length} sorted, ${changed.length} changed`,
+      );
+    }
 
     // Notify listeners
     if (changed.length > 0) {
+      this.version++;
       for (const listener of this.listeners) {
         listener(changed);
       }
@@ -244,6 +267,20 @@ export class Spreadsheet {
    */
   recompute(sheet: string, name: string): void {
     this.markDirty(resolveName(sheet, name));
+  }
+
+  /**
+   * Force recomputation by resolved name (already includes sheet prefix).
+   */
+  recomputeResolved(resolvedName: string): void {
+    this.markDirty(resolvedName);
+  }
+
+  /**
+   * Get all cells (for inspection by triggerBudgetChanges).
+   */
+  getCells(): Map<string, Cell> {
+    return this.cells;
   }
 
   /**

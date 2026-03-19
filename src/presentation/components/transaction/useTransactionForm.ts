@@ -7,7 +7,6 @@ import { deleteTransaction } from "@/transactions";
 import { useCategories } from "@/presentation/hooks/useCategories";
 import { usePickerStore } from "@/stores/pickerStore";
 import { useRulesStore } from "@/stores/rulesStore";
-import { useSchedulesStore } from "@/stores/schedulesStore";
 import { getTransactionById, getChildTransactions } from "@/transactions";
 import { saveTransaction } from "@/transactions/save";
 import { getRecurringDescription } from "@/schedules";
@@ -284,13 +283,9 @@ export function useTransactionForm(params: RouteParams, amountInput: AmountInput
         recurConfig: !isEdit ? recurConfig : undefined,
       },
       rules,
-    )
-      .then(() => {
-        if (recurConfig) useSchedulesStore.getState().load();
-      })
-      .catch((err) => {
-        if (__DEV__) console.warn("[performSave] failed:", err);
-      });
+    ).catch((err) => {
+      if (__DEV__) console.warn("[performSave] failed:", err);
+    });
   }
 
   function handleSave() {

@@ -323,8 +323,12 @@ function compileSelect(state: CompilerState, queryState: QueryState): string {
       }
     }
 
-    // Default virtual fields for * (payeeName, categoryName — but NOT accountName unless requested)
-    const defaultVirtuals = state.table === "transactions" ? ["payeeName", "categoryName"] : [];
+    // Default virtual fields included automatically in SELECT *
+    const defaultVirtualsMap: Record<string, string[]> = {
+      transactions: ["payeeName", "categoryName"],
+      schedules: ["next_date", "conditions", "actions"],
+    };
+    const defaultVirtuals = defaultVirtualsMap[state.table] ?? [];
     for (const vName of defaultVirtuals) {
       const vf = state.view?.virtualFields?.[vName];
       if (vf) {

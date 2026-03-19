@@ -4,7 +4,6 @@ import { usePickerStore } from "./pickerStore";
 import { usePreferencesStore } from "./preferencesStore";
 import { useSyncStore } from "./syncStore";
 import { useRulesStore } from "./rulesStore";
-import { useSchedulesStore } from "./schedulesStore";
 import { clearQueryCache } from "../queries/queryCache";
 import { currentMonth } from "../lib/date";
 import { PREFERENCE_DEFAULTS } from "../preferences/types";
@@ -25,5 +24,4 @@ export function resetAllStores(): void {
   useFeatureFlagsStore.setState({ ...FEATURE_FLAG_DEFAULTS });
   useSyncStore.setState({ status: "idle", error: null, lastSync: null });
   useRulesStore.setState({ rules: [], loading: false });
-  useSchedulesStore.setState({ schedules: [], loading: false });
 }

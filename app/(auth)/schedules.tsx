@@ -1,6 +1,6 @@
-import { useCallback, useMemo } from "react";
+import { useMemo } from "react";
 import { Alert, Pressable, SectionList, View } from "react-native";
-import { Stack, useFocusEffect, useRouter } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
 import {
@@ -13,7 +13,8 @@ import {
 } from "@/presentation/components";
 import { Icon } from "@/presentation/components/atoms/Icon";
 import { SwipeableRow } from "@/presentation/components";
-import { useSchedulesStore } from "@/stores/schedulesStore";
+import { useSchedules } from "@/presentation/hooks/useSchedules";
+import { deleteSchedule } from "@/schedules";
 import { usePayees } from "@/presentation/hooks/usePayees";
 import { useAccounts } from "@/presentation/hooks/useAccounts";
 import { useUndoStore } from "@/stores/undoStore";
@@ -136,15 +137,9 @@ export default function SchedulesScreen() {
   const styles = useThemedStyles(createStyles);
   const { t } = useTranslation(["schedules", "common"]);
 
-  const { schedules, load, delete_ } = useSchedulesStore();
+  const { schedules } = useSchedules();
   const { payees } = usePayees();
   const { accounts } = useAccounts();
-
-  useFocusEffect(
-    useCallback(() => {
-      load();
-    }, []),
-  );
 
   const payeeMap = useMemo(() => new Map(payees.map((p) => [p.id, p.name])), [payees]);
   const accountMap = useMemo(() => new Map(accounts.map((a) => [a.id, a.name])), [accounts]);
@@ -159,8 +154,7 @@ export default function SchedulesScreen() {
         text: t("common:delete"),
         style: "destructive",
         onPress: async () => {
-          await delete_(schedule.id);
-          load();
+          await deleteSchedule(schedule.id);
           useUndoStore.getState().showUndo(t("scheduleDeleted"));
         },
       },

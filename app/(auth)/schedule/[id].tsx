@@ -12,7 +12,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useAccounts } from "@/presentation/hooks/useAccounts";
 import { usePayees } from "@/presentation/hooks/usePayees";
 import { useCategories } from "@/presentation/hooks/useCategories";
-import { useSchedulesStore } from "@/stores/schedulesStore";
 import { usePickerStore } from "@/stores/pickerStore";
 import { useUndoStore } from "@/stores/undoStore";
 import {
@@ -20,6 +19,10 @@ import {
   getStatus,
   getScheduledAmount,
   getRecurringDescription,
+  updateSchedule,
+  deleteSchedule,
+  skipNextDate,
+  postTransactionForSchedule,
 } from "@/schedules";
 import { withOpacity } from "@/lib/colors";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
@@ -44,7 +47,6 @@ export default function ScheduleDetailScreen() {
   const isDark = colorScheme === "dark";
   const { t } = useTranslation(["schedules", "common"]);
 
-  const { update, delete_, skip, postTransaction, load } = useSchedulesStore();
   const { payees } = usePayees();
   const { accounts } = useAccounts();
   const { groups: categoryGroups } = useCategories();
@@ -269,7 +271,7 @@ export default function ScheduleDetailScreen() {
         ? [{ op: "set", field: "category", value: categoryId }]
         : [];
 
-      await update({
+      await updateSchedule({
         schedule: {
           id: schedule.id,
           name: name.trim() || null,
@@ -279,7 +281,6 @@ export default function ScheduleDetailScreen() {
         actions,
         resetNextDate: recurrenceChanged,
       });
-      load();
       router.dismiss();
     });
     setSaving(false);
@@ -291,8 +292,7 @@ export default function ScheduleDetailScreen() {
       {
         text: t("skip"),
         onPress: async () => {
-          await skip(schedule!.id);
-          load();
+          await skipNextDate(schedule!.id);
           useUndoStore.getState().showUndo(t("dateSkipped"));
         },
       },
@@ -305,8 +305,7 @@ export default function ScheduleDetailScreen() {
       {
         text: t("post"),
         onPress: async () => {
-          await postTransaction(schedule!.id);
-          load();
+          await postTransactionForSchedule(schedule!.id);
           useUndoStore.getState().showUndo(t("transactionPosted"));
         },
       },
@@ -319,10 +318,9 @@ export default function ScheduleDetailScreen() {
       {
         text: t("complete"),
         onPress: async () => {
-          await update({
+          await updateSchedule({
             schedule: { id: schedule!.id, completed: true },
           });
-          load();
           router.dismiss();
         },
       },
@@ -336,8 +334,7 @@ export default function ScheduleDetailScreen() {
         text: t("common:delete"),
         style: "destructive",
         onPress: async () => {
-          await delete_(schedule!.id);
-          load();
+          await deleteSchedule(schedule!.id);
           useUndoStore.getState().showUndo(t("scheduleDeleted"));
           router.dismiss();
         },

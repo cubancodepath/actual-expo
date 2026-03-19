@@ -9,10 +9,9 @@ import Animated, {
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAccounts } from "@/presentation/hooks/useAccounts";
-import { useSchedulesStore } from "@/stores/schedulesStore";
 import { usePickerStore } from "@/stores/pickerStore";
 // categories no longer needed from store — picker handles selection
-import { getRecurringDescription } from "@/schedules";
+import { getRecurringDescription, createSchedule } from "@/schedules";
 import { todayStr } from "@/lib/date";
 import { withOpacity } from "@/lib/colors";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
@@ -34,7 +33,6 @@ export default function NewScheduleScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
 
-  const { create, load } = useSchedulesStore();
   const { accounts } = useAccounts();
 
   // Picker store
@@ -176,7 +174,7 @@ export default function NewScheduleScreen() {
         ? [{ op: "set", field: "category", value: categoryId }]
         : [];
 
-      await create({
+      await createSchedule({
         schedule: {
           name: name.trim() || null,
           posts_transaction: postsTransaction,
@@ -185,7 +183,6 @@ export default function NewScheduleScreen() {
         actions,
       });
 
-      load();
       router.dismiss();
     });
     setSaving(false);

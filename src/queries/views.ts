@@ -103,4 +103,32 @@ export const views: Record<string, ViewDef> = {
       group: "c.cat_group",
     },
   },
+
+  schedules: {
+    alias: "s",
+    joins: [
+      "LEFT JOIN schedules_next_date snd ON snd.schedule_id = s.id AND snd.tombstone = 0",
+      "LEFT JOIN rules r ON r.id = s.rule AND r.tombstone = 0",
+    ],
+    virtualFields: {
+      next_date: {
+        sql: "COALESCE(snd.local_next_date, snd.base_next_date)",
+        type: "integer",
+        joins: [],
+        dependencies: ["schedules_next_date"],
+      },
+      conditions: {
+        sql: "r.conditions",
+        type: "json",
+        joins: [],
+        dependencies: ["rules"],
+      },
+      actions: {
+        sql: "r.actions",
+        type: "json",
+        joins: [],
+        dependencies: ["rules"],
+      },
+    },
+  },
 };

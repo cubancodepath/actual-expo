@@ -33,13 +33,9 @@ import { TokenSearchBar } from "@/presentation/components/transaction/TokenSearc
 import { SearchSuggestions } from "@/presentation/components/transaction/SearchSuggestions";
 import { useTags } from "@/presentation/hooks/useTags";
 import { GlassButton } from "@/presentation/components/atoms/GlassButton";
-import {
-  useTransactionSelection,
-  useTransactionBulkActions,
-  useSelectModeHeader,
-  useBulkCategoryPicker,
-  useBulkAccountPicker,
-} from "@/presentation/hooks/transactionList";
+import { useSelectModeHeader } from "@/presentation/hooks/transactionList";
+import { useSelectionMode } from "@/presentation/hooks/useSelectionMode";
+import { useTransactionBatchActions } from "@/presentation/hooks/useTransactionBatchActions";
 import { usePickerStore } from "@/stores/pickerStore";
 import { SelectModeToolbar } from "@/presentation/components/transaction/SelectModeToolbar";
 import { useTranslation } from "react-i18next";
@@ -155,40 +151,41 @@ export default function AccountSearchScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const offsetRef = useRef(0);
-  const refreshIdRef = useRef(0);
 
   // ---- Selection ----
-  const {
-    selectedIds,
-    isSelectMode,
-    allCleared,
-    selectedTotal,
-    handleLongPress,
-    enterSelectMode,
-    handleSelectAll,
-    handleDoneSelection,
-    resetSelection,
-  } = useTransactionSelection({ transactions: results });
+  const selection = useSelectionMode<TransactionDisplay>();
 
-  const { handleBulkDelete, handleBulkMove, handleBulkToggleCleared, handleBulkChangeCategory } =
-    useTransactionBulkActions({
-      selectedIds,
-      transactions: results,
-      setTransactions: setResults,
-      refreshIdRef,
-      resetSelection,
-      loadAccounts: () => {},
-    });
+  const selectedTransactions = results.filter((t) => selection.selectedIds.has(t.id));
+  const allCleared = (() => {
+    const nonReconciled = selectedTransactions.filter((t) => !t.reconciled);
+    return nonReconciled.length > 0 && nonReconciled.every((t) => t.cleared);
+  })();
+  const selectedTotal = selectedTransactions.reduce((sum, t) => sum + (t.amount as number), 0);
 
-  const { triggerCategoryPicker } = useBulkCategoryPicker(handleBulkChangeCategory);
-  const { triggerAccountPicker } = useBulkAccountPicker(handleBulkMove);
+  const batchActions = useTransactionBatchActions({
+    selectedIds: selection.selectedIds,
+    transactions: results,
+    onDone: selection.exit,
+  });
+
+  const bulkMovePendingRef = useRef(false);
+  const bulkCategoryPendingRef = useRef(false);
+
+  function triggerAccountPicker() {
+    bulkMovePendingRef.current = true;
+    router.push({ pathname: "/(auth)/transaction/account-picker", params: { selectedId: "" } });
+  }
+  function triggerCategoryPicker() {
+    bulkCategoryPendingRef.current = true;
+    router.push({ pathname: "/(auth)/transaction/category-picker", params: { hideSplit: "1" } });
+  }
 
   useSelectModeHeader({
-    isSelectMode,
-    selectedCount: selectedIds.size,
+    isSelectMode: selection.isSelectMode,
+    selectedCount: selection.selectedIds.size,
     selectedTotal,
-    onSelectAll: handleSelectAll,
-    onDoneSelection: handleDoneSelection,
+    onSelectAll: () => selection.selectAll(results, (t) => !t.reconciled),
+    onDoneSelection: selection.exit,
   });
 
   // Auto-focus on mount (skip if initial filter — auto-search instead)
@@ -212,7 +209,7 @@ export default function AccountSearchScreen() {
 
   // ---- Header ----
   useEffect(() => {
-    if (isSelectMode) return;
+    if (selection.isSelectMode) return;
     navigation.setOptions({
       title: accountName || t("detail.defaultTitle"),
       headerRight: undefined,
@@ -221,11 +218,11 @@ export default function AccountSearchScreen() {
           type: "button" as const,
           label: t("detail.select"),
           disabled: !hasResults,
-          onPress: enterSelectMode,
+          onPress: selection.enter,
         },
       ],
     });
-  }, [hasResults, accountName, isSelectMode]);
+  }, [hasResults, accountName, selection.isSelectMode]);
 
   // ---- Token management ----
 
@@ -391,14 +388,19 @@ export default function AccountSearchScreen() {
   const clearPicker = usePickerStore((s) => s.clear);
 
   useEffect(() => {
-    if (selectedAccount && pendingMoveRef.current) {
+    if (!selectedAccount) return;
+    if (pendingMoveRef.current) {
       const txnId = pendingMoveRef.current;
       pendingMoveRef.current = null;
       clearPicker();
       setResults((prev) => prev.filter((t) => t.id !== txnId));
       updateTransaction(txnId, { account: selectedAccount.id });
+    } else if (bulkMovePendingRef.current) {
+      bulkMovePendingRef.current = false;
+      batchActions.handleBulkMove(selectedAccount.id, selectedAccount.name);
+      clearPicker();
     }
-  }, [selectedAccount, clearPicker]);
+  }, [selectedAccount, clearPicker, batchActions.handleBulkMove]);
 
   function handleMove(txnId: string) {
     pendingMoveRef.current = txnId;
@@ -410,15 +412,21 @@ export default function AccountSearchScreen() {
   const selectedCategory = usePickerStore((s) => s.selectedCategory);
 
   useEffect(() => {
-    if (selectedCategory && pendingCategoryRef.current) {
+    if (!selectedCategory) return;
+    if (pendingCategoryRef.current) {
       const txnId = pendingCategoryRef.current;
       pendingCategoryRef.current = null;
-      const categoryId = selectedCategory.id;
       clearPicker();
-      setResults((prev) => prev.map((t) => (t.id === txnId ? { ...t, category: categoryId } : t)));
-      updateTransaction(txnId, { category: categoryId });
+      if (selectedCategory.id) {
+        setResults((prev) => prev.map((t) => (t.id === txnId ? { ...t, category: selectedCategory.id } : t)));
+        updateTransaction(txnId, { category: selectedCategory.id });
+      }
+    } else if (bulkCategoryPendingRef.current) {
+      bulkCategoryPendingRef.current = false;
+      if (selectedCategory.id) batchActions.handleBulkChangeCategory(selectedCategory.id);
+      clearPicker();
     }
-  }, [selectedCategory, clearPicker]);
+  }, [selectedCategory, clearPicker, batchActions.handleBulkChangeCategory]);
 
   function handleSetCategory(txnId: string) {
     pendingCategoryRef.current = txnId;
@@ -489,7 +497,7 @@ export default function AccountSearchScreen() {
                 onPress={handleEditTransaction}
                 onDelete={handleDelete}
                 onToggleCleared={handleToggleCleared}
-                onLongPress={handleLongPress}
+                onLongPress={(txnId: string) => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); selection.longPress(txnId); }}
                 onDuplicate={handleDuplicate}
                 onMove={handleMove}
                 onSetCategory={handleSetCategory}
@@ -497,8 +505,8 @@ export default function AccountSearchScreen() {
                 tags={tags}
                 isFirst={item.isFirst}
                 isLast={item.isLast}
-                isSelectMode={isSelectMode}
-                isSelected={selectedIds.has(item.data.id)}
+                isSelectMode={selection.isSelectMode}
+                isSelected={selection.selectedIds.has(item.data.id)}
               />
             );
           }}
@@ -523,12 +531,12 @@ export default function AccountSearchScreen() {
         />
       </View>
 
-      {isSelectMode && (
+      {selection.isSelectMode && (
         <SelectModeToolbar
           allCleared={allCleared}
-          selectedCount={selectedIds.size}
-          onToggleCleared={handleBulkToggleCleared}
-          onDelete={handleBulkDelete}
+          selectedCount={selection.selectedIds.size}
+          onToggleCleared={batchActions.handleBulkToggleCleared}
+          onDelete={batchActions.handleBulkDelete}
           onMove={triggerAccountPicker}
           onSetCategory={triggerCategoryPicker}
         />

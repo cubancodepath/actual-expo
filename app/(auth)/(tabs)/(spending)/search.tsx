@@ -35,13 +35,9 @@ import { SearchSuggestions } from "@/presentation/components/transaction/SearchS
 import { useTags } from "@/presentation/hooks/useTags";
 import { usePayees } from "@/presentation/hooks/usePayees";
 import { GlassButton } from "@/presentation/components/atoms/GlassButton";
-import {
-  useTransactionSelection,
-  useTransactionBulkActions,
-  useSelectModeHeader,
-  useBulkCategoryPicker,
-  useBulkAccountPicker,
-} from "@/presentation/hooks/transactionList";
+import { useSelectModeHeader } from "@/presentation/hooks/transactionList";
+import { useSelectionMode } from "@/presentation/hooks/useSelectionMode";
+import { useTransactionBatchActions } from "@/presentation/hooks/useTransactionBatchActions";
 import { usePickerStore } from "@/stores/pickerStore";
 import { useTabBarStore } from "@/stores/tabBarStore";
 import { SelectModeToolbar } from "@/presentation/components/transaction/SelectModeToolbar";
@@ -153,48 +149,49 @@ export default function SearchScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const offsetRef = useRef(0);
-  const refreshIdRef = useRef(0);
+
 
   // ---- Selection ----
-  const {
-    selectedIds,
-    isSelectMode,
-    allCleared,
-    selectedTotal,
-    handleLongPress,
-    enterSelectMode,
-    handleSelectAll,
-    handleDoneSelection,
-    resetSelection,
-  } = useTransactionSelection({
+  const selection = useSelectionMode<TransactionDisplay>();
+
+  const selectedTransactions = results.filter((t) => selection.selectedIds.has(t.id));
+  const allCleared = (() => {
+    const nonReconciled = selectedTransactions.filter((t) => !t.reconciled);
+    return nonReconciled.length > 0 && nonReconciled.every((t) => t.cleared);
+  })();
+  const selectedTotal = selectedTransactions.reduce((sum, t) => sum + (t.amount as number), 0);
+
+  const batchActions = useTransactionBatchActions({
+    selectedIds: selection.selectedIds,
     transactions: results,
-    onEnterSelectMode: () => setTabBarHidden(true),
-    onExitSelectMode: () => setTabBarHidden(false),
+    onDone: () => {
+      selection.exit();
+      setTabBarHidden(false);
+    },
   });
 
-  const { handleBulkDelete, handleBulkMove, handleBulkToggleCleared, handleBulkChangeCategory } =
-    useTransactionBulkActions({
-      selectedIds,
-      transactions: results,
-      setTransactions: setResults,
-      refreshIdRef,
-      resetSelection,
-      loadAccounts: () => {},
-      optimisticBulkMove: (prev, ids, targetAccountId, targetAccountName) =>
-        prev.map((t) =>
-          ids.has(t.id) ? { ...t, account: targetAccountId, accountName: targetAccountName } : t,
-        ),
-    });
+  // Bulk picker triggers
+  const bulkMovePendingRef = useRef(false);
+  const bulkCategoryPendingRef = useRef(false);
 
-  const { triggerCategoryPicker } = useBulkCategoryPicker(handleBulkChangeCategory);
-  const { triggerAccountPicker } = useBulkAccountPicker(handleBulkMove);
+  function triggerAccountPicker() {
+    bulkMovePendingRef.current = true;
+    router.push({ pathname: "/(auth)/transaction/account-picker", params: { selectedId: "" } });
+  }
+  function triggerCategoryPicker() {
+    bulkCategoryPendingRef.current = true;
+    router.push({ pathname: "/(auth)/transaction/category-picker", params: { hideSplit: "1" } });
+  }
 
   useSelectModeHeader({
-    isSelectMode,
-    selectedCount: selectedIds.size,
+    isSelectMode: selection.isSelectMode,
+    selectedCount: selection.selectedIds.size,
     selectedTotal,
-    onSelectAll: handleSelectAll,
-    onDoneSelection: handleDoneSelection,
+    onSelectAll: () => selection.selectAll(results, (t) => !t.reconciled),
+    onDoneSelection: () => {
+      selection.exit();
+      setTabBarHidden(false);
+    },
   });
 
   // Auto-focus on mount (skip if we have an initial filter — we'll auto-search instead)
@@ -217,7 +214,7 @@ export default function SearchScreen() {
 
   // ---- Header ----
   useEffect(() => {
-    if (isSelectMode) return;
+    if (selection.isSelectMode) return;
     navigation.setOptions({
       headerRight: undefined,
       unstable_headerRightItems: () => [
@@ -225,11 +222,11 @@ export default function SearchScreen() {
           type: "button" as const,
           label: t("select"),
           disabled: !hasResults,
-          onPress: enterSelectMode,
+          onPress: () => { setTabBarHidden(true); selection.enter(); },
         },
       ],
     });
-  }, [hasResults, isSelectMode]);
+  }, [hasResults, selection.isSelectMode]);
 
   // ---- Token management ----
 
@@ -408,20 +405,23 @@ export default function SearchScreen() {
   const clearPicker = usePickerStore((s) => s.clear);
 
   useEffect(() => {
-    if (selectedAccount && pendingMoveRef.current) {
+    if (!selectedAccount) return;
+    if (pendingMoveRef.current) {
       const txnId = pendingMoveRef.current;
       pendingMoveRef.current = null;
-      const targetAccountId = selectedAccount.id;
-      const targetName = selectedAccount.name;
       clearPicker();
       setResults((prev) =>
         prev.map((t) =>
-          t.id === txnId ? { ...t, account: targetAccountId, accountName: targetName } : t,
+          t.id === txnId ? { ...t, account: selectedAccount.id, accountName: selectedAccount.name } : t,
         ),
       );
-      updateTransaction(txnId, { account: targetAccountId });
+      updateTransaction(txnId, { account: selectedAccount.id });
+    } else if (bulkMovePendingRef.current) {
+      bulkMovePendingRef.current = false;
+      batchActions.handleBulkMove(selectedAccount.id, selectedAccount.name);
+      clearPicker();
     }
-  }, [selectedAccount, clearPicker]);
+  }, [selectedAccount, clearPicker, batchActions.handleBulkMove]);
 
   function handleMove(txnId: string) {
     pendingMoveRef.current = txnId;
@@ -433,15 +433,21 @@ export default function SearchScreen() {
   const selectedCategory = usePickerStore((s) => s.selectedCategory);
 
   useEffect(() => {
-    if (selectedCategory && pendingCategoryRef.current) {
+    if (!selectedCategory) return;
+    if (pendingCategoryRef.current) {
       const txnId = pendingCategoryRef.current;
       pendingCategoryRef.current = null;
-      const categoryId = selectedCategory.id;
       clearPicker();
-      setResults((prev) => prev.map((t) => (t.id === txnId ? { ...t, category: categoryId } : t)));
-      updateTransaction(txnId, { category: categoryId });
+      if (selectedCategory.id) {
+        setResults((prev) => prev.map((t) => (t.id === txnId ? { ...t, category: selectedCategory.id } : t)));
+        updateTransaction(txnId, { category: selectedCategory.id });
+      }
+    } else if (bulkCategoryPendingRef.current) {
+      bulkCategoryPendingRef.current = false;
+      if (selectedCategory.id) batchActions.handleBulkChangeCategory(selectedCategory.id);
+      clearPicker();
     }
-  }, [selectedCategory, clearPicker]);
+  }, [selectedCategory, clearPicker, batchActions.handleBulkChangeCategory]);
 
   function handleSetCategory(txnId: string) {
     pendingCategoryRef.current = txnId;
@@ -510,7 +516,7 @@ export default function SearchScreen() {
               onPress={handleEditTransaction}
               onDelete={handleDelete}
               onToggleCleared={handleToggleCleared}
-              onLongPress={handleLongPress}
+              onLongPress={(txnId: string) => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); if (!selection.isSelectMode) setTabBarHidden(true); selection.longPress(txnId); }}
               onDuplicate={handleDuplicate}
               onMove={handleMove}
               onSetCategory={handleSetCategory}
@@ -519,8 +525,8 @@ export default function SearchScreen() {
               tags={tags}
               isFirst={item.isFirst}
               isLast={item.isLast}
-              isSelectMode={isSelectMode}
-              isSelected={selectedIds.has(item.data.id)}
+              isSelectMode={selection.isSelectMode}
+              isSelected={selection.selectedIds.has(item.data.id)}
             />
           );
         }}
@@ -544,12 +550,12 @@ export default function SearchScreen() {
         contentContainerStyle={{ paddingBottom: 80, backgroundColor: colors.pageBackground }}
       />
 
-      {isSelectMode && (
+      {selection.isSelectMode && (
         <SelectModeToolbar
           allCleared={allCleared}
-          selectedCount={selectedIds.size}
-          onToggleCleared={handleBulkToggleCleared}
-          onDelete={handleBulkDelete}
+          selectedCount={selection.selectedIds.size}
+          onToggleCleared={batchActions.handleBulkToggleCleared}
+          onDelete={batchActions.handleBulkDelete}
           onMove={triggerAccountPicker}
           onSetCategory={triggerCategoryPicker}
         />

@@ -10,9 +10,10 @@
 
 import { Spreadsheet, type CellValue } from "./spreadsheet";
 import { sheetForMonth, envelopeBudget } from "./bindings";
-import { runQuery } from "../db";
-import { monthToInt } from "../lib/date";
+import { runQuery, first } from "../db";
+import { monthToInt, currentMonth, intToStr } from "../lib/date";
 import { ALIVE_TX_FILTER } from "../db/filters";
+import { getCategories, getCategoryGroups } from "../categories";
 import type { Category, CategoryGroup } from "../categories/types";
 
 // ---------------------------------------------------------------------------
@@ -271,4 +272,272 @@ function inferGoalFromDef(goalDef: string | null): { amount: number; longGoal: b
   } catch {
     return null;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Multi-month loading (like Actual's createAllBudgets)
+// ---------------------------------------------------------------------------
+
+/**
+ * Calculate the range of months that need budget cells.
+ * From (earliest transaction - 3 months) to (current month + 12 months).
+ */
+export async function getBudgetRange(): Promise<{ start: string; end: string; months: string[] }> {
+  const row = await first<{ d: number | null }>(
+    "SELECT MIN(date) as d FROM transactions WHERE tombstone = 0",
+  );
+
+  const today = currentMonth();
+  let startMonth: string;
+
+  if (row?.d) {
+    const dateStr = intToStr(row.d);
+    if (dateStr) {
+      startMonth = subMonths(dateStr.slice(0, 7), 3);
+    } else {
+      startMonth = subMonths(today, 3);
+    }
+  } else {
+    startMonth = subMonths(today, 3);
+  }
+
+  const endMonth = addMonths(today, 12);
+
+  return {
+    start: startMonth,
+    end: endMonth,
+    months: monthRange(startMonth, endMonth),
+  };
+}
+
+/**
+ * Create budget cells for ALL months in the budget range.
+ * This builds the full chain of dependencies so toBudget computes correctly.
+ */
+export async function createAllBudgetCells(ss: Spreadsheet): Promise<void> {
+  const { months } = await getBudgetRange();
+  const [cats, groups] = await Promise.all([getCategories(), getCategoryGroups()]);
+
+  // Create cells for all months in a single transaction
+  // so the topological sort runs once at the end
+  ss.startTransaction();
+  for (const month of months) {
+    await createBudgetCellsInTransaction(ss, month, cats, groups);
+  }
+  ss.endTransaction();
+}
+
+/**
+ * Like createBudgetCells but without its own transaction (caller manages it).
+ */
+async function createBudgetCellsInTransaction(
+  ss: Spreadsheet,
+  month: string,
+  categories: Category[],
+  groups: CategoryGroup[],
+): Promise<void> {
+  const sheet = sheetForMonth(month);
+  const prevMonth = getPrevMonth(month);
+  const prevSheet = sheetForMonth(prevMonth);
+  const monthInt = monthToInt(month);
+  const startDate = monthInt;
+  const endDate = monthToInt(getEndOfMonth(month));
+
+  // Load budget rows
+  const budgetRows = await runQuery<{ category: string; amount: number; carryover: number }>(
+    "SELECT category, amount, carryover FROM zero_budgets WHERE month = ?",
+    [monthInt],
+  );
+  const budgetMap = new Map<string, { amount: number; carryover: boolean }>();
+  for (const r of budgetRows) {
+    budgetMap.set(r.category, { amount: r.amount, carryover: r.carryover === 1 });
+  }
+
+  // Load spent amounts
+  const spentRows = await runQuery<{ category: string; total: number }>(
+    `SELECT COALESCE(cm.transferId, t.category) AS category, SUM(t.amount) AS total
+     FROM transactions t
+     LEFT JOIN category_mapping cm ON cm.id = t.category
+     LEFT JOIN accounts a ON a.id = t.acct
+     WHERE ${ALIVE_TX_FILTER} AND t.date >= ? AND t.date <= ? AND a.offbudget = 0
+     GROUP BY category`,
+    [startDate, endDate],
+  );
+  const spentMap = new Map<string, number>();
+  for (const r of spentRows) {
+    if (r.category) spentMap.set(r.category, r.total);
+  }
+
+  // Load buffered
+  const bufferedRow = await runQuery<{ buffered: number }>(
+    "SELECT buffered FROM zero_budget_months WHERE id = ?",
+    [monthInt],
+  );
+  const bufferedAmount = bufferedRow[0]?.buffered ?? 0;
+
+  // Load income
+  const incomeRow = await runQuery<{ total: number }>(
+    `SELECT SUM(t.amount) AS total
+     FROM transactions t
+     LEFT JOIN category_mapping cm ON cm.id = t.category
+     LEFT JOIN categories c ON COALESCE(cm.transferId, t.category) = c.id
+     LEFT JOIN category_groups g ON g.id = c.cat_group
+     LEFT JOIN accounts a ON a.id = t.acct
+     WHERE ${ALIVE_TX_FILTER} AND t.date >= ? AND t.date <= ?
+       AND a.offbudget = 0 AND g.is_income = 1`,
+    [startDate, endDate],
+  );
+  const totalIncome = incomeRow[0]?.total ?? 0;
+
+  // Create cells (no transaction — caller manages it)
+  ss.createStatic(sheet, envelopeBudget.buffered, bufferedAmount);
+  ss.createStatic(sheet, envelopeBudget.totalIncome, totalIncome);
+
+  const expenseGroups = groups.filter((g) => !g.is_income);
+
+  for (const cat of categories) {
+    const group = groups.find((g) => g.id === cat.cat_group);
+    if (!group || group.is_income) continue;
+
+    const budget = budgetMap.get(cat.id);
+    const budgeted = budget?.amount ?? 0;
+    const spent = spentMap.get(cat.id) ?? 0;
+    const carryover = budget?.carryover ?? false;
+
+    ss.createStatic(sheet, envelopeBudget.catBudgeted(cat.id), budgeted);
+    ss.createStatic(sheet, envelopeBudget.catSpent(cat.id), spent);
+    ss.createStatic(sheet, envelopeBudget.catCarryover(cat.id), carryover);
+
+    ss.createDynamic(sheet, envelopeBudget.catBalance(cat.id), {
+      dependencies: [
+        envelopeBudget.catBudgeted(cat.id),
+        envelopeBudget.catSpent(cat.id),
+        `${prevSheet}!${envelopeBudget.catCarryover(cat.id)}`,
+        `${prevSheet}!${envelopeBudget.catBalance(cat.id)}`,
+        `${prevSheet}!${envelopeBudget.catBalancePos(cat.id)}`,
+      ],
+      run: (budgetedVal, spentVal, prevCarryoverVal, prevBalance, prevBalancePos) => {
+        const prevCo = prevCarryoverVal === true || prevCarryoverVal === 1;
+        return num(budgetedVal) + num(spentVal) + (prevCo ? num(prevBalance) : num(prevBalancePos));
+      },
+    });
+
+    ss.createDynamic(sheet, envelopeBudget.catBalancePos(cat.id), {
+      dependencies: [envelopeBudget.catBalance(cat.id)],
+      run: (balance) => Math.max(0, num(balance)),
+    });
+
+    const goalInfo = cat.goal_def ? inferGoalFromDef(cat.goal_def) : null;
+    ss.createStatic(sheet, envelopeBudget.catGoal(cat.id), goalInfo?.amount ?? 0);
+    ss.createStatic(sheet, envelopeBudget.catLongGoal(cat.id), goalInfo?.longGoal ?? false);
+  }
+
+  for (const group of expenseGroups) {
+    const groupCats = categories.filter((c) => c.cat_group === group.id);
+
+    ss.createDynamic(sheet, envelopeBudget.groupBudgeted(group.id), {
+      dependencies: groupCats.map((c) => envelopeBudget.catBudgeted(c.id)),
+      run: (...vals) => vals.reduce((sum: number, v) => sum + num(v), 0),
+    });
+    ss.createDynamic(sheet, envelopeBudget.groupSpent(group.id), {
+      dependencies: groupCats.map((c) => envelopeBudget.catSpent(c.id)),
+      run: (...vals) => vals.reduce((sum: number, v) => sum + num(v), 0),
+    });
+    ss.createDynamic(sheet, envelopeBudget.groupBalance(group.id), {
+      dependencies: groupCats.map((c) => envelopeBudget.catBalance(c.id)),
+      run: (...vals) => vals.reduce((sum: number, v) => sum + num(v), 0),
+    });
+  }
+
+  ss.createDynamic(sheet, envelopeBudget.totalBudgeted, {
+    dependencies: expenseGroups.map((g) => envelopeBudget.groupBudgeted(g.id)),
+    run: (...vals) => -vals.reduce((sum: number, v) => sum + num(v), 0),
+  });
+  ss.createDynamic(sheet, envelopeBudget.totalSpent, {
+    dependencies: expenseGroups.map((g) => envelopeBudget.groupSpent(g.id)),
+    run: (...vals) => vals.reduce((sum: number, v) => sum + num(v), 0),
+  });
+  ss.createDynamic(sheet, envelopeBudget.totalBalance, {
+    dependencies: expenseGroups.map((g) => envelopeBudget.groupBalance(g.id)),
+    run: (...vals) => vals.reduce((sum: number, v) => sum + num(v), 0),
+  });
+
+  ss.createDynamic(sheet, envelopeBudget.fromLastMonth, {
+    dependencies: [
+      `${prevSheet}!${envelopeBudget.toBudget}`,
+      `${prevSheet}!${envelopeBudget.buffered}`,
+    ],
+    run: (prevToBudget, prevBuffered) => num(prevToBudget) + num(prevBuffered),
+  });
+
+  ss.createDynamic(sheet, envelopeBudget.lastMonthOverspent, {
+    dependencies: categories
+      .filter((c) => {
+        const g = groups.find((grp) => grp.id === c.cat_group);
+        return g && !g.is_income;
+      })
+      .flatMap((c) => [
+        `${prevSheet}!${envelopeBudget.catBalance(c.id)}`,
+        `${prevSheet}!${envelopeBudget.catCarryover(c.id)}`,
+      ]),
+    run: (...vals) => {
+      let penalty = 0;
+      for (let i = 0; i < vals.length; i += 2) {
+        const balance = num(vals[i]);
+        const co = vals[i + 1] === true || vals[i + 1] === 1;
+        if (balance < 0 && !co) penalty += balance;
+      }
+      return penalty;
+    },
+  });
+
+  ss.createDynamic(sheet, envelopeBudget.incomeAvailable, {
+    dependencies: [envelopeBudget.totalIncome, envelopeBudget.fromLastMonth],
+    run: (income, fromLast) => num(income) + num(fromLast),
+  });
+
+  ss.createDynamic(sheet, envelopeBudget.toBudget, {
+    dependencies: [
+      envelopeBudget.incomeAvailable,
+      envelopeBudget.lastMonthOverspent,
+      envelopeBudget.totalBudgeted,
+      envelopeBudget.buffered,
+    ],
+    run: (available, lastOverspent, totalBudgeted, buffered) =>
+      num(available) + num(lastOverspent) + num(totalBudgeted) - num(buffered),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Month math helpers
+// ---------------------------------------------------------------------------
+
+function subMonths(month: string, n: number): string {
+  let [y, m] = month.split("-").map(Number);
+  m -= n;
+  while (m <= 0) {
+    y--;
+    m += 12;
+  }
+  return `${y}-${String(m).padStart(2, "0")}`;
+}
+
+function addMonths(month: string, n: number): string {
+  let [y, m] = month.split("-").map(Number);
+  m += n;
+  while (m > 12) {
+    y++;
+    m -= 12;
+  }
+  return `${y}-${String(m).padStart(2, "0")}`;
+}
+
+function monthRange(start: string, end: string): string[] {
+  const months: string[] = [];
+  let current = start;
+  while (current <= end) {
+    months.push(current);
+    current = addMonths(current, 1);
+  }
+  return months;
 }

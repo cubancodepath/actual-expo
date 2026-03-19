@@ -398,6 +398,10 @@ export async function openBudget(budgetId: string): Promise<void> {
   const { useSyncedPrefsStore } = await import("../presentation/hooks/useSyncedPref");
   await useSyncedPrefsStore.getState().load();
 
+  // Initialize spreadsheet engine with all budget months
+  const { initSpreadsheet } = await import("../spreadsheet/sync");
+  await initSpreadsheet();
+
   await Promise.allSettled([useBudgetStore.getState().load()]);
 
   // Update global prefs with active budget info

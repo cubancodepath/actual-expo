@@ -3,4 +3,5 @@ export type { Cell, CellValue, CellChangeListener } from "./spreadsheet";
 export { DependencyGraph } from "./graph";
 export { getSpreadsheet, resetSpreadsheet } from "./instance";
 export { sheetForMonth, envelopeBudget } from "./bindings";
-export { createBudgetCells } from "./envelope";
+export { createBudgetCells, createAllBudgetCells, getBudgetRange } from "./envelope";
+export { initSpreadsheet } from "./sync";

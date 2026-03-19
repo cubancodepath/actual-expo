@@ -69,8 +69,18 @@ export class Spreadsheet {
 
   createStatic(sheet: string, name: string, initialValue: CellValue = 0): void {
     const resolved = resolveName(sheet, name);
+    const existing = this.cells.get(resolved);
+    if (existing) {
+      // Update existing cell — only mark dirty if value changed
+      if (existing.value !== initialValue) {
+        existing.value = initialValue;
+        this.dirtyCells.push(resolved);
+      }
+      return;
+    }
     this.cells.set(resolved, { type: "static", name: resolved, value: initialValue });
     this.graph.addNode(resolved);
+    this.dirtyCells.push(resolved);
   }
 
   createDynamic(
@@ -83,10 +93,18 @@ export class Spreadsheet {
     },
   ): void {
     const resolved = resolveName(sheet, name);
-    // Resolve dependency names (they may reference other sheets)
     const resolvedDeps = opts.dependencies.map((dep) =>
       dep.includes("!") ? dep : resolveName(sheet, dep),
     );
+
+    const existing = this.cells.get(resolved);
+    if (existing && existing.type === "dynamic") {
+      // Update existing dynamic cell — keep value, update run + deps
+      existing.dependencies = resolvedDeps;
+      existing.run = opts.run;
+      this.dirtyCells.push(resolved);
+      return;
+    }
 
     this.cells.set(resolved, {
       type: "dynamic",
@@ -100,6 +118,8 @@ export class Spreadsheet {
     for (const dep of resolvedDeps) {
       this.graph.addEdge(dep, resolved);
     }
+
+    this.dirtyCells.push(resolved);
   }
 
   // ---- Read ----

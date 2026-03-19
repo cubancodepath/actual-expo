@@ -13,6 +13,8 @@ import { FEATURE_FLAG_DEFAULTS } from "../preferences/featureFlags";
  */
 export function resetAllStores(): void {
   clearQueryCache();
+  // Reset spreadsheet engine
+  import("../spreadsheet/instance").then(({ resetSpreadsheet }) => resetSpreadsheet());
   useBudgetStore.setState({ month: currentMonth(), data: null, loading: false });
   usePickerStore.getState().clear();
   useSyncStore.setState({ status: "idle", error: null, lastSync: null });

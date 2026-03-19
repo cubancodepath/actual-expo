@@ -12,3 +12,7 @@ export class MMKV {
     return [];
   }
 }
+
+export function createMMKV(_opts?: { id?: string }) {
+  return new MMKV();
+}

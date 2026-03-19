@@ -6,7 +6,7 @@ import { useAccounts } from "@/presentation/hooks/useAccounts";
 import { deleteTransaction } from "@/transactions";
 import { useCategories } from "@/presentation/hooks/useCategories";
 import { usePickerStore } from "@/stores/pickerStore";
-import { useRulesStore } from "@/stores/rulesStore";
+import { useRules } from "@/presentation/hooks/useRules";
 import { getTransactionById, getChildTransactions } from "@/transactions";
 import { saveTransaction } from "@/transactions/save";
 import { getRecurringDescription } from "@/schedules";
@@ -50,7 +50,7 @@ export function useTransactionForm(params: RouteParams, amountInput: AmountInput
   const router = useRouter();
   const { accounts } = useAccounts();
   const { groups, categories } = useCategories();
-  const rules = useRulesStore((s) => s.rules);
+  const { rules } = useRules();
 
   // Picker store subscriptions
   const selectedPayee = usePickerStore((s) => s.selectedPayee);

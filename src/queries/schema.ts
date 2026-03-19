@@ -125,6 +125,7 @@ export const schema: Schema = {
       stage: { type: "string" },
       conditions: { type: "json" },
       actions: { type: "json" },
+      conditions_op: { type: "string" },
       tombstone: { type: "boolean" },
     },
     defaultOrder: ["id"],

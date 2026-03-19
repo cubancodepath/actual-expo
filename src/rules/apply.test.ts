@@ -1,22 +1,27 @@
 import { describe, it, expect } from "vitest";
 import { suggestCategoryForPayee, applyRulesToForm } from "./apply";
-import type { ParsedRule } from "./types";
+import { Rule } from "./rule";
 
 // ── Helper ──
 
 function makeRule(
   id: string,
-  conditions: ParsedRule["conditions"],
-  actions: ParsedRule["actions"],
-  opts?: { stage?: ParsedRule["stage"]; conditionsOp?: "and" | "or" },
-): ParsedRule {
-  return {
+  conditions: Array<{
+    field: string;
+    op: string;
+    value: unknown;
+    options?: Record<string, unknown>;
+  }>,
+  actions: Array<{ op: string; field?: string; value: unknown; options?: Record<string, unknown> }>,
+  opts?: { stage?: "pre" | null | "post"; conditionsOp?: "and" | "or" },
+): Rule {
+  return new Rule({
     id,
     stage: opts?.stage ?? null,
+    conditionsOp: opts?.conditionsOp ?? "and",
     conditions,
     actions,
-    conditionsOp: opts?.conditionsOp ?? "and",
-  };
+  });
 }
 
 // ── suggestCategoryForPayee ──
@@ -26,7 +31,7 @@ describe("suggestCategoryForPayee", () => {
     const rules = [
       makeRule(
         "r1",
-        [{ field: "payee", op: "is", value: "payee-walmart", type: "id" }],
+        [{ field: "payee", op: "is", value: "payee-walmart" }],
         [{ op: "set", field: "category", value: "cat-groceries" }],
       ),
     ];
@@ -37,7 +42,7 @@ describe("suggestCategoryForPayee", () => {
     const rules = [
       makeRule(
         "r1",
-        [{ field: "payee", op: "is", value: "payee-walmart", type: "id" }],
+        [{ field: "payee", op: "is", value: "payee-walmart" }],
         [{ op: "set", field: "category", value: "cat-groceries" }],
       ),
     ];
@@ -52,7 +57,7 @@ describe("suggestCategoryForPayee", () => {
     const rules = [
       makeRule(
         "r1",
-        [{ field: "payee", op: "is", value: "payee-1", type: "id" }],
+        [{ field: "payee", op: "is", value: "payee-1" }],
         [{ op: "set", field: "category", value: "cat-1" }],
       ),
     ];
@@ -64,22 +69,20 @@ describe("suggestCategoryForPayee", () => {
       // Lower specificity: contains (score 0)
       makeRule(
         "r-low",
-        [{ field: "payee", op: "contains", value: "payee", type: "id" }],
+        [{ field: "payee", op: "contains", value: "payee" }],
         [{ op: "set", field: "category", value: "cat-general" }],
       ),
       // Higher specificity: is (score 10 * 2 = 20)
       makeRule(
         "r-high",
-        [{ field: "payee", op: "is", value: "payee-walmart", type: "id" }],
+        [{ field: "payee", op: "is", value: "payee-walmart" }],
         [{ op: "set", field: "category", value: "cat-groceries" }],
       ),
     ];
-    // Both match, but r-high runs first (higher score) and sets cat-groceries,
-    // then r-low also runs and overwrites with cat-general
-    // Actually: higher specificity runs FIRST in rankRules (descending score),
-    // so r-high sets cat-groceries, then r-low overwrites with cat-general
-    // The last matching rule wins (all rules applied sequentially)
-    expect(suggestCategoryForPayee(rules, "payee-walmart", "acc-1")).toBe("cat-general");
+    // Rules are ranked ascending by score: r-low (score 0) runs first,
+    // then r-high (score 20) runs last and overwrites with cat-groceries.
+    // The last matching rule wins (all rules applied sequentially).
+    expect(suggestCategoryForPayee(rules, "payee-walmart", "acc-1")).toBe("cat-groceries");
   });
 
   it("works with account-based conditions", () => {
@@ -87,8 +90,8 @@ describe("suggestCategoryForPayee", () => {
       makeRule(
         "r1",
         [
-          { field: "payee", op: "is", value: "payee-1", type: "id" },
-          { field: "account", op: "is", value: "acc-checking", type: "id" },
+          { field: "payee", op: "is", value: "payee-1" },
+          { field: "account", op: "is", value: "acc-checking" },
         ],
         [{ op: "set", field: "category", value: "cat-bills" }],
       ),
@@ -117,7 +120,7 @@ describe("applyRulesToForm", () => {
     const rules = [
       makeRule(
         "r1",
-        [{ field: "payee", op: "is", value: "payee-1", type: "id" }],
+        [{ field: "payee", op: "is", value: "payee-1" }],
         [{ op: "set", field: "category", value: "cat-food" }],
       ),
     ];
@@ -129,7 +132,7 @@ describe("applyRulesToForm", () => {
     const rules = [
       makeRule(
         "r1",
-        [{ field: "payee", op: "is", value: "payee-1", type: "id" }],
+        [{ field: "payee", op: "is", value: "payee-1" }],
         [{ op: "set", field: "category", value: "cat-groceries" }],
       ),
     ];
@@ -141,7 +144,7 @@ describe("applyRulesToForm", () => {
     const rules = [
       makeRule(
         "r1",
-        [{ field: "payee", op: "is", value: "payee-1", type: "id" }],
+        [{ field: "payee", op: "is", value: "payee-1" }],
         [{ op: "set", field: "category", value: "cat-groceries" }],
       ),
     ];
@@ -155,7 +158,7 @@ describe("applyRulesToForm", () => {
     const rules = [
       makeRule(
         "r1",
-        [{ field: "payee", op: "is", value: "payee-1", type: "id" }],
+        [{ field: "payee", op: "is", value: "payee-1" }],
         [{ op: "append-notes", value: " [auto]" }],
       ),
     ];
@@ -167,7 +170,7 @@ describe("applyRulesToForm", () => {
     const rules = [
       makeRule(
         "r1",
-        [{ field: "payee", op: "is", value: "payee-1", type: "id" }],
+        [{ field: "payee", op: "is", value: "payee-1" }],
         [{ op: "prepend-notes", value: "auto: " }],
       ),
     ];
@@ -179,7 +182,7 @@ describe("applyRulesToForm", () => {
     const rules = [
       makeRule(
         "r1",
-        [{ field: "payee", op: "is", value: "payee-other", type: "id" }],
+        [{ field: "payee", op: "is", value: "payee-other" }],
         [{ op: "set", field: "category", value: "cat-food" }],
       ),
     ];
@@ -198,12 +201,12 @@ describe("applyRulesToForm", () => {
     const rules = [
       makeRule(
         "r1",
-        [{ field: "payee", op: "is", value: "payee-1", type: "id" }],
+        [{ field: "payee", op: "is", value: "payee-1" }],
         [{ op: "set", field: "category", value: "cat-food" }],
       ),
       makeRule(
         "r2",
-        [{ field: "category", op: "is", value: "cat-food", type: "id" }],
+        [{ field: "category", op: "is", value: "cat-food" }],
         [{ op: "append-notes", value: " [food]" }],
       ),
     ];
@@ -216,7 +219,7 @@ describe("applyRulesToForm", () => {
     const rules = [
       makeRule(
         "r1",
-        [{ field: "amount", op: "lt", value: 0, type: "number" }],
+        [{ field: "amount", op: "lt", value: 0 }],
         [{ op: "set", field: "category", value: "cat-expense" }],
       ),
     ];
@@ -228,7 +231,7 @@ describe("applyRulesToForm", () => {
     const rules = [
       makeRule(
         "r1",
-        [{ field: "date", op: "is", value: "2024-03", type: "date" }],
+        [{ field: "date", op: "is", value: "2024-03" }],
         [{ op: "append-notes", value: " [march]" }],
       ),
     ];
@@ -236,11 +239,11 @@ describe("applyRulesToForm", () => {
     expect(result.notes).toBe(" [march]");
   });
 
-  it("returns account when rule sets acct field", () => {
+  it("returns account when rule sets account field", () => {
     const rules = [
       makeRule(
         "r1",
-        [{ field: "amount", op: "gt", value: 0, type: "number", options: { outflow: true } }],
+        [{ field: "amount", op: "gt", value: 0, options: { outflow: true } }],
         [{ op: "set", field: "account", value: "acc-default" }],
       ),
     ];
@@ -252,7 +255,7 @@ describe("applyRulesToForm", () => {
     const rules = [
       makeRule(
         "r1",
-        [{ field: "amount", op: "gt", value: 0, type: "number", options: { outflow: true } }],
+        [{ field: "amount", op: "gt", value: 0, options: { outflow: true } }],
         [{ op: "set", field: "account", value: "acc-default" }],
       ),
     ];

@@ -6,7 +6,6 @@ import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Text, Amount } from "..";
 import { ScheduleStatusBadge } from "../atoms/ScheduleStatusBadge";
 import { SwipeableRow } from "../molecules/SwipeableRow";
-import { formatDateLong } from "../../../lib/date";
 import type { PreviewTransaction } from "../../../schedules/preview";
 import type { Theme } from "../../../theme";
 
@@ -18,6 +17,7 @@ interface UpcomingScheduleRowProps {
   onComplete: (scheduleId: string) => void;
   onDelete: (scheduleId: string) => void;
   onPress: (scheduleId: string) => void;
+  showAccountName?: boolean;
   isFirst?: boolean;
   isLast?: boolean;
 }
@@ -30,6 +30,7 @@ export const UpcomingScheduleRow = memo(function UpcomingScheduleRow({
   onComplete,
   onDelete,
   onPress,
+  showAccountName,
   isFirst = false,
   isLast = false,
 }: UpcomingScheduleRowProps) {
@@ -58,12 +59,29 @@ export const UpcomingScheduleRow = memo(function UpcomingScheduleRow({
           <Amount value={item.amount} variant="body" showSign style={{ fontWeight: "600" }} />
         </View>
 
-        {/* Bottom row: date + status badge */}
+        {/* Bottom row: status badge + category + account name */}
         <View style={styles.metaRow}>
-          <Text variant="captionSm" color={colors.textSecondary}>
-            {formatDateLong(item.date)}
-          </Text>
           <ScheduleStatusBadge status={item.status} />
+          {item.categoryName && (
+            <View style={styles.categoryPill}>
+              <Text variant="captionSm" color={colors.textSecondary} numberOfLines={1}>
+                {item.categoryName}
+              </Text>
+            </View>
+          )}
+          {showAccountName && item.accountName && (
+            <>
+              <View style={{ flex: 1 }} />
+              <Text
+                variant="captionSm"
+                color={colors.textMuted}
+                numberOfLines={1}
+                style={{ flexShrink: 0 }}
+              >
+                {item.accountName}
+              </Text>
+            </>
+          )}
         </View>
       </View>
 
@@ -91,7 +109,6 @@ export const UpcomingScheduleRow = memo(function UpcomingScheduleRow({
       swipeRightColor={colors.positive}
       isFirst={isFirst}
       isLast={isLast}
-      style={{ marginHorizontal: spacing.lg }}
     >
       {rowContent}
     </SwipeableRow>
@@ -164,10 +181,23 @@ const createStyles = (theme: Theme) => ({
     flex: 1,
     marginRight: theme.spacing.md,
   },
+  amountRow: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+  },
   metaRow: {
     flexDirection: "row" as const,
     justifyContent: "space-between" as const,
     alignItems: "center" as const,
     marginTop: theme.spacing.xs,
+    gap: theme.spacing.sm,
+  },
+  categoryPill: {
+    backgroundColor: theme.colors.buttonSecondaryBackground,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xxs,
+    borderRadius: theme.borderRadius.full,
+    flexShrink: 1,
+    maxWidth: "70%" as unknown as number,
   },
 });

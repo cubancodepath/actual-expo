@@ -21,6 +21,7 @@ import { UnclearedPill } from "@/presentation/components/transaction/UnclearedPi
 import { TransactionRow } from "@/presentation/components/account/TransactionRow";
 import { DateSectionHeader } from "@/presentation/components/account/DateSectionHeader";
 import { UpcomingSectionHeader } from "@/presentation/components/account/UpcomingSectionHeader";
+import { UpcomingDateHeader } from "@/presentation/components/account/UpcomingDateHeader";
 import { UpcomingScheduleRow } from "@/presentation/components/account/UpcomingScheduleRow";
 import { AddTransactionButton } from "@/presentation/components/molecules/AddTransactionButton";
 import { useTags } from "@/presentation/hooks/useTags";
@@ -315,22 +316,22 @@ export default function SpendingScreen() {
         showsVerticalScrollIndicator={false}
         contentInsetAdjustmentBehavior="automatic"
         ListHeaderComponent={
-          !selection.isSelectMode ? (
-            <>
+          <>
+            {!selection.isSelectMode && (
               <Stack.Screen.Title large>{t("spending.title")}</Stack.Screen.Title>
-              {unclearedCount > 0 && (
-                <UnclearedPill
-                  count={unclearedCount}
-                  onPress={() =>
-                    router.push({
-                      pathname: "/(auth)/(tabs)/(spending)/search",
-                      params: { initialFilter: "uncleared" },
-                    })
-                  }
-                />
-              )}
-            </>
-          ) : null
+            )}
+            {unclearedCount > 0 && (
+              <UnclearedPill
+                count={unclearedCount}
+                onPress={() =>
+                  router.push({
+                    pathname: "/(auth)/(tabs)/(spending)/search",
+                    params: { initialFilter: "uncleared" },
+                  })
+                }
+              />
+            )}
+          </>
         }
         renderItem={({ item }: { item: ListItem }) => {
           if (item.type === "upcoming-header") {
@@ -345,6 +346,9 @@ export default function SpendingScreen() {
               />
             );
           }
+          if (item.type === "upcoming-date") {
+            return <UpcomingDateHeader date={item.date} />;
+          }
           if (item.type === "upcoming") {
             return (
               <UpcomingScheduleRow
@@ -355,6 +359,7 @@ export default function SpendingScreen() {
                 onComplete={handleCompleteSchedule}
                 onDelete={handleDeleteSchedule}
                 onPress={handlePressSchedule}
+                showAccountName
                 isFirst={item.isFirst}
                 isLast={item.isLast}
               />

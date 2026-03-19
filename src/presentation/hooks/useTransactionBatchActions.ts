@@ -89,7 +89,8 @@ export function useTransactionBatchActions({
 
     await setClearedBulk(targetIds, targetVal);
     // sync-event auto-refreshes the list
-  }, []);
+    onDone();
+  }, [onDone]);
 
   const handleBulkMove = useCallback(
     (targetAccountId: string, targetAccountName?: string) => {

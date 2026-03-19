@@ -42,6 +42,12 @@ const config = ({ config }: ConfigContext): ExpoConfig => ({
     "expo-quick-actions",
     "expo-notifications",
     "expo-localization",
+    [
+      "expo-build-properties",
+      {
+        ios: { deploymentTarget: "26.0" },
+      },
+    ],
     "@bacons/apple-targets",
     [
       "@sentry/react-native/expo",

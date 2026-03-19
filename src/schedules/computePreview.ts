@@ -19,6 +19,8 @@ export type PreviewTransaction = {
   payee: string | null;
   payeeName: string;
   account: string | null;
+  accountName: string | null;
+  categoryName: string | null;
   amount: number;
   date: number; // YYYYMMDD int
   dateStr: string; // YYYY-MM-DD
@@ -39,6 +41,8 @@ export function computePreviewTransactions(
   schedules: Schedule[],
   statuses: ScheduleStatuses,
   payeeNames: Map<string, string>,
+  categoryNames: Map<string, string>,
+  accountNames: Map<string, string>,
   upcomingDays = 7,
   filter?: (schedule: Schedule) => boolean,
 ): PreviewTransaction[] {
@@ -110,6 +114,8 @@ export function computePreviewTransactions(
         payee: schedule._payee,
         payeeName: payeeNames.get(schedule._payee ?? "") ?? "(no payee)",
         account: schedule._account,
+        accountName: schedule._account ? (accountNames.get(schedule._account) ?? null) : null,
+        categoryName: schedule._category ? (categoryNames.get(schedule._category) ?? null) : null,
         amount,
         date: dateInt,
         dateStr,

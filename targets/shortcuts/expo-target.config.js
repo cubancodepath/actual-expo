@@ -1,7 +1,7 @@
 /** @type {import('@bacons/apple-targets/build/config').ConfigFunction} */
 module.exports = (config) => ({
   type: "app-intent",
-  deploymentTarget: "16.0",
+  deploymentTarget: "26.0",
   frameworks: ["AppIntents"],
   icon: "../../assets/icon.png",
   entitlements: {

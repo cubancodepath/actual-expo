@@ -12,8 +12,11 @@ import Animated, {
   Extrapolation,
 } from "react-native-reanimated";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { useBudgetStore } from "@/stores/budgetStore";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
+import { useSheetValueNumber, useSheetValue } from "@/presentation/hooks/useSheetValue";
+import { sheetForMonth, envelopeBudget } from "@/spreadsheet/bindings";
+import { getSpreadsheet } from "@/spreadsheet/instance";
+import { setBudgetAmount } from "@/budgets";
 import { useUndoStore } from "@/stores/undoStore";
 import { updateCategory, deleteCategory } from "@/categories";
 import { useCategories } from "@/presentation/hooks/useCategories";
@@ -197,12 +200,36 @@ export default function CategoryDetailsScreen() {
 
   // Data
   const month = useBudgetUIStore((s) => s.month);
-  const data = useBudgetStore((s) => s.data);
   const coverTarget = useBudgetUIStore((s) => s.coverTarget);
   const setCoverTarget = useBudgetUIStore((s) => s.setCoverTarget);
   const { categories } = useCategories();
   const category = categories.find((c) => c.id === categoryId);
-  const budgetCat = data?.groups.flatMap((g) => g.categories).find((c) => c.id === categoryId);
+  const sheet = sheetForMonth(month);
+  const budgeted = useSheetValueNumber(sheet, envelopeBudget.catBudgeted(categoryId ?? ""));
+  const spent = useSheetValueNumber(sheet, envelopeBudget.catSpent(categoryId ?? ""));
+  const balance = useSheetValueNumber(sheet, envelopeBudget.catBalance(categoryId ?? ""));
+  const carryoverRaw = useSheetValue(sheet, envelopeBudget.catCarryover(categoryId ?? ""));
+  const carryover = carryoverRaw === true || carryoverRaw === 1;
+  const goalRaw = useSheetValue(sheet, envelopeBudget.catGoal(categoryId ?? ""));
+  const goal = typeof goalRaw === "number" ? goalRaw : null;
+  const longGoalRaw = useSheetValue(sheet, envelopeBudget.catLongGoal(categoryId ?? ""));
+  const longGoal = longGoalRaw === true || longGoalRaw === 1;
+
+  const budgetCat: BudgetCategory | undefined = categoryId
+    ? {
+        id: categoryId,
+        name: category?.name ?? "",
+        budgeted,
+        spent,
+        balance,
+        carryIn: 0, // carryIn is calculated from history, approximate with 0 for display
+        carryover,
+        goal,
+        longGoal,
+        goalDef: category?.goal_def ?? null,
+        hidden: category?.hidden ?? false,
+      }
+    : undefined;
 
   const [deleting, setDeleting] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(false);
@@ -512,9 +539,10 @@ export default function CategoryDetailsScreen() {
                       onPress={async () => {
                         const needed = budgetCat.goal! - budgetCat.budgeted;
                         if (needed > 0) {
-                          await useBudgetStore
-                            .getState()
-                            .setAmount(budgetCat.id, budgetCat.budgeted + needed);
+                          const newAmount = budgetCat.budgeted + needed;
+                          const ss = getSpreadsheet();
+                          ss.setByName(sheet, envelopeBudget.catBudgeted(budgetCat.id), newAmount);
+                          await setBudgetAmount(month, budgetCat.id, newAmount);
                         }
                       }}
                     />

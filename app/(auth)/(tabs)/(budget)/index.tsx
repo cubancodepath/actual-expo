@@ -9,9 +9,13 @@ import { useSharedValue } from "react-native-reanimated";
 import { AddTransactionButton } from "@/presentation/components/molecules/AddTransactionButton";
 import { SharedAmountInput } from "@/presentation/components/transaction/SharedAmountInput";
 import type { CurrencyInputRef } from "@/presentation/components/currency-input/CurrencyInput";
-import { useBudgetStore } from "@/stores/budgetStore";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
-import { setCategoryCarryover, resetHold as resetHoldFn } from "@/budgets";
+import { setCategoryCarryover, resetHold as resetHoldFn, setBudgetAmount } from "@/budgets";
+import { useCategories } from "@/presentation/hooks/useCategories";
+import { useSheetValueNumber } from "@/presentation/hooks/useSheetValue";
+import { sheetForMonth, envelopeBudget } from "@/spreadsheet/bindings";
+import { getSpreadsheet } from "@/spreadsheet/instance";
+import { inferGoalFromDef } from "@/goals";
 import { useCommonMenuActions } from "@/presentation/hooks/useCommonMenuItems";
 import { useRefreshControl } from "@/presentation/hooks/useRefreshControl";
 import { useKeyboardHeight } from "@/presentation/hooks/useKeyboardHeight";
@@ -114,17 +118,70 @@ export default function BudgetScreen() {
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const router = useRouter();
   const month = useBudgetUIStore((s) => s.month);
-  const { data, setAmount } = useBudgetStore();
+  const sheet = sheetForMonth(month);
+  const { categories, groups: rawGroups, isLoading: categoriesLoading } = useCategories();
+  const toBudget = useSheetValueNumber(sheet, envelopeBudget.toBudget);
+  const buffered = useSheetValueNumber(sheet, envelopeBudget.buffered);
   const { refreshControlProps } = useRefreshControl();
   const { showProgressBars, toggleProgressBars } = usePrefsStore();
   const goalsEnabled = useFeatureFlag("goalTemplatesEnabled");
   const commonActions = useCommonMenuActions();
   const [uncategorizedCount, setUncategorizedCount] = useState(0);
 
+  // Build BudgetGroup[] from categories + spreadsheet data
+  const budgetGroups = useMemo<BudgetGroup[]>(() => {
+    if (rawGroups.length === 0) return [];
+    const ss = getSpreadsheet();
+    const num = (v: unknown) => (typeof v === "number" ? v : 0);
+
+    const sortedGroups = [...rawGroups].sort((a, b) => {
+      if (a.is_income !== b.is_income) return a.is_income ? 1 : -1;
+      return (a.sort_order ?? 0) - (b.sort_order ?? 0);
+    });
+
+    return sortedGroups.map((g) => {
+      const groupCats = categories
+        .filter((c) => c.cat_group === g.id)
+        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+
+      const budgetCats: BudgetCategory[] = groupCats.map((c) => {
+        const goalInfo = c.goal_def ? inferGoalFromDef(c.goal_def) : null;
+        return {
+          id: c.id,
+          name: c.name,
+          budgeted: num(ss.getValue(sheet, envelopeBudget.catBudgeted(c.id))),
+          spent: num(ss.getValue(sheet, envelopeBudget.catSpent(c.id))),
+          balance: num(ss.getValue(sheet, envelopeBudget.catBalance(c.id))),
+          carryIn: 0,
+          carryover:
+            ss.getValue(sheet, envelopeBudget.catCarryover(c.id)) === true ||
+            ss.getValue(sheet, envelopeBudget.catCarryover(c.id)) === 1,
+          goal: goalInfo?.goal ?? null,
+          longGoal: goalInfo?.longGoal ?? false,
+          goalDef: c.goal_def,
+          hidden: c.hidden,
+        };
+      });
+
+      return {
+        id: g.id,
+        name: g.name,
+        is_income: g.is_income,
+        hidden: g.hidden,
+        budgeted: num(ss.getValue(sheet, envelopeBudget.groupBudgeted(g.id))),
+        spent: num(ss.getValue(sheet, envelopeBudget.groupSpent(g.id))),
+        balance: num(ss.getValue(sheet, envelopeBudget.groupBalance(g.id))),
+        categories: budgetCats,
+      };
+    });
+  }, [categories, rawGroups, sheet]);
+
+  const dataReady = budgetGroups.length > 0 || (!categoriesLoading && rawGroups.length === 0);
+
   // Load uncategorized stats when data changes
   useEffect(() => {
     getUncategorizedStats().then(({ count }) => setUncategorizedCount(count));
-  }, [data]);
+  }, [budgetGroups]);
 
   const fabCollapsed = useSharedValue(false);
   const COLLAPSE_THRESHOLD = 100;
@@ -189,8 +246,10 @@ export default function BudgetScreen() {
   function commitEdit() {
     if (editingCatId !== null) {
       expr.handleBlurExpression();
-      // Read latest editValue from ref since handleBlurExpression may have updated it
-      setAmount(editingCatId, editValue);
+      // Optimistic update + persist
+      const ss = getSpreadsheet();
+      ss.setByName(sheet, envelopeBudget.catBudgeted(editingCatId), editValue);
+      setBudgetAmount(month, editingCatId, editValue);
     }
   }
 
@@ -248,8 +307,8 @@ export default function BudgetScreen() {
 
   // -- Sections (filtered) --
   const { visible: filteredGroups, hidden: hiddenCategories } = useMemo(
-    () => filterBudgetGroups(data?.groups ?? [], filter),
-    [data?.groups, filter],
+    () => filterBudgetGroups(budgetGroups, filter),
+    [budgetGroups, filter],
   );
   const sections: BudgetSection[] = filteredGroups.map((g) => ({
     key: g.id,
@@ -310,20 +369,16 @@ export default function BudgetScreen() {
     });
   }
 
-  // -- Budget assignment balance --
-  const toBudget = data?.toBudget ?? 0;
-
   // -- Overspent categories --
   const overspentCategories = useMemo(() => {
-    if (!data) return [];
-    return data.groups
+    return budgetGroups
       .filter((g) => !g.is_income)
       .flatMap((g) =>
         g.categories
           .filter((c) => c.balance < 0 && !c.carryover)
           .map((c) => ({ id: c.id, name: c.name, balance: c.balance, groupName: g.name })),
       );
-  }, [data]);
+  }, [budgetGroups]);
   const overspentCount = overspentCategories.length;
 
   function handleOverspentPress() {
@@ -392,18 +447,18 @@ export default function BudgetScreen() {
     <>
       <View style={{ flex: 1, backgroundColor: colors.pageBackground }}>
         {/* Sticky status area — stays fixed above the list */}
-        {data && (toBudget !== 0 || data.buffered > 0) && (
+        {dataReady && (toBudget !== 0 || buffered > 0) && (
           <View style={{ paddingTop: spacing.sm, paddingBottom: spacing.xs }}>
             <ReadyToAssignPill
               amount={toBudget}
               onPress={() => router.push("/(auth)/budget/assign")}
-              holdAmount={data.buffered}
+              holdAmount={buffered}
               onEditHold={() =>
                 router.push({
                   pathname: "/(auth)/budget/hold",
                   params: {
-                    current: String(data.buffered),
-                    maxAmount: String((data.toBudget ?? 0) + (data.buffered ?? 0)),
+                    current: String(buffered),
+                    maxAmount: String(toBudget + buffered),
                   },
                 })
               }
@@ -418,7 +473,7 @@ export default function BudgetScreen() {
         )}
 
         {/* Budget list */}
-        {!data ? (
+        {!dataReady ? (
           <BudgetListSkeleton />
         ) : (
           <SectionList
@@ -435,7 +490,7 @@ export default function BudgetScreen() {
             scrollEventThrottle={16}
             extraData={`${collapsedGroups.size}-${editingCatId}`}
             ListHeaderComponent={
-              data && (overspentCount > 0 || uncategorizedCount > 0) ? (
+              dataReady && (overspentCount > 0 || uncategorizedCount > 0) ? (
                 <View
                   style={{ paddingTop: spacing.xs, paddingBottom: spacing.xs, gap: spacing.xs }}
                 >

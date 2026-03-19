@@ -5,7 +5,14 @@ import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { useBudgetStore } from "@/stores/budgetStore";
+import { useBudgetUIStore } from "@/stores/budgetUIStore";
+import { useCategories } from "@/presentation/hooks/useCategories";
+import { useSheetValueNumber } from "@/presentation/hooks/useSheetValue";
+import { sheetForMonth, envelopeBudget } from "@/spreadsheet/bindings";
+import { getSpreadsheet } from "@/spreadsheet/instance";
+import { setBudgetAmount } from "@/budgets";
+import { computeGoalAllocations } from "@/goals/apply";
+import { inferGoalFromDef } from "@/goals";
 import { batchMessages } from "@/sync/batch";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
@@ -30,11 +37,54 @@ export default function AssignBudgetScreen() {
   const goalsEnabled = useFeatureFlag("goalTemplatesEnabled");
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { data, setAmount } = useBudgetStore();
 
-  const toBudget = data?.toBudget ?? 0;
-  const buffered = data?.buffered ?? 0;
-  const groups = data?.groups ?? [];
+  const month = useBudgetUIStore((s) => s.month);
+  const sheet = sheetForMonth(month);
+  const { categories, groups: rawGroups } = useCategories();
+  const toBudget = useSheetValueNumber(sheet, envelopeBudget.toBudget);
+  const buffered = useSheetValueNumber(sheet, envelopeBudget.buffered);
+
+  // Build BudgetCategory[] from categories + spreadsheet data
+  const budgetGroups = useMemo(() => {
+    const ss = getSpreadsheet();
+    const num = (v: unknown) => (typeof v === "number" ? v : 0);
+
+    const sortedGroups = [...rawGroups]
+      .filter((g) => !g.is_income)
+      .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+
+    return sortedGroups.map((g) => {
+      const groupCats = categories
+        .filter((c) => c.cat_group === g.id)
+        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+
+      const budgetCats: BudgetCategory[] = groupCats.map((c) => {
+        const goalInfo = c.goal_def ? inferGoalFromDef(c.goal_def) : null;
+        return {
+          id: c.id,
+          name: c.name,
+          budgeted: num(ss.getValue(sheet, envelopeBudget.catBudgeted(c.id))),
+          spent: num(ss.getValue(sheet, envelopeBudget.catSpent(c.id))),
+          balance: num(ss.getValue(sheet, envelopeBudget.catBalance(c.id))),
+          carryIn: 0,
+          carryover:
+            ss.getValue(sheet, envelopeBudget.catCarryover(c.id)) === true ||
+            ss.getValue(sheet, envelopeBudget.catCarryover(c.id)) === 1,
+          goal: goalInfo?.goal ?? null,
+          longGoal: goalInfo?.longGoal ?? false,
+          goalDef: c.goal_def,
+          hidden: c.hidden,
+        };
+      });
+
+      return {
+        id: g.id,
+        name: g.name,
+        is_income: g.is_income,
+        categories: budgetCats,
+      };
+    });
+  }, [categories, rawGroups, sheet]);
 
   // Local edits: categoryId -> cents
   const [edits, setEdits] = useState<Record<string, number>>({});
@@ -75,26 +125,23 @@ export default function AssignBudgetScreen() {
     Keyboard.dismiss(); // Clear focus so no input holds stale values
     setActiveEditCatId(null);
     const initial: Record<string, number> = {};
-    for (const g of groups) {
-      if (g.is_income) continue;
+    for (const g of budgetGroups) {
       for (const cat of g.categories) {
         initial[cat.id] = cat.budgeted;
       }
     }
     setEdits(initial);
-  }, [groups]);
+  }, [budgetGroups]);
 
   // Sections for expense groups only -- pass full BudgetCategory
   const sections = useMemo<CategorySection[]>(
     () =>
-      groups
-        .filter((g) => !g.is_income)
-        .map((g) => ({
-          key: g.id,
-          title: g.name,
-          data: g.categories,
-        })),
-    [groups],
+      budgetGroups.map((g) => ({
+        key: g.id,
+        title: g.name,
+        data: g.categories,
+      })),
+    [budgetGroups],
   );
 
   // Sum of all edited amounts in cents
@@ -109,14 +156,13 @@ export default function AssignBudgetScreen() {
   // Original total budgeted (to compute delta)
   const originalBudgeted = useMemo(() => {
     let sum = 0;
-    for (const g of groups) {
-      if (g.is_income) continue;
+    for (const g of budgetGroups) {
       for (const cat of g.categories) {
         sum += cat.budgeted;
       }
     }
     return sum;
-  }, [groups]);
+  }, [budgetGroups]);
 
   const remaining = toBudget - (totalAssigned - originalBudgeted);
 
@@ -124,8 +170,7 @@ export default function AssignBudgetScreen() {
   const underfunded = useMemo(() => {
     if (!goalsEnabled) return 0;
     let sum = 0;
-    for (const g of groups) {
-      if (g.is_income) continue;
+    for (const g of budgetGroups) {
       for (const cat of g.categories) {
         if (cat.goal == null || cat.goal <= 0) continue;
         if (cat.longGoal) continue;
@@ -138,18 +183,17 @@ export default function AssignBudgetScreen() {
       }
     }
     return sum;
-  }, [groups, edits, goalsEnabled]);
+  }, [budgetGroups, edits, goalsEnabled]);
 
   // Check if any category has been changed
   const hasChanges = useMemo(() => {
-    for (const g of groups) {
-      if (g.is_income) continue;
+    for (const g of budgetGroups) {
       for (const cat of g.categories) {
         if ((edits[cat.id] ?? 0) !== cat.budgeted) return true;
       }
     }
     return false;
-  }, [edits, groups]);
+  }, [edits, budgetGroups]);
 
   // Haptic when fully assigned
   useEffect(() => {
@@ -171,7 +215,7 @@ export default function AssignBudgetScreen() {
     setSaving(true);
     try {
       // Dry run: compute allocations without writing to DB
-      const result = await useBudgetStore.getState().computeGoals(false);
+      const result = await computeGoalAllocations(month, false);
       // Merge computed allocations into local edits
       setEdits((prev) => {
         const next = { ...prev };
@@ -193,13 +237,14 @@ export default function AssignBudgetScreen() {
 
   async function handleSave() {
     setSaving(true);
+    const ss = getSpreadsheet();
     await batchMessages(async () => {
-      for (const g of groups) {
-        if (g.is_income) continue;
+      for (const g of budgetGroups) {
         for (const cat of g.categories) {
           const newCents = edits[cat.id] ?? 0;
           if (newCents !== cat.budgeted) {
-            await setAmount(cat.id, newCents);
+            ss.setByName(sheet, envelopeBudget.catBudgeted(cat.id), newCents); // optimistic
+            await setBudgetAmount(month, cat.id, newCents);
           }
         }
       }

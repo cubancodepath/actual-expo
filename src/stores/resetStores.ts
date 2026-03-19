@@ -1,4 +1,3 @@
-import { useBudgetStore } from "./budgetStore";
 import { useBudgetUIStore } from "./budgetUIStore";
 import { usePickerStore } from "./pickerStore";
 import { useSyncStore } from "./syncStore";
@@ -16,7 +15,6 @@ export function resetAllStores(): void {
   clearQueryCache();
   // Reset spreadsheet engine
   import("../spreadsheet/instance").then(({ resetSpreadsheet }) => resetSpreadsheet());
-  useBudgetStore.setState({ month: currentMonth(), data: null, loading: false });
   useBudgetUIStore.setState({ month: currentMonth(), coverTarget: null });
   usePickerStore.getState().clear();
   useSyncStore.setState({ status: "idle", error: null, lastSync: null });

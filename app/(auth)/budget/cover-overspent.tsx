@@ -3,7 +3,10 @@ import { Pressable, ScrollView, View } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { useBudgetStore } from "@/stores/budgetStore";
+import { useBudgetUIStore } from "@/stores/budgetUIStore";
+import { useCategories } from "@/presentation/hooks/useCategories";
+import { sheetForMonth, envelopeBudget } from "@/spreadsheet/bindings";
+import { getSpreadsheet } from "@/spreadsheet/instance";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Amount } from "@/presentation/components/atoms/Amount";
 import { Button } from "@/presentation/components/atoms/Button";
@@ -19,18 +22,34 @@ export default function CoverOverspentScreen() {
   const { t } = useTranslation("budget");
   const { colors, spacing, borderRadius: br } = useTheme();
   const router = useRouter();
-  const data = useBudgetStore((s) => s.data);
+  const month = useBudgetUIStore((s) => s.month);
+  const { categories, groups } = useCategories();
+  const sheet = sheetForMonth(month);
 
   const overspentCategories = useMemo<OverspentCategory[]>(() => {
-    if (!data) return [];
-    return data.groups
+    const ss = getSpreadsheet();
+    const result: OverspentCategory[] = [];
+    const expenseGroups = groups
       .filter((g) => !g.is_income)
-      .flatMap((g) =>
-        g.categories
-          .filter((c) => c.balance < 0 && !c.carryover)
-          .map((c) => ({ id: c.id, name: c.name, balance: c.balance, groupName: g.name })),
-      );
-  }, [data]);
+      .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+
+    for (const g of expenseGroups) {
+      const groupCats = categories
+        .filter((c) => c.cat_group === g.id)
+        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+
+      for (const c of groupCats) {
+        const balance = (ss.getValue(sheet, envelopeBudget.catBalance(c.id)) as number) ?? 0;
+        const carryover =
+          ss.getValue(sheet, envelopeBudget.catCarryover(c.id)) === true ||
+          ss.getValue(sheet, envelopeBudget.catCarryover(c.id)) === 1;
+        if (balance < 0 && !carryover) {
+          result.push({ id: c.id, name: c.name, balance, groupName: g.name });
+        }
+      }
+    }
+    return result;
+  }, [categories, groups, sheet]);
 
   const pillBg = colors.cardBackground;
   const pillBorder = colors.cardBorder;

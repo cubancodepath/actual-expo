@@ -3,7 +3,10 @@ import { Pressable, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { useBudgetStore } from "@/stores/budgetStore";
+import { useBudgetUIStore } from "@/stores/budgetUIStore";
+import { holdForNextMonth } from "@/budgets";
+import { useSheetValueNumber } from "@/presentation/hooks/useSheetValue";
+import { sheetForMonth, envelopeBudget } from "@/spreadsheet/bindings";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
 import { Amount } from "@/presentation/components/atoms/Amount";
@@ -61,11 +64,15 @@ export default function HoldScreen() {
     amountInput.setCents(currentCents > 0 ? currentCents : maxCents);
   }, []);
 
+  const month = useBudgetUIStore((s) => s.month);
+  const sheet = sheetForMonth(month);
+  const toBudget = useSheetValueNumber(sheet, envelopeBudget.toBudget);
+
   async function handleSave() {
     if (amountInput.cents <= 0 || saving) return;
     setSaving(true);
     try {
-      await useBudgetStore.getState().hold(amountInput.cents);
+      await holdForNextMonth(month, amountInput.cents, toBudget);
       router.back();
     } finally {
       setSaving(false);

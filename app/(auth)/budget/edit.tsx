@@ -15,8 +15,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { useCategories } from "@/presentation/hooks/useCategories";
 import { deleteCategory as deleteCategoryFn, deleteCategoryGroup } from "@/categories";
-import { useBudgetStore } from "@/stores/budgetStore";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
+import { sheetForMonth, envelopeBudget } from "@/spreadsheet/bindings";
+import { getSpreadsheet } from "@/spreadsheet/instance";
+import { inferGoalFromDef, parseGoalDef } from "@/goals";
 import { useUndoStore } from "@/stores/undoStore";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Amount } from "@/presentation/components/atoms/Amount";
@@ -24,7 +26,6 @@ import { Button } from "@/presentation/components/atoms/Button";
 import { SwipeableRow } from "@/presentation/components/molecules/SwipeableRow";
 import { GlassButton } from "@/presentation/components/atoms/GlassButton";
 import { RowSeparator } from "@/presentation/components/atoms/RowSeparator";
-import { parseGoalDef } from "@/goals";
 import { describeTemplate, translateDescription } from "@/goals/describe";
 import i18n from "@/i18n/config";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
@@ -172,8 +173,8 @@ export default function EditBudgetScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { groups, categories } = useCategories();
-  const budgetData = useBudgetStore((s) => s.data);
   const budgetMonth = useBudgetUIStore((s) => s.month);
+  const sheet = sheetForMonth(budgetMonth);
   const monthName = useMemo(() => {
     const [y, m] = budgetMonth.split("-").map(Number);
     return new Date(y, m - 1, 1).toLocaleDateString(i18n.language, { month: "long" });
@@ -184,26 +185,32 @@ export default function EditBudgetScreen() {
   // ---------- Budget overview calculations ----------
 
   const { totalGoals, needed, income } = useMemo(() => {
-    const budgetGroups = budgetData?.groups ?? [];
+    const ss = getSpreadsheet();
+    const num = (v: unknown) => (typeof v === "number" ? v : 0);
     let goals = 0;
     let underfunded = 0;
-    for (const g of budgetGroups) {
-      if (g.is_income) continue;
-      for (const cat of g.categories) {
-        if (cat.goal == null || cat.goal <= 0) continue;
-        goals += cat.goal;
-        // How much more this category needs to reach its goal
-        const funded = cat.longGoal ? cat.balance : cat.budgeted;
-        const shortfall = cat.goal - funded;
+    const expenseGroups = groups.filter((g) => !g.is_income);
+    for (const g of expenseGroups) {
+      const groupCats = categories.filter((c) => c.cat_group === g.id);
+      for (const c of groupCats) {
+        const goalInfo = c.goal_def ? inferGoalFromDef(c.goal_def) : null;
+        const goal = goalInfo?.goal ?? null;
+        const longGoal = goalInfo?.longGoal ?? false;
+        if (goal == null || goal <= 0) continue;
+        goals += goal;
+        const budgeted = num(ss.getValue(sheet, envelopeBudget.catBudgeted(c.id)));
+        const balance = num(ss.getValue(sheet, envelopeBudget.catBalance(c.id)));
+        const funded = longGoal ? balance : budgeted;
+        const shortfall = goal - funded;
         if (shortfall > 0) underfunded += shortfall;
       }
     }
     return {
       totalGoals: goals,
       needed: underfunded,
-      income: budgetData?.income ?? 0,
+      income: num(ss.getValue(sheet, envelopeBudget.totalIncome)),
     };
-  }, [budgetData]);
+  }, [groups, categories, sheet]);
 
   // Split expense vs income groups
   const expenseGroups = useMemo(

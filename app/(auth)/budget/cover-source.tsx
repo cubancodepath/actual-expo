@@ -5,9 +5,10 @@ import { Icon } from "@/presentation/components/atoms/Icon";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { palette } from "@/theme/colors";
-import { useBudgetStore } from "@/stores/budgetStore";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
-import { transferMultipleCategories } from "@/budgets";
+import { transferMultipleCategories, setBudgetAmount } from "@/budgets";
+import { sheetForMonth, envelopeBudget } from "@/spreadsheet/bindings";
+import { getSpreadsheet } from "@/spreadsheet/instance";
 import { TO_BUDGET_ID } from "./cover-category-picker";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Amount } from "@/presentation/components/atoms/Amount";
@@ -188,10 +189,13 @@ export default function CoverSourceScreen() {
       const categorySources = sources.filter((s) => s.id !== TO_BUDGET_ID && s.amount > 0);
 
       if (toBudgetSource) {
-        const data = useBudgetStore.getState().data;
-        const targetCat = data?.groups.flatMap((g) => g.categories).find((c) => c.id === catId);
-        const currentBudgeted = targetCat?.budgeted ?? 0;
-        await useBudgetStore.getState().setAmount(catId, currentBudgeted + toBudgetSource.amount);
+        const ss = getSpreadsheet();
+        const sheet = sheetForMonth(month);
+        const currentBudgeted =
+          (ss.getValue(sheet, envelopeBudget.catBudgeted(catId)) as number) ?? 0;
+        const newAmount = currentBudgeted + toBudgetSource.amount;
+        ss.setByName(sheet, envelopeBudget.catBudgeted(catId), newAmount); // optimistic
+        await setBudgetAmount(month, catId, newAmount);
       }
 
       if (categorySources.length > 0) {

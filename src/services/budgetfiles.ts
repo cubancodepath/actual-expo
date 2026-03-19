@@ -401,10 +401,6 @@ export async function openBudget(budgetId: string): Promise<void> {
   const { initSpreadsheet } = await import("../spreadsheet/sync");
   await initSpreadsheet();
 
-  // Build BudgetMonth from spreadsheet data for the bridge store
-  const { useBudgetStore } = await import("../stores/budgetStore");
-  await useBudgetStore.getState().load();
-
   // Update global prefs with active budget info
   usePrefsStore.getState().setPrefs({
     activeBudgetId: budgetId,

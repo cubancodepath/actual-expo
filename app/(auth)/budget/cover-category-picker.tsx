@@ -2,8 +2,11 @@ import { useMemo } from "react";
 import { Pressable, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { useBudgetStore } from "@/stores/budgetStore";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
+import { useCategories } from "@/presentation/hooks/useCategories";
+import { useSheetValueNumber } from "@/presentation/hooks/useSheetValue";
+import { sheetForMonth, envelopeBudget } from "@/spreadsheet/bindings";
+import { getSpreadsheet } from "@/spreadsheet/instance";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Amount } from "@/presentation/components/atoms/Amount";
@@ -19,29 +22,47 @@ export default function CoverCategoryPickerScreen() {
     excludeIds: string;
     overspentCatId: string;
   }>();
-  const data = useBudgetStore((s) => s.data);
+  const month = useBudgetUIStore((s) => s.month);
   const setCoverTarget = useBudgetUIStore((s) => s.setCoverTarget);
-
-  const toBudget = data?.toBudget ?? 0;
+  const { categories, groups } = useCategories();
+  const sheet = sheetForMonth(month);
+  const toBudget = useSheetValueNumber(sheet, envelopeBudget.toBudget);
 
   const excludeSet = useMemo(
     () => new Set([...(excludeIds?.split(",") ?? []), overspentCatId].filter(Boolean)),
     [excludeIds, overspentCatId],
   );
 
-  const groups = useMemo<GroupedCategory[]>(() => {
-    if (!data) return [];
-    return data.groups
+  const groupedCategories = useMemo<GroupedCategory[]>(() => {
+    const ss = getSpreadsheet();
+    const expenseGroups = groups
       .filter((g) => !g.is_income)
-      .map((g) => ({
-        groupId: g.id,
-        groupName: g.name,
-        categories: g.categories
-          .filter((c) => !excludeSet.has(c.id) && c.balance > 0)
-          .map((c) => ({ id: c.id, name: c.name, balance: c.balance })),
-      }))
+      .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+
+    return expenseGroups
+      .map((g) => {
+        const groupCats = categories
+          .filter((c) => c.cat_group === g.id)
+          .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+
+        return {
+          groupId: g.id,
+          groupName: g.name,
+          categories: groupCats
+            .filter((c) => {
+              if (excludeSet.has(c.id)) return false;
+              const balance = (ss.getValue(sheet, envelopeBudget.catBalance(c.id)) as number) ?? 0;
+              return balance > 0;
+            })
+            .map((c) => ({
+              id: c.id,
+              name: c.name,
+              balance: (ss.getValue(sheet, envelopeBudget.catBalance(c.id)) as number) ?? 0,
+            })),
+        };
+      })
       .filter((g) => g.categories.length > 0);
-  }, [data, excludeSet]);
+  }, [categories, groups, excludeSet, sheet]);
 
   const alreadyAdded = excludeIds?.split(",").includes(TO_BUDGET_ID) ?? false;
 
@@ -79,7 +100,7 @@ export default function CoverCategoryPickerScreen() {
   return (
     <CategoryPickerList
       title={t("coverOverspendingFrom")}
-      groups={groups}
+      groups={groupedCategories}
       onSelect={(cat) => {
         setCoverTarget({ catId: cat.id, catName: cat.name, balance: cat.balance });
         router.back();

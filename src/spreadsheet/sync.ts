@@ -13,6 +13,10 @@ import type { SyncMessage } from "../sync/encoder";
 import { getSpreadsheet } from "./instance";
 import { createAllBudgetCells } from "./envelope";
 
+/** Timestamp of last initSpreadsheet — suppresses structural refresh cooldown. */
+let lastInitTime = 0;
+const INIT_COOLDOWN = 5000; // ms — skip structural refresh for 5s after init
+
 /**
  * Initialize the spreadsheet with budget cells for all months.
  * Called during bootstrap in openBudget().
@@ -21,6 +25,7 @@ export async function initSpreadsheet(): Promise<void> {
   const ss = getSpreadsheet();
   ss.clear();
   await createAllBudgetCells(ss);
+  lastInitTime = Date.now();
 }
 
 // ── Granular budget invalidation (ported from loot-core/budget/base.ts) ──
@@ -124,6 +129,11 @@ async function runStructuralRefresh(): Promise<void> {
 
 listen((event) => {
   if (event.tables.includes("categories") || event.tables.includes("category_groups")) {
+    // Skip structural refresh if we just initialized — cells are already fresh.
+    // This prevents the post-open sync from triggering a massive re-render
+    // that can reset Expo Router's tab navigation state.
+    if (Date.now() - lastInitTime < INIT_COOLDOWN) return;
+
     if (refreshing) {
       pendingRefresh = true;
       return;

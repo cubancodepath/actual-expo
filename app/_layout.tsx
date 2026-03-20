@@ -27,7 +27,7 @@ import { ErrorBoundary } from "@/presentation/components/ErrorBoundary";
 import { useShakeUndo } from "@/presentation/hooks/useShakeUndo";
 import { loadAllPersistedKeys } from "@/services/encryptionService";
 
-const queryClient = new QueryClient();
+import { queryClient } from "@/queries/queryClient";
 
 // Keep splash screen visible until bootstrap + data pre-load completes
 SplashScreen.preventAutoHideAsync();

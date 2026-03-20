@@ -23,6 +23,7 @@ import { useCategories } from "@/presentation/hooks/useCategories";
 import { useSheetValueNumber, useSpreadsheetVersion } from "@/presentation/hooks/useSheetValue";
 import { sheetForMonth, envelopeBudget } from "@/spreadsheet/bindings";
 import { getSpreadsheet } from "@/spreadsheet/instance";
+import { inferGoalFromDef } from "@/goals";
 import { useCommonMenuActions } from "@/presentation/hooks/useCommonMenuItems";
 import { useRefreshControl } from "@/presentation/hooks/useRefreshControl";
 import { useKeyboardHeight } from "@/presentation/hooks/useKeyboardHeight";
@@ -47,6 +48,8 @@ import { BudgetListSkeleton } from "@/presentation/components/skeletons/BudgetLi
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
+
+type BudgetFilter = "all" | "underfunded" | "overfunded" | "has-money";
 
 type BudgetSection = {
   key: string;
@@ -121,6 +124,7 @@ export default function BudgetScreen() {
   const fabCollapsed = useSharedValue(false);
   const COLLAPSE_THRESHOLD = 100;
 
+  const [filter, setFilter] = useState<BudgetFilter>("all");
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set([HIDDEN_GROUP_ID]));
 
   // -- Shared hidden input: editing state --
@@ -234,22 +238,52 @@ export default function BudgetScreen() {
   );
 
   useEffect(() => {
+    setFilter("all");
     Keyboard.dismiss();
   }, [month]);
 
-  // -- Sections (structural only — no spreadsheet values needed for visibility) --
+  // -- Sections --
+  // When filter !== "all", we read spreadsheet values to exclude non-matching
+  // categories so that empty groups are hidden entirely.
   const sections: BudgetSection[] = useMemo(() => {
+    const ss = filter !== "all" ? getSpreadsheet() : null;
     const hiddenCats: BudgetCategoryData[] = [];
+
+    function matchesFilter(c: BudgetCategoryData, groupIsIncome: boolean): boolean {
+      if (groupIsIncome || filter === "all" || !ss) return true;
+      const balance = (ss.getValue(sheet, envelopeBudget.catBalance(c.id)) as number) ?? 0;
+      const budgeted = (ss.getValue(sheet, envelopeBudget.catBudgeted(c.id)) as number) ?? 0;
+      const goalInfo = c.goalDef ? inferGoalFromDef(c.goalDef) : null;
+      const goal = goalInfo?.goal ?? null;
+      const longGoal = goalInfo?.longGoal ?? false;
+
+      switch (filter) {
+        case "underfunded": {
+          if (goal == null) return false;
+          const funded = longGoal ? balance : budgeted;
+          return funded < goal;
+        }
+        case "overfunded": {
+          if (goal == null || balance < 0) return false;
+          const funded = longGoal ? balance : budgeted;
+          return funded > goal;
+        }
+        case "has-money":
+          return balance > 0;
+      }
+    }
+
     const visible = budgetGroups
       .filter((g) => !g.hidden)
       .map((g) => {
         const visibleCats: BudgetCategoryData[] = [];
         for (const c of g.categories) {
           if (c.hidden) hiddenCats.push(c);
-          else visibleCats.push(c);
+          else if (matchesFilter(c, g.is_income)) visibleCats.push(c);
         }
         return { ...g, categories: visibleCats };
-      });
+      })
+      .filter((g) => filter === "all" || g.categories.length > 0);
 
     const result: BudgetSection[] = visible.map((g) => ({
       key: g.id,
@@ -281,7 +315,7 @@ export default function BudgetScreen() {
     }
 
     return result;
-  }, [budgetGroups, collapsedGroups, t]);
+  }, [budgetGroups, collapsedGroups, filter, sheet, t, ssVersion]);
 
   // -- Callbacks (accept IDs, not full objects) --
   function handleMoveMoney(catId: string, catName: string, balance: number) {
@@ -474,14 +508,26 @@ export default function BudgetScreen() {
             }
             refreshControl={<RefreshControl {...refreshControlProps} />}
             ListEmptyComponent={
-              <View style={{ alignItems: "center", marginTop: 80, gap: 8 }}>
-                <Text variant="bodyLg" color={colors.textSecondary}>
-                  {t("noCategoriesYet")}
-                </Text>
-                <Text variant="bodySm" color={colors.textMuted}>
-                  {t("syncToLoad")}
-                </Text>
-              </View>
+              filter !== "all" ? (
+                <View style={{ alignItems: "center", marginTop: 80, gap: 8 }}>
+                  <Icon name="funnelOutline" size={32} color={colors.textMuted} />
+                  <Text variant="bodyLg" color={colors.textSecondary}>
+                    {t("noMatchingCategories")}
+                  </Text>
+                  <Text variant="bodySm" color={colors.textMuted}>
+                    {t("tryDifferentFilter")}
+                  </Text>
+                </View>
+              ) : (
+                <View style={{ alignItems: "center", marginTop: 80, gap: 8 }}>
+                  <Text variant="bodyLg" color={colors.textSecondary}>
+                    {t("noCategoriesYet")}
+                  </Text>
+                  <Text variant="bodySm" color={colors.textMuted}>
+                    {t("syncToLoad")}
+                  </Text>
+                </View>
+              )
             }
             contentContainerStyle={{ paddingBottom: 200 }}
           />
@@ -500,6 +546,46 @@ export default function BudgetScreen() {
       />
 
       <Stack.Toolbar placement="right">
+        <Stack.Toolbar.Menu
+          icon={
+            filter === "all"
+              ? "line.3.horizontal.decrease"
+              : "line.3.horizontal.decrease.circle.fill"
+          }
+          tintColor={filter !== "all" ? colors.primary : undefined}
+          title={t("filter")}
+        >
+          <Stack.Toolbar.MenuAction
+            isOn={filter === "all"}
+            icon="list.bullet"
+            onPress={() => setFilter("all")}
+          >
+            {t("filterAll")}
+          </Stack.Toolbar.MenuAction>
+          {goalsEnabled && (
+            <Stack.Toolbar.MenuAction
+              isOn={filter === "underfunded"}
+              icon="arrow.down.circle"
+              onPress={() => setFilter("underfunded")}
+            >
+              {t("filterUnderfunded")}
+            </Stack.Toolbar.MenuAction>
+          )}
+          <Stack.Toolbar.MenuAction
+            isOn={filter === "overfunded"}
+            icon="arrow.up.circle"
+            onPress={() => setFilter("overfunded")}
+          >
+            {t("filterOverfunded")}
+          </Stack.Toolbar.MenuAction>
+          <Stack.Toolbar.MenuAction
+            isOn={filter === "has-money"}
+            icon="banknote"
+            onPress={() => setFilter("has-money")}
+          >
+            {t("filterMoneyAvailable")}
+          </Stack.Toolbar.MenuAction>
+        </Stack.Toolbar.Menu>
         <Stack.Toolbar.Menu icon="ellipsis">
           {goalsEnabled && (
             <Stack.Toolbar.MenuAction

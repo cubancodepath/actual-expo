@@ -83,6 +83,8 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
   const goalInfo = cat.goalDef ? inferGoalFromDef(cat.goalDef, month, carryIn) : null;
 
   // Build a BudgetCategory-compatible object for progress bar/goal utilities
+  const goal = goalInfo?.goal ?? null;
+  const longGoal = goalInfo?.longGoal ?? false;
   const fullCat: BudgetCategory = {
     id: cat.id,
     name: cat.name,
@@ -91,8 +93,8 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
     balance,
     carryIn,
     carryover,
-    goal: goalInfo?.goal ?? null,
-    longGoal: goalInfo?.longGoal ?? false,
+    goal,
+    longGoal,
     goalDef: cat.goalDef,
     hidden: cat.hidden,
   };
@@ -155,9 +157,11 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
     neutral: { bg: colors.cardBackground, text: colors.textMuted, bar: colors.textMuted },
   };
 
-  const pillBg = bar ? STATUS_COLORS[bar.pillStatus].bg : STATUS_COLORS.neutral.bg;
-  const pillText = bar ? STATUS_COLORS[bar.pillStatus].text : STATUS_COLORS.neutral.text;
-  const barColor = bar ? STATUS_COLORS[bar.barStatus].bar : colors.positive;
+  // Use pillStatus for both pill and bar so they always match visually
+  const status = bar?.pillStatus ?? "neutral";
+  const pillBg = STATUS_COLORS[status].bg;
+  const pillText = STATUS_COLORS[status].text;
+  const barColor = STATUS_COLORS[status].bar;
 
   const displayCents = isEditing ? (editValue ?? 0) : budgeted;
   const displayColor = isEditing

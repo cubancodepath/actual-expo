@@ -53,100 +53,89 @@ export default function ChangeBudgetScreen() {
   const hasFiles = localFiles.length > 0 || remoteFiles.length > 0;
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xl }}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} />
-      }
-    >
-      <Stack.Screen
-        options={{
-          headerLeft: () => (
-            <Button
-              icon="close"
-              buttonStyle="borderless"
-              color={colors.headerText}
-              onPress={() => router.back()}
-            />
-          ),
-          headerRight: () => (
-            <Pressable
-              onPress={() => router.push("/(auth)/new-budget")}
-              hitSlop={8}
-              style={styles.headerBtn}
-            >
-              <Text variant="body" style={{ fontWeight: "600" }}>
-                {t("new")}
+    <>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xl }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} />
+        }
+      >
+        <Stack.Screen options={{}} />
+
+        <View style={{ marginTop: spacing.md }}>
+          <ErrorBanner error={error} onDismiss={dismissError} />
+        </View>
+
+        {loading ? (
+          <Card style={{ marginTop: spacing.lg }}>
+            <View style={styles.loadingRow}>
+              <ActivityIndicator color={colors.primary} />
+              <Text variant="bodySm" color={colors.textMuted}>
+                {t("loading")}
               </Text>
-            </Pressable>
-          ),
-        }}
-      />
+            </View>
+          </Card>
+        ) : hasFiles ? (
+          <>
+            {localFiles.length > 0 && (
+              <>
+                <SectionHeader title={t("budget.onThisDevice")} style={{ marginTop: spacing.lg }} />
+                <Card style={styles.listCard}>
+                  {localFiles.map((file, index) => (
+                    <BudgetFileRow
+                      key={fileKey(file)}
+                      file={file}
+                      isActive={file.localId === activeBudgetId}
+                      isSelecting={selecting === fileKey(file)}
+                      onPress={() => handleSelect(file)}
+                      showSeparator={index < localFiles.length - 1}
+                    />
+                  ))}
+                </Card>
+              </>
+            )}
 
-      <View style={{ marginTop: spacing.md }}>
-        <ErrorBanner error={error} onDismiss={dismissError} />
-      </View>
+            {remoteFiles.length > 0 && (
+              <>
+                <SectionHeader
+                  title={t("budget.availableOnServer")}
+                  style={{ marginTop: spacing.lg }}
+                />
+                <Card style={styles.listCard}>
+                  {remoteFiles.map((file, index) => (
+                    <BudgetFileRow
+                      key={fileKey(file)}
+                      file={file}
+                      isSelecting={selecting === fileKey(file)}
+                      onPress={() => handleSelect(file)}
+                      showSeparator={index < remoteFiles.length - 1}
+                    />
+                  ))}
+                </Card>
+              </>
+            )}
+          </>
+        ) : (
+          <EmptyState
+            icon="folderOpenOutline"
+            title={t("budget.noBudgetsFound")}
+            description={t("budget.noBudgetsDescription")}
+            actionLabel={t("budget.createNewBudget")}
+            onAction={() => router.push("/(auth)/new-budget")}
+          />
+        )}
+      </ScrollView>
 
-      {loading ? (
-        <Card style={{ marginTop: spacing.lg }}>
-          <View style={styles.loadingRow}>
-            <ActivityIndicator color={colors.primary} />
-            <Text variant="bodySm" color={colors.textMuted}>
-              {t("loading")}
-            </Text>
-          </View>
-        </Card>
-      ) : hasFiles ? (
-        <>
-          {localFiles.length > 0 && (
-            <>
-              <SectionHeader title={t("budget.onThisDevice")} style={{ marginTop: spacing.lg }} />
-              <Card style={styles.listCard}>
-                {localFiles.map((file, index) => (
-                  <BudgetFileRow
-                    key={fileKey(file)}
-                    file={file}
-                    isActive={file.localId === activeBudgetId}
-                    isSelecting={selecting === fileKey(file)}
-                    onPress={() => handleSelect(file)}
-                    showSeparator={index < localFiles.length - 1}
-                  />
-                ))}
-              </Card>
-            </>
-          )}
-
-          {remoteFiles.length > 0 && (
-            <>
-              <SectionHeader
-                title={t("budget.availableOnServer")}
-                style={{ marginTop: spacing.lg }}
-              />
-              <Card style={styles.listCard}>
-                {remoteFiles.map((file, index) => (
-                  <BudgetFileRow
-                    key={fileKey(file)}
-                    file={file}
-                    isSelecting={selecting === fileKey(file)}
-                    onPress={() => handleSelect(file)}
-                    showSeparator={index < remoteFiles.length - 1}
-                  />
-                ))}
-              </Card>
-            </>
-          )}
-        </>
-      ) : (
-        <EmptyState
-          icon="folderOpenOutline"
-          title={t("budget.noBudgetsFound")}
-          description={t("budget.noBudgetsDescription")}
-          actionLabel={t("budget.createNewBudget")}
-          onAction={() => router.push("/(auth)/new-budget")}
-        />
-      )}
-    </ScrollView>
+      <Stack.Toolbar placement="left">
+        <Stack.Toolbar.Button icon="xmark" onPress={() => router.back()} />
+      </Stack.Toolbar>
+      <Stack.Toolbar placement="right">
+        <Stack.Toolbar.Button onPress={() => router.push("/(auth)/new-budget")}>
+          {t("new")}
+        </Stack.Toolbar.Button>
+      </Stack.Toolbar>
+    </>
   );
 }
 

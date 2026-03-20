@@ -373,27 +373,29 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
     }
   }, [accountName, startingBalance, categories, budgetName, step, mode]);
 
-  function handleStart() {
+  async function handleStart() {
     const name = budgetName.trim() || "My Budget";
     if (__DEV__) console.log("[wizard] handleStart, mode:", mode, "budgetId:", budgetIdRef.current);
+
+    // Close the raw DB opened during seed and do a proper openBudget
+    // which initializes spreadsheet, pre-fetches queries, etc.
+    const { closeDatabase } = await import("../../../db");
+    await closeDatabase();
+    const { openBudget } = await import("../../../services/budgetfiles");
+    await openBudget(budgetIdRef.current);
+
     if (mode === "local") {
       usePrefsStore.getState().setPrefs({
         isLocalOnly: true,
-        activeBudgetId: budgetIdRef.current,
-        budgetName: name,
       });
     } else {
-      // Server mode: set prefs now → triggers isConfigured → routing switches to (auth)
       const result = uploadResultRef.current;
       if (__DEV__) console.log("[wizard] Setting server prefs:", JSON.stringify(result));
       usePrefsStore.getState().setPrefs({
-        activeBudgetId: budgetIdRef.current,
-        budgetName: name,
         fileId: result?.cloudFileId ?? "",
         groupId: result?.groupId ?? "",
         isLocalOnly: false,
       });
-      // Trigger initial sync in background
       fullSync().catch((e) => {
         if (__DEV__) console.warn(e);
       });

@@ -124,124 +124,116 @@ export default function FilesScreen() {
   const hasFiles = localFiles.length > 0 || remoteFiles.length > 0;
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xl }}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} />
-      }
-    >
-      <Stack.Screen
-        options={{
-          headerLeft: () => (
-            <Pressable onPress={handleLogout} hitSlop={8} style={styles.headerBtn}>
-              <Text variant="body">{t("logOut")}</Text>
-            </Pressable>
-          ),
-          headerRight: () => (
-            <Pressable
-              onPress={() => router.push("/(files)/new-budget")}
-              hitSlop={8}
-              style={styles.headerBtn}
-            >
-              <Text variant="body" style={{ fontWeight: "600" }}>
-                {t("new")}
+    <>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xl }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} />
+        }
+      >
+        <Stack.Screen options={{}} />
+
+        <View style={{ marginTop: spacing.md }}>
+          <ErrorBanner error={error} onDismiss={dismissError} />
+        </View>
+
+        {loading ? (
+          <Card style={{ marginTop: spacing.lg }}>
+            <View style={styles.loadingRow}>
+              <ActivityIndicator color={colors.primary} />
+              <Text variant="bodySm" color={colors.textMuted}>
+                {tc("loading")}
               </Text>
-            </Pressable>
-          ),
-        }}
-      />
-
-      <View style={{ marginTop: spacing.md }}>
-        <ErrorBanner error={error} onDismiss={dismissError} />
-      </View>
-
-      {loading ? (
-        <Card style={{ marginTop: spacing.lg }}>
-          <View style={styles.loadingRow}>
-            <ActivityIndicator color={colors.primary} />
-            <Text variant="bodySm" color={colors.textMuted}>
-              {tc("loading")}
-            </Text>
-          </View>
-        </Card>
-      ) : hasFiles ? (
-        <>
-          {localFiles.length > 0 && (
-            <>
-              <SectionHeader
-                title={t("onThisDevice")}
-                style={{ marginTop: spacing.lg, paddingHorizontal: 0 }}
-              />
-              {hasDetached && (
-                <View style={{ marginBottom: spacing.sm }}>
-                  <Banner message={t("detachedHint")} variant="warning" />
+            </View>
+          </Card>
+        ) : hasFiles ? (
+          <>
+            {localFiles.length > 0 && (
+              <>
+                <SectionHeader
+                  title={t("onThisDevice")}
+                  style={{ marginTop: spacing.lg, paddingHorizontal: 0 }}
+                />
+                {hasDetached && (
+                  <View style={{ marginBottom: spacing.sm }}>
+                    <Banner message={t("detachedHint")} variant="warning" />
+                  </View>
+                )}
+                <View>
+                  {localFiles.map((file, index) => (
+                    <SwipeableRow
+                      key={fileKey(file)}
+                      onDelete={() => handleDelete(file)}
+                      onSwipeRight={file.state === "local" ? () => handleUpload(file) : undefined}
+                      swipeRightIcon="cloudUploadOutline"
+                      swipeRightColor={colors.primary}
+                      isFirst={index === 0}
+                      isLast={index === localFiles.length - 1}
+                    >
+                      <BudgetFileRow
+                        file={file}
+                        isSelecting={selecting === fileKey(file)}
+                        isActionInProgress={actionInProgress === fileKey(file)}
+                        onPress={() => handleSelect(file)}
+                        onActionPress={() => showActions(file)}
+                        showSeparator={index < localFiles.length - 1}
+                        style={styles.fileRow}
+                      />
+                    </SwipeableRow>
+                  ))}
                 </View>
-              )}
-              <View>
-                {localFiles.map((file, index) => (
-                  <SwipeableRow
-                    key={fileKey(file)}
-                    onDelete={() => handleDelete(file)}
-                    onSwipeRight={file.state === "local" ? () => handleUpload(file) : undefined}
-                    swipeRightIcon="cloudUploadOutline"
-                    swipeRightColor={colors.primary}
-                    isFirst={index === 0}
-                    isLast={index === localFiles.length - 1}
-                  >
-                    <BudgetFileRow
-                      file={file}
-                      isSelecting={selecting === fileKey(file)}
-                      isActionInProgress={actionInProgress === fileKey(file)}
-                      onPress={() => handleSelect(file)}
-                      onActionPress={() => showActions(file)}
-                      showSeparator={index < localFiles.length - 1}
-                      style={styles.fileRow}
-                    />
-                  </SwipeableRow>
-                ))}
-              </View>
-            </>
-          )}
+              </>
+            )}
 
-          {remoteFiles.length > 0 && (
-            <>
-              <SectionHeader
-                title={t("availableOnServer")}
-                style={{ marginTop: spacing.lg, paddingHorizontal: 0 }}
-              />
-              <View>
-                {remoteFiles.map((file, index) => (
-                  <SwipeableRow
-                    key={fileKey(file)}
-                    onDelete={() => handleDelete(file)}
-                    isFirst={index === 0}
-                    isLast={index === remoteFiles.length - 1}
-                  >
-                    <BudgetFileRow
-                      file={file}
-                      isSelecting={selecting === fileKey(file)}
-                      onPress={() => handleSelect(file)}
-                      onActionPress={() => showActions(file)}
-                      showSeparator={index < remoteFiles.length - 1}
-                      style={styles.fileRow}
-                    />
-                  </SwipeableRow>
-                ))}
-              </View>
-            </>
-          )}
-        </>
-      ) : (
-        <EmptyState
-          icon="folderOpenOutline"
-          title={t("noBudgetsFound")}
-          description={t("noBudgetsDescription")}
-          actionLabel={t("createNewBudget")}
-          onAction={() => router.push("/(files)/new-budget")}
-        />
-      )}
-    </ScrollView>
+            {remoteFiles.length > 0 && (
+              <>
+                <SectionHeader
+                  title={t("availableOnServer")}
+                  style={{ marginTop: spacing.lg, paddingHorizontal: 0 }}
+                />
+                <View>
+                  {remoteFiles.map((file, index) => (
+                    <SwipeableRow
+                      key={fileKey(file)}
+                      onDelete={() => handleDelete(file)}
+                      isFirst={index === 0}
+                      isLast={index === remoteFiles.length - 1}
+                    >
+                      <BudgetFileRow
+                        file={file}
+                        isSelecting={selecting === fileKey(file)}
+                        onPress={() => handleSelect(file)}
+                        onActionPress={() => showActions(file)}
+                        showSeparator={index < remoteFiles.length - 1}
+                        style={styles.fileRow}
+                      />
+                    </SwipeableRow>
+                  ))}
+                </View>
+              </>
+            )}
+          </>
+        ) : (
+          <EmptyState
+            icon="folderOpenOutline"
+            title={t("noBudgetsFound")}
+            description={t("noBudgetsDescription")}
+            actionLabel={t("createNewBudget")}
+            onAction={() => router.push("/(files)/new-budget")}
+          />
+        )}
+      </ScrollView>
+
+      <Stack.Toolbar placement="left">
+        <Stack.Toolbar.Button onPress={handleLogout}>{t("logOut")}</Stack.Toolbar.Button>
+      </Stack.Toolbar>
+      <Stack.Toolbar placement="right">
+        <Stack.Toolbar.Button onPress={() => router.push("/(files)/new-budget")}>
+          {t("new")}
+        </Stack.Toolbar.Button>
+      </Stack.Toolbar>
+    </>
   );
 }
 

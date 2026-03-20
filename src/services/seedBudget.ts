@@ -1,4 +1,6 @@
-import { batchMessages } from "../sync";
+import { randomUUID } from "expo-crypto";
+import { batchMessages, sendMessages } from "../sync";
+import { Timestamp } from "../crdt";
 import { createAccount } from "../accounts";
 import { createCategoryGroup, createCategory } from "../categories";
 import { refreshAllRegisteredStores } from "../stores/storeRegistry";
@@ -107,5 +109,229 @@ export async function seedLocalBudget(opts: {
   // category and payee, which must already be committed.
   await createAccount({ name: accountName, offbudget: false }, startingBalance);
 
+  // Seed default dashboard (required by desktop app — without this, dashboard is stuck loading)
+  await seedDashboard();
+
   await refreshAllRegisteredStores();
+}
+
+// ---------------------------------------------------------------------------
+// Default dashboard — matches loot-core migration 1722804019000 + 1765518577215
+// ---------------------------------------------------------------------------
+
+const DEFAULT_DASHBOARD_WIDGETS: Array<{
+  type: string;
+  width: number;
+  height: number;
+  x: number;
+  y: number;
+  meta: string | null;
+}> = [
+  {
+    type: "summary-card",
+    width: 3,
+    height: 2,
+    x: 0,
+    y: 0,
+    meta: JSON.stringify({
+      name: "Total Income (YTD)",
+      content: '{"type":"sum","fontSize":20}',
+      timeFrame: { start: "2024-01-01", end: "2024-12-31", mode: "yearToDate" },
+      conditions: [
+        { field: "amount", op: "gt", value: 0 },
+        { field: "account", op: "onBudget", value: "" },
+        { field: "transfer", op: "is", value: false },
+      ],
+      conditionsOp: "and",
+    }),
+  },
+  {
+    type: "summary-card",
+    width: 3,
+    height: 2,
+    x: 3,
+    y: 0,
+    meta: JSON.stringify({
+      name: "Total Expenses (YTD)",
+      content: '{"type":"sum","fontSize":20}',
+      timeFrame: { start: "2024-01-01", end: "2024-12-31", mode: "yearToDate" },
+      conditions: [
+        { field: "amount", op: "lt", value: 0 },
+        { field: "account", op: "onBudget", value: "" },
+        { field: "transfer", op: "is", value: false },
+      ],
+      conditionsOp: "and",
+    }),
+  },
+  {
+    type: "summary-card",
+    width: 3,
+    height: 2,
+    x: 6,
+    y: 0,
+    meta: JSON.stringify({
+      name: "Avg Per Month",
+      content: '{"type":"avgPerMonth","fontSize":20}',
+      timeFrame: { start: "2024-01-01", end: "2024-12-31", mode: "yearToDate" },
+      conditions: [
+        { field: "amount", op: "lt", value: 0 },
+        { field: "account", op: "onBudget", value: "" },
+        { field: "transfer", op: "is", value: false },
+      ],
+      conditionsOp: "and",
+    }),
+  },
+  {
+    type: "summary-card",
+    width: 3,
+    height: 2,
+    x: 9,
+    y: 0,
+    meta: JSON.stringify({
+      name: "Avg Per Transaction",
+      content: '{"type":"avgPerTransact","fontSize":20}',
+      timeFrame: { start: "2024-01-01", end: "2024-12-31", mode: "yearToDate" },
+      conditions: [
+        { field: "amount", op: "lt", value: 0 },
+        { field: "account", op: "onBudget", value: "" },
+        { field: "transfer", op: "is", value: false },
+      ],
+      conditionsOp: "and",
+    }),
+  },
+  { type: "net-worth-card", width: 6, height: 2, x: 0, y: 2, meta: null },
+  { type: "cash-flow-card", width: 6, height: 2, x: 6, y: 2, meta: null },
+  {
+    type: "spending-card",
+    width: 4,
+    height: 2,
+    x: 0,
+    y: 5,
+    meta: JSON.stringify({ name: "This Month", mode: "single-month" }),
+  },
+  {
+    type: "spending-card",
+    width: 4,
+    height: 2,
+    x: 4,
+    y: 5,
+    meta: JSON.stringify({ name: "Budget Overview", mode: "budget" }),
+  },
+  {
+    type: "spending-card",
+    width: 4,
+    height: 2,
+    x: 8,
+    y: 5,
+    meta: JSON.stringify({ name: "3-Month Average", mode: "average" }),
+  },
+  {
+    type: "calendar-card",
+    width: 8,
+    height: 4,
+    x: 0,
+    y: 8,
+    meta: JSON.stringify({
+      name: "Transaction Calendar",
+      timeFrame: { start: "2024-01-01", end: "2024-03-31", mode: "sliding-window" },
+      conditions: [{ field: "transfer", op: "is", value: false }],
+      conditionsOp: "and",
+    }),
+  },
+  {
+    type: "markdown-card",
+    width: 4,
+    height: 2,
+    x: 8,
+    y: 10,
+    meta: JSON.stringify({
+      content:
+        "## Dashboard Tips\n\nYou can add new widgets or edit existing widgets by using the buttons at the top of the page.",
+    }),
+  },
+];
+
+async function seedDashboard(): Promise<void> {
+  await batchMessages(async () => {
+    const pageId = randomUUID();
+
+    await sendMessages([
+      {
+        timestamp: Timestamp.send()!,
+        dataset: "dashboard_pages",
+        row: pageId,
+        column: "name",
+        value: "Main",
+      },
+      {
+        timestamp: Timestamp.send()!,
+        dataset: "dashboard_pages",
+        row: pageId,
+        column: "tombstone",
+        value: 0,
+      },
+    ]);
+
+    for (const widget of DEFAULT_DASHBOARD_WIDGETS) {
+      const widgetId = randomUUID();
+      await sendMessages([
+        {
+          timestamp: Timestamp.send()!,
+          dataset: "dashboard",
+          row: widgetId,
+          column: "type",
+          value: widget.type,
+        },
+        {
+          timestamp: Timestamp.send()!,
+          dataset: "dashboard",
+          row: widgetId,
+          column: "width",
+          value: widget.width,
+        },
+        {
+          timestamp: Timestamp.send()!,
+          dataset: "dashboard",
+          row: widgetId,
+          column: "height",
+          value: widget.height,
+        },
+        {
+          timestamp: Timestamp.send()!,
+          dataset: "dashboard",
+          row: widgetId,
+          column: "x",
+          value: widget.x,
+        },
+        {
+          timestamp: Timestamp.send()!,
+          dataset: "dashboard",
+          row: widgetId,
+          column: "y",
+          value: widget.y,
+        },
+        {
+          timestamp: Timestamp.send()!,
+          dataset: "dashboard",
+          row: widgetId,
+          column: "meta",
+          value: widget.meta,
+        },
+        {
+          timestamp: Timestamp.send()!,
+          dataset: "dashboard",
+          row: widgetId,
+          column: "dashboard_page_id",
+          value: pageId,
+        },
+        {
+          timestamp: Timestamp.send()!,
+          dataset: "dashboard",
+          row: widgetId,
+          column: "tombstone",
+          value: 0,
+        },
+      ]);
+    }
+  });
 }

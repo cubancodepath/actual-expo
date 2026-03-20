@@ -242,48 +242,19 @@ export default function BudgetScreen() {
     Keyboard.dismiss();
   }, [month]);
 
-  // -- Sections --
-  // When filter !== "all", we read spreadsheet values to exclude non-matching
-  // categories so that empty groups are hidden entirely.
-  const sections: BudgetSection[] = useMemo(() => {
-    const ss = filter !== "all" ? getSpreadsheet() : null;
+  // -- Base sections (structural — no spreadsheet reads, stable reference) --
+  const baseSections: BudgetSection[] = useMemo(() => {
     const hiddenCats: BudgetCategoryData[] = [];
-
-    function matchesFilter(c: BudgetCategoryData, groupIsIncome: boolean): boolean {
-      if (groupIsIncome || filter === "all" || !ss) return true;
-      const balance = (ss.getValue(sheet, envelopeBudget.catBalance(c.id)) as number) ?? 0;
-      const budgeted = (ss.getValue(sheet, envelopeBudget.catBudgeted(c.id)) as number) ?? 0;
-      const goalInfo = c.goalDef ? inferGoalFromDef(c.goalDef) : null;
-      const goal = goalInfo?.goal ?? null;
-      const longGoal = goalInfo?.longGoal ?? false;
-
-      switch (filter) {
-        case "underfunded": {
-          if (goal == null) return false;
-          const funded = longGoal ? balance : budgeted;
-          return funded < goal;
-        }
-        case "overfunded": {
-          if (goal == null || balance < 0) return false;
-          const funded = longGoal ? balance : budgeted;
-          return funded > goal;
-        }
-        case "has-money":
-          return balance > 0;
-      }
-    }
-
     const visible = budgetGroups
       .filter((g) => !g.hidden)
       .map((g) => {
         const visibleCats: BudgetCategoryData[] = [];
         for (const c of g.categories) {
           if (c.hidden) hiddenCats.push(c);
-          else if (matchesFilter(c, g.is_income)) visibleCats.push(c);
+          else visibleCats.push(c);
         }
         return { ...g, categories: visibleCats };
-      })
-      .filter((g) => filter === "all" || g.categories.length > 0);
+      });
 
     const result: BudgetSection[] = visible.map((g) => ({
       key: g.id,
@@ -292,7 +263,6 @@ export default function BudgetScreen() {
       data: collapsedGroups.has(g.id) ? [] : g.categories,
     }));
 
-    // Collect hidden categories from hidden groups too
     for (const g of budgetGroups) {
       if (!g.hidden) continue;
       for (const c of g.categories) hiddenCats.push(c);
@@ -315,7 +285,45 @@ export default function BudgetScreen() {
     }
 
     return result;
-  }, [budgetGroups, collapsedGroups, filter, sheet, t, ssVersion]);
+  }, [budgetGroups, collapsedGroups, t]);
+
+  // -- Filtered sections (reads spreadsheet only when filter is active) --
+  const sections: BudgetSection[] = useMemo(() => {
+    if (filter === "all") return baseSections;
+
+    const ss = getSpreadsheet();
+
+    function matchesFilter(c: BudgetCategoryData, groupIsIncome: boolean) {
+      if (groupIsIncome) return true;
+      const balance = (ss.getValue(sheet, envelopeBudget.catBalance(c.id)) as number) ?? 0;
+      const budgeted = (ss.getValue(sheet, envelopeBudget.catBudgeted(c.id)) as number) ?? 0;
+      const goalInfo = c.goalDef ? inferGoalFromDef(c.goalDef) : null;
+      const goal = goalInfo?.goal ?? null;
+      const longGoal = goalInfo?.longGoal ?? false;
+
+      switch (filter) {
+        case "underfunded": {
+          if (goal == null) return false;
+          const funded = longGoal ? balance : budgeted;
+          return funded < goal;
+        }
+        case "overfunded": {
+          if (goal == null || balance < 0) return false;
+          const funded = longGoal ? balance : budgeted;
+          return funded > goal;
+        }
+        case "has-money":
+          return balance > 0;
+      }
+    }
+
+    return baseSections
+      .map((section) => ({
+        ...section,
+        data: section.data.filter((c) => matchesFilter(c, section.group.is_income)),
+      }))
+      .filter((section) => section.data.length > 0);
+  }, [baseSections, filter, sheet, ssVersion]);
 
   // -- Callbacks (accept IDs, not full objects) --
   function handleMoveMoney(catId: string, catName: string, balance: number) {

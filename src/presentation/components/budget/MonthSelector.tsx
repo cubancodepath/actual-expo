@@ -1,11 +1,12 @@
-import { Pressable, View } from "react-native";
+import { useRef, useState } from "react";
+import { Pressable, Text, View } from "react-native";
+import { EaseView } from "react-native-ease";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  withSequence,
+  runOnJS,
 } from "react-native-reanimated";
-import { scheduleOnRN } from "react-native-worklets";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { Icon } from "../atoms/Icon";
 import { useTranslation } from "react-i18next";
@@ -14,6 +15,7 @@ import { useBudgetUIStore } from "../../../stores/budgetUIStore";
 import { addMonths, formatMonth } from "../../../lib/date";
 
 const SWIPE_THRESHOLD = 50;
+const DURATION = 120;
 
 export function MonthSelector() {
   const { i18n } = useTranslation();
@@ -21,72 +23,78 @@ export function MonthSelector() {
   const month = useBudgetUIStore((s) => s.month);
   const setMonth = useBudgetUIStore((s) => s.setMonth);
 
-  const translateX = useSharedValue(0);
-  const opacity = useSharedValue(1);
+  // Key increments to force remount of EaseView with fresh initialAnimate
+  const [animKey, setAnimKey] = useState(0);
+  const [direction, setDirection] = useState<-1 | 1>(1);
+  const [animating, setAnimating] = useState(false);
 
-  function goToMonth(direction: -1 | 1) {
-    const nextMonth = addMonths(month, direction);
-    // Animate out
-    translateX.value = withSequence(
-      withTiming(direction * -60, { duration: 120 }),
-      withTiming(direction * 60, { duration: 0 }),
-      withTiming(0, { duration: 150 }),
-    );
-    opacity.value = withSequence(
-      withTiming(0, { duration: 120 }),
-      withTiming(0, { duration: 0 }),
-      withTiming(1, { duration: 150 }),
-    );
-    // Update month after slide-out
-    setTimeout(() => setMonth(nextMonth), 120);
+  function goToMonth(dir: -1 | 1) {
+    if (animating) return;
+    setAnimating(true);
+    setDirection(dir);
+    const nextMonth = addMonths(month, dir);
+    // Set the new month — React renders new text immediately but EaseView
+    // starts from initialAnimate (invisible, offset) and animates to visible
+    setMonth(nextMonth);
+    setAnimKey((k) => k + 1);
   }
+
+  // Swipe gesture (Reanimated for smooth finger-follow during drag)
+  const gestureTranslateX = useSharedValue(0);
+  const gestureOpacity = useSharedValue(1);
 
   const panGesture = Gesture.Pan()
     .activeOffsetX([-15, 15])
     .onUpdate((e) => {
-      translateX.value = e.translationX * 0.5;
-      opacity.value = 1 - Math.min(Math.abs(e.translationX) / 150, 0.4);
+      if (animating) return;
+      gestureTranslateX.value = e.translationX * 0.5;
+      gestureOpacity.value = 1 - Math.min(Math.abs(e.translationX) / 150, 0.4);
     })
     .onEnd((e) => {
+      if (animating) return;
       if (Math.abs(e.translationX) > SWIPE_THRESHOLD) {
-        const direction = e.translationX > 0 ? -1 : 1;
-        scheduleOnRN(goToMonth, direction as -1 | 1);
+        const dir: -1 | 1 = e.translationX > 0 ? -1 : 1;
+        gestureTranslateX.value = withTiming(0, { duration: 0 });
+        gestureOpacity.value = withTiming(1, { duration: 0 });
+        runOnJS(goToMonth)(dir);
       } else {
-        translateX.value = withTiming(0, { duration: 150 });
-        opacity.value = withTiming(1, { duration: 150 });
+        gestureTranslateX.value = withTiming(0, { duration: 150 });
+        gestureOpacity.value = withTiming(1, { duration: 150 });
       }
     });
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: translateX.value }],
-    opacity: opacity.value,
+  const gestureStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: gestureTranslateX.value }],
+    opacity: gestureOpacity.value,
   }));
 
+  const textStyle = {
+    color: colors.headerText,
+    fontSize: 17,
+    fontWeight: "600" as const,
+    minWidth: 140,
+    textAlign: "center" as const,
+  };
+
   return (
-    <View
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        gap: spacing.xs,
-      }}
-    >
+    <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs }}>
       <Pressable onPress={() => goToMonth(-1)} hitSlop={12}>
         <Icon name="chevronBack" size={22} color={colors.headerText} />
       </Pressable>
 
       <GestureDetector gesture={panGesture}>
-        <Animated.View style={animatedStyle}>
-          <Animated.Text
-            style={{
-              color: colors.headerText,
-              fontSize: 17,
-              fontWeight: "600",
-              minWidth: 140,
-              textAlign: "center",
+        <Animated.View style={gestureStyle}>
+          <EaseView
+            key={animKey}
+            initialAnimate={animKey > 0 ? { opacity: 0, translateX: direction * 40 } : undefined}
+            animate={{ opacity: 1, translateX: 0 }}
+            transition={{ type: "timing", duration: DURATION, easing: "easeOut" }}
+            onTransitionEnd={({ finished }) => {
+              if (finished) setAnimating(false);
             }}
           >
-            {formatMonth(month, i18n.language)}
-          </Animated.Text>
+            <Text style={textStyle}>{formatMonth(month, i18n.language)}</Text>
+          </EaseView>
         </Animated.View>
       </GestureDetector>
 

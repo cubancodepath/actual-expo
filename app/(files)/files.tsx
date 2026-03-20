@@ -78,7 +78,8 @@ export default function FilesScreen() {
   async function handleSelect(file: ReconciledBudgetFile) {
     try {
       await selectFile(file);
-      router.replace("/(auth)/(tabs)/(budget)");
+      // Navigation is handled automatically by Stack.Protected guard
+      // when isConfigured changes to true in openBudget → setPrefs
     } catch {
       // Error already set in hook
     }

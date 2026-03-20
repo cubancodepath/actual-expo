@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, ScrollView, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Icon } from "@/presentation/components/atoms/Icon";
+
 import { useAccounts } from "@/presentation/hooks/useAccounts";
 import { closeAccount } from "@/accounts";
 import { useCategories } from "@/presentation/hooks/useCategories";

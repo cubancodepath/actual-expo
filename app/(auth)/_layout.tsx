@@ -38,6 +38,7 @@ export default function AuthLayout() {
           title: t("nav.closeAccount"),
           presentation: "formSheet",
           sheetAllowedDetents: [0.75, 1.0],
+          sheetGrabberVisible: true,
           contentStyle: { backgroundColor: theme.colors.pageBackground },
         }}
       />
@@ -133,6 +134,7 @@ export default function AuthLayout() {
           title: t("nav.overspentCategories"),
           presentation: "formSheet",
           sheetAllowedDetents: [0.3, 1.0],
+          sheetGrabberVisible: true,
           contentStyle: { backgroundColor: theme.colors.pageBackground },
         }}
       />
@@ -151,6 +153,7 @@ export default function AuthLayout() {
           headerShown: false,
           presentation: "formSheet",
           sheetAllowedDetents: [0.5, 1.0],
+          sheetGrabberVisible: true,
           contentStyle: { backgroundColor: theme.colors.pageBackground },
         }}
       />
@@ -160,7 +163,7 @@ export default function AuthLayout() {
           ...screen,
           title: t("nav.holdForNextMonth"),
           presentation: "formSheet",
-          sheetAllowedDetents: [0.45],
+          sheetAllowedDetents: [0.22],
           contentStyle: { backgroundColor: theme.colors.pageBackground },
         }}
       />
@@ -186,6 +189,7 @@ export default function AuthLayout() {
           headerShown: false,
           presentation: "formSheet",
           sheetAllowedDetents: [0.5, 1.0],
+          sheetGrabberVisible: true,
           contentStyle: { backgroundColor: theme.colors.pageBackground },
         }}
       />
@@ -197,7 +201,10 @@ export default function AuthLayout() {
         options={{ headerShown: false, presentation: "fullScreenModal" }}
       />
       <Stack.Screen name="new-budget" options={{ headerShown: false }} />
-      <Stack.Screen name="bank-sync" options={{ headerShown: false, presentation: "fullScreenModal" }} />
+      <Stack.Screen
+        name="bank-sync"
+        options={{ headerShown: false, presentation: "fullScreenModal" }}
+      />
     </Stack>
   );
 }

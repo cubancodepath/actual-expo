@@ -40,7 +40,6 @@ interface TransactionRowProps {
 
 // EaseView transitions (state-driven visual animations)
 const TIMING_BG = { type: "timing" as const, duration: 180, easing: "easeOut" as const };
-const SPRING_PULSE = { type: "spring" as const, damping: 18, stiffness: 300, mass: 0.8 };
 const TIMING_CHECK_IN = { type: "timing" as const, duration: 450, easing: "easeOut" as const };
 const TIMING_CHECK_OUT = { type: "timing" as const, duration: 350, easing: "easeOut" as const };
 const NONE = { type: "none" as const };
@@ -99,7 +98,6 @@ export const TransactionRow = memo(function TransactionRow({
 
   const bgTransition = noAnim || justExited ? NONE : TIMING_BG;
   const checkVisualTransition = noAnim ? NONE : isSelectMode ? TIMING_CHECK_IN : TIMING_CHECK_OUT;
-  const pulseTransition = noAnim ? NONE : SPRING_PULSE;
 
   const rowContent = (
     <EaseView
@@ -130,13 +128,16 @@ export const TransactionRow = memo(function TransactionRow({
             }}
             transition={checkVisualTransition}
           >
-            <EaseView animate={{ scale: isSelected ? 1 : 0.92 }} transition={pulseTransition}>
-              <Icon
-                name={isSelected ? "checkmarkCircle" : "ellipseOutline"}
-                size={22}
-                color={isSelected ? colors.primary : colors.textMuted}
-              />
-            </EaseView>
+            <View style={{ width: 22, height: 22 }}>
+              <Icon name="ellipseOutline" size={22} color={colors.textMuted} />
+              <EaseView
+                style={{ position: "absolute" }}
+                animate={{ scale: isSelected ? 1 : 0, opacity: isSelected ? 1 : 0 }}
+                transition={{ type: "spring", damping: 12, stiffness: 300, mass: 0.6 }}
+              >
+                <Icon name="checkmarkCircle" size={22} color={colors.primary} />
+              </EaseView>
+            </View>
           </EaseView>
         </Animated.View>
 

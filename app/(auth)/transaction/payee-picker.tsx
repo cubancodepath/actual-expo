@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { SymbolView } from "expo-symbols";
 import { Icon } from "@/presentation/components/atoms/Icon";
+
 import { usePayees } from "@/presentation/hooks/usePayees";
 import { usePickerStore } from "@/stores/pickerStore";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
@@ -27,7 +28,7 @@ export default function PayeePickerScreen() {
   const styles = useThemedStyles(createStyles);
   const { payees } = usePayees();
   const setPayee = usePickerStore((s) => s.setPayee);
-  const [search, setSearch] = useState(selectedName ?? "");
+  const [search, setSearch] = useState("");
   const {
     nearbyPayees,
     loading: nearbyLoading,

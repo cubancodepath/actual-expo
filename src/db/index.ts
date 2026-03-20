@@ -49,6 +49,18 @@ export async function run(sql: string, params: SQLiteBindParams = []): Promise<v
   await _db.runAsync(sql, params);
 }
 
+// ── Synchronous queries (for spreadsheet dynamic cells) ──
+
+export function runQuerySync<T = unknown>(sql: string, params: SQLiteBindParams = []): T[] {
+  if (!_db) return [];
+  return _db.getAllSync<T>(sql, params);
+}
+
+export function firstSync<T = unknown>(sql: string, params: SQLiteBindParams = []): T | null {
+  if (!_db) return null;
+  return _db.getFirstSync<T>(sql, params);
+}
+
 export async function transaction(fn: () => Promise<void>): Promise<void> {
   await getDb().withExclusiveTransactionAsync(fn);
 }

@@ -2,15 +2,17 @@
  * Budget formula definitions for the envelope budgeting system.
  *
  * Ported from Actual Budget's server/budget/envelope.ts.
- * Defines how each budget cell is computed from its dependencies.
+ * Each cell is created exactly once per month (like loot-core).
  *
- * Call `createBudgetCells(sheet, month, categories, groups)` to set up
- * all cells for a month. The spreadsheet engine handles recomputation.
+ * Cell types:
+ * - SQL cells (deps=[]): re-query DB on recompute via triggerBudgetChanges
+ * - Formula cells (deps=[...]): pure functions of other cells, cascade automatically
+ * - Static cells: set once, only change via ss.setByName()
  */
 
 import { Spreadsheet, type CellValue } from "./spreadsheet";
 import { sheetForMonth, envelopeBudget } from "./bindings";
-import { runQuery, first } from "../db";
+import { runQuery, first, firstSync } from "../db";
 import { monthToInt, currentMonth, intToStr } from "../lib/date";
 import { ALIVE_TX_FILTER } from "../db/filters";
 import { getCategories, getCategoryGroups } from "../categories";
@@ -25,11 +27,16 @@ function num(v: CellValue): number {
 }
 
 // ---------------------------------------------------------------------------
-// Load budget data from DB into spreadsheet cells
+// Create all budget cells for a single month
 // ---------------------------------------------------------------------------
 
 /**
- * Create all budget cells for a given month and populate with DB data.
+ * Create all budget cells for a given month.
+ * Each cell is created exactly once — createDynamic does early-return
+ * if the cell already exists (matching loot-core's idempotent pattern).
+ *
+ * Can be called with or without an outer transaction.
+ * When called from createAllBudgetCells, the caller wraps in startTransaction/endTransaction.
  */
 export async function createBudgetCells(
   ss: Spreadsheet,
@@ -44,87 +51,68 @@ export async function createBudgetCells(
   const startDate = monthInt * 100 + 1;
   const endDate = monthInt * 100 + 31;
 
-  // ── Load budget rows from DB ──
-  const budgetRows = await runQuery<{
-    category: string;
-    amount: number;
-    carryover: number;
-  }>("SELECT category, amount, carryover FROM zero_budgets WHERE month = ?", [monthInt]);
-
-  const budgetMap = new Map<string, { amount: number; carryover: boolean }>();
-  for (const r of budgetRows) {
-    budgetMap.set(r.category, { amount: r.amount, carryover: r.carryover === 1 });
-  }
-
-  // ── Load spent amounts per category ──
-  const spentRows = await runQuery<{ category: string; total: number }>(
-    `SELECT COALESCE(cm.transferId, t.category) AS category, SUM(t.amount) AS total
-     FROM transactions t
-     LEFT JOIN category_mapping cm ON cm.id = t.category
-     LEFT JOIN accounts a ON a.id = t.acct
-     WHERE ${ALIVE_TX_FILTER} AND t.date >= ? AND t.date <= ? AND a.offbudget = 0
-     GROUP BY category`,
-    [startDate, endDate],
-  );
-  const spentMap = new Map<string, number>();
-  for (const r of spentRows) {
-    if (r.category) spentMap.set(r.category, r.total);
-  }
-
-  // ── Load buffered amount ──
-  const bufferedRow = await runQuery<{ buffered: number }>(
-    "SELECT buffered FROM zero_budget_months WHERE id = ?",
-    [month],
-  );
-  const bufferedAmount = bufferedRow[0]?.buffered ?? 0;
-
-  // ── Load income ──
-  const incomeRow = await runQuery<{ total: number }>(
-    `SELECT SUM(t.amount) AS total
-     FROM transactions t
-     LEFT JOIN category_mapping cm ON cm.id = t.category
-     LEFT JOIN categories c ON COALESCE(cm.transferId, t.category) = c.id
-     LEFT JOIN category_groups g ON g.id = c.cat_group
-     LEFT JOIN accounts a ON a.id = t.acct
-     WHERE ${ALIVE_TX_FILTER} AND t.date >= ? AND t.date <= ?
-       AND a.offbudget = 0 AND g.is_income = 1`,
-    [startDate, endDate],
-  );
-  const totalIncome = incomeRow[0]?.total ?? 0;
-
-  // ── Create cells ──
-  ss.startTransaction();
-
-  // Buffered
-  ss.createStatic(sheet, envelopeBudget.buffered, bufferedAmount);
-
-  // Income
-  ss.createStatic(sheet, envelopeBudget.totalIncome, totalIncome);
-
-  // Per-category cells
   const expenseGroups = groups.filter((g) => !g.is_income);
   const incomeGroup = groups.find((g) => g.is_income);
   const incomeCats = categories.filter((c) => incomeGroup && c.cat_group === incomeGroup.id);
 
+  // ── Buffered (SQL cell) ──
+  ss.createDynamic(sheet, envelopeBudget.buffered, {
+    dependencies: [],
+    run: () => {
+      const row = firstSync<{ buffered: number }>(
+        "SELECT buffered FROM zero_budget_months WHERE id = ?",
+        [month],
+      );
+      return row?.buffered ?? 0;
+    },
+  });
+
+  // ── Per-category: catSpent for ALL categories (income + expense) ──
+  for (const cat of categories) {
+    ss.createDynamic(sheet, envelopeBudget.catSpent(cat.id), {
+      dependencies: [],
+      run: () => {
+        const row = firstSync<{ total: number }>(
+          `SELECT SUM(t.amount) AS total
+           FROM transactions t
+           LEFT JOIN category_mapping cm ON cm.id = t.category
+           LEFT JOIN accounts a ON a.id = t.acct
+           WHERE ${ALIVE_TX_FILTER} AND t.date >= ? AND t.date <= ? AND a.offbudget = 0
+             AND COALESCE(cm.transferId, t.category) = ?`,
+          [startDate, endDate, cat.id],
+        );
+        return row?.total ?? 0;
+      },
+    });
+  }
+
+  // ── Per-category: budget/carryover/balance for expense categories only ──
   for (const cat of categories) {
     const group = groups.find((g) => g.id === cat.cat_group);
-    if (!group || group.is_income) continue; // skip income categories
+    if (!group || group.is_income) continue;
 
-    const budget = budgetMap.get(cat.id);
-    const budgeted = budget?.amount ?? 0;
-    const spent = spentMap.get(cat.id) ?? 0;
-    const carryover = budget?.carryover ?? false;
+    ss.createDynamic(sheet, envelopeBudget.catBudgeted(cat.id), {
+      dependencies: [],
+      run: () => {
+        const row = firstSync<{ amount: number }>(
+          "SELECT amount FROM zero_budgets WHERE month = ? AND category = ?",
+          [monthInt, cat.id],
+        );
+        return row?.amount ?? 0;
+      },
+    });
 
-    // Static: user-set budget amount
-    ss.createStatic(sheet, envelopeBudget.catBudgeted(cat.id), budgeted);
+    ss.createDynamic(sheet, envelopeBudget.catCarryover(cat.id), {
+      dependencies: [],
+      run: () => {
+        const row = firstSync<{ carryover: number }>(
+          "SELECT carryover FROM zero_budgets WHERE month = ? AND category = ?",
+          [monthInt, cat.id],
+        );
+        return row?.carryover === 1;
+      },
+    });
 
-    // Static: spent amount (from transactions)
-    ss.createStatic(sheet, envelopeBudget.catSpent(cat.id), spent);
-
-    // Static: carryover flag
-    ss.createStatic(sheet, envelopeBudget.catCarryover(cat.id), carryover);
-
-    // Dynamic: balance (leftover) = budgeted + spent + carryIn
     ss.createDynamic(sheet, envelopeBudget.catBalance(cat.id), {
       dependencies: [
         envelopeBudget.catBudgeted(cat.id),
@@ -139,29 +127,31 @@ export async function createBudgetCells(
       },
     });
 
-    // Dynamic: positive balance (for non-carryover rollover)
     ss.createDynamic(sheet, envelopeBudget.catBalancePos(cat.id), {
       dependencies: [envelopeBudget.catBalance(cat.id)],
       run: (balance) => Math.max(0, num(balance)),
     });
 
-    // Goal (static for now)
     const goalInfo = cat.goal_def ? inferGoalFromDef(cat.goal_def) : null;
     ss.createStatic(sheet, envelopeBudget.catGoal(cat.id), goalInfo?.amount ?? 0);
     ss.createStatic(sheet, envelopeBudget.catLongGoal(cat.id), goalInfo?.longGoal ?? false);
   }
 
-  // Per-group cells
+  // ── Per-group: groupSpent for ALL groups (income + expense) ──
+  for (const group of groups) {
+    const groupCats = categories.filter((c) => c.cat_group === group.id);
+    ss.createDynamic(sheet, envelopeBudget.groupSpent(group.id), {
+      dependencies: groupCats.map((c) => envelopeBudget.catSpent(c.id)),
+      run: (...vals) => vals.reduce((sum: number, v) => sum + num(v), 0),
+    });
+  }
+
+  // ── Per-group: groupBudgeted/groupBalance for expense groups only ──
   for (const group of expenseGroups) {
     const groupCats = categories.filter((c) => c.cat_group === group.id);
 
     ss.createDynamic(sheet, envelopeBudget.groupBudgeted(group.id), {
       dependencies: groupCats.map((c) => envelopeBudget.catBudgeted(c.id)),
-      run: (...vals) => vals.reduce((sum: number, v) => sum + num(v), 0),
-    });
-
-    ss.createDynamic(sheet, envelopeBudget.groupSpent(group.id), {
-      dependencies: groupCats.map((c) => envelopeBudget.catSpent(c.id)),
       run: (...vals) => vals.reduce((sum: number, v) => sum + num(v), 0),
     });
 
@@ -171,7 +161,17 @@ export async function createBudgetCells(
     });
   }
 
-  // Summary cells
+  // ── totalIncome: alias of income group's spent (formula, not SQL) ──
+  if (incomeGroup) {
+    ss.createDynamic(sheet, envelopeBudget.totalIncome, {
+      dependencies: [envelopeBudget.groupSpent(incomeGroup.id)],
+      run: (amount) => num(amount),
+    });
+  } else {
+    ss.createStatic(sheet, envelopeBudget.totalIncome, 0);
+  }
+
+  // ── Summary cells ──
   ss.createDynamic(sheet, envelopeBudget.totalBudgeted, {
     dependencies: expenseGroups.map((g) => envelopeBudget.groupBudgeted(g.id)),
     run: (...vals) => -vals.reduce((sum: number, v) => sum + num(v), 0),
@@ -187,8 +187,7 @@ export async function createBudgetCells(
     run: (...vals) => vals.reduce((sum: number, v) => sum + num(v), 0),
   });
 
-  // from-last-month: previous month's to-budget + previous month's buffered
-  // buffered-auto: sum of income amounts with carryover flag
+  // ── Buffered auto/selected ──
   ss.createDynamic(sheet, envelopeBudget.bufferedAuto, {
     dependencies: incomeCats.flatMap((c) => [
       envelopeBudget.catSpent(c.id),
@@ -205,12 +204,12 @@ export async function createBudgetCells(
     },
   });
 
-  // buffered-selected: manual if set, else auto
   ss.createDynamic(sheet, envelopeBudget.bufferedSelected, {
     dependencies: [envelopeBudget.buffered, envelopeBudget.bufferedAuto],
     run: (manual, auto) => (num(manual) !== 0 ? num(manual) : num(auto)),
   });
 
+  // ── Cross-month cells ──
   ss.createDynamic(sheet, envelopeBudget.fromLastMonth, {
     dependencies: [
       `${prevSheet}!${envelopeBudget.toBudget}`,
@@ -219,11 +218,10 @@ export async function createBudgetCells(
     run: (prevToBudget, prevBuffered) => num(prevToBudget) + num(prevBuffered),
   });
 
-  // last-month-overspent: sum of negative balances from prev month for cats WITHOUT carryover
   ss.createDynamic(sheet, envelopeBudget.lastMonthOverspent, {
     dependencies: categories
       .filter((c) => {
-        const g = groups.find((g) => g.id === c.cat_group);
+        const g = groups.find((grp) => grp.id === c.cat_group);
         return g && !g.is_income;
       })
       .flatMap((c) => [
@@ -234,22 +232,19 @@ export async function createBudgetCells(
       let penalty = 0;
       for (let i = 0; i < vals.length; i += 2) {
         const balance = num(vals[i]);
-        const carryover = vals[i + 1] === true || vals[i + 1] === 1;
-        if (balance < 0 && !carryover) {
-          penalty += balance;
-        }
+        const co = vals[i + 1] === true || vals[i + 1] === 1;
+        if (balance < 0 && !co) penalty += balance;
       }
       return penalty;
     },
   });
 
-  // available-funds: total income + from-last-month
+  // ── Final: incomeAvailable + toBudget ──
   ss.createDynamic(sheet, envelopeBudget.incomeAvailable, {
     dependencies: [envelopeBudget.totalIncome, envelopeBudget.fromLastMonth],
     run: (income, fromLast) => num(income) + num(fromLast),
   });
 
-  // to-budget: available-funds + last-month-overspent + total-budgeted - buffered
   ss.createDynamic(sheet, envelopeBudget.toBudget, {
     dependencies: [
       envelopeBudget.incomeAvailable,
@@ -260,8 +255,6 @@ export async function createBudgetCells(
     run: (available, lastOverspent, totalBudgeted, buffered) =>
       num(available) + num(lastOverspent) + num(totalBudgeted) - num(buffered),
   });
-
-  ss.endTransaction();
 }
 
 // ---------------------------------------------------------------------------
@@ -272,12 +265,6 @@ function getPrevMonth(month: string): string {
   const [y, m] = month.split("-").map(Number);
   if (m === 1) return `${y - 1}-12`;
   return `${y}-${String(m - 1).padStart(2, "0")}`;
-}
-
-function getEndOfMonth(month: string): string {
-  const [y, m] = month.split("-").map(Number);
-  const lastDay = new Date(y, m, 0).getDate();
-  return `${month}-${String(lastDay).padStart(2, "0")}`;
 }
 
 /** Infer goal amount from goal_def JSON. */
@@ -300,13 +287,9 @@ function inferGoalFromDef(goalDef: string | null): { amount: number; longGoal: b
 }
 
 // ---------------------------------------------------------------------------
-// Multi-month loading (like Actual's createAllBudgets)
+// Multi-month loading
 // ---------------------------------------------------------------------------
 
-/**
- * Calculate the range of months that need budget cells.
- * From (earliest transaction - 3 months) to (current month + 12 months).
- */
 export async function getBudgetRange(): Promise<{ start: string; end: string; months: string[] }> {
   const row = await first<{ d: number | null }>(
     "SELECT MIN(date) as d FROM transactions WHERE tombstone = 0",
@@ -337,233 +320,17 @@ export async function getBudgetRange(): Promise<{ start: string; end: string; mo
 
 /**
  * Create budget cells for ALL months in the budget range.
- * This builds the full chain of dependencies so toBudget computes correctly.
+ * Wraps everything in a single transaction so topological sort runs once.
  */
 export async function createAllBudgetCells(ss: Spreadsheet): Promise<void> {
   const { months } = await getBudgetRange();
   const [cats, groups] = await Promise.all([getCategories(), getCategoryGroups()]);
 
-  // Create cells for all months in a single transaction
-  // so the topological sort runs once at the end
   ss.startTransaction();
   for (const month of months) {
-    await createBudgetCellsInTransaction(ss, month, cats, groups);
+    await createBudgetCells(ss, month, cats, groups);
   }
   ss.endTransaction();
-}
-
-/**
- * Like createBudgetCells but without its own transaction (caller manages it).
- */
-async function createBudgetCellsInTransaction(
-  ss: Spreadsheet,
-  month: string,
-  categories: Category[],
-  groups: CategoryGroup[],
-): Promise<void> {
-  const sheet = sheetForMonth(month);
-  const prevMonth = getPrevMonth(month);
-  const prevSheet = sheetForMonth(prevMonth);
-  const monthInt = monthToInt(month);
-  const startDate = monthInt * 100 + 1;
-  const endDate = monthInt * 100 + 31;
-
-  // Load budget rows
-  const budgetRows = await runQuery<{ category: string; amount: number; carryover: number }>(
-    "SELECT category, amount, carryover FROM zero_budgets WHERE month = ?",
-    [monthInt],
-  );
-  const budgetMap = new Map<string, { amount: number; carryover: boolean }>();
-  for (const r of budgetRows) {
-    budgetMap.set(r.category, { amount: r.amount, carryover: r.carryover === 1 });
-  }
-
-  // Load spent amounts
-  const spentRows = await runQuery<{ category: string; total: number }>(
-    `SELECT COALESCE(cm.transferId, t.category) AS category, SUM(t.amount) AS total
-     FROM transactions t
-     LEFT JOIN category_mapping cm ON cm.id = t.category
-     LEFT JOIN accounts a ON a.id = t.acct
-     WHERE ${ALIVE_TX_FILTER} AND t.date >= ? AND t.date <= ? AND a.offbudget = 0
-     GROUP BY category`,
-    [startDate, endDate],
-  );
-  const spentMap = new Map<string, number>();
-  for (const r of spentRows) {
-    if (r.category) spentMap.set(r.category, r.total);
-  }
-
-  // Load buffered
-  const bufferedRow = await runQuery<{ buffered: number }>(
-    "SELECT buffered FROM zero_budget_months WHERE id = ?",
-    [month],
-  );
-  const bufferedAmount = bufferedRow[0]?.buffered ?? 0;
-
-  // Create cells (no transaction — caller manages it)
-  ss.createStatic(sheet, envelopeBudget.buffered, bufferedAmount);
-
-  const expenseGroups = groups.filter((g) => !g.is_income);
-  const incomeGroup = groups.find((g) => g.is_income);
-  const incomeCats = categories.filter((c) => incomeGroup && c.cat_group === incomeGroup.id);
-
-  // ── Per-category cells ──
-  // Step 1: Create sum-amount (spent) for ALL categories (income + expense)
-  for (const cat of categories) {
-    const spent = spentMap.get(cat.id) ?? 0;
-    ss.createStatic(sheet, envelopeBudget.catSpent(cat.id), spent);
-  }
-
-  // Step 2: Create budget/carryover/balance cells ONLY for expense categories
-  for (const cat of categories) {
-    const group = groups.find((g) => g.id === cat.cat_group);
-    if (!group || group.is_income) continue;
-
-    const budget = budgetMap.get(cat.id);
-    const budgeted = budget?.amount ?? 0;
-    const carryover = budget?.carryover ?? false;
-
-    ss.createStatic(sheet, envelopeBudget.catBudgeted(cat.id), budgeted);
-    ss.createStatic(sheet, envelopeBudget.catCarryover(cat.id), carryover);
-
-    ss.createDynamic(sheet, envelopeBudget.catBalance(cat.id), {
-      dependencies: [
-        envelopeBudget.catBudgeted(cat.id),
-        envelopeBudget.catSpent(cat.id),
-        `${prevSheet}!${envelopeBudget.catCarryover(cat.id)}`,
-        `${prevSheet}!${envelopeBudget.catBalance(cat.id)}`,
-        `${prevSheet}!${envelopeBudget.catBalancePos(cat.id)}`,
-      ],
-      run: (budgetedVal, spentVal, prevCarryoverVal, prevBalance, prevBalancePos) => {
-        const prevCo = prevCarryoverVal === true || prevCarryoverVal === 1;
-        return num(budgetedVal) + num(spentVal) + (prevCo ? num(prevBalance) : num(prevBalancePos));
-      },
-    });
-
-    ss.createDynamic(sheet, envelopeBudget.catBalancePos(cat.id), {
-      dependencies: [envelopeBudget.catBalance(cat.id)],
-      run: (balance) => Math.max(0, num(balance)),
-    });
-
-    const goalInfo = cat.goal_def ? inferGoalFromDef(cat.goal_def) : null;
-    ss.createStatic(sheet, envelopeBudget.catGoal(cat.id), goalInfo?.amount ?? 0);
-    ss.createStatic(sheet, envelopeBudget.catLongGoal(cat.id), goalInfo?.longGoal ?? false);
-  }
-
-  // ── Per-group cells ──
-  // Step 3: Create group-sum-amount for ALL groups (income + expense)
-  for (const group of groups) {
-    const groupCats = categories.filter((c) => c.cat_group === group.id);
-    ss.createDynamic(sheet, envelopeBudget.groupSpent(group.id), {
-      dependencies: groupCats.map((c) => envelopeBudget.catSpent(c.id)),
-      run: (...vals) => vals.reduce((sum: number, v) => sum + num(v), 0),
-    });
-  }
-
-  // Step 4: Create group-budget and group-balance ONLY for expense groups
-  for (const group of expenseGroups) {
-    const groupCats = categories.filter((c) => c.cat_group === group.id);
-
-    ss.createDynamic(sheet, envelopeBudget.groupBudgeted(group.id), {
-      dependencies: groupCats.map((c) => envelopeBudget.catBudgeted(c.id)),
-      run: (...vals) => vals.reduce((sum: number, v) => sum + num(v), 0),
-    });
-    ss.createDynamic(sheet, envelopeBudget.groupBalance(group.id), {
-      dependencies: groupCats.map((c) => envelopeBudget.catBalance(c.id)),
-      run: (...vals) => vals.reduce((sum: number, v) => sum + num(v), 0),
-    });
-  }
-
-  // Step 5: total-income = alias of income group's sum-amount
-  if (incomeGroup) {
-    ss.createDynamic(sheet, envelopeBudget.totalIncome, {
-      dependencies: [envelopeBudget.groupSpent(incomeGroup.id)],
-      run: (amount) => num(amount),
-    });
-  } else {
-    ss.createStatic(sheet, envelopeBudget.totalIncome, 0);
-  }
-
-  ss.createDynamic(sheet, envelopeBudget.totalBudgeted, {
-    dependencies: expenseGroups.map((g) => envelopeBudget.groupBudgeted(g.id)),
-    run: (...vals) => -vals.reduce((sum: number, v) => sum + num(v), 0),
-  });
-  ss.createDynamic(sheet, envelopeBudget.totalSpent, {
-    dependencies: expenseGroups.map((g) => envelopeBudget.groupSpent(g.id)),
-    run: (...vals) => vals.reduce((sum: number, v) => sum + num(v), 0),
-  });
-  ss.createDynamic(sheet, envelopeBudget.totalBalance, {
-    dependencies: expenseGroups.map((g) => envelopeBudget.groupBalance(g.id)),
-    run: (...vals) => vals.reduce((sum: number, v) => sum + num(v), 0),
-  });
-
-  // buffered-auto: sum of income amounts with carryover flag
-  ss.createDynamic(sheet, envelopeBudget.bufferedAuto, {
-    dependencies: incomeCats.flatMap((c) => [
-      envelopeBudget.catSpent(c.id),
-      envelopeBudget.catCarryover(c.id),
-    ]),
-    run: (...vals) => {
-      let total = 0;
-      for (let i = 0; i < vals.length; i += 2) {
-        const amount = num(vals[i]);
-        const co = vals[i + 1] === true || vals[i + 1] === 1;
-        if (co) total += amount;
-      }
-      return total;
-    },
-  });
-
-  // buffered-selected: manual if set, else auto
-  ss.createDynamic(sheet, envelopeBudget.bufferedSelected, {
-    dependencies: [envelopeBudget.buffered, envelopeBudget.bufferedAuto],
-    run: (manual, auto) => (num(manual) !== 0 ? num(manual) : num(auto)),
-  });
-
-  ss.createDynamic(sheet, envelopeBudget.fromLastMonth, {
-    dependencies: [
-      `${prevSheet}!${envelopeBudget.toBudget}`,
-      `${prevSheet}!${envelopeBudget.bufferedSelected}`,
-    ],
-    run: (prevToBudget, prevBuffered) => num(prevToBudget) + num(prevBuffered),
-  });
-
-  ss.createDynamic(sheet, envelopeBudget.lastMonthOverspent, {
-    dependencies: categories
-      .filter((c) => {
-        const g = groups.find((grp) => grp.id === c.cat_group);
-        return g && !g.is_income;
-      })
-      .flatMap((c) => [
-        `${prevSheet}!${envelopeBudget.catBalance(c.id)}`,
-        `${prevSheet}!${envelopeBudget.catCarryover(c.id)}`,
-      ]),
-    run: (...vals) => {
-      let penalty = 0;
-      for (let i = 0; i < vals.length; i += 2) {
-        const balance = num(vals[i]);
-        const co = vals[i + 1] === true || vals[i + 1] === 1;
-        if (balance < 0 && !co) penalty += balance;
-      }
-      return penalty;
-    },
-  });
-
-  ss.createDynamic(sheet, envelopeBudget.incomeAvailable, {
-    dependencies: [envelopeBudget.totalIncome, envelopeBudget.fromLastMonth],
-    run: (income, fromLast) => num(income) + num(fromLast),
-  });
-
-  ss.createDynamic(sheet, envelopeBudget.toBudget, {
-    dependencies: [
-      envelopeBudget.incomeAvailable,
-      envelopeBudget.lastMonthOverspent,
-      envelopeBudget.totalBudgeted,
-      envelopeBudget.bufferedSelected,
-    ],
-    run: (available, lastOverspent, totalBudgeted, buffered) =>
-      num(available) + num(lastOverspent) + num(totalBudgeted) - num(buffered),
-  });
 }
 
 // ---------------------------------------------------------------------------

@@ -14,6 +14,7 @@ import {
   fullSync,
   waitForSyncToSettle,
 } from "../sync";
+import { emit } from "../sync/syncEvents";
 import { resetAllStores } from "../stores/resetStores";
 import { usePrefsStore } from "../stores/prefsStore";
 import type { BudgetFile } from "./authService";
@@ -418,21 +419,33 @@ export async function openBudget(budgetId: string): Promise<void> {
 
   clearSwitchingFlag();
 
+  // Force all liveQuery hooks to re-fetch from the new DB
+  emit({
+    type: "applied",
+    tables: [
+      "accounts",
+      "categories",
+      "category_groups",
+      "transactions",
+      "payees",
+      "rules",
+      "schedules",
+      "tags",
+    ],
+  });
+
   // Load encryption key into memory if needed (before sync)
   if (meta?.encryptKeyId && meta?.cloudFileId && !encryption.hasKey(meta.encryptKeyId)) {
     await loadKeyForBudget(meta.cloudFileId);
   }
 
-  // Sync for cloud-connected budgets
+  // Sync for cloud-connected budgets — only block on first open.
+  // Subsequent syncs are handled by the AppState listener in _layout.tsx
+  // and the debounced scheduleFullSync in batch.ts.
   if (meta?.cloudFileId && meta?.groupId) {
     const needsInitialSync = isFirstOpen || !meta?.lastSyncedTimestamp;
     if (needsInitialSync) {
-      // First-time open: block until sync completes so the user doesn't see empty tabs
       await fullSync().catch((e) => {
-        if (__DEV__) console.warn(e);
-      });
-    } else {
-      fullSync().catch((e) => {
         if (__DEV__) console.warn(e);
       });
     }

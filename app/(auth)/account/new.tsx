@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { Platform, Pressable, ScrollView, Switch, View } from "react-native";
+import { Platform, ScrollView, Switch, View } from "react-native";
 import { Input } from "@/presentation/components/atoms/Input";
 import { Stack, useRouter } from "expo-router";
-import { Icon } from "@/presentation/components/atoms/Icon";
 import { createAccount } from "@/accounts";
 import { useBankSyncStore } from "@/stores/bankSyncStore";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
@@ -55,20 +54,7 @@ export default function NewAccountScreen() {
 
   return (
     <>
-      <Stack.Screen
-        options={{
-          headerLeft: () => (
-            <Pressable
-              onPress={() => router.back()}
-              hitSlop={12}
-              accessibilityLabel={tc("close")}
-              accessibilityRole="button"
-            >
-              <Icon name="close" size={24} color={theme.colors.textSecondary} />
-            </Pressable>
-          ),
-        }}
-      />
+      <Stack.Screen options={{}} />
       <ScrollView
         style={styles.flex}
         contentContainerStyle={styles.container}
@@ -159,6 +145,10 @@ export default function NewAccountScreen() {
           disabled={!providersAvailable}
         />
       </ScrollView>
+
+      <Stack.Toolbar placement="left">
+        <Stack.Toolbar.Button icon="xmark" onPress={() => router.back()} />
+      </Stack.Toolbar>
     </>
   );
 }

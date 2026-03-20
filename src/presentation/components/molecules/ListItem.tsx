@@ -1,5 +1,6 @@
 import { Pressable, View, StyleSheet, type ViewStyle } from "react-native";
 import { Icon } from "../atoms/Icon";
+import { AnimatedCheckmark } from "../atoms/AnimatedCheckmark";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Text } from "../atoms/Text";
 import { RowSeparator } from "../atoms/RowSeparator";
@@ -61,12 +62,9 @@ export function ListItem({
       {right && <View style={styles.right}>{right}</View>}
 
       {checkmark && (
-        <Icon
-          name="checkmark"
-          size={20}
-          color={colors.primary}
-          style={{ marginLeft: spacing.sm }}
-        />
+        <View style={{ marginLeft: spacing.sm }}>
+          <AnimatedCheckmark color={colors.primary} />
+        </View>
       )}
 
       {showChevron && (

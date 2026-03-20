@@ -28,7 +28,7 @@ import { ErrorBoundary } from "@/presentation/components/ErrorBoundary";
 import { useShakeUndo } from "@/presentation/hooks/useShakeUndo";
 import { loadAllPersistedKeys } from "@/services/encryptionService";
 
-const queryClient = new QueryClient();
+import { queryClient } from "@/queries/queryClient";
 
 // Keep splash screen visible until bootstrap + data pre-load completes
 SplashScreen.preventAutoHideAsync();
@@ -84,7 +84,10 @@ function RootLayout() {
 
       // Check bank sync provider availability (non-blocking)
       if (usePrefsStore.getState().isConfigured && !usePrefsStore.getState().isLocalOnly) {
-        useBankSyncStore.getState().checkProviders().catch(() => {});
+        useBankSyncStore
+          .getState()
+          .checkProviders()
+          .catch(() => {});
       }
     }
     bootstrap()

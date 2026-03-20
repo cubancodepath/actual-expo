@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { Icon } from "@/presentation/components/atoms/Icon";
+
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/presentation/providers/ThemeProvider";

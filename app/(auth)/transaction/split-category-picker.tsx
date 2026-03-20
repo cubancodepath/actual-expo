@@ -3,6 +3,7 @@ import { Pressable, SafeAreaView, ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCategories } from "@/presentation/hooks/useCategories";
 import { Icon } from "@/presentation/components/atoms/Icon";
+
 import { usePickerStore } from "@/stores/pickerStore";
 import { getCategoryBalancesForMonth } from "@/budgets";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";

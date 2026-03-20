@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Icon } from "@/presentation/components/atoms/Icon";
+import { AnimatedCheckmark } from "@/presentation/components/atoms/AnimatedCheckmark";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
 import { useTags } from "@/presentation/hooks/useTags";
 import { createTag } from "@/tags";
@@ -189,7 +190,7 @@ export default function TransactionTagsScreen() {
                 >
                   <TagPill tagName={tag.tag} color={tag.color} />
                   <View style={{ flex: 1 }} />
-                  {isActive && <Icon name="checkmark" size={20} color={colors.primary} />}
+                  {isActive && <AnimatedCheckmark color={colors.primary} />}
                   {!isLast && (
                     <View style={[styles.divider, { backgroundColor: colors.divider }]} />
                   )}

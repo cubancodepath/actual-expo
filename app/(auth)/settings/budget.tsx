@@ -110,15 +110,26 @@ function PickerRow({
 function FeatureFlagRow({ flag, showSeparator }: { flag: FeatureFlag; showSeparator: boolean }) {
   const { colors } = useTheme();
   const [enabled, setEnabled] = useFeatureFlag(flag);
+
+  async function handleToggle(value: boolean) {
+    if (flag === "payeeLocations" && value) {
+      // Request location permission when enabling nearby payees
+      const { requestLocationPermission } = await import("@/services/locationService");
+      const granted = await requestLocationPermission();
+      if (!granted) return; // Don't enable if permission denied
+    }
+    setEnabled(value);
+  }
+
   return (
     <ListItem
       title={FEATURE_FLAG_LABELS[flag].title}
       subtitle={FEATURE_FLAG_LABELS[flag].subtitle}
-      onPress={() => setEnabled(!enabled)}
+      onPress={() => handleToggle(!enabled)}
       right={
         <Switch
           value={enabled}
-          onValueChange={(v) => setEnabled(v)}
+          onValueChange={handleToggle}
           trackColor={{ true: colors.primary }}
         />
       }

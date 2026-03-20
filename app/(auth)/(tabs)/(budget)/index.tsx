@@ -20,7 +20,7 @@ import type { CurrencyInputRef } from "@/presentation/components/currency-input/
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { setCategoryCarryover, resetHold as resetHoldFn, setBudgetAmount } from "@/budgets";
 import { useCategories } from "@/presentation/hooks/useCategories";
-import { useSheetValueNumber } from "@/presentation/hooks/useSheetValue";
+import { useSheetValueNumber, useSpreadsheetVersion } from "@/presentation/hooks/useSheetValue";
 import { sheetForMonth, envelopeBudget } from "@/spreadsheet/bindings";
 import { getSpreadsheet } from "@/spreadsheet/instance";
 import { inferGoalFromDef } from "@/goals";
@@ -30,7 +30,7 @@ import { useKeyboardHeight } from "@/presentation/hooks/useKeyboardHeight";
 import { useExpressionMode } from "@/presentation/hooks/useExpressionMode";
 import { useKeyboardBlur } from "@/presentation/hooks/useKeyboardBlur";
 import { MAX_CENTS } from "@/lib/currency";
-import type { BudgetCategory, BudgetGroup } from "@/budgets/types";
+import type { BudgetCategoryData, BudgetGroupData } from "@/budgets/types";
 
 const BUDGET_ACCESSORY_ID = "budgetSharedCalcToolbar";
 
@@ -44,6 +44,7 @@ import { Text } from "@/presentation/components/atoms/Text";
 import { usePrefsStore } from "@/stores/prefsStore";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { BudgetListSkeleton } from "@/presentation/components/skeletons/BudgetListSkeleton";
+import { CollapsibleRow } from "@/presentation/components/atoms/CollapsibleRow";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -54,68 +55,15 @@ type BudgetFilter = "all" | "underfunded" | "overfunded" | "has-money";
 type BudgetSection = {
   key: string;
   title: string;
-  group: BudgetGroup;
-  data: BudgetCategory[];
+  group: BudgetGroupData;
+  data: BudgetCategoryData[];
 };
 
 // ---------------------------------------------------------------------------
-// Filter logic
+// Constants
 // ---------------------------------------------------------------------------
 
-function matchesFilter(cat: BudgetCategory, filter: BudgetFilter): boolean {
-  switch (filter) {
-    case "all":
-      return true;
-    case "underfunded": {
-      if (cat.goal == null) return false;
-      const funded = cat.longGoal ? cat.balance : cat.budgeted;
-      return funded < cat.goal;
-    }
-    case "overfunded": {
-      if (cat.goal != null) {
-        const funded = cat.longGoal ? cat.balance : cat.budgeted;
-        return funded > cat.goal;
-      }
-      return cat.balance > 0 && cat.budgeted > 0;
-    }
-    case "has-money":
-      return cat.balance > 0;
-  }
-}
-
 const HIDDEN_GROUP_ID = "__hidden__";
-
-function filterBudgetGroups(
-  groups: BudgetGroup[],
-  filter: BudgetFilter,
-): { visible: BudgetGroup[]; hidden: BudgetCategory[] } {
-  const hiddenCats: BudgetCategory[] = [];
-
-  const visible = groups
-    .filter((g) => !g.hidden)
-    .map((g) => {
-      const visibleCats: BudgetCategory[] = [];
-      for (const c of g.categories) {
-        if (c.hidden) {
-          hiddenCats.push(c);
-        } else if (matchesFilter(c, filter)) {
-          visibleCats.push(c);
-        }
-      }
-      return { ...g, categories: visibleCats };
-    })
-    .filter((g) => filter === "all" || g.categories.length > 0);
-
-  // Also collect categories from hidden groups
-  for (const g of groups) {
-    if (!g.hidden) continue;
-    for (const c of g.categories) {
-      hiddenCats.push(c);
-    }
-  }
-
-  return { visible, hidden: hiddenCats };
-}
 
 // ---------------------------------------------------------------------------
 // Main screen
@@ -123,24 +71,24 @@ function filterBudgetGroups(
 
 export default function BudgetScreen() {
   const { t } = useTranslation("budget");
-  const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
+  const { colors, spacing } = useTheme();
   const router = useRouter();
   const month = useBudgetUIStore((s) => s.month);
   const sheet = sheetForMonth(month);
   const { categories, groups: rawGroups, isLoading: categoriesLoading } = useCategories();
   const toBudget = useSheetValueNumber(sheet, envelopeBudget.toBudget);
   const buffered = useSheetValueNumber(sheet, envelopeBudget.buffered);
+  // ssVersion still needed for overspent count (reads balance from spreadsheet)
+  const ssVersion = useSpreadsheetVersion();
   const { refreshControlProps } = useRefreshControl();
   const { showProgressBars, toggleProgressBars } = usePrefsStore();
   const goalsEnabled = useFeatureFlag("goalTemplatesEnabled");
   const commonActions = useCommonMenuActions();
   const [uncategorizedCount, setUncategorizedCount] = useState(0);
 
-  // Build BudgetGroup[] from categories + spreadsheet data
-  const budgetGroups = useMemo<BudgetGroup[]>(() => {
+  // Build structural BudgetGroupData[] — NO spreadsheet reads
+  const budgetGroups = useMemo<BudgetGroupData[]>(() => {
     if (rawGroups.length === 0) return [];
-    const ss = getSpreadsheet();
-    const num = (v: unknown) => (typeof v === "number" ? v : 0);
 
     const sortedGroups = [...rawGroups].sort((a, b) => {
       if (a.is_income !== b.is_income) return a.is_income ? 1 : -1;
@@ -152,48 +100,27 @@ export default function BudgetScreen() {
         .filter((c) => c.cat_group === g.id)
         .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
 
-      const budgetCats: BudgetCategory[] = groupCats.map((c) => {
-        const budgeted = num(ss.getValue(sheet, envelopeBudget.catBudgeted(c.id)));
-        const spent = num(ss.getValue(sheet, envelopeBudget.catSpent(c.id)));
-        const balance = num(ss.getValue(sheet, envelopeBudget.catBalance(c.id)));
-        const carryIn = balance - budgeted - spent;
-        const goalInfo = c.goal_def ? inferGoalFromDef(c.goal_def, month, carryIn) : null;
-        return {
-          id: c.id,
-          name: c.name,
-          budgeted,
-          spent,
-          balance,
-          carryIn,
-          carryover:
-            ss.getValue(sheet, envelopeBudget.catCarryover(c.id)) === true ||
-            ss.getValue(sheet, envelopeBudget.catCarryover(c.id)) === 1,
-          goal: goalInfo?.goal ?? null,
-          longGoal: goalInfo?.longGoal ?? false,
-          goalDef: c.goal_def,
-          hidden: c.hidden,
-        };
-      });
-
       return {
         id: g.id,
         name: g.name,
         is_income: g.is_income,
         hidden: g.hidden,
-        budgeted: num(ss.getValue(sheet, envelopeBudget.groupBudgeted(g.id))),
-        spent: num(ss.getValue(sheet, envelopeBudget.groupSpent(g.id))),
-        balance: num(ss.getValue(sheet, envelopeBudget.groupBalance(g.id))),
-        categories: budgetCats,
+        categories: groupCats.map((c) => ({
+          id: c.id,
+          name: c.name,
+          hidden: c.hidden,
+          goalDef: c.goal_def,
+        })),
       };
     });
-  }, [categories, rawGroups, sheet]);
+  }, [categories, rawGroups]);
 
   const dataReady = budgetGroups.length > 0 || (!categoriesLoading && rawGroups.length === 0);
 
-  // Load uncategorized stats when data changes
+  // Load uncategorized stats
   useEffect(() => {
     getUncategorizedStats().then(({ count }) => setUncategorizedCount(count));
-  }, [budgetGroups]);
+  }, [ssVersion]);
 
   const fabCollapsed = useSharedValue(false);
   const COLLAPSE_THRESHOLD = 100;
@@ -205,13 +132,12 @@ export default function BudgetScreen() {
   const [editingCatId, setEditingCatId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState(0);
   const sharedInputRef = useRef<TextInput>(null);
-  const sectionListRef = useRef<SectionList<BudgetCategory, BudgetSection>>(null);
+  const sectionListRef = useRef<SectionList<BudgetCategoryData, BudgetSection>>(null);
   const expr = useExpressionMode({
     value: editValue,
     onChangeValue: setEditValue,
   });
 
-  // Imperative ref for the calculator pill (conforms to CurrencyInputRef)
   const selfRef = useRef<CurrencyInputRef>(null);
   useImperativeHandle(selfRef, () => ({
     focus: () => sharedInputRef.current?.focus(),
@@ -226,7 +152,6 @@ export default function BudgetScreen() {
     },
   }));
 
-  // Track scroll offset for smart keyboard scrolling
   const scrollOffsetRef = useRef(0);
   const handleScrollForOffset = useCallback(
     (e: { nativeEvent: { contentOffset: { y: number } } }) => {
@@ -236,22 +161,20 @@ export default function BudgetScreen() {
     [],
   );
 
-  function handleRowPress(cat: BudgetCategory, pageY: number) {
-    if (editingCatId === cat.id) {
+  function handleRowPress(catId: string, budgeted: number, pageY: number) {
+    if (editingCatId === catId) {
       sharedInputRef.current?.blur();
       return;
     }
     if (editingCatId) {
       commitEdit();
     }
-    setEditingCatId(cat.id);
-    setEditValue(cat.budgeted);
+    setEditingCatId(catId);
+    setEditValue(budgeted);
     sharedInputRef.current?.focus();
 
-    // If the tapped cell is in the lower half of the screen, it'll be behind
-    // the keyboard (~340pt). Scroll just enough to keep it visible.
     const screenHeight = Dimensions.get("window").height;
-    const keyboardTop = screenHeight - 340; // approximate
+    const keyboardTop = screenHeight - 340;
     if (pageY > keyboardTop - 60) {
       const scrollBy = pageY - keyboardTop + 100;
       setTimeout(() => {
@@ -266,7 +189,6 @@ export default function BudgetScreen() {
   function commitEdit() {
     if (editingCatId !== null) {
       expr.handleBlurExpression();
-      // Optimistic update + persist
       const ss = getSpreadsheet();
       ss.setByName(sheet, envelopeBudget.catBudgeted(editingCatId), editValue);
       setBudgetAmount(month, editingCatId, editValue);
@@ -296,7 +218,6 @@ export default function BudgetScreen() {
     }
   }
 
-  // -- Collapsible groups --
   function toggleGroup(groupId: string) {
     setCollapsedGroups((prev) => {
       const next = new Set(prev);
@@ -306,10 +227,8 @@ export default function BudgetScreen() {
     });
   }
 
-  // -- Keyboard tracking --
   const { visible: keyboardVisible } = useKeyboardHeight();
 
-  // -- Dismiss keyboard when leaving screen --
   useFocusEffect(
     useCallback(() => {
       return () => {
@@ -319,105 +238,150 @@ export default function BudgetScreen() {
     }, []),
   );
 
-  // -- Reset filter on month change --
   useEffect(() => {
     setFilter("all");
     Keyboard.dismiss();
   }, [month]);
 
-  // -- Sections (filtered) --
-  const { visible: filteredGroups, hidden: hiddenCategories } = useMemo(
-    () => filterBudgetGroups(budgetGroups, filter),
-    [budgetGroups, filter],
-  );
-  const sections: BudgetSection[] = filteredGroups.map((g) => ({
-    key: g.id,
-    title: g.name,
-    group: g,
-    data: collapsedGroups.has(g.id) ? [] : g.categories,
-  }));
+  // -- Base sections (structural — always include all items for animation) --
+  const baseSections: BudgetSection[] = useMemo(() => {
+    const hiddenCats: BudgetCategoryData[] = [];
+    const visible = budgetGroups
+      .filter((g) => !g.hidden)
+      .map((g) => {
+        const visibleCats: BudgetCategoryData[] = [];
+        for (const c of g.categories) {
+          if (c.hidden) hiddenCats.push(c);
+          else visibleCats.push(c);
+        }
+        return { ...g, categories: visibleCats };
+      });
 
-  // Append hidden categories as a virtual group at the bottom
-  if (hiddenCategories.length > 0) {
-    sections.push({
-      key: HIDDEN_GROUP_ID,
-      title: t("hiddenCategories"),
-      group: {
+    const result: BudgetSection[] = visible.map((g) => ({
+      key: g.id,
+      title: g.name,
+      group: g,
+      data: g.categories,
+    }));
+
+    for (const g of budgetGroups) {
+      if (!g.hidden) continue;
+      for (const c of g.categories) hiddenCats.push(c);
+    }
+
+    if (hiddenCats.length > 0) {
+      const hiddenGroup: BudgetGroupData = {
         id: HIDDEN_GROUP_ID,
         name: t("hiddenCategories"),
         is_income: false,
         hidden: false,
-        budgeted: 0,
-        spent: 0,
-        balance: 0,
-        categories: hiddenCategories,
-      },
-      data: collapsedGroups.has(HIDDEN_GROUP_ID) ? [] : hiddenCategories,
-    });
-  }
+        categories: hiddenCats,
+      };
+      result.push({
+        key: HIDDEN_GROUP_ID,
+        title: t("hiddenCategories"),
+        group: hiddenGroup,
+        data: hiddenCats,
+      });
+    }
 
-  // -- Move money --
-  function handleMoveMoney(cat: BudgetCategory) {
+    return result;
+  }, [budgetGroups, t]);
+
+  // -- Filtered sections (reads spreadsheet only when filter is active) --
+  const sections: BudgetSection[] = useMemo(() => {
+    if (filter === "all") return baseSections;
+
+    const ss = getSpreadsheet();
+
+    function matchesFilter(c: BudgetCategoryData, groupIsIncome: boolean) {
+      if (groupIsIncome) return true;
+      const balance = (ss.getValue(sheet, envelopeBudget.catBalance(c.id)) as number) ?? 0;
+      const budgeted = (ss.getValue(sheet, envelopeBudget.catBudgeted(c.id)) as number) ?? 0;
+      const goalInfo = c.goalDef ? inferGoalFromDef(c.goalDef) : null;
+      const goal = goalInfo?.goal ?? null;
+      const longGoal = goalInfo?.longGoal ?? false;
+
+      switch (filter) {
+        case "underfunded": {
+          if (goal == null) return false;
+          const funded = longGoal ? balance : budgeted;
+          return funded < goal;
+        }
+        case "overfunded": {
+          if (goal == null || balance < 0) return false;
+          const funded = longGoal ? balance : budgeted;
+          return funded > goal;
+        }
+        case "has-money":
+          return balance > 0;
+      }
+    }
+
+    return baseSections
+      .map((section) => ({
+        ...section,
+        data: section.data.filter((c) => matchesFilter(c, section.group.is_income)),
+      }))
+      .filter((section) => section.data.length > 0);
+  }, [baseSections, filter, sheet, ssVersion]);
+
+  // -- Callbacks (accept IDs, not full objects) --
+  function handleMoveMoney(catId: string, catName: string, balance: number) {
     router.push({
       pathname: "/(auth)/budget/move-money",
-      params: {
-        catId: cat.id,
-        catName: cat.name,
-        balance: String(cat.balance),
-      },
+      params: { catId, catName, balance: String(balance) },
     });
   }
 
-  function handleToggleCarryover(cat: BudgetCategory) {
-    setCategoryCarryover(month, cat.id, !cat.carryover);
+  function handleToggleCarryover(catId: string, carryover: boolean) {
+    setCategoryCarryover(month, catId, !carryover);
   }
 
-  function handleCategoryDetails(cat: BudgetCategory) {
+  function handleCategoryDetails(catId: string) {
     router.push({
       pathname: "/(auth)/budget/edit-category",
-      params: { categoryId: cat.id },
+      params: { categoryId: catId },
     });
   }
 
-  function handleViewTransactions(cat: BudgetCategory) {
+  function handleViewTransactions(catId: string, catName: string) {
     router.push({
       pathname: "/(auth)/budget/category-transactions",
-      params: { categoryId: cat.id, categoryName: cat.name },
+      params: { categoryId: catId, categoryName: catName },
     });
   }
 
-  function handleBudgetNotes(cat: BudgetCategory) {
+  function handleBudgetNotes(catName: string) {
     router.push({
       pathname: "/(auth)/budget/notes",
-      params: { categoryName: cat.name },
+      params: { categoryName: catName },
     });
   }
 
-  // -- Overspent categories --
-  const overspentCategories = useMemo(() => {
-    return budgetGroups
-      .filter((g) => !g.is_income)
-      .flatMap((g) =>
-        g.categories
-          .filter((c) => c.balance < 0 && !c.carryover)
-          .map((c) => ({
-            id: c.id,
-            name: c.name,
-            balance: c.balance,
-            groupName: g.name,
-          })),
-      );
-  }, [budgetGroups]);
-  const overspentCount = overspentCategories.length;
+  // -- Overspent count (uses ssVersion since it reads spreadsheet) --
+  const overspentCount = useMemo(() => {
+    const ss = getSpreadsheet();
+    let count = 0;
+    for (const g of budgetGroups) {
+      if (g.is_income) continue;
+      for (const c of g.categories) {
+        const balance = (ss.getValue(sheet, envelopeBudget.catBalance(c.id)) as number) ?? 0;
+        const carryover =
+          ss.getValue(sheet, envelopeBudget.catCarryover(c.id)) === true ||
+          ss.getValue(sheet, envelopeBudget.catCarryover(c.id)) === 1;
+        if (balance < 0 && !carryover) count++;
+      }
+    }
+    return count;
+  }, [budgetGroups, sheet, ssVersion]);
 
   function handleOverspentPress() {
     router.push("/(auth)/budget/cover-overspent");
   }
 
-  // -- Column header visibility --
-  const showBudgetedColumn = !goalsEnabled || !showProgressBars;
+  const showBudgetedColumn = !goalsEnabled || !showProgressBars || editingCatId !== null;
 
-  // -- Render helpers --
   function dismissEdit() {
     sharedInputRef.current?.blur();
     Keyboard.dismiss();
@@ -428,6 +392,7 @@ export default function BudgetScreen() {
       <View style={section.group.hidden ? { opacity: 0.5 } : undefined}>
         <BudgetGroupHeader
           group={section.group}
+          sheet={sheet}
           isCollapsed={collapsedGroups.has(section.group.id)}
           onToggle={() => {
             dismissEdit();
@@ -444,38 +409,42 @@ export default function BudgetScreen() {
     index,
     section,
   }: {
-    item: BudgetCategory;
+    item: BudgetCategoryData;
     index: number;
     section: BudgetSection;
   }) {
+    const isCollapsed = collapsedGroups.has(section.group.id);
     return (
-      <View style={cat.hidden ? { opacity: 0.5 } : undefined}>
-        <BudgetCategoryRow
-          cat={cat}
-          isIncome={section.group.is_income}
-          isFirst={index === 0}
-          isLast={index === section.data.length - 1}
-          onCategoryDetails={handleCategoryDetails}
-          onMoveMoney={handleMoveMoney}
-          onToggleCarryover={handleToggleCarryover}
-          onViewTransactions={handleViewTransactions}
-          onBudgetNotes={handleBudgetNotes}
-          isEditing={editingCatId === cat.id}
-          editValue={editingCatId === cat.id ? editValue : undefined}
-          expressionMode={editingCatId === cat.id && expr.expressionMode}
-          expression={editingCatId === cat.id ? expr.expression : ""}
-          onPress={(pageY) => handleRowPress(cat, pageY)}
-          showProgressBar={goalsEnabled && showProgressBars}
-          showBudgetedColumn={showBudgetedColumn}
-        />
-      </View>
+      <CollapsibleRow collapsed={isCollapsed}>
+        <View style={cat.hidden ? { opacity: 0.5 } : undefined}>
+          <BudgetCategoryRow
+            cat={cat}
+            sheet={sheet}
+            month={month}
+            isIncome={section.group.is_income}
+            isFirst={index === 0}
+            isLast={index === section.data.length - 1}
+            onCategoryDetails={handleCategoryDetails}
+            onMoveMoney={handleMoveMoney}
+            onToggleCarryover={handleToggleCarryover}
+            onViewTransactions={handleViewTransactions}
+            onBudgetNotes={handleBudgetNotes}
+            isEditing={editingCatId === cat.id}
+            editValue={editingCatId === cat.id ? editValue : undefined}
+            expressionMode={editingCatId === cat.id && expr.expressionMode}
+            expression={editingCatId === cat.id ? expr.expression : ""}
+            onPress={handleRowPress}
+            showProgressBar={goalsEnabled && showProgressBars}
+            showBudgetedColumn={showBudgetedColumn}
+          />
+        </View>
+      </CollapsibleRow>
     );
   }
 
   return (
     <>
       <View style={{ flex: 1, backgroundColor: colors.pageBackground }}>
-        {/* Sticky status area — stays fixed above the list */}
         {dataReady && (toBudget !== 0 || buffered > 0) && (
           <View style={{ paddingTop: spacing.sm, paddingBottom: spacing.xs }}>
             <ReadyToAssignPill
@@ -505,7 +474,6 @@ export default function BudgetScreen() {
           </View>
         )}
 
-        {/* Budget list */}
         {!dataReady ? (
           <BudgetListSkeleton />
         ) : (
@@ -580,7 +548,6 @@ export default function BudgetScreen() {
         {!keyboardVisible && <AddTransactionButton collapsed={fabCollapsed} />}
       </View>
 
-      {/* Shared hidden TextInput — one for all budget rows */}
       <SharedAmountInput
         accessoryID={BUDGET_ACCESSORY_ID}
         sharedInputRef={sharedInputRef}

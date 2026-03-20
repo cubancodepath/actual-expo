@@ -27,7 +27,7 @@ export default function PayeePickerScreen() {
   const styles = useThemedStyles(createStyles);
   const { payees } = usePayees();
   const setPayee = usePickerStore((s) => s.setPayee);
-  const [search, setSearch] = useState(selectedName ?? "");
+  const [search, setSearch] = useState("");
   const {
     nearbyPayees,
     loading: nearbyLoading,

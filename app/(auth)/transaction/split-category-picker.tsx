@@ -3,6 +3,7 @@ import { Pressable, SafeAreaView, ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCategories } from "@/presentation/hooks/useCategories";
 import { Icon } from "@/presentation/components/atoms/Icon";
+import { AnimatedCheckmark } from "@/presentation/components/atoms/AnimatedCheckmark";
 import { usePickerStore } from "@/stores/pickerStore";
 import { getCategoryBalancesForMonth } from "@/budgets";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
@@ -77,7 +78,7 @@ export default function SplitCategoryPickerScreen() {
             <Text variant="body" color={colors.textMuted} style={styles.catName}>
               No category
             </Text>
-            {noneSelected && <Icon name="checkmark" size={20} color={colors.primary} />}
+            {noneSelected && <AnimatedCheckmark color={colors.primary} />}
           </Pressable>
         </View>
 
@@ -129,7 +130,7 @@ export default function SplitCategoryPickerScreen() {
                             style={styles.balance}
                           />
                         )}
-                        {isSelected && <Icon name="checkmark" size={20} color={colors.primary} />}
+                        {isSelected && <AnimatedCheckmark color={colors.primary} />}
                         {!isLast && (
                           <View
                             style={{

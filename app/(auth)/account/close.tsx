@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, ScrollView, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Icon } from "@/presentation/components/atoms/Icon";
+import { AnimatedCheckmark } from "@/presentation/components/atoms/AnimatedCheckmark";
 import { useAccounts } from "@/presentation/hooks/useAccounts";
 import { closeAccount } from "@/accounts";
 import { useCategories } from "@/presentation/hooks/useCategories";
@@ -294,7 +295,7 @@ function AccountPickerList({
                 >
                   {acct.name}
                 </Text>
-                {selected && <Icon name="checkmark" size={20} color={theme.colors.primary} />}
+                {selected && <AnimatedCheckmark color={theme.colors.primary} />}
               </Pressable>
             );
           })}
@@ -355,7 +356,7 @@ function CategoryPickerList({
                   >
                     {cat.name}
                   </Text>
-                  {selected && <Icon name="checkmark" size={20} color={theme.colors.primary} />}
+                  {selected && <AnimatedCheckmark color={theme.colors.primary} />}
                 </Pressable>
               );
             })}

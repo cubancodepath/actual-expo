@@ -3,6 +3,7 @@ import { Pressable, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCategories } from "@/presentation/hooks/useCategories";
 import { Icon } from "@/presentation/components/atoms/Icon";
+import { AnimatedCheckmark } from "@/presentation/components/atoms/AnimatedCheckmark";
 import { usePickerStore } from "@/stores/pickerStore";
 import { getCategoryBalancesForMonth } from "@/budgets";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
@@ -132,7 +133,7 @@ export default function CategoryPickerScreen() {
                 No category
               </Text>
               <View style={{ width: 20, alignItems: "center" }}>
-                {noneSelected && <Icon name="checkmark" size={20} color={colors.primary} />}
+                {noneSelected && <AnimatedCheckmark color={colors.primary} />}
               </View>
             </Pressable>
           </View>
@@ -159,7 +160,7 @@ export default function CategoryPickerScreen() {
                 />
               )}
               <View style={{ width: 20, alignItems: "center" }}>
-                {isSelected && <Icon name="checkmark" size={20} color={colors.primary} />}
+                {isSelected && <AnimatedCheckmark color={colors.primary} />}
               </View>
             </>
           );

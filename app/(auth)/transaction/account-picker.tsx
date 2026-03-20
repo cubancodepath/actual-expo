@@ -2,6 +2,7 @@ import { Pressable, ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useAccounts, useAccountBalance } from "@/presentation/hooks/useAccounts";
 import { Icon } from "@/presentation/components/atoms/Icon";
+import { AnimatedCheckmark } from "@/presentation/components/atoms/AnimatedCheckmark";
 import { usePickerStore } from "@/stores/pickerStore";
 import { groupAccounts } from "@/accounts";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
@@ -29,7 +30,7 @@ function AccountPickerRow({
   return (
     <Pressable style={({ pressed }) => [styles.item, pressed && styles.pressed]} onPress={onSelect}>
       <View style={styles.checkSlot}>
-        {isSelected && <Icon name="checkmark" size={20} color={colors.primary} />}
+        {isSelected && <AnimatedCheckmark color={colors.primary} />}
       </View>
       <Text variant="body" color={colors.textPrimary} style={styles.itemLabel}>
         {account.name}

@@ -23,7 +23,7 @@
   "dependencies": {
     "@bacons/apple-targets": "^4.0.6",
     "@expo/prebuild-config": "^55.0.8",
-    "@expo/ui": "55.0.1",
+    "@expo/ui": "^55.0.1",
     "@expo/vector-icons": "^15.0.2",
     "@legendapp/list": "^2.0.19",
     "@noble/ciphers": "^2.1.1",
@@ -33,6 +33,7 @@
     "@rschedule/json-tools": "^1.5.0",
     "@rschedule/standard-date-adapter": "^1.5.0",
     "@sentry/react-native": "~7.11.0",
+    "@shopify/react-native-skia": "2.4.18",
     "@tanstack/react-query": "^5.91.0",
     "date-fns": "^4.1.0",
     "expo": "~55.0.4",
@@ -80,6 +81,7 @@
     "react-native-sortables": "^1.9.4",
     "react-native-svg": "15.15.3",
     "react-native-worklets": "^0.7.4",
+    "victory-native": "^41.20.2",
     "zeego": "^3.0.6",
     "zustand": "^5.0.11"
   },
@@ -90,6 +92,7 @@
     "lint-staged": "^16.4.0",
     "oxfmt": "^0.41.0",
     "oxlint": "^1.56.0",
+    "patch-package": "^8.0.1",
     "typescript": "~5.9.2",
     "vitest": "^4.0.18"
   },

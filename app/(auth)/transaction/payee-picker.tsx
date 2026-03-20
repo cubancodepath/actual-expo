@@ -34,7 +34,7 @@ export default function PayeePickerScreen() {
     refresh: refreshNearby,
     enabled: nearbyEnabled,
   } = useNearbyPayees();
-  const { status: locationStatus, request: requestLocation } = useLocationPermission();
+  const { status: locationStatus } = useLocationPermission();
 
   useEffect(() => {
     refreshNearby();
@@ -163,14 +163,7 @@ export default function PayeePickerScreen() {
             <View style={styles.groupCard}>
               <Pressable
                 style={({ pressed }) => [styles.item, pressed && styles.pressed]}
-                onPress={async () => {
-                  if (locationStatus === "undetermined") {
-                    const granted = await requestLocation();
-                    if (granted) refreshNearby();
-                  } else {
-                    Linking.openSettings();
-                  }
-                }}
+                onPress={() => Linking.openSettings()}
               >
                 {Platform.OS === "ios" ? (
                   <SymbolView

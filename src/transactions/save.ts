@@ -250,9 +250,6 @@ function savePayeeLocationIfEnabled(payeeId: string): void {
     .then((flags) => {
       if (!flags.payeeLocations) return;
 
-      const { isLocalOnly, serverFeatures } = usePrefsStore.getState();
-      if (!isLocalOnly && !serverFeatures.payeeLocations) return;
-
       return getCurrentPosition().then((coords) => {
         if (coords) {
           return createPayeeLocation(payeeId, coords);

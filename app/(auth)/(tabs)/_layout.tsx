@@ -14,13 +14,17 @@ export default function TabsLayout() {
         <NativeTabs.Trigger.Icon sf="wallet.bifold.fill" md="account_balance_wallet" />
         <NativeTabs.Trigger.Label>{t("tabs.budget")}</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="(spending)">
+        <NativeTabs.Trigger.Icon sf="list.bullet" md="receipt_long" />
+        <NativeTabs.Trigger.Label>{t("tabs.spending")}</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="(accounts)">
         <NativeTabs.Trigger.Icon sf="building.columns" md="account_balance" />
         <NativeTabs.Trigger.Label>{t("tabs.accounts")}</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="(spending)">
-        <NativeTabs.Trigger.Icon sf="chart.line.uptrend.xyaxis" md="trending_up" />
-        <NativeTabs.Trigger.Label>{t("tabs.spending")}</NativeTabs.Trigger.Label>
+      <NativeTabs.Trigger name="(reports)">
+        <NativeTabs.Trigger.Icon sf="chart.bar.xaxis" md="bar_chart" />
+        <NativeTabs.Trigger.Label>{t("tabs.reports")}</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       {__DEV__ && (
         <NativeTabs.Trigger name="(test)">

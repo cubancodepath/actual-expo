@@ -50,3 +50,4 @@ build-*
 docs/app-store-connect-metadata.md
 assets/appstore-screenshots/
 .claude/worktrees/
+.claude/agent-memory

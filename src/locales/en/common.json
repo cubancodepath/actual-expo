@@ -32,6 +32,7 @@
   "hide": "hide",
 
   "tabs": {
+    "reports": "Reports",
     "accounts": "Accounts",
     "budget": "Budget",
     "spending": "Spending"
@@ -91,6 +92,33 @@
     "addCat": "+ cat",
     "noCategoriesInGroup": "No categories \u2014 tap \"+ cat\" to add one",
     "addGroup": "+ Add Group"
+  },
+
+  "dashboard": {
+    "netWorth": "Net Worth",
+    "vsLastMonth": "vs last month",
+    "cashFlow": "Cash Flow",
+    "income": "Income",
+    "expenses": "Expenses",
+    "net": "Net",
+    "topSpending": "Spending This Month",
+    "noSpending": "No spending this month",
+    "budget": "Budget",
+    "spent": "spent",
+    "budgeted": "Budgeted",
+    "totalSpent": "Spent",
+    "toBudget": "To Budget",
+    "assets": "Assets",
+    "debt": "Debt",
+    "savingsRate": "Savings Rate",
+    "savingsRateDescription": "The percentage of your income you saved this month.",
+    "savingsRateNoData": "Add income transactions to see your savings rate.",
+    "netWorthNoData": "Add accounts to see your net worth over time.",
+    "cashFlowNoData": "No income or expenses recorded this month.",
+    "moneyBuffer": "Money Buffer",
+    "days": "days",
+    "moneyBufferDescription": "How many days of spending your income covers before you need new money. 30+ days means you're a full month ahead.",
+    "moneyBufferNoData": "Keep adding transactions — we need a bit more data to calculate your buffer."
   },
 
   "spending": {

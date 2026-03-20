@@ -44,6 +44,7 @@ import { Text } from "@/presentation/components/atoms/Text";
 import { usePrefsStore } from "@/stores/prefsStore";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { BudgetListSkeleton } from "@/presentation/components/skeletons/BudgetListSkeleton";
+import { CollapsibleRow } from "@/presentation/components/atoms/CollapsibleRow";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -242,7 +243,7 @@ export default function BudgetScreen() {
     Keyboard.dismiss();
   }, [month]);
 
-  // -- Base sections (structural — no spreadsheet reads, stable reference) --
+  // -- Base sections (structural — always include all items for animation) --
   const baseSections: BudgetSection[] = useMemo(() => {
     const hiddenCats: BudgetCategoryData[] = [];
     const visible = budgetGroups
@@ -260,7 +261,7 @@ export default function BudgetScreen() {
       key: g.id,
       title: g.name,
       group: g,
-      data: collapsedGroups.has(g.id) ? [] : g.categories,
+      data: g.categories,
     }));
 
     for (const g of budgetGroups) {
@@ -280,12 +281,12 @@ export default function BudgetScreen() {
         key: HIDDEN_GROUP_ID,
         title: t("hiddenCategories"),
         group: hiddenGroup,
-        data: collapsedGroups.has(HIDDEN_GROUP_ID) ? [] : hiddenCats,
+        data: hiddenCats,
       });
     }
 
     return result;
-  }, [budgetGroups, collapsedGroups, t]);
+  }, [budgetGroups, t]);
 
   // -- Filtered sections (reads spreadsheet only when filter is active) --
   const sections: BudgetSection[] = useMemo(() => {
@@ -412,29 +413,32 @@ export default function BudgetScreen() {
     index: number;
     section: BudgetSection;
   }) {
+    const isCollapsed = collapsedGroups.has(section.group.id);
     return (
-      <View style={cat.hidden ? { opacity: 0.5 } : undefined}>
-        <BudgetCategoryRow
-          cat={cat}
-          sheet={sheet}
-          month={month}
-          isIncome={section.group.is_income}
-          isFirst={index === 0}
-          isLast={index === section.data.length - 1}
-          onCategoryDetails={handleCategoryDetails}
-          onMoveMoney={handleMoveMoney}
-          onToggleCarryover={handleToggleCarryover}
-          onViewTransactions={handleViewTransactions}
-          onBudgetNotes={handleBudgetNotes}
-          isEditing={editingCatId === cat.id}
-          editValue={editingCatId === cat.id ? editValue : undefined}
-          expressionMode={editingCatId === cat.id && expr.expressionMode}
-          expression={editingCatId === cat.id ? expr.expression : ""}
-          onPress={handleRowPress}
-          showProgressBar={goalsEnabled && showProgressBars}
-          showBudgetedColumn={showBudgetedColumn}
-        />
-      </View>
+      <CollapsibleRow collapsed={isCollapsed}>
+        <View style={cat.hidden ? { opacity: 0.5 } : undefined}>
+          <BudgetCategoryRow
+            cat={cat}
+            sheet={sheet}
+            month={month}
+            isIncome={section.group.is_income}
+            isFirst={index === 0}
+            isLast={index === section.data.length - 1}
+            onCategoryDetails={handleCategoryDetails}
+            onMoveMoney={handleMoveMoney}
+            onToggleCarryover={handleToggleCarryover}
+            onViewTransactions={handleViewTransactions}
+            onBudgetNotes={handleBudgetNotes}
+            isEditing={editingCatId === cat.id}
+            editValue={editingCatId === cat.id ? editValue : undefined}
+            expressionMode={editingCatId === cat.id && expr.expressionMode}
+            expression={editingCatId === cat.id ? expr.expression : ""}
+            onPress={handleRowPress}
+            showProgressBar={goalsEnabled && showProgressBars}
+            showBudgetedColumn={showBudgetedColumn}
+          />
+        </View>
+      </CollapsibleRow>
     );
   }
 

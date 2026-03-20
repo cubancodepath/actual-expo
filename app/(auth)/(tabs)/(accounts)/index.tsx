@@ -1,11 +1,8 @@
 import { useMemo } from "react";
 import { Pressable, RefreshControl, ScrollView, View } from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useDerivedValue,
-  useSharedValue,
-  withTiming,
-} from "react-native-reanimated";
+import Animated from "react-native-reanimated";
+import { EaseView } from "react-native-ease";
+import { useCollapsible } from "@/presentation/hooks/useCollapsible";
 import { Stack, useRouter } from "expo-router";
 import { ContextMenu } from "@/presentation/components/atoms/ContextMenu";
 import {
@@ -147,49 +144,26 @@ function AccountSection({
   const accountIds = useMemo(() => group.accounts.map((a) => a.id), [group.accounts]);
   const groupTotal = useAccountGroupBalance(accountIds);
 
-  const isExpanded = useSharedValue(true);
-  const height = useSharedValue(0);
-  const rotation = useSharedValue(0);
-
-  const derivedHeight = useDerivedValue(() =>
-    withTiming(height.value * (isExpanded.value ? 1 : 0), { duration: 250 }),
-  );
-
-  const bodyStyle = useAnimatedStyle(() => ({
-    height: derivedHeight.value,
-    overflow: "hidden" as const,
-  }));
-
-  const chevronStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${rotation.value}deg` }],
-  }));
-
-  function toggle() {
-    isExpanded.value = !isExpanded.value;
-    rotation.value = withTiming(isExpanded.value ? 0 : -90, { duration: 250 });
-  }
+  const { expanded, toggle, bodyStyle, measuringStyle, onMeasure } = useCollapsible();
 
   return (
     <View style={styles.section}>
       {/* Section header */}
       <Pressable style={styles.sectionHeader} onPress={toggle}>
-        <Animated.View style={chevronStyle}>
+        <EaseView
+          animate={{ rotate: expanded ? 0 : -90 }}
+          transition={{ type: "timing", duration: 250, easing: "easeInOut" }}
+        >
           <Icon name="chevronDown" size={18} color={theme.colors.textSecondary} />
-        </Animated.View>
+        </EaseView>
         <Text variant="body" color={theme.colors.textPrimary} style={styles.sectionLabel}>
           {groupLabel}
         </Text>
         <Amount value={groupTotal} variant="body" style={styles.sectionTotal} />
       </Pressable>
 
-      {/* Hidden measurer — always keeps natural height */}
-      <View
-        style={{ position: "absolute", opacity: 0, zIndex: -1 }}
-        onLayout={(e) => {
-          height.value = e.nativeEvent.layout.height;
-        }}
-        pointerEvents="none"
-      >
+      {/* Measurer — offscreen, always at natural height */}
+      <View style={measuringStyle} onLayout={onMeasure} pointerEvents="none">
         <AccountContent
           group={group}
           onPressAccount={onPressAccount}

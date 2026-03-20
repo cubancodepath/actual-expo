@@ -1,5 +1,5 @@
 import { Pressable, View } from "react-native";
-import Animated, { useAnimatedStyle, withTiming } from "react-native-reanimated";
+import { EaseView } from "react-native-ease";
 import { Icon } from "../atoms/Icon";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../../providers/ThemeProvider";
@@ -33,10 +33,6 @@ export function BudgetGroupHeader({
   const spent = useSheetValueNumber(sheet, envelopeBudget.groupSpent(group.id));
   const balance = useSheetValueNumber(sheet, envelopeBudget.groupBalance(group.id));
 
-  const chevronStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: withTiming(isCollapsed ? "-90deg" : "0deg", { duration: 200 }) }],
-  }));
-
   const balanceColor = group.is_income
     ? colors.positive
     : balance < 0
@@ -59,7 +55,7 @@ export function BudgetGroupHeader({
         }}
       >
         <View style={{ flex: 1 }} />
-        {showBudgetedColumn && !group.is_income && (
+        {(showBudgetedColumn || isCollapsed) && !group.is_income && (
           <Text
             variant="captionSm"
             color={colors.textMuted}
@@ -93,9 +89,12 @@ export function BudgetGroupHeader({
         }}
         onPress={onToggle}
       >
-        <Animated.View style={chevronStyle}>
+        <EaseView
+          animate={{ rotate: isCollapsed ? -90 : 0 }}
+          transition={{ type: "timing", duration: 250, easing: "easeInOut" }}
+        >
           <Icon name="chevronDown" size={14} color={colors.textMuted} />
-        </Animated.View>
+        </EaseView>
         <Text
           variant="captionSm"
           color={colors.textSecondary}
@@ -104,15 +103,19 @@ export function BudgetGroupHeader({
         >
           {group.name}
         </Text>
-        {showBudgetedColumn && !group.is_income && (
-          <View style={{ width: BUDGET_COLUMNS.budgeted, alignItems: "flex-end" }}>
+        {(showBudgetedColumn || isCollapsed) && !group.is_income && (
+          <EaseView
+            animate={{ opacity: showBudgetedColumn || isCollapsed ? 1 : 0 }}
+            transition={{ type: "timing", duration: 200, easing: "easeInOut" }}
+            style={{ width: BUDGET_COLUMNS.budgeted, alignItems: "flex-end" }}
+          >
             <Amount
               value={budgeted}
               variant="caption"
               color={budgeted !== 0 ? colors.textSecondary : colors.textMuted}
               weight="600"
             />
-          </View>
+          </EaseView>
         )}
         <View style={{ width: BUDGET_COLUMNS.available, alignItems: "center" }}>
           <Amount value={balanceValue} variant="caption" color={balanceColor} weight="600" />

@@ -32,6 +32,7 @@
   "hide": "ocultar",
 
   "tabs": {
+    "reports": "Reportes",
     "accounts": "Cuentas",
     "budget": "Presupuesto",
     "spending": "Gastos"
@@ -91,6 +92,33 @@
     "addCat": "+ cat",
     "noCategoriesInGroup": "Sin categorías — toca \"+ cat\" para agregar una",
     "addGroup": "+ Agregar Grupo"
+  },
+
+  "dashboard": {
+    "netWorth": "Patrimonio Neto",
+    "vsLastMonth": "vs. el mes pasado",
+    "cashFlow": "Flujo de Caja",
+    "income": "Ingresos",
+    "expenses": "Gastos",
+    "net": "Neto",
+    "topSpending": "Gastos del Mes",
+    "noSpending": "Sin gastos este mes",
+    "budget": "Presupuesto",
+    "spent": "gastado",
+    "budgeted": "Presupuestado",
+    "totalSpent": "Gastado",
+    "toBudget": "Por Presupuestar",
+    "assets": "Activos",
+    "debt": "Deudas",
+    "savingsRate": "Tasa de Ahorro",
+    "savingsRateDescription": "El porcentaje de tus ingresos que ahorraste este mes.",
+    "savingsRateNoData": "Agrega transacciones de ingresos para ver tu tasa de ahorro.",
+    "netWorthNoData": "Agrega cuentas para ver tu patrimonio neto a lo largo del tiempo.",
+    "cashFlowNoData": "No se registraron ingresos ni gastos este mes.",
+    "moneyBuffer": "Colchón Financiero",
+    "days": "días",
+    "moneyBufferDescription": "Cuántos días de gastos cubren tus ingresos antes de necesitar dinero nuevo. 30+ días significa que llevas un mes completo de ventaja.",
+    "moneyBufferNoData": "Sigue añadiendo transacciones — necesitamos más datos para calcular tu colchón."
   },
 
   "spending": {

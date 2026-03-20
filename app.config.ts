@@ -42,6 +42,7 @@ const config = ({ config }: ConfigContext): ExpoConfig => ({
     "expo-quick-actions",
     "expo-notifications",
     "expo-localization",
+    "expo-location",
     [
       "expo-build-properties",
       {

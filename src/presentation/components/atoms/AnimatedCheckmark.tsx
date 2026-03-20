@@ -1,11 +1,14 @@
 /**
- * AnimatedCheckmark — Apple-style checkmark with spring entrance animation.
+ * AnimatedCheckmark — Apple-style checkmark with native SF Symbol animation.
  *
- * Animates scale + opacity on mount via EaseView initialAnimate.
+ * On iOS: Uses SF Symbol `appear` effect (iOS 17+) for native fade+scale.
+ * EaseView provides the container spring animation (cross-platform).
+ *
  * Use with conditional rendering: `{isSelected && <AnimatedCheckmark />}`
  * The mount triggers the entrance animation; unmount removes instantly.
  */
 
+import { Platform } from "react-native";
 import { EaseView } from "react-native-ease";
 import { Icon } from "./Icon";
 
@@ -21,7 +24,14 @@ export function AnimatedCheckmark({ color, size = 20 }: AnimatedCheckmarkProps) 
       animate={{ opacity: 1, scale: 1 }}
       transition={{ type: "spring", damping: 14, stiffness: 250, mass: 0.8 }}
     >
-      <Icon name="checkmark" size={size} color={color} />
+      <Icon
+        name="checkmark"
+        size={size}
+        color={color}
+        animationSpec={
+          Platform.OS === "ios" ? { effect: { type: "bounce" }, repeating: false } : undefined
+        }
+      />
     </EaseView>
   );
 }

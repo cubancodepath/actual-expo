@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { Icon } from "@/presentation/components/atoms/Icon";
-import { AnimatedCheckmark } from "@/presentation/components/atoms/AnimatedCheckmark";
+
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
@@ -124,7 +124,7 @@ export default function RecurrencePickerScreen() {
               {t("never")}
             </Text>
             <View style={{ width: 20, alignItems: "center" }}>
-              {isNever && <AnimatedCheckmark color={colors.primary} />}
+              {isNever && <Icon name="checkmark" size={20} color={colors.primary} />}
             </View>
           </Pressable>
 
@@ -151,7 +151,7 @@ export default function RecurrencePickerScreen() {
                     {preset.label}
                   </Text>
                   <View style={{ width: 20, alignItems: "center" }}>
-                    {selected && <AnimatedCheckmark color={colors.primary} />}
+                    {selected && <Icon name="checkmark" size={20} color={colors.primary} />}
                   </View>
                 </Pressable>
               </View>

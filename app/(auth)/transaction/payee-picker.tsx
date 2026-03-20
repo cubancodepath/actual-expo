@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { SymbolView } from "expo-symbols";
 import { Icon } from "@/presentation/components/atoms/Icon";
-import { AnimatedCheckmark } from "@/presentation/components/atoms/AnimatedCheckmark";
+
 import { usePayees } from "@/presentation/hooks/usePayees";
 import { usePickerStore } from "@/stores/pickerStore";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
@@ -85,7 +85,7 @@ export default function PayeePickerScreen() {
         <Text variant="body" color={colors.textMuted} style={styles.itemText}>
           {t("noPayee")}
         </Text>
-        {noneSelected && <AnimatedCheckmark color={colors.primary} />}
+        {noneSelected && <Icon name="checkmark" size={20} color={colors.primary} />}
       </Pressable>
     ),
   });
@@ -234,9 +234,12 @@ export default function PayeePickerScreen() {
                         {formatDistance(n.distance)}
                       </Text>
                       {isSelected && (
-                        <View style={{ marginLeft: spacing.sm }}>
-                          <AnimatedCheckmark color={colors.primary} />
-                        </View>
+                        <Icon
+                          name="checkmark"
+                          size={20}
+                          color={colors.primary}
+                          style={{ marginLeft: spacing.sm }}
+                        />
                       )}
                       {!isLast && (
                         <View
@@ -285,7 +288,7 @@ export default function PayeePickerScreen() {
                     <Text variant="body" color={colors.textPrimary} style={styles.itemText}>
                       {p.name}
                     </Text>
-                    {isSelected && <AnimatedCheckmark color={colors.primary} />}
+                    {isSelected && <Icon name="checkmark" size={20} color={colors.primary} />}
                     {!isLast && (
                       <View
                         style={{
@@ -329,7 +332,7 @@ export default function PayeePickerScreen() {
                     <Text variant="body" color={colors.textPrimary} style={styles.itemText}>
                       {p.name}
                     </Text>
-                    {isSelected && <AnimatedCheckmark color={colors.primary} />}
+                    {isSelected && <Icon name="checkmark" size={20} color={colors.primary} />}
                     {!isLast && (
                       <View
                         style={{

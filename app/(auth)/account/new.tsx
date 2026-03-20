@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { Platform, Pressable, ScrollView, Switch, View } from "react-native";
+import { Platform, ScrollView, Switch, View } from "react-native";
 import { Input } from "@/presentation/components/atoms/Input";
 import { Stack, useRouter } from "expo-router";
-import { Icon } from "@/presentation/components/atoms/Icon";
 import { createAccount } from "@/accounts";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
 import { Text } from "@/presentation/components/atoms/Text";
@@ -50,26 +49,7 @@ export default function NewAccountScreen() {
 
   return (
     <>
-      <Stack.Screen
-        options={{
-          headerLeft: () => (
-            <Pressable onPress={() => router.back()} hitSlop={8}>
-              <Icon name="close" size={24} color={theme.colors.textSecondary} />
-            </Pressable>
-          ),
-          headerRight: () => (
-            <Pressable onPress={handleCreate} hitSlop={8} disabled={!name.trim() || loading}>
-              <Text
-                variant="body"
-                color={name.trim() && !loading ? theme.colors.primary : theme.colors.textMuted}
-                style={{ fontWeight: "600", fontSize: 17 }}
-              >
-                {t("newAccount.create")}
-              </Text>
-            </Pressable>
-          ),
-        }}
-      />
+      <Stack.Screen options={{}} />
       <ScrollView
         style={styles.flex}
         contentContainerStyle={styles.container}
@@ -140,6 +120,10 @@ export default function NewAccountScreen() {
           style={styles.createButton}
         />
       </ScrollView>
+
+      <Stack.Toolbar placement="left">
+        <Stack.Toolbar.Button icon="xmark" onPress={() => router.back()} />
+      </Stack.Toolbar>
     </>
   );
 }

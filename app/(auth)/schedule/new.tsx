@@ -350,7 +350,7 @@ export default function NewScheduleScreen() {
         </View>
       </Animated.ScrollView>
 
-      <HiddenAmountInput amountInput={amountInput} autoFocus />
+      <HiddenAmountInput amountInput={amountInput} autoFocus onDone={() => Keyboard.dismiss()} />
 
       {/* ── Fixed top blur: fades in on scroll like Apple nav bars ── */}
       <Animated.View

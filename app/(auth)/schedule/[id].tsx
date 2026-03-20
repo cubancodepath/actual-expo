@@ -538,7 +538,7 @@ export default function ScheduleDetailScreen() {
         </View>
       </Animated.ScrollView>
 
-      <HiddenAmountInput amountInput={amountInput} />
+      <HiddenAmountInput amountInput={amountInput} onDone={() => Keyboard.dismiss()} />
 
       {/* ── Fixed top blur: fades in on scroll like Apple nav bars ── */}
       <Animated.View

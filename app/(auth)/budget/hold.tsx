@@ -8,7 +8,6 @@ import { holdForNextMonth } from "@/budgets";
 import { useSheetValueNumber } from "@/presentation/hooks/useSheetValue";
 import { sheetForMonth, envelopeBudget } from "@/spreadsheet/bindings";
 import { Text } from "@/presentation/components/atoms/Text";
-import { Button } from "@/presentation/components/atoms/Button";
 import { Amount } from "@/presentation/components/atoms/Amount";
 import { HiddenAmountInput } from "@/presentation/components/transaction/HiddenAmountInput";
 import { useAmountInput } from "@/presentation/components/transaction/useAmountInput";
@@ -50,7 +49,7 @@ function AmountDisplay({
 
 export default function HoldScreen() {
   const { t } = useTranslation("budget");
-  const { colors, spacing, borderRadius: br } = useTheme();
+  const { colors, spacing } = useTheme();
   const router = useRouter();
   const { current, maxAmount } = useLocalSearchParams<{ current: string; maxAmount: string }>();
 
@@ -82,18 +81,7 @@ export default function HoldScreen() {
   return (
     <>
       <View style={{ flex: 1, backgroundColor: colors.pageBackground, padding: spacing.lg }}>
-        <Stack.Screen
-          options={{
-            headerLeft: () => (
-              <Button
-                icon="close"
-                buttonStyle="borderless"
-                color={colors.headerText}
-                onPress={() => router.back()}
-              />
-            ),
-          }}
-        />
+        <Stack.Screen options={{}} />
 
         <Text
           variant="bodySm"
@@ -126,15 +114,21 @@ export default function HoldScreen() {
           </Text>
           <Amount value={maxCents} variant="captionSm" color={colors.primary} weight="700" />
         </View>
-
-        <Button
-          title={t("hold")}
-          onPress={handleSave}
-          disabled={amountInput.cents <= 0}
-          loading={saving}
-          style={{ marginTop: spacing.xl, borderRadius: br.full }}
-        />
       </View>
+
+      <Stack.Toolbar placement="left">
+        <Stack.Toolbar.Button icon="xmark" onPress={() => router.back()} />
+      </Stack.Toolbar>
+      <Stack.Toolbar placement="right">
+        <Stack.Toolbar.Button
+          variant="done"
+          tintColor={colors.primary}
+          disabled={amountInput.cents <= 0 || saving}
+          onPress={handleSave}
+        >
+          {t("hold")}
+        </Stack.Toolbar.Button>
+      </Stack.Toolbar>
 
       <HiddenAmountInput amountInput={amountInput} autoFocus />
     </>

@@ -1,4 +1,4 @@
-import { View, useColorScheme } from "react-native";
+import { Keyboard, View, useColorScheme } from "react-native";
 import { useTranslation } from "react-i18next";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import Animated, {
@@ -216,7 +216,11 @@ export default function NewTransactionScreen() {
         </View>
       </Animated.ScrollView>
 
-      <HiddenAmountInput amountInput={amountInput} autoFocus={!form.isEdit} />
+      <HiddenAmountInput
+        amountInput={amountInput}
+        autoFocus={!form.isEdit}
+        onDone={() => Keyboard.dismiss()}
+      />
 
       {/* ── Fixed top blur: fades in on scroll like Apple nav bars ── */}
       <Animated.View

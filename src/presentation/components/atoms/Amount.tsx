@@ -1,11 +1,10 @@
-import { View, type TextStyle } from "react-native";
+import type { TextStyle } from "react-native";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Text, type TextProps } from "./Text";
-import { CurrencySymbol } from "./CurrencySymbol";
-import { formatAmount, formatBalance, formatAmountParts, PRIVACY_MASK } from "../../../lib/format";
+import { formatAmount, formatBalance, PRIVACY_MASK } from "../../../lib/format";
 import { usePrivacyStore } from "../../../stores/privacyStore";
 import { useSyncedPref } from "../../hooks/useSyncedPref";
-import { typography, type TypographyVariant } from "../../../theme";
+import type { TypographyVariant } from "../../../theme";
 
 export interface AmountProps extends Omit<TextProps, "children" | "variant"> {
   /** Amount in cents (integer) */
@@ -73,48 +72,10 @@ export function Amount({
     );
   }
 
-  const parts = formatAmountParts(value, showSign);
-
-  // Fast path: no SVG symbol — single <Text> (unchanged behavior)
-  if (!parts.svgSymbol) {
-    const text = showSign ? formatAmount(value) : formatBalance(value);
-    return (
-      <Text variant={variant} color={color} style={textStyle} {...props}>
-        {text}
-      </Text>
-    );
-  }
-
-  // SVG path: render sign + symbol + number as separate elements
-  const fontSize = typography[variant].fontSize;
-  const resolvedColor = color ?? colors.textPrimary;
-  // AED guidelines: clear space = 1/3 of symbol height
-  const spacerWidth = parts.svgSymbol ? Math.round(fontSize / 3) : 3;
-  const spacer = parts.spaceBetween ? <View style={{ width: spacerWidth }} /> : null;
-
-  const symbolEl = (
-    <CurrencySymbol
-      symbol={parts.symbol}
-      svgSymbol={parts.svgSymbol}
-      fontSize={fontSize}
-      color={resolvedColor}
-    />
-  );
-
+  const text = showSign ? formatAmount(value) : formatBalance(value);
   return (
-    <View style={{ flexDirection: "row", alignItems: "center" }} {...props}>
-      {parts.sign !== "" && (
-        <Text variant={variant} color={resolvedColor} style={textStyle}>
-          {parts.sign}
-        </Text>
-      )}
-      {parts.position === "before" && symbolEl}
-      {parts.position === "before" && spacer}
-      <Text variant={variant} color={resolvedColor} style={textStyle}>
-        {parts.number}
-      </Text>
-      {parts.position === "after" && spacer}
-      {parts.position === "after" && symbolEl}
-    </View>
+    <Text variant={variant} color={color} style={textStyle} {...props}>
+      {text}
+    </Text>
   );
 }

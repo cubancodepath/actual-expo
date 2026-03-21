@@ -445,6 +445,23 @@ export default function TestPlayground() {
           Development only — preview components, styles, and interactions
         </Text>
 
+        {/* ── 0. SwiftUI List Prototype ─────────────────────────── */}
+        <Pressable
+          onPress={() => require("expo-router").router.push("/(auth)/(tabs)/(test)/swiftui-list")}
+          style={{
+            backgroundColor: colors.primary,
+            paddingVertical: 12,
+            paddingHorizontal: 16,
+            borderRadius: 10,
+            marginBottom: spacing.lg,
+            alignItems: "center",
+          }}
+        >
+          <Text variant="body" color="#fff" style={{ fontWeight: "600" }}>
+            SwiftUI List Prototype
+          </Text>
+        </Pressable>
+
         {/* ── 1. Currency Input ─────────────────────────────────── */}
 
         <SectionTitle first>CURRENCY INPUT</SectionTitle>

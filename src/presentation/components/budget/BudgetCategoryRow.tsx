@@ -22,7 +22,7 @@ import type { BudgetCategory } from "../../../budgets/types";
 /** Shared column widths for table-style alignment across header, rows, and group headers. */
 export const BUDGET_COLUMNS = {
   budgeted: 90,
-  available: 80,
+  available: 95,
 } as const;
 
 interface BudgetCategoryRowProps {
@@ -101,13 +101,8 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
     hidden: cat.hidden,
   };
 
-  const insetStyle = {
-    marginHorizontal: spacing.lg,
+  const rowStyle = {
     backgroundColor: colors.cardBackground,
-    borderTopLeftRadius: isFirst ? br.lg : 0,
-    borderTopRightRadius: isFirst ? br.lg : 0,
-    borderBottomLeftRadius: isLast ? br.lg : 0,
-    borderBottomRightRadius: isLast ? br.lg : 0,
   };
 
   // ── Income row (simple) ──
@@ -120,14 +115,20 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
           paddingHorizontal: spacing.lg,
           paddingVertical: 13,
           minHeight: 44,
-          ...insetStyle,
+          ...rowStyle,
         }}
       >
         <Text variant="body" style={{ flex: 1 }} numberOfLines={1}>
           {cat.name}
         </Text>
-        <View style={{ width: BUDGET_COLUMNS.available, alignItems: "flex-end" }}>
-          <Amount value={spent} variant="body" color={colors.positive} weight="500" />
+        <View style={{ width: BUDGET_COLUMNS.available, alignItems: "flex-end", marginLeft: 6 }}>
+          <Amount
+            value={spent}
+            variant="body"
+            color={colors.positive}
+            weight="500"
+            numberOfLines={1}
+          />
         </View>
         {!isLast && (
           <View
@@ -207,7 +208,7 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
           )}
         </View>
         {showBudgetedColumn || isEditing ? (
-          <View style={{ width: BUDGET_COLUMNS.budgeted, alignItems: "flex-end" }}>
+          <View style={{ width: BUDGET_COLUMNS.budgeted, alignItems: "flex-end", marginLeft: 10 }}>
             {isEditing && expressionMode ? (
               <>
                 <Text
@@ -251,9 +252,10 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
             ) : (
               <Amount
                 value={budgeted}
-                variant="body"
+                variant="caption"
                 color={budgeted !== 0 ? colors.textPrimary : colors.textMuted}
                 weight="600"
+                numberOfLines={1}
                 style={{ fontVariant: ["tabular-nums"] }}
               />
             )}
@@ -263,31 +265,24 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
           accessibilityLabel={`${formatPrivacyAware(balance)} available`}
           style={{
             width: BUDGET_COLUMNS.available,
-            flexShrink: 0,
-            justifyContent: "center",
-            alignItems: "center",
-            paddingLeft: spacing.sm,
+            marginLeft: 6,
+            alignItems: "flex-end",
           }}
         >
           <View
             style={{
               backgroundColor: pillBg,
               borderRadius: 100,
-              paddingHorizontal: 10,
-              paddingVertical: 3,
-              alignItems: "center",
-              flexDirection: "row",
-              flexWrap: "nowrap",
+              paddingHorizontal: 8,
+              paddingVertical: 2,
             }}
           >
             <Amount
               value={balance}
-              variant="captionSm"
+              variant="caption"
               color={pillText}
               weight="700"
-              showSign
-              numberOfLines={1}
-              adjustsFontSizeToFit
+              style={{ fontVariant: ["tabular-nums"] }}
             />
           </View>
         </View>
@@ -347,7 +342,7 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
   const carryoverLabel = carryover ? t("removeOverspendingRollover") : t("rolloverOverspending");
 
   return (
-    <ContextMenu style={insetStyle}>
+    <ContextMenu style={rowStyle}>
       <ContextMenu.Trigger>{pressableContent}</ContextMenu.Trigger>
       <ContextMenu.Content>
         <ContextMenu.Item key="details" onSelect={() => onCategoryDetails?.(cat.id, cat.name)}>

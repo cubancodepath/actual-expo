@@ -42,7 +42,7 @@ export function BudgetGroupHeader({
         : colors.textMuted;
 
   const balanceValue = group.is_income ? spent : balance;
-  const paddingH = spacing.lg + spacing.lg;
+  const paddingH = spacing.lg;
 
   return (
     <View style={{ backgroundColor: colors.pageBackground }}>
@@ -59,7 +59,12 @@ export function BudgetGroupHeader({
           <Text
             variant="bodySm"
             color={colors.textMuted}
-            style={{ width: BUDGET_COLUMNS.budgeted, textAlign: "right", fontWeight: "700" }}
+            style={{
+              width: BUDGET_COLUMNS.budgeted,
+              textAlign: "right",
+              marginLeft: 10,
+              fontWeight: "700",
+            }}
           >
             {t("columnBudgeted")}
           </Text>
@@ -69,9 +74,9 @@ export function BudgetGroupHeader({
           color={colors.textMuted}
           style={{
             width: BUDGET_COLUMNS.available,
-            textAlign: "center",
+            textAlign: "right",
+            marginLeft: 6,
             fontWeight: "700",
-            paddingLeft: spacing.sm,
           }}
         >
           {t("columnAvailable")}
@@ -85,13 +90,13 @@ export function BudgetGroupHeader({
           paddingHorizontal: paddingH,
           paddingTop: spacing.xs,
           paddingBottom: spacing.md,
-          gap: 6,
         }}
         onPress={onToggle}
       >
         <AnimatedView
           animate={{ rotate: isCollapsed ? -90 : 0 }}
           transition={{ type: "timing", duration: 250, easing: "easeInOut" }}
+          style={{ marginRight: 6 }}
         >
           <Icon name="chevronDown" size={14} color={colors.textMuted} />
         </AnimatedView>
@@ -107,18 +112,26 @@ export function BudgetGroupHeader({
           <AnimatedView
             animate={{ opacity: showBudgetedColumn || isCollapsed ? 1 : 0 }}
             transition={{ type: "timing", duration: 200, easing: "easeInOut" }}
-            style={{ width: BUDGET_COLUMNS.budgeted, alignItems: "flex-end" }}
+            style={{ width: BUDGET_COLUMNS.budgeted, alignItems: "flex-end", marginLeft: 10 }}
           >
             <Amount
               value={budgeted}
               variant="caption"
               color={budgeted !== 0 ? colors.textSecondary : colors.textMuted}
               weight="600"
+              numberOfLines={1}
+              style={{ fontVariant: ["tabular-nums"] }}
             />
           </AnimatedView>
         )}
-        <View style={{ width: BUDGET_COLUMNS.available, alignItems: "center" }}>
-          <Amount value={balanceValue} variant="caption" color={balanceColor} weight="600" />
+        <View style={{ width: BUDGET_COLUMNS.available, alignItems: "flex-end", marginLeft: 6 }}>
+          <Amount
+            value={balanceValue}
+            variant="caption"
+            color={balanceColor}
+            weight="600"
+            style={{ fontVariant: ["tabular-nums"] }}
+          />
         </View>
       </Pressable>
     </View>

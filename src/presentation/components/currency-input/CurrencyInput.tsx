@@ -10,11 +10,9 @@ import {
 import * as Haptics from "expo-haptics";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Text } from "../atoms/Text";
-import { CurrencySymbol } from "../atoms/CurrencySymbol";
 import { KeyboardToolbar } from "../molecules/KeyboardToolbar";
 import { MAX_CENTS, formatCents, formatExpression } from "../../../lib/currency";
 import { withOpacity } from "../../../lib/colors";
-import { formatAmountParts } from "../../../lib/format";
 import { useCurrencyInput } from "./useCurrencyInput";
 import { CalculatorPill } from "./CalculatorPill";
 import type { Theme } from "../../../theme";
@@ -162,43 +160,14 @@ export function CurrencyInput({
         accessibilityHint="Tap to edit amount"
       >
         <View style={styles.display}>
-          {!ci.expressionMode &&
-            (() => {
-              const parts = formatAmountParts(value, false);
-              const fontSize = compact ? 20 : 32;
-              return (
-                <>
-                  <Text style={[styles.prefix, { color: amountColor }, compactOverride]}>
-                    {prefix}
-                  </Text>
-                  {parts.svgSymbol && parts.position === "before" && (
-                    <>
-                      <CurrencySymbol
-                        symbol={parts.symbol}
-                        svgSymbol={parts.svgSymbol}
-                        fontSize={fontSize}
-                        color={amountColor}
-                      />
-                      {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
-                    </>
-                  )}
-                  <Text style={[styles.amount, { color: amountColor }, compactOverride]}>
-                    {parts.svgSymbol ? parts.number : formatCents(value)}
-                  </Text>
-                  {parts.svgSymbol && parts.position === "after" && (
-                    <>
-                      {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
-                      <CurrencySymbol
-                        symbol={parts.symbol}
-                        svgSymbol={parts.svgSymbol}
-                        fontSize={fontSize}
-                        color={amountColor}
-                      />
-                    </>
-                  )}
-                </>
-              );
-            })()}
+          {!ci.expressionMode && (
+            <>
+              <Text style={[styles.prefix, { color: amountColor }, compactOverride]}>{prefix}</Text>
+              <Text style={[styles.amount, { color: amountColor }, compactOverride]}>
+                {formatCents(value)}
+              </Text>
+            </>
+          )}
           {ci.expressionMode && (
             <Text
               style={[styles.amount, { color: theme.colors.primary }, compactOverride]}

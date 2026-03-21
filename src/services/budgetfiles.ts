@@ -442,6 +442,21 @@ export async function openBudget(budgetId: string): Promise<void> {
       budgetName: meta?.budgetName ?? "Unnamed budget",
     });
     clearSwitchingFlag();
+
+    // Notify all mounted liveQueries to re-fetch from the new DB
+    emit({
+      type: "applied",
+      tables: [
+        "accounts",
+        "categories",
+        "category_groups",
+        "transactions",
+        "payees",
+        "rules",
+        "schedules",
+        "tags",
+      ],
+    });
     lap("TOTAL — UI visible now");
 
     // 11. Background sync (non-blocking) — reactive liveQuery updates UI when done

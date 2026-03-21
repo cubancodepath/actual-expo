@@ -431,28 +431,34 @@ export async function openBudget(budgetId: string): Promise<void> {
     });
     clearSwitchingFlag();
 
-    // Notify all mounted liveQueries to re-fetch from the new DB
-    emit({
-      type: "applied",
-      tables: [
-        "accounts",
-        "categories",
-        "category_groups",
-        "transactions",
-        "payees",
-        "rules",
-        "schedules",
-        "tags",
-      ],
-    });
     lap("TOTAL — UI visible now");
 
-    // 11. Background sync (non-blocking) — reactive liveQuery updates UI when done
-    if (meta?.cloudFileId && meta?.groupId) {
-      fullSync({ force: true }).catch((e) => {
-        if (__DEV__) console.warn("[openBudget] background sync failed:", e);
+    // Delay emit + sync to let React finish the mount cycle triggered by
+    // activeBudgetId. Without this, EaseView receives updateProps while
+    // native views are being torn down → SIGSEGV in updateProps:oldProps:.
+    setTimeout(() => {
+      // Notify all mounted liveQueries to re-fetch from the new DB
+      emit({
+        type: "applied",
+        tables: [
+          "accounts",
+          "categories",
+          "category_groups",
+          "transactions",
+          "payees",
+          "rules",
+          "schedules",
+          "tags",
+        ],
       });
-    }
+
+      // Background sync (non-blocking) — reactive liveQuery updates UI when done
+      if (meta?.cloudFileId && meta?.groupId) {
+        fullSync({ force: true }).catch((e) => {
+          if (__DEV__) console.warn("[openBudget] background sync failed:", e);
+        });
+      }
+    }, 200);
   } catch (error) {
     // Cleanup on failure (upstream pattern: closeBudget on error)
     await closeBudget().catch(() => {});

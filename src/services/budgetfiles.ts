@@ -395,6 +395,24 @@ export async function openBudget(budgetId: string): Promise<void> {
     lap("repairSync + resetClock");
   }
 
+  // Diagnostic: check what's actually in the DB
+  if (__DEV__) {
+    const { first: firstRow } = await import("../db");
+    const msgCount = await firstRow<{ cnt: number }>("SELECT COUNT(*) as cnt FROM messages_crdt");
+    const catCount = await firstRow<{ cnt: number }>(
+      "SELECT COUNT(*) as cnt FROM categories WHERE tombstone = 0",
+    );
+    const acctCount = await firstRow<{ cnt: number }>(
+      "SELECT COUNT(*) as cnt FROM accounts WHERE tombstone = 0",
+    );
+    const txCount = await firstRow<{ cnt: number }>(
+      "SELECT COUNT(*) as cnt FROM transactions WHERE tombstone = 0",
+    );
+    console.log(
+      `[openBudget] DB state: messages=${msgCount?.cnt ?? 0}, categories=${catCount?.cnt ?? 0}, accounts=${acctCount?.cnt ?? 0}, transactions=${txCount?.cnt ?? 0}`,
+    );
+  }
+
   // Pre-fetch core queries while splash screen is visible.
   const { executeQuery } = await import("../queries/execute");
   const { q } = await import("../queries/query");

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import { ActivityIndicator, RefreshControl, ScrollView, View } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -12,10 +12,13 @@ import {
   ErrorBanner,
   EmptyState,
   BudgetFileRow,
+  BudgetOpeningOverlay,
 } from "@/presentation/components";
 import { useBudgetFiles, fileKey } from "@/presentation/hooks/useBudgetFiles";
 import type { ReconciledBudgetFile } from "@/services/budgetfiles";
 import type { Theme } from "@/theme";
+
+type SwitchPhase = "downloading" | "opening" | null;
 
 export default function ChangeBudgetScreen() {
   const router = useRouter();
@@ -25,6 +28,7 @@ export default function ChangeBudgetScreen() {
   const insets = useSafeAreaInsets();
   const { activeBudgetId } = usePrefsStore();
   const [switchingName, setSwitchingName] = useState<string | null>(null);
+  const [switchPhase, setSwitchPhase] = useState<SwitchPhase>(null);
   const {
     localFiles,
     remoteFiles,
@@ -44,17 +48,25 @@ export default function ChangeBudgetScreen() {
       return;
     }
     setSwitchingName(file.name);
+    setSwitchPhase(file.state === "remote" ? "downloading" : "opening");
     try {
       await selectFile(file);
       router.dismissAll();
     } catch {
       setSwitchingName(null);
-      // Error already set in hook
+      setSwitchPhase(null);
     }
   }
 
   const hasFiles = localFiles.length > 0 || remoteFiles.length > 0;
   const isSwitching = selecting !== null;
+
+  const phaseLabel =
+    switchPhase === "downloading"
+      ? t("budget.downloading")
+      : switchPhase === "opening"
+        ? t("budget.opening")
+        : t("budget.opening");
 
   return (
     <>
@@ -96,8 +108,8 @@ export default function ChangeBudgetScreen() {
                     <BudgetFileRow
                       key={fileKey(file)}
                       file={file}
-                      isActive={file.localId === activeBudgetId}
-                      isSelecting={selecting === fileKey(file)}
+                      isActive={!isSwitching && file.localId === activeBudgetId}
+                      isSelecting={false}
                       onPress={() => handleSelect(file)}
                       showSeparator={index < localFiles.length - 1}
                     />
@@ -117,7 +129,7 @@ export default function ChangeBudgetScreen() {
                     <BudgetFileRow
                       key={fileKey(file)}
                       file={file}
-                      isSelecting={selecting === fileKey(file)}
+                      isSelecting={false}
                       onPress={() => handleSelect(file)}
                       showSeparator={index < remoteFiles.length - 1}
                     />
@@ -151,28 +163,11 @@ export default function ChangeBudgetScreen() {
         </>
       )}
 
-      {/* Blocking overlay during budget switch */}
-      {isSwitching && (
-        <View style={styles.switchingOverlay} pointerEvents="box-only">
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text
-            variant="bodyLg"
-            color={colors.textPrimary}
-            style={{ marginTop: spacing.md, textAlign: "center" }}
-          >
-            {t("budget.opening")}
-          </Text>
-          {switchingName && (
-            <Text
-              variant="bodySm"
-              color={colors.textMuted}
-              style={{ marginTop: spacing.xs, textAlign: "center" }}
-            >
-              {switchingName}
-            </Text>
-          )}
-        </View>
-      )}
+      <BudgetOpeningOverlay
+        visible={isSwitching}
+        phase={switchPhase ?? "opening"}
+        budgetName={switchingName}
+      />
     </>
   );
 }
@@ -191,12 +186,5 @@ const createStyles = (theme: Theme) => ({
     paddingVertical: theme.spacing.xl,
     alignItems: "center" as const,
     gap: theme.spacing.md,
-  },
-  switchingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: theme.colors.pageBackground,
-    justifyContent: "center" as const,
-    alignItems: "center" as const,
-    zIndex: 100,
   },
 });

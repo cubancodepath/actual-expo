@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -23,6 +23,7 @@ import {
   ErrorBanner,
   EmptyState,
   BudgetFileRow,
+  BudgetOpeningOverlay,
   SwipeableRow,
 } from "@/presentation/components";
 import { useBudgetFiles, fileKey } from "@/presentation/hooks/useBudgetFiles";
@@ -56,6 +57,9 @@ export default function FilesScreen() {
     dismissError,
   } = useBudgetFiles();
 
+  const [switchingName, setSwitchingName] = useState<string | null>(null);
+  const [switchPhase, setSwitchPhase] = useState<"downloading" | "opening" | null>(null);
+
   const { showActions } = useFileActionSheet({
     uploadFile,
     deleteFile,
@@ -76,11 +80,15 @@ export default function FilesScreen() {
   const hasDetached = localFiles.some((f) => f.state === "detached");
 
   async function handleSelect(file: ReconciledBudgetFile) {
+    setSwitchingName(file.name);
+    setSwitchPhase(file.state === "remote" ? "downloading" : "opening");
     try {
       await selectFile(file);
       // Navigation is handled automatically by Stack.Protected guard
       // when isConfigured changes to true in openBudget → setPrefs
     } catch {
+      setSwitchingName(null);
+      setSwitchPhase(null);
       // Error already set in hook
     }
   }
@@ -160,7 +168,7 @@ export default function FilesScreen() {
                     <Banner message={t("detachedHint")} variant="warning" />
                   </View>
                 )}
-                <View>
+                <Card style={styles.listCard}>
                   {localFiles.map((file, index) => (
                     <SwipeableRow
                       key={fileKey(file)}
@@ -178,11 +186,10 @@ export default function FilesScreen() {
                         onPress={() => handleSelect(file)}
                         onActionPress={() => showActions(file)}
                         showSeparator={index < localFiles.length - 1}
-                        style={styles.fileRow}
                       />
                     </SwipeableRow>
                   ))}
-                </View>
+                </Card>
               </>
             )}
 
@@ -192,7 +199,7 @@ export default function FilesScreen() {
                   title={t("availableOnServer")}
                   style={{ marginTop: spacing.lg, paddingHorizontal: 0 }}
                 />
-                <View>
+                <Card style={styles.listCard}>
                   {remoteFiles.map((file, index) => (
                     <SwipeableRow
                       key={fileKey(file)}
@@ -206,11 +213,10 @@ export default function FilesScreen() {
                         onPress={() => handleSelect(file)}
                         onActionPress={() => showActions(file)}
                         showSeparator={index < remoteFiles.length - 1}
-                        style={styles.fileRow}
                       />
                     </SwipeableRow>
                   ))}
-                </View>
+                </Card>
               </>
             )}
           </>
@@ -225,14 +231,24 @@ export default function FilesScreen() {
         )}
       </ScrollView>
 
-      <Stack.Toolbar placement="left">
-        <Stack.Toolbar.Button onPress={handleLogout}>{t("logOut")}</Stack.Toolbar.Button>
-      </Stack.Toolbar>
-      <Stack.Toolbar placement="right">
-        <Stack.Toolbar.Button onPress={() => router.push("/(files)/new-budget")}>
-          {t("new")}
-        </Stack.Toolbar.Button>
-      </Stack.Toolbar>
+      {!selecting && (
+        <>
+          <Stack.Toolbar placement="left">
+            <Stack.Toolbar.Button onPress={handleLogout}>{t("logOut")}</Stack.Toolbar.Button>
+          </Stack.Toolbar>
+          <Stack.Toolbar placement="right">
+            <Stack.Toolbar.Button onPress={() => router.push("/(files)/new-budget")}>
+              {t("new")}
+            </Stack.Toolbar.Button>
+          </Stack.Toolbar>
+        </>
+      )}
+
+      <BudgetOpeningOverlay
+        visible={selecting !== null}
+        phase={switchPhase ?? "opening"}
+        budgetName={switchingName}
+      />
     </>
   );
 }
@@ -270,8 +286,9 @@ const createStyles = (theme: Theme) => ({
     backgroundColor: theme.colors.pageBackground,
     paddingHorizontal: theme.spacing.lg,
   },
-  fileRow: {
-    backgroundColor: theme.colors.cardBackground,
+  listCard: {
+    padding: 0,
+    overflow: "hidden" as const,
   },
   loadingRow: {
     paddingVertical: theme.spacing.xl,

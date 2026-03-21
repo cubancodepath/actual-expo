@@ -164,7 +164,8 @@
     "noBudgetsDescription": "There are no budget files on this server or on this device.",
     "createNewBudget": "Create New Budget",
     "unnamedBudget": "My Budget",
-    "opening": "Opening budget…"
+    "opening": "Opening budget…",
+    "downloading": "Downloading budget…"
   },
 
   "encryption": {

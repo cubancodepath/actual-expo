@@ -6,7 +6,7 @@
  */
 
 import { getClock, merkle, Timestamp } from "../crdt";
-import { run, runQuery, first, transaction } from "../db";
+import { run, runQuery, runQuerySync, first, transaction } from "../db";
 import type { MessagesCrdtRow } from "../db/types";
 import type { SyncMessage } from "./encoder";
 import type { OldData } from "./undo";
@@ -60,10 +60,13 @@ function sequential<T extends (...args: any[]) => Promise<any>>(fn: T): T {
  * - Match exists with different timestamp → message is old (skip DB write, still update merkle)
  * - Exact timestamp match → duplicate (skip entirely)
  */
-async function compareMessages(messages: SyncMessage[]): Promise<SyncMessage[]> {
+// Synchronous — uses runQuerySync to match upstream's better-sqlite3 pattern.
+// expo-sqlite supports sync queries, eliminating async marshaling overhead
+// that made this function slow with 1000+ messages.
+function compareMessages(messages: SyncMessage[]): SyncMessage[] {
   const result: SyncMessage[] = [];
   for (const msg of messages) {
-    const rows = await runQuery<{ timestamp: string }>(
+    const rows = runQuerySync<{ timestamp: string }>(
       "SELECT timestamp FROM messages_crdt WHERE dataset = ? AND row = ? AND column = ? AND timestamp >= ?",
       [msg.dataset, msg.row, msg.column, msg.timestamp.toString()],
     );
@@ -72,7 +75,6 @@ async function compareMessages(messages: SyncMessage[]): Promise<SyncMessage[]> 
     } else if (rows[0].timestamp !== msg.timestamp.toString()) {
       result.push({ ...msg, old: true });
     }
-    // Exact match → duplicate, skip entirely
   }
   return result;
 }
@@ -83,7 +85,7 @@ export const applyMessages = sequential(async function applyMessages(
   if (messages.length === 0) return {};
 
   // Deduplicate against existing CRDT log (upstream pattern)
-  const deduped = await compareMessages(messages);
+  const deduped = compareMessages(messages);
   if (deduped.length === 0) return {};
 
   // Sort by timestamp for deterministic application
@@ -105,8 +107,7 @@ export const applyMessages = sequential(async function applyMessages(
   for (const [dataset, rowIds] of rowsToFetch) {
     const ids = [...rowIds];
     // Batch fetch: SELECT ... WHERE id IN (?, ?, ...)
-    // Chunk size 100 — matches upstream (Safari stack overflow workaround)
-    const CHUNK_SIZE = 100;
+    const CHUNK_SIZE = 500;
     for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
       const chunk = ids.slice(i, i + CHUNK_SIZE);
       const placeholders = chunk.map(() => "?").join(",");

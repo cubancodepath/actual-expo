@@ -46,8 +46,11 @@ async function _fullSync(
 
   try {
     // On retry, use merkle diff time as since (upstream pattern).
-    // Default to 5 minutes ago on first sync (not epoch — upstream pattern).
-    const defaultSince = new Timestamp(Date.now() - 5 * 60 * 1000, 0, "0").toString();
+    // Default to 5 minutes ago for returning users (upstream pattern).
+    // On first sync (no lastSyncedTimestamp), use epoch to get all messages.
+    const defaultSince = prefs.lastSyncedTimestamp
+      ? new Timestamp(Date.now() - 5 * 60 * 1000, 0, "0").toString()
+      : "1970-01-01T00:00:00.000Z-0000-0000000000000000";
     const sinceStr =
       sinceDiffTime != null
         ? new Timestamp(sinceDiffTime, 0, "0").toString()

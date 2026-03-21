@@ -141,7 +141,7 @@ function SectionHeaderLabel({
 
   return (
     <HStack alignment="bottom">
-      <SUIText modifiers={[font({ size: 11, weight: "semibold" }), lineLimit(1)]}>
+      <SUIText modifiers={[font({ size: 13, weight: "semibold" }), lineLimit(1)]}>
         {group.name}
       </SUIText>
       <Spacer />
@@ -159,7 +159,7 @@ function SectionHeaderLabel({
           </SUIText>
           <SUIText
             modifiers={[
-              font({ size: amountFontSize, weight: "semibold" }),
+              font({ size: amountFontSize + 1, weight: "bold" }),
               monospacedDigit(),
               lineLimit(1),
               foregroundStyle(budgeted !== 0 ? colors.textSecondary : colors.textMuted),
@@ -182,7 +182,7 @@ function SectionHeaderLabel({
         </SUIText>
         <SUIText
           modifiers={[
-            font({ size: amountFontSize, weight: "semibold" }),
+            font({ size: amountFontSize + 1, weight: "bold" }),
             monospacedDigit(),
             lineLimit(1),
             foregroundStyle(balanceColor),
@@ -254,7 +254,7 @@ function CategoryRowNative({
   if (isIncome) {
     return (
       <HStack modifiers={[padding({ trailing: 16 }), listRowBackground(colors.cardBackground)]}>
-        <SUIText modifiers={[font({ size: 14 })]}>{catName}</SUIText>
+        <SUIText modifiers={[font({ size: 14, weight: "medium" })]}>{catName}</SUIText>
         <Spacer />
         <SUIText
           modifiers={[
@@ -324,7 +324,9 @@ function CategoryRowNative({
       ]}
     >
       <HStack>
-        <SUIText modifiers={[font({ size: 14 }), lineLimit(1)]}>{catName}</SUIText>
+        <SUIText modifiers={[font({ size: 14, weight: "medium" }), lineLimit(1)]}>
+          {catName}
+        </SUIText>
         <Spacer />
         {
           <VStack alignment="trailing" modifiers={[opacity(!showBar || anyEditing ? 1 : 0)]}>

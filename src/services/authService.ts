@@ -27,7 +27,12 @@ export async function getBootstrapInfo(serverUrl: string): Promise<BootstrapInfo
   if (!res.ok) {
     throw new PostError("network-failure");
   }
-  const json = await res.json();
+  let json: any;
+  try {
+    json = await res.json();
+  } catch {
+    throw new PostError("parse-json");
+  }
   const data = json?.data ?? json;
   const bootstrapped: boolean = data?.bootstrapped ?? true;
 
@@ -68,7 +73,12 @@ export async function login(serverUrl: string, password: string): Promise<string
     throw new PostError("internal");
   }
 
-  const json = await res.json();
+  let json: any;
+  try {
+    json = await res.json();
+  } catch {
+    throw new PostError("parse-json");
+  }
   const token: string = json?.data?.token ?? json?.token;
   if (!token) throw new PostError("internal");
   return token;
@@ -97,7 +107,12 @@ export async function initiateOpenIdLogin(serverUrl: string, returnUrl: string):
     throw new PostError("internal");
   }
 
-  const json = await res.json();
+  let json: any;
+  try {
+    json = await res.json();
+  } catch {
+    throw new PostError("parse-json");
+  }
   const authUrl: string = json?.data?.redirectUrl ?? json?.data?.returnUrl ?? json?.redirectUrl;
   if (!authUrl) throw new PostError("internal");
   return authUrl;
@@ -120,7 +135,12 @@ export async function listFiles(serverUrl: string, token: string): Promise<Budge
     throw new PostError("internal");
   }
 
-  const json = await res.json();
+  let json: any;
+  try {
+    json = await res.json();
+  } catch {
+    throw new PostError("parse-json");
+  }
   const files: BudgetFile[] = (
     Array.isArray(json?.data) ? json.data : (json?.data?.files ?? json?.files ?? [])
   ).map((f: Record<string, unknown>) => ({

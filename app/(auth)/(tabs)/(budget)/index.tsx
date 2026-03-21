@@ -210,6 +210,7 @@ function CategoryRowNative({
   expression,
   operandCents,
   catGoalDef,
+  month,
   showBar = false,
   anyEditing = false,
   onPress,
@@ -224,6 +225,7 @@ function CategoryRowNative({
   expression?: string;
   operandCents?: number;
   catGoalDef?: string | null;
+  month: string;
   showBar?: boolean;
   anyEditing?: boolean;
   onPress: (catId: string, budgeted: number) => void;
@@ -271,14 +273,15 @@ function CategoryRowNative({
   }
 
   // Progress bar computation
-  const goalInfo = catGoalDef ? inferGoalFromDef(catGoalDef) : null;
+  const carryIn = balance - budgeted - spent;
+  const goalInfo = catGoalDef ? inferGoalFromDef(catGoalDef, month, carryIn) : null;
   const fullCat = {
     id: catId,
     name: catName,
     budgeted,
     spent,
     balance,
-    carryIn: 0,
+    carryIn,
     carryover,
     goal: goalInfo?.goal ?? null,
     longGoal: goalInfo?.longGoal ?? false,
@@ -750,6 +753,7 @@ export default function BudgetScreen() {
                           expression={editingCatId === cat.id ? expr.expression : ""}
                           operandCents={editingCatId === cat.id ? expr.operandCents : 0}
                           catGoalDef={cat.goalDef}
+                          month={month}
                           showBar={goalsEnabled && showProgressBars}
                           anyEditing={editingCatId !== null}
                           onPress={handleRowPress}

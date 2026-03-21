@@ -73,6 +73,8 @@ import { OverspentPill } from "@/presentation/components/budget/OverspentPill";
 import { UnclearedPill } from "@/presentation/components/transaction/UnclearedPill";
 import { getUncategorizedStats } from "@/transactions";
 import { Text } from "@/presentation/components/atoms/Text";
+import { SText, SAmount, SPill } from "@/presentation/swift-ui/atoms";
+import { SSectionHeader } from "@/presentation/swift-ui/molecules";
 import { usePrefsStore } from "@/stores/prefsStore";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { BudgetListSkeleton } from "@/presentation/components/skeletons/BudgetListSkeleton";
@@ -100,97 +102,6 @@ const COL_BUDGETED_SYM = 85;
 const COL_AVAILABLE_SYM = 90;
 const COL_BUDGETED_PLAIN = 100;
 const COL_AVAILABLE_PLAIN = 105;
-
-// ---------------------------------------------------------------------------
-// Section header — native SwiftUI text (no RN views in header)
-// ---------------------------------------------------------------------------
-
-function SectionHeaderLabel({
-  group,
-  sheet,
-  showBar = false,
-  anyEditing = false,
-}: {
-  group: { id: string; name: string; is_income: boolean };
-  sheet: string;
-  showBar?: boolean;
-  anyEditing?: boolean;
-}) {
-  const { colors } = useTheme();
-  usePrivacyStore();
-  const [currencyCode] = useSyncedPref("defaultCurrencyCode");
-  const hasSym = !!currencyCode;
-  const amountFontSize = hasSym ? 10 : 12;
-  const COL_BUDGETED = hasSym ? COL_BUDGETED_SYM : COL_BUDGETED_PLAIN;
-  const COL_AVAILABLE = hasSym ? COL_AVAILABLE_SYM : COL_AVAILABLE_PLAIN;
-  const budgeted = useSheetValueNumber(sheet, envelopeBudget.groupBudgeted(group.id));
-  const spent = useSheetValueNumber(sheet, envelopeBudget.groupSpent(group.id));
-  const balance = useSheetValueNumber(sheet, envelopeBudget.groupBalance(group.id));
-  const balanceValue = group.is_income ? spent : balance;
-
-  const balanceColor = group.is_income
-    ? colors.positive
-    : balance < 0
-      ? colors.negative
-      : balance > 0
-        ? colors.positive
-        : colors.textMuted;
-
-  return (
-    <HStack alignment="bottom">
-      <SUIText modifiers={[font({ size: 13, weight: "semibold" }), lineLimit(1)]}>
-        {group.name}
-      </SUIText>
-      <Spacer />
-      {(!showBar || anyEditing) && !group.is_income && (
-        <VStack
-          alignment="trailing"
-          spacing={2}
-          modifiers={[
-            frame({ width: COL_BUDGETED, alignment: "trailing" }),
-            padding({ trailing: -10 }),
-          ]}
-        >
-          <SUIText modifiers={[font({ size: 10 }), foregroundStyle(colors.textMuted)]}>
-            Budgeted
-          </SUIText>
-          <SUIText
-            modifiers={[
-              font({ size: amountFontSize + 1, weight: "bold" }),
-              monospacedDigit(),
-              lineLimit(1),
-              foregroundStyle(budgeted !== 0 ? colors.textSecondary : colors.textMuted),
-            ]}
-          >
-            {formatPrivacyAware(budgeted)}
-          </SUIText>
-        </VStack>
-      )}
-      <VStack
-        alignment="trailing"
-        spacing={2}
-        modifiers={[
-          frame({ width: COL_AVAILABLE, alignment: "trailing" }),
-          padding({ leading: 6 }),
-        ]}
-      >
-        <SUIText modifiers={[font({ size: 10 }), foregroundStyle(colors.textMuted)]}>
-          Available
-        </SUIText>
-        <SUIText
-          modifiers={[
-            font({ size: amountFontSize + 1, weight: "bold" }),
-            monospacedDigit(),
-            lineLimit(1),
-            foregroundStyle(balanceColor),
-          ]}
-        >
-          {formatPrivacyAware(balanceValue)}
-        </SUIText>
-      </VStack>
-    </HStack>
-  );
-}
 
 // ---------------------------------------------------------------------------
 // Category row — native SwiftUI (simple: name + available pill)
@@ -253,18 +164,17 @@ function CategoryRowNative({
   if (isIncome) {
     return (
       <HStack modifiers={[padding({ trailing: 16 }), listRowBackground(colors.cardBackground)]}>
-        <SUIText modifiers={[font({ size: 14, weight: "medium" })]}>{catName}</SUIText>
+        <SText variant="bodyMedium" lines={1}>
+          {catName}
+        </SText>
         <Spacer />
-        <SUIText
-          modifiers={[
-            font({ size: 14, weight: "medium" }),
-            monospacedDigit(),
-            foregroundStyle(colors.positive),
-            frame({ width: COL_AVAILABLE, alignment: "trailing" }),
-          ]}
-        >
-          {formatPrivacyAware(spent)}
-        </SUIText>
+        <SAmount
+          value={spent}
+          variant="bodyMedium"
+          color={colors.positive}
+          lines={1}
+          modifiers={[frame({ width: COL_AVAILABLE, alignment: "trailing" })]}
+        />
       </HStack>
     );
   }
@@ -324,49 +234,32 @@ function CategoryRowNative({
       ]}
     >
       <HStack>
-        <SUIText modifiers={[font({ size: 14, weight: "medium" }), lineLimit(1)]}>
+        <SText variant="bodyMedium" lines={1}>
           {catName}
-        </SUIText>
+        </SText>
         <Spacer />
         {
           <VStack alignment="trailing" modifiers={[opacity(!showBar || anyEditing ? 1 : 0)]}>
-            <SUIText
-              modifiers={[
-                font({ size: amountFontSize }),
-                monospacedDigit(),
-                lineLimit(1),
-                foregroundStyle(showExpression ? colors.textMuted : budgetedColor),
-              ]}
+            <SText
+              variant={hasSym ? "captionSm" : "caption"}
+              color={showExpression ? colors.textMuted : budgetedColor}
+              tabularNums
+              lines={1}
             >
               {baseText}
-            </SUIText>
+            </SText>
             {showExpression && (
-              <SUIText
-                modifiers={[
-                  font({ size: amountFontSize, weight: "semibold" }),
-                  monospacedDigit(),
-                  foregroundStyle(colors.primary),
-                ]}
-              >
+              <SText variant={hasSym ? "captionSm" : "caption"} color={colors.primary} tabularNums>
                 {operandText}
-              </SUIText>
+              </SText>
             )}
           </VStack>
         }
-        <SUIText
-          modifiers={[
-            font({ size: amountFontSize, weight: "bold" }),
-            monospacedDigit(),
-            lineLimit(1),
-            foregroundStyle(balanceColor),
-            padding({ horizontal: 10, vertical: 3 }),
-            background(pillBg),
-            cornerRadius(100),
-            frame({ width: COL_AVAILABLE, alignment: "trailing" }),
-          ]}
-        >
-          {formatPrivacyAware(balance)}
-        </SUIText>
+        <SPill
+          value={balance}
+          variant={hasSym ? "captionSm" : "caption"}
+          modifiers={[frame({ width: COL_AVAILABLE, alignment: "trailing" })]}
+        />
       </HStack>
       {showBar && bar && (
         <StripedProgressBar
@@ -375,21 +268,15 @@ function CategoryRowNative({
           color={barColor}
           overspent={bar.overspent}
           striped={bar.striped}
-          barHeight={5}
+          barHeight={6}
           modifiers={[padding({ top: 6 })]}
         />
       )}
       {showBar && bar && progressLabel !== "" && (
         <HStack>
-          <SUIText
-            modifiers={[
-              font({ size: 11 }),
-              foregroundStyle(colors.textMuted),
-              padding({ top: 16 }),
-            ]}
-          >
+          <SText variant="captionSm" color={colors.textMuted} modifiers={[padding({ top: 8 })]}>
             {progressLabel}
-          </SUIText>
+          </SText>
           <Spacer />
         </HStack>
       )}
@@ -725,7 +612,7 @@ export default function BudgetScreen() {
                     }
                   }}
                   header={
-                    <SectionHeaderLabel
+                    <SSectionHeader
                       group={section.group}
                       sheet={sheet}
                       showBar={goalsEnabled && showProgressBars}

@@ -1,0 +1,1 @@
+export { SSectionHeader } from "./SSectionHeader";

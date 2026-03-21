@@ -1,6 +1,8 @@
 /**
  * Core CRDT message application — writes messages to SQLite and updates
  * the in-memory Merkle trie. No network, no scheduling, no store refresh.
+ *
+ * Aligned with upstream Actual Budget (loot-core/src/server/sync/index.ts).
  */
 
 import { getClock, merkle, Timestamp } from "../crdt";
@@ -33,11 +35,59 @@ const ALLOWED_TABLES = new Set([
   "dashboard_pages",
 ]);
 
-export async function applyMessages(messages: SyncMessage[]): Promise<OldData> {
+/**
+ * Sequential execution guard — prevents concurrent applyMessages calls
+ * from corrupting the merkle trie or DB. Upstream wraps applyMessages
+ * with sequential() for the same reason.
+ */
+function sequential<T extends (...args: any[]) => Promise<any>>(fn: T): T {
+  let queue = Promise.resolve() as Promise<any>;
+  return ((...args: any[]) => {
+    const p = queue.then(() => fn(...args));
+    queue = p.then(
+      () => {},
+      () => {},
+    );
+    return p;
+  }) as T;
+}
+
+/**
+ * Compare messages with existing CRDT log to deduplicate.
+ * Ported from upstream Actual Budget's compareMessages().
+ *
+ * - No match in DB → message is new (apply normally)
+ * - Match exists with different timestamp → message is old (skip DB write, still update merkle)
+ * - Exact timestamp match → duplicate (skip entirely)
+ */
+async function compareMessages(messages: SyncMessage[]): Promise<SyncMessage[]> {
+  const result: SyncMessage[] = [];
+  for (const msg of messages) {
+    const rows = await runQuery<{ timestamp: string }>(
+      "SELECT timestamp FROM messages_crdt WHERE dataset = ? AND row = ? AND column = ? AND timestamp >= ?",
+      [msg.dataset, msg.row, msg.column, msg.timestamp.toString()],
+    );
+    if (rows.length === 0) {
+      result.push(msg);
+    } else if (rows[0].timestamp !== msg.timestamp.toString()) {
+      result.push({ ...msg, old: true });
+    }
+    // Exact match → duplicate, skip entirely
+  }
+  return result;
+}
+
+export const applyMessages = sequential(async function applyMessages(
+  messages: SyncMessage[],
+): Promise<OldData> {
   if (messages.length === 0) return {};
 
+  // Deduplicate against existing CRDT log (upstream pattern)
+  const deduped = await compareMessages(messages);
+  if (deduped.length === 0) return {};
+
   // Sort by timestamp for deterministic application
-  const sorted = [...messages].sort((a, b) =>
+  const sorted = [...deduped].sort((a, b) =>
     a.timestamp.toString() < b.timestamp.toString() ? -1 : 1,
   );
 
@@ -55,8 +105,8 @@ export async function applyMessages(messages: SyncMessage[]): Promise<OldData> {
   for (const [dataset, rowIds] of rowsToFetch) {
     const ids = [...rowIds];
     // Batch fetch: SELECT ... WHERE id IN (?, ?, ...)
-    // SQLite has a limit of ~999 variables — chunk if needed
-    const CHUNK_SIZE = 500;
+    // Chunk size 100 — matches upstream (Safari stack overflow workaround)
+    const CHUNK_SIZE = 100;
     for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
       const chunk = ids.slice(i, i + CHUNK_SIZE);
       const placeholders = chunk.map(() => "?").join(",");
@@ -74,6 +124,9 @@ export async function applyMessages(messages: SyncMessage[]): Promise<OldData> {
   }
 
   await transaction(async () => {
+    // Track rows created in this batch to avoid extra SELECT (upstream pattern)
+    const added = new Set<string>();
+
     for (const msg of sorted) {
       const { dataset, row, column } = msg;
       const serialized = serializeValue(msg.value as string | number | null);
@@ -102,24 +155,21 @@ export async function applyMessages(messages: SyncMessage[]): Promise<OldData> {
         continue;
       }
 
-      // Check if row already existed (use oldData to avoid extra query)
-      const existed = oldData[dataset]?.[row] != null;
+      // Old messages (already superseded in CRDT log) skip DB writes
+      // but still get recorded in CRDT log and merkle trie below
+      if (!msg.old) {
+        const existed = oldData[dataset]?.[row] != null || added.has(dataset + row);
 
-      if (existed) {
-        await run(`UPDATE ${dataset} SET ${column} = ? WHERE id = ?`, [value, row]);
-      } else {
-        // Row may have been created by a prior message in this batch
-        const existing = await first<{ id: string }>(`SELECT id FROM ${dataset} WHERE id = ?`, [
-          row,
-        ]);
-        if (existing) {
+        if (existed) {
           await run(`UPDATE ${dataset} SET ${column} = ? WHERE id = ?`, [value, row]);
         } else {
           await run(`INSERT INTO ${dataset} (id, ${column}) VALUES (?, ?)`, [row, value]);
         }
+
+        added.add(dataset + row);
       }
 
-      // Record in CRDT log
+      // Record in CRDT log (all messages, old or new)
       await run(
         "INSERT OR IGNORE INTO messages_crdt (timestamp, dataset, row, column, value) VALUES (?, ?, ?, ?, ?)",
         [msg.timestamp.toString(), dataset, row, column, serialized],
@@ -130,9 +180,10 @@ export async function applyMessages(messages: SyncMessage[]): Promise<OldData> {
       const newMerkle = merkle.insert(clock.merkle, msg.timestamp);
       getClock().merkle = merkle.prune(newMerkle);
     }
-  });
 
-  await saveClock();
+    // Save clock atomically inside the transaction (upstream pattern)
+    await saveClock();
+  });
 
   // Apply synced metadata prefs (e.g. budgetName) to the prefs store
   if (Object.keys(prefsToSet).length > 0) {
@@ -143,7 +194,7 @@ export async function applyMessages(messages: SyncMessage[]): Promise<OldData> {
   }
 
   return oldData;
-}
+});
 
 export async function getMessagesSince(since: string): Promise<SyncMessage[]> {
   const rows = await runQuery<MessagesCrdtRow>(

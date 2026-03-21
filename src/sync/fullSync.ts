@@ -3,6 +3,8 @@
  *
  * Encodes local messages → POST /sync/sync → decodes response → applies
  * server messages → checks Merkle divergence → retries if needed.
+ *
+ * Aligned with upstream Actual Budget (loot-core/src/server/sync/index.ts).
  */
 
 import { getClock, merkle, Timestamp } from "../crdt";
@@ -13,7 +15,18 @@ import { applyMessages, getMessagesSince } from "./apply";
 import { emit } from "./syncEvents";
 import { getSyncGeneration, isSwitchingBudget, setActiveSyncPromise } from "./lifecycle";
 
-async function _fullSync(attempt = 0): Promise<void> {
+/** Normalize table names for event emission (upstream pattern) */
+function normalizeTables(datasets: string[]): string[] {
+  return [...new Set(datasets.map((d) => (d === "schedules_next_date" ? "schedules" : d)))];
+}
+
+const BUDGET_TABLES = new Set(["zero_budgets", "zero_budget_months", "transactions"]);
+
+async function _fullSync(
+  attempt = 0,
+  sinceDiffTime?: number,
+  prevDiffTime?: number | null,
+): Promise<void> {
   if (isSwitchingBudget()) return;
 
   const gen = getSyncGeneration();
@@ -29,32 +42,28 @@ async function _fullSync(attempt = 0): Promise<void> {
   }
 
   useSyncStore.getState()._setStatus("syncing");
+  emit({ type: "start", tables: [] });
 
   try {
-    const sinceStr = prefs.lastSyncedTimestamp ?? "1970-01-01T00:00:00.000Z";
+    // On retry, use merkle diff time as since (upstream pattern).
+    // Default to 5 minutes ago on first sync (not epoch — upstream pattern).
+    const defaultSince = new Timestamp(Date.now() - 5 * 60 * 1000, 0, "0").toString();
+    const sinceStr =
+      sinceDiffTime != null
+        ? new Timestamp(sinceDiffTime, 0, "0").toString()
+        : (prefs.lastSyncedTimestamp ?? defaultSince);
     const since = Timestamp.since(sinceStr);
 
     const localMessages = await getMessagesSince(since);
 
     if (__DEV__) {
-      const scheduleTables = new Set(["rules", "schedules", "schedules_next_date"]);
-      const relevant = localMessages.filter((m) => scheduleTables.has(m.dataset));
-      console.log(
-        `[fullSync] sending ${localMessages.length} local messages (${relevant.length} schedule-related)`,
-      );
-      if (relevant.length > 0) {
-        console.log(
-          "[fullSync] schedule messages to sync:",
-          relevant.map((m) => ({
-            dataset: m.dataset,
-            row: m.row.slice(0, 8),
-            column: m.column,
-          })),
-        );
-      }
+      console.log(`[fullSync] attempt ${attempt}, sending ${localMessages.length} local messages`);
     }
 
     if (gen !== getSyncGeneration()) return;
+
+    // Record clock before network request to detect local changes during sync
+    const clockBefore = getClock().timestamp.toString();
 
     const requestBytes = await encode(
       prefs.groupId,
@@ -71,8 +80,7 @@ async function _fullSync(attempt = 0): Promise<void> {
 
     // Critical guard: discard results if budget changed during network request
     if (gen !== getSyncGeneration()) {
-      if (__DEV__)
-        console.log("[fullSync] generation changed during network request — discarding results");
+      if (__DEV__) console.log("[fullSync] generation changed during network — discarding");
       return;
     }
 
@@ -81,23 +89,43 @@ async function _fullSync(attempt = 0): Promise<void> {
       prefs.encryptKeyId,
     );
 
-    if (__DEV__)
-      console.log(
-        `[fullSync] received ${serverMessages.length} messages from server (attempt ${attempt})`,
-      );
+    if (__DEV__) {
+      console.log(`[fullSync] received ${serverMessages.length} messages from server`);
+    }
+
+    // Advance local clock with server timestamps (CRITICAL — maintains HLC invariants)
+    // Upstream: receiveMessages() calls Timestamp.recv() for every message
+    try {
+      for (const msg of serverMessages) {
+        Timestamp.recv(msg.timestamp);
+      }
+    } catch (e) {
+      if (e instanceof Timestamp.ClockDriftError) {
+        throw new SyncError("clock-drift");
+      }
+      throw e;
+    }
 
     if (serverMessages.length > 0) {
       if (gen !== getSyncGeneration()) return;
       await applyMessages(serverMessages);
-      if (gen !== getSyncGeneration()) return;
-      const tables = [...new Set(serverMessages.map((m) => m.dataset))];
-      emit({ type: "success", tables });
+
+      // Recompute budget cells for server messages (upstream calls triggerBudgetChanges
+      // inside applyMessages — we call it after, same effect)
+      if (serverMessages.some((m) => BUDGET_TABLES.has(m.dataset))) {
+        const { triggerBudgetChanges } = await import("../spreadsheet/sync");
+        triggerBudgetChanges(serverMessages);
+      }
     }
 
     if (gen !== getSyncGeneration()) return;
 
-    // Persist last synced timestamp — persist middleware auto-saves to MMKV
-    const syncTimestamp = new Date().toISOString();
+    // Always emit success with affected tables so liveQuery/pagedQuery re-run
+    const tables = normalizeTables(serverMessages.map((m) => m.dataset));
+    emit({ type: "success", tables });
+
+    // Persist last synced timestamp using HLC clock (matches upstream behavior)
+    const syncTimestamp = getClock().timestamp.toString();
     prefs.setPrefs({ lastSyncedTimestamp: syncTimestamp });
 
     // Also persist to budget's metadata.json for offline access
@@ -108,11 +136,18 @@ async function _fullSync(attempt = 0): Promise<void> {
       );
     }
 
-    // Check merkle divergence — only retry if server actually sent messages
-    // (otherwise we'd loop 5 times with 0 messages, achieving nothing)
+    // Check merkle divergence — retry until trees match (upstream pattern)
     const diffTime = merkle.diff(serverMerkle as any, getClock().merkle);
-    if (diffTime !== null && serverMessages.length > 0 && attempt < 5) {
-      return fullSync(attempt + 1);
+    if (diffTime !== null) {
+      // Detect if local clock changed during sync (user made mutations) — reset counter
+      const localTimeChanged = getClock().timestamp.toString() !== clockBefore;
+      const nextAttempt = localTimeChanged ? 0 : attempt + 1;
+
+      // Stop if stuck on same diff for 10+ attempts, or hard cap at 100
+      if ((nextAttempt >= 10 && diffTime === prevDiffTime) || nextAttempt >= 100) {
+        throw new SyncError("out-of-sync");
+      }
+      return fullSync(nextAttempt, diffTime, diffTime);
     }
 
     useSyncStore.getState()._setStatus("success");
@@ -129,20 +164,37 @@ async function _fullSync(attempt = 0): Promise<void> {
 
     // Auth error — clear everything and let router redirect to login
     if (e instanceof PostError && (e.type === "unauthorized" || e.type === "token-expired")) {
+      emit({ type: "error", tables: [], subtype: "unauthorized" });
       const { closeBudget } = await import("../services/budgetfiles");
       await closeBudget().catch(() => {});
       usePrefsStore.getState().clearAll();
       return;
     }
 
-    // Handle missing encryption key gracefully (don't crash, let user re-enter password)
+    // Handle missing encryption key gracefully
     if (e instanceof SyncError && (e.meta as { isMissingKey?: boolean })?.isMissingKey) {
+      emit({ type: "error", tables: [], subtype: "decrypt-failure" });
+      useSyncStore.getState()._setError(toAppError(e));
+      return;
+    }
+
+    // Clock drift
+    if (e instanceof SyncError && e.type === "clock-drift") {
+      emit({ type: "error", tables: [], subtype: "clock-drift" });
+      useSyncStore.getState()._setError(toAppError(e));
+      return;
+    }
+
+    // Out of sync
+    if (e instanceof SyncError && e.type === "out-of-sync") {
+      emit({ type: "error", tables: [], subtype: "out-of-sync" });
       useSyncStore.getState()._setError(toAppError(e));
       return;
     }
 
     // Network errors → silent (local-first: user keeps working, sync retries on foreground)
     if (e instanceof PostError && e.type === "network-failure") {
+      emit({ type: "error", tables: [], subtype: "network" });
       useSyncStore.getState()._setStatus("idle");
       return;
     }
@@ -154,7 +206,8 @@ async function _fullSync(attempt = 0): Promise<void> {
       return;
     }
 
-    // Sync integrity errors → show to user (out-of-sync, encryption, schema)
+    // Sync integrity errors → show to user
+    emit({ type: "error", tables: [], subtype: "unknown" });
     useSyncStore.getState()._setError(toAppError(e));
     throw e;
   }
@@ -164,8 +217,14 @@ async function _fullSync(attempt = 0): Promise<void> {
  * Public wrapper that tracks the active sync promise so budget-switch
  * can wait for it to settle before closing the database.
  */
-export function fullSync(attempt = 0): Promise<void> {
-  const p = _fullSync(attempt).finally(() => setActiveSyncPromise(null));
+export function fullSync(
+  attempt = 0,
+  sinceDiffTime?: number,
+  prevDiffTime?: number | null,
+): Promise<void> {
+  const p = _fullSync(attempt, sinceDiffTime, prevDiffTime).finally(() =>
+    setActiveSyncPromise(null),
+  );
   setActiveSyncPromise(p);
   return p;
 }

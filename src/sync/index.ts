@@ -24,8 +24,6 @@ export {
   isSwitchingBudget,
   waitForSyncToSettle,
 } from "./lifecycle";
-export { refreshAllRegisteredStores as refreshAllStores } from "../stores/storeRegistry";
-
 // resetSyncState needs to reset batch state, so we wire the two modules together
 import { resetBatchState } from "./batch";
 import { resetSyncState as _resetSyncState } from "./lifecycle";

@@ -3,7 +3,7 @@ import { batchMessages, sendMessages } from "../sync";
 import { Timestamp } from "../crdt";
 import { createAccount } from "../accounts";
 import { createCategoryGroup, createCategory } from "../categories";
-import { refreshAllRegisteredStores } from "../stores/storeRegistry";
+import { emit } from "../sync/syncEvents";
 
 // ---------------------------------------------------------------------------
 // Default category data — matches what Actual Budget server bundles
@@ -112,7 +112,19 @@ export async function seedLocalBudget(opts: {
   // Seed default dashboard (required by desktop app — without this, dashboard is stuck loading)
   await seedDashboard();
 
-  await refreshAllRegisteredStores();
+  // Notify all listeners to refresh from DB
+  emit({
+    type: "applied",
+    tables: [
+      "accounts",
+      "categories",
+      "category_groups",
+      "transactions",
+      "payees",
+      "zero_budgets",
+      "dashboard",
+    ],
+  });
 }
 
 // ---------------------------------------------------------------------------

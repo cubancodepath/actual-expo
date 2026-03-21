@@ -16,6 +16,10 @@ npm run fmt            # Format with oxfmt
 npm run fmt:check      # Check formatting without writing
 npm run e2e            # Run all Maestro E2E tests (requires app running in simulator)
 npm run e2e:flow       # Run a single Maestro flow (e.g. npm run e2e:flow maestro/flows/login_screen.yaml)
+npm run build:preview  # Local preview build (ad-hoc distribution, installable on device)
+npm run build:prod     # Local production build (.ipa for App Store/TestFlight)
+npm run submit:ios     # Upload latest build to App Store Connect
+npm run release:ios    # Build + upload in one command
 ```
 
 Unit tests use Vitest (`npm test`). E2E tests use Maestro (YAML flows in `maestro/flows/`). Linting uses oxlint (`.oxlintrc.json`). Formatting uses oxfmt (`.oxfmtrc.json`).

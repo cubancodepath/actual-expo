@@ -21,6 +21,7 @@ import { usePrivacyStore } from "@/stores/privacyStore";
 import { useSheetValueNumber } from "@/presentation/hooks/useSheetValue";
 import { envelopeBudget } from "@/spreadsheet/bindings";
 import { useSyncedPref } from "@/presentation/hooks/useSyncedPref";
+import { useTranslation } from "react-i18next";
 
 // Column widths — wider symbols (AED, USD) need smaller font
 const COL_BUDGETED_SYM = 85;
@@ -42,6 +43,7 @@ export function SSectionHeader({
   anyEditing = false,
 }: SSectionHeaderProps) {
   const { colors } = useTheme();
+  const { t } = useTranslation("budget");
   usePrivacyStore();
   const [currencyCode] = useSyncedPref("defaultCurrencyCode");
   const hasSym = !!currencyCode;
@@ -78,7 +80,7 @@ export function SSectionHeader({
           ]}
         >
           <SText variant="captionSm" color={colors.textMuted}>
-            Budgeted
+            {t("columnBudgeted")}
           </SText>
           <SAmount
             value={budgeted}
@@ -98,7 +100,7 @@ export function SSectionHeader({
         ]}
       >
         <SText variant="captionSm" color={colors.textMuted}>
-          Available
+          {t("columnAvailable")}
         </SText>
         <SAmount
           value={balanceValue}

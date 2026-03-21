@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { View, Pressable } from "react-native";
-import { EaseView } from "react-native-ease";
+import { AnimatedView } from "../atoms/AnimatedView";
 import { CartesianChart, Bar, useChartPressState } from "victory-native";
 import { Line as SkiaLine, matchFont, vec } from "@shopify/react-native-skia";
 import { useAnimatedReaction, runOnJS } from "react-native-reanimated";
@@ -91,7 +91,7 @@ export function SavingsRateCard() {
         <View style={{ flexDirection: "row", gap: 2 }}>
           {RANGES.map((r) => (
             <Pressable key={r} onPress={() => setRange(r)} hitSlop={4}>
-              <EaseView
+              <AnimatedView
                 animate={{
                   backgroundColor: range === r ? colors.primary : "transparent",
                   scale: range === r ? 1 : 0.95,
@@ -106,7 +106,7 @@ export function SavingsRateCard() {
                 >
                   {r}m
                 </Text>
-              </EaseView>
+              </AnimatedView>
             </Pressable>
           ))}
         </View>
@@ -145,7 +145,7 @@ export function SavingsRateCard() {
       <View
         style={{ height: 20, borderRadius: 4, backgroundColor: colors.divider, overflow: "hidden" }}
       >
-        <EaseView
+        <AnimatedView
           animate={{ scaleX: 1 }}
           initialAnimate={{ scaleX: 0 }}
           transformOrigin={{ x: 0, y: 0.5 }}

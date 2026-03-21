@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef } from "react";
+import { memo, useEffect } from "react";
 import { Platform, Pressable, View } from "react-native";
 import Animated, {
   Easing,
@@ -9,7 +9,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from "react-native-reanimated";
-import { EaseView } from "react-native-ease";
+import { AnimatedView } from "../atoms/AnimatedView";
 import { Icon } from "../atoms/Icon";
 import { ContextMenu } from "../atoms/ContextMenu";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
@@ -39,7 +39,6 @@ interface TransactionRowProps {
 }
 
 // EaseView transitions (state-driven visual animations)
-const TIMING_BG = { type: "timing" as const, duration: 180, easing: "easeOut" as const };
 const TIMING_CHECK_IN = { type: "timing" as const, duration: 450, easing: "easeOut" as const };
 const TIMING_CHECK_OUT = { type: "timing" as const, duration: 350, easing: "easeOut" as const };
 const NONE = { type: "none" as const };
@@ -73,13 +72,6 @@ export const TransactionRow = memo(function TransactionRow({
   const reducedMotion = useReducedMotion();
   const noAnim = reducedMotion ?? false;
 
-  // Track exit for instant background clear
-  const wasSelectMode = useRef(isSelectMode);
-  const justExited = !isSelectMode && wasSelectMode.current;
-  useEffect(() => {
-    wasSelectMode.current = isSelectMode;
-  });
-
   // Layout animation: checkbox container width (Reanimated — can't do layout with EaseView)
   const checkboxAnim = useSharedValue(isSelectMode ? 1 : 0);
   useEffect(() => {
@@ -96,15 +88,13 @@ export const TransactionRow = memo(function TransactionRow({
     overflow: "hidden" as const,
   }));
 
-  const bgTransition = noAnim || justExited ? NONE : TIMING_BG;
   const checkVisualTransition = noAnim ? NONE : isSelectMode ? TIMING_CHECK_IN : TIMING_CHECK_OUT;
 
   const rowContent = (
-    <EaseView
-      animate={{
+    <View
+      style={{
         backgroundColor: isSelectMode && isSelected ? colors.primarySubtle : colors.cardBackground,
       }}
-      transition={bgTransition}
     >
       <Pressable
         style={({ pressed }) => [styles.row, pressed && styles.pressed]}
@@ -121,7 +111,7 @@ export const TransactionRow = memo(function TransactionRow({
       >
         {/* Checkbox — Reanimated for layout (width), EaseView for visuals (opacity/scale) */}
         <Animated.View style={[styles.checkboxContainer, checkboxContainerStyle]}>
-          <EaseView
+          <AnimatedView
             animate={{
               opacity: isSelectMode ? 1 : 0,
               scale: isSelectMode ? 1 : 0.5,
@@ -130,15 +120,15 @@ export const TransactionRow = memo(function TransactionRow({
           >
             <View style={{ width: 22, height: 22 }}>
               <Icon name="ellipseOutline" size={22} color={colors.textMuted} />
-              <EaseView
+              <AnimatedView
                 style={{ position: "absolute" }}
                 animate={{ scale: isSelected ? 1 : 0, opacity: isSelected ? 1 : 0 }}
                 transition={{ type: "spring", damping: 12, stiffness: 300, mass: 0.6 }}
               >
                 <Icon name="checkmarkCircle" size={22} color={colors.primary} />
-              </EaseView>
+              </AnimatedView>
             </View>
-          </EaseView>
+          </AnimatedView>
         </Animated.View>
 
         <View style={styles.content}>
@@ -259,7 +249,7 @@ export const TransactionRow = memo(function TransactionRow({
 
         {!isLast && <RowSeparator />}
       </Pressable>
-    </EaseView>
+    </View>
   );
 
   // In select mode, no SwipeableRow and no ContextMenu

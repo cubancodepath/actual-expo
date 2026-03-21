@@ -15,7 +15,6 @@ import {
   fullSync,
   waitForSyncToSettle,
 } from "../sync";
-import { emit } from "../sync/syncEvents";
 import { resetAllStores } from "../stores/resetStores";
 import { usePrefsStore } from "../stores/prefsStore";
 import type { BudgetFile } from "./authService";
@@ -352,10 +351,13 @@ export async function openBudget(budgetId: string): Promise<void> {
   };
 
   try {
-    // 1. Close previous budget — clean slate
+    // 1. Close previous budget — settle sync + close DB, but do NOT resetAllStores()
+    // here. Resetting stores triggers immediate re-renders with empty/0 values on
+    // components with EaseView (BudgetGroupHeader, etc.), causing a native SIGSEGV
+    // when Fabric tries to update props on deallocating views. Instead, we let
+    // the data transition happen atomically when activeBudgetId changes.
     await waitForSyncToSettle();
     resetSyncState();
-    resetAllStores();
     await closeDatabase();
     lap("close + reset");
 
@@ -387,7 +389,8 @@ export async function openBudget(budgetId: string): Promise<void> {
     // liveQuery takes over reactively after mount; sync updates flow through events.
     const { executeQuery } = await import("../queries/execute");
     const { q } = await import("../queries/query");
-    const { setQueryCache } = await import("../queries/queryCache");
+    const { setQueryCache, clearQueryCache } = await import("../queries/queryCache");
+    clearQueryCache(); // Clear old budget's stale entries before populating with new data
 
     const [accounts, categories, groups, payees, tags] = await Promise.all([
       executeQuery(q("accounts")),
@@ -401,6 +404,37 @@ export async function openBudget(budgetId: string): Promise<void> {
     setQueryCache(q("category_groups").serializeAsString(), groups.data);
     setQueryCache(q("payees").serializeAsString(), payees.data);
     setQueryCache(q("tags").serializeAsString(), tags.data);
+
+    // Pre-fetch account balances + group totals in parallel
+    const typedAccounts = accounts.data as Array<{ id: string; offbudget: number; closed: number }>;
+    const openAccounts = typedAccounts.filter((a) => !a.closed);
+    const budgetIds = openAccounts.filter((a) => !a.offbudget).map((a) => a.id);
+    const offBudgetIds = openAccounts.filter((a) => a.offbudget).map((a) => a.id);
+
+    const balanceQueries = openAccounts.map((a) => {
+      const bq = q("transactions").filter({ acct: a.id }).calculate({ $sum: "$amount" });
+      return executeQuery(bq).then((r) => setQueryCache(bq.serializeAsString(), r.data));
+    });
+
+    // Group totals (same query shape as useAccountGroupBalance)
+    if (budgetIds.length > 0) {
+      const gq = q("transactions")
+        .filter({ acct: { $oneof: budgetIds } })
+        .calculate({ $sum: "$amount" });
+      balanceQueries.push(
+        executeQuery(gq).then((r) => setQueryCache(gq.serializeAsString(), r.data)),
+      );
+    }
+    if (offBudgetIds.length > 0) {
+      const gq = q("transactions")
+        .filter({ acct: { $oneof: offBudgetIds } })
+        .calculate({ $sum: "$amount" });
+      balanceQueries.push(
+        executeQuery(gq).then((r) => setQueryCache(gq.serializeAsString(), r.data)),
+      );
+    }
+
+    if (balanceQueries.length > 0) await Promise.all(balanceQueries);
     lap("pre-fetch queries");
 
     // 6. Initialize spreadsheet engine with local data
@@ -433,32 +467,14 @@ export async function openBudget(budgetId: string): Promise<void> {
 
     lap("TOTAL — UI visible now");
 
-    // Delay emit + sync to let React finish the mount cycle triggered by
-    // activeBudgetId. Without this, EaseView receives updateProps while
-    // native views are being torn down → SIGSEGV in updateProps:oldProps:.
-    setTimeout(() => {
-      // Notify all mounted liveQueries to re-fetch from the new DB
-      emit({
-        type: "applied",
-        tables: [
-          "accounts",
-          "categories",
-          "category_groups",
-          "transactions",
-          "payees",
-          "rules",
-          "schedules",
-          "tags",
-        ],
+    // Background sync (non-blocking) — reactive liveQuery updates UI when done.
+    // No emit needed: useLiveQuery/usePagedLiveQuery depend on activeBudgetId,
+    // so they automatically recreate and re-fetch when the budget changes.
+    if (meta?.cloudFileId && meta?.groupId) {
+      fullSync({ force: true }).catch((e) => {
+        if (__DEV__) console.warn("[openBudget] background sync failed:", e);
       });
-
-      // Background sync (non-blocking) — reactive liveQuery updates UI when done
-      if (meta?.cloudFileId && meta?.groupId) {
-        fullSync({ force: true }).catch((e) => {
-          if (__DEV__) console.warn("[openBudget] background sync failed:", e);
-        });
-      }
-    }, 200);
+    }
   } catch (error) {
     // Cleanup on failure (upstream pattern: closeBudget on error)
     await closeBudget().catch(() => {});

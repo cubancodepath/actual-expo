@@ -1,5 +1,5 @@
 import { View } from "react-native";
-import { EaseView } from "react-native-ease";
+import { AnimatedView } from "../atoms/AnimatedView";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Card } from "../atoms/Card";
@@ -75,7 +75,7 @@ export function AgeOfMoneyCard() {
       <View
         style={{ height: 20, borderRadius: 4, backgroundColor: colors.divider, overflow: "hidden" }}
       >
-        <EaseView
+        <AnimatedView
           animate={{ scaleX: 1 }}
           initialAnimate={{ scaleX: 0 }}
           transformOrigin={{ x: 0, y: 0.5 }}

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { View, type ViewStyle } from "react-native";
 import { useReducedMotion } from "react-native-reanimated";
-import { EaseView } from "react-native-ease";
+import { AnimatedView } from "../components/atoms/AnimatedView";
 
 /**
  * Cursor blink animation using react-native-ease (native Core Animation / Animator).
@@ -29,7 +29,7 @@ export function useCursorBlink(focused: boolean) {
     }
 
     return (
-      <EaseView
+      <AnimatedView
         initialAnimate={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ type: "timing", duration: 500, easing: "easeInOut", loop: "reverse" }}

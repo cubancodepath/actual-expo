@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Pressable, RefreshControl, ScrollView, View } from "react-native";
 import Animated from "react-native-reanimated";
-import { EaseView } from "react-native-ease";
+import { AnimatedView } from "@/presentation/components/atoms/AnimatedView";
 import { useCollapsible } from "@/presentation/hooks/useCollapsible";
 import { Stack, useRouter } from "expo-router";
 import { ContextMenu } from "@/presentation/components/atoms/ContextMenu";
@@ -150,12 +150,12 @@ function AccountSection({
     <View style={styles.section}>
       {/* Section header */}
       <Pressable style={styles.sectionHeader} onPress={toggle}>
-        <EaseView
+        <AnimatedView
           animate={{ rotate: expanded ? 0 : -90 }}
           transition={{ type: "timing", duration: 250, easing: "easeInOut" }}
         >
           <Icon name="chevronDown" size={18} color={theme.colors.textSecondary} />
-        </EaseView>
+        </AnimatedView>
         <Text variant="body" color={theme.colors.textPrimary} style={styles.sectionLabel}>
           {groupLabel}
         </Text>

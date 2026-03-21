@@ -1,5 +1,5 @@
 import { Pressable, View } from "react-native";
-import { EaseView } from "react-native-ease";
+import { AnimatedView } from "../atoms/AnimatedView";
 import { Icon } from "../atoms/Icon";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../../providers/ThemeProvider";
@@ -89,12 +89,12 @@ export function BudgetGroupHeader({
         }}
         onPress={onToggle}
       >
-        <EaseView
+        <AnimatedView
           animate={{ rotate: isCollapsed ? -90 : 0 }}
           transition={{ type: "timing", duration: 250, easing: "easeInOut" }}
         >
           <Icon name="chevronDown" size={14} color={colors.textMuted} />
-        </EaseView>
+        </AnimatedView>
         <Text
           variant="captionSm"
           color={colors.textSecondary}
@@ -104,7 +104,7 @@ export function BudgetGroupHeader({
           {group.name}
         </Text>
         {(showBudgetedColumn || isCollapsed) && !group.is_income && (
-          <EaseView
+          <AnimatedView
             animate={{ opacity: showBudgetedColumn || isCollapsed ? 1 : 0 }}
             transition={{ type: "timing", duration: 200, easing: "easeInOut" }}
             style={{ width: BUDGET_COLUMNS.budgeted, alignItems: "flex-end" }}
@@ -115,7 +115,7 @@ export function BudgetGroupHeader({
               color={budgeted !== 0 ? colors.textSecondary : colors.textMuted}
               weight="600"
             />
-          </EaseView>
+          </AnimatedView>
         )}
         <View style={{ width: BUDGET_COLUMNS.available, alignItems: "center" }}>
           <Amount value={balanceValue} variant="caption" color={balanceColor} weight="600" />

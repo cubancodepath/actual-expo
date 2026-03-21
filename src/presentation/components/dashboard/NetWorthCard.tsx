@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { View, Pressable } from "react-native";
-import { EaseView } from "react-native-ease";
+import { AnimatedView } from "../atoms/AnimatedView";
 import { CartesianChart, Area, Line, useChartPressState } from "victory-native";
 import {
   LinearGradient,
@@ -117,7 +117,7 @@ export function NetWorthCard() {
         <View style={{ flexDirection: "row", gap: 2 }}>
           {RANGES.map((r) => (
             <Pressable key={r} onPress={() => setRange(r)} hitSlop={4}>
-              <EaseView
+              <AnimatedView
                 animate={{
                   backgroundColor: range === r ? colors.primary : "transparent",
                   scale: range === r ? 1 : 0.95,
@@ -132,7 +132,7 @@ export function NetWorthCard() {
                 >
                   {r}m
                 </Text>
-              </EaseView>
+              </AnimatedView>
             </Pressable>
           ))}
         </View>

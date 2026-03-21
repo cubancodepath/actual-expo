@@ -9,7 +9,7 @@
  */
 
 import { Platform } from "react-native";
-import { EaseView } from "react-native-ease";
+import { AnimatedView } from "./AnimatedView";
 import { Icon } from "./Icon";
 
 interface AnimatedCheckmarkProps {
@@ -19,7 +19,7 @@ interface AnimatedCheckmarkProps {
 
 export function AnimatedCheckmark({ color, size = 20 }: AnimatedCheckmarkProps) {
   return (
-    <EaseView
+    <AnimatedView
       initialAnimate={{ opacity: 0, scale: 0.4 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ type: "spring", damping: 14, stiffness: 250, mass: 0.8 }}
@@ -32,6 +32,6 @@ export function AnimatedCheckmark({ color, size = 20 }: AnimatedCheckmarkProps) 
           Platform.OS === "ios" ? { effect: { type: "bounce" }, repeating: false } : undefined
         }
       />
-    </EaseView>
+    </AnimatedView>
   );
 }

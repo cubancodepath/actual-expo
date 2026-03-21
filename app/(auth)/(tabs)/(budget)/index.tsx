@@ -10,12 +10,9 @@ import {
   VStack,
   Text as SUIText,
   Spacer,
-  RNHostView,
   ContextMenu,
   Button as SUIButton,
-  Divider as SUIDivider,
 } from "@expo/ui/swift-ui";
-import { progressViewStyle, tint } from "@expo/ui/swift-ui/modifiers";
 import { Amount } from "@/presentation/components/atoms/Amount";
 import {
   foregroundStyle,
@@ -31,7 +28,6 @@ import {
   onTapGesture,
   opacity,
   contentShape,
-  onLongPressGesture,
 } from "@expo/ui/swift-ui/modifiers";
 import { shapes } from "@expo/ui/swift-ui/modifiers";
 import { listStyle, refreshable } from "@expo/ui/swift-ui/modifiers";
@@ -59,6 +55,7 @@ import { useExpressionMode } from "@/presentation/hooks/useExpressionMode";
 import { useKeyboardBlur } from "@/presentation/hooks/useKeyboardBlur";
 import { MAX_CENTS } from "@/lib/currency";
 import { formatBalance, formatPrivacyAware } from "@/lib/format";
+import { StripedProgressBar } from "../../../../modules/actual-ui";
 import { useSyncedPref } from "@/presentation/hooks/useSyncedPref";
 import { usePrivacyStore } from "@/stores/privacyStore";
 import { computeProgressBar } from "@/goals/progressBar";
@@ -372,18 +369,15 @@ function CategoryRowNative({
         </SUIText>
       </HStack>
       {showBar && bar && (
-        <RNHostView>
-          <View style={{ height: 12, marginTop: 6 }}>
-            <ProgressBar
-              spent={bar.spent}
-              available={bar.available}
-              color={barColor}
-              overspent={bar.overspent}
-              striped={bar.striped}
-              height={6}
-            />
-          </View>
-        </RNHostView>
+        <StripedProgressBar
+          spent={bar.spent}
+          available={bar.available}
+          color={barColor}
+          overspent={bar.overspent}
+          striped={bar.striped}
+          barHeight={5}
+          modifiers={[padding({ top: 6 })]}
+        />
       )}
       {showBar && bar && progressLabel !== "" && (
         <HStack>

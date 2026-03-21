@@ -285,7 +285,7 @@ function CategoryRowNative({
     goalDef: catGoalDef ?? null,
     hidden: false,
   };
-  const bar = !isIncome && budgeted > 0 ? computeProgressBar(fullCat) : null;
+  const bar = !isIncome ? computeProgressBar(fullCat) : null;
   const barColor = bar
     ? bar.barStatus === "overspent"
       ? colors.negative
@@ -368,7 +368,7 @@ function CategoryRowNative({
           {formatPrivacyAware(balance)}
         </SUIText>
       </HStack>
-      {showBar && !isIncome && budgeted > 0 && bar && (
+      {showBar && bar && (
         <RNHostView>
           <View style={{ height: 12, marginTop: 6 }}>
             <ProgressBar
@@ -382,7 +382,7 @@ function CategoryRowNative({
           </View>
         </RNHostView>
       )}
-      {showBar && !isIncome && budgeted > 0 && bar && progressLabel !== "" && (
+      {showBar && bar && progressLabel !== "" && (
         <HStack>
           <SUIText
             modifiers={[

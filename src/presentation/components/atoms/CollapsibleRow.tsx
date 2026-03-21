@@ -30,17 +30,25 @@ export function CollapsibleRow({
   const animOpacity = useSharedValue(collapsed ? 0 : 1);
   const initialized = useSharedValue(false);
 
-  const onLayout = useCallback((e: { nativeEvent: { layout: { height: number } } }) => {
-    const h = e.nativeEvent.layout.height;
-    if (h > 0) {
-      contentHeight.value = h;
-      if (!initialized.value) {
-        initialized.value = true;
-        animHeight.value = collapsed ? 0 : h;
-        animOpacity.value = collapsed ? 0 : 1;
+  const onLayout = useCallback(
+    (e: { nativeEvent: { layout: { height: number } } }) => {
+      const h = e.nativeEvent.layout.height;
+      if (h > 0) {
+        const prev = contentHeight.value;
+        contentHeight.value = h;
+        if (!initialized.value) {
+          initialized.value = true;
+          animHeight.value = collapsed ? 0 : h;
+          animOpacity.value = collapsed ? 0 : 1;
+        } else if (h !== prev && !collapsed) {
+          // Content height changed while expanded (e.g. progress bar toggled)
+          // — snap to new height immediately to avoid double-animation
+          animHeight.value = h;
+        }
       }
-    }
-  }, []);
+    },
+    [collapsed],
+  );
 
   useEffect(() => {
     if (!initialized.value) return;

@@ -201,6 +201,7 @@ export default function AuthLayout() {
           title: t("nav.switchBudget"),
           presentation: "fullScreenModal",
           headerTintColor: theme.colors.headerText,
+          headerStyle: { backgroundColor: theme.colors.pageBackground },
           headerShadowVisible: false,
           contentStyle: { backgroundColor: theme.colors.pageBackground },
         }}

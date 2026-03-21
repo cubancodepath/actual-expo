@@ -57,20 +57,20 @@ export function BudgetGroupHeader({
         <View style={{ flex: 1 }} />
         {(showBudgetedColumn || isCollapsed) && !group.is_income && (
           <Text
-            variant="captionSm"
+            variant="bodySm"
             color={colors.textMuted}
-            style={{ width: BUDGET_COLUMNS.budgeted, textAlign: "right", fontWeight: "600" }}
+            style={{ width: BUDGET_COLUMNS.budgeted, textAlign: "right", fontWeight: "700" }}
           >
             {t("columnBudgeted")}
           </Text>
         )}
         <Text
-          variant="captionSm"
+          variant="bodySm"
           color={colors.textMuted}
           style={{
             width: BUDGET_COLUMNS.available,
             textAlign: "center",
-            fontWeight: "600",
+            fontWeight: "700",
             paddingLeft: spacing.sm,
           }}
         >

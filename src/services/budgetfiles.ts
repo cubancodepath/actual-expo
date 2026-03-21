@@ -346,10 +346,16 @@ export async function downloadBudget(
  * Open an existing local budget. Closes any currently open budget first.
  */
 export async function openBudget(budgetId: string): Promise<void> {
+  const t0 = Date.now();
+  const lap = (label: string) => {
+    if (__DEV__) console.log(`[openBudget] ${label}: ${Date.now() - t0}ms`);
+  };
+
   await waitForSyncToSettle();
   resetSyncState();
   resetAllStores();
   await closeDatabase();
+  lap("close + reset");
 
   const budgetDir = getBudgetDir(budgetId);
   await openDatabase(budgetDir);
@@ -362,12 +368,7 @@ export async function openBudget(budgetId: string): Promise<void> {
   const isFirstOpen = !!meta?.resetClock;
 
   await loadClock();
-
-  if (__DEV__) {
-    console.log(
-      `[openBudget] id=${budgetId}, isFirstOpen=${isFirstOpen}, meta.lastSyncedTimestamp=${meta?.lastSyncedTimestamp ?? "NONE"}, meta.resetClock=${meta?.resetClock}`,
-    );
-  }
+  lap("openDB + loadClock");
 
   if (isFirstOpen) {
     const { makeClientId, getClock } = await import("../crdt");
@@ -391,6 +392,7 @@ export async function openBudget(budgetId: string): Promise<void> {
       lastSyncedTimestamp: getClock().timestamp.toString(),
     });
     meta = await readMetadata(budgetId);
+    lap("repairSync + resetClock");
   }
 
   // Pre-fetch core queries while splash screen is visible.
@@ -423,6 +425,8 @@ export async function openBudget(budgetId: string): Promise<void> {
     await Promise.all(balanceQueries);
   }
 
+  lap("pre-fetch queries");
+
   // Load synced prefs store (includes format config + feature flags)
   const { useSyncedPrefsStore } = await import("../presentation/hooks/useSyncedPref");
   await useSyncedPrefsStore.getState().load();
@@ -431,16 +435,14 @@ export async function openBudget(budgetId: string): Promise<void> {
   const { initSpreadsheet } = await import("../spreadsheet/sync");
   await initSpreadsheet();
 
-  // Update global prefs with active budget info
+  lap("initSpreadsheet");
+
+  // Set sync-related prefs BEFORE sync (needed for fullSync to work).
+  // Do NOT set activeBudgetId yet — that triggers isConfigured → UI shows.
   usePrefsStore.getState().setPrefs({
-    activeBudgetId: budgetId,
     fileId: meta?.cloudFileId ?? "",
     groupId: meta?.groupId ?? "",
     encryptKeyId: meta?.encryptKeyId,
-    budgetName: meta?.budgetName ?? "Unnamed budget",
-    // ALWAYS read lastSyncedTimestamp from per-budget metadata, never carry over
-    // from a previous budget. Prevents stale timestamps from a fire-and-forget
-    // sync of the previous budget contaminating this one.
     lastSyncedTimestamp: meta?.lastSyncedTimestamp ?? undefined,
   });
 
@@ -449,9 +451,39 @@ export async function openBudget(budgetId: string): Promise<void> {
     lastOpened: new Date().toISOString(),
   });
 
-  clearSwitchingFlag();
+  // Load encryption key into memory if needed (before sync)
+  if (meta?.encryptKeyId && meta?.cloudFileId && !encryption.hasKey(meta.encryptKeyId)) {
+    await loadKeyForBudget(meta.cloudFileId);
+  }
 
-  // Force all liveQuery hooks to re-fetch from the new DB
+  // Initial sync — blocks until complete (upstream pattern: await initialFullSync).
+  // Uses force:true to bypass isSwitchingBudget check.
+  // UI is still hidden (activeBudgetId not set → isConfigured false).
+  if (meta?.cloudFileId && meta?.groupId) {
+    const received = await fullSync({ force: true }).catch((e) => {
+      if (__DEV__) console.warn("[openBudget] initial sync failed:", e);
+      return 0;
+    });
+
+    lap("fullSync");
+
+    // Only re-init spreadsheet if sync brought new messages
+    if (received > 0) {
+      await initSpreadsheet();
+      lap("re-initSpreadsheet");
+    }
+  }
+
+  // NOW set activeBudgetId — this triggers isConfigured → UI renders.
+  // All data is synced and spreadsheet is computed at this point.
+  usePrefsStore.getState().setPrefs({
+    activeBudgetId: budgetId,
+    budgetName: meta?.budgetName ?? "Unnamed budget",
+  });
+
+  lap("TOTAL — UI visible now");
+
+  clearSwitchingFlag();
   emit({
     type: "applied",
     tables: [
@@ -465,20 +497,6 @@ export async function openBudget(budgetId: string): Promise<void> {
       "tags",
     ],
   });
-
-  // Load encryption key into memory if needed (before sync)
-  if (meta?.encryptKeyId && meta?.cloudFileId && !encryption.hasKey(meta.encryptKeyId)) {
-    await loadKeyForBudget(meta.cloudFileId);
-  }
-
-  // Initial sync — blocks until complete (upstream pattern: await initialFullSync).
-  // Ensures all server messages are applied before the UI shows.
-  // Subsequent syncs are handled by 60s polling and scheduleFullSync in background.
-  if (meta?.cloudFileId && meta?.groupId) {
-    await fullSync().catch((e) => {
-      if (__DEV__) console.warn("[openBudget] initial sync failed:", e);
-    });
-  }
 }
 
 /** Close the currently open budget without opening another. */

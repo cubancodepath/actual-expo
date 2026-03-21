@@ -37,8 +37,9 @@ async function _fullSync(
   gen: number,
   prefs: any,
   useSyncStore: any,
+  force?: boolean,
 ): Promise<SyncMessage[]> {
-  if (isSwitchingBudget()) return [];
+  if (!force && isSwitchingBudget()) return [];
   if (gen !== getSyncGeneration()) return [];
 
   // Snapshot local clock before network request (upstream pattern)
@@ -144,6 +145,7 @@ async function _fullSync(
       gen,
       prefs,
       useSyncStore,
+      force,
     );
 
     return receivedMessages.concat(retryMessages);
@@ -175,19 +177,21 @@ async function _fullSync(
  * promise instead of starting a concurrent one. Prevents overlapping syncs
  * from 60s polling, scheduleFullSync, and foreground triggers.
  */
-let _activeSyncPromise: Promise<void> | null = null;
+let _activeSyncPromise: Promise<number> | null = null;
 
 /** Called by resetSyncState to cancel the once() guard for budget switches. */
 export function clearActiveSyncPromise(): void {
   _activeSyncPromise = null;
 }
 
-export function fullSync(): Promise<void> {
+export function fullSync(opts?: { force?: boolean }): Promise<number> {
   // If sync is already running, return the existing promise (upstream once() pattern)
   if (_activeSyncPromise) return _activeSyncPromise;
 
-  const p = (async () => {
-    if (isSwitchingBudget()) return;
+  const force = opts?.force ?? false;
+
+  const p = (async (): Promise<number> => {
+    if (!force && isSwitchingBudget()) return 0;
 
     const gen = getSyncGeneration();
 
@@ -195,8 +199,8 @@ export function fullSync(): Promise<void> {
     const { useSyncStore } = await import("../stores/syncStore");
 
     const prefs = usePrefsStore.getState();
-    if (prefs.isLocalOnly) return;
-    if (!prefs.isConfigured) {
+    if (prefs.isLocalOnly) return 0;
+    if (!force && !prefs.isConfigured) {
       throw new Error("Server not configured — set serverUrl, token, fileId, groupId first");
     }
 
@@ -205,9 +209,9 @@ export function fullSync(): Promise<void> {
 
     try {
       // Run the sync loop (may recurse on merkle divergence)
-      const allMessages = await _fullSync(null, 0, null, gen, prefs, useSyncStore);
+      const allMessages = await _fullSync(null, 0, null, gen, prefs, useSyncStore, force);
 
-      if (gen !== getSyncGeneration()) return;
+      if (gen !== getSyncGeneration()) return 0;
 
       // Post-sync: emit success, trigger budget changes, advance schedules
       // These only run ONCE after the full sync completes (not per retry)
@@ -228,45 +232,47 @@ export function fullSync(): Promise<void> {
       } catch (e) {
         if (__DEV__) console.warn("[fullSync] advanceSchedules failed:", e);
       }
+
+      return allMessages.length;
     } catch (e: unknown) {
-      if (gen !== getSyncGeneration()) return;
+      if (gen !== getSyncGeneration()) return 0;
 
       if (e instanceof PostError && (e.type === "unauthorized" || e.type === "token-expired")) {
         emit({ type: "error", tables: [], subtype: "unauthorized" });
         const { closeBudget } = await import("../services/budgetfiles");
         await closeBudget().catch(() => {});
         usePrefsStore.getState().clearAll();
-        return;
+        return 0;
       }
 
       if (e instanceof SyncError && (e.meta as { isMissingKey?: boolean })?.isMissingKey) {
         emit({ type: "error", tables: [], subtype: "decrypt-failure" });
         useSyncStore.getState()._setError(toAppError(e));
-        return;
+        return 0;
       }
 
       if (e instanceof SyncError && e.type === "clock-drift") {
         emit({ type: "error", tables: [], subtype: "clock-drift" });
         useSyncStore.getState()._setError(toAppError(e));
-        return;
+        return 0;
       }
 
       if (e instanceof SyncError && e.type === "out-of-sync") {
         emit({ type: "error", tables: [], subtype: "out-of-sync" });
         useSyncStore.getState()._setError(toAppError(e));
-        return;
+        return 0;
       }
 
       if (e instanceof PostError && e.type === "network-failure") {
         emit({ type: "error", tables: [], subtype: "network" });
         useSyncStore.getState()._setStatus("idle");
-        return;
+        return 0;
       }
 
       const msg = e instanceof Error ? e.message : String(e);
       if (msg.includes("closed resource") || msg.includes("not initialized")) {
         useSyncStore.getState()._setStatus("idle");
-        return;
+        return 0;
       }
 
       emit({ type: "error", tables: [], subtype: "unknown" });

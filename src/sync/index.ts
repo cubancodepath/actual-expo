@@ -24,10 +24,11 @@ export {
   isSwitchingBudget,
   waitForSyncToSettle,
 } from "./lifecycle";
-// resetSyncState needs to reset batch state, so we wire the two modules together
+// resetSyncState needs to reset batch state + clear fullSync once() guard
 import { resetBatchState } from "./batch";
+import { clearActiveSyncPromise } from "./fullSync";
 import { resetSyncState as _resetSyncState } from "./lifecycle";
 
 export function resetSyncState(): void {
-  _resetSyncState(resetBatchState);
+  _resetSyncState(resetBatchState, clearActiveSyncPromise);
 }

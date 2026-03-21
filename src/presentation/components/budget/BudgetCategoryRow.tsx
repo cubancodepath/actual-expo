@@ -112,9 +112,7 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
         style={{
           flexDirection: "row",
           alignItems: "center",
-          paddingHorizontal: spacing.lg,
-          paddingVertical: 13,
-          minHeight: 44,
+          paddingVertical: 4,
           ...rowStyle,
         }}
       >
@@ -180,10 +178,8 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
   const pressableContent = (
     <Pressable
       style={{
-        paddingHorizontal: spacing.lg,
-        paddingTop: 12,
-        paddingBottom: 10,
-        minHeight: 44,
+        paddingTop: 4,
+        paddingBottom: 4,
       }}
       onPress={(e) => onPress(cat.id, budgeted, e.nativeEvent.pageY)}
     >

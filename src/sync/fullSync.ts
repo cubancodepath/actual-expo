@@ -44,13 +44,13 @@ async function _fullSync(
   // Snapshot local clock before network request (upstream pattern)
   const currentTime = getClock().timestamp.toString();
 
-  // Determine "since" — retry uses diff time, first call uses lastSyncedTimestamp
-  // Upstream: sinceTimestamp || lastSyncedTimestamp || 5-minutes-ago
-  // On first sync (no lastSyncedTimestamp), use epoch to get all messages
-  const defaultSince = prefs.lastSyncedTimestamp
-    ? new Timestamp(Date.now() - 5 * 60 * 1000, 0, "0").toString()
-    : "1970-01-01T00:00:00.000Z-0000-0000000000000000";
-  const since = Timestamp.since(sinceTimestamp || prefs.lastSyncedTimestamp || defaultSince);
+  // Match upstream exactly (sync/index.ts line 674-678):
+  // sinceTimestamp (from retry) || lastSyncedTimestamp || 5-minutes-ago
+  const since = Timestamp.since(
+    sinceTimestamp ||
+      prefs.lastSyncedTimestamp ||
+      new Timestamp(Date.now() - 5 * 60 * 1000, 0, "0").toString(),
+  );
 
   const localMessages = await getMessagesSince(since);
 

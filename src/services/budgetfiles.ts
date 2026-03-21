@@ -9,6 +9,7 @@ import { randomUUID } from "expo-crypto";
 import { closeDatabase, openDatabase, run, getDb } from "../db";
 import {
   loadClock,
+  saveClock,
   resetSyncState,
   clearSwitchingFlag,
   fullSync,
@@ -354,14 +355,26 @@ export async function openBudget(budgetId: string): Promise<void> {
   await openDatabase(budgetDir);
 
   // Handle resetClock flag (fresh downloads need a new node ID)
+  // Upstream pattern: keep the existing merkle trie, only change the client node ID.
+  // Previously we deleted messages_clock entirely, which destroyed the merkle and
+  // caused fullSync to re-send all 7000+ messages on first open.
   const meta = await readMetadata(budgetId);
   const isFirstOpen = !!meta?.resetClock;
-  if (isFirstOpen) {
-    await run("DELETE FROM messages_clock");
-    await updateMetadata(budgetId, { resetClock: false });
-  }
 
   await loadClock();
+
+  if (isFirstOpen) {
+    // Generate a new client node ID (upstream pattern: budgetfiles/app.ts lines 568-582)
+    const { makeClientId, getClock, Timestamp } = await import("../crdt");
+    getClock().timestamp.setNode(makeClientId());
+    Timestamp.init({ node: getClock().timestamp.node() });
+    // Rebuild merkle from our CRDT log — the downloaded SQLite's merkle
+    // may differ due to Node.js vs expo-sqlite serialization differences.
+    // repairSync() calls saveClock() internally.
+    const { repairSync } = await import("../sync/repair");
+    await repairSync();
+    await updateMetadata(budgetId, { resetClock: false });
+  }
 
   // Pre-fetch core queries while splash screen is visible.
   // Results are cached and consumed by useLiveQuery as initialData.

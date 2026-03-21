@@ -191,7 +191,7 @@ export const TransactionRow = memo(function TransactionRow({
                 return names.map((name, i) => (
                   <View key={i} style={styles.splitLineRow}>
                     <View style={styles.categoryPill}>
-                      <Text variant="captionSm" color={colors.textSecondary} numberOfLines={1}>
+                      <Text variant="caption" color={colors.textSecondary} numberOfLines={1}>
                         {name || "No category"}
                       </Text>
                     </View>
@@ -226,13 +226,13 @@ export const TransactionRow = memo(function TransactionRow({
               <View style={styles.metaRow}>
                 {item.transfer_id != null ? (
                   <View style={styles.categoryPill}>
-                    <Text variant="captionSm" color={colors.primary} numberOfLines={1}>
+                    <Text variant="caption" color={colors.primary} numberOfLines={1}>
                       Transfer
                     </Text>
                   </View>
                 ) : item.categoryName ? (
                   <View style={styles.categoryPill}>
-                    <Text variant="captionSm" color={colors.textSecondary} numberOfLines={1}>
+                    <Text variant="caption" color={colors.textSecondary} numberOfLines={1}>
                       {item.categoryName}
                     </Text>
                   </View>

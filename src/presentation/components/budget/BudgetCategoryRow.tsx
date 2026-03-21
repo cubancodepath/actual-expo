@@ -150,11 +150,15 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
   // Centralized progress bar + pill computation
   const bar = goalsEnabled ? computeProgressBar(fullCat) : null;
 
+  // Sign-based color for neutral status (no goal set) — matches BudgetGroupHeader pattern
+  const neutralText =
+    balance < 0 ? colors.negative : balance > 0 ? colors.positive : colors.textMuted;
+
   const STATUS_COLORS: Record<BarStatus, { bg: string; text: string; bar: string }> = {
     healthy: { bg: colors.budgetHealthyBg, text: colors.budgetHealthy, bar: colors.positive },
     caution: { bg: colors.budgetCautionBg, text: colors.budgetCaution, bar: colors.warning },
     overspent: { bg: colors.budgetOverspentBg, text: colors.budgetOverspent, bar: colors.negative },
-    neutral: { bg: colors.cardBackground, text: colors.textMuted, bar: colors.textMuted },
+    neutral: { bg: colors.cardBackground, text: neutralText, bar: colors.textMuted },
   };
 
   // Use pillStatus for both pill and bar so they always match visually
@@ -279,6 +283,7 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
               variant="captionSm"
               color={pillText}
               weight="700"
+              showSign
               numberOfLines={1}
               adjustsFontSizeToFit
             />

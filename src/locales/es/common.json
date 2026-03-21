@@ -57,7 +57,12 @@
     "manageCategories": "Administrar Categorías",
     "managePayees": "Administrar Beneficiarios",
     "schedules": "Programaciones",
-    "changeBudget": "Cambiar Presupuesto"
+    "changeBudget": "Cambiar Presupuesto",
+    "switchBudget": "Cambiar Presupuesto"
+  },
+
+  "nav": {
+    "switchBudget": "Cambiar Presupuesto"
   },
 
   "payees": {

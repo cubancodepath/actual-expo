@@ -57,7 +57,12 @@
     "manageCategories": "Manage Categories",
     "managePayees": "Manage Payees",
     "schedules": "Schedules",
-    "changeBudget": "Change Budget"
+    "changeBudget": "Switch Budget",
+    "switchBudget": "Switch Budget"
+  },
+
+  "nav": {
+    "switchBudget": "Switch Budget"
   },
 
   "payees": {

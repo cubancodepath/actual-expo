@@ -46,11 +46,12 @@ async function _fullSync(
 
   // Match upstream exactly (sync/index.ts line 674-678):
   // sinceTimestamp (from retry) || lastSyncedTimestamp || 5-minutes-ago
-  const since = Timestamp.since(
+  // Do NOT wrap in Timestamp.since() — that adds a second counter+node suffix
+  // to strings that already have one from Timestamp.toString().
+  const since =
     sinceTimestamp ||
-      prefs.lastSyncedTimestamp ||
-      new Timestamp(Date.now() - 5 * 60 * 1000, 0, "0").toString(),
-  );
+    prefs.lastSyncedTimestamp ||
+    new Timestamp(Date.now() - 5 * 60 * 1000, 0, "0").toString();
 
   const localMessages = await getMessagesSince(since);
 
@@ -112,21 +113,20 @@ async function _fullSync(
   const diffTime = merkle.diff(serverMerkle as any, getClock().merkle);
 
   if (diffTime !== null) {
-    // If server sent messages but our merkle didn't change (all duplicates),
-    // the local merkle trie is corrupted. Rebuild from CRDT log.
-    // Upstream uses rebuildMerkleHash() in repair.ts for this exact case.
-    if (!merkleChanged && count > 0) {
-      if (__DEV__) console.log("[fullSync] merkle corrupted — rebuilding from CRDT log");
-      const { rebuildMerkleHash } = await import("./repair");
-      const rebuilt = rebuildMerkleHash();
-      getClock().merkle = rebuilt.trie;
-      await saveClock();
-      // Re-check with rebuilt merkle
-      const newDiff = merkle.diff(serverMerkle as any, getClock().merkle);
-      if (newDiff === null) {
-        if (__DEV__) console.log("[fullSync] merkle repaired — trees now match");
-        return receivedMessages;
-      }
+    // Merkle diverged — try rebuilding from CRDT log before retrying.
+    // Our insert+prune may produce a different trie structure than the server's
+    // (Node.js vs expo-sqlite differences). Rebuilding from all timestamps
+    // produces a canonical trie that matches the server.
+    if (__DEV__) console.log("[fullSync] merkle diverged — rebuilding from CRDT log");
+    const { rebuildMerkleHash } = await import("./repair");
+    const rebuilt = rebuildMerkleHash();
+    getClock().merkle = rebuilt.trie;
+    await saveClock();
+    // Re-check with rebuilt merkle
+    const newDiff = merkle.diff(serverMerkle as any, getClock().merkle);
+    if (newDiff === null) {
+      if (__DEV__) console.log("[fullSync] merkle repaired — trees now match");
+      return receivedMessages;
     }
 
     // Retry — upstream retries up to 10× for same diffTime, 100× total

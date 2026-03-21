@@ -358,7 +358,7 @@ export async function openBudget(budgetId: string): Promise<void> {
   // Upstream pattern: keep the existing merkle trie, only change the client node ID.
   // Previously we deleted messages_clock entirely, which destroyed the merkle and
   // caused fullSync to re-send all 7000+ messages on first open.
-  const meta = await readMetadata(budgetId);
+  let meta = await readMetadata(budgetId);
   const isFirstOpen = !!meta?.resetClock;
 
   await loadClock();
@@ -368,16 +368,16 @@ export async function openBudget(budgetId: string): Promise<void> {
     const { makeClientId, getClock, Timestamp } = await import("../crdt");
     getClock().timestamp.setNode(makeClientId());
     Timestamp.init({ node: getClock().timestamp.node() });
-    // Rebuild merkle from our CRDT log — the downloaded SQLite's merkle
-    // may differ due to Node.js vs expo-sqlite serialization differences.
-    // repairSync() calls saveClock() internally.
+    // Rebuild merkle with our prune strategy (insert all + prune once at end).
+    // The downloaded SQLite's merkle was built by the server which may use a
+    // different prune cadence. Rebuilding ensures our merkle uses the same
+    // strategy as our applyMessages, so future syncs converge correctly.
     const { repairSync } = await import("../sync/repair");
     await repairSync();
     await updateMetadata(budgetId, { resetClock: false });
   }
 
   // Pre-fetch core queries while splash screen is visible.
-  // Results are cached and consumed by useLiveQuery as initialData.
   const { executeQuery } = await import("../queries/execute");
   const { q } = await import("../queries/query");
   const { setQueryCache } = await import("../queries/queryCache");
@@ -452,16 +452,11 @@ export async function openBudget(budgetId: string): Promise<void> {
     await loadKeyForBudget(meta.cloudFileId);
   }
 
-  // Sync for cloud-connected budgets — only block on first open.
-  // Subsequent syncs are handled by the AppState listener in _layout.tsx
-  // and the debounced scheduleFullSync in batch.ts.
+  // Sync in background — subsequent syncs handled by 60s polling and scheduleFullSync
   if (meta?.cloudFileId && meta?.groupId) {
-    const needsInitialSync = isFirstOpen || !meta?.lastSyncedTimestamp;
-    if (needsInitialSync) {
-      await fullSync().catch((e) => {
-        if (__DEV__) console.warn(e);
-      });
-    }
+    fullSync().catch((e) => {
+      if (__DEV__) console.warn("[openBudget] sync failed:", e);
+    });
   }
 }
 

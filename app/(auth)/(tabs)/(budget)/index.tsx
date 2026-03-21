@@ -324,7 +324,13 @@ export default function BudgetScreen() {
         data: section.data.filter((c) => matchesFilter(c, section.group.is_income)),
       }))
       .filter((section) => section.data.length > 0);
+    // ssVersion only needed when filtering — individual rows handle value updates via useSheetValue
   }, [baseSections, filter, sheet, ssVersion]);
+
+  // When filter is "all" (default), use baseSections directly to avoid re-rendering
+  // the entire SectionList on every spreadsheet change. This prevents the keyboard
+  // from losing focus during background sync (triggerBudgetChanges recomputes 3000+ cells).
+  const displaySections = filter === "all" ? baseSections : sections;
 
   // -- Callbacks (accept IDs, not full objects) --
   function handleMoveMoney(catId: string, catName: string, balance: number) {
@@ -478,7 +484,7 @@ export default function BudgetScreen() {
           <BudgetListSkeleton />
         ) : (
           <SectionList
-            sections={sections}
+            sections={displaySections}
             keyExtractor={(c) => c.id}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"

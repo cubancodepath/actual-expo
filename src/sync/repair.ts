@@ -22,6 +22,8 @@ export function rebuildMerkleHash(): { numMessages: number; trie: merkle.TrieNod
     }
   }
 
+  // Prune once at the end (matches applyMessages pattern — upstream line 370)
+  trie = merkle.prune(trie);
   return { numMessages: rows.length, trie };
 }
 

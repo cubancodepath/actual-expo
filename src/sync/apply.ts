@@ -142,9 +142,7 @@ export const applyMessages = sequential(async function applyMessages(
           "INSERT OR IGNORE INTO messages_crdt (timestamp, dataset, row, column, value) VALUES (?, ?, ?, ?, ?)",
           [msg.timestamp.toString(), dataset, row, column, serialized],
         );
-        const clock = getClock();
-        const newMerkle = merkle.insert(clock.merkle, msg.timestamp);
-        getClock().merkle = merkle.prune(newMerkle);
+        getClock().merkle = merkle.insert(getClock().merkle, msg.timestamp);
         continue;
       }
 
@@ -176,13 +174,12 @@ export const applyMessages = sequential(async function applyMessages(
         [msg.timestamp.toString(), dataset, row, column, serialized],
       );
 
-      // Update in-memory merkle trie
-      const clock = getClock();
-      const newMerkle = merkle.insert(clock.merkle, msg.timestamp);
-      getClock().merkle = merkle.prune(newMerkle);
+      // Insert into merkle trie (no prune yet — upstream pattern)
+      getClock().merkle = merkle.insert(getClock().merkle, msg.timestamp);
     }
 
-    // Save clock atomically inside the transaction (upstream pattern)
+    // Prune once at end of batch (upstream line 370), then save atomically
+    getClock().merkle = merkle.prune(getClock().merkle);
     await saveClock();
   });
 

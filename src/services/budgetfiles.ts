@@ -351,170 +351,110 @@ export async function openBudget(budgetId: string): Promise<void> {
     if (__DEV__) console.log(`[openBudget] ${label}: ${Date.now() - t0}ms`);
   };
 
-  await waitForSyncToSettle();
-  resetSyncState();
-  resetAllStores();
-  await closeDatabase();
-  lap("close + reset");
+  try {
+    // 1. Close previous budget — clean slate
+    await waitForSyncToSettle();
+    resetSyncState();
+    resetAllStores();
+    await closeDatabase();
+    lap("close + reset");
 
-  const budgetDir = getBudgetDir(budgetId);
-  await openDatabase(budgetDir);
+    // 2. Open DB + load clock
+    const budgetDir = getBudgetDir(budgetId);
+    await openDatabase(budgetDir);
+    let meta = await readMetadata(budgetId);
+    const isFirstOpen = !!meta?.resetClock;
+    await loadClock();
+    lap("openDB + loadClock");
 
-  // Handle resetClock flag (fresh downloads need a new node ID)
-  // Upstream pattern: keep the existing merkle trie, only change the client node ID.
-  // Previously we deleted messages_clock entirely, which destroyed the merkle and
-  // caused fullSync to re-send all 7000+ messages on first open.
-  let meta = await readMetadata(budgetId);
-  const isFirstOpen = !!meta?.resetClock;
-
-  await loadClock();
-  lap("openDB + loadClock");
-
-  if (isFirstOpen) {
-    const { makeClientId, getClock } = await import("../crdt");
-    // Only change the node ID — do NOT call Timestamp.init() which resets
-    // the entire clock to epoch, destroying the loaded timestamp and merkle.
-    // Upstream (budgetfiles/app.ts line 575) only does setNode().
-    getClock().timestamp.setNode(makeClientId());
-    // Rebuild merkle from messages_crdt — the downloaded SQLite's merkle
-    // (in messages_clock) reflects the SERVER's state which may include
-    // messages not present in the downloaded messages_crdt table.
-    // Rebuilding ensures our merkle matches what we actually have,
-    // so the server detects the gap and sends missing messages.
-    const { repairSync } = await import("../sync/repair");
-    await repairSync();
-    // Set lastSyncedTimestamp to our clock's latest message. This tells fullSync
-    // "I have everything up to here" → sends 0 local messages, and the server
-    // sends only messages newer than our clock (the ones the snapshot missed).
-    // Without this, the 5-min default filters out older server messages.
-    await updateMetadata(budgetId, {
-      resetClock: false,
-      lastSyncedTimestamp: getClock().timestamp.toString(),
-    });
-    meta = await readMetadata(budgetId);
-    lap("repairSync + resetClock");
-  }
-
-  // Diagnostic: check what's actually in the DB
-  if (__DEV__) {
-    const { first: firstRow } = await import("../db");
-    const msgCount = await firstRow<{ cnt: number }>("SELECT COUNT(*) as cnt FROM messages_crdt");
-    const catCount = await firstRow<{ cnt: number }>(
-      "SELECT COUNT(*) as cnt FROM categories WHERE tombstone = 0",
-    );
-    const acctCount = await firstRow<{ cnt: number }>(
-      "SELECT COUNT(*) as cnt FROM accounts WHERE tombstone = 0",
-    );
-    const txCount = await firstRow<{ cnt: number }>(
-      "SELECT COUNT(*) as cnt FROM transactions WHERE tombstone = 0",
-    );
-    console.log(
-      `[openBudget] DB state: messages=${msgCount?.cnt ?? 0}, categories=${catCount?.cnt ?? 0}, accounts=${acctCount?.cnt ?? 0}, transactions=${txCount?.cnt ?? 0}`,
-    );
-  }
-
-  // Pre-fetch core queries while splash screen is visible.
-  const { executeQuery } = await import("../queries/execute");
-  const { q } = await import("../queries/query");
-  const { setQueryCache } = await import("../queries/queryCache");
-
-  const [accounts, categories, groups, payees, tags] = await Promise.all([
-    executeQuery(q("accounts")),
-    executeQuery(q("categories")),
-    executeQuery(q("category_groups")),
-    executeQuery(q("payees")),
-    executeQuery(q("tags")),
-  ]);
-  setQueryCache(q("accounts").serializeAsString(), accounts.data);
-  setQueryCache(q("categories").serializeAsString(), categories.data);
-  setQueryCache(q("category_groups").serializeAsString(), groups.data);
-  setQueryCache(q("payees").serializeAsString(), payees.data);
-  setQueryCache(q("tags").serializeAsString(), tags.data);
-
-  // Pre-fetch account balances (one per account, in parallel)
-  const accountIds = (accounts.data as Array<{ id: string }>).map((a) => a.id);
-  if (accountIds.length > 0) {
-    const balanceQueries = accountIds.map((id) => {
-      const balanceQuery = q("transactions").filter({ acct: id }).calculate({ $sum: "$amount" });
-      return executeQuery(balanceQuery).then((result) => {
-        setQueryCache(balanceQuery.serializeAsString(), result.data);
-      });
-    });
-    await Promise.all(balanceQueries);
-  }
-
-  lap("pre-fetch queries");
-
-  // Load synced prefs store (includes format config + feature flags)
-  const { useSyncedPrefsStore } = await import("../presentation/hooks/useSyncedPref");
-  await useSyncedPrefsStore.getState().load();
-
-  // Initialize spreadsheet engine with all budget months
-  const { initSpreadsheet } = await import("../spreadsheet/sync");
-  await initSpreadsheet();
-
-  lap("initSpreadsheet");
-
-  // Set sync-related prefs BEFORE sync (needed for fullSync to work).
-  // Do NOT set activeBudgetId yet — that triggers isConfigured → UI shows.
-  usePrefsStore.getState().setPrefs({
-    fileId: meta?.cloudFileId ?? "",
-    groupId: meta?.groupId ?? "",
-    encryptKeyId: meta?.encryptKeyId,
-    lastSyncedTimestamp: meta?.lastSyncedTimestamp ?? undefined,
-  });
-
-  // Update lastOpened
-  await updateMetadata(budgetId, {
-    lastOpened: new Date().toISOString(),
-  });
-
-  // Load encryption key into memory if needed (before sync)
-  if (meta?.encryptKeyId && meta?.cloudFileId && !encryption.hasKey(meta.encryptKeyId)) {
-    await loadKeyForBudget(meta.cloudFileId);
-  }
-
-  // Initial sync — blocks until complete (upstream pattern: await initialFullSync).
-  // Uses force:true to bypass isSwitchingBudget check.
-  // UI is still hidden (activeBudgetId not set → isConfigured false).
-  if (meta?.cloudFileId && meta?.groupId) {
-    const received = await fullSync({ force: true }).catch((e) => {
-      if (__DEV__) console.warn("[openBudget] initial sync failed:", e);
-      return 0;
-    });
-
-    lap("fullSync");
-
-    // Only re-init spreadsheet if sync brought new messages
-    if (received > 0) {
-      await initSpreadsheet();
-      lap("re-initSpreadsheet");
+    // 3. Handle resetClock (fresh downloads need a new node ID)
+    // Upstream pattern (budgetfiles/app.ts line 575): only setNode() + save clock.
+    // The server will detect merkle divergence during sync and send missing messages.
+    if (isFirstOpen) {
+      const { makeClientId, getClock } = await import("../crdt");
+      getClock().timestamp.setNode(makeClientId());
+      await saveClock();
+      await updateMetadata(budgetId, { resetClock: false });
+      meta = await readMetadata(budgetId);
+      lap("resetClock");
     }
+
+    // 4. Load synced prefs (format config, feature flags)
+    const { useSyncedPrefsStore } = await import("../presentation/hooks/useSyncedPref");
+    await useSyncedPrefsStore.getState().load();
+
+    // 5. Pre-fetch core queries into cache — gives instant first render with local data.
+    // liveQuery takes over reactively after mount; sync updates flow through events.
+    const { executeQuery } = await import("../queries/execute");
+    const { q } = await import("../queries/query");
+    const { setQueryCache } = await import("../queries/queryCache");
+
+    const [accounts, categories, groups, payees, tags] = await Promise.all([
+      executeQuery(q("accounts")),
+      executeQuery(q("categories")),
+      executeQuery(q("category_groups")),
+      executeQuery(q("payees")),
+      executeQuery(q("tags")),
+    ]);
+    setQueryCache(q("accounts").serializeAsString(), accounts.data);
+    setQueryCache(q("categories").serializeAsString(), categories.data);
+    setQueryCache(q("category_groups").serializeAsString(), groups.data);
+    setQueryCache(q("payees").serializeAsString(), payees.data);
+    setQueryCache(q("tags").serializeAsString(), tags.data);
+
+    // Pre-fetch account balances (one per account, in parallel)
+    const accountIds = (accounts.data as Array<{ id: string }>).map((a) => a.id);
+    if (accountIds.length > 0) {
+      const balanceQueries = accountIds.map((id) => {
+        const balanceQuery = q("transactions").filter({ acct: id }).calculate({ $sum: "$amount" });
+        return executeQuery(balanceQuery).then((result) => {
+          setQueryCache(balanceQuery.serializeAsString(), result.data);
+        });
+      });
+      await Promise.all(balanceQueries);
+    }
+    lap("pre-fetch queries");
+
+    // 6. Initialize spreadsheet engine with local data
+    const { initSpreadsheet } = await import("../spreadsheet/sync");
+    await initSpreadsheet();
+    lap("initSpreadsheet");
+
+    // 7. Set sync-related prefs (needed for fullSync)
+    usePrefsStore.getState().setPrefs({
+      fileId: meta?.cloudFileId ?? "",
+      groupId: meta?.groupId ?? "",
+      encryptKeyId: meta?.encryptKeyId,
+      lastSyncedTimestamp: meta?.lastSyncedTimestamp ?? undefined,
+    });
+
+    // 8. Update lastOpened
+    await updateMetadata(budgetId, { lastOpened: new Date().toISOString() });
+
+    // 9. Load encryption key if needed (before sync)
+    if (meta?.encryptKeyId && meta?.cloudFileId && !encryption.hasKey(meta.encryptKeyId)) {
+      await loadKeyForBudget(meta.cloudFileId);
+    }
+
+    // 10. Activate UI — render with local data (upstream pattern: show before sync)
+    usePrefsStore.getState().setPrefs({
+      activeBudgetId: budgetId,
+      budgetName: meta?.budgetName ?? "Unnamed budget",
+    });
+    clearSwitchingFlag();
+    lap("TOTAL — UI visible now");
+
+    // 11. Background sync (non-blocking) — reactive liveQuery updates UI when done
+    if (meta?.cloudFileId && meta?.groupId) {
+      fullSync({ force: true }).catch((e) => {
+        if (__DEV__) console.warn("[openBudget] background sync failed:", e);
+      });
+    }
+  } catch (error) {
+    // Cleanup on failure (upstream pattern: closeBudget on error)
+    await closeBudget().catch(() => {});
+    throw error;
   }
-
-  // NOW set activeBudgetId — this triggers isConfigured → UI renders.
-  // All data is synced and spreadsheet is computed at this point.
-  usePrefsStore.getState().setPrefs({
-    activeBudgetId: budgetId,
-    budgetName: meta?.budgetName ?? "Unnamed budget",
-  });
-
-  lap("TOTAL — UI visible now");
-
-  clearSwitchingFlag();
-  emit({
-    type: "applied",
-    tables: [
-      "accounts",
-      "categories",
-      "category_groups",
-      "transactions",
-      "payees",
-      "rules",
-      "schedules",
-      "tags",
-    ],
-  });
 }
 
 /** Close the currently open budget without opening another. */

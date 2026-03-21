@@ -163,7 +163,8 @@
     "noBudgetsFound": "No se encontraron presupuestos",
     "noBudgetsDescription": "No hay archivos de presupuesto en este servidor ni en este dispositivo.",
     "createNewBudget": "Crear Nuevo Presupuesto",
-    "unnamedBudget": "Mi Presupuesto"
+    "unnamedBudget": "Mi Presupuesto",
+    "opening": "Abriendo presupuesto…"
   },
 
   "encryption": {

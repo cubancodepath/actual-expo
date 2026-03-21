@@ -1,4 +1,5 @@
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, View } from "react-native";
+import { useState } from "react";
+import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -8,7 +9,6 @@ import {
   Text,
   Card,
   SectionHeader,
-  Button,
   ErrorBanner,
   EmptyState,
   BudgetFileRow,
@@ -24,6 +24,7 @@ export default function ChangeBudgetScreen() {
   const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const { activeBudgetId } = usePrefsStore();
+  const [switchingName, setSwitchingName] = useState<string | null>(null);
   const {
     localFiles,
     remoteFiles,
@@ -42,23 +43,32 @@ export default function ChangeBudgetScreen() {
       router.back();
       return;
     }
+    setSwitchingName(file.name);
     try {
       await selectFile(file);
       router.dismissAll();
     } catch {
+      setSwitchingName(null);
       // Error already set in hook
     }
   }
 
   const hasFiles = localFiles.length > 0 || remoteFiles.length > 0;
+  const isSwitching = selecting !== null;
 
   return (
     <>
       <ScrollView
         style={styles.container}
         contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xl }}
+        scrollEnabled={!isSwitching}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={refresh}
+            tintColor={colors.primary}
+            enabled={!isSwitching}
+          />
         }
       >
         <Stack.Screen options={{}} />
@@ -127,14 +137,42 @@ export default function ChangeBudgetScreen() {
         )}
       </ScrollView>
 
-      <Stack.Toolbar placement="left">
-        <Stack.Toolbar.Button icon="xmark" onPress={() => router.back()} />
-      </Stack.Toolbar>
-      <Stack.Toolbar placement="right">
-        <Stack.Toolbar.Button onPress={() => router.push("/(auth)/new-budget")}>
-          {t("new")}
-        </Stack.Toolbar.Button>
-      </Stack.Toolbar>
+      {/* Toolbar — hidden during switch to prevent navigation */}
+      {!isSwitching && (
+        <>
+          <Stack.Toolbar placement="left">
+            <Stack.Toolbar.Button icon="xmark" onPress={() => router.back()} />
+          </Stack.Toolbar>
+          <Stack.Toolbar placement="right">
+            <Stack.Toolbar.Button onPress={() => router.push("/(auth)/new-budget")}>
+              {t("new")}
+            </Stack.Toolbar.Button>
+          </Stack.Toolbar>
+        </>
+      )}
+
+      {/* Blocking overlay during budget switch */}
+      {isSwitching && (
+        <View style={styles.switchingOverlay} pointerEvents="box-only">
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text
+            variant="bodyLg"
+            color={colors.textPrimary}
+            style={{ marginTop: spacing.md, textAlign: "center" }}
+          >
+            {t("budget.opening")}
+          </Text>
+          {switchingName && (
+            <Text
+              variant="bodySm"
+              color={colors.textMuted}
+              style={{ marginTop: spacing.xs, textAlign: "center" }}
+            >
+              {switchingName}
+            </Text>
+          )}
+        </View>
+      )}
     </>
   );
 }
@@ -154,8 +192,11 @@ const createStyles = (theme: Theme) => ({
     alignItems: "center" as const,
     gap: theme.spacing.md,
   },
-  headerBtn: {
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: theme.spacing.xs,
+  switchingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: theme.colors.pageBackground,
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
+    zIndex: 100,
   },
 });

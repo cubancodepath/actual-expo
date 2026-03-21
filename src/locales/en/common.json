@@ -163,7 +163,8 @@
     "noBudgetsFound": "No budgets found",
     "noBudgetsDescription": "There are no budget files on this server or on this device.",
     "createNewBudget": "Create New Budget",
-    "unnamedBudget": "My Budget"
+    "unnamedBudget": "My Budget",
+    "opening": "Opening budget…"
   },
 
   "encryption": {

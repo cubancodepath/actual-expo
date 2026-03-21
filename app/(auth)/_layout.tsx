@@ -195,7 +195,16 @@ export default function AuthLayout() {
       />
       <Stack.Screen name="schedules" options={{ title: t("nav.schedules"), ...modal }} />
       <Stack.Screen name="schedule" options={{ headerShown: false, ...modal }} />
-      <Stack.Screen name="change-budget" options={{ title: t("nav.changeBudget"), ...modal }} />
+      <Stack.Screen
+        name="change-budget"
+        options={{
+          title: t("nav.switchBudget"),
+          presentation: "fullScreenModal",
+          headerTintColor: theme.colors.headerText,
+          headerShadowVisible: false,
+          contentStyle: { backgroundColor: theme.colors.pageBackground },
+        }}
+      />
       <Stack.Screen
         name="settings"
         options={{ headerShown: false, presentation: "fullScreenModal" }}

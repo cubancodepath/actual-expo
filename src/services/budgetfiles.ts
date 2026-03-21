@@ -363,18 +363,34 @@ export async function openBudget(budgetId: string): Promise<void> {
 
   await loadClock();
 
+  if (__DEV__) {
+    console.log(
+      `[openBudget] id=${budgetId}, isFirstOpen=${isFirstOpen}, meta.lastSyncedTimestamp=${meta?.lastSyncedTimestamp ?? "NONE"}, meta.resetClock=${meta?.resetClock}`,
+    );
+  }
+
   if (isFirstOpen) {
-    // Generate a new client node ID (upstream pattern: budgetfiles/app.ts lines 568-582)
-    const { makeClientId, getClock, Timestamp } = await import("../crdt");
+    const { makeClientId, getClock } = await import("../crdt");
+    // Only change the node ID — do NOT call Timestamp.init() which resets
+    // the entire clock to epoch, destroying the loaded timestamp and merkle.
+    // Upstream (budgetfiles/app.ts line 575) only does setNode().
     getClock().timestamp.setNode(makeClientId());
-    Timestamp.init({ node: getClock().timestamp.node() });
-    // Rebuild merkle with our prune strategy (insert all + prune once at end).
-    // The downloaded SQLite's merkle was built by the server which may use a
-    // different prune cadence. Rebuilding ensures our merkle uses the same
-    // strategy as our applyMessages, so future syncs converge correctly.
+    // Rebuild merkle from messages_crdt — the downloaded SQLite's merkle
+    // (in messages_clock) reflects the SERVER's state which may include
+    // messages not present in the downloaded messages_crdt table.
+    // Rebuilding ensures our merkle matches what we actually have,
+    // so the server detects the gap and sends missing messages.
     const { repairSync } = await import("../sync/repair");
     await repairSync();
-    await updateMetadata(budgetId, { resetClock: false });
+    // Set lastSyncedTimestamp to our clock's latest message. This tells fullSync
+    // "I have everything up to here" → sends 0 local messages, and the server
+    // sends only messages newer than our clock (the ones the snapshot missed).
+    // Without this, the 5-min default filters out older server messages.
+    await updateMetadata(budgetId, {
+      resetClock: false,
+      lastSyncedTimestamp: getClock().timestamp.toString(),
+    });
+    meta = await readMetadata(budgetId);
   }
 
   // Pre-fetch core queries while splash screen is visible.
@@ -422,7 +438,10 @@ export async function openBudget(budgetId: string): Promise<void> {
     groupId: meta?.groupId ?? "",
     encryptKeyId: meta?.encryptKeyId,
     budgetName: meta?.budgetName ?? "Unnamed budget",
-    lastSyncedTimestamp: meta?.lastSyncedTimestamp,
+    // ALWAYS read lastSyncedTimestamp from per-budget metadata, never carry over
+    // from a previous budget. Prevents stale timestamps from a fire-and-forget
+    // sync of the previous budget contaminating this one.
+    lastSyncedTimestamp: meta?.lastSyncedTimestamp ?? undefined,
   });
 
   // Update lastOpened
@@ -452,10 +471,12 @@ export async function openBudget(budgetId: string): Promise<void> {
     await loadKeyForBudget(meta.cloudFileId);
   }
 
-  // Sync in background — subsequent syncs handled by 60s polling and scheduleFullSync
+  // Initial sync — blocks until complete (upstream pattern: await initialFullSync).
+  // Ensures all server messages are applied before the UI shows.
+  // Subsequent syncs are handled by 60s polling and scheduleFullSync in background.
   if (meta?.cloudFileId && meta?.groupId) {
-    fullSync().catch((e) => {
-      if (__DEV__) console.warn("[openBudget] sync failed:", e);
+    await fullSync().catch((e) => {
+      if (__DEV__) console.warn("[openBudget] initial sync failed:", e);
     });
   }
 }

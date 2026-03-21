@@ -56,7 +56,9 @@ async function _fullSync(
   const localMessages = await getMessagesSince(since);
 
   if (__DEV__) {
-    console.log(`[fullSync] attempt ${count}, sending ${localMessages.length} local messages`);
+    console.log(
+      `[fullSync] attempt ${count}, since=${since.slice(0, 23)}, sending ${localMessages.length} local messages`,
+    );
   }
 
   if (gen !== getSyncGeneration()) return [];
@@ -113,20 +115,20 @@ async function _fullSync(
   const diffTime = merkle.diff(serverMerkle as any, getClock().merkle);
 
   if (diffTime !== null) {
-    // Merkle diverged — try rebuilding from CRDT log before retrying.
-    // Our insert+prune may produce a different trie structure than the server's
-    // (Node.js vs expo-sqlite differences). Rebuilding from all timestamps
-    // produces a canonical trie that matches the server.
-    if (__DEV__) console.log("[fullSync] merkle diverged — rebuilding from CRDT log");
-    const { rebuildMerkleHash } = await import("./repair");
-    const rebuilt = rebuildMerkleHash();
-    getClock().merkle = rebuilt.trie;
-    await saveClock();
-    // Re-check with rebuilt merkle
-    const newDiff = merkle.diff(serverMerkle as any, getClock().merkle);
-    if (newDiff === null) {
-      if (__DEV__) console.log("[fullSync] merkle repaired — trees now match");
-      return receivedMessages;
+    // Only rebuild merkle if we received messages but our hash didn't change
+    // (indicates corrupted trie, not missing messages). If the hash DID change
+    // (we applied new messages), the divergence is real — retry to get the rest.
+    if (!merkleChanged && count > 0) {
+      if (__DEV__) console.log("[fullSync] merkle corrupted (no change after apply) — rebuilding");
+      const { rebuildMerkleHash } = await import("./repair");
+      const rebuilt = rebuildMerkleHash();
+      getClock().merkle = rebuilt.trie;
+      await saveClock();
+      const newDiff = merkle.diff(serverMerkle as any, getClock().merkle);
+      if (newDiff === null) {
+        if (__DEV__) console.log("[fullSync] merkle repaired — trees now match");
+        return receivedMessages;
+      }
     }
 
     // Retry — upstream retries up to 10× for same diffTime, 100× total
@@ -174,6 +176,11 @@ async function _fullSync(
  * from 60s polling, scheduleFullSync, and foreground triggers.
  */
 let _activeSyncPromise: Promise<void> | null = null;
+
+/** Called by resetSyncState to cancel the once() guard for budget switches. */
+export function clearActiveSyncPromise(): void {
+  _activeSyncPromise = null;
+}
 
 export function fullSync(): Promise<void> {
   // If sync is already running, return the existing promise (upstream once() pattern)

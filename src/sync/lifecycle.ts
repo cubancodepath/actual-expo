@@ -70,4 +70,7 @@ export function resetSyncState(resetBatchState: () => void): void {
   clearUndo();
   resetBatchState();
   _switchingBudget = true;
+  _activeSyncPromise = null;
+  // Also clear the once() guard in fullSync so the new budget gets a fresh sync
+  import("./fullSync").then(({ clearActiveSyncPromise }) => clearActiveSyncPromise());
 }

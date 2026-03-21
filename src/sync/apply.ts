@@ -86,6 +86,14 @@ export const applyMessages = sequential(async function applyMessages(
 
   // Deduplicate against existing CRDT log (upstream pattern)
   const deduped = compareMessages(messages);
+  if (__DEV__) {
+    const newCount = deduped.filter((m) => !m.old).length;
+    const oldCount = deduped.filter((m) => m.old).length;
+    const skipped = messages.length - deduped.length;
+    console.log(
+      `[applyMessages] ${messages.length} in → ${newCount} new, ${oldCount} old, ${skipped} skipped`,
+    );
+  }
   if (deduped.length === 0) return {};
 
   // Sort by timestamp for deterministic application

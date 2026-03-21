@@ -439,6 +439,7 @@ export default function BudgetScreen() {
             editValue={editingCatId === cat.id ? editValue : undefined}
             expressionMode={editingCatId === cat.id && expr.expressionMode}
             expression={editingCatId === cat.id ? expr.expression : ""}
+            operandCents={editingCatId === cat.id ? expr.operandCents : 0}
             onPress={handleRowPress}
             showProgressBar={goalsEnabled && showProgressBars}
             showBudgetedColumn={showBudgetedColumn}

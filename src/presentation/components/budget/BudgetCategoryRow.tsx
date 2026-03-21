@@ -41,6 +41,7 @@ interface BudgetCategoryRowProps {
   editValue?: number;
   expressionMode?: boolean;
   expression?: string;
+  operandCents?: number;
   onPress: (catId: string, budgeted: number, pageY: number) => void;
   showProgressBar?: boolean;
   showBudgetedColumn?: boolean;
@@ -62,6 +63,7 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
   editValue,
   expressionMode = false,
   expression = "",
+  operandCents = 0,
   onPress,
   showProgressBar = true,
   showBudgetedColumn = true,
@@ -229,7 +231,7 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
                     }}
                   >
                     {expression.slice(-1)}
-                    {formatCents(Math.abs(editValue ?? 0))}
+                    {formatCents(operandCents)}
                   </Text>
                   {renderCursor(
                     { width: 1.5, height: 16, marginLeft: 1, borderRadius: 1 },

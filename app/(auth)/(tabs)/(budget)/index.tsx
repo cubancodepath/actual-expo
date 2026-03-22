@@ -39,7 +39,12 @@ import { useExpressionMode } from "@/presentation/hooks/useExpressionMode";
 import { useKeyboardBlur } from "@/presentation/hooks/useKeyboardBlur";
 import { MAX_CENTS } from "@/lib/currency";
 import { formatBalance, formatPrivacyAware } from "@/lib/format";
-import { StripedProgressBar, ActualList, ActualSection } from "../../../../modules/actual-ui";
+import {
+  StripedProgressBar,
+  ActualList,
+  ActualSection,
+  minimumScaleFactor,
+} from "../../../../modules/actual-ui";
 import { usePrivacyStore } from "@/stores/privacyStore";
 import { computeProgressBar } from "@/goals/progressBar";
 import { ProgressBar } from "@/presentation/components/atoms/ProgressBar";
@@ -219,6 +224,7 @@ function CategoryRowNative({
               color={showExpression ? colors.textMuted : budgetedColor}
               tabularNums
               lines={1}
+              modifiers={[minimumScaleFactor(0.7)]}
             >
               {baseText}
             </SText>

@@ -14,6 +14,7 @@ import {
   monospacedDigit,
   lineLimit,
 } from "@expo/ui/swift-ui/modifiers";
+import { minimumScaleFactor } from "../../../../modules/actual-ui";
 import { sFont, type SFontVariant } from "../tokens";
 import { formatPrivacyAware } from "@/lib/format";
 import { usePrivacyStore } from "@/stores/privacyStore";
@@ -40,6 +41,7 @@ export function SPill({ value, variant = "caption", modifiers: extraModifiers }:
     sFont[variant],
     monospacedDigit(),
     lineLimit(1),
+    minimumScaleFactor(0.7),
     foregroundStyle(pillText),
     padding({ horizontal: 10, vertical: 3 }),
     background(pillBg),

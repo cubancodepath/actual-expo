@@ -7,6 +7,7 @@
 
 import { Text as SUIText } from "@expo/ui/swift-ui";
 import { foregroundStyle, lineLimit, monospacedDigit } from "@expo/ui/swift-ui/modifiers";
+import { minimumScaleFactor } from "../../../../modules/actual-ui";
 import { sFont, type SFontVariant } from "../tokens";
 import { formatPrivacyAware } from "@/lib/format";
 import { usePrivacyStore } from "@/stores/privacyStore";
@@ -47,6 +48,8 @@ export function SAmount({
   const mods = [
     sFont[variant],
     monospacedDigit(),
+    lineLimit(1),
+    minimumScaleFactor(0.7),
     ...(color ? [foregroundStyle(color)] : []),
     ...(lines != null ? [lineLimit(lines)] : []),
     ...(extraModifiers ?? []),

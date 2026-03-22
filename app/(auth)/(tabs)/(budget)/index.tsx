@@ -2,35 +2,19 @@ import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState 
 import { useFocusEffect } from "expo-router";
 import { Alert, Keyboard, Pressable, TextInput, View, useColorScheme } from "react-native";
 import { Icon } from "@/presentation/components/atoms/Icon";
-import {
-  Host,
-  List,
-  Section,
-  HStack,
-  VStack,
-  Text as SUIText,
-  Spacer,
-  ContextMenu,
-  Button as SUIButton,
-} from "@expo/ui/swift-ui";
+import { Host, HStack, VStack, Spacer, ContextMenu, Button as SUIButton } from "@expo/ui/swift-ui";
 import { Amount } from "@/presentation/components/atoms/Amount";
 import {
   foregroundStyle,
-  font,
-  monospacedDigit,
-  background,
-  cornerRadius,
   padding,
-  scrollContentBackground,
   listRowBackground,
   frame,
-  lineLimit,
   onTapGesture,
   opacity,
   contentShape,
+  refreshable,
 } from "@expo/ui/swift-ui/modifiers";
 import { shapes } from "@expo/ui/swift-ui/modifiers";
-import { listStyle, refreshable } from "@expo/ui/swift-ui/modifiers";
 import { Stack, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
@@ -55,8 +39,7 @@ import { useExpressionMode } from "@/presentation/hooks/useExpressionMode";
 import { useKeyboardBlur } from "@/presentation/hooks/useKeyboardBlur";
 import { MAX_CENTS } from "@/lib/currency";
 import { formatBalance, formatPrivacyAware } from "@/lib/format";
-import { StripedProgressBar } from "../../../../modules/actual-ui";
-import { useSyncedPref } from "@/presentation/hooks/useSyncedPref";
+import { StripedProgressBar, ActualList, ActualSection } from "../../../../modules/actual-ui";
 import { usePrivacyStore } from "@/stores/privacyStore";
 import { computeProgressBar } from "@/goals/progressBar";
 import { ProgressBar } from "@/presentation/components/atoms/ProgressBar";
@@ -96,12 +79,9 @@ type BudgetSection = {
 
 const HIDDEN_GROUP_ID = "__hidden__";
 
-// Column widths and font size — wider symbols (AED, USD) need smaller font
-// When currency symbol is active, columns need less space (smaller font)
-const COL_BUDGETED_SYM = 85;
-const COL_AVAILABLE_SYM = 90;
-const COL_BUDGETED_PLAIN = 100;
-const COL_AVAILABLE_PLAIN = 105;
+// Column widths — minimumScaleFactor handles overflow
+const COL_BUDGETED = 90;
+const COL_AVAILABLE = 95;
 
 // ---------------------------------------------------------------------------
 // Category row — native SwiftUI (simple: name + available pill)
@@ -141,11 +121,6 @@ function CategoryRowNative({
   const { colors } = useTheme();
   const { t: tBudget } = useTranslation("budget");
   usePrivacyStore(); // subscribe to re-render on privacy toggle
-  const [currencyCode] = useSyncedPref("defaultCurrencyCode");
-  const hasSym = !!currencyCode;
-  const amountFontSize = hasSym ? 10 : 12;
-  const COL_BUDGETED = hasSym ? COL_BUDGETED_SYM : COL_BUDGETED_PLAIN;
-  const COL_AVAILABLE = hasSym ? COL_AVAILABLE_SYM : COL_AVAILABLE_PLAIN;
   const budgeted = useSheetValueNumber(sheet, envelopeBudget.catBudgeted(catId));
   const spent = useSheetValueNumber(sheet, envelopeBudget.catSpent(catId));
   const balance = useSheetValueNumber(sheet, envelopeBudget.catBalance(catId));
@@ -227,7 +202,6 @@ function CategoryRowNative({
     <VStack
       alignment="trailing"
       modifiers={[
-        padding({ trailing: 16 }),
         listRowBackground(colors.cardBackground),
         contentShape(shapes.rectangle()),
         onTapGesture(() => onPress(catId, budgeted)),
@@ -241,7 +215,7 @@ function CategoryRowNative({
         {
           <VStack alignment="trailing" modifiers={[opacity(!showBar || anyEditing ? 1 : 0)]}>
             <SText
-              variant={hasSym ? "captionSm" : "caption"}
+              variant="caption"
               color={showExpression ? colors.textMuted : budgetedColor}
               tabularNums
               lines={1}
@@ -249,7 +223,7 @@ function CategoryRowNative({
               {baseText}
             </SText>
             {showExpression && (
-              <SText variant={hasSym ? "captionSm" : "caption"} color={colors.primary} tabularNums>
+              <SText variant="caption" color={colors.primary} tabularNums>
                 {operandText}
               </SText>
             )}
@@ -257,7 +231,7 @@ function CategoryRowNative({
         }
         <SPill
           value={balance}
-          variant={hasSym ? "captionSm" : "caption"}
+          variant="caption"
           modifiers={[frame({ width: COL_AVAILABLE, alignment: "trailing" })]}
         />
       </HStack>
@@ -585,10 +559,9 @@ export default function BudgetScreen() {
           <BudgetListSkeleton />
         ) : (
           <Host style={{ flex: 1 }} colorScheme={colorScheme === "dark" ? "dark" : "light"}>
-            <List
+            <ActualList
+              listStyleType="plain"
               modifiers={[
-                listStyle("sidebar"),
-                scrollContentBackground("hidden"),
                 refreshable(async () => {
                   await refreshControlProps.onRefresh();
                 }),
@@ -596,9 +569,10 @@ export default function BudgetScreen() {
             >
               {/* Budget groups */}
               {displaySections.map((section) => (
-                <Section
+                <ActualSection
                   key={section.key}
                   isExpanded={!collapsedGroups.has(section.group.id)}
+                  headerBackground={colors.pageBackground}
                   onIsExpandedChange={(expanded) => {
                     dismissEdit();
                     if (expanded) {
@@ -620,7 +594,7 @@ export default function BudgetScreen() {
                     />
                   }
                 >
-                  {section.data.map((cat) => (
+                  {section.data.map((cat, idx) => (
                     <ContextMenu key={cat.id}>
                       <ContextMenu.Trigger>
                         <CategoryRowNative
@@ -664,9 +638,9 @@ export default function BudgetScreen() {
                       </ContextMenu.Items>
                     </ContextMenu>
                   ))}
-                </Section>
+                </ActualSection>
               ))}
-            </List>
+            </ActualList>
           </Host>
         )}
 

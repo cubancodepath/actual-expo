@@ -13,21 +13,17 @@ import {
   frame,
   padding,
 } from "@expo/ui/swift-ui/modifiers";
-import { sFont } from "../tokens";
 import { SText } from "../atoms/SText";
 import { SAmount } from "../atoms/SAmount";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { usePrivacyStore } from "@/stores/privacyStore";
 import { useSheetValueNumber } from "@/presentation/hooks/useSheetValue";
 import { envelopeBudget } from "@/spreadsheet/bindings";
-import { useSyncedPref } from "@/presentation/hooks/useSyncedPref";
 import { useTranslation } from "react-i18next";
 
-// Column widths — wider symbols (AED, USD) need smaller font
-const COL_BUDGETED_SYM = 85;
-const COL_AVAILABLE_SYM = 90;
-const COL_BUDGETED_PLAIN = 100;
-const COL_AVAILABLE_PLAIN = 105;
+// Column widths — minimumScaleFactor handles overflow
+const COL_BUDGETED = 90;
+const COL_AVAILABLE = 95;
 
 interface SSectionHeaderProps {
   group: { id: string; name: string; is_income: boolean };
@@ -45,11 +41,6 @@ export function SSectionHeader({
   const { colors } = useTheme();
   const { t } = useTranslation("budget");
   usePrivacyStore();
-  const [currencyCode] = useSyncedPref("defaultCurrencyCode");
-  const hasSym = !!currencyCode;
-  const amountFontSize = hasSym ? 10 : 12;
-  const COL_BUDGETED = hasSym ? COL_BUDGETED_SYM : COL_BUDGETED_PLAIN;
-  const COL_AVAILABLE = hasSym ? COL_AVAILABLE_SYM : COL_AVAILABLE_PLAIN;
 
   const budgeted = useSheetValueNumber(sheet, envelopeBudget.groupBudgeted(group.id));
   const spent = useSheetValueNumber(sheet, envelopeBudget.groupSpent(group.id));
@@ -87,7 +78,6 @@ export function SSectionHeader({
             variant="caption"
             color={budgeted !== 0 ? colors.textSecondary : colors.textMuted}
             lines={1}
-            modifiers={[sFont[hasSym ? "captionSm" : "caption"]]}
           />
         </VStack>
       )}
@@ -102,13 +92,7 @@ export function SSectionHeader({
         <SText variant="captionSm" color={colors.textMuted}>
           {t("columnAvailable")}
         </SText>
-        <SAmount
-          value={balanceValue}
-          color={balanceColor}
-          variant="caption"
-          lines={1}
-          modifiers={[sFont[hasSym ? "captionSm" : "caption"]]}
-        />
+        <SAmount value={balanceValue} color={balanceColor} variant="caption" lines={1} />
       </VStack>
     </HStack>
   );

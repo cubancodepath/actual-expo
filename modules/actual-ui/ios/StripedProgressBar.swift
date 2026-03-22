@@ -77,6 +77,8 @@ public struct StripedProgressBarView: ExpoSwiftUI.View {
       }
     }
     .frame(height: CGFloat(props.barHeight))
+    .animation(.easeInOut(duration: 0.4), value: props.spent)
+    .animation(.easeInOut(duration: 0.4), value: props.available)
   }
 }
 

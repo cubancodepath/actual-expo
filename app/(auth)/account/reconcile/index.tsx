@@ -1,16 +1,117 @@
-import { useState } from "react";
-import { View } from "react-native";
+import { useEffect, useState } from "react";
+import { Pressable, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import Animated, {
+  interpolate,
+  interpolateColor,
+  useAnimatedStyle,
+  useSharedValue,
+  useReducedMotion,
+  withSpring,
+} from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { lockTransactions } from "@/transactions";
+import { lockTransactions, reconcileAccount } from "@/transactions";
 import { Text } from "@/presentation/components/atoms/Text";
-import { Button } from "@/presentation/components/atoms/Button";
 import { Amount } from "@/presentation/components/atoms/Amount";
 import { Icon } from "@/presentation/components/atoms/Icon";
+import { useAmountInput } from "@/presentation/components/transaction/useAmountInput";
+import { HiddenAmountInput } from "@/presentation/components/transaction/HiddenAmountInput";
+import { CurrencyAmountDisplay } from "@/presentation/components/currency-input/CurrencyAmountDisplay";
+import { formatAmount } from "@/lib/format";
 import { useTranslation } from "react-i18next";
 
-export default function ReconcileConfirmScreen() {
+// ---------------------------------------------------------------------------
+// Sign Toggle (+/−)
+// ---------------------------------------------------------------------------
+
+const TRACK_W = 52;
+const TRACK_H = 28;
+const THUMB = 22;
+const TRAVEL = TRACK_W - THUMB - 6;
+
+function SignToggle({ isNegative, onToggle }: { isNegative: boolean; onToggle: () => void }) {
+  const { colors } = useTheme();
+  const reducedMotion = useReducedMotion();
+  const progress = useSharedValue(isNegative ? 1 : 0);
+
+  useEffect(() => {
+    progress.value = reducedMotion
+      ? isNegative
+        ? 1
+        : 0
+      : withSpring(isNegative ? 1 : 0, { damping: 20, stiffness: 300 });
+  }, [isNegative]);
+
+  const thumbStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: interpolate(progress.value, [0, 1], [0, TRAVEL]) }],
+  }));
+
+  const trackStyle = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(
+      progress.value,
+      [0, 1],
+      [colors.positiveSubtle, colors.negativeSubtle],
+    ),
+  }));
+
+  const symbolColor = isNegative ? colors.negative : colors.positive;
+
+  return (
+    <Pressable
+      onPress={() => {
+        Haptics.selectionAsync();
+        onToggle();
+      }}
+      hitSlop={8}
+    >
+      <Animated.View
+        style={[
+          {
+            width: TRACK_W,
+            height: TRACK_H,
+            borderRadius: TRACK_H / 2,
+            justifyContent: "center",
+            paddingLeft: 3,
+          },
+          trackStyle,
+        ]}
+      >
+        <Animated.View
+          style={[
+            {
+              width: THUMB,
+              height: THUMB,
+              borderRadius: THUMB / 2,
+              backgroundColor: colors.elevatedBackground,
+              alignItems: "center",
+              justifyContent: "center",
+              shadowColor: "#000",
+              shadowOpacity: 0.15,
+              shadowRadius: 3,
+              shadowOffset: { width: 0, height: 1 },
+            },
+            thumbStyle,
+          ]}
+        >
+          <Text
+            variant="body"
+            color={symbolColor}
+            style={{ fontWeight: "700", fontSize: 16, lineHeight: 18 }}
+          >
+            {isNegative ? "−" : "+"}
+          </Text>
+        </Animated.View>
+      </Animated.View>
+    </Pressable>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Reconcile Screen (single half-sheet)
+// ---------------------------------------------------------------------------
+
+export default function ReconcileScreen() {
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const router = useRouter();
   const { accountId, clearedBalance, clearedCount, lastReconciled } = useLocalSearchParams<{
@@ -25,7 +126,21 @@ export default function ReconcileConfirmScreen() {
   const count = Number(clearedCount) || 0;
   const [loading, setLoading] = useState(false);
 
-  // Format last reconciled date
+  // Pre-populate with cleared balance
+  const [isNegative, setIsNegative] = useState(clearedCents < 0);
+  const amountInput = useAmountInput(Math.abs(clearedCents));
+
+  const bankBalance = isNegative ? -amountInput.cents : amountInput.cents;
+  const diff = bankBalance - clearedCents;
+
+  // Diff pill state
+  const hasDiff = amountInput.cents > 0 && diff !== 0;
+  const isBalanced = amountInput.cents > 0 && diff === 0;
+
+  const diffPillBg = isBalanced ? colors.positiveSubtle : colors.warningSubtle;
+  const diffPillColor = isBalanced ? colors.positive : colors.warning;
+
+  // Last reconciled label
   const lastReconciledLabel = lastReconciled
     ? t("reconcile.lastReconciled", {
         date: new Date(Number(lastReconciled)).toLocaleDateString(undefined, {
@@ -35,11 +150,18 @@ export default function ReconcileConfirmScreen() {
       })
     : t("reconcile.neverReconciled");
 
-  async function handleMatch() {
-    if (loading) return;
+  const displayColor =
+    amountInput.cents > 0 ? (isNegative ? colors.negative : colors.positive) : colors.textMuted;
+
+  async function handleReconcile() {
+    if (amountInput.cents === 0 || loading) return;
     setLoading(true);
     try {
-      await lockTransactions(accountId);
+      if (diff === 0) {
+        await lockTransactions(accountId);
+      } else {
+        await reconcileAccount(accountId, bankBalance);
+      }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.dismiss();
     } finally {
@@ -47,112 +169,167 @@ export default function ReconcileConfirmScreen() {
     }
   }
 
-  function handleEnterBalance() {
-    router.push({
-      pathname: "/(auth)/account/reconcile/amount",
-      params: { accountId, clearedBalance },
-    });
-  }
-
   return (
-    <View style={{ flex: 1, backgroundColor: colors.pageBackground, padding: spacing.lg }}>
-      <Stack.Screen options={{}} />
+    <>
+      <View style={{ flex: 1, backgroundColor: colors.pageBackground, padding: spacing.lg }}>
+        <Stack.Screen options={{}} />
 
-      {/* Hero card with cleared balance */}
-      <View
-        style={{
-          backgroundColor: colors.cardBackground,
-          borderRadius: br.lg,
-          paddingHorizontal: spacing.lg,
-          paddingVertical: spacing.xl,
-          alignItems: "center",
-          marginBottom: spacing.lg,
-        }}
-      >
-        <Text
-          variant="captionSm"
-          color={colors.textMuted}
-          style={{
-            textTransform: "uppercase",
-            letterSpacing: 1.2,
-            fontWeight: "700",
-            marginBottom: spacing.sm,
-          }}
-        >
-          {t("reconcile.title")}
-        </Text>
-
-        <Amount
-          value={clearedCents}
-          variant="displayLg"
-          colored
-          weight="700"
-          style={{ fontSize: 40, lineHeight: 48 }}
-        />
-
+        {/* Hero card */}
         <View
           style={{
-            height: bw.thin,
-            backgroundColor: colors.divider,
-            alignSelf: "stretch",
-            marginVertical: spacing.md,
+            backgroundColor: colors.cardBackground,
+            borderRadius: br.lg,
+            paddingHorizontal: spacing.lg,
+            paddingVertical: spacing.lg,
+            alignItems: "center",
+            marginBottom: spacing.md,
           }}
-        />
-
-        <Text variant="captionSm" color={colors.textMuted}>
-          {lastReconciledLabel}
-        </Text>
-
-        {count > 0 && (
-          <View
+        >
+          <Text
+            variant="captionSm"
+            color={colors.textMuted}
             style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: spacing.xs,
-              marginTop: spacing.xs,
+              textTransform: "uppercase",
+              letterSpacing: 1.2,
+              fontWeight: "700",
+              marginBottom: spacing.xs,
             }}
           >
-            <Icon name="lockClosed" size={12} color={colors.textMuted} />
-            <Text variant="captionSm" color={colors.textMuted}>
-              {t("reconcile.transactionsToLock", { count })}
-            </Text>
+            {t("reconcile.title")}
+          </Text>
+
+          <Amount
+            value={clearedCents}
+            variant="displayLg"
+            colored
+            weight="700"
+            style={{ fontSize: 36, lineHeight: 44 }}
+          />
+
+          <View
+            style={{
+              height: bw.thin,
+              backgroundColor: colors.divider,
+              alignSelf: "stretch",
+              marginVertical: spacing.sm,
+            }}
+          />
+
+          <Text variant="captionSm" color={colors.textMuted}>
+            {lastReconciledLabel}
+          </Text>
+
+          {count > 0 && (
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: spacing.xs,
+                marginTop: spacing.xs,
+              }}
+            >
+              <Icon name="lockClosed" size={12} color={colors.textMuted} />
+              <Text variant="captionSm" color={colors.textMuted}>
+                {t("reconcile.transactionsToLock", { count })}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Question */}
+        <Text
+          variant="body"
+          color={colors.textSecondary}
+          style={{ textAlign: "center", marginBottom: spacing.md }}
+        >
+          {t("reconcile.question")}
+        </Text>
+
+        {/* Amount input */}
+        <Pressable
+          onPress={() => amountInput.sharedInputRef.current?.focus()}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            backgroundColor: colors.cardBackground,
+            borderRadius: br.lg,
+            paddingHorizontal: spacing.md,
+            paddingVertical: spacing.sm,
+            gap: spacing.sm,
+          }}
+        >
+          <SignToggle isNegative={isNegative} onToggle={() => setIsNegative((prev) => !prev)} />
+          <View style={{ flex: 1, justifyContent: "center", alignItems: "flex-end" }}>
+            <CurrencyAmountDisplay
+              amount={amountInput.cents}
+              isActive={amountInput.amountFocused}
+              expressionMode={amountInput.expr.expressionMode}
+              fullExpression={amountInput.expr.fullExpression}
+              color={displayColor}
+              primaryColor={colors.primary}
+            />
+          </View>
+        </Pressable>
+
+        {/* Diff pill */}
+        {(isBalanced || hasDiff) && (
+          <View style={{ alignItems: "center", marginTop: spacing.md }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                backgroundColor: diffPillBg,
+                borderRadius: br.full,
+                paddingHorizontal: spacing.sm,
+                paddingVertical: spacing.xs,
+                gap: spacing.xs,
+              }}
+            >
+              {isBalanced ? (
+                <>
+                  <Icon name="checkmarkCircle" size={14} color={diffPillColor} />
+                  <Text variant="captionSm" color={diffPillColor} style={{ fontWeight: "600" }}>
+                    {t("reconcile.diffZero")}
+                  </Text>
+                </>
+              ) : (
+                <Text variant="captionSm" color={diffPillColor} style={{ fontWeight: "600" }}>
+                  {diff > 0
+                    ? t("reconcile.diffPositive", { amount: formatAmount(Math.abs(diff)) })
+                    : t("reconcile.diffNegative", { amount: formatAmount(Math.abs(diff)) })}
+                </Text>
+              )}
+            </View>
+
+            {hasDiff && (
+              <Text
+                variant="captionSm"
+                color={colors.textMuted}
+                style={{ marginTop: spacing.xs, textAlign: "center" }}
+              >
+                {t("reconcile.adjustmentNotice")}
+              </Text>
+            )}
           </View>
         )}
       </View>
 
-      {/* Question */}
-      <Text
-        variant="body"
-        color={colors.textSecondary}
-        style={{ textAlign: "center", marginBottom: spacing.sm }}
-      >
-        {t("reconcile.question")}
-      </Text>
+      {/* Toolbar */}
+      <Stack.Toolbar placement="left">
+        <Stack.Toolbar.Button icon="xmark" onPress={() => router.dismiss()} />
+      </Stack.Toolbar>
+      <Stack.Toolbar placement="right">
+        <Stack.Toolbar.Button
+          variant="done"
+          tintColor={colors.primary}
+          disabled={amountInput.cents === 0 || loading}
+          onPress={handleReconcile}
+        >
+          {t("reconcile.reconcileButton")}
+        </Stack.Toolbar.Button>
+      </Stack.Toolbar>
 
-      {/* Helper text */}
-      <Text
-        variant="captionSm"
-        color={colors.textMuted}
-        style={{ textAlign: "center", marginBottom: spacing.xl }}
-      >
-        {t("reconcile.helperText")}
-      </Text>
-
-      {/* Actions */}
-      <View style={{ gap: spacing.sm }}>
-        <Button
-          title={t("reconcile.yesMatches")}
-          onPress={handleMatch}
-          loading={loading}
-          style={{ borderRadius: br.full }}
-        />
-        <Button
-          title={t("reconcile.noEnterBalance")}
-          buttonStyle="borderedSecondary"
-          onPress={handleEnterBalance}
-          style={{ borderRadius: br.full }}
-        />
-      </View>
-    </View>
+      <HiddenAmountInput amountInput={amountInput} />
+    </>
   );
 }

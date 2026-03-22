@@ -569,6 +569,7 @@ export default function BudgetScreen() {
           <Host style={{ flex: 1 }} colorScheme={colorScheme === "dark" ? "dark" : "light"}>
             <ActualList
               listStyleType="plain"
+              sectionSpacing={0}
               modifiers={[
                 refreshable(async () => {
                   await refreshControlProps.onRefresh();

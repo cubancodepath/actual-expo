@@ -9,6 +9,8 @@ public final class ActualListProps: UIBaseViewProps {
   @Field var listStyleType: String = "plain"
   /// Tint color hex (affects refresh spinner, accent elements)
   @Field var listTintColor: String?
+  /// Section spacing in points (default: system default, 0 = compact)
+  @Field var sectionSpacing: Double = -1
 }
 
 // MARK: - View
@@ -23,7 +25,12 @@ public struct ActualListView: ExpoSwiftUI.View {
   public var body: some View {
     let tintColor = props.listTintColor.map { Color(hex: $0) }
 
-    if #available(iOS 16.0, *) {
+    if #available(iOS 17.0, *) {
+      listForStyle
+        .scrollContentBackground(.hidden)
+        .tint(tintColor)
+        .listSectionSpacing(props.sectionSpacing >= 0 ? .custom(props.sectionSpacing) : .default)
+    } else if #available(iOS 16.0, *) {
       listForStyle
         .scrollContentBackground(.hidden)
         .tint(tintColor)

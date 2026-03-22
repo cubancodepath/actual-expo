@@ -7,6 +7,8 @@ export interface ActualListProps extends CommonViewModifierProps {
   listStyleType?: "plain" | "insetGrouped" | "grouped";
   /** Tint color hex (refresh spinner, accent elements) */
   listTintColor?: string;
+  /** Section spacing in points (-1 = system default, 0 = compact) */
+  sectionSpacing?: number;
   children: React.ReactNode;
 }
 

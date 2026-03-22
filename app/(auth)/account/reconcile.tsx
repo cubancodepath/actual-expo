@@ -14,11 +14,11 @@ import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { lockTransactions, reconcileAccount } from "@/transactions";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Amount } from "@/presentation/components/atoms/Amount";
-import { Icon } from "@/presentation/components/atoms/Icon";
 import { useAmountInput } from "@/presentation/components/transaction/useAmountInput";
 import { HiddenAmountInput } from "@/presentation/components/transaction/HiddenAmountInput";
 import { CurrencyAmountDisplay } from "@/presentation/components/currency-input/CurrencyAmountDisplay";
 import { formatAmount } from "@/lib/format";
+import { formatDistanceToNow, format } from "date-fns";
 import { useTranslation } from "react-i18next";
 
 // ---------------------------------------------------------------------------
@@ -108,47 +108,41 @@ function SignToggle({ isNegative, onToggle }: { isNegative: boolean; onToggle: (
 }
 
 // ---------------------------------------------------------------------------
-// Reconcile Screen (single half-sheet)
+// Reconcile Screen
 // ---------------------------------------------------------------------------
 
 export default function ReconcileScreen() {
-  const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
+  const { colors, spacing, borderRadius: br, borderWidth: bw, sizes } = useTheme();
   const router = useRouter();
-  const { accountId, clearedBalance, clearedCount, lastReconciled } = useLocalSearchParams<{
+  const { accountId, clearedBalance, lastReconciled } = useLocalSearchParams<{
     accountId: string;
     clearedBalance: string;
-    clearedCount: string;
     lastReconciled: string;
   }>();
 
   const { t } = useTranslation("accounts");
   const clearedCents = Number(clearedBalance) || 0;
-  const count = Number(clearedCount) || 0;
+
+  // Human-readable last reconciled
+  const lastReconciledText =
+    lastReconciled && lastReconciled !== ""
+      ? (() => {
+          const ts = Number(lastReconciled);
+          const date = isNaN(ts) ? new Date(lastReconciled) : new Date(ts);
+          if (isNaN(date.getTime())) return null;
+          const relative = formatDistanceToNow(date, { addSuffix: true });
+          const dateStr = format(date, "MMM d");
+          return `${relative} (${dateStr})`;
+        })()
+      : null;
   const [loading, setLoading] = useState(false);
 
-  // Pre-populate with cleared balance
   const [isNegative, setIsNegative] = useState(clearedCents < 0);
   const amountInput = useAmountInput(Math.abs(clearedCents));
 
   const bankBalance = isNegative ? -amountInput.cents : amountInput.cents;
   const diff = bankBalance - clearedCents;
-
-  // Diff pill state
-  const hasDiff = amountInput.cents > 0 && diff !== 0;
   const isBalanced = amountInput.cents > 0 && diff === 0;
-
-  const diffPillBg = isBalanced ? colors.positiveSubtle : colors.warningSubtle;
-  const diffPillColor = isBalanced ? colors.positive : colors.warning;
-
-  // Last reconciled label
-  const lastReconciledLabel = lastReconciled
-    ? t("reconcile.lastReconciled", {
-        date: new Date(Number(lastReconciled)).toLocaleDateString(undefined, {
-          month: "short",
-          day: "numeric",
-        }),
-      })
-    : t("reconcile.neverReconciled");
 
   const displayColor =
     amountInput.cents > 0 ? (isNegative ? colors.negative : colors.positive) : colors.textMuted;
@@ -171,95 +165,39 @@ export default function ReconcileScreen() {
 
   return (
     <>
-      <View style={{ flex: 1, backgroundColor: colors.pageBackground, padding: spacing.lg }}>
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: colors.pageBackground,
+          paddingHorizontal: spacing.lg,
+          paddingTop: 72,
+          paddingBottom: spacing.lg,
+        }}
+      >
         <Stack.Screen options={{}} />
 
-        {/* Hero card */}
-        <View
-          style={{
-            backgroundColor: colors.cardBackground,
-            borderRadius: br.lg,
-            paddingHorizontal: spacing.lg,
-            paddingVertical: spacing.lg,
-            alignItems: "center",
-            marginBottom: spacing.md,
-          }}
-        >
-          <Text
-            variant="captionSm"
-            color={colors.textMuted}
-            style={{
-              textTransform: "uppercase",
-              letterSpacing: 1.2,
-              fontWeight: "700",
-              marginBottom: spacing.xs,
-            }}
-          >
-            {t("reconcile.title")}
-          </Text>
-
-          <Amount
-            value={clearedCents}
-            variant="displayLg"
-            colored
-            weight="700"
-            style={{ fontSize: 36, lineHeight: 44 }}
-          />
-
-          <View
-            style={{
-              height: bw.thin,
-              backgroundColor: colors.divider,
-              alignSelf: "stretch",
-              marginVertical: spacing.sm,
-            }}
-          />
-
-          <Text variant="captionSm" color={colors.textMuted}>
-            {lastReconciledLabel}
-          </Text>
-
-          {count > 0 && (
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: spacing.xs,
-                marginTop: spacing.xs,
-              }}
-            >
-              <Icon name="lockClosed" size={12} color={colors.textMuted} />
-              <Text variant="captionSm" color={colors.textMuted}>
-                {t("reconcile.transactionsToLock", { count })}
-              </Text>
-            </View>
-          )}
-        </View>
-
         {/* Question */}
-        <Text
-          variant="body"
-          color={colors.textSecondary}
-          style={{ textAlign: "center", marginBottom: spacing.md }}
-        >
-          {t("reconcile.question")}
+        <Text variant="bodySm" color={colors.textMuted} style={{ marginBottom: spacing.lg }}>
+          {t("reconcile.bankBalanceQuestion")}
         </Text>
 
-        {/* Amount input */}
+        {/* Amount input — app standard input style with sign toggle as icon */}
         <Pressable
           onPress={() => amountInput.sharedInputRef.current?.focus()}
           style={{
             flexDirection: "row",
             alignItems: "center",
-            backgroundColor: colors.cardBackground,
-            borderRadius: br.lg,
+            backgroundColor: colors.inputBackground,
+            borderRadius: br.full,
+            borderWidth: bw.default,
+            borderColor: colors.inputBorder,
             paddingHorizontal: spacing.md,
-            paddingVertical: spacing.sm,
+            minHeight: sizes.control,
             gap: spacing.sm,
           }}
         >
           <SignToggle isNegative={isNegative} onToggle={() => setIsNegative((prev) => !prev)} />
-          <View style={{ flex: 1, justifyContent: "center", alignItems: "flex-end" }}>
+          <View style={{ flex: 1, alignItems: "flex-end", paddingVertical: spacing.md }}>
             <CurrencyAmountDisplay
               amount={amountInput.cents}
               isActive={amountInput.amountFocused}
@@ -271,46 +209,11 @@ export default function ReconcileScreen() {
           </View>
         </Pressable>
 
-        {/* Diff pill */}
-        {(isBalanced || hasDiff) && (
-          <View style={{ alignItems: "center", marginTop: spacing.md }}>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                backgroundColor: diffPillBg,
-                borderRadius: br.full,
-                paddingHorizontal: spacing.sm,
-                paddingVertical: spacing.xs,
-                gap: spacing.xs,
-              }}
-            >
-              {isBalanced ? (
-                <>
-                  <Icon name="checkmarkCircle" size={14} color={diffPillColor} />
-                  <Text variant="captionSm" color={diffPillColor} style={{ fontWeight: "600" }}>
-                    {t("reconcile.diffZero")}
-                  </Text>
-                </>
-              ) : (
-                <Text variant="captionSm" color={diffPillColor} style={{ fontWeight: "600" }}>
-                  {diff > 0
-                    ? t("reconcile.diffPositive", { amount: formatAmount(Math.abs(diff)) })
-                    : t("reconcile.diffNegative", { amount: formatAmount(Math.abs(diff)) })}
-                </Text>
-              )}
-            </View>
-
-            {hasDiff && (
-              <Text
-                variant="captionSm"
-                color={colors.textMuted}
-                style={{ marginTop: spacing.xs, textAlign: "center" }}
-              >
-                {t("reconcile.adjustmentNotice")}
-              </Text>
-            )}
-          </View>
+        {/* Last reconciled */}
+        {lastReconciledText && (
+          <Text variant="captionSm" color={colors.textMuted} style={{ marginTop: spacing.sm }}>
+            Last reconciled {lastReconciledText}
+          </Text>
         )}
       </View>
 

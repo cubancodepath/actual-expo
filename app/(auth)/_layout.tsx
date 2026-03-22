@@ -29,10 +29,11 @@ export default function AuthLayout() {
       <Stack.Screen
         name="account/reconcile"
         options={{
-          ...screen,
-          title: "Reconcile",
+          title: "",
+          headerShadowVisible: false,
+          headerStyle: { backgroundColor: theme.colors.pageBackground },
           presentation: "formSheet",
-          sheetAllowedDetents: [0.6, 1.0],
+          sheetAllowedDetents: [0.3],
           sheetGrabberVisible: true,
           contentStyle: { backgroundColor: theme.colors.pageBackground },
         }}

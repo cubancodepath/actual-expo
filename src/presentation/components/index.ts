@@ -48,7 +48,6 @@ export {
 
 // Budget
 export { MonthSelector } from "./budget/MonthSelector";
-export { ReadyToAssignPill } from "./budget/ReadyToAssignPill";
 export { OverspentPill } from "./budget/OverspentPill";
 // export { BudgetSummaryBar } from "./budget/BudgetSummaryBar";
 export { BudgetGroupHeader } from "./budget/BudgetGroupHeader";

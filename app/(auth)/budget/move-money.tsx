@@ -15,7 +15,10 @@ import Animated, {
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { palette } from "@/theme/colors";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
-import { transferMultipleCategories } from "@/budgets";
+import { transferMultipleCategories, transferAvailable } from "@/budgets";
+import { useSheetValueNumber } from "@/presentation/hooks/useSheetValue";
+import { sheetForMonth, envelopeBudget } from "@/spreadsheet/bindings";
+import { batchMessages } from "@/sync/batch";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Amount } from "@/presentation/components/atoms/Amount";
 import { Button } from "@/presentation/components/atoms/Button";
@@ -191,17 +194,21 @@ export default function MoveMoneyScreen() {
   const { t } = useTranslation("budget");
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const router = useRouter();
-  const { catId, catName, balance } = useLocalSearchParams<{
+  const { catId, catName, balance, source } = useLocalSearchParams<{
     catId: string;
     catName: string;
     balance: string;
+    source: string;
   }>();
 
+  const isFromBudget = source === "toBudget";
   const month = useBudgetUIStore((s) => s.month);
+  const sheet = sheetForMonth(month);
+  const toBudgetLive = useSheetValueNumber(sheet, envelopeBudget.toBudget);
   const coverTarget = useBudgetUIStore((s) => s.coverTarget);
   const setCoverTarget = useBudgetUIStore((s) => s.setCoverTarget);
 
-  const [direction, setDirection] = useState<MoveDirection>("to");
+  const [direction, setDirection] = useState<MoveDirection>(isFromBudget ? "from" : "to");
   const [sources, setSources] = useState<SourceEntry[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -237,10 +244,13 @@ export default function MoveMoneyScreen() {
     shared.focus();
   }
 
-  const balanceCents = Number(balance);
+  const balanceCents = isFromBudget ? toBudgetLive : Number(balance);
   const totalAmount = sources.reduce((sum, s) => sum + s.amount, 0);
-  const projectedBalance =
-    direction === "to" ? balanceCents + totalAmount : balanceCents - totalAmount;
+  const projectedBalance = isFromBudget
+    ? balanceCents - totalAmount
+    : direction === "to"
+      ? balanceCents + totalAmount
+      : balanceCents - totalAmount;
 
   // Open picker after mount
   const [didAutoOpen, setDidAutoOpen] = useState(false);
@@ -278,18 +288,28 @@ export default function MoveMoneyScreen() {
   }
 
   async function handleMove() {
-    if (!catId || saving) return;
+    if ((!catId && !isFromBudget) || saving) return;
     setSaving(true);
     try {
       const entries = sources.filter((s) => s.amount > 0);
       if (entries.length === 0) return;
-      await transferMultipleCategories(
-        month,
-        catId,
-        entries.map((s) => ({ categoryId: s.id, amountCents: s.amount, name: s.name })),
-        direction === "to" ? "to" : "from",
-        catName,
-      );
+
+      if (isFromBudget) {
+        // Transfer from To Budget to each selected category
+        await batchMessages(async () => {
+          for (const entry of entries) {
+            await transferAvailable(month, entry.id, entry.amount);
+          }
+        });
+      } else {
+        await transferMultipleCategories(
+          month,
+          catId,
+          entries.map((s) => ({ categoryId: s.id, amountCents: s.amount, name: s.name })),
+          direction === "to" ? "to" : "from",
+          catName,
+        );
+      }
       router.back();
     } finally {
       setSaving(false);
@@ -330,7 +350,7 @@ export default function MoveMoneyScreen() {
           </View>
 
           <Text variant="headingSm" color={headerText} align="center">
-            {catName}
+            {isFromBudget ? t("readyToAssignLabel") : catName}
           </Text>
 
           <View
@@ -344,12 +364,14 @@ export default function MoveMoneyScreen() {
             <Amount value={projectedBalance} variant="body" color={headerText} weight="700" />
           </View>
 
-          <DirectionToggle
-            direction={direction}
-            onToggle={() => setDirection((d) => (d === "to" ? "from" : "to"))}
-            fromLabel={t("from")}
-            toLabel={t("to")}
-          />
+          {!isFromBudget && (
+            <DirectionToggle
+              direction={direction}
+              onToggle={() => setDirection((d) => (d === "to" ? "from" : "to"))}
+              fromLabel={t("from")}
+              toLabel={t("to")}
+            />
+          )}
         </View>
 
         <View style={{ marginTop: -20, zIndex: 1, paddingHorizontal: spacing.lg }}>

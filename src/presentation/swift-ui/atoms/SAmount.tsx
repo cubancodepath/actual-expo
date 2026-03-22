@@ -46,6 +46,7 @@ interface SAmountProps extends CommonViewModifierProps {
   colored?: boolean;
   lines?: number;
   weight?: string;
+  letterSpacing?: number;
 }
 
 export function SAmount({
@@ -55,6 +56,7 @@ export function SAmount({
   colored = true,
   lines = 1,
   weight,
+  letterSpacing,
   modifiers: extraModifiers,
 }: SAmountProps) {
   const { colors } = useTheme();
@@ -62,8 +64,8 @@ export function SAmount({
 
   let color = colorProp;
   if (!colorProp && colored) {
-    if (value > 0) color = colors.positive;
-    else if (value < 0) color = colors.negative;
+    if (value > 0) color = colors.vibrantPositive;
+    else if (value < 0) color = colors.vibrantNegative;
     else color = colors.textMuted;
   }
 
@@ -76,6 +78,7 @@ export function SAmount({
       maxLines={lines}
       minScale={0.5}
       monoDigits
+      letterSpacing={letterSpacing}
       modifiers={extraModifiers}
     />
   );

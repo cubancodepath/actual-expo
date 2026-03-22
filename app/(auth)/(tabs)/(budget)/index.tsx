@@ -23,7 +23,9 @@ import { AddTransactionButton } from "@/presentation/components/molecules/AddTra
 import { SharedAmountInput } from "@/presentation/components/transaction/SharedAmountInput";
 import type { CurrencyInputRef } from "@/presentation/components/currency-input/CurrencyInput";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
-import { setCategoryCarryover, resetHold as resetHoldFn, setBudgetAmount } from "@/budgets";
+import { setCategoryCarryover, setBudgetAmount, holdForNextMonth } from "@/budgets";
+import { computeGoalAllocations, persistGoalAllocations } from "@/goals/apply";
+import * as Haptics from "expo-haptics";
 import { useCategories } from "@/presentation/hooks/useCategories";
 import {
   useSheetValue,
@@ -56,7 +58,7 @@ const BUDGET_ACCESSORY_ID = "budgetSharedCalcToolbar";
 
 import { BudgetGroupHeader } from "@/presentation/components/budget/BudgetGroupHeader";
 import { BudgetCategoryRow } from "@/presentation/components/budget/BudgetCategoryRow";
-import { ReadyToAssignPill } from "@/presentation/components/budget/ReadyToAssignPill";
+import { SReadyToAssignPill } from "@/presentation/swift-ui/molecules";
 import { OverspentPill } from "@/presentation/components/budget/OverspentPill";
 import { UnclearedPill } from "@/presentation/components/transaction/UnclearedPill";
 import { getUncategorizedStats } from "@/transactions";
@@ -178,11 +180,11 @@ function CategoryRowNative({
   const bar = !isIncome ? computeProgressBar(fullCat) : null;
   const barColor = bar
     ? bar.barStatus === "overspent"
-      ? colors.negative
+      ? colors.vibrantNegative
       : bar.barStatus === "caution"
-        ? colors.warning
+        ? colors.vibrantWarning
         : bar.barStatus === "healthy"
-          ? colors.positive
+          ? colors.vibrantPositive
           : colors.textMuted
     : colors.textMuted;
   const progressLabel = bar
@@ -222,10 +224,12 @@ function CategoryRowNative({
             <ScalableText
               text={baseText}
               fontSize={12}
+              fontWeight="semibold"
               color={showExpression ? colors.textMuted : budgetedColor}
               maxLines={1}
               minScale={0.5}
               monoDigits
+              letterSpacing={-0.5}
               modifiers={[frame({ width: COL_BUDGETED, alignment: "trailing" })]}
             />
             {showExpression && (
@@ -240,7 +244,18 @@ function CategoryRowNative({
           </VStack>
         }
         <VStack modifiers={[frame({ width: COL_AVAILABLE, alignment: "trailing" })]}>
-          <SPill value={balance} variant="caption" />
+          <SPill
+            value={balance}
+            variant="caption"
+            bgColor={bar && bar.barStatus !== "neutral" ? barColor : undefined}
+            textColor={
+              bar && bar.barStatus === "overspent"
+                ? colors.vibrantPillTextNegative
+                : bar && bar.barStatus !== "neutral"
+                  ? colors.vibrantPillText
+                  : undefined
+            }
+          />
         </VStack>
       </HStack>
       {showBar && bar && (
@@ -524,6 +539,31 @@ export default function BudgetScreen() {
     router.push("/(auth)/budget/cover-overspent");
   }
 
+  function handleResetHold() {
+    Alert.alert(t("resetHoldConfirmTitle"), t("resetHoldConfirmMessage"), [
+      { text: t("cancel"), style: "cancel" },
+      {
+        text: t("resetHold"),
+        style: "destructive",
+        onPress: () => holdForNextMonth(month, 0, toBudget),
+      },
+    ]);
+  }
+
+  async function handleAutoAssign() {
+    try {
+      const result = await computeGoalAllocations(month, true);
+      if (result.applied === 0) {
+        Alert.alert(t("noChangesTitle"), t("noChangesMessage"));
+        return;
+      }
+      await persistGoalAllocations(month, result.allocations);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch {
+      Alert.alert(t("errorTitle"), t("autoAssignError"));
+    }
+  }
+
   const showBudgetedColumn = !goalsEnabled || !showProgressBars || editingCatId !== null;
 
   function dismissEdit() {
@@ -534,32 +574,35 @@ export default function BudgetScreen() {
   return (
     <>
       <View style={{ flex: 1, backgroundColor: colors.pageBackground }}>
-        {dataReady && (toBudget !== 0 || buffered > 0) && (
-          <View style={{ paddingTop: spacing.sm, paddingBottom: spacing.xs }}>
-            <ReadyToAssignPill
-              amount={toBudget}
-              onPress={() => router.push("/(auth)/budget/assign")}
-              holdAmount={buffered}
-              onEditHold={() =>
-                router.push({
-                  pathname: "/(auth)/budget/hold",
-                  params: {
-                    current: String(buffered),
-                    maxAmount: String(toBudget + buffered),
-                  },
-                })
-              }
-              onClearHold={() =>
-                Alert.alert(t("releaseHoldTitle"), t("releaseHoldMessage"), [
-                  { text: t("cancel"), style: "cancel" },
-                  {
-                    text: t("release"),
-                    style: "destructive",
-                    onPress: () => resetHoldFn(month),
-                  },
-                ])
-              }
-            />
+        {dataReady && (
+          <View
+            style={{
+              paddingTop: spacing.sm,
+              paddingBottom: spacing.xs,
+              paddingHorizontal: spacing.lg,
+            }}
+          >
+            <Host matchContents colorScheme={colorScheme === "dark" ? "dark" : "light"}>
+              <SReadyToAssignPill
+                amount={toBudget}
+                buffered={buffered}
+                goalsEnabled={goalsEnabled}
+                onMoveToBudget={() =>
+                  router.push({
+                    pathname: "/(auth)/budget/move-money",
+                    params: { source: "toBudget" },
+                  })
+                }
+                onHold={() =>
+                  router.push({
+                    pathname: "/(auth)/budget/hold",
+                    params: { current: String(buffered), maxAmount: String(toBudget + buffered) },
+                  })
+                }
+                onAutoAssign={handleAutoAssign}
+                onResetHold={handleResetHold}
+              />
+            </Host>
           </View>
         )}
 
@@ -632,7 +675,14 @@ export default function BudgetScreen() {
                         <SUIButton
                           label="Move Money"
                           systemImage="arrow.left.arrow.right"
-                          onPress={() => handleMoveMoney(cat.id, cat.name, 0)}
+                          onPress={() => {
+                            const bal =
+                              (getSpreadsheet().getValue(
+                                sheet,
+                                envelopeBudget.catBalance(cat.id),
+                              ) as number) ?? 0;
+                            handleMoveMoney(cat.id, cat.name, bal);
+                          }}
                         />
                         <SUIButton
                           label="View Transactions"

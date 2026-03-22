@@ -201,6 +201,16 @@ export interface ThemeColors {
   // Toast
   toastBackground: string;
 
+  // Vibrant colors (modern, high-contrast — for native UI components)
+  vibrantPositive: string;
+  vibrantNegative: string;
+  vibrantWarning: string;
+  vibrantPositiveBg: string;
+  vibrantNegativeBg: string;
+  vibrantWarningBg: string;
+  vibrantPillText: string;
+  vibrantPillTextNegative: string;
+
   // Misc
   divider: string;
   skeleton: string;
@@ -299,6 +309,16 @@ export const lightColors: ThemeColors = {
   skeleton: palette.navy100,
   shadow: "rgba(0, 0, 0, 0.12)",
   progressTrack: palette.navy100,
+
+  // Vibrant
+  vibrantPositive: "#AFE966",
+  vibrantNegative: "#F87171",
+  vibrantWarning: "#FBBF24",
+  vibrantPositiveBg: "rgba(74, 222, 128, 0.15)",
+  vibrantNegativeBg: "rgba(248, 113, 113, 0.12)",
+  vibrantWarningBg: "rgba(251, 191, 36, 0.12)",
+  vibrantPillText: "#1A1A2E",
+  vibrantPillTextNegative: "#450A0A",
 };
 
 export const darkColors: ThemeColors = {
@@ -392,4 +412,14 @@ export const darkColors: ThemeColors = {
   skeleton: palette.gray700,
   shadow: "rgba(0, 0, 0, 0.4)",
   progressTrack: "rgba(255, 255, 255, 0.06)",
+
+  // Vibrant
+  vibrantPositive: "#22C55E",
+  vibrantNegative: "#EF4444",
+  vibrantWarning: "#F59E0B",
+  vibrantPositiveBg: "rgba(34, 197, 94, 0.20)",
+  vibrantNegativeBg: "rgba(239, 68, 68, 0.20)",
+  vibrantWarningBg: "rgba(245, 158, 11, 0.20)",
+  vibrantPillText: "#080811",
+  vibrantPillTextNegative: "#FFFFFF",
 };

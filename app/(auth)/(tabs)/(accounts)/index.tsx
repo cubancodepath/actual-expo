@@ -62,7 +62,7 @@ function AccountRowNative({ account, onPress }: { account: Account; onPress: () 
         {account.name}
       </SText>
       <Spacer />
-      <SAmount value={balance} variant="body" />
+      <SAmount value={balance} variant="body" weight="semibold" />
     </HStack>
   );
 }
@@ -80,11 +80,11 @@ function AccountSectionHeader({ group }: { group: AccountGroup }) {
 
   return (
     <HStack alignment="center" spacing={8}>
-      <SText variant="bodySm" color={colors.textPrimary}>
+      <SText variant="bodyMedium" color={colors.textPrimary}>
         {groupLabel}
       </SText>
       <Spacer />
-      <SAmount value={groupTotal} variant="bodySm" weight="semibold" />
+      <SAmount value={groupTotal} variant="bodySm" weight="medium" colored={false} />
     </HStack>
   );
 }

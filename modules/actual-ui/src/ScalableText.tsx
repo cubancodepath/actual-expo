@@ -19,6 +19,8 @@ export interface ScalableTextProps extends CommonViewModifierProps {
   monoDigits?: boolean;
   /** Text alignment */
   alignment?: "leading" | "center" | "trailing";
+  /** Letter spacing (kerning) */
+  letterSpacing?: number;
 }
 
 const NativeScalableText: React.ComponentType<ScalableTextProps> = requireNativeView(

@@ -20,7 +20,7 @@ export function OverspentPill({ count, onPress }: OverspentPillProps) {
 
   return (
     <InfoPill
-      backgroundColor={colors.negativeSubtle}
+      backgroundColor={colors.vibrantNegativeBg}
       onPress={onPress}
       accessibilityLabel={`${label}. Tap to cover.`}
       style={{ paddingHorizontal: spacing.md, paddingVertical: 8 }}
@@ -28,7 +28,7 @@ export function OverspentPill({ count, onPress }: OverspentPillProps) {
         <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
           <View
             style={{
-              backgroundColor: colors.negativeFill,
+              backgroundColor: colors.vibrantNegative,
               borderRadius: 100,
               minWidth: 18,
               height: 18,
@@ -45,7 +45,7 @@ export function OverspentPill({ count, onPress }: OverspentPillProps) {
               {count}
             </Text>
           </View>
-          <Text variant="captionSm" color={colors.negative} style={{ fontWeight: "500" }}>
+          <Text variant="captionSm" color={colors.vibrantNegative} style={{ fontWeight: "500" }}>
             {label}
           </Text>
         </View>

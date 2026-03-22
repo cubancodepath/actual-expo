@@ -48,11 +48,11 @@ export function SSectionHeader({
   const balanceValue = group.is_income ? spent : balance;
 
   const balanceColor = group.is_income
-    ? colors.positive
+    ? colors.vibrantPositive
     : balance < 0
-      ? colors.negative
+      ? colors.vibrantNegative
       : balance > 0
-        ? colors.positive
+        ? colors.vibrantPositive
         : colors.textMuted;
 
   return (
@@ -73,7 +73,9 @@ export function SSectionHeader({
           <SAmount
             value={budgeted}
             variant="caption"
-            color={budgeted !== 0 ? colors.textSecondary : colors.textMuted}
+            color={colors.textPrimary}
+            weight="semibold"
+            letterSpacing={-0.5}
             lines={1}
           />
         </VStack>
@@ -86,7 +88,14 @@ export function SSectionHeader({
         <SText variant="captionSm" color={colors.textMuted}>
           {t("columnAvailable")}
         </SText>
-        <SAmount value={balanceValue} color={balanceColor} variant="caption" lines={1} />
+        <SAmount
+          value={balanceValue}
+          color={colors.textPrimary}
+          variant="caption"
+          weight="semibold"
+          letterSpacing={-0.5}
+          lines={1}
+        />
       </VStack>
     </HStack>
   );

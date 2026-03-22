@@ -43,7 +43,6 @@ export default function AuthLayout() {
         }}
       />
       <Stack.Screen name="transaction" options={{ headerShown: false, ...modal }} />
-      <Stack.Screen name="budget/assign" options={{ title: t("nav.assignBudget"), ...modal }} />
       <Stack.Screen name="budget/edit" options={{ headerShown: false }} />
       <Stack.Screen
         name="budget/reorder"

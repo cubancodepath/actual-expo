@@ -54,6 +54,7 @@
     "transactions": "Transactions",
     "overspentCategories": "Overspent Categories",
     "holdForNextMonth": "Hold for Next Month",
+    "transferAvailable": "Move to Category",
     "manageCategories": "Manage Categories",
     "managePayees": "Manage Payees",
     "schedules": "Schedules",

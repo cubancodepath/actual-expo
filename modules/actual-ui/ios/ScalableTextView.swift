@@ -13,6 +13,7 @@ public final class ScalableTextProps: UIBaseViewProps {
   @Field var maxLines: Int = 0
   @Field var monoDigits: Bool = false
   @Field var alignment: String = "leading"
+  @Field var letterSpacing: CGFloat = 0
 }
 
 // MARK: - View
@@ -35,6 +36,10 @@ public struct ScalableTextView: ExpoSwiftUI.View {
 
     if let colorHex = props.color {
       text = text.foregroundColor(Color(hex: colorHex))
+    }
+
+    if props.letterSpacing != 0 {
+      text = text.kerning(props.letterSpacing)
     }
 
     return text

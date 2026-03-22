@@ -33,7 +33,7 @@ export function AgeOfMoneyCard() {
 
   const change = age - previousAge;
   const progressPercent = Math.min((age / GOAL_DAYS) * 100, 100);
-  const barFillColor = age >= GOAL_DAYS ? colors.positive : colors.primary;
+  const barFillColor = age >= GOAL_DAYS ? colors.vibrantPositive : colors.primary;
 
   return (
     <Card style={{ padding: spacing.lg, gap: spacing.sm }}>
@@ -50,7 +50,7 @@ export function AgeOfMoneyCard() {
       {change !== 0 ? (
         <Text
           variant="captionSm"
-          color={change > 0 ? colors.positive : colors.negative}
+          color={change > 0 ? colors.vibrantPositive : colors.vibrantNegative}
           style={{ fontVariant: ["tabular-nums"] }}
         >
           {change > 0 ? "+" : ""}

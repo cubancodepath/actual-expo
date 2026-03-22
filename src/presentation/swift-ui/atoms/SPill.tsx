@@ -17,6 +17,10 @@ type PillVariant = keyof typeof fontSizeMap;
 interface SPillProps extends CommonViewModifierProps {
   value: number;
   variant?: PillVariant;
+  /** Override pill background color (e.g. from bar status) */
+  bgColor?: string;
+  /** Override pill text color */
+  textColor?: string;
   /** Fixed width for table alignment — text shrinks to fit */
   width?: number;
 }
@@ -24,17 +28,27 @@ interface SPillProps extends CommonViewModifierProps {
 export function SPill({
   value,
   variant = "caption",
+  bgColor,
+  textColor,
   width,
   modifiers: extraModifiers,
 }: SPillProps) {
   const { colors } = useTheme();
   usePrivacyStore();
 
-  const pillBg =
-    value < 0 ? colors.negativeSubtle : value > 0 ? colors.positiveSubtle : colors.cardBackground;
-  const pillText = value < 0 ? colors.negative : value > 0 ? colors.positive : colors.textMuted;
+  const defaultBg =
+    value < 0 ? colors.vibrantNegative : value > 0 ? colors.vibrantPositive : colors.cardBackground;
+  const defaultText =
+    value < 0
+      ? colors.vibrantPillTextNegative
+      : value > 0
+        ? colors.vibrantPillText
+        : colors.textMuted;
 
-  const hasPill = value !== 0;
+  const pillBg = bgColor ?? defaultBg;
+  const pillText = textColor ?? defaultText;
+
+  const hasPill = value !== 0 || bgColor != null;
   const mods = [
     ...(extraModifiers ?? []),
     ...(hasPill
@@ -46,10 +60,11 @@ export function SPill({
     <ScalableText
       text={formatPrivacyAware(value)}
       fontSize={fontSizeMap[variant]}
-      fontWeight="bold"
+      fontWeight="semibold"
       color={pillText}
       maxLines={1}
       minScale={0.5}
+      letterSpacing={-0.5}
       monoDigits
       modifiers={mods}
     />

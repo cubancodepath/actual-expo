@@ -51,13 +51,13 @@ export function SavingsRateCard() {
       : undefined;
 
   const displayRate = activePoint ? activePoint.rate : currentRate;
-  const rateColor = displayRate >= 0 ? colors.positive : colors.negative;
+  const rateColor = displayRate >= 0 ? colors.vibrantPositive : colors.vibrantNegative;
 
   const barColor = isPressActive
     ? colors.primary
     : currentRate >= 0
-      ? colors.positive
-      : colors.negative;
+      ? colors.vibrantPositive
+      : colors.vibrantNegative;
 
   // Empty state — no income data (after all hooks)
   if (currentRate === 0 && previousRate === 0 && trend.every((p) => p.rate === 0)) {
@@ -120,7 +120,7 @@ export function SavingsRateCard() {
       ) : change !== 0 ? (
         <Text
           variant="captionSm"
-          color={change > 0 ? colors.positive : colors.negative}
+          color={change > 0 ? colors.vibrantPositive : colors.vibrantNegative}
           style={{ fontVariant: ["tabular-nums"] }}
         >
           {change > 0 ? "+" : ""}
@@ -189,7 +189,7 @@ export function SavingsRateCard() {
                 <Bar
                   points={points.saved}
                   chartBounds={chartBounds}
-                  color={isPressActive ? colors.primary : colors.positive}
+                  color={isPressActive ? colors.primary : colors.vibrantPositive}
                   roundedCorners={{ topLeft: 4, topRight: 4 }}
                   barWidth={range <= 6 ? 16 : 8}
                 />
@@ -197,7 +197,7 @@ export function SavingsRateCard() {
                 <Bar
                   points={points.overspent}
                   chartBounds={chartBounds}
-                  color={isPressActive ? colors.primary : colors.negative}
+                  color={isPressActive ? colors.primary : colors.vibrantNegative}
                   roundedCorners={{ topLeft: 4, topRight: 4 }}
                   barWidth={range <= 6 ? 16 : 8}
                 />

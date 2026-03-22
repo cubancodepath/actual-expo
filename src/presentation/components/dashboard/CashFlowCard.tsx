@@ -143,13 +143,23 @@ export function CashFlowCard() {
           <Text variant="captionSm" color={colors.textMuted}>
             {t("dashboard.income")}
           </Text>
-          <Amount value={displayIncome} variant="body" weight="600" color={colors.positive} />
+          <Amount
+            value={displayIncome}
+            variant="body"
+            weight="600"
+            color={colors.vibrantPositive}
+          />
         </View>
         <View style={{ alignItems: "flex-end", gap: 1 }}>
           <Text variant="captionSm" color={colors.textMuted}>
             {t("dashboard.expenses")}
           </Text>
-          <Amount value={displayExpenses} variant="body" weight="600" color={colors.negative} />
+          <Amount
+            value={displayExpenses}
+            variant="body"
+            weight="600"
+            color={colors.vibrantNegative}
+          />
         </View>
       </View>
 
@@ -183,8 +193,8 @@ export function CashFlowCard() {
                   withinGroupPadding={0}
                   roundedCorners={{ topLeft: 3, topRight: 3 }}
                 >
-                  <BarGroup.Bar points={points.income} color={colors.positive} />
-                  <BarGroup.Bar points={points.expenses} color={colors.negative} />
+                  <BarGroup.Bar points={points.income} color={colors.vibrantPositive} />
+                  <BarGroup.Bar points={points.expenses} color={colors.vibrantNegative} />
                 </BarGroup>
                 {/* Cursor line */}
                 {isPressActive &&

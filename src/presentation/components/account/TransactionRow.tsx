@@ -9,6 +9,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from "react-native-reanimated";
+import { useTranslation } from "react-i18next";
 import { AnimatedView } from "../atoms/AnimatedView";
 import { Icon } from "../atoms/Icon";
 import { ContextMenu } from "../atoms/ContextMenu";
@@ -67,6 +68,7 @@ export const TransactionRow = memo(function TransactionRow({
   isSelectMode = false,
   isSelected = false,
 }: TransactionRowProps) {
+  const { t } = useTranslation("transactions");
   const { colors, spacing } = useTheme();
   const styles = useThemedStyles(createStyles);
   const reducedMotion = useReducedMotion();
@@ -148,7 +150,7 @@ export const TransactionRow = memo(function TransactionRow({
                 numberOfLines={1}
                 style={{ flex: 1, fontWeight: "500" as const }}
               >
-                {item.payeeName ?? "(no payee)"}
+                {item.payeeName ?? t("noPayee")}
               </Text>
             </View>
             <View style={styles.amountRow}>
@@ -216,7 +218,7 @@ export const TransactionRow = memo(function TransactionRow({
               {item.transfer_id != null ? (
                 <View style={[styles.categoryPill, { backgroundColor: colors.primarySubtle }]}>
                   <Text variant="caption" color={colors.primary} numberOfLines={1}>
-                    Transfer
+                    {t("transfer")}
                   </Text>
                 </View>
               ) : item.categoryName ? (
@@ -228,7 +230,7 @@ export const TransactionRow = memo(function TransactionRow({
               ) : (
                 <View style={[styles.categoryPill, { backgroundColor: colors.warningSubtle }]}>
                   <Text variant="caption" color={colors.warning} numberOfLines={1}>
-                    Uncategorized
+                    {t("uncategorized")}
                   </Text>
                 </View>
               )}
@@ -278,35 +280,41 @@ export const TransactionRow = memo(function TransactionRow({
       <ContextMenu>
         <ContextMenu.Trigger>{swipeableContent}</ContextMenu.Trigger>
         <ContextMenu.Content>
+          <ContextMenu.Item key="edit" onSelect={() => onPress(item.id)}>
+            <ContextMenu.ItemTitle>{t("contextEdit")}</ContextMenu.ItemTitle>
+            <ContextMenu.ItemIcon ios={{ name: "pencil" }} />
+          </ContextMenu.Item>
           {!item.reconciled && (
             <ContextMenu.Item key="toggle-cleared" onSelect={() => onToggleCleared(item.id)}>
-              <ContextMenu.ItemTitle>{item.cleared ? "Unclear" : "Clear"}</ContextMenu.ItemTitle>
+              <ContextMenu.ItemTitle>
+                {item.cleared ? t("contextUnclear") : t("contextClear")}
+              </ContextMenu.ItemTitle>
               <ContextMenu.ItemIcon ios={{ name: item.cleared ? "circle" : "checkmark.circle" }} />
             </ContextMenu.Item>
           )}
           <ContextMenu.Item key="duplicate" onSelect={() => onDuplicate?.(item.id)}>
-            <ContextMenu.ItemTitle>Duplicate</ContextMenu.ItemTitle>
+            <ContextMenu.ItemTitle>{t("contextDuplicate")}</ContextMenu.ItemTitle>
             <ContextMenu.ItemIcon ios={{ name: "doc.on.doc" }} />
           </ContextMenu.Item>
           {onMove && (
             <ContextMenu.Item key="move" onSelect={() => onMove(item.id)}>
-              <ContextMenu.ItemTitle>Move to…</ContextMenu.ItemTitle>
+              <ContextMenu.ItemTitle>{t("contextMoveToAccount")}</ContextMenu.ItemTitle>
               <ContextMenu.ItemIcon ios={{ name: "arrow.right.arrow.left" }} />
             </ContextMenu.Item>
           )}
           {onSetCategory && (
             <ContextMenu.Item key="set-category" onSelect={() => onSetCategory(item.id)}>
-              <ContextMenu.ItemTitle>Categorize</ContextMenu.ItemTitle>
+              <ContextMenu.ItemTitle>{t("contextCategorize")}</ContextMenu.ItemTitle>
               <ContextMenu.ItemIcon ios={{ name: "tag" }} />
             </ContextMenu.Item>
           )}
           <ContextMenu.Item key="add-tag" onSelect={() => onAddTag?.(item.id)}>
-            <ContextMenu.ItemTitle>Add Tag</ContextMenu.ItemTitle>
-            <ContextMenu.ItemIcon ios={{ name: "tag" }} />
+            <ContextMenu.ItemTitle>{t("contextAddTag")}</ContextMenu.ItemTitle>
+            <ContextMenu.ItemIcon ios={{ name: "number" }} />
           </ContextMenu.Item>
           <ContextMenu.Separator />
           <ContextMenu.Item key="delete" destructive onSelect={() => onDelete(item.id)}>
-            <ContextMenu.ItemTitle>Delete</ContextMenu.ItemTitle>
+            <ContextMenu.ItemTitle>{t("contextDelete")}</ContextMenu.ItemTitle>
             <ContextMenu.ItemIcon ios={{ name: "trash" }} />
           </ContextMenu.Item>
         </ContextMenu.Content>

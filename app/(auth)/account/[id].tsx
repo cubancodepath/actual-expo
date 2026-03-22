@@ -109,6 +109,20 @@ export default function AccountTransactionsScreen() {
   );
   const unclearedCount = unclearedCountData?.[0]?.result ?? 0;
 
+  // ---- Cleared count for reconciliation ----
+  const clearedCountQuery = useMemo(
+    () =>
+      q("transactions")
+        .filter({ acct: id, cleared: true, reconciled: false })
+        .calculate({ $count: "$id" }),
+    [id],
+  );
+  const { data: clearedCountData } = useLiveQuery<{ result: number }>(
+    () => clearedCountQuery,
+    [clearedCountQuery],
+  );
+  const clearedCount = clearedCountData?.[0]?.result ?? 0;
+
   // ---- Selection mode ----
   const selection = useSelectionMode<TransactionDisplay>();
 
@@ -479,7 +493,12 @@ export default function AccountTransactionsScreen() {
               onPress={() =>
                 router.push({
                   pathname: "/(auth)/account/reconcile",
-                  params: { accountId: id, clearedBalance: String(clearedBalance) },
+                  params: {
+                    accountId: id,
+                    clearedBalance: String(clearedBalance),
+                    clearedCount: String(clearedCount),
+                    lastReconciled: account?.lastReconciled ?? "",
+                  },
                 })
               }
             >

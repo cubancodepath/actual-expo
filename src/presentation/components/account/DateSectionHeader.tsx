@@ -1,4 +1,5 @@
 import { View } from "react-native";
+import { useTranslation } from "react-i18next";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Text, Amount } from "..";
 import { formatDateLong, todayInt } from "../../../lib/date";
@@ -19,12 +20,14 @@ interface DateSectionHeaderProps {
 }
 
 export function DateSectionHeader({ date, dailyTotal }: DateSectionHeaderProps) {
+  const { t } = useTranslation("transactions");
   const { colors, spacing } = useTheme();
   useSyncedPref("dateFormat");
 
   const today = todayInt();
   const yesterday = yesterdayInt();
-  const label = date === today ? "Today" : date === yesterday ? "Yesterday" : formatDateLong(date);
+  const label =
+    date === today ? t("today") : date === yesterday ? t("yesterday") : formatDateLong(date);
 
   return (
     <View

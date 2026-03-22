@@ -78,5 +78,30 @@
   "transferToAccount": "TRANSFER TO ACCOUNT",
   "payees": "PAYEES",
   "noPayee": "No payee",
-  "createPayee": "Create \"{{name}}\""
+  "createPayee": "Create \"{{name}}\"",
+
+  "contextEdit": "Edit",
+  "contextClear": "Clear",
+  "contextUnclear": "Unclear",
+  "contextDuplicate": "Duplicate",
+  "contextMoveToAccount": "Move to Account…",
+  "contextCategorize": "Categorize",
+  "contextAddTag": "Add Tag",
+  "contextDelete": "Delete",
+
+  "selectAll": "Select All",
+  "selectItems": "0 Selected",
+  "selected": "{{count}} Selected",
+  "bulkClear": "Clear",
+  "bulkCategorize": "Categorize",
+  "bulkMove": "Move to…",
+  "bulkDelete": "Delete",
+
+  "upcoming": "Upcoming",
+  "today": "Today",
+  "yesterday": "Yesterday",
+
+  "transfer": "Transfer",
+  "showUncleared_one": "Show {{count}} uncleared transaction",
+  "showUncleared_other": "Show {{count}} uncleared transactions"
 }

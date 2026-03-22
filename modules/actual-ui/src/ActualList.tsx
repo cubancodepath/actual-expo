@@ -5,6 +5,8 @@ import { createViewModifierEventListener } from "@expo/ui/swift-ui/modifiers";
 export interface ActualListProps extends CommonViewModifierProps {
   /** List visual style */
   listStyleType?: "plain" | "insetGrouped" | "grouped";
+  /** Tint color hex (refresh spinner, accent elements) */
+  listTintColor?: string;
   children: React.ReactNode;
 }
 

@@ -7,6 +7,8 @@ import ExpoUI
 public final class ActualListProps: UIBaseViewProps {
   /// List visual style: "plain" (edge-to-edge) or "insetGrouped" (card-style sections)
   @Field var listStyleType: String = "plain"
+  /// Tint color hex (affects refresh spinner, accent elements)
+  @Field var listTintColor: String?
 }
 
 // MARK: - View
@@ -19,15 +21,15 @@ public struct ActualListView: ExpoSwiftUI.View {
   }
 
   public var body: some View {
-    listContent
-  }
+    let tintColor = props.listTintColor.map { Color(hex: $0) }
 
-  @ViewBuilder
-  private var listContent: some View {
     if #available(iOS 16.0, *) {
-      listForStyle.scrollContentBackground(.hidden)
+      listForStyle
+        .scrollContentBackground(.hidden)
+        .tint(tintColor)
     } else {
       listForStyle
+        .tint(tintColor)
     }
   }
 

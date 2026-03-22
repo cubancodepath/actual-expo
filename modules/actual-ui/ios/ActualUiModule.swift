@@ -17,6 +17,9 @@ public class ActualUiModule: Module {
 
     ExpoUIView(ScalableTextView.self)
     ExpoUIView(StripedProgressBarView.self)
+    ExpoUIView(ActualNavigationStackView.self)
+    View(NavTrailingView.self)
+    View(NavContentView.self)
     ExpoUIView(ActualListView.self)
     ExpoUIView(ActualSectionView.self)
     View(ActualSectionHeaderView.self)

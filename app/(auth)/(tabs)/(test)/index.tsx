@@ -445,6 +445,71 @@ export default function TestPlayground() {
           Development only — preview components, styles, and interactions
         </Text>
 
+        {/* ── ScalableText Test ───────────────────────── */}
+        <SectionTitle first>SCALABLE TEXT TEST</SectionTitle>
+        <View
+          style={{
+            backgroundColor: colors.cardBackground,
+            borderRadius: 12,
+            padding: 16,
+            marginBottom: spacing.lg,
+          }}
+        >
+          {(() => {
+            const { Host, Text: SUIText, HStack, VStack } = require("@expo/ui/swift-ui");
+            const { font, lineLimit, frame } = require("@expo/ui/swift-ui/modifiers");
+            const { ScalableText } = require("../../../../modules/actual-ui");
+            return (
+              <Host style={{ height: 250 }} colorScheme="dark">
+                <VStack spacing={8}>
+                  <SUIText modifiers={[font({ size: 12 })]}>SUIText (truncates):</SUIText>
+                  <HStack>
+                    <SUIText modifiers={[font({ size: 14 }), lineLimit(1), frame({ width: 100 })]}>
+                      AED9,999,999.99
+                    </SUIText>
+                  </HStack>
+                  <SUIText modifiers={[font({ size: 12 })]}>ScalableText minScale=0.5:</SUIText>
+                  <HStack>
+                    <ScalableText
+                      text="AED9,999,999.99"
+                      fontSize={14}
+                      maxLines={1}
+                      minScale={0.5}
+                      color="#ffffff"
+                      monoDigits
+                      modifiers={[frame({ width: 100 })]}
+                    />
+                  </HStack>
+                  <SUIText modifiers={[font({ size: 12 })]}>ScalableText minScale=0.1:</SUIText>
+                  <HStack>
+                    <ScalableText
+                      text="AED9,999,999.99"
+                      fontSize={14}
+                      maxLines={1}
+                      minScale={0.1}
+                      color="#ffffff"
+                      monoDigits
+                      modifiers={[frame({ width: 100 })]}
+                    />
+                  </HStack>
+                  <SUIText modifiers={[font({ size: 12 })]}>ScalableText fits normally:</SUIText>
+                  <HStack>
+                    <ScalableText
+                      text="AED547.45"
+                      fontSize={14}
+                      maxLines={1}
+                      minScale={0.5}
+                      color="#34d399"
+                      monoDigits
+                      modifiers={[frame({ width: 100 })]}
+                    />
+                  </HStack>
+                </VStack>
+              </Host>
+            );
+          })()}
+        </View>
+
         {/* ── 0. SwiftUI List Prototype ─────────────────────────── */}
         <Pressable
           onPress={() => require("expo-router").router.push("/(auth)/(tabs)/(test)/swiftui-list")}

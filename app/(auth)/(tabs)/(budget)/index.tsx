@@ -43,7 +43,7 @@ import {
   StripedProgressBar,
   ActualList,
   ActualSection,
-  minimumScaleFactor,
+  ScalableText,
 } from "../../../../modules/actual-ui";
 import { usePrivacyStore } from "@/stores/privacyStore";
 import { computeProgressBar } from "@/goals/progressBar";
@@ -212,34 +212,36 @@ function CategoryRowNative({
         onTapGesture(() => onPress(catId, budgeted)),
       ]}
     >
-      <HStack>
+      <HStack spacing={8}>
         <SText variant="bodyMedium" lines={1}>
           {catName}
         </SText>
         <Spacer />
         {
           <VStack alignment="trailing" modifiers={[opacity(!showBar || anyEditing ? 1 : 0)]}>
-            <SText
-              variant="caption"
+            <ScalableText
+              text={baseText}
+              fontSize={12}
               color={showExpression ? colors.textMuted : budgetedColor}
-              tabularNums
-              lines={1}
-              modifiers={[minimumScaleFactor(0.7)]}
-            >
-              {baseText}
-            </SText>
+              maxLines={1}
+              minScale={0.5}
+              monoDigits
+              modifiers={[frame({ width: COL_BUDGETED, alignment: "trailing" })]}
+            />
             {showExpression && (
-              <SText variant="caption" color={colors.primary} tabularNums>
-                {operandText}
-              </SText>
+              <ScalableText
+                text={operandText}
+                fontSize={12}
+                fontWeight="semibold"
+                color={colors.primary}
+                monoDigits
+              />
             )}
           </VStack>
         }
-        <SPill
-          value={balance}
-          variant="caption"
-          modifiers={[frame({ width: COL_AVAILABLE, alignment: "trailing" })]}
-        />
+        <VStack modifiers={[frame({ width: COL_AVAILABLE, alignment: "trailing" })]}>
+          <SPill value={balance} variant="caption" />
+        </VStack>
       </HStack>
       {showBar && bar && (
         <StripedProgressBar

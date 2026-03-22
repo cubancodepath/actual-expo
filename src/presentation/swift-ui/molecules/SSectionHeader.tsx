@@ -56,7 +56,7 @@ export function SSectionHeader({
         : colors.textMuted;
 
   return (
-    <HStack alignment="center">
+    <HStack alignment="center" spacing={8}>
       <SText variant="bodySm" color={colors.textSecondary} lines={1}>
         {group.name}
       </SText>
@@ -65,10 +65,7 @@ export function SSectionHeader({
         <VStack
           alignment="trailing"
           spacing={2}
-          modifiers={[
-            frame({ width: COL_BUDGETED, alignment: "trailing" }),
-            padding({ trailing: -10 }),
-          ]}
+          modifiers={[frame({ width: COL_BUDGETED, alignment: "trailing" })]}
         >
           <SText variant="captionSm" color={colors.textMuted}>
             {t("columnBudgeted")}
@@ -84,10 +81,7 @@ export function SSectionHeader({
       <VStack
         alignment="trailing"
         spacing={2}
-        modifiers={[
-          frame({ width: COL_AVAILABLE, alignment: "trailing" }),
-          padding({ leading: 6 }),
-        ]}
+        modifiers={[frame({ width: COL_AVAILABLE, alignment: "trailing" })]}
       >
         <SText variant="captionSm" color={colors.textMuted}>
           {t("columnAvailable")}

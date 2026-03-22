@@ -15,6 +15,7 @@ public class ActualUiModule: Module {
       ViewModifierRegistry.unregister("minimumScaleFactor")
     }
 
+    ExpoUIView(ScalableTextView.self)
     ExpoUIView(StripedProgressBarView.self)
     ExpoUIView(ActualListView.self)
     ExpoUIView(ActualSectionView.self)

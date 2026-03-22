@@ -1,30 +1,51 @@
 /**
- * SAmount — SwiftUI currency amount display.
+ * SAmount — SwiftUI currency amount display with auto-shrink.
  *
+ * Uses native ScalableText for minimumScaleFactor support.
  * Formats cents as currency string, respects privacy mode,
- * auto-colors based on sign, uses monospaced digits.
+ * auto-colors based on sign.
  */
 
-import { Text as SUIText } from "@expo/ui/swift-ui";
-import { foregroundStyle, lineLimit, monospacedDigit } from "@expo/ui/swift-ui/modifiers";
-import { minimumScaleFactor } from "../../../../modules/actual-ui";
-import { sFont, type SFontVariant } from "../tokens";
 import { formatPrivacyAware } from "@/lib/format";
 import { usePrivacyStore } from "@/stores/privacyStore";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
+import { ScalableText } from "../../../../modules/actual-ui";
+import { sFont, type SFontVariant } from "../tokens";
 import type { CommonViewModifierProps } from "@expo/ui/swift-ui";
 
+// Extract font size from our token presets
+const fontSizeMap: Record<SFontVariant, number> = {
+  displayLg: 30,
+  displaySm: 24,
+  headingLg: 20,
+  headingSm: 17,
+  bodyLg: 15,
+  body: 14,
+  bodyMedium: 14,
+  bodySm: 13,
+  caption: 12,
+  captionSm: 10,
+};
+const fontWeightMap: Record<SFontVariant, string> = {
+  displayLg: "semibold",
+  displaySm: "bold",
+  headingLg: "bold",
+  headingSm: "semibold",
+  bodyLg: "medium",
+  body: "regular",
+  bodyMedium: "medium",
+  bodySm: "regular",
+  caption: "regular",
+  captionSm: "medium",
+};
+
 interface SAmountProps extends CommonViewModifierProps {
-  /** Amount in cents */
   value: number;
-  /** Typography variant */
   variant?: SFontVariant;
-  /** Explicit color — overrides auto-coloring */
   color?: string;
-  /** Auto-color based on sign (default true) */
   colored?: boolean;
-  /** Max lines */
   lines?: number;
+  weight?: string;
 }
 
 export function SAmount({
@@ -32,11 +53,12 @@ export function SAmount({
   variant = "body",
   color: colorProp,
   colored = true,
-  lines,
+  lines = 1,
+  weight,
   modifiers: extraModifiers,
 }: SAmountProps) {
   const { colors } = useTheme();
-  usePrivacyStore(); // subscribe to re-render on privacy toggle
+  usePrivacyStore();
 
   let color = colorProp;
   if (!colorProp && colored) {
@@ -45,15 +67,16 @@ export function SAmount({
     else color = colors.textMuted;
   }
 
-  const mods = [
-    sFont[variant],
-    monospacedDigit(),
-    lineLimit(1),
-    minimumScaleFactor(0.7),
-    ...(color ? [foregroundStyle(color)] : []),
-    ...(lines != null ? [lineLimit(lines)] : []),
-    ...(extraModifiers ?? []),
-  ];
-
-  return <SUIText modifiers={mods}>{formatPrivacyAware(value)}</SUIText>;
+  return (
+    <ScalableText
+      text={formatPrivacyAware(value)}
+      fontSize={fontSizeMap[variant]}
+      fontWeight={(weight ?? fontWeightMap[variant]) as any}
+      color={color}
+      maxLines={lines}
+      minScale={0.5}
+      monoDigits
+      modifiers={extraModifiers}
+    />
+  );
 }

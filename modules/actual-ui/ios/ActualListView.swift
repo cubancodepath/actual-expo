@@ -24,6 +24,11 @@ public struct ActualListView: ExpoSwiftUI.View {
 
   public var body: some View {
     let tintColor = props.listTintColor.map { Color(hex: $0) }
+    let _ = {
+      if let hex = props.listTintColor {
+        UIRefreshControl.appearance().tintColor = UIColor(Color(hex: hex))
+      }
+    }()
 
     if #available(iOS 17.0, *) {
       listForStyle

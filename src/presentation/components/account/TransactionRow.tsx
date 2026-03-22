@@ -154,9 +154,11 @@ export const TransactionRow = memo(function TransactionRow({
             <View style={styles.amountRow}>
               <Amount
                 value={item.amount}
-                variant="body"
-                showSign
-                style={{ fontWeight: "600" as const }}
+                variant="bodyLg"
+                showSign={!item.transfer_id}
+                colored={!item.transfer_id}
+                color={item.transfer_id ? colors.textSecondary : undefined}
+                weight="700"
               />
               <View style={{ marginLeft: spacing.sm }}>
                 {item.reconciled ? (
@@ -210,37 +212,37 @@ export const TransactionRow = memo(function TransactionRow({
               })()}
             </>
           ) : (
-            (item.categoryName ||
-              item.transfer_id != null ||
-              (showAccountName && item.accountName)) && (
-              <View style={styles.metaRow}>
-                {item.transfer_id != null ? (
-                  <View style={styles.categoryPill}>
-                    <Text variant="caption" color={colors.primary} numberOfLines={1}>
-                      Transfer
-                    </Text>
-                  </View>
-                ) : item.categoryName ? (
-                  <View style={styles.categoryPill}>
-                    <Text variant="caption" color={colors.textSecondary} numberOfLines={1}>
-                      {item.categoryName}
-                    </Text>
-                  </View>
-                ) : (
-                  <View />
-                )}
-                {showAccountName && item.accountName && (
-                  <Text
-                    variant="captionSm"
-                    color={colors.textMuted}
-                    numberOfLines={1}
-                    style={{ flexShrink: 0 }}
-                  >
-                    {item.accountName}
+            <View style={styles.metaRow}>
+              {item.transfer_id != null ? (
+                <View style={[styles.categoryPill, { backgroundColor: colors.primarySubtle }]}>
+                  <Text variant="caption" color={colors.primary} numberOfLines={1}>
+                    Transfer
                   </Text>
-                )}
-              </View>
-            )
+                </View>
+              ) : item.categoryName ? (
+                <View style={styles.categoryPill}>
+                  <Text variant="caption" color={colors.textSecondary} numberOfLines={1}>
+                    {item.categoryName}
+                  </Text>
+                </View>
+              ) : (
+                <View style={[styles.categoryPill, { backgroundColor: colors.warningSubtle }]}>
+                  <Text variant="caption" color={colors.warning} numberOfLines={1}>
+                    Uncategorized
+                  </Text>
+                </View>
+              )}
+              {showAccountName && item.accountName && (
+                <Text
+                  variant="captionSm"
+                  color={colors.textMuted}
+                  numberOfLines={1}
+                  style={{ flexShrink: 0 }}
+                >
+                  {item.accountName}
+                </Text>
+              )}
+            </View>
           )}
 
           {/* Notes with inline tag pills */}

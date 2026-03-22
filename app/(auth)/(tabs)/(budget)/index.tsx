@@ -34,7 +34,6 @@ import {
 } from "@/presentation/hooks/useSheetValue";
 import { sheetForMonth, envelopeBudget } from "@/spreadsheet/bindings";
 import { getSpreadsheet } from "@/spreadsheet/instance";
-import { useCommonMenuActions } from "@/presentation/hooks/useCommonMenuItems";
 import { useRefreshControl } from "@/presentation/hooks/useRefreshControl";
 import { useKeyboardHeight } from "@/presentation/hooks/useKeyboardHeight";
 import { useExpressionMode } from "@/presentation/hooks/useExpressionMode";
@@ -48,6 +47,7 @@ import {
   ScalableText,
 } from "../../../../modules/actual-ui";
 import { usePrivacyStore } from "@/stores/privacyStore";
+import { useUndoStore } from "@/stores/undoStore";
 import { computeProgressBar } from "@/goals/progressBar";
 import { ProgressBar } from "@/presentation/components/atoms/ProgressBar";
 import { inferGoalFromDef } from "@/goals";
@@ -299,8 +299,9 @@ export default function BudgetScreen() {
   const { refreshControlProps } = useRefreshControl();
   const colorScheme = useColorScheme();
   const { showProgressBars, toggleProgressBars } = usePrefsStore();
+  const { privacyMode, toggle: togglePrivacy } = usePrivacyStore();
+  const isLocalOnly = usePrefsStore((s) => s.isLocalOnly);
   const goalsEnabled = useFeatureFlag("goalTemplatesEnabled");
-  const commonActions = useCommonMenuActions();
   const [uncategorizedCount, setUncategorizedCount] = useState(0);
 
   // Build structural BudgetGroupData[] — NO spreadsheet reads
@@ -715,6 +716,12 @@ export default function BudgetScreen() {
         onBlur={handleBlur}
       />
 
+      <Stack.Toolbar placement="left">
+        <Stack.Toolbar.Button
+          icon="slider.horizontal.3"
+          onPress={() => router.push("/(auth)/budget/edit")}
+        />
+      </Stack.Toolbar>
       <Stack.Toolbar placement="right">
         <Stack.Toolbar.Menu icon="ellipsis">
           {goalsEnabled && (
@@ -727,7 +734,34 @@ export default function BudgetScreen() {
               {showProgressBars ? t("hideProgress") : t("showProgress")}
             </Stack.Toolbar.MenuAction>
           )}
-          {commonActions}
+          <Stack.Toolbar.MenuAction
+            icon="arrow.uturn.backward"
+            onPress={async () => {
+              await useUndoStore.getState().undo();
+            }}
+          >
+            Undo
+          </Stack.Toolbar.MenuAction>
+          <Stack.Toolbar.MenuAction
+            icon={privacyMode ? "eye" : "eye.slash"}
+            onPress={togglePrivacy}
+          >
+            {privacyMode ? "Show Amounts" : "Hide Amounts"}
+          </Stack.Toolbar.MenuAction>
+          {!isLocalOnly && (
+            <Stack.Toolbar.MenuAction
+              icon="arrow.2.squarepath"
+              onPress={() => router.push("/(auth)/change-budget")}
+            >
+              Switch Budget
+            </Stack.Toolbar.MenuAction>
+          )}
+          <Stack.Toolbar.MenuAction
+            icon="gearshape"
+            onPress={() => router.push("/(auth)/settings")}
+          >
+            Settings
+          </Stack.Toolbar.MenuAction>
         </Stack.Toolbar.Menu>
       </Stack.Toolbar>
     </>

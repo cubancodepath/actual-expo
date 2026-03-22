@@ -1,7 +1,7 @@
 import type { TransactionDisplay } from "../../../transactions";
 import type { PreviewTransaction } from "../../../schedules/computePreview";
 
-export type DateHeader = { type: "date"; date: number; key: string };
+export type DateHeader = { type: "date"; date: number; key: string; dailyTotal: number };
 export type TransactionItem = {
   type: "transaction";
   data: TransactionDisplay;
@@ -91,6 +91,12 @@ export function buildListData(
     }
   }
 
+  // Pre-compute daily totals
+  const dailyTotals = new Map<number, number>();
+  for (const txn of transactions) {
+    dailyTotals.set(txn.date, (dailyTotals.get(txn.date) ?? 0) + txn.amount);
+  }
+
   // Regular transactions grouped by date
   let lastDate: number | null = null;
 
@@ -102,7 +108,12 @@ export function buildListData(
         const prev = items[items.length - 1];
         if (prev.type === "transaction") prev.isLast = true;
       }
-      items.push({ type: "date", date: txn.date, key: `date-${txn.date}` });
+      items.push({
+        type: "date",
+        date: txn.date,
+        key: `date-${txn.date}`,
+        dailyTotal: dailyTotals.get(txn.date) ?? 0,
+      });
       lastDate = txn.date;
     }
     items.push({

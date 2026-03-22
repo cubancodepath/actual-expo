@@ -208,7 +208,9 @@ export default function MoveMoneyScreen() {
   const coverTarget = useBudgetUIStore((s) => s.coverTarget);
   const setCoverTarget = useBudgetUIStore((s) => s.setCoverTarget);
 
-  const [direction, setDirection] = useState<MoveDirection>(isFromBudget ? "from" : "to");
+  const [direction, setDirection] = useState<MoveDirection>(
+    isFromBudget ? (toBudgetLive < 0 ? "to" : "from") : "to",
+  );
   const [sources, setSources] = useState<SourceEntry[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -247,7 +249,9 @@ export default function MoveMoneyScreen() {
   const balanceCents = isFromBudget ? toBudgetLive : Number(balance);
   const totalAmount = sources.reduce((sum, s) => sum + s.amount, 0);
   const projectedBalance = isFromBudget
-    ? balanceCents - totalAmount
+    ? direction === "from"
+      ? balanceCents - totalAmount
+      : balanceCents + totalAmount
     : direction === "to"
       ? balanceCents + totalAmount
       : balanceCents - totalAmount;
@@ -295,10 +299,11 @@ export default function MoveMoneyScreen() {
       if (entries.length === 0) return;
 
       if (isFromBudget) {
-        // Transfer from To Budget to each selected category
         await batchMessages(async () => {
           for (const entry of entries) {
-            await transferAvailable(month, entry.id, entry.amount);
+            // "from" = toBudget → categories (add), "to" = categories → toBudget (subtract)
+            const amount = direction === "from" ? entry.amount : -entry.amount;
+            await transferAvailable(month, entry.id, amount);
           }
         });
       } else {
@@ -364,14 +369,12 @@ export default function MoveMoneyScreen() {
             <Amount value={projectedBalance} variant="body" color={headerText} weight="700" />
           </View>
 
-          {!isFromBudget && (
-            <DirectionToggle
-              direction={direction}
-              onToggle={() => setDirection((d) => (d === "to" ? "from" : "to"))}
-              fromLabel={t("from")}
-              toLabel={t("to")}
-            />
-          )}
+          <DirectionToggle
+            direction={direction}
+            onToggle={() => setDirection((d) => (d === "to" ? "from" : "to"))}
+            fromLabel={t("from")}
+            toLabel={t("to")}
+          />
         </View>
 
         <View style={{ marginTop: -20, zIndex: 1, paddingHorizontal: spacing.lg }}>

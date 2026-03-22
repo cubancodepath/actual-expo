@@ -366,7 +366,7 @@ export default function SpendingScreen() {
             );
           }
           if (item.type === "date") {
-            return <DateSectionHeader date={item.date} />;
+            return <DateSectionHeader date={item.date} dailyTotal={item.dailyTotal} />;
           }
           if (item.type !== "transaction") return null;
           return (

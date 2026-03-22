@@ -162,10 +162,11 @@ const createStyles = (theme: Theme) => ({
     paddingVertical: theme.spacing.md,
     paddingLeft: theme.spacing.lg,
     paddingRight: theme.spacing.md,
-    opacity: 0.6,
+    borderLeftWidth: 3,
+    borderLeftColor: "rgba(135, 25, 224, 0.35)",
   },
   pressed: {
-    opacity: 0.7,
+    opacity: 0.8,
   },
   content: {
     flex: 1,

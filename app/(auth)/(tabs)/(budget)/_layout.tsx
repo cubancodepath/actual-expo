@@ -1,6 +1,5 @@
 import { Stack, useRouter } from "expo-router";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { Button } from "@/presentation/components/atoms/Button";
 import { MonthSelector } from "@/presentation/components/budget/MonthSelector";
 
 export default function BudgetStack() {
@@ -20,15 +19,6 @@ export default function BudgetStack() {
         name="index"
         options={{
           headerTitle: () => <MonthSelector />,
-          headerLeft: () => (
-            <Button
-              icon="optionsOutline"
-              buttonStyle="borderless"
-              size="sm"
-              color={colors.headerText}
-              onPress={() => router.push("/(auth)/budget/edit")}
-            />
-          ),
         }}
       />
     </Stack>

@@ -56,7 +56,7 @@ export function SSectionHeader({
         : colors.textMuted;
 
   return (
-    <HStack alignment="bottom">
+    <HStack alignment="center">
       <SText variant="bodySm" color={colors.textSecondary} lines={1}>
         {group.name}
       </SText>

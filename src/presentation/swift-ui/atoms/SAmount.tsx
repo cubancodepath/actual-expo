@@ -64,8 +64,8 @@ export function SAmount({
 
   let color = colorProp;
   if (!colorProp && colored) {
-    if (value > 0) color = colors.vibrantPositive;
-    else if (value < 0) color = colors.vibrantNegative;
+    if (value > 0) color = colors.positiveVivid;
+    else if (value < 0) color = colors.negative;
     else color = colors.textMuted;
   }
 

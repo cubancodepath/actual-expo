@@ -104,6 +104,8 @@ export const palette = {
   emerald600: "#059669", // light-mode positive text (4.6:1 on white ✓)
   emerald700: "#047857", // positive fill bg (5.48:1 white-on ✓)
   emerald400: "#34D399", // dark-mode positive (vibrant mint)
+  twGreen600: "#16a34a", // vivid positive text light (4.5:1 on white ✓)
+  twGreen400: "#4ade80", // vivid positive text dark
   rose600: "#E11D48", // light-mode negative text (5.2:1 on white ✓)
   rose700: "#9F1239", // negative fill bg (8.0:1 white-on ✓) — matches emerald700 depth
   rose400: "#FB7185", // dark-mode negative (vibrant coral)
@@ -148,6 +150,7 @@ export interface ThemeColors {
 
   // Semantic (amounts, indicators)
   positive: string;
+  positiveVivid: string;
   negative: string;
   warning: string;
   link: string;
@@ -242,6 +245,7 @@ export const lightColors: ThemeColors = {
 
   // Semantic (vibrant modern — emerald/rose/amber)
   positive: palette.emerald600,
+  positiveVivid: palette.twGreen600,
   negative: palette.rose600,
   warning: palette.amber600,
   link: palette.blue600,
@@ -346,6 +350,7 @@ export const darkColors: ThemeColors = {
 
   // Semantic (vibrant modern — bright on dark)
   positive: palette.emerald400,
+  positiveVivid: palette.twGreen400,
   negative: palette.rose400,
   warning: palette.amber400,
   link: palette.purple300,

@@ -312,12 +312,16 @@
     }
   },
 
-  "overspent_one": "{{count}} category overspent",
-  "overspent_other": "{{count}} categories overspent",
+  "overspent_one": "Category overspent",
+  "overspent_other": "Categories overspent",
   "coverAction": "Cover",
+
+  "uncategorizedTransactions_one": "Uncategorized transaction",
+  "uncategorizedTransactions_other": "Uncategorized transactions",
 
   "holding": "Holding ",
   "nextMonth": " next month",
   "editAction": "Edit",
-  "clearAction": "Clear"
+  "clearAction": "Clear",
+  "reviewAction": "Review"
 }

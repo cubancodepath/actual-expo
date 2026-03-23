@@ -5,22 +5,22 @@ import { Text } from "../atoms/Text";
 import { Button } from "../atoms/Button";
 import { InfoPill } from "../atoms/InfoPill";
 
-interface OverspentPillProps {
+interface UncategorizedPillProps {
   count: number;
   onPress: () => void;
 }
 
-export function OverspentPill({ count, onPress }: OverspentPillProps) {
+export function UncategorizedPill({ count, onPress }: UncategorizedPillProps) {
   const { t } = useTranslation("budget");
   const { colors } = useTheme();
 
-  const label = t("overspent", { count });
+  const label = t("uncategorizedTransactions", { count });
 
   return (
     <InfoPill
       backgroundColor={colors.cardBackground}
       onPress={onPress}
-      accessibilityLabel={`${label}. Tap to cover.`}
+      accessibilityLabel={`${count} ${label}. Tap to view.`}
       style={{ marginHorizontal: 0 }}
       left={
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
@@ -48,7 +48,9 @@ export function OverspentPill({ count, onPress }: OverspentPillProps) {
           </Text>
         </View>
       }
-      right={<Button title={t("coverAction")} buttonStyle="bordered" size="sm" onPress={onPress} />}
+      right={
+        <Button title={t("reviewAction")} buttonStyle="bordered" size="sm" onPress={onPress} />
+      }
     />
   );
 }

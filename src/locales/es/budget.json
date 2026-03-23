@@ -292,12 +292,16 @@
     }
   },
 
-  "overspent_one": "{{count}} categoría sobregastada",
-  "overspent_other": "{{count}} categorías sobregastadas",
+  "overspent_one": "Categoría sobregastada",
+  "overspent_other": "Categorías sobregastadas",
   "coverAction": "Cubrir",
+
+  "uncategorizedTransactions_one": "Transacción sin categorizar",
+  "uncategorizedTransactions_other": "Transacciones sin categorizar",
 
   "holding": "Reservando ",
   "nextMonth": " próximo mes",
   "editAction": "Editar",
-  "clearAction": "Borrar"
+  "clearAction": "Borrar",
+  "reviewAction": "Revisar"
 }

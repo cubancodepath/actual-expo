@@ -8,6 +8,7 @@ import {
   ContextMenu,
   Button as SUIButton,
   Menu,
+  Image,
 } from "@expo/ui/swift-ui";
 import {
   listRowBackground,
@@ -63,6 +64,7 @@ function AccountRowNative({ account, onPress }: { account: Account; onPress: () 
       </SText>
       <Spacer />
       <SAmount value={balance} variant="body" weight="semibold" />
+      <Image systemName="chevron.right" size={12} color={colors.textMuted} />
     </HStack>
   );
 }

@@ -60,8 +60,8 @@ import { BudgetGroupHeader } from "@/presentation/components/budget/BudgetGroupH
 import { BudgetCategoryRow } from "@/presentation/components/budget/BudgetCategoryRow";
 import { SReadyToAssignPill } from "@/presentation/swift-ui/molecules";
 import { OverspentPill } from "@/presentation/components/budget/OverspentPill";
-import { UnclearedPill } from "@/presentation/components/transaction/UnclearedPill";
-import { getUncategorizedStats } from "@/transactions";
+import { UncategorizedPill } from "@/presentation/components/budget/UncategorizedPill";
+import { useUncategorizedCount } from "@/presentation/hooks/useUncategorizedCount";
 import { Text } from "@/presentation/components/atoms/Text";
 import { SText, SAmount, SPill } from "@/presentation/swift-ui/atoms";
 import { SSectionHeader } from "@/presentation/swift-ui/molecules";
@@ -302,7 +302,7 @@ export default function BudgetScreen() {
   const { privacyMode, toggle: togglePrivacy } = usePrivacyStore();
   const isLocalOnly = usePrefsStore((s) => s.isLocalOnly);
   const goalsEnabled = useFeatureFlag("goalTemplatesEnabled");
-  const [uncategorizedCount, setUncategorizedCount] = useState(0);
+  const uncategorizedCount = useUncategorizedCount();
 
   // Build structural BudgetGroupData[] — NO spreadsheet reads
   const budgetGroups = useMemo<BudgetGroupData[]>(() => {
@@ -334,11 +334,6 @@ export default function BudgetScreen() {
   }, [categories, rawGroups]);
 
   const dataReady = budgetGroups.length > 0 || (!categoriesLoading && rawGroups.length === 0);
-
-  // Load uncategorized stats
-  useEffect(() => {
-    getUncategorizedStats().then(({ count }) => setUncategorizedCount(count));
-  }, [ssVersion]);
 
   const fabCollapsed = useSharedValue(false);
 
@@ -581,6 +576,7 @@ export default function BudgetScreen() {
               paddingTop: spacing.sm,
               paddingBottom: spacing.xs,
               paddingHorizontal: spacing.lg,
+              gap: spacing.sm,
             }}
           >
             <Host matchContents colorScheme={colorScheme === "dark" ? "dark" : "light"}>
@@ -604,6 +600,20 @@ export default function BudgetScreen() {
                 onResetHold={handleResetHold}
               />
             </Host>
+            {uncategorizedCount > 0 && (
+              <UncategorizedPill
+                count={uncategorizedCount}
+                onPress={() =>
+                  router.push({
+                    pathname: "/(auth)/(tabs)/(spending)/search",
+                    params: { initialFilter: "uncategorized" },
+                  })
+                }
+              />
+            )}
+            {overspentCount > 0 && (
+              <OverspentPill count={overspentCount} onPress={handleOverspentPress} />
+            )}
           </View>
         )}
 

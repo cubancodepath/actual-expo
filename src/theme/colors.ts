@@ -237,7 +237,7 @@ export const lightColors: ThemeColors = {
   primary: palette.purple500,
   primaryHover: palette.purple600,
   primaryText: palette.white,
-  primarySubtle: "rgba(135, 25, 224, 0.08)",
+  primarySubtle: "rgba(135, 25, 224, 0.14)",
   primaryMuted: palette.purple200,
 
   // Semantic (vibrant modern — emerald/rose/amber)
@@ -283,11 +283,11 @@ export const lightColors: ThemeColors = {
   buttonDangerText: palette.rose600,
 
   // Status
-  successBackground: "rgba(5, 150, 105, 0.10)",
+  successBackground: "rgba(5, 150, 105, 0.16)",
   successText: palette.emerald600,
-  warningBackground: "rgba(217, 119, 6, 0.10)",
+  warningBackground: "rgba(217, 119, 6, 0.16)",
   warningText: palette.amber600,
-  errorBackground: "rgba(225, 29, 72, 0.08)",
+  errorBackground: "rgba(225, 29, 72, 0.14)",
   errorText: palette.rose600,
 
   // Charts (vibrant modern palette)
@@ -341,7 +341,7 @@ export const darkColors: ThemeColors = {
   primary: palette.purple400,
   primaryHover: palette.purple500,
   primaryText: palette.white,
-  primarySubtle: "rgba(148, 70, 237, 0.12)",
+  primarySubtle: "rgba(148, 70, 237, 0.25)",
   primaryMuted: palette.purple700,
 
   // Semantic (vibrant modern — bright on dark)
@@ -387,11 +387,11 @@ export const darkColors: ThemeColors = {
   buttonDangerText: palette.rose400,
 
   // Status
-  successBackground: "rgba(52, 211, 153, 0.14)",
+  successBackground: "rgba(52, 211, 153, 0.25)",
   successText: palette.emerald400,
-  warningBackground: "rgba(251, 191, 36, 0.12)",
+  warningBackground: "rgba(251, 191, 36, 0.22)",
   warningText: palette.amber400,
-  errorBackground: "rgba(251, 113, 133, 0.12)",
+  errorBackground: "rgba(251, 113, 133, 0.22)",
   errorText: palette.rose400,
 
   // Charts (vibrant modern palette)

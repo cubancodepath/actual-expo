@@ -21,7 +21,6 @@ import { UnclearedPill } from "@/presentation/components/transaction/UnclearedPi
 import { TransactionRow } from "@/presentation/components/account/TransactionRow";
 import { DateSectionHeader } from "@/presentation/components/account/DateSectionHeader";
 import { UpcomingSectionHeader } from "@/presentation/components/account/UpcomingSectionHeader";
-import { UpcomingDateHeader } from "@/presentation/components/account/UpcomingDateHeader";
 import { UpcomingScheduleRow } from "@/presentation/components/account/UpcomingScheduleRow";
 import { AddTransactionButton } from "@/presentation/components/molecules/AddTransactionButton";
 import { useTags } from "@/presentation/hooks/useTags";
@@ -347,7 +346,7 @@ export default function SpendingScreen() {
             );
           }
           if (item.type === "upcoming-date") {
-            return <UpcomingDateHeader date={item.date} />;
+            return <DateSectionHeader date={item.date} />;
           }
           if (item.type === "upcoming") {
             return (

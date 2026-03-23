@@ -43,7 +43,7 @@ export function UpcomingSectionHeader({ count, expanded, onToggle }: UpcomingSec
         color={colors.textSecondary}
         style={{ textTransform: "uppercase", letterSpacing: 0.8, fontWeight: "700" }}
       >
-        Upcoming
+        Scheduled
       </Text>
       <View
         style={{

@@ -11,6 +11,7 @@ export { iconRegistry } from "./atoms/iconRegistry";
 export { RowSeparator, type RowSeparatorProps } from "./atoms/RowSeparator";
 export { CurrencyInput, type CurrencyInputRef } from "./currency-input";
 export { InfoPill } from "./atoms/InfoPill";
+export { Pill, type PillProps } from "./atoms/Pill";
 export { TagPill, type TagPillProps } from "./atoms/TagPill";
 export { NotesWithTags, type NotesWithTagsProps } from "./atoms/NotesWithTags";
 export { KeyboardDoneButton } from "./atoms/KeyboardDoneButton";

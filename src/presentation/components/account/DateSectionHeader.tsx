@@ -2,7 +2,7 @@ import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Text } from "..";
-import { formatDateLong, todayInt } from "../../../lib/date";
+import { formatDateHuman, todayInt } from "../../../lib/date";
 import { useSyncedPref } from "../../hooks/useSyncedPref";
 
 function yesterdayInt(): number {
@@ -26,22 +26,18 @@ export function DateSectionHeader({ date }: DateSectionHeaderProps) {
   const today = todayInt();
   const yesterday = yesterdayInt();
   const label =
-    date === today ? t("today") : date === yesterday ? t("yesterday") : formatDateLong(date);
+    date === today ? t("today") : date === yesterday ? t("yesterday") : formatDateHuman(date);
 
   return (
     <View
       style={{
         paddingHorizontal: spacing.lg,
-        paddingTop: spacing.xl,
+        paddingTop: spacing.md,
         paddingBottom: spacing.xs,
         backgroundColor: colors.pageBackground,
       }}
     >
-      <Text
-        variant="caption"
-        color={colors.textMuted}
-        style={{ textTransform: "uppercase", letterSpacing: 1.2, fontWeight: "700" }}
-      >
+      <Text variant="caption" color={colors.textMuted} style={{ fontWeight: "600" }}>
         {label}
       </Text>
     </View>

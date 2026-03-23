@@ -14,7 +14,7 @@ import { AnimatedView } from "../atoms/AnimatedView";
 import { Icon } from "../atoms/Icon";
 import { ContextMenu } from "../atoms/ContextMenu";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
-import { Text, Amount, NotesWithTags, RowSeparator } from "..";
+import { Text, Amount, NotesWithTags, RowSeparator, Pill } from "..";
 import { formatAmount } from "../../../lib/format";
 import { SwipeableRow } from "../molecules/SwipeableRow";
 import type { TransactionDisplay } from "../../../transactions";
@@ -183,11 +183,7 @@ export const TransactionRow = memo(function TransactionRow({
                 const amounts = item.splitCategoryAmounts?.split("||") ?? [];
                 return names.map((name, i) => (
                   <View key={i} style={styles.splitLineRow}>
-                    <View style={styles.categoryPill}>
-                      <Text variant="caption" color={colors.textSecondary} numberOfLines={1}>
-                        {name || "No category"}
-                      </Text>
-                    </View>
+                    <Pill label={name || "No category"} size="sm" maxWidth="70%" />
                     <Text
                       variant="captionSm"
                       color={colors.textMuted}
@@ -215,23 +211,23 @@ export const TransactionRow = memo(function TransactionRow({
           ) : (
             <View style={styles.metaRow}>
               {item.transfer_id != null ? (
-                <View style={[styles.categoryPill, { backgroundColor: colors.primaryFill }]}>
-                  <Text variant="caption" color={colors.primaryText} numberOfLines={1}>
-                    {t("transfer")}
-                  </Text>
-                </View>
+                <Pill
+                  label={t("transfer")}
+                  variant="primary"
+                  fill="subtle"
+                  size="sm"
+                  maxWidth="70%"
+                />
               ) : item.categoryName ? (
-                <View style={styles.categoryPill}>
-                  <Text variant="caption" color={colors.textSecondary} numberOfLines={1}>
-                    {item.categoryName}
-                  </Text>
-                </View>
+                <Pill label={item.categoryName} size="sm" maxWidth="70%" />
               ) : (
-                <View style={[styles.categoryPill, { backgroundColor: colors.warningFill }]}>
-                  <Text variant="caption" color={colors.primaryText} numberOfLines={1}>
-                    {t("uncategorized")}
-                  </Text>
-                </View>
+                <Pill
+                  label={t("uncategorized")}
+                  variant="warning"
+                  fill="subtle"
+                  size="sm"
+                  maxWidth="70%"
+                />
               )}
               {showAccountName && item.accountName && (
                 <Text
@@ -369,13 +365,5 @@ const createStyles = (theme: Theme) => ({
     alignItems: "center" as const,
     marginTop: theme.spacing.xs,
     gap: theme.spacing.xs,
-  },
-  categoryPill: {
-    backgroundColor: theme.colors.buttonSecondaryBackground,
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: theme.spacing.xxs,
-    borderRadius: theme.borderRadius.full,
-    flexShrink: 1,
-    maxWidth: "70%" as unknown as number,
   },
 });

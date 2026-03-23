@@ -3,7 +3,7 @@ import { Platform, Pressable, View } from "react-native";
 import { Icon } from "../atoms/Icon";
 import { ContextMenu } from "../atoms/ContextMenu";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
-import { Text, Amount } from "..";
+import { Text, Amount, Pill } from "..";
 import { ScheduleStatusBadge } from "../atoms/ScheduleStatusBadge";
 import { SwipeableRow } from "../molecules/SwipeableRow";
 import type { PreviewTransaction } from "../../../schedules/preview";
@@ -52,23 +52,27 @@ export const UpcomingScheduleRow = memo(function UpcomingScheduleRow({
               color={colors.primary}
               style={{ marginRight: spacing.xs }}
             />
-            <Text variant="body" numberOfLines={1} style={{ flex: 1, fontWeight: "500" }}>
+            <Text
+              variant="body"
+              numberOfLines={1}
+              style={{ flex: 1, fontWeight: "400", fontStyle: "italic" }}
+            >
               {item.payeeName}
             </Text>
           </View>
-          <Amount value={item.amount} variant="body" showSign style={{ fontWeight: "600" }} />
+          <Amount
+            value={item.amount}
+            variant="body"
+            colored={false}
+            color={item.amount < 0 ? colors.negative : undefined}
+            style={{ fontWeight: "400", fontStyle: "italic" }}
+          />
         </View>
 
         {/* Bottom row: status badge + category + account name */}
         <View style={styles.metaRow}>
           <ScheduleStatusBadge status={item.status} />
-          {item.categoryName && (
-            <View style={styles.categoryPill}>
-              <Text variant="captionSm" color={colors.textSecondary} numberOfLines={1}>
-                {item.categoryName}
-              </Text>
-            </View>
-          )}
+          {item.categoryName && <Pill label={item.categoryName} size="sm" maxWidth="70%" />}
           {showAccountName && item.accountName && (
             <>
               <View style={{ flex: 1 }} />
@@ -76,7 +80,7 @@ export const UpcomingScheduleRow = memo(function UpcomingScheduleRow({
                 variant="captionSm"
                 color={colors.textMuted}
                 numberOfLines={1}
-                style={{ flexShrink: 0 }}
+                style={{ flexShrink: 0, fontStyle: "italic" }}
               >
                 {item.accountName}
               </Text>
@@ -158,12 +162,10 @@ const createStyles = (theme: Theme) => ({
   row: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
-    backgroundColor: theme.colors.primarySubtle,
+    backgroundColor: theme.colors.cardBackground,
     paddingVertical: theme.spacing.md,
     paddingLeft: theme.spacing.lg,
     paddingRight: theme.spacing.md,
-    borderLeftWidth: 3,
-    borderLeftColor: "rgba(135, 25, 224, 0.35)",
   },
   pressed: {
     opacity: 0.8,
@@ -192,13 +194,5 @@ const createStyles = (theme: Theme) => ({
     alignItems: "center" as const,
     marginTop: theme.spacing.xs,
     gap: theme.spacing.sm,
-  },
-  categoryPill: {
-    backgroundColor: theme.colors.buttonSecondaryBackground,
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: theme.spacing.xxs,
-    borderRadius: theme.borderRadius.full,
-    flexShrink: 1,
-    maxWidth: "70%" as unknown as number,
   },
 });

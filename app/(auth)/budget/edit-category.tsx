@@ -392,35 +392,41 @@ export default function CategoryDetailsScreen() {
         {/* ── Balance Section ── */}
         {budgetCat && (
           <View style={[cardStyle, { marginBottom: spacing.xl }]}>
-            <View style={rowStyle}>
-              <Text variant="body" color={colors.textSecondary}>
-                {t("fromMonth", { month: previousMonth })}
-              </Text>
-              <Amount
-                value={budgetCat.carryIn}
-                variant="body"
-                weight="500"
-                color={budgetCat.carryIn !== 0 ? colors.textPrimary : colors.textMuted}
-              />
-            </View>
-            <View style={dividerStyle} />
+            {!isIncome && (
+              <>
+                <View style={rowStyle}>
+                  <Text variant="body" color={colors.textSecondary}>
+                    {t("fromMonth", { month: previousMonth })}
+                  </Text>
+                  <Amount
+                    value={budgetCat.carryIn}
+                    variant="body"
+                    weight="500"
+                    color={budgetCat.carryIn !== 0 ? colors.textPrimary : colors.textMuted}
+                  />
+                </View>
+                <View style={dividerStyle} />
+
+                <View style={rowStyle}>
+                  <Text variant="body" color={colors.textSecondary}>
+                    {t("assignedForMonth", { month: currentMonth })}
+                  </Text>
+                  <Amount
+                    value={budgetCat.budgeted}
+                    variant="body"
+                    weight="500"
+                    color={budgetCat.budgeted !== 0 ? colors.textPrimary : colors.textMuted}
+                  />
+                </View>
+                <View style={dividerStyle} />
+              </>
+            )}
 
             <View style={rowStyle}>
               <Text variant="body" color={colors.textSecondary}>
-                {t("assignedForMonth", { month: currentMonth })}
-              </Text>
-              <Amount
-                value={budgetCat.budgeted}
-                variant="body"
-                weight="500"
-                color={budgetCat.budgeted !== 0 ? colors.textPrimary : colors.textMuted}
-              />
-            </View>
-            <View style={dividerStyle} />
-
-            <View style={rowStyle}>
-              <Text variant="body" color={colors.textSecondary}>
-                {t("activityInMonth", { month: currentMonth })}
+                {isIncome
+                  ? t("receivedInMonth", { month: currentMonth })
+                  : t("activityInMonth", { month: currentMonth })}
               </Text>
               <Amount
                 value={budgetCat.spent}
@@ -430,30 +436,39 @@ export default function CategoryDetailsScreen() {
               />
             </View>
 
-            <View
-              style={{
-                height: bw.thin + 1,
-                backgroundColor: colors.divider,
-                marginHorizontal: spacing.md,
-              }}
-            />
-            <View style={[rowStyle, { paddingVertical: spacing.md }]}>
-              <Text variant="body" style={{ fontWeight: "600" }}>
-                {t("available")}
-              </Text>
-              <View
-                style={{
-                  backgroundColor: pill.bg,
-                  borderRadius: 100,
-                  paddingHorizontal: 14,
-                  paddingVertical: 5,
-                  minWidth: 64,
-                  alignItems: "center",
-                }}
-              >
-                <Amount value={budgetCat.balance} variant="body" color={pill.text} weight="700" />
-              </View>
-            </View>
+            {!isIncome && (
+              <>
+                <View
+                  style={{
+                    height: bw.thin + 1,
+                    backgroundColor: colors.divider,
+                    marginHorizontal: spacing.md,
+                  }}
+                />
+                <View style={[rowStyle, { paddingVertical: spacing.md }]}>
+                  <Text variant="body" style={{ fontWeight: "600" }}>
+                    {t("available")}
+                  </Text>
+                  <View
+                    style={{
+                      backgroundColor: pill.bg,
+                      borderRadius: 100,
+                      paddingHorizontal: 14,
+                      paddingVertical: 5,
+                      minWidth: 64,
+                      alignItems: "center",
+                    }}
+                  >
+                    <Amount
+                      value={budgetCat.balance}
+                      variant="body"
+                      color={pill.text}
+                      weight="700"
+                    />
+                  </View>
+                </View>
+              </>
+            )}
           </View>
         )}
 

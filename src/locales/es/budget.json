@@ -159,6 +159,7 @@
   "fromMonth": "De {{month}}",
   "assignedForMonth": "Presupuestado para {{month}}",
   "activityInMonth": "Actividad en {{month}}",
+  "receivedInMonth": "Recibido en {{month}}",
   "available": "Disponible",
   "target": "Meta",
   "budgetToMeetGoal": "Presupuesta ",

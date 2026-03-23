@@ -28,18 +28,26 @@ export type UpcomingItem = {
   isLast: boolean;
 };
 
+export type EmptyStateItem = {
+  type: "empty-state";
+  key: string;
+  variant: "reconciled" | "no-transactions";
+};
+
 export type ListItem =
   | DateHeader
   | TransactionItem
   | UpcomingHeader
   | UpcomingDateHeader
-  | UpcomingItem;
+  | UpcomingItem
+  | EmptyStateItem;
 
 export function buildListData(
   transactions: TransactionDisplay[],
   opts?: {
     previewTransactions?: PreviewTransaction[];
     upcomingExpanded?: boolean;
+    hideReconciled?: boolean;
   },
 ): ListItem[] {
   const items: ListItem[] = [];
@@ -89,6 +97,15 @@ export function buildListData(
         if (last.type === "upcoming") last.isLast = true;
       }
     }
+  }
+
+  // Inject empty state when schedules exist but no visible transactions
+  if (previews.length > 0 && transactions.length === 0) {
+    items.push({
+      type: "empty-state",
+      key: "empty-state",
+      variant: opts?.hideReconciled ? "reconciled" : "no-transactions",
+    });
   }
 
   // Pre-compute daily totals

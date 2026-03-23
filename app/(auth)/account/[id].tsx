@@ -309,8 +309,9 @@ export default function AccountTransactionsScreen() {
       buildListData(transactions as TransactionDisplay[], {
         previewTransactions,
         upcomingExpanded,
+        hideReconciled,
       }),
-    [transactions, previewTransactions, upcomingExpanded],
+    [transactions, previewTransactions, upcomingExpanded, hideReconciled],
   );
 
   // ---- Common menu actions ----
@@ -387,6 +388,23 @@ export default function AccountTransactionsScreen() {
                 onPress={handlePressSchedule}
                 isFirst={item.isFirst}
                 isLast={item.isLast}
+              />
+            );
+          }
+          if (item.type === "empty-state") {
+            return item.variant === "reconciled" ? (
+              <EmptyState
+                icon="lockClosedOutline"
+                title={t("detail.allReconciled.title")}
+                description={t("detail.allReconciled.description")}
+                actionLabel={t("detail.allReconciled.showAll")}
+                onAction={toggleHideReconciled}
+              />
+            ) : (
+              <EmptyState
+                icon="receiptOutline"
+                title={t("detail.noTransactions.title")}
+                description={t("detail.noTransactions.description")}
               />
             );
           }

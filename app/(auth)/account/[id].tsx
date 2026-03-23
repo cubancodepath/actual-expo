@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useSharedValue } from "react-native-reanimated";
-import { ActivityIndicator, Alert, LayoutAnimation, RefreshControl, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  LayoutAnimation,
+  RefreshControl,
+  ScrollView,
+  View,
+} from "react-native";
 import { LegendList } from "@legendapp/list";
 import { Stack, useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
@@ -28,6 +35,7 @@ import { usePrivacyStore } from "@/stores/privacyStore";
 import { useUndoStore } from "@/stores/undoStore";
 import { useCommonMenuActions } from "@/presentation/hooks/useCommonMenuItems";
 import { useTags } from "@/presentation/hooks/useTags";
+import { useRefreshControl } from "@/presentation/hooks/useRefreshControl";
 import { usePickerStore } from "@/stores/pickerStore";
 import {
   buildListData,
@@ -65,6 +73,7 @@ export default function AccountTransactionsScreen() {
   const [hideReconciled, toggleHideReconciled] = useAccountPref(id, "hide-reconciled");
   usePrivacyStore();
   const { tags } = useTags();
+  const { refreshControlProps } = useRefreshControl();
 
   // ---- Upcoming (reactive via liveQuery) ----
   const [upcomingExpanded, setUpcomingExpanded] = useState(false);
@@ -150,8 +159,6 @@ export default function AccountTransactionsScreen() {
     isSelectMode: selection.isSelectMode,
     selectedCount: selection.selectedIds.size,
     selectedTotal,
-    onSelectAll: () =>
-      selection.selectAll(transactions as TransactionDisplay[], (t) => !t.reconciled),
     onDoneSelection: selection.exit,
   });
 
@@ -461,13 +468,18 @@ export default function AccountTransactionsScreen() {
         }}
         onEndReachedThreshold={0.3}
         contentContainerStyle={{ paddingBottom: 80 }}
-        refreshControl={
-          <RefreshControl
-            refreshing={false}
-            onRefresh={() => refetch()}
-            tintColor={colors.primary}
+        renderScrollComponent={(props) => (
+          <ScrollView
+            {...props}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshControlProps.refreshing}
+                onRefresh={refreshControlProps.onRefresh}
+                tintColor={refreshControlProps.tintColor}
+              />
+            }
           />
-        }
+        )}
       />
 
       {!selection.isSelectMode && (

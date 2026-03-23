@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef } from "react";
-import { Pressable, View } from "react-native";
+import { View } from "react-native";
 import { useNavigation } from "expo-router";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Text } from "../../components";
@@ -9,7 +9,6 @@ interface UseSelectModeHeaderOptions {
   isSelectMode: boolean;
   selectedCount: number;
   selectedTotal: number;
-  onSelectAll: () => void;
   onDoneSelection: () => void;
 }
 
@@ -21,15 +20,11 @@ export function useSelectModeHeader({
   isSelectMode,
   selectedCount,
   selectedTotal,
-  onSelectAll,
   onDoneSelection,
 }: UseSelectModeHeaderOptions) {
   const navigation = useNavigation();
   const { colors } = useTheme();
 
-  // Refs to keep stable callback identities in the layout effect
-  const onSelectAllRef = useRef(onSelectAll);
-  onSelectAllRef.current = onSelectAll;
   const onDoneRef = useRef(onDoneSelection);
   onDoneRef.current = onDoneSelection;
 
@@ -52,6 +47,7 @@ export function useSelectModeHeader({
               </View>
             )
           : undefined,
+      headerLeft: undefined,
       headerRight: undefined,
       unstable_headerRightItems: () => [
         {
@@ -60,17 +56,6 @@ export function useSelectModeHeader({
           onPress: () => onDoneRef.current(),
         },
       ],
-      headerLeft: () => (
-        <Pressable
-          onPress={() => onSelectAllRef.current()}
-          hitSlop={8}
-          style={{ paddingHorizontal: 8 }}
-        >
-          <Text variant="body" color={colors.headerText} style={{ fontWeight: "600" }}>
-            Select All
-          </Text>
-        </Pressable>
-      ),
     });
-  }, [isSelectMode, selectedCount, selectedTotal, colors.headerText, colors.textMuted]);
+  }, [isSelectMode, selectedCount, selectedTotal, colors.textMuted]);
 }

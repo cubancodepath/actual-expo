@@ -82,7 +82,6 @@ export default function CategoryTransactionsScreen() {
     isSelectMode: txnList.isSelectMode,
     selectedCount: txnList.selectedIds.size,
     selectedTotal: txnList.selectedTotal,
-    onSelectAll: txnList.handleSelectAll,
     onDoneSelection: txnList.handleDoneSelection,
   });
 

@@ -116,8 +116,6 @@ export default function SpendingScreen() {
     isSelectMode: selection.isSelectMode,
     selectedCount: selection.selectedIds.size,
     selectedTotal,
-    onSelectAll: () =>
-      selection.selectAll(transactions as TransactionDisplay[], (t) => !t.reconciled),
     onDoneSelection: () => {
       selection.exit();
       setTabBarHidden(false);

@@ -38,7 +38,9 @@ export function useRefreshControl(options?: UseRefreshControlOptions) {
     try {
       if (syncFirst) {
         try {
+          console.log("[useRefreshControl] starting fullSync...");
           await fullSync();
+          console.log("[useRefreshControl] fullSync complete");
         } catch {
           // fullSync already records the error in syncStore
         }

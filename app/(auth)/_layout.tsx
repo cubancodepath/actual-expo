@@ -208,11 +208,8 @@ export default function AuthLayout() {
       <Stack.Screen
         name="change-budget"
         options={{
-          title: t("nav.switchBudget"),
           presentation: "fullScreenModal",
-          headerTintColor: theme.colors.headerText,
-          headerStyle: { backgroundColor: theme.colors.pageBackground },
-          headerShadowVisible: false,
+          headerShown: false,
           contentStyle: { backgroundColor: theme.colors.pageBackground },
         }}
       />

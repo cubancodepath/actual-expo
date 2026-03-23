@@ -1,13 +1,6 @@
 import { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  View,
-} from "react-native";
-import { Stack, useRouter } from "expo-router";
+import { ActivityIndicator, Alert, RefreshControl, ScrollView, View } from "react-native";
+import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { usePrefsStore } from "@/stores/prefsStore";
@@ -25,6 +18,7 @@ import {
   BudgetFileRow,
   BudgetOpeningOverlay,
   SwipeableRow,
+  GlassButton,
 } from "@/presentation/components";
 import { useBudgetFiles, fileKey } from "@/presentation/hooks/useBudgetFiles";
 import { useFileActionSheet } from "@/presentation/hooks/useFileActionSheet";
@@ -132,7 +126,24 @@ export default function FilesScreen() {
   const hasFiles = localFiles.length > 0 || remoteFiles.length > 0;
 
   return (
-    <>
+    <View style={{ flex: 1, backgroundColor: colors.pageBackground }}>
+      {/* Custom header */}
+      <View
+        style={{
+          paddingTop: insets.top + 8,
+          paddingBottom: 12,
+          paddingHorizontal: spacing.lg,
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          backgroundColor: colors.pageBackground,
+        }}
+      >
+        <GlassButton label={t("logOut")} onPress={handleLogout} />
+        <Text variant="headingSm">{t("openBudget")}</Text>
+        <GlassButton label={t("new")} onPress={() => router.push("/(files)/new-budget")} />
+      </View>
+
       <ScrollView
         style={styles.container}
         contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xl }}
@@ -140,8 +151,6 @@ export default function FilesScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} />
         }
       >
-        <Stack.Screen options={{}} />
-
         <View style={{ marginTop: spacing.md }}>
           <ErrorBanner error={error} onDismiss={dismissError} />
         </View>
@@ -231,25 +240,12 @@ export default function FilesScreen() {
         )}
       </ScrollView>
 
-      {!selecting && (
-        <>
-          <Stack.Toolbar placement="left">
-            <Stack.Toolbar.Button onPress={handleLogout}>{t("logOut")}</Stack.Toolbar.Button>
-          </Stack.Toolbar>
-          <Stack.Toolbar placement="right">
-            <Stack.Toolbar.Button onPress={() => router.push("/(files)/new-budget")}>
-              {t("new")}
-            </Stack.Toolbar.Button>
-          </Stack.Toolbar>
-        </>
-      )}
-
       <BudgetOpeningOverlay
         visible={selecting !== null}
         phase={switchPhase ?? "opening"}
         budgetName={switchingName}
       />
-    </>
+    </View>
   );
 }
 

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ActivityIndicator, RefreshControl, ScrollView, View } from "react-native";
-import { Stack, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePrefsStore } from "@/stores/prefsStore";
@@ -13,6 +13,7 @@ import {
   EmptyState,
   BudgetFileRow,
   BudgetOpeningOverlay,
+  GlassButton,
 } from "@/presentation/components";
 import { useBudgetFiles, fileKey } from "@/presentation/hooks/useBudgetFiles";
 import type { ReconciledBudgetFile } from "@/services/budgetfiles";
@@ -61,15 +62,25 @@ export default function ChangeBudgetScreen() {
   const hasFiles = localFiles.length > 0 || remoteFiles.length > 0;
   const isSwitching = selecting !== null;
 
-  const phaseLabel =
-    switchPhase === "downloading"
-      ? t("budget.downloading")
-      : switchPhase === "opening"
-        ? t("budget.opening")
-        : t("budget.opening");
-
   return (
-    <>
+    <View style={{ flex: 1, backgroundColor: colors.pageBackground }}>
+      {/* Custom header */}
+      <View
+        style={{
+          paddingTop: insets.top + 8,
+          paddingBottom: 12,
+          paddingHorizontal: spacing.lg,
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          backgroundColor: colors.pageBackground,
+        }}
+      >
+        <GlassButton icon="close" onPress={() => router.back()} />
+        <Text variant="headingSm">{t("nav.switchBudget")}</Text>
+        <GlassButton label={t("new")} onPress={() => router.push("/(auth)/new-budget")} />
+      </View>
+
       <ScrollView
         style={styles.container}
         contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xl }}
@@ -83,8 +94,6 @@ export default function ChangeBudgetScreen() {
           />
         }
       >
-        <Stack.Screen options={{}} />
-
         <View style={{ marginTop: spacing.md }}>
           <ErrorBanner error={error} onDismiss={dismissError} />
         </View>
@@ -149,26 +158,12 @@ export default function ChangeBudgetScreen() {
         )}
       </ScrollView>
 
-      {/* Toolbar — hidden during switch to prevent navigation */}
-      {!isSwitching && (
-        <>
-          <Stack.Toolbar placement="left">
-            <Stack.Toolbar.Button icon="xmark" onPress={() => router.back()} />
-          </Stack.Toolbar>
-          <Stack.Toolbar placement="right">
-            <Stack.Toolbar.Button onPress={() => router.push("/(auth)/new-budget")}>
-              {t("new")}
-            </Stack.Toolbar.Button>
-          </Stack.Toolbar>
-        </>
-      )}
-
       <BudgetOpeningOverlay
         visible={isSwitching}
         phase={switchPhase ?? "opening"}
         budgetName={switchingName}
       />
-    </>
+    </View>
   );
 }
 

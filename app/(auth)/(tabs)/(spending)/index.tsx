@@ -25,6 +25,7 @@ import { UpcomingScheduleRow } from "@/presentation/components/account/UpcomingS
 import { AddTransactionButton } from "@/presentation/components/molecules/AddTransactionButton";
 import { useTags } from "@/presentation/hooks/useTags";
 import { usePickerStore } from "@/stores/pickerStore";
+import { useRefreshControl } from "@/presentation/hooks/useRefreshControl";
 import {
   buildListData,
   useSelectModeHeader,
@@ -59,6 +60,7 @@ export default function SpendingScreen() {
   usePrivacyStore(); // subscribe to re-render on privacy mode change
   const setTabBarHidden = useTabBarStore((s) => s.setHidden);
   const { tags } = useTags();
+  const { refreshControlProps } = useRefreshControl();
 
   // ---- Upcoming scheduled transactions (reactive, derived from liveQuery) ----
   const [upcomingExpanded, setUpcomingExpanded] = useState(false);
@@ -408,9 +410,9 @@ export default function SpendingScreen() {
         onEndReachedThreshold={0.3}
         refreshControl={
           <RefreshControl
-            refreshing={false}
-            onRefresh={() => refetch()}
-            tintColor={colors.primary}
+            refreshing={refreshControlProps.refreshing}
+            onRefresh={refreshControlProps.onRefresh}
+            tintColor={refreshControlProps.tintColor}
           />
         }
         contentContainerStyle={{ paddingBottom: 80, backgroundColor: colors.pageBackground }}

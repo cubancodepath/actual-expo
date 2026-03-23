@@ -1,13 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useSharedValue } from "react-native-reanimated";
-import {
-  ActivityIndicator,
-  Alert,
-  LayoutAnimation,
-  RefreshControl,
-  ScrollView,
-  View,
-} from "react-native";
+import { ActivityIndicator, Alert, LayoutAnimation, RefreshControl, View } from "react-native";
 import { LegendList } from "@legendapp/list";
 import { Stack, useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
@@ -468,18 +461,13 @@ export default function AccountTransactionsScreen() {
         }}
         onEndReachedThreshold={0.3}
         contentContainerStyle={{ paddingBottom: 80 }}
-        renderScrollComponent={(props) => (
-          <ScrollView
-            {...props}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshControlProps.refreshing}
-                onRefresh={refreshControlProps.onRefresh}
-                tintColor={refreshControlProps.tintColor}
-              />
-            }
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshControlProps.refreshing}
+            onRefresh={refreshControlProps.onRefresh}
+            tintColor={refreshControlProps.tintColor}
           />
-        )}
+        }
       />
 
       {!selection.isSelectMode && (

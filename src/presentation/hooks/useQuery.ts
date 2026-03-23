@@ -21,6 +21,7 @@ import type { Query } from "@/queries/query";
 import { liveQuery, type LiveQueryInstance } from "@/queries/liveQuery";
 import { getQueryCache } from "@/queries/queryCache";
 import { pagedQuery, type PagedQueryInstance } from "@/queries/pagedQuery";
+import { usePrefsStore } from "@/stores/prefsStore";
 
 // ---------------------------------------------------------------------------
 // useLiveQuery
@@ -37,7 +38,9 @@ export function useLiveQuery<T = Record<string, unknown>>(
   makeQuery: () => Query | null,
   deps: DependencyList,
 ): UseLiveQueryResult<T> {
-  const query = useMemo(makeQuery, deps);
+  // Recreate query when budget changes so liveQuery re-fetches from new DB
+  const activeBudgetId = usePrefsStore((s) => s.activeBudgetId);
+  const query = useMemo(makeQuery, [...deps, activeBudgetId]);
   // Check pre-loaded cache on first render (populated during bootstrap)
   const initialCache = useRef<T[] | null | undefined>(undefined);
   if (initialCache.current === undefined) {
@@ -108,7 +111,8 @@ export function usePagedLiveQuery<T = Record<string, unknown>>(
   deps: DependencyList,
   options?: UsePagedLiveQueryOptions,
 ): UsePagedLiveQueryResult<T> {
-  const query = useMemo(makeQuery, deps);
+  const activeBudgetId = usePrefsStore((s) => s.activeBudgetId);
+  const query = useMemo(makeQuery, [...deps, activeBudgetId]);
   const pageSize = options?.pageSize ?? 50;
 
   const [data, setData] = useState<T[] | null>(null);

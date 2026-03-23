@@ -1,5 +1,5 @@
 import { View } from "react-native";
-import { EaseView } from "react-native-ease";
+import { AnimatedView } from "../atoms/AnimatedView";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Card } from "../atoms/Card";
@@ -69,7 +69,7 @@ export function SpendingByCategoryCard() {
       {/* Category list */}
       <View style={{ gap: spacing.sm }}>
         {categories.map((cat, i) => (
-          <EaseView
+          <AnimatedView
             key={cat.id}
             initialAnimate={{ opacity: 0, translateY: 8 }}
             animate={{ opacity: 1, translateY: 0 }}
@@ -101,7 +101,7 @@ export function SpendingByCategoryCard() {
                 {cat.percent}%
               </Text>
             </View>
-          </EaseView>
+          </AnimatedView>
         ))}
       </View>
     </Card>
@@ -127,7 +127,7 @@ function StackedBar({
       }}
     >
       {categories.map((cat) => (
-        <EaseView
+        <AnimatedView
           key={cat.id}
           initialAnimate={{ scaleX: 0 }}
           animate={{ scaleX: 1 }}

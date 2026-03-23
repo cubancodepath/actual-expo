@@ -104,6 +104,8 @@ export const palette = {
   emerald600: "#059669", // light-mode positive text (4.6:1 on white ✓)
   emerald700: "#047857", // positive fill bg (5.48:1 white-on ✓)
   emerald400: "#34D399", // dark-mode positive (vibrant mint)
+  twGreen600: "#16a34a", // vivid positive text light (4.5:1 on white ✓)
+  twGreen400: "#4ade80", // vivid positive text dark
   rose600: "#E11D48", // light-mode negative text (5.2:1 on white ✓)
   rose700: "#9F1239", // negative fill bg (8.0:1 white-on ✓) — matches emerald700 depth
   rose400: "#FB7185", // dark-mode negative (vibrant coral)
@@ -148,6 +150,7 @@ export interface ThemeColors {
 
   // Semantic (amounts, indicators)
   positive: string;
+  positiveVivid: string;
   negative: string;
   warning: string;
   link: string;
@@ -158,6 +161,7 @@ export interface ThemeColors {
   warningSubtle: string;
 
   // Solid fill backgrounds for white text (WCAG AA ≥ 4.5:1)
+  primaryFill: string;
   positiveFill: string;
   negativeFill: string;
   warningFill: string;
@@ -201,6 +205,17 @@ export interface ThemeColors {
   // Toast
   toastBackground: string;
 
+  // Vibrant colors (modern, high-contrast — for native UI components)
+  vibrantPositive: string;
+  vibrantNegative: string;
+  vibrantWarning: string;
+  vibrantPositiveBg: string;
+  vibrantNegativeBg: string;
+  vibrantWarningBg: string;
+  vibrantPillText: string;
+  vibrantPillTextNegative: string;
+  vibrantNegativeBadge: string;
+
   // Misc
   divider: string;
   skeleton: string;
@@ -226,11 +241,12 @@ export const lightColors: ThemeColors = {
   primary: palette.purple500,
   primaryHover: palette.purple600,
   primaryText: palette.white,
-  primarySubtle: "rgba(135, 25, 224, 0.08)",
+  primarySubtle: "rgba(135, 25, 224, 0.14)",
   primaryMuted: palette.purple200,
 
   // Semantic (vibrant modern — emerald/rose/amber)
   positive: palette.emerald600,
+  positiveVivid: palette.twGreen600,
   negative: palette.rose600,
   warning: palette.amber600,
   link: palette.blue600,
@@ -241,6 +257,7 @@ export const lightColors: ThemeColors = {
   warningSubtle: "rgba(217, 119, 6, 0.10)",
 
   // Solid fills for white text
+  primaryFill: palette.purple400,
   positiveFill: palette.emerald700,
   negativeFill: palette.rose700,
   warningFill: palette.amber700,
@@ -271,11 +288,11 @@ export const lightColors: ThemeColors = {
   buttonDangerText: palette.rose600,
 
   // Status
-  successBackground: "rgba(5, 150, 105, 0.10)",
+  successBackground: "rgba(5, 150, 105, 0.16)",
   successText: palette.emerald600,
-  warningBackground: "rgba(217, 119, 6, 0.10)",
+  warningBackground: "rgba(217, 119, 6, 0.16)",
   warningText: palette.amber600,
-  errorBackground: "rgba(225, 29, 72, 0.08)",
+  errorBackground: "rgba(225, 29, 72, 0.14)",
   errorText: palette.rose600,
 
   // Charts (vibrant modern palette)
@@ -299,6 +316,17 @@ export const lightColors: ThemeColors = {
   skeleton: palette.navy100,
   shadow: "rgba(0, 0, 0, 0.12)",
   progressTrack: palette.navy100,
+
+  // Vibrant
+  vibrantPositive: "#AFE966",
+  vibrantNegative: "#F87171",
+  vibrantWarning: "#FBBF24",
+  vibrantPositiveBg: "rgba(74, 222, 128, 0.15)",
+  vibrantNegativeBg: "rgba(248, 113, 113, 0.12)",
+  vibrantWarningBg: "rgba(251, 191, 36, 0.12)",
+  vibrantPillText: "#1A1A2E",
+  vibrantPillTextNegative: "#450A0A",
+  vibrantNegativeBadge: "#F87171",
 };
 
 export const darkColors: ThemeColors = {
@@ -319,11 +347,12 @@ export const darkColors: ThemeColors = {
   primary: palette.purple400,
   primaryHover: palette.purple500,
   primaryText: palette.white,
-  primarySubtle: "rgba(148, 70, 237, 0.12)",
+  primarySubtle: "rgba(148, 70, 237, 0.25)",
   primaryMuted: palette.purple700,
 
   // Semantic (vibrant modern — bright on dark)
   positive: palette.emerald400,
+  positiveVivid: palette.twGreen400,
   negative: palette.rose400,
   warning: palette.amber400,
   link: palette.purple300,
@@ -334,6 +363,7 @@ export const darkColors: ThemeColors = {
   warningSubtle: "rgba(251, 191, 36, 0.14)",
 
   // Solid fills for white text (same as light — these are dark enough)
+  primaryFill: palette.purple600,
   positiveFill: palette.emerald700,
   negativeFill: palette.rose700,
   warningFill: palette.amber700,
@@ -364,11 +394,11 @@ export const darkColors: ThemeColors = {
   buttonDangerText: palette.rose400,
 
   // Status
-  successBackground: "rgba(52, 211, 153, 0.14)",
+  successBackground: "rgba(52, 211, 153, 0.25)",
   successText: palette.emerald400,
-  warningBackground: "rgba(251, 191, 36, 0.12)",
+  warningBackground: "rgba(251, 191, 36, 0.22)",
   warningText: palette.amber400,
-  errorBackground: "rgba(251, 113, 133, 0.12)",
+  errorBackground: "rgba(251, 113, 133, 0.22)",
   errorText: palette.rose400,
 
   // Charts (vibrant modern palette)
@@ -392,4 +422,15 @@ export const darkColors: ThemeColors = {
   skeleton: palette.gray700,
   shadow: "rgba(0, 0, 0, 0.4)",
   progressTrack: "rgba(255, 255, 255, 0.06)",
+
+  // Vibrant
+  vibrantPositive: "#22C55E",
+  vibrantNegative: "#C02F3D",
+  vibrantWarning: "#F59E0B",
+  vibrantPositiveBg: "rgba(34, 197, 94, 0.20)",
+  vibrantNegativeBg: "rgba(239, 68, 68, 0.20)",
+  vibrantWarningBg: "rgba(245, 158, 11, 0.20)",
+  vibrantPillText: "#080811",
+  vibrantPillTextNegative: "#FFFFFF",
+  vibrantNegativeBadge: "#6C0C20",
 };

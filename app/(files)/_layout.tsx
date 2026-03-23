@@ -11,7 +11,7 @@ export default function FilesLayout() {
   return (
     <>
       <Stack screenOptions={themedScreenOptions(theme)}>
-        <Stack.Screen name="files" options={{ title: t("openBudget") }} />
+        <Stack.Screen name="files" options={{ headerShown: false }} />
         <Stack.Screen name="new-budget" options={{ headerShown: false }} />
       </Stack>
       <EncryptionPasswordPrompt />

@@ -186,7 +186,6 @@ export default function SearchScreen() {
     isSelectMode: selection.isSelectMode,
     selectedCount: selection.selectedIds.size,
     selectedTotal,
-    onSelectAll: () => selection.selectAll(results, (t) => !t.reconciled),
     onDoneSelection: () => {
       selection.exit();
       setTabBarHidden(false);

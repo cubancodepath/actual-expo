@@ -11,6 +11,7 @@ export default function TestStack() {
       }}
     >
       <Stack.Screen name="index" options={{ headerShown: false }} />
+      <Stack.Screen name="swiftui-list" options={{ title: "SwiftUI List" }} />
     </Stack>
   );
 }

@@ -3,20 +3,22 @@
  *
  * Ported from Actual Budget's sync-event pattern. All code that applies
  * changes (local mutations via batch.ts, remote sync via fullSync.ts)
- * emits events here. Consumers (storeRegistry, liveQuery) listen and
- * react to changes in tables they depend on.
+ * emits events here. Consumers (liveQuery, pagedQuery, spreadsheet,
+ * useSyncedPref, useTransactions) listen and react to changes.
  *
  * This replaces direct function calls and ensures every sync path
  * notifies all consumers uniformly.
  */
 
-export type SyncEventType = "applied" | "success";
+export type SyncEventType = "start" | "applied" | "success" | "error";
 
 export type SyncEvent = {
-  /** "applied" = local mutation, "success" = remote sync completed */
+  /** "start" = sync starting, "applied" = local mutation, "success" = remote sync completed, "error" = sync failed */
   type: SyncEventType;
   /** Tables/datasets that changed */
   tables: string[];
+  /** Error subtype: out-of-sync, network, clock-drift, encrypt-failure, decrypt-failure */
+  subtype?: string;
 };
 
 type Listener = (event: SyncEvent) => void;

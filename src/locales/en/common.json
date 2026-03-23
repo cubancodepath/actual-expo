@@ -35,7 +35,7 @@
     "reports": "Reports",
     "accounts": "Accounts",
     "budget": "Budget",
-    "spending": "Spending"
+    "spending": "Transactions"
   },
 
   "nav": {
@@ -54,10 +54,12 @@
     "transactions": "Transactions",
     "overspentCategories": "Overspent Categories",
     "holdForNextMonth": "Hold for Next Month",
+    "transferAvailable": "Move to Category",
     "manageCategories": "Manage Categories",
     "managePayees": "Manage Payees",
     "schedules": "Schedules",
-    "changeBudget": "Change Budget"
+    "changeBudget": "Switch Budget",
+    "switchBudget": "Switch Budget"
   },
 
   "payees": {
@@ -158,7 +160,9 @@
     "noBudgetsFound": "No budgets found",
     "noBudgetsDescription": "There are no budget files on this server or on this device.",
     "createNewBudget": "Create New Budget",
-    "unnamedBudget": "My Budget"
+    "unnamedBudget": "My Budget",
+    "opening": "Opening budget…",
+    "downloading": "Downloading budget…"
   },
 
   "encryption": {

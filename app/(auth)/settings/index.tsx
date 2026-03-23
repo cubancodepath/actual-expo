@@ -119,13 +119,9 @@ export default function SettingsScreen() {
         onPress: async () => {
           setLoggingOut(true);
           try {
-            resetSyncState();
-            resetAllStores();
+            await closeBudget();
             await clearAll();
-            await clearLocalData();
-            await loadClock();
           } finally {
-            clearSwitchingFlag();
             setLoggingOut(false);
           }
         },

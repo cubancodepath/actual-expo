@@ -13,6 +13,7 @@ export const iconRegistry = {
   chevronForward: { ionicon: "chevron-forward", sfSymbol: "chevron.right" },
   chevronDown: { ionicon: "chevron-down", sfSymbol: "chevron.down" },
   chevronUp: { ionicon: "chevron-up", sfSymbol: "chevron.up" },
+  arrowBackOutline: { ionicon: "arrow-back-outline", sfSymbol: "arrow.left" },
   arrowForwardOutline: { ionicon: "arrow-forward-outline", sfSymbol: "arrow.right" },
   arrowUp: { ionicon: "arrow-up", sfSymbol: "arrow.up" },
 

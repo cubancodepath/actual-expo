@@ -84,7 +84,7 @@ export function useNetWorth() {
       allIds.length > 0
         ? q("transactions")
             .filter({ acct: { $oneof: allIds } })
-            .groupBy("$acct")
+            .groupBy("acct")
             .select([{ acct: "$acct" }, { amount: { $sum: "$amount" } }])
         : null,
     [allIdsKey],

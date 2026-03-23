@@ -22,7 +22,6 @@ import { BalanceSummary } from "@/presentation/components/account/BalanceSummary
 import { TransactionRow } from "@/presentation/components/account/TransactionRow";
 import { DateSectionHeader } from "@/presentation/components/account/DateSectionHeader";
 import { UpcomingSectionHeader } from "@/presentation/components/account/UpcomingSectionHeader";
-import { UpcomingDateHeader } from "@/presentation/components/account/UpcomingDateHeader";
 import { UpcomingScheduleRow } from "@/presentation/components/account/UpcomingScheduleRow";
 import { AddTransactionButton } from "@/presentation/components/molecules/AddTransactionButton";
 import { UnclearedPill } from "@/presentation/components/transaction/UnclearedPill";
@@ -31,6 +30,7 @@ import { usePrivacyStore } from "@/stores/privacyStore";
 import { useUndoStore } from "@/stores/undoStore";
 import { useCommonMenuActions } from "@/presentation/hooks/useCommonMenuItems";
 import { useTags } from "@/presentation/hooks/useTags";
+import { useRefreshControl } from "@/presentation/hooks/useRefreshControl";
 import { usePickerStore } from "@/stores/pickerStore";
 import {
   buildListData,
@@ -97,6 +97,7 @@ export default function AccountTransactionsScreen() {
   const [hideReconciled, toggleHideReconciled] = useAccountPref(id, "hide-reconciled");
   usePrivacyStore();
   const { tags } = useTags();
+  const { refreshControlProps } = useRefreshControl();
 
   // ---- Upcoming (reactive via liveQuery) ----
   const [upcomingExpanded, setUpcomingExpanded] = useState(false);
@@ -140,6 +141,20 @@ export default function AccountTransactionsScreen() {
   );
   const unclearedCount = unclearedCountData?.[0]?.result ?? 0;
 
+  // ---- Cleared count for reconciliation ----
+  const clearedCountQuery = useMemo(
+    () =>
+      q("transactions")
+        .filter({ acct: id, cleared: true, reconciled: false })
+        .calculate({ $count: "$id" }),
+    [id],
+  );
+  const { data: clearedCountData } = useLiveQuery<{ result: number }>(
+    () => clearedCountQuery,
+    [clearedCountQuery],
+  );
+  const clearedCount = clearedCountData?.[0]?.result ?? 0;
+
   // ---- Selection mode ----
   const selection = useSelectionMode<TransactionDisplay>();
 
@@ -168,8 +183,6 @@ export default function AccountTransactionsScreen() {
     isSelectMode: selection.isSelectMode,
     selectedCount: selection.selectedIds.size,
     selectedTotal,
-    onSelectAll: () =>
-      selection.selectAll(transactions as TransactionDisplay[], (t) => !t.reconciled),
     onDoneSelection: selection.exit,
   });
 
@@ -327,8 +340,9 @@ export default function AccountTransactionsScreen() {
       buildListData(transactions as TransactionDisplay[], {
         previewTransactions,
         upcomingExpanded,
+        hideReconciled,
       }),
-    [transactions, previewTransactions, upcomingExpanded],
+    [transactions, previewTransactions, upcomingExpanded, hideReconciled],
   );
 
   // ---- Common menu actions ----
@@ -433,7 +447,7 @@ export default function AccountTransactionsScreen() {
             );
           }
           if (item.type === "upcoming-date") {
-            return <UpcomingDateHeader date={item.date} />;
+            return <DateSectionHeader date={item.date} />;
           }
           if (item.type === "upcoming") {
             return (
@@ -447,6 +461,23 @@ export default function AccountTransactionsScreen() {
                 onPress={handlePressSchedule}
                 isFirst={item.isFirst}
                 isLast={item.isLast}
+              />
+            );
+          }
+          if (item.type === "empty-state") {
+            return item.variant === "reconciled" ? (
+              <EmptyState
+                icon="lockClosedOutline"
+                title={t("detail.allReconciled.title")}
+                description={t("detail.allReconciled.description")}
+                actionLabel={t("detail.allReconciled.showAll")}
+                onAction={toggleHideReconciled}
+              />
+            ) : (
+              <EmptyState
+                icon="receiptOutline"
+                title={t("detail.noTransactions.title")}
+                description={t("detail.noTransactions.description")}
               />
             );
           }
@@ -505,9 +536,9 @@ export default function AccountTransactionsScreen() {
         contentContainerStyle={{ paddingBottom: 80 }}
         refreshControl={
           <RefreshControl
-            refreshing={false}
-            onRefresh={() => refetch()}
-            tintColor={colors.primary}
+            refreshing={refreshControlProps.refreshing}
+            onRefresh={refreshControlProps.onRefresh}
+            tintColor={refreshControlProps.tintColor}
           />
         }
       />
@@ -562,7 +593,12 @@ export default function AccountTransactionsScreen() {
               onPress={() =>
                 router.push({
                   pathname: "/(auth)/account/reconcile",
-                  params: { accountId: id, clearedBalance: String(clearedBalance) },
+                  params: {
+                    accountId: id,
+                    clearedBalance: String(clearedBalance),
+                    clearedCount: String(clearedCount),
+                    lastReconciled: account?.lastReconciled ?? "",
+                  },
                 })
               }
             >

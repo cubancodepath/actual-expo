@@ -57,7 +57,8 @@
     "manageCategories": "Administrar Categorías",
     "managePayees": "Administrar Beneficiarios",
     "schedules": "Programaciones",
-    "changeBudget": "Cambiar Presupuesto"
+    "changeBudget": "Cambiar Presupuesto",
+    "switchBudget": "Cambiar Presupuesto"
   },
 
   "payees": {
@@ -158,7 +159,9 @@
     "noBudgetsFound": "No se encontraron presupuestos",
     "noBudgetsDescription": "No hay archivos de presupuesto en este servidor ni en este dispositivo.",
     "createNewBudget": "Crear Nuevo Presupuesto",
-    "unnamedBudget": "Mi Presupuesto"
+    "unnamedBudget": "Mi Presupuesto",
+    "opening": "Abriendo presupuesto…",
+    "downloading": "Descargando presupuesto…"
   },
 
   "encryption": {

@@ -69,6 +69,11 @@ export function formatDateLong(d: number): string {
   return format(intToDate(d), dateFormatStr);
 }
 
+/** YYYYMMDD → human-readable with month name, e.g. "March 23, 2025" */
+export function formatDateHuman(d: number): string {
+  return format(intToDate(d), "MMMM d, yyyy");
+}
+
 // ── Conversion between int and string ─────────────────────────────────────────
 
 /** YYYYMMDD integer → "YYYY-MM-DD" string. */

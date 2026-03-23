@@ -6,7 +6,7 @@ const config = ({ config }: ConfigContext): ExpoConfig => ({
   name: IS_DEV ? "Actual (Dev)" : "Actual",
   slug: "actual-expo",
   scheme: IS_DEV ? "actualbudget-dev" : "actualbudget",
-  version: "1.0.0",
+  version: "1.0.1",
   orientation: "portrait",
   icon: "./assets/icon.png",
   userInterfaceStyle: "automatic",

@@ -22,7 +22,7 @@ import type { BudgetCategory } from "../../../budgets/types";
 /** Shared column widths for table-style alignment across header, rows, and group headers. */
 export const BUDGET_COLUMNS = {
   budgeted: 90,
-  available: 80,
+  available: 95,
 } as const;
 
 interface BudgetCategoryRowProps {
@@ -41,6 +41,7 @@ interface BudgetCategoryRowProps {
   editValue?: number;
   expressionMode?: boolean;
   expression?: string;
+  operandCents?: number;
   onPress: (catId: string, budgeted: number, pageY: number) => void;
   showProgressBar?: boolean;
   showBudgetedColumn?: boolean;
@@ -62,6 +63,7 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
   editValue,
   expressionMode = false,
   expression = "",
+  operandCents = 0,
   onPress,
   showProgressBar = true,
   showBudgetedColumn = true,
@@ -99,13 +101,8 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
     hidden: cat.hidden,
   };
 
-  const insetStyle = {
-    marginHorizontal: spacing.lg,
+  const rowStyle = {
     backgroundColor: colors.cardBackground,
-    borderTopLeftRadius: isFirst ? br.lg : 0,
-    borderTopRightRadius: isFirst ? br.lg : 0,
-    borderBottomLeftRadius: isLast ? br.lg : 0,
-    borderBottomRightRadius: isLast ? br.lg : 0,
   };
 
   // ── Income row (simple) ──
@@ -115,17 +112,21 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
         style={{
           flexDirection: "row",
           alignItems: "center",
-          paddingHorizontal: spacing.lg,
-          paddingVertical: 13,
-          minHeight: 44,
-          ...insetStyle,
+          paddingVertical: 4,
+          ...rowStyle,
         }}
       >
         <Text variant="body" style={{ flex: 1 }} numberOfLines={1}>
           {cat.name}
         </Text>
-        <View style={{ width: BUDGET_COLUMNS.available, alignItems: "flex-end" }}>
-          <Amount value={spent} variant="body" color={colors.positive} weight="500" />
+        <View style={{ width: BUDGET_COLUMNS.available, alignItems: "flex-end", marginLeft: 6 }}>
+          <Amount
+            value={spent}
+            variant="body"
+            color={colors.positive}
+            weight="500"
+            numberOfLines={1}
+          />
         </View>
         {!isLast && (
           <View
@@ -150,11 +151,15 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
   // Centralized progress bar + pill computation
   const bar = goalsEnabled ? computeProgressBar(fullCat) : null;
 
+  // Sign-based color for neutral status (no goal set) — matches BudgetGroupHeader pattern
+  const neutralText =
+    balance < 0 ? colors.negative : balance > 0 ? colors.positive : colors.textMuted;
+
   const STATUS_COLORS: Record<BarStatus, { bg: string; text: string; bar: string }> = {
     healthy: { bg: colors.budgetHealthyBg, text: colors.budgetHealthy, bar: colors.positive },
     caution: { bg: colors.budgetCautionBg, text: colors.budgetCaution, bar: colors.warning },
     overspent: { bg: colors.budgetOverspentBg, text: colors.budgetOverspent, bar: colors.negative },
-    neutral: { bg: colors.cardBackground, text: colors.textMuted, bar: colors.textMuted },
+    neutral: { bg: colors.cardBackground, text: neutralText, bar: colors.textMuted },
   };
 
   // Use pillStatus for both pill and bar so they always match visually
@@ -173,10 +178,8 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
   const pressableContent = (
     <Pressable
       style={{
-        paddingHorizontal: spacing.lg,
-        paddingTop: 12,
-        paddingBottom: 10,
-        minHeight: 44,
+        paddingTop: 4,
+        paddingBottom: 4,
       }}
       onPress={(e) => onPress(cat.id, budgeted, e.nativeEvent.pageY)}
     >
@@ -201,7 +204,7 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
           )}
         </View>
         {showBudgetedColumn || isEditing ? (
-          <View style={{ width: BUDGET_COLUMNS.budgeted, alignItems: "flex-end" }}>
+          <View style={{ width: BUDGET_COLUMNS.budgeted, alignItems: "flex-end", marginLeft: 10 }}>
             {isEditing && expressionMode ? (
               <>
                 <Text
@@ -225,7 +228,7 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
                     }}
                   >
                     {expression.slice(-1)}
-                    {formatCents(Math.abs(editValue ?? 0))}
+                    {formatCents(operandCents)}
                   </Text>
                   {renderCursor(
                     { width: 1.5, height: 16, marginLeft: 1, borderRadius: 1 },
@@ -245,9 +248,10 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
             ) : (
               <Amount
                 value={budgeted}
-                variant="body"
+                variant="caption"
                 color={budgeted !== 0 ? colors.textPrimary : colors.textMuted}
                 weight="600"
+                numberOfLines={1}
                 style={{ fontVariant: ["tabular-nums"] }}
               />
             )}
@@ -257,30 +261,24 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
           accessibilityLabel={`${formatPrivacyAware(balance)} available`}
           style={{
             width: BUDGET_COLUMNS.available,
-            flexShrink: 0,
-            justifyContent: "center",
-            alignItems: "center",
-            paddingLeft: spacing.sm,
+            marginLeft: 6,
+            alignItems: "flex-end",
           }}
         >
           <View
             style={{
               backgroundColor: pillBg,
               borderRadius: 100,
-              paddingHorizontal: 10,
-              paddingVertical: 3,
-              alignItems: "center",
-              flexDirection: "row",
-              flexWrap: "nowrap",
+              paddingHorizontal: 8,
+              paddingVertical: 2,
             }}
           >
             <Amount
               value={balance}
-              variant="captionSm"
+              variant="caption"
               color={pillText}
               weight="700"
-              numberOfLines={1}
-              adjustsFontSizeToFit
+              style={{ fontVariant: ["tabular-nums"] }}
             />
           </View>
         </View>
@@ -340,7 +338,7 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
   const carryoverLabel = carryover ? t("removeOverspendingRollover") : t("rolloverOverspending");
 
   return (
-    <ContextMenu style={insetStyle}>
+    <ContextMenu style={rowStyle}>
       <ContextMenu.Trigger>{pressableContent}</ContextMenu.Trigger>
       <ContextMenu.Content>
         <ContextMenu.Item key="details" onSelect={() => onCategoryDetails?.(cat.id, cat.name)}>

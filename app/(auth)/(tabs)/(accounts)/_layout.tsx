@@ -14,7 +14,7 @@ export default function AccountsStack() {
         contentStyle: { backgroundColor: colors.pageBackground },
       }}
     >
-      <Stack.Screen name="index" options={{ title: t("title") }} />
+      <Stack.Screen name="index" options={{ headerShown: false }} />
     </Stack>
   );
 }

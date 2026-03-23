@@ -1,68 +1,55 @@
 import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../../providers/ThemeProvider";
-import { palette } from "../../../theme/colors";
 import { Text } from "../atoms/Text";
+import { Icon } from "../atoms/Icon";
 import { InfoPill } from "../atoms/InfoPill";
 
 interface OverspentPillProps {
-  /** Number of overspent categories. */
   count: number;
-  /** Called when the pill is tapped. */
   onPress: () => void;
 }
 
 export function OverspentPill({ count, onPress }: OverspentPillProps) {
   const { t } = useTranslation("budget");
-  const { colors, spacing, borderRadius: br } = useTheme();
+  const { colors } = useTheme();
 
   const label = t("overspent", { count });
 
   return (
     <InfoPill
-      backgroundColor={colors.negativeSubtle}
+      backgroundColor={colors.cardBackground}
       onPress={onPress}
       accessibilityLabel={`${label}. Tap to cover.`}
-      style={{ paddingHorizontal: spacing.md, paddingVertical: 8 }}
+      style={{ marginHorizontal: 0 }}
       left={
-        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
           <View
             style={{
-              backgroundColor: colors.negativeFill,
+              backgroundColor: colors.vibrantNegativeBadge,
               borderRadius: 100,
-              minWidth: 18,
-              height: 18,
+              minWidth: 20,
+              height: 20,
               alignItems: "center",
               justifyContent: "center",
-              paddingHorizontal: 4,
+              paddingHorizontal: 3,
             }}
           >
             <Text
-              variant="captionSm"
-              color={palette.white}
-              style={{ fontWeight: "700", fontSize: 10, lineHeight: 14 }}
+              variant="caption"
+              color={colors.vibrantPillTextNegative}
+              style={{ fontWeight: "700", fontVariant: ["tabular-nums"] }}
             >
               {count}
             </Text>
           </View>
-          <Text variant="captionSm" color={colors.negative} style={{ fontWeight: "500" }}>
+          <Text variant="caption" color={colors.textPrimary} style={{ fontWeight: "400" }}>
             {label}
           </Text>
         </View>
       }
       right={
-        <View
-          style={{
-            backgroundColor: colors.primary,
-            borderRadius: br.full,
-            paddingHorizontal: 14,
-            paddingVertical: 5,
-          }}
-        >
-          <Text variant="captionSm" color={colors.primaryText} style={{ fontWeight: "600" }}>
-            {t("coverAction")}
-          </Text>
-        </View>
+        <Icon name="chevronForward" size={14} color={colors.textMuted} style={{ opacity: 0.6 }} />
       }
     />
   );

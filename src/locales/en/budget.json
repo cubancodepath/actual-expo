@@ -1,6 +1,7 @@
 {
   "columnBudgeted": "Budgeted",
   "columnAvailable": "Available",
+  "columnReceived": "Received",
 
   "filter": "Filter",
   "filterAll": "All",
@@ -158,6 +159,7 @@
   "fromMonth": "From {{month}}",
   "assignedForMonth": "Budgeted for {{month}}",
   "activityInMonth": "Activity in {{month}}",
+  "receivedInMonth": "Received in {{month}}",
   "available": "Available",
   "target": "Target",
   "budgetToMeetGoal": "Budget ",
@@ -209,6 +211,26 @@
   "addAnother": "Add Another",
   "coveringEllipsis": "Covering...",
   "cover": "Cover",
+
+  "assignToCategories": "Assign to Categories",
+  "fixOverbudgeting": "Fix Overbudgeting",
+  "holdForNextMonth": "Hold for Next Month",
+  "moveToCategory": "Move to a Category",
+  "coverFromCategory": "Cover from a Category",
+  "resetHold": "Reset Hold",
+  "resetHoldConfirmTitle": "Reset Hold?",
+  "resetHoldConfirmMessage": "This will release held funds back to your budget.",
+
+  "availableIncome": "Available Income",
+  "budgetedTotal": "Budgeted",
+  "discardChangesTitle": "Discard Changes?",
+  "discardChangesMessage": "You have unsaved budget changes.",
+  "discardAction": "Discard",
+  "keepEditing": "Keep Editing",
+  "overassignedWarningTitle": "Overassigned",
+  "overassignedWarningMessage": "You've overassigned by {{amount}}. Save anyway?",
+  "saveAnyway": "Save Anyway",
+  "reviewAction": "Review",
 
   "reserveDescription": "Reserve money from To Budget to carry it into next month.",
   "availableToHold": "Available to hold: ",
@@ -294,12 +316,16 @@
     }
   },
 
-  "overspent_one": "{{count}} category overspent",
-  "overspent_other": "{{count}} categories overspent",
+  "overspent_one": "Category overspent",
+  "overspent_other": "Categories overspent",
   "coverAction": "Cover",
+
+  "uncategorizedTransactions_one": "Uncategorized transaction",
+  "uncategorizedTransactions_other": "Uncategorized transactions",
 
   "holding": "Holding ",
   "nextMonth": " next month",
   "editAction": "Edit",
-  "clearAction": "Clear"
+  "clearAction": "Clear",
+  "reviewAction": "Review"
 }

@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { View, Pressable } from "react-native";
-import { EaseView } from "react-native-ease";
+import { AnimatedView } from "../atoms/AnimatedView";
 import { CartesianChart, Area, Line, useChartPressState } from "victory-native";
 import {
   LinearGradient,
@@ -59,7 +59,7 @@ export function NetWorthCard() {
     const dataMin = Math.min(...values);
     const pos = dataMax > 0;
     const neg = dataMin < 0;
-    const lc = pos && neg ? colors.primary : pos ? colors.positive : colors.negative;
+    const lc = pos && neg ? colors.primary : pos ? colors.vibrantPositive : colors.vibrantNegative;
     // Always include 0 in Y domain so the area fills between zero and the line
     const yMin = Math.min(dataMin, 0);
     const yMax = Math.max(dataMax, 0);
@@ -117,7 +117,7 @@ export function NetWorthCard() {
         <View style={{ flexDirection: "row", gap: 2 }}>
           {RANGES.map((r) => (
             <Pressable key={r} onPress={() => setRange(r)} hitSlop={4}>
-              <EaseView
+              <AnimatedView
                 animate={{
                   backgroundColor: range === r ? colors.primary : "transparent",
                   scale: range === r ? 1 : 0.95,
@@ -132,7 +132,7 @@ export function NetWorthCard() {
                 >
                   {r}m
                 </Text>
-              </EaseView>
+              </AnimatedView>
             </Pressable>
           ))}
         </View>
@@ -172,7 +172,12 @@ export function NetWorthCard() {
             <Text variant="captionSm" color={colors.textMuted}>
               {t("dashboard.assets")}
             </Text>
-            <Amount value={assets} variant="captionSm" weight="600" color={colors.positive} />
+            <Amount
+              value={assets}
+              variant="captionSm"
+              weight="600"
+              color={colors.vibrantPositive}
+            />
           </View>
           <View style={{ alignItems: "flex-end", gap: 1 }}>
             <Text variant="captionSm" color={colors.textMuted}>
@@ -182,7 +187,7 @@ export function NetWorthCard() {
               value={Math.abs(debt)}
               variant="captionSm"
               weight="600"
-              color={colors.negative}
+              color={colors.vibrantNegative}
             />
           </View>
         </View>
@@ -232,14 +237,14 @@ export function NetWorthCard() {
                 ? [`${baseColor}40`, `${baseColor}08`]
                 : hasNegative && hasPositive
                   ? [
-                      `${colors.positive}40`,
-                      `${colors.positive}08`,
-                      `${colors.negative}08`,
-                      `${colors.negative}40`,
+                      `${colors.vibrantPositive}40`,
+                      `${colors.vibrantPositive}08`,
+                      `${colors.vibrantNegative}08`,
+                      `${colors.vibrantNegative}40`,
                     ]
                   : hasNegative
-                    ? [`${colors.negative}08`, `${colors.negative}40`]
-                    : [`${colors.positive}40`, `${colors.positive}08`];
+                    ? [`${colors.vibrantNegative}08`, `${colors.vibrantNegative}40`]
+                    : [`${colors.vibrantPositive}40`, `${colors.vibrantPositive}08`];
 
               const gradientPositions =
                 !isPressActive && hasNegative && hasPositive ? [0, off, off, 1] : undefined;

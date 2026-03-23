@@ -17,6 +17,7 @@ export type SyncMessage = {
   row: string;
   column: string;
   value: string | number | null;
+  old?: boolean;
 };
 
 export async function encode(

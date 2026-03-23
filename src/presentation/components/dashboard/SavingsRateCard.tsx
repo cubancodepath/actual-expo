@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { View, Pressable } from "react-native";
-import { EaseView } from "react-native-ease";
+import { AnimatedView } from "../atoms/AnimatedView";
 import { CartesianChart, Bar, useChartPressState } from "victory-native";
 import { Line as SkiaLine, matchFont, vec } from "@shopify/react-native-skia";
 import { useAnimatedReaction, runOnJS } from "react-native-reanimated";
@@ -51,13 +51,13 @@ export function SavingsRateCard() {
       : undefined;
 
   const displayRate = activePoint ? activePoint.rate : currentRate;
-  const rateColor = displayRate >= 0 ? colors.positive : colors.negative;
+  const rateColor = displayRate >= 0 ? colors.vibrantPositive : colors.vibrantNegative;
 
   const barColor = isPressActive
     ? colors.primary
     : currentRate >= 0
-      ? colors.positive
-      : colors.negative;
+      ? colors.vibrantPositive
+      : colors.vibrantNegative;
 
   // Empty state — no income data (after all hooks)
   if (currentRate === 0 && previousRate === 0 && trend.every((p) => p.rate === 0)) {
@@ -91,7 +91,7 @@ export function SavingsRateCard() {
         <View style={{ flexDirection: "row", gap: 2 }}>
           {RANGES.map((r) => (
             <Pressable key={r} onPress={() => setRange(r)} hitSlop={4}>
-              <EaseView
+              <AnimatedView
                 animate={{
                   backgroundColor: range === r ? colors.primary : "transparent",
                   scale: range === r ? 1 : 0.95,
@@ -106,7 +106,7 @@ export function SavingsRateCard() {
                 >
                   {r}m
                 </Text>
-              </EaseView>
+              </AnimatedView>
             </Pressable>
           ))}
         </View>
@@ -120,7 +120,7 @@ export function SavingsRateCard() {
       ) : change !== 0 ? (
         <Text
           variant="captionSm"
-          color={change > 0 ? colors.positive : colors.negative}
+          color={change > 0 ? colors.vibrantPositive : colors.vibrantNegative}
           style={{ fontVariant: ["tabular-nums"] }}
         >
           {change > 0 ? "+" : ""}
@@ -145,7 +145,7 @@ export function SavingsRateCard() {
       <View
         style={{ height: 20, borderRadius: 4, backgroundColor: colors.divider, overflow: "hidden" }}
       >
-        <EaseView
+        <AnimatedView
           animate={{ scaleX: 1 }}
           initialAnimate={{ scaleX: 0 }}
           transformOrigin={{ x: 0, y: 0.5 }}
@@ -189,7 +189,7 @@ export function SavingsRateCard() {
                 <Bar
                   points={points.saved}
                   chartBounds={chartBounds}
-                  color={isPressActive ? colors.primary : colors.positive}
+                  color={isPressActive ? colors.primary : colors.vibrantPositive}
                   roundedCorners={{ topLeft: 4, topRight: 4 }}
                   barWidth={range <= 6 ? 16 : 8}
                 />
@@ -197,7 +197,7 @@ export function SavingsRateCard() {
                 <Bar
                   points={points.overspent}
                   chartBounds={chartBounds}
-                  color={isPressActive ? colors.primary : colors.negative}
+                  color={isPressActive ? colors.primary : colors.vibrantNegative}
                   roundedCorners={{ topLeft: 4, topRight: 4 }}
                   barWidth={range <= 6 ? 16 : 8}
                 />

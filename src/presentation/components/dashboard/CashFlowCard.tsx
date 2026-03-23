@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { View, Pressable } from "react-native";
-import { EaseView } from "react-native-ease";
+import { AnimatedView } from "../atoms/AnimatedView";
 import { CartesianChart, BarGroup, useChartPressState } from "victory-native";
 import { Line as SkiaLine, matchFont, vec } from "@shopify/react-native-skia";
 import { useAnimatedReaction, runOnJS } from "react-native-reanimated";
@@ -98,7 +98,7 @@ export function CashFlowCard() {
         <View style={{ flexDirection: "row", gap: 2 }}>
           {RANGES.map((r) => (
             <Pressable key={r} onPress={() => setRange(r)} hitSlop={4}>
-              <EaseView
+              <AnimatedView
                 animate={{
                   backgroundColor: range === r ? colors.primary : "transparent",
                   scale: range === r ? 1 : 0.95,
@@ -113,7 +113,7 @@ export function CashFlowCard() {
                 >
                   {r}m
                 </Text>
-              </EaseView>
+              </AnimatedView>
             </Pressable>
           ))}
         </View>
@@ -143,13 +143,23 @@ export function CashFlowCard() {
           <Text variant="captionSm" color={colors.textMuted}>
             {t("dashboard.income")}
           </Text>
-          <Amount value={displayIncome} variant="body" weight="600" color={colors.positive} />
+          <Amount
+            value={displayIncome}
+            variant="body"
+            weight="600"
+            color={colors.vibrantPositive}
+          />
         </View>
         <View style={{ alignItems: "flex-end", gap: 1 }}>
           <Text variant="captionSm" color={colors.textMuted}>
             {t("dashboard.expenses")}
           </Text>
-          <Amount value={displayExpenses} variant="body" weight="600" color={colors.negative} />
+          <Amount
+            value={displayExpenses}
+            variant="body"
+            weight="600"
+            color={colors.vibrantNegative}
+          />
         </View>
       </View>
 
@@ -183,8 +193,8 @@ export function CashFlowCard() {
                   withinGroupPadding={0}
                   roundedCorners={{ topLeft: 3, topRight: 3 }}
                 >
-                  <BarGroup.Bar points={points.income} color={colors.positive} />
-                  <BarGroup.Bar points={points.expenses} color={colors.negative} />
+                  <BarGroup.Bar points={points.income} color={colors.vibrantPositive} />
+                  <BarGroup.Bar points={points.expenses} color={colors.vibrantNegative} />
                 </BarGroup>
                 {/* Cursor line */}
                 {isPressActive &&

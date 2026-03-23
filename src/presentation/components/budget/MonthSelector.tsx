@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Pressable, Text, View } from "react-native";
-import { EaseView } from "react-native-ease";
+import { AnimatedView } from "../atoms/AnimatedView";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -84,7 +84,7 @@ export function MonthSelector() {
 
       <GestureDetector gesture={panGesture}>
         <Animated.View style={gestureStyle}>
-          <EaseView
+          <AnimatedView
             key={animKey}
             initialAnimate={animKey > 0 ? { opacity: 0, translateX: direction * 40 } : undefined}
             animate={{ opacity: 1, translateX: 0 }}
@@ -94,7 +94,7 @@ export function MonthSelector() {
             }}
           >
             <Text style={textStyle}>{formatMonth(month, i18n.language)}</Text>
-          </EaseView>
+          </AnimatedView>
         </Animated.View>
       </GestureDetector>
 

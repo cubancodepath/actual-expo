@@ -61,10 +61,6 @@
     "switchBudget": "Cambiar Presupuesto"
   },
 
-  "nav": {
-    "switchBudget": "Cambiar Presupuesto"
-  },
-
   "payees": {
     "deleteTitle": "Eliminar Beneficiario",
     "deleteConfirm": "¿Eliminar \"{{name}}\"?",

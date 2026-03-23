@@ -62,10 +62,6 @@
     "switchBudget": "Switch Budget"
   },
 
-  "nav": {
-    "switchBudget": "Switch Budget"
-  },
-
   "payees": {
     "deleteTitle": "Delete Payee",
     "deleteConfirm": "Delete \"{{name}}\"?",

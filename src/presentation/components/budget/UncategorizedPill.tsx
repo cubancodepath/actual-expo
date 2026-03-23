@@ -2,7 +2,7 @@ import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Text } from "../atoms/Text";
-import { Button } from "../atoms/Button";
+import { Icon } from "../atoms/Icon";
 import { InfoPill } from "../atoms/InfoPill";
 
 interface UncategorizedPillProps {
@@ -26,7 +26,7 @@ export function UncategorizedPill({ count, onPress }: UncategorizedPillProps) {
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
           <View
             style={{
-              backgroundColor: colors.vibrantNegative,
+              backgroundColor: colors.vibrantNegativeBadge,
               borderRadius: 100,
               minWidth: 20,
               height: 20,
@@ -49,7 +49,7 @@ export function UncategorizedPill({ count, onPress }: UncategorizedPillProps) {
         </View>
       }
       right={
-        <Button title={t("reviewAction")} buttonStyle="bordered" size="sm" onPress={onPress} />
+        <Icon name="chevronForward" size={14} color={colors.textMuted} style={{ opacity: 0.6 }} />
       }
     />
   );

@@ -214,6 +214,7 @@ export interface ThemeColors {
   vibrantWarningBg: string;
   vibrantPillText: string;
   vibrantPillTextNegative: string;
+  vibrantNegativeBadge: string;
 
   // Misc
   divider: string;
@@ -325,6 +326,7 @@ export const lightColors: ThemeColors = {
   vibrantWarningBg: "rgba(251, 191, 36, 0.12)",
   vibrantPillText: "#1A1A2E",
   vibrantPillTextNegative: "#450A0A",
+  vibrantNegativeBadge: "#F87171",
 };
 
 export const darkColors: ThemeColors = {
@@ -423,11 +425,12 @@ export const darkColors: ThemeColors = {
 
   // Vibrant
   vibrantPositive: "#22C55E",
-  vibrantNegative: "#EF4444",
+  vibrantNegative: "#C02F3D",
   vibrantWarning: "#F59E0B",
   vibrantPositiveBg: "rgba(34, 197, 94, 0.20)",
   vibrantNegativeBg: "rgba(239, 68, 68, 0.20)",
   vibrantWarningBg: "rgba(245, 158, 11, 0.20)",
   vibrantPillText: "#080811",
   vibrantPillTextNegative: "#FFFFFF",
+  vibrantNegativeBadge: "#6C0C20",
 };

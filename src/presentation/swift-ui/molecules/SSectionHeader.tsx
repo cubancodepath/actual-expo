@@ -86,7 +86,7 @@ export function SSectionHeader({
         modifiers={[frame({ width: COL_AVAILABLE, alignment: "trailing" })]}
       >
         <SText variant="captionSm" color={colors.textMuted}>
-          {t("columnAvailable")}
+          {group.is_income ? t("columnReceived") : t("columnAvailable")}
         </SText>
         <SAmount
           value={balanceValue}

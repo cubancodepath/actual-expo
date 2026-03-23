@@ -1,6 +1,7 @@
 {
   "columnBudgeted": "Presupuestado",
   "columnAvailable": "Disponible",
+  "columnReceived": "Recibido",
 
   "filter": "Filtro",
   "filterAll": "Todo",

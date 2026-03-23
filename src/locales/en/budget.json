@@ -1,6 +1,7 @@
 {
   "columnBudgeted": "Budgeted",
   "columnAvailable": "Available",
+  "columnReceived": "Received",
 
   "filter": "Filter",
   "filterAll": "All",

@@ -145,7 +145,7 @@ function CategoryRowNative({
 
   if (isIncome) {
     return (
-      <HStack modifiers={[padding({ trailing: 16 }), listRowBackground(colors.cardBackground)]}>
+      <HStack modifiers={[listRowBackground(colors.cardBackground)]}>
         <SText variant="bodyMedium" lines={1}>
           {catName}
         </SText>
@@ -153,8 +153,10 @@ function CategoryRowNative({
         <SAmount
           value={spent}
           variant="bodyMedium"
-          color={colors.positive}
+          color={colors.textPrimary}
           lines={1}
+          weight="semibold"
+          letterSpacing={-0.5}
           modifiers={[frame({ width: COL_AVAILABLE, alignment: "trailing" })]}
         />
       </HStack>

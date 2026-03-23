@@ -78,5 +78,7 @@
   "transferToAccount": "TRANSFERIR A CUENTA",
   "payees": "BENEFICIARIOS",
   "noPayee": "Sin beneficiario",
-  "createPayee": "Crear \"{{name}}\""
+  "createPayee": "Crear \"{{name}}\"",
+
+  "transfer": "Transferencia"
 }

@@ -158,6 +158,7 @@ export interface ThemeColors {
   warningSubtle: string;
 
   // Solid fill backgrounds for white text (WCAG AA ≥ 4.5:1)
+  primaryFill: string;
   positiveFill: string;
   negativeFill: string;
   warningFill: string;
@@ -251,6 +252,7 @@ export const lightColors: ThemeColors = {
   warningSubtle: "rgba(217, 119, 6, 0.10)",
 
   // Solid fills for white text
+  primaryFill: palette.purple400,
   positiveFill: palette.emerald700,
   negativeFill: palette.rose700,
   warningFill: palette.amber700,
@@ -354,6 +356,7 @@ export const darkColors: ThemeColors = {
   warningSubtle: "rgba(251, 191, 36, 0.14)",
 
   // Solid fills for white text (same as light — these are dark enough)
+  primaryFill: palette.purple600,
   positiveFill: palette.emerald700,
   negativeFill: palette.rose700,
   warningFill: palette.amber700,

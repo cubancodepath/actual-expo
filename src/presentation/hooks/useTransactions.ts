@@ -10,6 +10,7 @@ import { useEffect, useMemo } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { listen } from "@/sync/syncEvents";
 import { transactionQueries } from "@/transactions/queries";
+import { usePrefsStore } from "@/stores/prefsStore";
 import type { Query } from "@/queries/query";
 import type { TransactionDisplay } from "@/transactions/types";
 
@@ -31,16 +32,17 @@ export function useTransactions({ query, fetchFn, options }: UseTransactionsProp
   const pageSize = options?.pageSize ?? 25;
   const key = options?.key ?? "all";
   const refetchOnSync = options?.refetchOnSync ?? true;
+  const activeBudgetId = usePrefsStore((s) => s.activeBudgetId);
 
   const queryOptions = useMemo(() => {
     if (query) {
-      return transactionQueries.aql({ query, pageSize });
+      return transactionQueries.aql({ query, pageSize, activeBudgetId });
     }
     if (fetchFn) {
-      return transactionQueries.list({ fetchFn, pageSize, key });
+      return transactionQueries.list({ fetchFn, pageSize, key, activeBudgetId });
     }
     throw new Error("useTransactions requires either query or fetchFn");
-  }, [query, fetchFn, pageSize, key]);
+  }, [query, fetchFn, pageSize, key, activeBudgetId]);
 
   const queryResult = useInfiniteQuery(queryOptions);
 

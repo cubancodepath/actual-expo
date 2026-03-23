@@ -139,9 +139,9 @@ export const TransactionRow = memo(function TransactionRow({
             <View style={styles.payeeRow}>
               {item.transfer_id != null && (
                 <Icon
-                  name="swapHorizontal"
+                  name={item.amount < 0 ? "arrowForwardOutline" : "arrowBackOutline"}
                   size={14}
-                  color={colors.primary}
+                  color={colors.textSecondary}
                   style={{ marginRight: spacing.xs }}
                 />
               )}
@@ -155,11 +155,10 @@ export const TransactionRow = memo(function TransactionRow({
             </View>
             <View style={styles.amountRow}>
               <Amount
-                value={item.amount}
+                value={item.transfer_id ? Math.abs(item.amount) : item.amount}
                 variant="bodyLg"
-                showSign={!item.transfer_id}
-                colored={!item.transfer_id}
-                color={item.transfer_id ? colors.textSecondary : undefined}
+                colored={false}
+                color={!item.transfer_id && item.amount < 0 ? colors.negative : undefined}
                 weight="700"
               />
               <View style={{ marginLeft: spacing.sm }}>
@@ -216,8 +215,8 @@ export const TransactionRow = memo(function TransactionRow({
           ) : (
             <View style={styles.metaRow}>
               {item.transfer_id != null ? (
-                <View style={[styles.categoryPill, { backgroundColor: colors.primarySubtle }]}>
-                  <Text variant="caption" color={colors.primary} numberOfLines={1}>
+                <View style={[styles.categoryPill, { backgroundColor: colors.primaryFill }]}>
+                  <Text variant="caption" color={colors.primaryText} numberOfLines={1}>
                     {t("transfer")}
                   </Text>
                 </View>
@@ -228,8 +227,8 @@ export const TransactionRow = memo(function TransactionRow({
                   </Text>
                 </View>
               ) : (
-                <View style={[styles.categoryPill, { backgroundColor: colors.warningSubtle }]}>
-                  <Text variant="caption" color={colors.warning} numberOfLines={1}>
+                <View style={[styles.categoryPill, { backgroundColor: colors.warningFill }]}>
+                  <Text variant="caption" color={colors.primaryText} numberOfLines={1}>
                     {t("uncategorized")}
                   </Text>
                 </View>

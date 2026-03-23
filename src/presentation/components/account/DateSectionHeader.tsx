@@ -1,7 +1,7 @@
 import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../../providers/ThemeProvider";
-import { Text, Amount } from "..";
+import { Text } from "..";
 import { formatDateLong, todayInt } from "../../../lib/date";
 import { useSyncedPref } from "../../hooks/useSyncedPref";
 
@@ -16,10 +16,9 @@ function yesterdayInt(): number {
 
 interface DateSectionHeaderProps {
   date: number;
-  dailyTotal?: number;
 }
 
-export function DateSectionHeader({ date, dailyTotal }: DateSectionHeaderProps) {
+export function DateSectionHeader({ date }: DateSectionHeaderProps) {
   const { t } = useTranslation("transactions");
   const { colors, spacing } = useTheme();
   useSyncedPref("dateFormat");
@@ -32,9 +31,6 @@ export function DateSectionHeader({ date, dailyTotal }: DateSectionHeaderProps) 
   return (
     <View
       style={{
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "baseline",
         paddingHorizontal: spacing.lg,
         paddingTop: spacing.xl,
         paddingBottom: spacing.xs,
@@ -48,16 +44,6 @@ export function DateSectionHeader({ date, dailyTotal }: DateSectionHeaderProps) 
       >
         {label}
       </Text>
-      {dailyTotal != null && dailyTotal !== 0 && (
-        <Amount
-          value={dailyTotal}
-          variant="caption"
-          weight="600"
-          showSign
-          colored={false}
-          color={dailyTotal > 0 ? colors.vibrantPositive : colors.textMuted}
-        />
-      )}
     </View>
   );
 }

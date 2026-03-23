@@ -141,7 +141,7 @@ export default function CategoryTransactionsScreen() {
           scrollEventThrottle={16}
           renderItem={({ item }) => {
             if (item.type === "date") {
-              return <DateSectionHeader date={item.date} dailyTotal={item.dailyTotal} />;
+              return <DateSectionHeader date={item.date} />;
             }
             if (item.type !== "transaction") return null;
             return (

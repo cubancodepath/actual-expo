@@ -1,5 +1,6 @@
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, View } from "react-native";
-import { Stack, useRouter } from "expo-router";
+import { useState } from "react";
+import { ActivityIndicator, RefreshControl, ScrollView, View } from "react-native";
+import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePrefsStore } from "@/stores/prefsStore";
@@ -8,14 +9,17 @@ import {
   Text,
   Card,
   SectionHeader,
-  Button,
   ErrorBanner,
   EmptyState,
   BudgetFileRow,
+  BudgetOpeningOverlay,
+  GlassButton,
 } from "@/presentation/components";
 import { useBudgetFiles, fileKey } from "@/presentation/hooks/useBudgetFiles";
 import type { ReconciledBudgetFile } from "@/services/budgetfiles";
 import type { Theme } from "@/theme";
+
+type SwitchPhase = "downloading" | "opening" | null;
 
 export default function ChangeBudgetScreen() {
   const router = useRouter();
@@ -24,6 +28,8 @@ export default function ChangeBudgetScreen() {
   const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const { activeBudgetId } = usePrefsStore();
+  const [switchingName, setSwitchingName] = useState<string | null>(null);
+  const [switchPhase, setSwitchPhase] = useState<SwitchPhase>(null);
   const {
     localFiles,
     remoteFiles,
@@ -42,27 +48,52 @@ export default function ChangeBudgetScreen() {
       router.back();
       return;
     }
+    setSwitchingName(file.name);
+    setSwitchPhase(file.state === "remote" ? "downloading" : "opening");
     try {
       await selectFile(file);
       router.dismissAll();
     } catch {
-      // Error already set in hook
+      setSwitchingName(null);
+      setSwitchPhase(null);
     }
   }
 
   const hasFiles = localFiles.length > 0 || remoteFiles.length > 0;
+  const isSwitching = selecting !== null;
 
   return (
-    <>
+    <View style={{ flex: 1, backgroundColor: colors.pageBackground }}>
+      {/* Custom header */}
+      <View
+        style={{
+          paddingTop: insets.top + 8,
+          paddingBottom: 12,
+          paddingHorizontal: spacing.lg,
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          backgroundColor: colors.pageBackground,
+        }}
+      >
+        <GlassButton icon="close" onPress={() => router.back()} />
+        <Text variant="headingSm">{t("nav.switchBudget")}</Text>
+        <GlassButton label={t("new")} onPress={() => router.push("/(auth)/new-budget")} />
+      </View>
+
       <ScrollView
         style={styles.container}
         contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xl }}
+        scrollEnabled={!isSwitching}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={refresh}
+            tintColor={colors.primary}
+            enabled={!isSwitching}
+          />
         }
       >
-        <Stack.Screen options={{}} />
-
         <View style={{ marginTop: spacing.md }}>
           <ErrorBanner error={error} onDismiss={dismissError} />
         </View>
@@ -86,8 +117,8 @@ export default function ChangeBudgetScreen() {
                     <BudgetFileRow
                       key={fileKey(file)}
                       file={file}
-                      isActive={file.localId === activeBudgetId}
-                      isSelecting={selecting === fileKey(file)}
+                      isActive={!isSwitching && file.localId === activeBudgetId}
+                      isSelecting={false}
                       onPress={() => handleSelect(file)}
                       showSeparator={index < localFiles.length - 1}
                     />
@@ -107,7 +138,7 @@ export default function ChangeBudgetScreen() {
                     <BudgetFileRow
                       key={fileKey(file)}
                       file={file}
-                      isSelecting={selecting === fileKey(file)}
+                      isSelecting={false}
                       onPress={() => handleSelect(file)}
                       showSeparator={index < remoteFiles.length - 1}
                     />
@@ -127,15 +158,12 @@ export default function ChangeBudgetScreen() {
         )}
       </ScrollView>
 
-      <Stack.Toolbar placement="left">
-        <Stack.Toolbar.Button icon="xmark" onPress={() => router.back()} />
-      </Stack.Toolbar>
-      <Stack.Toolbar placement="right">
-        <Stack.Toolbar.Button onPress={() => router.push("/(auth)/new-budget")}>
-          {t("new")}
-        </Stack.Toolbar.Button>
-      </Stack.Toolbar>
-    </>
+      <BudgetOpeningOverlay
+        visible={isSwitching}
+        phase={switchPhase ?? "opening"}
+        budgetName={switchingName}
+      />
+    </View>
   );
 }
 
@@ -153,9 +181,5 @@ const createStyles = (theme: Theme) => ({
     paddingVertical: theme.spacing.xl,
     alignItems: "center" as const,
     gap: theme.spacing.md,
-  },
-  headerBtn: {
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: theme.spacing.xs,
   },
 });

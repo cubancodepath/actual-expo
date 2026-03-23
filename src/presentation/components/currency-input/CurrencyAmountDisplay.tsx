@@ -1,9 +1,7 @@
 import { StyleSheet, View } from "react-native";
 import { Text } from "@/presentation/components/atoms/Text";
-import { CurrencySymbol } from "@/presentation/components/atoms/CurrencySymbol";
 import { useCursorBlink } from "@/presentation/hooks/useCursorBlink";
 import { useSyncedPref } from "@/presentation/hooks/useSyncedPref";
-import { formatAmountParts } from "@/lib/format";
 import { formatCents, formatExpression } from "@/lib/currency";
 
 interface CurrencyAmountDisplayProps {
@@ -29,7 +27,7 @@ export function CurrencyAmountDisplay({
   fullExpression,
   color,
   primaryColor,
-  fontSize = 14,
+  fontSize,
 }: CurrencyAmountDisplayProps) {
   const { renderCursor } = useCursorBlink(isActive);
 
@@ -41,8 +39,7 @@ export function CurrencyAmountDisplay({
   useSyncedPref("currencySymbolPosition");
   useSyncedPref("currencySpaceBetweenAmountAndSymbol");
 
-  const isHero = fontSize >= 32;
-  const parts = isActive && expressionMode ? null : formatAmountParts(Math.abs(amount), false);
+  const isHero = (fontSize ?? 14) >= 32;
   const amountStyle = isHero ? styles.heroText : styles.compactText;
   const cursorStyle = isHero ? styles.heroCursor : styles.compactCursor;
 
@@ -52,35 +49,9 @@ export function CurrencyAmountDisplay({
         <Text style={[amountStyle, { color: primaryColor }]} numberOfLines={1}>
           {formatExpression(fullExpression)}
         </Text>
-      ) : parts ? (
-        <>
-          {parts.svgSymbol && parts.position === "before" && (
-            <>
-              <CurrencySymbol
-                symbol={parts.symbol}
-                svgSymbol={parts.svgSymbol}
-                fontSize={fontSize}
-                color={color}
-              />
-              {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
-            </>
-          )}
-          <Text style={[amountStyle, { color }]}>
-            {parts.svgSymbol ? parts.number : formatCents(Math.abs(amount))}
-          </Text>
-          {parts.svgSymbol && parts.position === "after" && (
-            <>
-              {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
-              <CurrencySymbol
-                symbol={parts.symbol}
-                svgSymbol={parts.svgSymbol}
-                fontSize={fontSize}
-                color={color}
-              />
-            </>
-          )}
-        </>
-      ) : null}
+      ) : (
+        <Text style={[amountStyle, { color }]}>{formatCents(Math.abs(amount))}</Text>
+      )}
       {renderCursor(cursorStyle, primaryColor)}
     </View>
   );

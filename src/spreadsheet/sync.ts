@@ -15,7 +15,7 @@ import { createAllBudgetCells } from "./envelope";
 
 /** Timestamp of last initSpreadsheet — suppresses structural refresh cooldown. */
 let lastInitTime = 0;
-const INIT_COOLDOWN = 5000; // ms — skip structural refresh for 5s after init
+const INIT_COOLDOWN = 500; // ms — brief cooldown to prevent double-init, short enough for sync refresh
 
 /**
  * Initialize the spreadsheet with budget cells for all months.

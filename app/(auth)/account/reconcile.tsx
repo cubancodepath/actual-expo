@@ -6,19 +6,20 @@ import Animated, {
   interpolateColor,
   useAnimatedStyle,
   useSharedValue,
-  withTiming,
+  useReducedMotion,
+  withSpring,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { reconcileAccount } from "@/transactions";
+import { lockTransactions, reconcileAccount } from "@/transactions";
 import { Text } from "@/presentation/components/atoms/Text";
-import { Button } from "@/presentation/components/atoms/Button";
+import { Amount } from "@/presentation/components/atoms/Amount";
 import { useAmountInput } from "@/presentation/components/transaction/useAmountInput";
 import { HiddenAmountInput } from "@/presentation/components/transaction/HiddenAmountInput";
 import { CurrencyAmountDisplay } from "@/presentation/components/currency-input/CurrencyAmountDisplay";
 import { formatAmount } from "@/lib/format";
+import { formatDistanceToNow, format } from "date-fns";
 import { useTranslation } from "react-i18next";
-import { useRef } from "react";
 
 // ---------------------------------------------------------------------------
 // Sign Toggle (+/−)
@@ -31,21 +32,19 @@ const TRAVEL = TRACK_W - THUMB - 6;
 
 function SignToggle({ isNegative, onToggle }: { isNegative: boolean; onToggle: () => void }) {
   const { colors } = useTheme();
+  const reducedMotion = useReducedMotion();
   const progress = useSharedValue(isNegative ? 1 : 0);
-  const toggleCount = useRef(0);
-  const spin = useSharedValue(0);
 
   useEffect(() => {
-    progress.value = withTiming(isNegative ? 1 : 0, { duration: 250 });
-    toggleCount.current += 1;
-    spin.value = withTiming(toggleCount.current * 360, { duration: 350 });
+    progress.value = reducedMotion
+      ? isNegative
+        ? 1
+        : 0
+      : withSpring(isNegative ? 1 : 0, { damping: 20, stiffness: 300 });
   }, [isNegative]);
 
   const thumbStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: interpolate(progress.value, [0, 1], [0, TRAVEL]) },
-      { rotate: `${spin.value}deg` },
-    ],
+    transform: [{ translateX: interpolate(progress.value, [0, 1], [0, TRAVEL]) }],
   }));
 
   const trackStyle = useAnimatedStyle(() => ({
@@ -84,7 +83,7 @@ function SignToggle({ isNegative, onToggle }: { isNegative: boolean; onToggle: (
               width: THUMB,
               height: THUMB,
               borderRadius: THUMB / 2,
-              backgroundColor: "#ffffff",
+              backgroundColor: colors.elevatedBackground,
               alignItems: "center",
               justifyContent: "center",
               shadowColor: "#000",
@@ -109,69 +108,42 @@ function SignToggle({ isNegative, onToggle }: { isNegative: boolean; onToggle: (
 }
 
 // ---------------------------------------------------------------------------
-// Inline amount display
+// Reconcile Screen
 // ---------------------------------------------------------------------------
 
-function AmountDisplay({
-  cents,
-  color,
-  focused,
-  expressionMode,
-  fullExpression,
-  primaryColor,
-  onPress,
-}: {
-  cents: number;
-  color: string;
-  focused: boolean;
-  expressionMode: boolean;
-  fullExpression: string;
-  primaryColor: string;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={{ flex: 1, justifyContent: "center", alignItems: "flex-end" }}
-    >
-      <CurrencyAmountDisplay
-        amount={cents}
-        isActive={focused}
-        expressionMode={expressionMode}
-        fullExpression={fullExpression}
-        color={color}
-        primaryColor={primaryColor}
-      />
-    </Pressable>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Amount Screen
-// ---------------------------------------------------------------------------
-
-export default function ReconcileAmountScreen() {
-  const { colors, spacing, borderRadius: br } = useTheme();
+export default function ReconcileScreen() {
+  const { colors, spacing, borderRadius: br, borderWidth: bw, sizes } = useTheme();
   const router = useRouter();
-  const { accountId, clearedBalance } = useLocalSearchParams<{
+  const { accountId, clearedBalance, lastReconciled } = useLocalSearchParams<{
     accountId: string;
     clearedBalance: string;
+    lastReconciled: string;
   }>();
 
   const { t } = useTranslation("accounts");
   const clearedCents = Number(clearedBalance) || 0;
 
-  const [isNegative, setIsNegative] = useState(false);
+  // Human-readable last reconciled
+  const lastReconciledText =
+    lastReconciled && lastReconciled !== ""
+      ? (() => {
+          const ts = Number(lastReconciled);
+          const date = isNaN(ts) ? new Date(lastReconciled) : new Date(ts);
+          if (isNaN(date.getTime())) return null;
+          const relative = formatDistanceToNow(date, { addSuffix: true });
+          const dateStr = format(date, "MMM d");
+          return `${relative} (${dateStr})`;
+        })()
+      : null;
   const [loading, setLoading] = useState(false);
-  const amountInput = useAmountInput(0);
 
-  // Auto-focus after mount
-  useEffect(() => {
-    setTimeout(() => amountInput.sharedInputRef.current?.focus(), 300);
-  }, []);
+  const [isNegative, setIsNegative] = useState(clearedCents < 0);
+  const amountInput = useAmountInput(Math.abs(clearedCents));
 
   const bankBalance = isNegative ? -amountInput.cents : amountInput.cents;
   const diff = bankBalance - clearedCents;
+  const isBalanced = amountInput.cents > 0 && diff === 0;
+
   const displayColor =
     amountInput.cents > 0 ? (isNegative ? colors.negative : colors.positive) : colors.textMuted;
 
@@ -179,8 +151,13 @@ export default function ReconcileAmountScreen() {
     if (amountInput.cents === 0 || loading) return;
     setLoading(true);
     try {
-      await reconcileAccount(accountId, bankBalance);
-      router.dismiss(2);
+      if (diff === 0) {
+        await lockTransactions(accountId);
+      } else {
+        await reconcileAccount(accountId, bankBalance);
+      }
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      router.dismiss();
     } finally {
       setLoading(false);
     }
@@ -188,58 +165,72 @@ export default function ReconcileAmountScreen() {
 
   return (
     <>
-      <View style={{ flex: 1, backgroundColor: colors.pageBackground, padding: spacing.lg }}>
-        <Text
-          variant="body"
-          color={colors.textSecondary}
-          style={{ textAlign: "center", marginBottom: spacing.xl }}
-        >
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: colors.pageBackground,
+          paddingHorizontal: spacing.lg,
+          paddingTop: 72,
+          paddingBottom: spacing.lg,
+        }}
+      >
+        <Stack.Screen options={{}} />
+
+        {/* Question */}
+        <Text variant="bodySm" color={colors.textMuted} style={{ marginBottom: spacing.lg }}>
           {t("reconcile.bankBalanceQuestion")}
         </Text>
 
-        {/* Sign toggle + amount display */}
+        {/* Amount input — app standard input style with sign toggle as icon */}
         <Pressable
           onPress={() => amountInput.sharedInputRef.current?.focus()}
           style={{
             flexDirection: "row",
             alignItems: "center",
-            backgroundColor: colors.cardBackground,
-            borderRadius: br.lg,
+            backgroundColor: colors.inputBackground,
+            borderRadius: br.full,
+            borderWidth: bw.default,
+            borderColor: colors.inputBorder,
             paddingHorizontal: spacing.md,
-            paddingVertical: spacing.sm,
+            minHeight: sizes.control,
             gap: spacing.sm,
           }}
         >
           <SignToggle isNegative={isNegative} onToggle={() => setIsNegative((prev) => !prev)} />
-          <AmountDisplay
-            cents={amountInput.cents}
-            color={displayColor}
-            focused={amountInput.amountFocused}
-            expressionMode={amountInput.expr.expressionMode}
-            fullExpression={amountInput.expr.fullExpression}
-            primaryColor={colors.primary}
-            onPress={() => amountInput.sharedInputRef.current?.focus()}
-          />
+          <View style={{ flex: 1, alignItems: "flex-end", paddingVertical: spacing.md }}>
+            <CurrencyAmountDisplay
+              amount={amountInput.cents}
+              isActive={amountInput.amountFocused}
+              expressionMode={amountInput.expr.expressionMode}
+              fullExpression={amountInput.expr.fullExpression}
+              color={displayColor}
+              primaryColor={colors.primary}
+            />
+          </View>
         </Pressable>
 
-        {amountInput.cents > 0 && diff !== 0 && (
-          <Text
-            variant="captionSm"
-            color={colors.textMuted}
-            style={{ textAlign: "right", marginTop: spacing.xs }}
-          >
-            {t("reconcile.diff", { amount: formatAmount(diff) })}
+        {/* Last reconciled */}
+        {lastReconciledText && (
+          <Text variant="captionSm" color={colors.textMuted} style={{ marginTop: spacing.sm }}>
+            Last reconciled {lastReconciledText}
           </Text>
         )}
-
-        <Button
-          title={t("reconcile.reconcileButton")}
-          onPress={handleReconcile}
-          loading={loading}
-          disabled={amountInput.cents === 0}
-          style={{ marginTop: spacing.xl, borderRadius: br.full }}
-        />
       </View>
+
+      {/* Toolbar */}
+      <Stack.Toolbar placement="left">
+        <Stack.Toolbar.Button icon="xmark" onPress={() => router.dismiss()} />
+      </Stack.Toolbar>
+      <Stack.Toolbar placement="right">
+        <Stack.Toolbar.Button
+          variant="done"
+          tintColor={colors.primary}
+          disabled={amountInput.cents === 0 || loading}
+          onPress={handleReconcile}
+        >
+          {t("reconcile.reconcileButton")}
+        </Stack.Toolbar.Button>
+      </Stack.Toolbar>
 
       <HiddenAmountInput amountInput={amountInput} />
     </>

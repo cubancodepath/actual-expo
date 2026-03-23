@@ -18,6 +18,7 @@ import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
 import { GlassButton } from "@/presentation/components/atoms/GlassButton";
+import { Pill } from "@/presentation/components/atoms/Pill";
 import { Icon } from "@/presentation/components/atoms/Icon";
 import { CurrencySymbol } from "@/presentation/components/atoms/CurrencySymbol";
 import { useCursorBlink } from "@/presentation/hooks/useCursorBlink";
@@ -444,6 +445,88 @@ export default function TestPlayground() {
         <Text variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.xl }}>
           Development only — preview components, styles, and interactions
         </Text>
+
+        {/* ── ScalableText Test ───────────────────────── */}
+        <SectionTitle first>SCALABLE TEXT TEST</SectionTitle>
+        <View
+          style={{
+            backgroundColor: colors.cardBackground,
+            borderRadius: 12,
+            padding: 16,
+            marginBottom: spacing.lg,
+          }}
+        >
+          {(() => {
+            const { Host, Text: SUIText, HStack, VStack } = require("@expo/ui/swift-ui");
+            const { font, lineLimit, frame } = require("@expo/ui/swift-ui/modifiers");
+            const { ScalableText } = require("../../../../modules/actual-ui");
+            return (
+              <Host style={{ height: 250 }} colorScheme="dark">
+                <VStack spacing={8}>
+                  <SUIText modifiers={[font({ size: 12 })]}>SUIText (truncates):</SUIText>
+                  <HStack>
+                    <SUIText modifiers={[font({ size: 14 }), lineLimit(1), frame({ width: 100 })]}>
+                      AED9,999,999.99
+                    </SUIText>
+                  </HStack>
+                  <SUIText modifiers={[font({ size: 12 })]}>ScalableText minScale=0.5:</SUIText>
+                  <HStack>
+                    <ScalableText
+                      text="AED9,999,999.99"
+                      fontSize={14}
+                      maxLines={1}
+                      minScale={0.5}
+                      color="#ffffff"
+                      monoDigits
+                      modifiers={[frame({ width: 100 })]}
+                    />
+                  </HStack>
+                  <SUIText modifiers={[font({ size: 12 })]}>ScalableText minScale=0.1:</SUIText>
+                  <HStack>
+                    <ScalableText
+                      text="AED9,999,999.99"
+                      fontSize={14}
+                      maxLines={1}
+                      minScale={0.1}
+                      color="#ffffff"
+                      monoDigits
+                      modifiers={[frame({ width: 100 })]}
+                    />
+                  </HStack>
+                  <SUIText modifiers={[font({ size: 12 })]}>ScalableText fits normally:</SUIText>
+                  <HStack>
+                    <ScalableText
+                      text="AED547.45"
+                      fontSize={14}
+                      maxLines={1}
+                      minScale={0.5}
+                      color="#34d399"
+                      monoDigits
+                      modifiers={[frame({ width: 100 })]}
+                    />
+                  </HStack>
+                </VStack>
+              </Host>
+            );
+          })()}
+        </View>
+
+        {/* ── 0. SwiftUI List Prototype ─────────────────────────── */}
+        <Pressable
+          onPress={() => require("expo-router").router.push("/(auth)/(tabs)/(test)/swiftui-list")}
+          style={{
+            backgroundColor: colors.primary,
+            paddingVertical: 12,
+            paddingHorizontal: 16,
+            borderRadius: 10,
+            marginBottom: spacing.lg,
+            alignItems: "center",
+          }}
+        >
+          <Text variant="body" color="#fff" style={{ fontWeight: "600" }}>
+            SwiftUI List Prototype
+          </Text>
+        </Pressable>
 
         {/* ── 1. Currency Input ─────────────────────────────────── */}
 
@@ -924,6 +1007,43 @@ export default function TestPlayground() {
           keyboardType="email-address"
           autoCapitalize="none"
         />
+        {/* ── Pills ──────────────────────────────────── */}
+        <SectionTitle>PILLS — SOLID</SectionTitle>
+        <Row wrap>
+          <Pill label="Default" fill="solid" />
+          <Pill label="Primary" variant="primary" fill="solid" />
+          <Pill label="Warning" variant="warning" fill="solid" />
+          <Pill label="Error" variant="error" fill="solid" />
+          <Pill label="Success" variant="success" fill="solid" />
+        </Row>
+
+        <SectionTitle>PILLS — SUBTLE</SectionTitle>
+        <Row wrap>
+          <Pill label="Default" fill="subtle" />
+          <Pill label="Primary" variant="primary" fill="subtle" />
+          <Pill label="Warning" variant="warning" fill="subtle" />
+          <Pill label="Error" variant="error" fill="subtle" />
+          <Pill label="Success" variant="success" fill="subtle" />
+        </Row>
+
+        <SectionTitle>PILLS — SIZES</SectionTitle>
+        <Row>
+          <Pill label="Small (sm)" variant="primary" fill="solid" size="sm" />
+          <Pill label="Medium (md)" variant="primary" fill="solid" size="md" />
+        </Row>
+
+        <SectionTitle>PILLS — IN CONTEXT</SectionTitle>
+        <SectionCaption>Transaction + schedule examples</SectionCaption>
+        <Row wrap>
+          <Pill label="Transfer" variant="primary" fill="subtle" size="sm" />
+          <Pill label="Coffee & Dining" size="sm" />
+          <Pill label="Uncategorized" variant="warning" fill="subtle" size="sm" />
+          <Pill label="Groceries" size="sm" />
+          <Pill label="Due" variant="error" fill="subtle" size="sm" />
+          <Pill label="Upcoming" variant="warning" fill="subtle" size="sm" />
+          <Pill label="Paid" variant="success" fill="subtle" size="sm" />
+          <Pill label="Scheduled" variant="primary" fill="subtle" size="sm" />
+        </Row>
       </ScrollView>
 
       {/* Hidden shared TextInput for currency input demo */}

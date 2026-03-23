@@ -26,7 +26,18 @@ export default function AuthLayout() {
           headerLeft: () => null,
         }}
       />
-      <Stack.Screen name="account/reconcile" options={{ headerShown: false, ...modal }} />
+      <Stack.Screen
+        name="account/reconcile"
+        options={{
+          title: "",
+          headerShadowVisible: false,
+          headerStyle: { backgroundColor: theme.colors.pageBackground },
+          presentation: "formSheet",
+          sheetAllowedDetents: [0.3],
+          sheetGrabberVisible: true,
+          contentStyle: { backgroundColor: theme.colors.pageBackground },
+        }}
+      />
       <Stack.Screen
         name="account/settings"
         options={{ title: t("nav.accountSettings"), ...modal }}
@@ -43,7 +54,6 @@ export default function AuthLayout() {
         }}
       />
       <Stack.Screen name="transaction" options={{ headerShown: false, ...modal }} />
-      <Stack.Screen name="budget/assign" options={{ title: t("nav.assignBudget"), ...modal }} />
       <Stack.Screen name="budget/edit" options={{ headerShown: false }} />
       <Stack.Screen
         name="budget/reorder"
@@ -195,7 +205,14 @@ export default function AuthLayout() {
       />
       <Stack.Screen name="schedules" options={{ title: t("nav.schedules"), ...modal }} />
       <Stack.Screen name="schedule" options={{ headerShown: false, ...modal }} />
-      <Stack.Screen name="change-budget" options={{ title: t("nav.changeBudget"), ...modal }} />
+      <Stack.Screen
+        name="change-budget"
+        options={{
+          presentation: "fullScreenModal",
+          headerShown: false,
+          contentStyle: { backgroundColor: theme.colors.pageBackground },
+        }}
+      />
       <Stack.Screen
         name="settings"
         options={{ headerShown: false, presentation: "fullScreenModal" }}

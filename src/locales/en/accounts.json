@@ -98,12 +98,22 @@
 
   "reconcile": {
     "title": "Reconcile Account",
-    "question": "Does your cleared balance match your bank statement?",
+    "question": "Does this match your bank's current balance?",
+    "helperText": "Reconciling locks cleared transactions and confirms your balance matches your bank.",
     "yesMatches": "Yes, it matches",
-    "noEnterBalance": "No, enter balance",
+    "noEnterBalance": "No, enter my bank balance",
     "enterBankBalance": "Enter Bank Balance",
-    "bankBalanceQuestion": "What is your current bank balance?",
-    "diff": "Diff: {{amount}}",
-    "reconcileButton": "Reconcile"
+    "bankBalanceQuestion": "Enter the current balance of your bank account that you want to reconcile with:",
+    "diffPositive": "Your bank has {{amount}} more than your records",
+    "diffNegative": "Your bank has {{amount}} less than your records",
+    "diffZero": "Balances match",
+    "reconcileButton": "Reconcile",
+    "adjustmentNotice": "An adjustment transaction will be created",
+    "successSimple": "Account reconciled",
+    "successWithAdjustment": "Account reconciled — {{amount}} adjustment added",
+    "transactionsToLock_one": "{{count}} transaction will be locked",
+    "transactionsToLock_other": "{{count}} transactions will be locked",
+    "neverReconciled": "Never reconciled",
+    "lastReconciled": "Last reconciled {{date}}"
   }
 }

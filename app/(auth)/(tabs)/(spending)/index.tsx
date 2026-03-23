@@ -21,11 +21,11 @@ import { UnclearedPill } from "@/presentation/components/transaction/UnclearedPi
 import { TransactionRow } from "@/presentation/components/account/TransactionRow";
 import { DateSectionHeader } from "@/presentation/components/account/DateSectionHeader";
 import { UpcomingSectionHeader } from "@/presentation/components/account/UpcomingSectionHeader";
-import { UpcomingDateHeader } from "@/presentation/components/account/UpcomingDateHeader";
 import { UpcomingScheduleRow } from "@/presentation/components/account/UpcomingScheduleRow";
 import { AddTransactionButton } from "@/presentation/components/molecules/AddTransactionButton";
 import { useTags } from "@/presentation/hooks/useTags";
 import { usePickerStore } from "@/stores/pickerStore";
+import { useRefreshControl } from "@/presentation/hooks/useRefreshControl";
 import {
   buildListData,
   useSelectModeHeader,
@@ -60,6 +60,7 @@ export default function SpendingScreen() {
   usePrivacyStore(); // subscribe to re-render on privacy mode change
   const setTabBarHidden = useTabBarStore((s) => s.setHidden);
   const { tags } = useTags();
+  const { refreshControlProps } = useRefreshControl();
 
   // ---- Upcoming scheduled transactions (reactive, derived from liveQuery) ----
   const [upcomingExpanded, setUpcomingExpanded] = useState(false);
@@ -117,8 +118,6 @@ export default function SpendingScreen() {
     isSelectMode: selection.isSelectMode,
     selectedCount: selection.selectedIds.size,
     selectedTotal,
-    onSelectAll: () =>
-      selection.selectAll(transactions as TransactionDisplay[], (t) => !t.reconciled),
     onDoneSelection: () => {
       selection.exit();
       setTabBarHidden(false);
@@ -347,7 +346,7 @@ export default function SpendingScreen() {
             );
           }
           if (item.type === "upcoming-date") {
-            return <UpcomingDateHeader date={item.date} />;
+            return <DateSectionHeader date={item.date} />;
           }
           if (item.type === "upcoming") {
             return (
@@ -411,9 +410,9 @@ export default function SpendingScreen() {
         onEndReachedThreshold={0.3}
         refreshControl={
           <RefreshControl
-            refreshing={false}
-            onRefresh={() => refetch()}
-            tintColor={colors.primary}
+            refreshing={refreshControlProps.refreshing}
+            onRefresh={refreshControlProps.onRefresh}
+            tintColor={refreshControlProps.tintColor}
           />
         }
         contentContainerStyle={{ paddingBottom: 80, backgroundColor: colors.pageBackground }}

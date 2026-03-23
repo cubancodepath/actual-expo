@@ -16,9 +16,23 @@ export const transactionQueries = {
   all: () => ["transactions"] as const,
 
   /** AQL-based query — uses the compiler with views/mappings. */
-  aql: ({ query, pageSize = 25 }: { query: Query; pageSize?: number }) =>
+  aql: ({
+    query,
+    pageSize = 25,
+    activeBudgetId,
+  }: {
+    query: Query;
+    pageSize?: number;
+    activeBudgetId?: string | null;
+  }) =>
     infiniteQueryOptions<TransactionDisplay[]>({
-      queryKey: [...transactionQueries.all(), "aql", query.serializeAsString(), pageSize],
+      queryKey: [
+        ...transactionQueries.all(),
+        "aql",
+        query.serializeAsString(),
+        pageSize,
+        activeBudgetId,
+      ],
       queryFn: async ({ pageParam }) => {
         const paged = query.offset((pageParam as number) * pageSize).limit(pageSize);
         const { data } = await executeQuery<TransactionDisplay>(paged);
@@ -31,9 +45,19 @@ export const transactionQueries = {
     }),
 
   /** Raw fetchFn query — for screens not yet migrated to AQL. */
-  list: ({ fetchFn, pageSize = 25, key }: { fetchFn: FetchFn; pageSize?: number; key?: string }) =>
+  list: ({
+    fetchFn,
+    pageSize = 25,
+    key,
+    activeBudgetId,
+  }: {
+    fetchFn: FetchFn;
+    pageSize?: number;
+    key?: string;
+    activeBudgetId?: string | null;
+  }) =>
     infiniteQueryOptions<TransactionDisplay[]>({
-      queryKey: [...transactionQueries.all(), "list", key ?? "all", pageSize],
+      queryKey: [...transactionQueries.all(), "list", key ?? "all", pageSize, activeBudgetId],
       queryFn: async ({ pageParam }) => {
         return fetchFn(pageSize, (pageParam as number) * pageSize);
       },

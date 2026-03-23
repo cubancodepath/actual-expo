@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef } from "react";
+import { memo, useEffect } from "react";
 import { Platform, Pressable, View } from "react-native";
 import Animated, {
   Easing,
@@ -9,11 +9,12 @@ import Animated, {
   withSpring,
   withTiming,
 } from "react-native-reanimated";
-import { EaseView } from "react-native-ease";
+import { useTranslation } from "react-i18next";
+import { AnimatedView } from "../atoms/AnimatedView";
 import { Icon } from "../atoms/Icon";
 import { ContextMenu } from "../atoms/ContextMenu";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
-import { Text, Amount, NotesWithTags, RowSeparator } from "..";
+import { Text, Amount, NotesWithTags, RowSeparator, Pill } from "..";
 import { formatAmount } from "../../../lib/format";
 import { SwipeableRow } from "../molecules/SwipeableRow";
 import type { TransactionDisplay } from "../../../transactions";
@@ -39,7 +40,6 @@ interface TransactionRowProps {
 }
 
 // EaseView transitions (state-driven visual animations)
-const TIMING_BG = { type: "timing" as const, duration: 180, easing: "easeOut" as const };
 const TIMING_CHECK_IN = { type: "timing" as const, duration: 450, easing: "easeOut" as const };
 const TIMING_CHECK_OUT = { type: "timing" as const, duration: 350, easing: "easeOut" as const };
 const NONE = { type: "none" as const };
@@ -68,17 +68,11 @@ export const TransactionRow = memo(function TransactionRow({
   isSelectMode = false,
   isSelected = false,
 }: TransactionRowProps) {
+  const { t } = useTranslation("transactions");
   const { colors, spacing } = useTheme();
   const styles = useThemedStyles(createStyles);
   const reducedMotion = useReducedMotion();
   const noAnim = reducedMotion ?? false;
-
-  // Track exit for instant background clear
-  const wasSelectMode = useRef(isSelectMode);
-  const justExited = !isSelectMode && wasSelectMode.current;
-  useEffect(() => {
-    wasSelectMode.current = isSelectMode;
-  });
 
   // Layout animation: checkbox container width (Reanimated — can't do layout with EaseView)
   const checkboxAnim = useSharedValue(isSelectMode ? 1 : 0);
@@ -96,15 +90,13 @@ export const TransactionRow = memo(function TransactionRow({
     overflow: "hidden" as const,
   }));
 
-  const bgTransition = noAnim || justExited ? NONE : TIMING_BG;
   const checkVisualTransition = noAnim ? NONE : isSelectMode ? TIMING_CHECK_IN : TIMING_CHECK_OUT;
 
   const rowContent = (
-    <EaseView
-      animate={{
+    <View
+      style={{
         backgroundColor: isSelectMode && isSelected ? colors.primarySubtle : colors.cardBackground,
       }}
-      transition={bgTransition}
     >
       <Pressable
         style={({ pressed }) => [styles.row, pressed && styles.pressed]}
@@ -121,7 +113,7 @@ export const TransactionRow = memo(function TransactionRow({
       >
         {/* Checkbox — Reanimated for layout (width), EaseView for visuals (opacity/scale) */}
         <Animated.View style={[styles.checkboxContainer, checkboxContainerStyle]}>
-          <EaseView
+          <AnimatedView
             animate={{
               opacity: isSelectMode ? 1 : 0,
               scale: isSelectMode ? 1 : 0.5,
@@ -130,15 +122,15 @@ export const TransactionRow = memo(function TransactionRow({
           >
             <View style={{ width: 22, height: 22 }}>
               <Icon name="ellipseOutline" size={22} color={colors.textMuted} />
-              <EaseView
+              <AnimatedView
                 style={{ position: "absolute" }}
                 animate={{ scale: isSelected ? 1 : 0, opacity: isSelected ? 1 : 0 }}
                 transition={{ type: "spring", damping: 12, stiffness: 300, mass: 0.6 }}
               >
                 <Icon name="checkmarkCircle" size={22} color={colors.primary} />
-              </EaseView>
+              </AnimatedView>
             </View>
-          </EaseView>
+          </AnimatedView>
         </Animated.View>
 
         <View style={styles.content}>
@@ -147,9 +139,9 @@ export const TransactionRow = memo(function TransactionRow({
             <View style={styles.payeeRow}>
               {item.transfer_id != null && (
                 <Icon
-                  name="swapHorizontal"
+                  name={item.amount < 0 ? "arrowForwardOutline" : "arrowBackOutline"}
                   size={14}
-                  color={colors.primary}
+                  color={colors.textSecondary}
                   style={{ marginRight: spacing.xs }}
                 />
               )}
@@ -158,15 +150,16 @@ export const TransactionRow = memo(function TransactionRow({
                 numberOfLines={1}
                 style={{ flex: 1, fontWeight: "500" as const }}
               >
-                {item.payeeName ?? "(no payee)"}
+                {item.payeeName ?? t("noPayee")}
               </Text>
             </View>
             <View style={styles.amountRow}>
               <Amount
-                value={item.amount}
-                variant="body"
-                showSign
-                style={{ fontWeight: "600" as const }}
+                value={item.transfer_id ? Math.abs(item.amount) : item.amount}
+                variant="bodyLg"
+                colored={false}
+                color={!item.transfer_id && item.amount < 0 ? colors.negative : undefined}
+                weight="700"
               />
               <View style={{ marginLeft: spacing.sm }}>
                 {item.reconciled ? (
@@ -190,11 +183,7 @@ export const TransactionRow = memo(function TransactionRow({
                 const amounts = item.splitCategoryAmounts?.split("||") ?? [];
                 return names.map((name, i) => (
                   <View key={i} style={styles.splitLineRow}>
-                    <View style={styles.categoryPill}>
-                      <Text variant="captionSm" color={colors.textSecondary} numberOfLines={1}>
-                        {name || "No category"}
-                      </Text>
-                    </View>
+                    <Pill label={name || "No category"} size="sm" maxWidth="70%" />
                     <Text
                       variant="captionSm"
                       color={colors.textMuted}
@@ -220,37 +209,37 @@ export const TransactionRow = memo(function TransactionRow({
               })()}
             </>
           ) : (
-            (item.categoryName ||
-              item.transfer_id != null ||
-              (showAccountName && item.accountName)) && (
-              <View style={styles.metaRow}>
-                {item.transfer_id != null ? (
-                  <View style={styles.categoryPill}>
-                    <Text variant="captionSm" color={colors.primary} numberOfLines={1}>
-                      Transfer
-                    </Text>
-                  </View>
-                ) : item.categoryName ? (
-                  <View style={styles.categoryPill}>
-                    <Text variant="captionSm" color={colors.textSecondary} numberOfLines={1}>
-                      {item.categoryName}
-                    </Text>
-                  </View>
-                ) : (
-                  <View />
-                )}
-                {showAccountName && item.accountName && (
-                  <Text
-                    variant="captionSm"
-                    color={colors.textMuted}
-                    numberOfLines={1}
-                    style={{ flexShrink: 0 }}
-                  >
-                    {item.accountName}
-                  </Text>
-                )}
-              </View>
-            )
+            <View style={styles.metaRow}>
+              {item.transfer_id != null ? (
+                <Pill
+                  label={t("transfer")}
+                  variant="primary"
+                  fill="subtle"
+                  size="sm"
+                  maxWidth="70%"
+                />
+              ) : item.categoryName ? (
+                <Pill label={item.categoryName} size="sm" maxWidth="70%" />
+              ) : (
+                <Pill
+                  label={t("uncategorized")}
+                  variant="warning"
+                  fill="subtle"
+                  size="sm"
+                  maxWidth="70%"
+                />
+              )}
+              {showAccountName && item.accountName && (
+                <Text
+                  variant="captionSm"
+                  color={colors.textMuted}
+                  numberOfLines={1}
+                  style={{ flexShrink: 0 }}
+                >
+                  {item.accountName}
+                </Text>
+              )}
+            </View>
           )}
 
           {/* Notes with inline tag pills */}
@@ -259,7 +248,7 @@ export const TransactionRow = memo(function TransactionRow({
 
         {!isLast && <RowSeparator />}
       </Pressable>
-    </EaseView>
+    </View>
   );
 
   // In select mode, no SwipeableRow and no ContextMenu
@@ -286,35 +275,41 @@ export const TransactionRow = memo(function TransactionRow({
       <ContextMenu>
         <ContextMenu.Trigger>{swipeableContent}</ContextMenu.Trigger>
         <ContextMenu.Content>
+          <ContextMenu.Item key="edit" onSelect={() => onPress(item.id)}>
+            <ContextMenu.ItemTitle>{t("contextEdit")}</ContextMenu.ItemTitle>
+            <ContextMenu.ItemIcon ios={{ name: "pencil" }} />
+          </ContextMenu.Item>
           {!item.reconciled && (
             <ContextMenu.Item key="toggle-cleared" onSelect={() => onToggleCleared(item.id)}>
-              <ContextMenu.ItemTitle>{item.cleared ? "Unclear" : "Clear"}</ContextMenu.ItemTitle>
+              <ContextMenu.ItemTitle>
+                {item.cleared ? t("contextUnclear") : t("contextClear")}
+              </ContextMenu.ItemTitle>
               <ContextMenu.ItemIcon ios={{ name: item.cleared ? "circle" : "checkmark.circle" }} />
             </ContextMenu.Item>
           )}
           <ContextMenu.Item key="duplicate" onSelect={() => onDuplicate?.(item.id)}>
-            <ContextMenu.ItemTitle>Duplicate</ContextMenu.ItemTitle>
+            <ContextMenu.ItemTitle>{t("contextDuplicate")}</ContextMenu.ItemTitle>
             <ContextMenu.ItemIcon ios={{ name: "doc.on.doc" }} />
           </ContextMenu.Item>
           {onMove && (
             <ContextMenu.Item key="move" onSelect={() => onMove(item.id)}>
-              <ContextMenu.ItemTitle>Move to…</ContextMenu.ItemTitle>
+              <ContextMenu.ItemTitle>{t("contextMoveToAccount")}</ContextMenu.ItemTitle>
               <ContextMenu.ItemIcon ios={{ name: "arrow.right.arrow.left" }} />
             </ContextMenu.Item>
           )}
           {onSetCategory && (
             <ContextMenu.Item key="set-category" onSelect={() => onSetCategory(item.id)}>
-              <ContextMenu.ItemTitle>Categorize</ContextMenu.ItemTitle>
+              <ContextMenu.ItemTitle>{t("contextCategorize")}</ContextMenu.ItemTitle>
               <ContextMenu.ItemIcon ios={{ name: "tag" }} />
             </ContextMenu.Item>
           )}
           <ContextMenu.Item key="add-tag" onSelect={() => onAddTag?.(item.id)}>
-            <ContextMenu.ItemTitle>Add Tag</ContextMenu.ItemTitle>
-            <ContextMenu.ItemIcon ios={{ name: "tag" }} />
+            <ContextMenu.ItemTitle>{t("contextAddTag")}</ContextMenu.ItemTitle>
+            <ContextMenu.ItemIcon ios={{ name: "number" }} />
           </ContextMenu.Item>
           <ContextMenu.Separator />
           <ContextMenu.Item key="delete" destructive onSelect={() => onDelete(item.id)}>
-            <ContextMenu.ItemTitle>Delete</ContextMenu.ItemTitle>
+            <ContextMenu.ItemTitle>{t("contextDelete")}</ContextMenu.ItemTitle>
             <ContextMenu.ItemIcon ios={{ name: "trash" }} />
           </ContextMenu.Item>
         </ContextMenu.Content>
@@ -370,13 +365,5 @@ const createStyles = (theme: Theme) => ({
     alignItems: "center" as const,
     marginTop: theme.spacing.xs,
     gap: theme.spacing.xs,
-  },
-  categoryPill: {
-    backgroundColor: theme.colors.buttonSecondaryBackground,
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: theme.spacing.xxs,
-    borderRadius: theme.borderRadius.full,
-    flexShrink: 1,
-    maxWidth: "70%" as unknown as number,
   },
 });

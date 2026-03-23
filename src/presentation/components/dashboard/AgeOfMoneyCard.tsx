@@ -1,5 +1,5 @@
 import { View } from "react-native";
-import { EaseView } from "react-native-ease";
+import { AnimatedView } from "../atoms/AnimatedView";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Card } from "../atoms/Card";
@@ -33,7 +33,7 @@ export function AgeOfMoneyCard() {
 
   const change = age - previousAge;
   const progressPercent = Math.min((age / GOAL_DAYS) * 100, 100);
-  const barFillColor = age >= GOAL_DAYS ? colors.positive : colors.primary;
+  const barFillColor = age >= GOAL_DAYS ? colors.vibrantPositive : colors.primary;
 
   return (
     <Card style={{ padding: spacing.lg, gap: spacing.sm }}>
@@ -50,7 +50,7 @@ export function AgeOfMoneyCard() {
       {change !== 0 ? (
         <Text
           variant="captionSm"
-          color={change > 0 ? colors.positive : colors.negative}
+          color={change > 0 ? colors.vibrantPositive : colors.vibrantNegative}
           style={{ fontVariant: ["tabular-nums"] }}
         >
           {change > 0 ? "+" : ""}
@@ -75,7 +75,7 @@ export function AgeOfMoneyCard() {
       <View
         style={{ height: 20, borderRadius: 4, backgroundColor: colors.divider, overflow: "hidden" }}
       >
-        <EaseView
+        <AnimatedView
           animate={{ scaleX: 1 }}
           initialAnimate={{ scaleX: 0 }}
           transformOrigin={{ x: 0, y: 0.5 }}

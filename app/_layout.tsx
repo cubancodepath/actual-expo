@@ -187,21 +187,53 @@ function RootLayout() {
     // Check once after bootstrap (cold launch from shortcut)
     let pendingTimer: ReturnType<typeof setTimeout> | null = setTimeout(checkShortcutAction, 300);
 
-    // Single AppState listener for both sync and shortcut check
-    const sub = AppState.addEventListener("change", (nextState) => {
-      if (nextState !== "active") return;
-      // Sync on foreground
+    // Periodic foreground sync every 60s — differs from upstream desktop app
+    // which has no periodic sync. On mobile, users often co-edit on web + phone
+    // simultaneously, and without polling they'd only see web changes after
+    // backgrounding and re-opening the app. 60s matches what Notion/Confluence
+    // use for "live enough without being aggressive" on mobile.
+    let syncInterval: ReturnType<typeof setInterval> | null = null;
+
+    const startSyncPolling = () => {
+      if (syncInterval) clearInterval(syncInterval);
       const p = usePrefsStore.getState();
-      if (p.isConfigured && !p.isLocalOnly && !isSwitchingBudget()) {
-        fullSync().catch(console.warn);
+      if (p.isConfigured && !p.isLocalOnly) {
+        syncInterval = setInterval(() => {
+          if (!isSwitchingBudget()) fullSync().catch(console.warn);
+        }, 60_000);
       }
-      // Check shortcut action with debounced timer
-      if (pendingTimer) clearTimeout(pendingTimer);
-      pendingTimer = setTimeout(checkShortcutAction, 300);
+    };
+
+    const stopSyncPolling = () => {
+      if (syncInterval) {
+        clearInterval(syncInterval);
+        syncInterval = null;
+      }
+    };
+
+    // Single AppState listener for sync, polling, and shortcut check
+    const sub = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "active") {
+        // Sync immediately on foreground
+        const p = usePrefsStore.getState();
+        if (p.isConfigured && !p.isLocalOnly && !isSwitchingBudget()) {
+          fullSync().catch(console.warn);
+        }
+        startSyncPolling();
+        // Check shortcut action with debounced timer
+        if (pendingTimer) clearTimeout(pendingTimer);
+        pendingTimer = setTimeout(checkShortcutAction, 300);
+      } else {
+        stopSyncPolling();
+      }
     });
+
+    // Start polling on initial mount (app is already active)
+    startSyncPolling();
 
     return () => {
       if (pendingTimer) clearTimeout(pendingTimer);
+      stopSyncPolling();
       sub.remove();
     };
   }, [ready, isConfigured, router]);

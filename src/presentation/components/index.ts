@@ -6,12 +6,12 @@ export { Divider, type DividerProps } from "./atoms/Divider";
 export { Badge, type BadgeProps } from "./atoms/Badge";
 export { Spacer, type SpacerProps } from "./atoms/Spacer";
 export { Amount, type AmountProps } from "./atoms/Amount";
-export { CurrencySymbol } from "./atoms/CurrencySymbol";
 export { Icon, type IconProps, type IconName } from "./atoms/Icon";
 export { iconRegistry } from "./atoms/iconRegistry";
 export { RowSeparator, type RowSeparatorProps } from "./atoms/RowSeparator";
 export { CurrencyInput, type CurrencyInputRef } from "./currency-input";
 export { InfoPill } from "./atoms/InfoPill";
+export { Pill, type PillProps } from "./atoms/Pill";
 export { TagPill, type TagPillProps } from "./atoms/TagPill";
 export { NotesWithTags, type NotesWithTagsProps } from "./atoms/NotesWithTags";
 export { KeyboardDoneButton } from "./atoms/KeyboardDoneButton";
@@ -40,6 +40,7 @@ export {
 export { UndoToast } from "./molecules/UndoToast";
 export { ErrorBanner } from "./molecules/ErrorBanner";
 export { BudgetFileRow, type BudgetFileRowProps } from "./molecules/BudgetFileRow";
+export { BudgetOpeningOverlay } from "./molecules/BudgetOpeningOverlay";
 export {
   EncryptionPasswordPrompt,
   promptForPassword,
@@ -48,7 +49,6 @@ export {
 
 // Budget
 export { MonthSelector } from "./budget/MonthSelector";
-export { ReadyToAssignPill } from "./budget/ReadyToAssignPill";
 export { OverspentPill } from "./budget/OverspentPill";
 // export { BudgetSummaryBar } from "./budget/BudgetSummaryBar";
 export { BudgetGroupHeader } from "./budget/BudgetGroupHeader";

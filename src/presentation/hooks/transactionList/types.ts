@@ -1,7 +1,7 @@
 import type { TransactionDisplay } from "../../../transactions";
 import type { PreviewTransaction } from "../../../schedules/computePreview";
 
-export type DateHeader = { type: "date"; date: number; key: string };
+export type DateHeader = { type: "date"; date: number; key: string; dailyTotal: number };
 export type TransactionItem = {
   type: "transaction";
   data: TransactionDisplay;
@@ -28,18 +28,26 @@ export type UpcomingItem = {
   isLast: boolean;
 };
 
+export type EmptyStateItem = {
+  type: "empty-state";
+  key: string;
+  variant: "reconciled" | "no-transactions";
+};
+
 export type ListItem =
   | DateHeader
   | TransactionItem
   | UpcomingHeader
   | UpcomingDateHeader
-  | UpcomingItem;
+  | UpcomingItem
+  | EmptyStateItem;
 
 export function buildListData(
   transactions: TransactionDisplay[],
   opts?: {
     previewTransactions?: PreviewTransaction[];
     upcomingExpanded?: boolean;
+    hideReconciled?: boolean;
   },
 ): ListItem[] {
   const items: ListItem[] = [];
@@ -91,6 +99,21 @@ export function buildListData(
     }
   }
 
+  // Inject empty state when schedules exist but no visible transactions
+  if (previews.length > 0 && transactions.length === 0) {
+    items.push({
+      type: "empty-state",
+      key: "empty-state",
+      variant: opts?.hideReconciled ? "reconciled" : "no-transactions",
+    });
+  }
+
+  // Pre-compute daily totals
+  const dailyTotals = new Map<number, number>();
+  for (const txn of transactions) {
+    dailyTotals.set(txn.date, (dailyTotals.get(txn.date) ?? 0) + txn.amount);
+  }
+
   // Regular transactions grouped by date
   let lastDate: number | null = null;
 
@@ -102,7 +125,12 @@ export function buildListData(
         const prev = items[items.length - 1];
         if (prev.type === "transaction") prev.isLast = true;
       }
-      items.push({ type: "date", date: txn.date, key: `date-${txn.date}` });
+      items.push({
+        type: "date",
+        date: txn.date,
+        key: `date-${txn.date}`,
+        dailyTotal: dailyTotals.get(txn.date) ?? 0,
+      });
       lastDate = txn.date;
     }
     items.push({

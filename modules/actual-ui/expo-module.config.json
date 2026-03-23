@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android", "web"],
+  "apple": {
+    "modules": ["ActualUiModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.actualui.ActualUiModule"]
+  }
+}

@@ -7,6 +7,11 @@ import { run, first } from "../db";
 
 export async function loadClock(): Promise<void> {
   const row = await first<{ clock: string }>("SELECT clock FROM messages_clock WHERE id = 1");
+  if (__DEV__) {
+    console.log(
+      `[loadClock] row exists: ${!!row}, clock preview: ${row?.clock?.slice(0, 60) ?? "NONE"}`,
+    );
+  }
   if (row) {
     const clock = deserializeClock(row.clock);
     const { setClock } = await import("../crdt");

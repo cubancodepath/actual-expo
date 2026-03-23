@@ -178,6 +178,7 @@ export function useExpressionMode({ value, onChangeValue }: UseExpressionModeOpt
   return {
     expressionMode,
     expression,
+    operandCents,
     fullExpression,
     previewCents,
     expressionInputValue,

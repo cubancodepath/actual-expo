@@ -57,6 +57,7 @@ export const schema: Schema = {
       offbudget: { type: "boolean" },
       closed: { type: "boolean" },
       sort_order: { type: "float" },
+      last_reconciled: { type: "string" },
       tombstone: { type: "boolean" },
     },
     defaultOrder: [{ sort_order: "asc" }, "name"],

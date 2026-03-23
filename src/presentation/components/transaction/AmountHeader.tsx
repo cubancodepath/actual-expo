@@ -2,9 +2,7 @@ import { memo, type ReactNode } from "react";
 import { Pressable, View, type ViewStyle } from "react-native";
 import { useSyncedPref } from "@/presentation/hooks/useSyncedPref";
 import { formatCents, formatExpression } from "@/lib/currency";
-import { formatAmountParts } from "@/lib/format";
 import { Text } from "../atoms/Text";
-import { CurrencySymbol } from "../atoms/CurrencySymbol";
 import { TypeToggle, type TransactionType } from "./TypeToggle";
 import type { Theme } from "@/theme";
 
@@ -74,60 +72,32 @@ export const AmountHeader = memo(function AmountHeader({
         accessibilityHint="Tap to edit amount"
       >
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center" }}>
-          {!expressionMode &&
-            (() => {
-              const parts = formatAmountParts(cents, false);
-              const fontSize = 32;
-              const prefix = isExpense ? "-" : "";
-              return (
-                <>
-                  <Text
-                    style={{
-                      fontSize: 32,
-                      lineHeight: 40,
-                      fontWeight: "700",
-                      marginRight: spacing.xs,
-                      color: headerText,
-                    }}
-                  >
-                    {prefix}
-                  </Text>
-                  {parts.svgSymbol && parts.position === "before" && (
-                    <>
-                      <CurrencySymbol
-                        symbol={parts.symbol}
-                        svgSymbol={parts.svgSymbol}
-                        fontSize={fontSize}
-                        color={headerText}
-                      />
-                      {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
-                    </>
-                  )}
-                  <Text
-                    style={{
-                      fontSize: 32,
-                      lineHeight: 40,
-                      fontWeight: "700",
-                      fontVariant: ["tabular-nums"],
-                      color: headerText,
-                    }}
-                  >
-                    {parts.svgSymbol ? parts.number : formatCents(cents)}
-                  </Text>
-                  {parts.svgSymbol && parts.position === "after" && (
-                    <>
-                      {parts.spaceBetween && <View style={{ width: Math.round(fontSize / 3) }} />}
-                      <CurrencySymbol
-                        symbol={parts.symbol}
-                        svgSymbol={parts.svgSymbol}
-                        fontSize={fontSize}
-                        color={headerText}
-                      />
-                    </>
-                  )}
-                </>
-              );
-            })()}
+          {!expressionMode && (
+            <>
+              <Text
+                style={{
+                  fontSize: 32,
+                  lineHeight: 40,
+                  fontWeight: "700",
+                  marginRight: spacing.xs,
+                  color: headerText,
+                }}
+              >
+                {isExpense ? "-" : ""}
+              </Text>
+              <Text
+                style={{
+                  fontSize: 32,
+                  lineHeight: 40,
+                  fontWeight: "700",
+                  fontVariant: ["tabular-nums"],
+                  color: headerText,
+                }}
+              >
+                {formatCents(cents)}
+              </Text>
+            </>
+          )}
           {expressionMode && (
             <Text
               style={{

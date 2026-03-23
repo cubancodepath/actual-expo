@@ -10,7 +10,7 @@ import { clearUndo } from "./undo";
 let _syncGeneration = 0;
 let _switchingBudget = false;
 let _syncTimeout: ReturnType<typeof setTimeout> | null = null;
-let _activeSyncPromise: Promise<void> | null = null;
+let _activeSyncPromise: Promise<unknown> | null = null;
 
 export function getSyncGeneration(): number {
   return _syncGeneration;
@@ -40,7 +40,7 @@ export function getSyncTimeout(): ReturnType<typeof setTimeout> | null {
 }
 
 /** Track the active sync promise so we can wait for it before closing the DB. */
-export function setActiveSyncPromise(p: Promise<void> | null): void {
+export function setActiveSyncPromise(p: Promise<unknown> | null): void {
   _activeSyncPromise = p;
 }
 
@@ -64,10 +64,13 @@ export async function waitForSyncToSettle(): Promise<void> {
  * BEFORE opening a new database. Increments the generation counter so any
  * in-flight fullSync() silently discards its results.
  */
-export function resetSyncState(resetBatchState: () => void): void {
+export function resetSyncState(resetBatchState: () => void, clearFullSyncGuard?: () => void): void {
   _syncGeneration++;
   clearSyncTimeout();
   clearUndo();
   resetBatchState();
   _switchingBudget = true;
+  _activeSyncPromise = null;
+  // Clear the once() guard in fullSync synchronously so the new budget gets a fresh sync
+  clearFullSyncGuard?.();
 }

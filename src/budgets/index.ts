@@ -9,6 +9,8 @@ import type { BudgetMonth, BudgetGroup, BudgetCategory } from "./types";
 import { inferGoalFromDef } from "../goals";
 import { ALIVE_TX_FILTER } from "../db/filters";
 import { computeToBudgetFull } from "./toBudget";
+import { getSpreadsheet } from "../spreadsheet/instance";
+import { sheetForMonth, envelopeBudget } from "../spreadsheet/bindings";
 
 // ---------------------------------------------------------------------------
 // Carryover chain computation
@@ -765,4 +767,19 @@ export const setBudgetAmount = undoable(async function setBudgetAmount(
       value: amount,
     },
   ]);
+});
+
+// ---------------------------------------------------------------------------
+// Transfer from "To Budget" to a category
+// ---------------------------------------------------------------------------
+
+export const transferAvailable = undoable(async function transferAvailable(
+  month: string,
+  categoryId: string,
+  amountCents: number,
+): Promise<void> {
+  const ss = getSpreadsheet();
+  const sheet = sheetForMonth(month);
+  const current = (ss.getValue(sheet, envelopeBudget.catBudgeted(categoryId)) as number) ?? 0;
+  await setBudgetAmount(month, categoryId, current + amountCents);
 });

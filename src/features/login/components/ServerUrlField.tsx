@@ -1,6 +1,7 @@
-import { Pressable, Text, View } from "react-native";
+import { View } from "react-native";
+import Animated, { FadeInRight, FadeOutRight, LinearTransition } from "react-native-reanimated";
 import { useTranslation } from "react-i18next";
-import { TextField, Input, Label, FieldError } from "@/ui";
+import { Button, TextField, Input, Label, FieldError } from "@/ui";
 
 type ServerUrlFieldProps = {
   value: string;
@@ -27,7 +28,7 @@ export function ServerUrlField({
     <TextField isInvalid={isInvalid}>
       <Label>{t("serverUrl")}</Label>
       <View className="flex-row items-center gap-2">
-        <View className="flex-1">
+        <Animated.View className="flex-1" layout={LinearTransition.duration(200)}>
           <Input
             testID="server-url-input"
             placeholder={t("serverUrlPlaceholder")}
@@ -41,11 +42,13 @@ export function ServerUrlField({
             editable={!isLocked}
             className="rounded-md"
           />
-        </View>
+        </Animated.View>
         {isLocked && (
-          <Pressable onPress={onChangeServer} hitSlop={8}>
-            <Text className="text-accent text-sm font-semibold">{t("change")}</Text>
-          </Pressable>
+          <Animated.View entering={FadeInRight.duration(200)} exiting={FadeOutRight.duration(150)}>
+            <Button variant="ghost" size="sm" feedbackVariant="none" onPress={onChangeServer}>
+              <Button.Label className="text-accent">{t("change")}</Button.Label>
+            </Button>
+          </Animated.View>
         )}
       </View>
       {isInvalid && errorMessage && <FieldError>{errorMessage}</FieldError>}

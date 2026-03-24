@@ -1,4 +1,5 @@
 // Atoms — smallest building blocks
+export { ActualLogo } from "./ActualLogo";
 export { Avatar } from "./Avatar";
 export { Badge } from "./Badge";
 export { Button } from "./Button";

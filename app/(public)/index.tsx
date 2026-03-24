@@ -1,6 +1,6 @@
-import { KeyboardAvoidingView, Platform, ScrollView } from "react-native";
+import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import * as WebBrowser from "expo-web-browser";
-import { Card } from "@/ui";
 import { Alert } from "@/ui/molecules";
 import {
   useLogin,
@@ -28,7 +28,7 @@ export default function LoginScreen() {
       >
         <LoginHero />
 
-        <Card className="p-5 gap-4">
+        <View className="gap-4">
           <ServerUrlField
             value={login.serverUrl}
             onChange={login.handleServerUrlChange}
@@ -52,7 +52,9 @@ export default function LoginScreen() {
           {login.step === "openid" && <OpenIdInfo />}
 
           {login.error && login.error.category !== "validation" && (
-            <Alert variant="error" title={login.error.message} onDismiss={login.dismissError} />
+            <Animated.View entering={FadeInDown.duration(200)}>
+              <Alert variant="error" title={login.error.message} onDismiss={login.dismissError} />
+            </Animated.View>
           )}
 
           <LoginActionButton
@@ -63,7 +65,7 @@ export default function LoginScreen() {
             onPasswordLogin={login.handlePasswordLogin}
             onOpenIdLogin={login.handleOpenIdLogin}
           />
-        </Card>
+        </View>
 
         <SecondaryLinks onLocalMode={login.handleLocalMode} />
       </ScrollView>

@@ -14,7 +14,7 @@ export function SecondaryLinks({ onLocalMode }: SecondaryLinksProps) {
 
   return (
     <View className="items-center mt-8 gap-3">
-      <Button variant="ghost" onPress={onLocalMode}>
+      <Button variant="ghost" feedbackVariant="none" onPress={onLocalMode}>
         {t("useWithoutServer")}
       </Button>
 

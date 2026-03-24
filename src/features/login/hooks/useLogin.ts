@@ -71,14 +71,19 @@ export function useLogin() {
   }
 
   async function handleProbe() {
-    const url = serverUrl.trim().replace(/\/$/, "");
+    let url = serverUrl.trim().replace(/\/$/, "");
     if (!url) {
       setValidationError(t("serverUrlRequired"));
       return;
     }
 
+    if (!/^https?:\/\//i.test(url)) {
+      url = `https://${url}`;
+      setServerUrl(url);
+    }
+
     setStep("probing");
-    const info = await handleError(() => probeWithRetry(url));
+    const info = await handleError(() => probeWithRetry(url), { silenceNetwork: false });
     if (!info) {
       setStep("idle");
       return;
@@ -101,40 +106,46 @@ export function useLogin() {
 
   async function handlePasswordLogin() {
     setLoading(true);
-    await handleError(async () => {
-      const token = await login(urlRef.current, password.trim());
-      await saveLoginAndRedirect(urlRef.current, token);
-    });
+    await handleError(
+      async () => {
+        const token = await login(urlRef.current, password.trim());
+        await saveLoginAndRedirect(urlRef.current, token);
+      },
+      { silenceNetwork: false },
+    );
     setLoading(false);
   }
 
   async function handleOpenIdLogin() {
     setLoading(true);
-    await handleError(async () => {
-      const url = urlRef.current;
-      const appScheme = "actualbudget";
-      const serverHostname = new URL(url).hostname;
-      const returnUrl = `${appScheme}://${serverHostname}`;
-      const callbackUrl = `${returnUrl}/openid-cb`;
+    await handleError(
+      async () => {
+        const url = urlRef.current;
+        const appScheme = "actualbudget";
+        const serverHostname = new URL(url).hostname;
+        const returnUrl = `${appScheme}://${serverHostname}`;
+        const callbackUrl = `${returnUrl}/openid-cb`;
 
-      const authUrl = await initiateOpenIdLogin(url, returnUrl);
-      const result = await WebBrowser.openAuthSessionAsync(authUrl, callbackUrl);
+        const authUrl = await initiateOpenIdLogin(url, returnUrl);
+        const result = await WebBrowser.openAuthSessionAsync(authUrl, callbackUrl);
 
-      if (result.type !== "success") {
-        setLoading(false);
-        return;
-      }
+        if (result.type !== "success") {
+          setLoading(false);
+          return;
+        }
 
-      const parsed = Linking.parse(result.url);
-      const token = parsed.queryParams?.token as string | undefined;
-      if (!token) {
-        setValidationError(t("openIdNoToken"));
-        setLoading(false);
-        return;
-      }
+        const parsed = Linking.parse(result.url);
+        const token = parsed.queryParams?.token as string | undefined;
+        if (!token) {
+          setValidationError(t("openIdNoToken"));
+          setLoading(false);
+          return;
+        }
 
-      await saveLoginAndRedirect(url, token);
-    });
+        await saveLoginAndRedirect(url, token);
+      },
+      { silenceNetwork: false },
+    );
     setLoading(false);
   }
 

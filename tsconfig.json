@@ -7,5 +7,5 @@
       "@/*": ["src/*"]
     }
   },
-  "include": ["./uniwind-types.d.ts"]
+  "include": ["**/*.ts", "**/*.tsx", "./uniwind-types.d.ts"]
 }

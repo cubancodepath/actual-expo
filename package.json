@@ -68,6 +68,7 @@
     "handlebars": "^4.7.8",
     "heroui-native": "^1.0.0",
     "i18next": "^25.8.18",
+    "lucide-react-native": "^0.577.0",
     "murmurhash": "^2.0.1",
     "protobufjs": "^8.0.0",
     "react": "19.2.0",

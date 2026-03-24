@@ -32,11 +32,12 @@ export function LoginActionButton({
     );
   }
 
-  const config = {
-    idle: { label: t("continue"), onPress: onProbe, isDisabled: false },
-    password: { label: t("signIn"), onPress: onPasswordLogin, isDisabled: disabled || loading },
-    openid: { label: t("signInWithOpenId"), onPress: onOpenIdLogin, isDisabled: loading },
-  }[step] ?? { label: t("continue"), onPress: onProbe, isDisabled: false };
+  const config =
+    step === "password"
+      ? { label: t("signIn"), onPress: onPasswordLogin, isDisabled: disabled || loading }
+      : step === "openid"
+        ? { label: t("signInWithOpenId"), onPress: onOpenIdLogin, isDisabled: loading }
+        : { label: t("continue"), onPress: onProbe, isDisabled: false };
 
   return (
     <Button variant="primary" size="lg" onPress={config.onPress} isDisabled={config.isDisabled}>

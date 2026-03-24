@@ -3,10 +3,11 @@ import type { ComponentProps } from "react";
 import { cn } from "@/lib/cn";
 import Icon from "@/ui/atoms/Icon";
 import type { IconName } from "@/ui/atoms/Icon";
+import type { ThemeColor } from "@/ui/types";
 
 type AlertVariant = "info" | "success" | "warning" | "error";
 
-const variantConfig: Record<AlertVariant, { status: string; icon: IconName }> = {
+const variantConfig: Record<AlertVariant, { status: ThemeColor; icon: IconName }> = {
   info: { status: "accent", icon: "Info" },
   success: { status: "success", icon: "CircleCheck" },
   warning: { status: "warning", icon: "TriangleAlert" },

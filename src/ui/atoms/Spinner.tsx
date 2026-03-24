@@ -1,9 +1,10 @@
 import { Spinner as HeroSpinner } from "heroui-native";
 import type { ComponentProps } from "react";
 import { useThemeColor } from "heroui-native";
+import type { ThemeColor } from "@/ui/types";
 
 type SpinnerProps = Omit<ComponentProps<typeof HeroSpinner>, "color"> & {
-  themeColor?: string;
+  themeColor?: ThemeColor;
   color?: string;
 };
 

@@ -1,10 +1,13 @@
 import * as icons from "lucide-react-native/icons";
 import { useThemeColor } from "heroui-native";
+import type { ThemeColor } from "@/ui/types";
+
+export type IconName = keyof typeof icons;
 
 interface IconProps {
-  name: keyof typeof icons;
+  name: IconName;
   color?: string;
-  themeColor?: string;
+  themeColor?: ThemeColor;
   size?: number;
   strokeWidth?: number;
 }

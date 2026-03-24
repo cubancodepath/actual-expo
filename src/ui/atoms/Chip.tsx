@@ -19,4 +19,3 @@ function ChipLabel({ className, ...props }: ComponentProps<typeof HeroChip.Label
 }
 
 Chip.Label = ChipLabel;
-Chip.CloseButton = HeroChip.CloseButton;

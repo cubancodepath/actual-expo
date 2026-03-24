@@ -1,10 +1,11 @@
 import Svg, { Path } from "react-native-svg";
 import { useThemeColor } from "heroui-native";
+import type { ThemeColor } from "@/ui/types";
 
 type ActualLogoProps = {
   size?: number;
   color?: string;
-  themeColor?: string;
+  themeColor?: ThemeColor;
 };
 
 export function ActualLogo({ size = 100, color, themeColor = "accent" }: ActualLogoProps) {

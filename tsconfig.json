@@ -6,5 +6,6 @@
     "paths": {
       "@/*": ["src/*"]
     }
-  }
+  },
+  "include": ["./uniwind-types.d.ts"]
 }

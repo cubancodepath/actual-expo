@@ -1,0 +1,318 @@
+@import 'tailwindcss';
+@import 'uniwind';
+@import 'heroui-native/styles';
+
+@source './node_modules/heroui-native/lib';
+
+/* ─── Raw Palette ─── */
+@theme {
+  /* Electric Indigo */
+  --color-electric-indigo-50: #f0e9fb;
+  --color-electric-indigo-100: #e1d4f7;
+  --color-electric-indigo-200: #c4a8f0;
+  --color-electric-indigo-300: #a67de8;
+  --color-electric-indigo-400: #8852e0;
+  --color-electric-indigo-500: #6b26d9;
+  --color-electric-indigo-600: #551fad;
+  --color-electric-indigo-700: #401782;
+  --color-electric-indigo-800: #2b0f57;
+  --color-electric-indigo-900: #15082b;
+  --color-electric-indigo-950: #0f051e;
+
+  /* Watermelon */
+  --color-watermelon-50: #fde8ec;
+  --color-watermelon-100: #fbd0da;
+  --color-watermelon-200: #f6a2b4;
+  --color-watermelon-300: #f2738f;
+  --color-watermelon-400: #ee4469;
+  --color-watermelon-500: #e91644;
+  --color-watermelon-600: #bb1136;
+  --color-watermelon-700: #8c0d29;
+  --color-watermelon-800: #5d091b;
+  --color-watermelon-900: #2f040e;
+  --color-watermelon-950: #210309;
+
+  /* Golden Pollen */
+  --color-golden-pollen-50: #fff9e5;
+  --color-golden-pollen-100: #fff3cc;
+  --color-golden-pollen-200: #ffe799;
+  --color-golden-pollen-300: #ffdb66;
+  --color-golden-pollen-400: #ffcf33;
+  --color-golden-pollen-500: #ffc300;
+  --color-golden-pollen-600: #cc9c00;
+  --color-golden-pollen-700: #997500;
+  --color-golden-pollen-800: #664e00;
+  --color-golden-pollen-900: #332700;
+  --color-golden-pollen-950: #241b00;
+
+  /* Carbon Black */
+  --color-carbon-black-50: #f1f2f3;
+  --color-carbon-black-100: #e3e4e8;
+  --color-carbon-black-200: #c8cad0;
+  --color-carbon-black-300: #acafb9;
+  --color-carbon-black-400: #9194a1;
+  --color-carbon-black-500: #75798a;
+  --color-carbon-black-600: #5e616e;
+  --color-carbon-black-700: #464953;
+  --color-carbon-black-800: #2f3137;
+  --color-carbon-black-900: #17181c;
+  --color-carbon-black-950: #101113;
+
+  /* Jungle Green */
+  --color-jungle-green-50: #e7fdf4;
+  --color-jungle-green-100: #d0fbe8;
+  --color-jungle-green-200: #a1f7d2;
+  --color-jungle-green-300: #71f4bb;
+  --color-jungle-green-400: #42f0a5;
+  --color-jungle-green-500: #13ec8e;
+  --color-jungle-green-600: #0fbd72;
+  --color-jungle-green-700: #0b8e55;
+  --color-jungle-green-800: #085e39;
+  --color-jungle-green-900: #042f1c;
+  --color-jungle-green-950: #032114;
+
+  /* ─── Spacing (base 4px) ─── */
+  --spacing-0.5: 2px;
+  --spacing-1: 4px;
+  --spacing-1.5: 6px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-5: 20px;
+  --spacing-6: 24px;
+  --spacing-8: 32px;
+  --spacing-10: 40px;
+  --spacing-12: 48px;
+  --spacing-16: 64px;
+  --spacing-20: 80px;
+
+  /* ─── Border Radius ─── */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+
+  /* ─── Typography ─── */
+  --font-sans: 'Outfit-Regular';
+  --font-sans-medium: 'Outfit-Medium';
+  --font-sans-semibold: 'Outfit-SemiBold';
+  --font-sans-bold: 'Outfit-Bold';
+
+  /* HeroUI font tokens */
+  --font-normal: 'Outfit-Regular';
+  --font-medium: 'Outfit-Medium';
+  --font-semibold: 'Outfit-SemiBold';
+
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 16px;
+  --text-lg: 18px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-3xl: 30px;
+  --text-4xl: 36px;
+  --text-5xl: 48px;
+  --text-6xl: 60px;
+  --text-7xl: 72px;
+
+  /* ─── Font Weight ─── */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* ─── Line Height ─── */
+  --leading-none: 1;
+  --leading-tight: 1.25;
+  --leading-snug: 1.375;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+  --leading-loose: 2;
+
+  /* ─── Border Width ─── */
+  --border-width-0: 0px;
+  --border-width-1: 1px;
+  --border-width-2: 2px;
+  --border-width-4: 4px;
+
+  /* ─── Opacity ─── */
+  --opacity-0: 0;
+  --opacity-5: 0.05;
+  --opacity-10: 0.1;
+  --opacity-20: 0.2;
+  --opacity-30: 0.3;
+  --opacity-50: 0.5;
+  --opacity-70: 0.7;
+  --opacity-80: 0.8;
+  --opacity-90: 0.9;
+  --opacity-100: 1;
+
+  /* ─── Sizing (fixed recurring) ─── */
+  --size-icon-sm: 16px;
+  --size-icon: 20px;
+  --size-icon-lg: 24px;
+  --size-avatar-sm: 32px;
+  --size-avatar: 40px;
+  --size-avatar-lg: 56px;
+  --size-touch: 44px;
+
+  /* ─── Box Shadows ─── */
+  --shadow-none: 0 0 0 0 transparent;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* ─── Semantic Tokens (bare vars for HeroUI + --color-* for Tailwind) ─── */
+@layer theme {
+  :root {
+    @variant light {
+      /* Base — HeroUI reads these bare vars */
+      --background: #f1f2f3;
+      --foreground: #101113;
+      --muted: #9194a1;
+
+      /* Surface */
+      --surface: #ffffff;
+      --surface-foreground: #101113;
+      --surface-secondary: #f1f2f3;
+      --surface-secondary-foreground: #101113;
+      --surface-tertiary: #e3e4e8;
+      --surface-tertiary-foreground: #101113;
+
+      /* Overlay */
+      --overlay: #ffffff;
+      --overlay-foreground: #101113;
+
+      /* Default */
+      --default: #e3e4e8;
+      --default-foreground: #101113;
+
+      /* Accent — Electric Indigo (HeroUI primary buttons use this) */
+      --accent: #6b26d9;
+      --accent-foreground: #ffffff;
+
+      /* Status — Watermelon */
+      --danger: #e91644;
+      --danger-foreground: #ffffff;
+
+      /* Status — Jungle Green */
+      --success: #0fbd72;
+      --success-foreground: #101113;
+
+      /* Status — Golden Pollen */
+      --warning: #ffc300;
+      --warning-foreground: #101113;
+
+      /* Fields */
+      --field-background: #ffffff;
+      --field-foreground: #101113;
+      --field-placeholder: #9194a1;
+      --field-border: transparent;
+
+      /* Segment */
+      --segment: #ffffff;
+      --segment-foreground: #101113;
+
+      /* Utility */
+      --border: #c8cad0;
+      --separator: #e3e4e8;
+      --focus: var(--accent);
+      --link: #101113;
+
+      /* Shadows */
+      --surface-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.04), 0 1px 2px 0 rgba(0, 0, 0, 0.06), 0 0 1px 0 rgba(0, 0, 0, 0.06);
+      --overlay-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.02), 0 -6px 12px 0 rgba(0, 0, 0, 0.01), 0 14px 28px 0 rgba(0, 0, 0, 0.03);
+      --field-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.04), 0 1px 2px 0 rgba(0, 0, 0, 0.06), 0 0 1px 0 rgba(0, 0, 0, 0.06);
+
+      /* ─── App-specific tokens (not in HeroUI) ─── */
+      --color-primary: #6b26d9;
+      --color-primary-light: #c4a8f0;
+      --color-on-primary: #ffffff;
+      --color-card: #ffffff;
+      --color-card-elevated: #ffffff;
+      --color-border-light: #e3e4e8;
+      --color-foreground-secondary: #5e616e;
+      --color-danger-light: #f6a2b4;
+      --color-on-danger: #ffffff;
+      --color-success-light: #a1f7d2;
+      --color-warning-light: #ffe799;
+    }
+
+    @variant dark {
+      /* Base */
+      --background: #101113;
+      --foreground: #f1f2f3;
+      --muted: #75798a;
+
+      /* Surface */
+      --surface: #17181c;
+      --surface-foreground: #f1f2f3;
+      --surface-secondary: #2f3137;
+      --surface-secondary-foreground: #f1f2f3;
+      --surface-tertiary: #464953;
+      --surface-tertiary-foreground: #f1f2f3;
+
+      /* Overlay */
+      --overlay: #17181c;
+      --overlay-foreground: #f1f2f3;
+
+      /* Default */
+      --default: #2f3137;
+      --default-foreground: #f1f2f3;
+
+      /* Accent — Electric Indigo */
+      --accent: #8852e0;
+      --accent-foreground: #ffffff;
+
+      /* Status — Watermelon */
+      --danger: #ee4469;
+      --danger-foreground: #ffffff;
+
+      /* Status — Jungle Green */
+      --success: #13ec8e;
+      --success-foreground: #101113;
+
+      /* Status — Golden Pollen */
+      --warning: #ffcf33;
+      --warning-foreground: #101113;
+
+      /* Fields */
+      --field-background: #17181c;
+      --field-foreground: #f1f2f3;
+      --field-placeholder: #75798a;
+      --field-border: transparent;
+
+      /* Segment */
+      --segment: #2f3137;
+      --segment-foreground: #f1f2f3;
+
+      /* Utility */
+      --border: #464953;
+      --separator: #2f3137;
+      --focus: var(--accent);
+      --link: #f1f2f3;
+
+      /* Shadows */
+      --surface-shadow: 0 0 0 0 transparent inset;
+      --overlay-shadow: 0 0 1px 0 rgba(255, 255, 255, 0.2) inset;
+      --field-shadow: 0 0 0 0 transparent inset;
+
+      /* ─── App-specific tokens (not in HeroUI) ─── */
+      --color-primary: #8852e0;
+      --color-primary-light: #401782;
+      --color-on-primary: #ffffff;
+      --color-card: #17181c;
+      --color-card-elevated: #2f3137;
+      --color-border-light: #2f3137;
+      --color-foreground-secondary: #9194a1;
+      --color-danger-light: #5d091b;
+      --color-on-danger: #ffffff;
+      --color-success-light: #085e39;
+      --color-warning-light: #664e00;
+    }
+  }
+}

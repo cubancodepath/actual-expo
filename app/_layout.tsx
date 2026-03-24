@@ -1,3 +1,4 @@
+import "../global.css";
 import "@/i18n/config";
 import * as Sentry from "@sentry/react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -22,6 +23,14 @@ import { ensureBudgetsDir, budgetExists } from "@/services/budgetMetadata";
 import { openBudget } from "@/services/budgetfiles";
 import { updateAppBadge } from "@/lib/badge";
 import { syncShortcutCache } from "@/lib/syncShortcutCache";
+import { useFonts } from "expo-font";
+import {
+  Outfit_400Regular,
+  Outfit_500Medium,
+  Outfit_600SemiBold,
+  Outfit_700Bold,
+} from "@expo-google-fonts/outfit";
+import { HeroUINativeProvider } from "heroui-native";
 import { UndoToast } from "@/presentation/components";
 import { ErrorBoundary } from "@/presentation/components/ErrorBoundary";
 import { useShakeUndo } from "@/presentation/hooks/useShakeUndo";
@@ -57,6 +66,13 @@ function RootLayout() {
   const isLocalOnly = usePrefsStore((s) => s.isLocalOnly);
   const [ready, setReady] = useState(false);
   const handledTimestamp = useRef(0);
+
+  const [fontsLoaded] = useFonts({
+    "Outfit-Regular": Outfit_400Regular,
+    "Outfit-Medium": Outfit_500Medium,
+    "Outfit-SemiBold": Outfit_600SemiBold,
+    "Outfit-Bold": Outfit_700Bold,
+  });
 
   useEffect(() => {
     if (ref) {
@@ -240,30 +256,32 @@ function RootLayout() {
 
   useShakeUndo();
 
-  if (!ready) return null;
+  if (!ready || !fontsLoaded) return null;
 
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <GestureHandlerRootView style={{ flex: 1 }}>
-          <KeyboardProvider>
-            <NavigationThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-              <ThemeProvider>
-                <Stack>
-                  <Stack.Protected guard={!hasToken && !isLocalOnly}>
-                    <Stack.Screen name="(public)" options={{ headerShown: false }} />
-                  </Stack.Protected>
-                  <Stack.Protected guard={hasToken && !isConfigured}>
-                    <Stack.Screen name="(files)" options={{ headerShown: false }} />
-                  </Stack.Protected>
-                  <Stack.Protected guard={isConfigured}>
-                    <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-                  </Stack.Protected>
-                </Stack>
-                <UndoToast />
-              </ThemeProvider>
-            </NavigationThemeProvider>
-          </KeyboardProvider>
+          <HeroUINativeProvider>
+            <KeyboardProvider>
+              <NavigationThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+                <ThemeProvider>
+                  <Stack>
+                    <Stack.Protected guard={!hasToken && !isLocalOnly}>
+                      <Stack.Screen name="(public)" options={{ headerShown: false }} />
+                    </Stack.Protected>
+                    <Stack.Protected guard={hasToken && !isConfigured}>
+                      <Stack.Screen name="(files)" options={{ headerShown: false }} />
+                    </Stack.Protected>
+                    <Stack.Protected guard={isConfigured}>
+                      <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                    </Stack.Protected>
+                  </Stack>
+                  <UndoToast />
+                </ThemeProvider>
+              </NavigationThemeProvider>
+            </KeyboardProvider>
+          </HeroUINativeProvider>
         </GestureHandlerRootView>
       </QueryClientProvider>
     </ErrorBoundary>

@@ -9,10 +9,10 @@ import { Icon } from "@/presentation/components/atoms/Icon";
 import * as Haptics from "expo-haptics";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { useCategories } from "@/presentation/hooks/useCategories";
-import { moveCategory, moveCategoryGroup } from "@/categories";
+import { moveCategory, moveCategoryGroup } from "@core/categories";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
-import type { Category, CategoryGroup } from "@/categories/types";
+import type { Category, CategoryGroup } from "@core/categories/types";
 
 type GroupWithCats = {
   id: string;

@@ -40,8 +40,8 @@ import {
   getBudgetDir,
   writeMetadata,
 } from "../../../services/budgetMetadata";
-import { openDatabase } from "../../../db";
-import { loadClock, fullSync } from "../../../sync";
+import { openDatabase } from "@core/db";
+import { loadClock, fullSync } from "@core/sync";
 import { uploadBudget } from "../../../services/budgetfiles";
 import type { Theme } from "../../../theme";
 
@@ -379,7 +379,7 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
 
     // Close the raw DB opened during seed and do a proper openBudget
     // which initializes spreadsheet, pre-fetches queries, etc.
-    const { closeDatabase } = await import("../../../db");
+    const { closeDatabase } = await import("@core/db");
     await closeDatabase();
     const { openBudget } = await import("../../../services/budgetfiles");
     await openBudget(budgetIdRef.current);

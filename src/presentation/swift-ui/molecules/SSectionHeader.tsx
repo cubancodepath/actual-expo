@@ -18,7 +18,7 @@ import { SAmount } from "../atoms/SAmount";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { usePrivacyStore } from "@/stores/privacyStore";
 import { useSheetValueNumber } from "@/presentation/hooks/useSheetValue";
-import { envelopeBudget } from "@/spreadsheet/bindings";
+import { envelopeBudget } from "@core/spreadsheet/bindings";
 import { useTranslation } from "react-i18next";
 
 // Column widths — minimumScaleFactor handles overflow

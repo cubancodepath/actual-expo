@@ -13,7 +13,7 @@ import { GlassButton } from "@/presentation/components/atoms/GlassButton";
 import { SearchBar } from "@/presentation/components/molecules/SearchBar";
 import { useNearbyPayees } from "@/presentation/hooks/useNearbyPayees";
 import { useLocationPermission } from "@/presentation/hooks/useLocationPermission";
-import { formatDistance } from "@/payee-locations/location-utils";
+import { formatDistance } from "@core/payee-locations/location-utils";
 import type { Theme } from "@/theme";
 
 export default function PayeePickerScreen() {

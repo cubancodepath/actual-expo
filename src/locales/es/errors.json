@@ -1,8 +1,8 @@
 {
-  "networkFailure": "No se pudo conectar al servidor. Verifica tu conexión a internet e inténtalo de nuevo.",
-  "invalidPassword": "Contraseña incorrecta. Inténtalo de nuevo.",
-  "sessionExpired": "Tu sesión expiró. Vuelve a iniciar sesión.",
-  "serverError": "Algo salió mal en el servidor. Inténtalo de nuevo.",
+  "networkFailure": "No pudimos conectar con tu servidor. Revisa tu conexión e inténtalo de nuevo.",
+  "invalidPassword": "Esa contraseña no funcionó. Inténtalo de nuevo.",
+  "sessionExpired": "Tu sesión expiró. Vuelve a entrar.",
+  "serverError": "Algo salió mal en el servidor. Inténtalo en un momento.",
   "syncFailed": "La sincronización falló. Tus datos están seguros localmente — lo intentaremos de nuevo pronto.",
   "encryptionKeyMissing": "Este presupuesto está protegido con contraseña. Ciérralo y ábrelo de nuevo para escribirla.",
   "databaseUnavailable": "No se pudo acceder a tus datos. Reinicia la aplicación e inténtalo de nuevo.",

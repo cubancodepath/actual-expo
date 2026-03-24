@@ -24,7 +24,7 @@ import {
   useAccountBalance,
   useAccountGroupBalance,
 } from "@/presentation/hooks/useAccounts";
-import { updateAccount, groupAccounts, type AccountGroup } from "@/accounts";
+import { updateAccount, groupAccounts, type AccountGroup } from "@core/accounts";
 import { useRefreshControl } from "@/presentation/hooks/useRefreshControl";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { EmptyState } from "@/presentation/components/molecules/EmptyState";
@@ -33,7 +33,7 @@ import { useUndoStore } from "@/stores/undoStore";
 import { usePrivacyStore } from "@/stores/privacyStore";
 import { usePrefsStore } from "@/stores/prefsStore";
 import { useTranslation } from "react-i18next";
-import type { Account } from "@/accounts/types";
+import type { Account } from "@core/accounts/types";
 import {
   ActualList,
   ActualSection,

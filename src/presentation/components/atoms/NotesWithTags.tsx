@@ -2,8 +2,8 @@ import { View } from "react-native";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Text } from "./Text";
 import { TagPill } from "./TagPill";
-import { parseNotes } from "../../../tags";
-import type { Tag } from "../../../tags/types";
+import { parseNotes } from "@core/tags";
+import type { Tag } from "@core/tags/types";
 
 export interface NotesWithTagsProps {
   notes: string;

@@ -10,7 +10,7 @@ import {
   duplicateTransaction,
   toggleCleared,
   updateTransaction,
-} from "@/transactions";
+} from "@core/transactions";
 import { useAccounts, useAccountBalance } from "@/presentation/hooks/useAccounts";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
 import { EmptyState } from "@/presentation/components";
@@ -42,14 +42,14 @@ import {
   postTransactionForScheduleToday,
   deleteSchedule,
   updateSchedule,
-} from "@/schedules";
+} from "@core/schedules";
 import { useTransactions } from "@/presentation/hooks/useTransactions";
 import { useSelectionMode } from "@/presentation/hooks/useSelectionMode";
 import { useTransactionBatchActions } from "@/presentation/hooks/useTransactionBatchActions";
 import { usePreviewTransactions } from "@/presentation/hooks/usePreviewTransactions";
 import { useLiveQuery } from "@/presentation/hooks/useQuery";
-import { q } from "@/queries";
-import type { TransactionDisplay } from "@/transactions/types";
+import { q } from "@core/queries";
+import type { TransactionDisplay } from "@core/transactions/types";
 
 export default function AccountTransactionsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

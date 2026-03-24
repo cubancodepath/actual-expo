@@ -11,9 +11,12 @@ import { useSchedules } from "./useSchedules";
 import { usePayees } from "./usePayees";
 import { useCategories } from "./useCategories";
 import { useAccounts } from "./useAccounts";
-import { computePreviewTransactions, type PreviewTransaction } from "@/schedules/computePreview";
+import {
+  computePreviewTransactions,
+  type PreviewTransaction,
+} from "@core/schedules/computePreview";
 
-export type { PreviewTransaction } from "@/schedules/computePreview";
+export type { PreviewTransaction } from "@core/schedules/computePreview";
 
 export function usePreviewTransactions(opts?: {
   accountId?: string;

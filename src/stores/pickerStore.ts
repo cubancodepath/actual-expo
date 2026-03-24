@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { RecurConfig } from "../schedules/types";
+import type { RecurConfig } from "@core/schedules/types";
 
 type PayeeSelection = { id: string | null; name: string; transferAcct?: string | null };
 type CategorySelection = { id: string | null; name: string };

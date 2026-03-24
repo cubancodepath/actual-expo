@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { q } from "@/queries";
+import { q } from "@core/queries";
 import { useLiveQuery } from "../useQuery";
 import { addMonths } from "@/lib/date";
 

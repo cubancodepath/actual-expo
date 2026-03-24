@@ -8,11 +8,11 @@
 
 import { useEffect, useMemo } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { listen } from "@/sync/syncEvents";
-import { transactionQueries } from "@/transactions/queries";
+import { listen } from "@core/sync/syncEvents";
+import { transactionQueries } from "@core/transactions/queries";
 import { usePrefsStore } from "@/stores/prefsStore";
-import type { Query } from "@/queries/query";
-import type { TransactionDisplay } from "@/transactions/types";
+import type { Query } from "@core/queries/query";
+import type { TransactionDisplay } from "@core/transactions/types";
 
 const SYNC_TABLES = new Set(["transactions", "category_mapping", "payee_mapping"]);
 

@@ -8,9 +8,9 @@ import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { Text, Card, Divider } from "@/presentation/components";
 import { GlassButton } from "@/presentation/components/atoms/GlassButton";
 import { usePickerStore } from "@/stores/pickerStore";
-import { getRecurringDescription } from "@/schedules";
+import { getRecurringDescription } from "@core/schedules";
 import { todayStr } from "@/lib/date";
-import type { RecurConfig } from "@/schedules/types";
+import type { RecurConfig } from "@core/schedules/types";
 
 // ---------------------------------------------------------------------------
 // Presets

@@ -12,17 +12,17 @@
 
 import { useCallback } from "react";
 import { create } from "zustand";
-import { listen } from "@/sync/syncEvents";
+import { listen } from "@core/sync/syncEvents";
 import {
   getAllPreferences,
   setPreference,
   setArbitraryPref,
   getAllFeatureFlags,
   setFeatureFlag,
-} from "@/preferences";
-import { PREFERENCE_DEFAULTS, type PreferenceKey } from "@/preferences/types";
-import { FEATURE_FLAG_DEFAULTS, type FeatureFlag } from "@/preferences/featureFlags";
-import { applyFormatConfig } from "@/preferences/formatConfig";
+} from "@core/preferences";
+import { PREFERENCE_DEFAULTS, type PreferenceKey } from "@core/preferences/types";
+import { FEATURE_FLAG_DEFAULTS, type FeatureFlag } from "@core/preferences/featureFlags";
+import { applyFormatConfig } from "@core/preferences/formatConfig";
 
 // ---------------------------------------------------------------------------
 // Internal Zustand store (global cache for all synced prefs)
@@ -49,7 +49,7 @@ export const useSyncedPrefsStore = create<SyncedPrefsState>((set) => ({
       getAllPreferences(),
       getAllFeatureFlags(),
       // Load ALL preferences (including per-account keys like hide-cleared-xxx)
-      import("@/db").then(({ runQuery }) =>
+      import("@core/db").then(({ runQuery }) =>
         runQuery<{ id: string; value: string }>("SELECT id, value FROM preferences"),
       ),
     ]);

@@ -20,12 +20,12 @@ import {
   ALL_FEATURE_FLAGS,
   FEATURE_FLAG_LABELS,
   type FeatureFlag,
-} from "@/preferences/featureFlags";
+} from "@core/preferences/featureFlags";
 import {
   DATE_FORMAT_OPTIONS,
   NUMBER_FORMAT_OPTIONS,
   DAY_OF_WEEK_OPTIONS,
-} from "@/preferences/types";
+} from "@core/preferences/types";
 import { currencies, getCurrency } from "@/lib/currencies";
 import {
   deleteBudget,

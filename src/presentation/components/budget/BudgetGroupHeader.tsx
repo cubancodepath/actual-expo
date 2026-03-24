@@ -3,8 +3,8 @@ import { useTheme } from "../../providers/ThemeProvider";
 import { Text } from "../atoms/Text";
 import { Amount } from "../atoms/Amount";
 import { useSheetValueNumber } from "../../hooks/useSheetValue";
-import { envelopeBudget } from "../../../spreadsheet/bindings";
-import type { BudgetGroupData } from "../../../budgets/types";
+import { envelopeBudget } from "@core/spreadsheet/bindings";
+import type { BudgetGroupData } from "@core/budgets/types";
 
 interface BudgetGroupHeaderProps {
   group: BudgetGroupData;

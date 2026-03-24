@@ -9,11 +9,15 @@ import { Text, Card, SectionHeader } from "@/presentation/components";
 import { ListItem } from "@/presentation/components/molecules/ListItem";
 import { GlassButton } from "@/presentation/components/atoms/GlassButton";
 import { usePickerStore } from "@/stores/pickerStore";
-import { getRecurringDescription } from "@/schedules";
-import { getUpcomingDates, dayFromDate, getDateWithSkippedWeekend } from "@/schedules/recurrence";
+import { getRecurringDescription } from "@core/schedules";
+import {
+  getUpcomingDates,
+  dayFromDate,
+  getDateWithSkippedWeekend,
+} from "@core/schedules/recurrence";
 import { todayStr } from "@/lib/date";
 import { formatDateLong, strToInt } from "@/lib/date";
-import type { RecurConfig } from "@/schedules/types";
+import type { RecurConfig } from "@core/schedules/types";
 
 // ---------------------------------------------------------------------------
 // Constants

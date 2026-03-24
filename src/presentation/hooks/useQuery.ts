@@ -17,10 +17,10 @@
  */
 
 import { useEffect, useMemo, useRef, useState, type DependencyList } from "react";
-import type { Query } from "@/queries/query";
-import { liveQuery, type LiveQueryInstance } from "@/queries/liveQuery";
-import { getQueryCache } from "@/queries/queryCache";
-import { pagedQuery, type PagedQueryInstance } from "@/queries/pagedQuery";
+import type { Query } from "@core/queries/query";
+import { liveQuery, type LiveQueryInstance } from "@core/queries/liveQuery";
+import { getQueryCache } from "@core/queries/queryCache";
+import { pagedQuery, type PagedQueryInstance } from "@core/queries/pagedQuery";
 import { usePrefsStore } from "@/stores/prefsStore";
 
 // ---------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { fullSync } from "../sync";
+import { fullSync } from "@core/sync";
 import { toAppError } from "../errors";
 import type { AppError } from "../errors";
 

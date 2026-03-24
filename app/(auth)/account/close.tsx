@@ -4,17 +4,17 @@ import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Icon } from "@/presentation/components/atoms/Icon";
 
 import { useAccounts } from "@/presentation/hooks/useAccounts";
-import { closeAccount } from "@/accounts";
+import { closeAccount } from "@core/accounts";
 import { useCategories } from "@/presentation/hooks/useCategories";
 import { useUndoStore } from "@/stores/undoStore";
-import { getAccountProperties, groupAccounts } from "@/accounts";
+import { getAccountProperties, groupAccounts } from "@core/accounts";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
 import { formatBalance } from "@/lib/format";
 import { Divider } from "@/presentation/components/atoms/Divider";
-import type { Account } from "@/accounts/types";
-import type { Category, CategoryGroup } from "@/categories/types";
+import type { Account } from "@core/accounts/types";
+import type { Category, CategoryGroup } from "@core/categories/types";
 import { useTranslation } from "react-i18next";
 import type { Theme } from "@/theme";
 

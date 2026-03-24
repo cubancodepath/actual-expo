@@ -14,12 +14,12 @@ import {
 import { Icon } from "@/presentation/components/atoms/Icon";
 import { SwipeableRow } from "@/presentation/components";
 import { useSchedules } from "@/presentation/hooks/useSchedules";
-import { deleteSchedule } from "@/schedules";
+import { deleteSchedule } from "@core/schedules";
 import { usePayees } from "@/presentation/hooks/usePayees";
 import { useAccounts } from "@/presentation/hooks/useAccounts";
 import { useUndoStore } from "@/stores/undoStore";
-import { getStatus, getScheduledAmount, getRecurringDescription } from "@/schedules";
-import type { Schedule, ScheduleStatus, RecurConfig } from "@/schedules/types";
+import { getStatus, getScheduledAmount, getRecurringDescription } from "@core/schedules";
+import type { Schedule, ScheduleStatus, RecurConfig } from "@core/schedules/types";
 import type { Theme } from "@/theme";
 
 type ScheduleSection = {

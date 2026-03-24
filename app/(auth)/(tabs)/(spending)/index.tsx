@@ -10,7 +10,7 @@ import {
   duplicateTransaction,
   toggleCleared,
   updateTransaction,
-} from "@/transactions";
+} from "@core/transactions";
 import { usePrivacyStore } from "@/stores/privacyStore";
 import { useUndoStore } from "@/stores/undoStore";
 import { useCommonMenuActions } from "@/presentation/hooks/useCommonMenuItems";
@@ -38,14 +38,14 @@ import {
   postTransactionForScheduleToday,
   deleteSchedule,
   updateSchedule,
-} from "@/schedules";
+} from "@core/schedules";
 import { useTransactions } from "@/presentation/hooks/useTransactions";
-import { q } from "@/queries";
+import { q } from "@core/queries";
 import { useSelectionMode } from "@/presentation/hooks/useSelectionMode";
 import { usePreviewTransactions } from "@/presentation/hooks/usePreviewTransactions";
 import { useLiveQuery } from "@/presentation/hooks/useQuery";
 import { useTransactionBatchActions } from "@/presentation/hooks/useTransactionBatchActions";
-import type { TransactionDisplay } from "@/transactions/types";
+import type { TransactionDisplay } from "@core/transactions/types";
 
 // ---------------------------------------------------------------------------
 // Screen

@@ -14,11 +14,11 @@ import { SymbolView } from "expo-symbols";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { useCategories } from "@/presentation/hooks/useCategories";
-import { deleteCategory as deleteCategoryFn, deleteCategoryGroup } from "@/categories";
+import { deleteCategory as deleteCategoryFn, deleteCategoryGroup } from "@core/categories";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
-import { sheetForMonth, envelopeBudget } from "@/spreadsheet/bindings";
-import { getSpreadsheet } from "@/spreadsheet/instance";
-import { inferGoalFromDef, parseGoalDef } from "@/goals";
+import { sheetForMonth, envelopeBudget } from "@core/spreadsheet/bindings";
+import { getSpreadsheet } from "@core/spreadsheet/instance";
+import { inferGoalFromDef, parseGoalDef } from "@core/goals";
 import { useUndoStore } from "@/stores/undoStore";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Amount } from "@/presentation/components/atoms/Amount";
@@ -26,10 +26,10 @@ import { Button } from "@/presentation/components/atoms/Button";
 import { SwipeableRow } from "@/presentation/components/molecules/SwipeableRow";
 import { GlassButton } from "@/presentation/components/atoms/GlassButton";
 import { RowSeparator } from "@/presentation/components/atoms/RowSeparator";
-import { describeTemplate, translateDescription } from "@/goals/describe";
+import { describeTemplate, translateDescription } from "@core/goals/describe";
 import i18n from "@/i18n/config";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
-import type { Category, CategoryGroup } from "@/categories/types";
+import type { Category, CategoryGroup } from "@core/categories/types";
 
 // ---------- Section types ----------
 

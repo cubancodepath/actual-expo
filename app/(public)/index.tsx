@@ -1,11 +1,11 @@
 import { useCallback, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
+  Text,
   View,
 } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -15,7 +15,6 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import { Input } from "@/presentation/components/atoms/Input";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import Constants from "expo-constants";
@@ -28,20 +27,14 @@ import {
 } from "@/services/authService";
 import { getServerInfo } from "@/services/serverInfo";
 import { usePrefsStore } from "@/stores/prefsStore";
-import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
-import { Text } from "@/presentation/components/atoms/Text";
-import { Button } from "@/presentation/components/atoms/Button";
-import { Banner } from "@/presentation/components/molecules/Banner";
+import { Button, Card, Icon, Spinner, TextField, Input, Label, FieldError } from "@/ui";
 import { ErrorBanner } from "@/presentation/components/molecules/ErrorBanner";
-import { useErrorHandler } from "@/presentation/hooks/useErrorHandler";
-import type { Theme } from "@/theme";
+import { useErrorHandler } from "@/hooks/useErrorHandler";
 
 WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen() {
   const router = useRouter();
-  const theme = useTheme();
-  const styles = useThemedStyles(createStyles);
   const { setPrefs, saveToken } = usePrefsStore();
   const { t } = useTranslation("auth");
   const [serverUrl, setServerUrl] = useState("");
@@ -168,84 +161,84 @@ export default function LoginScreen() {
     dismissError();
   }
 
+  const isLocked = step !== "idle" && step !== "probing";
+
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <KeyboardAvoidingView
-      style={styles.flex}
+      className="flex-1 bg-background"
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerClassName="flex-grow px-6 pt-20 pb-12"
+        keyboardShouldPersistTaps="handled"
+      >
         <Animated.View style={contentAnimStyle}>
-          {/* Header */}
-          <View style={styles.header}>
-            <Image source={require("../../assets/splash-icon.png")} style={styles.logoImage} />
-            <Text variant="displayLg" color={theme.colors.primary} style={styles.logoText}>
+          {/* ─── Hero ─── */}
+          <View className="items-center mb-12">
+            <Image
+              source={require("../../assets/splash-icon.png")}
+              style={{ width: 100, height: 100, resizeMode: "contain" }}
+            />
+            <Text className="text-3xl font-bold text-accent mt-2">
               {Constants.expoConfig?.name ?? "Actual"}
             </Text>
-            <Text variant="bodySm" color={theme.colors.textMuted}>
-              {t("tagline")}
-            </Text>
+            <Text className="text-sm text-muted mt-1">{t("tagline")}</Text>
           </View>
 
-          {/* Form */}
-          <View style={styles.form}>
+          {/* ─── Form Card ─── */}
+          <Card className="p-5 gap-4">
             {/* Server URL */}
-            <Text variant="caption" color={theme.colors.textSecondary} style={styles.label}>
-              {t("serverUrl")}
-            </Text>
-            <View style={styles.urlRow}>
-              <Input
-                testID="server-url-input"
-                icon="serverOutline"
-                placeholder={t("serverUrlPlaceholder")}
-                value={serverUrl}
-                onChangeText={(v) => {
-                  setServerUrl(v);
-                  setStep("idle");
-                  dismissError();
-                }}
-                autoCapitalize="none"
-                autoCorrect={false}
-                keyboardType="url"
-                returnKeyType="go"
-                onSubmitEditing={step === "idle" ? handleProbe : undefined}
-                editable={step === "idle" || step === "probing"}
-                containerStyle={[
-                  styles.inputContainer,
-                  step !== "idle" && step !== "probing" && styles.inputLocked,
-                ]}
-              />
-              {step !== "idle" && step !== "probing" && (
-                <Pressable style={styles.changeBtn} onPress={handleChangeServer} hitSlop={8}>
-                  <Text variant="bodySm" color={theme.colors.primary} style={{ fontWeight: "600" }}>
-                    {t("change")}
-                  </Text>
-                </Pressable>
+            <TextField isInvalid={step === "idle" && error?.category === "validation"}>
+              <Label>{t("serverUrl")}</Label>
+              <View className="flex-row items-center gap-2">
+                <View className="flex-1">
+                  <Input
+                    testID="server-url-input"
+                    placeholder={t("serverUrlPlaceholder")}
+                    value={serverUrl}
+                    onChangeText={(v: string) => {
+                      setServerUrl(v);
+                      setStep("idle");
+                      dismissError();
+                    }}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    keyboardType="url"
+                    returnKeyType="go"
+                    onSubmitEditing={step === "idle" ? handleProbe : undefined}
+                    editable={!isLocked}
+                    className="rounded-md"
+                  />
+                </View>
+                {isLocked && (
+                  <Pressable onPress={handleChangeServer} hitSlop={8}>
+                    <Text className="text-accent text-sm font-semibold">{t("change")}</Text>
+                  </Pressable>
+                )}
+              </View>
+              {step === "idle" && error?.category === "validation" && (
+                <FieldError>{error.message}</FieldError>
               )}
-            </View>
+            </TextField>
 
             {/* Probing */}
             {step === "probing" && (
-              <View style={styles.probingRow}>
-                <ActivityIndicator size="small" color={theme.colors.primary} />
-                <Text variant="bodySm" color={theme.colors.textSecondary}>
-                  {t("connecting")}
-                </Text>
+              <View className="flex-row items-center gap-2 py-2">
+                <Spinner themeColor="accent" size="small" />
+                <Text className="text-sm text-muted">{t("connecting")}</Text>
               </View>
             )}
 
-            {/* Password form */}
+            {/* Password */}
             {step === "password" && (
-              <>
-                <Text variant="caption" color={theme.colors.textSecondary} style={styles.label}>
-                  {t("password")}
-                </Text>
+              <TextField isInvalid={error?.category === "validation"}>
+                <Label>{t("password")}</Label>
                 <Input
                   testID="password-input"
-                  icon="lockClosedOutline"
                   placeholder={t("passwordPlaceholder")}
                   value={password}
-                  onChangeText={(v) => {
+                  onChangeText={(v: string) => {
                     setPassword(v);
                     dismissError();
                   }}
@@ -254,191 +247,96 @@ export default function LoginScreen() {
                   autoFocus
                   returnKeyType="go"
                   onSubmitEditing={handlePasswordLogin}
-                  error={error?.category === "validation"}
-                  containerStyle={styles.inputContainer}
+                  className="rounded-md"
                 />
-                {error?.category === "validation" && (
-                  <Text variant="captionSm" color={theme.colors.errorText}>
-                    {error.message}
-                  </Text>
-                )}
-              </>
+                {error?.category === "validation" && <FieldError>{error.message}</FieldError>}
+              </TextField>
             )}
 
-            {/* OpenID banner */}
-            {step === "openid" && <Banner message={t("openIdRedirect")} variant="info" />}
+            {/* OpenID info */}
+            {step === "openid" && (
+              <View className="flex-row items-center gap-3 bg-accent/10 rounded-md p-3">
+                <Icon name="Globe" size={20} themeColor="accent" />
+                <Text className="text-sm text-foreground flex-1">{t("openIdRedirect")}</Text>
+              </View>
+            )}
 
-            {/* Error — password validation is inline; other errors show as Banner */}
+            {/* Error banner (non-validation errors) */}
             {!(step === "password" && error?.category === "validation") && (
               <ErrorBanner error={error} onDismiss={dismissError} />
             )}
 
             {/* Action buttons */}
             {step === "idle" && (
-              <Button
-                title={t("continue")}
-                onPress={handleProbe}
-                size="lg"
-                style={styles.actionButton}
-              />
+              <Button variant="primary" size="lg" onPress={handleProbe}>
+                {t("continue")}
+              </Button>
             )}
 
             {step === "password" && (
               <Button
-                title={t("signIn")}
-                onPress={handlePasswordLogin}
+                variant="primary"
                 size="lg"
-                loading={loading}
-                disabled={!password}
-                style={styles.actionButton}
-              />
+                onPress={handlePasswordLogin}
+                isDisabled={!password || loading}
+              >
+                {loading ? <Spinner themeColor="accent-foreground" size="small" /> : t("signIn")}
+              </Button>
             )}
 
             {step === "openid" && (
-              <Button
-                title={t("signInWithOpenId")}
-                onPress={handleOpenIdLogin}
-                size="lg"
-                loading={loading}
-                style={styles.actionButton}
-              />
+              <Button variant="primary" size="lg" onPress={handleOpenIdLogin} isDisabled={loading}>
+                {loading ? (
+                  <Spinner themeColor="accent-foreground" size="small" />
+                ) : (
+                  t("signInWithOpenId")
+                )}
+              </Button>
             )}
+          </Card>
 
-            {/* Local mode */}
+          {/* ─── Secondary Actions ─── */}
+          <Pressable
+            onPress={() => {
+              usePrefsStore.getState().setPrefs({
+                activeBudgetId: "",
+                fileId: "",
+                groupId: "",
+                encryptKeyId: undefined,
+                lastSyncedTimestamp: undefined,
+                budgetName: undefined,
+              });
+              if (!reducedMotion) {
+                contentOpacity.value = withTiming(0, { duration: 200 });
+                setTimeout(() => router.push("/(public)/local-setup"), 180);
+              } else {
+                router.push("/(public)/local-setup");
+              }
+            }}
+            className="mt-8 self-center"
+          >
+            <Text className="text-sm text-muted">{t("useWithoutServer")}</Text>
+          </Pressable>
+
+          {/* DEV links */}
+          {__DEV__ && (
             <Pressable
-              onPress={() => {
-                // Clear any stale budget state so the user doesn't auto-open an old budget
-                usePrefsStore.getState().setPrefs({
-                  activeBudgetId: "",
-                  fileId: "",
-                  groupId: "",
-                  encryptKeyId: undefined,
-                  lastSyncedTimestamp: undefined,
-                  budgetName: undefined,
-                });
-                if (!reducedMotion) {
-                  contentOpacity.value = withTiming(0, { duration: 200 });
-                  setTimeout(() => router.push("/(public)/local-setup"), 180);
-                } else {
-                  router.push("/(public)/local-setup");
-                }
-              }}
-              style={{ marginTop: 32, alignSelf: "center" }}
+              onPress={() => usePrefsStore.getState().setPrefs({ hasSeenOnboarding: false })}
+              className="mt-8 self-center"
             >
-              <Text variant="bodySm" color={theme.colors.textSecondary}>
-                {t("useWithoutServer")}
-              </Text>
+              <Text className="text-xs text-muted">{t("devReplayOnboarding")}</Text>
             </Pressable>
-
-            {/* DEV: Reset onboarding */}
-            {__DEV__ && (
-              <Pressable
-                onPress={() => {
-                  usePrefsStore.getState().setPrefs({ hasSeenOnboarding: false });
-                }}
-                style={{ marginTop: 32, alignSelf: "center" }}
-              >
-                <Text variant="caption" color={theme.colors.textMuted}>
-                  {t("devReplayOnboarding")}
-                </Text>
-              </Pressable>
-            )}
-            {__DEV__ && (
-              <Pressable
-                onPress={() => router.push("/(public)/design-system")}
-                style={{ marginTop: 12, alignSelf: "center" }}
-              >
-                <Text variant="caption" color={theme.colors.primary}>
-                  Design System
-                </Text>
-              </Pressable>
-            )}
-          </View>
+          )}
+          {__DEV__ && (
+            <Pressable
+              onPress={() => router.push("/(public)/design-system")}
+              className="mt-3 self-center"
+            >
+              <Text className="text-xs text-accent">Design System</Text>
+            </Pressable>
+          )}
         </Animated.View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
-
-const createStyles = (theme: Theme) => ({
-  flex: {
-    flex: 1,
-    backgroundColor: theme.colors.pageBackground,
-  },
-  container: {
-    flexGrow: 1,
-    paddingHorizontal: theme.spacing.xl,
-    paddingTop: 100,
-    paddingBottom: theme.spacing.xxxl,
-  },
-
-  // Header
-  header: {
-    alignItems: "center" as const,
-    marginBottom: theme.spacing.xxxl,
-  },
-  logoImage: {
-    width: 100,
-    height: 100,
-    resizeMode: "contain" as const,
-    marginBottom: theme.spacing.sm,
-  },
-  logoText: {
-    letterSpacing: -1,
-    marginBottom: theme.spacing.xs,
-  },
-
-  // Form
-  form: {
-    gap: theme.spacing.sm,
-  },
-  label: {
-    letterSpacing: 0.8,
-    fontWeight: "600" as const,
-    marginTop: theme.spacing.sm,
-    marginLeft: theme.spacing.xs,
-  },
-  inputContainer: {
-    flex: 1,
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    backgroundColor: theme.colors.inputBackground,
-    borderRadius: theme.borderRadius.full,
-    borderWidth: theme.borderWidth.default,
-    borderColor: theme.colors.inputBorder,
-    paddingHorizontal: theme.spacing.lg,
-    gap: theme.spacing.sm,
-    minHeight: 50,
-  },
-  inputLocked: {
-    opacity: 0.5,
-  },
-
-  urlRow: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    gap: theme.spacing.sm,
-  },
-  changeBtn: {
-    backgroundColor: theme.colors.buttonSecondaryBackground,
-    borderRadius: theme.borderRadius.full,
-    borderWidth: theme.borderWidth.default,
-    borderColor: theme.colors.inputBorder,
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
-    minHeight: 50,
-    justifyContent: "center" as const,
-  },
-
-  probingRow: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    gap: theme.spacing.sm,
-    marginTop: theme.spacing.sm,
-    justifyContent: "center" as const,
-  },
-
-  actionButton: {
-    marginTop: theme.spacing.lg,
-  },
-});

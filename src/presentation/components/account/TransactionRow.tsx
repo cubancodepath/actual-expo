@@ -17,8 +17,8 @@ import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Text, Amount, NotesWithTags, RowSeparator, Pill } from "..";
 import { formatAmount } from "../../../lib/format";
 import { SwipeableRow } from "../molecules/SwipeableRow";
-import type { TransactionDisplay } from "../../../transactions";
-import type { Tag } from "../../../tags/types";
+import type { TransactionDisplay } from "@core/transactions";
+import type { Tag } from "@core/tags/types";
 import type { Theme } from "../../../theme";
 
 interface TransactionRowProps {

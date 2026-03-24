@@ -7,17 +7,17 @@ import { Text } from "../atoms/Text";
 import { Amount } from "../atoms/Amount";
 import { formatPrivacyAware } from "../../../lib/format";
 import { formatCents } from "../../../lib/currency";
-import { getGoalProgress, getGoalProgressLabel } from "../../../goals/progress";
-import { computeProgressBar, type BarStatus } from "../../../goals/progressBar";
+import { getGoalProgress, getGoalProgressLabel } from "@core/goals/progress";
+import { computeProgressBar, type BarStatus } from "@core/goals/progressBar";
 import { ProgressBar } from "../atoms/ProgressBar";
 import { useFeatureFlag } from "../../../hooks/useFeatureFlag";
 import { useCursorBlink } from "../../hooks/useCursorBlink";
 import { CurrencyAmountDisplay } from "../currency-input/CurrencyAmountDisplay";
 import { useSheetValue, useSheetValueNumber } from "../../hooks/useSheetValue";
-import { envelopeBudget } from "../../../spreadsheet/bindings";
-import { inferGoalFromDef } from "../../../goals";
-import type { BudgetCategoryData } from "../../../budgets/types";
-import type { BudgetCategory } from "../../../budgets/types";
+import { envelopeBudget } from "@core/spreadsheet/bindings";
+import { inferGoalFromDef } from "@core/goals";
+import type { BudgetCategoryData } from "@core/budgets/types";
+import type { BudgetCategory } from "@core/budgets/types";
 
 /** Shared column widths for table-style alignment across header, rows, and group headers. */
 export const BUDGET_COLUMNS = {

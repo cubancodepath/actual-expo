@@ -17,8 +17,8 @@ import * as QuickActions from "expo-quick-actions";
 import i18n from "@/i18n/config";
 import { ThemeProvider } from "@/presentation/providers/ThemeProvider";
 import { usePrefsStore } from "@/stores/prefsStore";
-import { listen } from "@/sync/syncEvents";
-import { fullSync, isSwitchingBudget } from "@/sync";
+import { listen } from "@core/sync/syncEvents";
+import { fullSync, isSwitchingBudget } from "@core/sync";
 import { ensureBudgetsDir, budgetExists } from "@/services/budgetMetadata";
 import { openBudget } from "@/services/budgetfiles";
 import { updateAppBadge } from "@/lib/badge";
@@ -36,7 +36,7 @@ import { ErrorBoundary } from "@/presentation/components/ErrorBoundary";
 import { useShakeUndo } from "@/presentation/hooks/useShakeUndo";
 import { loadAllPersistedKeys } from "@/services/encryptionService";
 
-import { queryClient } from "@/queries/queryClient";
+import { queryClient } from "@core/queries/queryClient";
 
 // Keep splash screen visible until bootstrap + data pre-load completes
 SplashScreen.preventAutoHideAsync();

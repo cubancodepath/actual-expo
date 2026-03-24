@@ -3,7 +3,7 @@ import { Pressable, TextInput, View } from "react-native";
 import { Icon } from "../atoms/Icon";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Text } from "../atoms/Text";
-import type { SearchToken, StatusFilter } from "../../../transactions/types";
+import type { SearchToken, StatusFilter } from "@core/transactions/types";
 
 // ---------------------------------------------------------------------------
 // Helpers

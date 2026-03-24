@@ -8,12 +8,12 @@
  */
 
 import { useMemo } from "react";
-import { q } from "@/queries";
+import { q } from "@core/queries";
 import { useLiveQuery } from "./useQuery";
-import { getStatus } from "@/schedules/helpers";
-import { getHasTransactionsQuery, type ScheduleStatuses } from "@/schedules/status";
-import { mapScheduleRow } from "@/schedules/mapRow";
-import type { Schedule } from "@/schedules/types";
+import { getStatus } from "@core/schedules/helpers";
+import { getHasTransactionsQuery, type ScheduleStatuses } from "@core/schedules/status";
+import { mapScheduleRow } from "@core/schedules/mapRow";
+import type { Schedule } from "@core/schedules/types";
 
 export interface UseSchedulesResult {
   schedules: Schedule[];

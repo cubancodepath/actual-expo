@@ -5,13 +5,13 @@ import { useTranslation } from "react-i18next";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { useUndoStore } from "@/stores/undoStore";
-import { updateCategory, deleteCategory } from "@/categories";
+import { updateCategory, deleteCategory } from "@core/categories";
 import { useCategories } from "@/presentation/hooks/useCategories";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
 import { Input } from "@/presentation/components/atoms/Input";
-import { parseGoalDef } from "@/goals";
-import { describeTemplate, translateDescription } from "@/goals/describe";
+import { parseGoalDef } from "@core/goals";
+import { describeTemplate, translateDescription } from "@core/goals/describe";
 import i18n from "@/i18n/config";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 

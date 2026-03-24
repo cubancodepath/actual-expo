@@ -8,7 +8,7 @@ import { Text } from "@/presentation/components/atoms/Text";
 import { RowSeparator } from "@/presentation/components/atoms/RowSeparator";
 import { Button } from "@/presentation/components/atoms/Button";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
-import { first } from "@/db";
+import { first } from "@core/db";
 
 // ---------------------------------------------------------------------------
 // Parse "on <date>" from the end of a note line

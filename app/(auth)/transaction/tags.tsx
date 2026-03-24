@@ -5,14 +5,14 @@ import { Icon } from "@/presentation/components/atoms/Icon";
 import { AnimatedCheckmark } from "@/presentation/components/atoms/AnimatedCheckmark";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
 import { useTags } from "@/presentation/hooks/useTags";
-import { createTag } from "@/tags";
+import { createTag } from "@core/tags";
 import { usePickerStore } from "@/stores/pickerStore";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
 import { TagPill } from "@/presentation/components/atoms/TagPill";
 import { SearchBar } from "@/presentation/components/molecules/SearchBar";
-import { getTransactionById, updateTransaction } from "@/transactions";
-import { extractTagsFromNotes } from "@/tags";
+import { getTransactionById, updateTransaction } from "@core/transactions";
+import { extractTagsFromNotes } from "@core/tags";
 import type { Theme } from "@/theme";
 
 const TAG_COLORS = [

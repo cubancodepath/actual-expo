@@ -14,13 +14,13 @@ import { Card } from "@/presentation/components/atoms/Card";
 import { ListItem } from "@/presentation/components/molecules/ListItem";
 import { Divider } from "@/presentation/components/atoms/Divider";
 import { CurrencyInput, type CurrencyInputRef } from "@/presentation/components/currency-input";
-import { getGoalTemplates, setGoalTemplates } from "@/goals";
-import { updateGoalIndicator } from "@/goals/apply";
-import { amountToInteger, integerToAmount } from "@/goals/engine";
-import { batchMessages } from "@/sync";
+import { getGoalTemplates, setGoalTemplates } from "@core/goals";
+import { updateGoalIndicator } from "@core/goals/apply";
+import { amountToInteger, integerToAmount } from "@core/goals/engine";
+import { batchMessages } from "@core/sync";
 import { formatDateLong } from "@/lib/date";
 import { formatBalance } from "@/lib/format";
-import type { Template } from "@/goals/types";
+import type { Template } from "@core/goals/types";
 
 // ---------------------------------------------------------------------------
 // Type options
@@ -222,7 +222,7 @@ export default function GoalEditorScreen() {
       // - `simple` with `limit` but no `monthly` (#template up to X)
       // - legacy `[limit, refill]` pair from older Expo saves
       const simpleWithLimitOnly = templates.find(
-        (t): t is import("@/goals/types").SimpleTemplate =>
+        (t): t is import("@core/goals/types").SimpleTemplate =>
           t.type === "simple" && !!t.limit && t.monthly == null,
       );
       if (simpleWithLimitOnly?.limit) {

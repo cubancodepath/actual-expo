@@ -17,8 +17,8 @@ import {
 import { usePrefsStore } from "@/stores/prefsStore";
 import { resetAllStores } from "@/stores/resetStores";
 import { useSyncStore } from "@/stores/syncStore";
-import { resetSyncState, clearSwitchingFlag, loadClock } from "@/sync";
-import { clearLocalData } from "@/db";
+import { resetSyncState, clearSwitchingFlag, loadClock } from "@core/sync";
+import { clearLocalData } from "@core/db";
 import { closeBudget } from "@/services/budgetfiles";
 import type { Theme } from "@/theme";
 

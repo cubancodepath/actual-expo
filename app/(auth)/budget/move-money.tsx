@@ -15,10 +15,10 @@ import Animated, {
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { palette } from "@/theme/colors";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
-import { transferMultipleCategories, transferAvailable } from "@/budgets";
+import { transferMultipleCategories, transferAvailable } from "@core/budgets";
 import { useSheetValueNumber } from "@/presentation/hooks/useSheetValue";
-import { sheetForMonth, envelopeBudget } from "@/spreadsheet/bindings";
-import { batchMessages } from "@/sync/batch";
+import { sheetForMonth, envelopeBudget } from "@core/spreadsheet/bindings";
+import { batchMessages } from "@core/sync/batch";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Amount } from "@/presentation/components/atoms/Amount";
 import { Button } from "@/presentation/components/atoms/Button";

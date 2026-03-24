@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { q } from "@/queries";
+import { q } from "@core/queries";
 import { useLiveQuery } from "../useQuery";
 import { useAccounts } from "../useAccounts";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";

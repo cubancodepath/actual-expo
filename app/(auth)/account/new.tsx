@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Platform, ScrollView, Switch, View } from "react-native";
 import { Input } from "@/presentation/components/atoms/Input";
 import { Stack, useRouter } from "expo-router";
-import { createAccount } from "@/accounts";
+import { createAccount } from "@core/accounts";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";

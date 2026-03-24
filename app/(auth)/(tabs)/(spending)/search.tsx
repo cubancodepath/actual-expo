@@ -21,9 +21,9 @@ import {
   toggleCleared,
   updateTransaction,
   type TransactionDisplay,
-} from "@/transactions";
+} from "@core/transactions";
 import { useUndoStore } from "@/stores/undoStore";
-import type { SearchToken } from "@/transactions/types";
+import type { SearchToken } from "@core/transactions/types";
 import { useAccounts } from "@/presentation/hooks/useAccounts";
 import { useCategories } from "@/presentation/hooks/useCategories";
 import { useTheme } from "@/presentation/providers/ThemeProvider";

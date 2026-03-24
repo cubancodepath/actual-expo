@@ -14,22 +14,22 @@ import Animated, {
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { useSheetValueNumber, useSheetValue } from "@/presentation/hooks/useSheetValue";
-import { sheetForMonth, envelopeBudget } from "@/spreadsheet/bindings";
-import { getSpreadsheet } from "@/spreadsheet/instance";
-import { setBudgetAmount } from "@/budgets";
+import { sheetForMonth, envelopeBudget } from "@core/spreadsheet/bindings";
+import { getSpreadsheet } from "@core/spreadsheet/instance";
+import { setBudgetAmount } from "@core/budgets";
 import { useUndoStore } from "@/stores/undoStore";
-import { updateCategory, deleteCategory } from "@/categories";
+import { updateCategory, deleteCategory } from "@core/categories";
 import { useCategories } from "@/presentation/hooks/useCategories";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Button } from "@/presentation/components/atoms/Button";
 import { Amount } from "@/presentation/components/atoms/Amount";
 import { GlassButton } from "@/presentation/components/atoms/GlassButton";
 import { CircularProgress } from "@/presentation/components/atoms/CircularProgress";
-import { parseGoalDef } from "@/goals";
-import { describeTemplate, translateDescription } from "@/goals/describe";
+import { parseGoalDef } from "@core/goals";
+import { describeTemplate, translateDescription } from "@core/goals/describe";
 import i18n from "@/i18n/config";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
-import type { BudgetCategory } from "@/budgets/types";
+import type { BudgetCategory } from "@core/budgets/types";
 import type { ThemeColors } from "@/theme/colors";
 
 // ---------------------------------------------------------------------------

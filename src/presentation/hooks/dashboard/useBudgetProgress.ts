@@ -1,6 +1,6 @@
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { useSheetValueNumber } from "../useSheetValue";
-import { sheetForMonth, envelopeBudget } from "@/spreadsheet/bindings";
+import { sheetForMonth, envelopeBudget } from "@core/spreadsheet/bindings";
 
 /**
  * Budget progress for the selected month.

@@ -1,0 +1,14 @@
+-- Merging decision tree log ---
+manifest
+ADDED from /Users/cubancodepath/dev/actual-project/actual-expo/modules/actual-ui/android/src/main/AndroidManifest.xml:1:1-2:12
+INJECTED from /Users/cubancodepath/dev/actual-project/actual-expo/modules/actual-ui/android/src/main/AndroidManifest.xml:1:1-2:12
+	package
+		INJECTED from /Users/cubancodepath/dev/actual-project/actual-expo/modules/actual-ui/android/src/main/AndroidManifest.xml
+uses-sdk
+INJECTED from /Users/cubancodepath/dev/actual-project/actual-expo/modules/actual-ui/android/src/main/AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from /Users/cubancodepath/dev/actual-project/actual-expo/modules/actual-ui/android/src/main/AndroidManifest.xml
+INJECTED from /Users/cubancodepath/dev/actual-project/actual-expo/modules/actual-ui/android/src/main/AndroidManifest.xml
+	android:targetSdkVersion
+		INJECTED from /Users/cubancodepath/dev/actual-project/actual-expo/modules/actual-ui/android/src/main/AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from /Users/cubancodepath/dev/actual-project/actual-expo/modules/actual-ui/android/src/main/AndroidManifest.xml

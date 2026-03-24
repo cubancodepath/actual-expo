@@ -3,9 +3,9 @@
  * Replaces usePayeesStore for data reads.
  */
 
-import { q } from "@/queries";
+import { q } from "@core/queries";
 import { useLiveQuery } from "./useQuery";
-import type { Payee } from "@/payees/types";
+import type { Payee } from "@core/payees/types";
 
 export function usePayees() {
   const { data, isLoading } = useLiveQuery<Payee>(() => q("payees"), []);

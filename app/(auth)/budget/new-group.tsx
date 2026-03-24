@@ -3,7 +3,7 @@ import { ScrollView, View } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { createCategoryGroup } from "@/categories";
+import { createCategoryGroup } from "@core/categories";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Input } from "@/presentation/components/atoms/Input";
 

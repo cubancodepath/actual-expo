@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { usePrefsStore } from "@/stores/prefsStore";
 import { getServerInfo } from "@/services/serverInfo";
 import { resetAllStores } from "@/stores/resetStores";
-import { resetSyncState, clearSwitchingFlag } from "@/sync";
+import { resetSyncState, clearSwitchingFlag } from "@core/sync";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
 import {
   Text,

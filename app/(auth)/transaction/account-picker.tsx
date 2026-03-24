@@ -4,12 +4,12 @@ import { useAccounts, useAccountBalance } from "@/presentation/hooks/useAccounts
 import { Icon } from "@/presentation/components/atoms/Icon";
 
 import { usePickerStore } from "@/stores/pickerStore";
-import { groupAccounts } from "@/accounts";
+import { groupAccounts } from "@core/accounts";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
 import { Text } from "@/presentation/components/atoms/Text";
 import { GlassButton } from "@/presentation/components/atoms/GlassButton";
 import { Amount } from "@/presentation/components/atoms/Amount";
-import type { Account } from "@/accounts/types";
+import type { Account } from "@core/accounts/types";
 import type { Theme } from "@/theme";
 
 function AccountPickerRow({

@@ -9,7 +9,7 @@ import { Button } from "@/presentation/components/atoms/Button";
 import { TransactionRow } from "@/presentation/components/account/TransactionRow";
 import { DateSectionHeader } from "@/presentation/components/account/DateSectionHeader";
 import { SelectModeToolbar } from "@/presentation/components/transaction/SelectModeToolbar";
-import { transactionQuery } from "@/transactions/query";
+import { transactionQuery } from "@core/transactions/query";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { useUndoStore } from "@/stores/undoStore";
 import { useTags } from "@/presentation/hooks/useTags";

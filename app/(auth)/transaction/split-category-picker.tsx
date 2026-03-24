@@ -5,7 +5,7 @@ import { useCategories } from "@/presentation/hooks/useCategories";
 import { Icon } from "@/presentation/components/atoms/Icon";
 
 import { usePickerStore } from "@/stores/pickerStore";
-import { getCategoryBalancesForMonth } from "@/budgets";
+import { getCategoryBalancesForMonth } from "@core/budgets";
 import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Amount } from "@/presentation/components/atoms/Amount";

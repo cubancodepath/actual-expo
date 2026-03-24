@@ -6,7 +6,7 @@ import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Text, Amount, Pill } from "..";
 import { ScheduleStatusBadge } from "../atoms/ScheduleStatusBadge";
 import { SwipeableRow } from "../molecules/SwipeableRow";
-import type { PreviewTransaction } from "../../../schedules/preview";
+import type { PreviewTransaction } from "@core/schedules/preview";
 import type { Theme } from "../../../theme";
 
 interface UpcomingScheduleRowProps {

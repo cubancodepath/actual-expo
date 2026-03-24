@@ -1,10 +1,10 @@
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
-import { getSpreadsheet } from "../spreadsheet/instance";
-import { sheetForMonth, envelopeBudget } from "../spreadsheet/bindings";
+import { getSpreadsheet } from "@core/spreadsheet/instance";
+import { sheetForMonth, envelopeBudget } from "@core/spreadsheet/bindings";
 import { currentMonth } from "./date";
-import { getCategories, getCategoryGroups } from "../categories";
-import { getUncategorizedStats } from "../transactions";
+import { getCategories, getCategoryGroups } from "@core/categories";
+import { getUncategorizedStats } from "@core/transactions";
 
 let permissionGranted = false;
 

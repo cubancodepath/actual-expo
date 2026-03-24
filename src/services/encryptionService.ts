@@ -1,10 +1,10 @@
 import { randomUUID } from "expo-crypto";
-import * as encryption from "../encryption";
+import * as encryption from "@core/encryption";
 import * as keyStorage from "./encryptionKeyStorage";
 import { post } from "../post";
-import { Message, type IMessage } from "../proto";
-import { getDb } from "../db";
-import { loadClock } from "../sync";
+import { Message, type IMessage } from "@core/proto";
+import { getDb } from "@core/db";
+import { loadClock } from "@core/sync";
 
 type KeyTestSuccess = { success: true };
 type KeyTestError = { error: "network" | "decrypt-failure" | "old-key-style" };

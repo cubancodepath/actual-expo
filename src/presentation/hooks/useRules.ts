@@ -5,11 +5,11 @@
  */
 
 import { useMemo } from "react";
-import { q } from "@/queries";
+import { q } from "@core/queries";
 import { useLiveQuery } from "./useQuery";
-import { Rule } from "@/rules/rule";
-import { RuleError } from "@/rules/errors";
-import type { RuleStage } from "@/rules/types";
+import { Rule } from "@core/rules/rule";
+import { RuleError } from "@core/rules/errors";
+import type { RuleStage } from "@core/rules/types";
 
 // Internal→public field mapping (same as index.ts)
 const INTERNAL_TO_PUBLIC: Record<string, string> = {

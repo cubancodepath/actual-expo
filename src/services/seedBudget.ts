@@ -1,9 +1,9 @@
 import { randomUUID } from "expo-crypto";
-import { batchMessages, sendMessages } from "../sync";
-import { Timestamp } from "../crdt";
-import { createAccount } from "../accounts";
-import { createCategoryGroup, createCategory } from "../categories";
-import { emit } from "../sync/syncEvents";
+import { batchMessages, sendMessages } from "@core/sync";
+import { Timestamp } from "@core/crdt";
+import { createAccount } from "@core/accounts";
+import { createCategoryGroup, createCategory } from "@core/categories";
+import { emit } from "@core/sync/syncEvents";
 
 // ---------------------------------------------------------------------------
 // Default category data — matches what Actual Budget server bundles

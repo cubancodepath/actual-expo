@@ -11,7 +11,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useAccounts } from "@/presentation/hooks/useAccounts";
 import { usePickerStore } from "@/stores/pickerStore";
 // categories no longer needed from store — picker handles selection
-import { getRecurringDescription, createSchedule } from "@/schedules";
+import { getRecurringDescription, createSchedule } from "@core/schedules";
 import { todayStr } from "@/lib/date";
 import { withOpacity } from "@/lib/colors";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
@@ -25,7 +25,7 @@ import { ErrorBanner } from "@/presentation/components/molecules/ErrorBanner";
 import { useErrorHandler } from "@/presentation/hooks/useErrorHandler";
 import type { TransactionType } from "@/presentation/components/transaction/TypeToggle";
 import { DetailRow } from "@/presentation/components/transaction/DetailRow";
-import type { RecurConfig, RuleCondition, RuleAction } from "@/schedules/types";
+import type { RecurConfig, RuleCondition, RuleAction } from "@core/schedules/types";
 
 export default function NewScheduleScreen() {
   const router = useRouter();

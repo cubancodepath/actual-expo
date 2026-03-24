@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { undo as performUndo, canUndo as checkCanUndo, setOnStateChange } from "../sync/undo";
+import { undo as performUndo, canUndo as checkCanUndo, setOnStateChange } from "@core/sync/undo";
 
 type UndoNotification = {
   message: string;

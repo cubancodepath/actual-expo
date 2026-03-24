@@ -11,7 +11,7 @@ import Animated, {
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { lockTransactions, reconcileAccount } from "@/transactions";
+import { lockTransactions, reconcileAccount } from "@core/transactions";
 import { Text } from "@/presentation/components/atoms/Text";
 import { Amount } from "@/presentation/components/atoms/Amount";
 import { useAmountInput } from "@/presentation/components/transaction/useAmountInput";

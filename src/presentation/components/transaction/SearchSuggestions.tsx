@@ -4,7 +4,7 @@ import type { IconName } from "../atoms/iconRegistry";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Text } from "../atoms/Text";
-import type { SearchToken, StatusFilter } from "../../../transactions/types";
+import type { SearchToken, StatusFilter } from "@core/transactions/types";
 
 // ---------------------------------------------------------------------------
 // Constants

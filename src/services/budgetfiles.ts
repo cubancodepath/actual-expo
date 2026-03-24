@@ -6,7 +6,7 @@ import {
 } from "expo-file-system/legacy";
 import { unzipSync, zipSync } from "fflate";
 import { randomUUID } from "expo-crypto";
-import { closeDatabase, openDatabase, run, getDb } from "../db";
+import { closeDatabase, openDatabase, run, getDb } from "@core/db";
 import {
   loadClock,
   saveClock,
@@ -14,7 +14,7 @@ import {
   clearSwitchingFlag,
   fullSync,
   waitForSyncToSettle,
-} from "../sync";
+} from "@core/sync";
 import { resetAllStores } from "../stores/resetStores";
 import { usePrefsStore } from "../stores/prefsStore";
 import type { BudgetFile } from "./authService";
@@ -27,7 +27,7 @@ import {
   idFromBudgetName,
   deleteBudgetDir,
 } from "./budgetMetadata";
-import * as encryption from "../encryption";
+import * as encryption from "@core/encryption";
 import { loadKeyForBudget } from "./encryptionService";
 
 // ---------------------------------------------------------------------------
@@ -373,7 +373,7 @@ export async function openBudget(budgetId: string): Promise<void> {
     // Upstream pattern (budgetfiles/app.ts line 575): only setNode() + save clock.
     // The server will detect merkle divergence during sync and send missing messages.
     if (isFirstOpen) {
-      const { makeClientId, getClock } = await import("../crdt");
+      const { makeClientId, getClock } = await import("@core/crdt");
       getClock().timestamp.setNode(makeClientId());
       await saveClock();
       await updateMetadata(budgetId, { resetClock: false });
@@ -387,9 +387,9 @@ export async function openBudget(budgetId: string): Promise<void> {
 
     // 5. Pre-fetch core queries into cache — gives instant first render with local data.
     // liveQuery takes over reactively after mount; sync updates flow through events.
-    const { executeQuery } = await import("../queries/execute");
-    const { q } = await import("../queries/query");
-    const { setQueryCache, clearQueryCache } = await import("../queries/queryCache");
+    const { executeQuery } = await import("@core/queries/execute");
+    const { q } = await import("@core/queries/query");
+    const { setQueryCache, clearQueryCache } = await import("@core/queries/queryCache");
     clearQueryCache(); // Clear old budget's stale entries before populating with new data
 
     const [accounts, categories, groups, payees, tags] = await Promise.all([
@@ -438,7 +438,7 @@ export async function openBudget(budgetId: string): Promise<void> {
     lap("pre-fetch queries");
 
     // 6. Initialize spreadsheet engine with local data
-    const { initSpreadsheet } = await import("../spreadsheet/sync");
+    const { initSpreadsheet } = await import("@core/spreadsheet/sync");
     await initSpreadsheet();
     lap("initSpreadsheet");
 

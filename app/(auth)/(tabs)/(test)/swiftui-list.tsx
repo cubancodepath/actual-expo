@@ -7,7 +7,7 @@ import { Amount } from "@/presentation/components/atoms/Amount";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { useCategories } from "@/presentation/hooks/useCategories";
 import { useSheetValueNumber } from "@/presentation/hooks/useSheetValue";
-import { sheetForMonth, envelopeBudget } from "@/spreadsheet/bindings";
+import { sheetForMonth, envelopeBudget } from "@core/spreadsheet/bindings";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
 interface GroupInfo {
   id: string;

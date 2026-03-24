@@ -23,8 +23,8 @@ import { AddTransactionButton } from "@/presentation/components/molecules/AddTra
 import { SharedAmountInput } from "@/presentation/components/transaction/SharedAmountInput";
 import type { CurrencyInputRef } from "@/presentation/components/currency-input/CurrencyInput";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
-import { setCategoryCarryover, setBudgetAmount, holdForNextMonth } from "@/budgets";
-import { computeGoalAllocations, persistGoalAllocations } from "@/goals/apply";
+import { setCategoryCarryover, setBudgetAmount, holdForNextMonth } from "@core/budgets";
+import { computeGoalAllocations, persistGoalAllocations } from "@core/goals/apply";
 import * as Haptics from "expo-haptics";
 import { useCategories } from "@/presentation/hooks/useCategories";
 import {
@@ -32,8 +32,8 @@ import {
   useSheetValueNumber,
   useSpreadsheetVersion,
 } from "@/presentation/hooks/useSheetValue";
-import { sheetForMonth, envelopeBudget } from "@/spreadsheet/bindings";
-import { getSpreadsheet } from "@/spreadsheet/instance";
+import { sheetForMonth, envelopeBudget } from "@core/spreadsheet/bindings";
+import { getSpreadsheet } from "@core/spreadsheet/instance";
 import { useRefreshControl } from "@/presentation/hooks/useRefreshControl";
 import { useKeyboardHeight } from "@/presentation/hooks/useKeyboardHeight";
 import { useExpressionMode } from "@/presentation/hooks/useExpressionMode";
@@ -48,11 +48,11 @@ import {
 } from "../../../../modules/actual-ui";
 import { usePrivacyStore } from "@/stores/privacyStore";
 import { useUndoStore } from "@/stores/undoStore";
-import { computeProgressBar } from "@/goals/progressBar";
+import { computeProgressBar } from "@core/goals/progressBar";
 import { ProgressBar } from "@/presentation/components/atoms/ProgressBar";
-import { inferGoalFromDef } from "@/goals";
-import { getGoalProgressLabel } from "@/goals/progress";
-import type { BudgetCategoryData, BudgetGroupData } from "@/budgets/types";
+import { inferGoalFromDef } from "@core/goals";
+import { getGoalProgressLabel } from "@core/goals/progress";
+import type { BudgetCategoryData, BudgetGroupData } from "@core/budgets/types";
 
 const BUDGET_ACCESSORY_ID = "budgetSharedCalcToolbar";
 

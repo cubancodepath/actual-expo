@@ -14,8 +14,8 @@ import {
   convertToLocalOnly,
   reRegisterBudget,
 } from "../../services/budgetfiles";
-import { clearSwitchingFlag } from "../../sync";
-import * as encryption from "../../encryption";
+import { clearSwitchingFlag } from "@core/sync";
+import * as encryption from "@core/encryption";
 import { loadKeyForBudget } from "../../services/encryptionService";
 import { promptForPassword } from "../components/molecules/EncryptionPasswordPrompt";
 

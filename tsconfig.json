@@ -4,7 +4,8 @@
     "strict": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@core/*": ["src/core/*"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx", "./uniwind-types.d.ts"]

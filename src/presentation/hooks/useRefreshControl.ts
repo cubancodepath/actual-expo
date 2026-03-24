@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTheme } from "../providers/ThemeProvider";
-import { fullSync } from "../../sync";
+import { fullSync } from "@core/sync";
 
 type UseRefreshControlOptions = {
   /** Screen-specific data reload. Runs AFTER fullSync() completes. */

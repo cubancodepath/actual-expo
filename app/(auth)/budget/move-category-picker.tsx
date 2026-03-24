@@ -3,8 +3,8 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { useCategories } from "@/presentation/hooks/useCategories";
-import { sheetForMonth, envelopeBudget } from "@/spreadsheet/bindings";
-import { getSpreadsheet } from "@/spreadsheet/instance";
+import { sheetForMonth, envelopeBudget } from "@core/spreadsheet/bindings";
+import { getSpreadsheet } from "@core/spreadsheet/instance";
 import { Amount } from "@/presentation/components/atoms/Amount";
 import { CategoryPickerList, type GroupedCategory } from "@/presentation/components";
 

@@ -3,7 +3,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import { createMMKV } from "react-native-mmkv";
 import * as SecureStore from "expo-secure-store";
 import { clearAllKeys as clearEncryptionKeys } from "../services/encryptionKeyStorage";
-import { unloadAllKeys } from "../encryption";
+import { unloadAllKeys } from "@core/encryption";
 import { resolveFeatures, type ServerFeatures } from "../services/serverFeatures";
 
 // ---------------------------------------------------------------------------

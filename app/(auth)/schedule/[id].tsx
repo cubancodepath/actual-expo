@@ -23,7 +23,7 @@ import {
   deleteSchedule,
   skipNextDate,
   postTransactionForSchedule,
-} from "@/schedules";
+} from "@core/schedules";
 import { withOpacity } from "@/lib/colors";
 import { useTheme } from "@/presentation/providers/ThemeProvider";
 import { Button } from "@/presentation/components/atoms/Button";
@@ -37,7 +37,7 @@ import { ErrorBanner } from "@/presentation/components/molecules/ErrorBanner";
 import { useErrorHandler } from "@/presentation/hooks/useErrorHandler";
 import type { TransactionType } from "@/presentation/components/transaction/TypeToggle";
 import { DetailRow } from "@/presentation/components/transaction/DetailRow";
-import type { Schedule, RecurConfig, RuleCondition, RuleAction } from "@/schedules/types";
+import type { Schedule, RecurConfig, RuleCondition, RuleAction } from "@core/schedules/types";
 
 export default function ScheduleDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

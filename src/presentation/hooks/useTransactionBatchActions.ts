@@ -11,11 +11,11 @@ import { useCallback, useRef } from "react";
 import { Alert } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
-import { deleteTransaction, updateTransaction, setClearedBulk } from "@/transactions";
-import { undoable } from "@/sync/undo";
-import { batchMessages } from "@/sync";
+import { deleteTransaction, updateTransaction, setClearedBulk } from "@core/transactions";
+import { undoable } from "@core/sync/undo";
+import { batchMessages } from "@core/sync";
 import { useUndoStore } from "@/stores/undoStore";
-import type { TransactionDisplay } from "@/transactions/types";
+import type { TransactionDisplay } from "@core/transactions/types";
 
 export interface UseTransactionBatchActionsOptions {
   selectedIds: Set<string>;

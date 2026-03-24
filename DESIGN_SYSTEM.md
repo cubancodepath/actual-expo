@@ -395,20 +395,152 @@ const color = useThemeColor("accent");
 
 ## Voice & Tone
 
-We're a financial coach who's also a friend. Users feel stressed about money — our words should reduce that stress.
+### Brand Personality: "Playful Precision"
 
-### Principles
+A high-precision financial tool wrapped in a human, approachable interface. We take the user's money seriously, but we don't take ourselves too seriously.
 
-- **Cercano**: Use "tú" not "usted". First-person plural ("vamos", "logramos").
-- **Accionable**: Every message suggests a next step.
-- **Positivo**: Celebrate progress, no matter how small.
+| Dimension | Our approach |
+|-----------|-------------|
+| **Sentiment** | Trustworthy + warm. Finances are stressful — we reduce that stress |
+| **Inspiration** | Coinbase's cleanliness meets Airbnb's warmth |
+| **Visual bridge** | Electric Indigo as the energy, large corner radii for friendliness, 4px grid for engineering rigor |
 
-### Examples
+### Voice: "The Trusted Sidekick"
 
-| Situation | Bad | Good |
-|-----------|-----|------|
-| Sync error | "Error de sincronización" | "Vaya, no pudimos conectar con tu servidor. ¿Reintentamos?" |
-| Savings milestone | "Has ahorrado $500" | "¡Buen trabajo! Has ahorrado un 10% más este mes" |
-| Empty state | "No hay transacciones" | "Aún no hay movimientos. Añade tu primera transacción" |
-| Delete confirm | "¿Eliminar transacción?" | "¿Seguro que quieres eliminar esta transacción? No se puede deshacer" |
-| Budget exceeded | "Presupuesto excedido" | "Te pasaste un poco en Comida. ¿Quieres ajustar?" |
+We are a close financial coach who understands the user's habits — not a cold ATM or a lecture. We walk alongside the user, not ahead of them.
+
+**In English:** We use "you" and "your." Direct address, second person, conversational.
+**In Spanish:** We use "tú" not "usted." First-person plural when appropriate ("vamos", "ajustemos").
+
+### Tone Rules
+
+Tone shifts depending on the moment. The voice stays the same — the intensity changes.
+
+| Principle | What it means | When to apply |
+|-----------|---------------|---------------|
+| **Approachable** | Human language for technical processes. Short sentences. No jargon. | Everywhere — this is the default |
+| **Actionable** | Every message suggests what to do next. Lead with the action, not the problem. | Errors, empty states, confirmations |
+| **Encouraging** | Celebrate progress. Frame setbacks as adjustable, not failures. | Budget alerts, milestones, overspending |
+| **Transparent** | Drop the warmth. Be direct, brief, precise. State the fact and the fix. | Critical failures, data loss risk, security |
+
+### We Never...
+
+- Blame the user ("You entered the wrong password" → "That password didn't work")
+- Use technical jargon without context ("Error 500" → "Something went wrong on the server")
+- Use passive voice in errors ("The connection was lost" → "We couldn't reach your server")
+- Use ALL CAPS for emphasis (use bold or color instead)
+- Make light of data loss or financial mistakes
+- Say "please" excessively — one "please" per screen max; it starts to sound desperate
+
+### UI Copy Dictionary
+
+Reference examples showing how our voice applies across states. English is the primary language; Spanish translations follow the same principles.
+
+#### Errors
+
+| Context | Instead of | Write |
+|---------|-----------|-------|
+| Network failure | "Connection error" | "We couldn't reach your server. Check your connection and try again." |
+| Wrong password | "Authentication failed" | "That password didn't work. Try again." |
+| Sync failure | "Sync error" | "Sync failed. Your data is safe locally — we'll try again soon." |
+| Server down | "Server error 500" | "Something went wrong on the server. Try again in a moment." |
+| Save failure | "Write operation failed" | "Couldn't save your changes. Try again." |
+
+**Error formula:** [What happened] + [Reassurance if needed] + [What to do next].
+
+#### Empty States
+
+| Context | Instead of | Write |
+|---------|-----------|-------|
+| No transactions | "No data" | "No transactions yet. Add your first transaction to get started." |
+| No payees | "No payees found" | "No payees yet. Payees are created when you add transactions." |
+| No budgets | "No files" | "No budgets found. Create a new budget to get started." |
+| No search results | "0 results" | "No matching transactions. Try different search terms or filters." |
+| Dashboard no data | "Insufficient data" | "Keep adding transactions — we need a bit more data to calculate your buffer." |
+
+**Empty state formula:** [Acknowledge the emptiness without drama] + [Suggest the next action].
+
+#### Success & Confirmation
+
+| Context | Instead of | Write |
+|---------|-----------|-------|
+| Sync complete | "Synchronization successful" | "Synced" (status indicator, not a message) |
+| Transaction saved | "Record created" | (Silent success — return to list. No toast needed.) |
+| Transaction deleted | "Deletion complete" | "Transaction deleted" + Undo option |
+| Budget created | "File created successfully" | Navigate directly to the new budget |
+
+**Success formula:** Keep it minimal. The best success state is the result itself, not a message about the result. Use brief confirmations only for destructive or async actions.
+
+#### Confirmations (Destructive Actions)
+
+| Context | Instead of | Write |
+|---------|-----------|-------|
+| Delete transaction | "Are you sure?" | "Delete this transaction?" |
+| Delete synced budget | "Confirm deletion" | '"{{name}}" is synced with the server.' + action buttons |
+| Delete local budget | "Confirm deletion" | 'Delete "{{name}}"? This cannot be undone.' |
+| Log out | "End session?" | "Disconnect from this server? Your local data stays on this device, but you'll need to reconnect to sync." |
+| Delete payee with data | "Warning: associated records exist" | "This payee has transactions. Reassign them to: [picker]" |
+
+**Confirmation formula:** [What will happen] + [Consequence if irreversible] + [Clear action buttons: specific verb, not "Yes/No"].
+
+#### Loading & Progress
+
+| Context | Instead of | Write |
+|---------|-----------|-------|
+| Connecting to server | "Connecting..." | "Looking for your server..." |
+| Opening budget | "Loading file..." | "Opening budget..." |
+| Downloading from server | "Downloading..." | "Downloading budget..." |
+| Generic loading | "Please wait" | "Loading..." |
+| Syncing | "Synchronizing data" | "Syncing" (a11y label) |
+
+**Loading formula:** Use present participle + object. Keep it under 4 words. Use ellipsis (...) to indicate ongoing action.
+
+#### Onboarding & First-Time Moments
+
+| Context | Copy |
+|---------|------|
+| App tagline | "Your budget, your way." |
+| Server URL prompt | "Your server" (label) + "Enter your server address to get started." (helper) |
+| First budget | "My Budget" (default name) |
+| Create prompt | "Or start fresh with a new budget" |
+| Encryption setup | "Encrypts all sync data end-to-end. You'll need this password on every device you use." |
+
+**Onboarding formula:** State the benefit or outcome, not the feature. Reduce choices. One action per screen.
+
+#### Budget-Specific Language
+
+| Context | Instead of | Write |
+|---------|-----------|-------|
+| Over budget | "Category limit reached" | "Overspent Categories" (section header) |
+| Money available | "Remaining budget" | "To Budget" |
+| Monthly comparison | "Month-over-month delta" | "vs last month" |
+| Savings metric | "Savings percentage" | "Savings Rate" + "The percentage of your income you saved this month." |
+| Buffer metric | "Days of expenses covered" | "Money Buffer" + "How many days of spending your income covers before you need new money." |
+
+### Terminology Conventions
+
+Consistent terms across the entire app. Once chosen, never mix alternatives.
+
+| Concept | We say | We don't say |
+|---------|--------|-------------|
+| Authentication | "Log in" / "Log out" | "Sign in" / "Sign out" |
+| Server connection | "Connect" / "Disconnect" | "Link" / "Unlink" |
+| Budget files | "Budget" | "File", "Budget file" (except in technical contexts) |
+| Removing data | "Delete" | "Remove" (except for list items where "Remove" means detach) |
+| Undoing | "Undo" | "Revert", "Roll back" |
+| Sync upload | "Sync to Server" | "Upload to server" (except re-upload: "Upload to Server") |
+| Categories | "Category" / "Group" | "Subcategory" / "Parent category" |
+| Recipients | "Payee" | "Merchant", "Vendor", "Recipient" |
+| Money movement | "Transfer" | "Move money" (except budget context: "Move to Category") |
+| Encryption | "Encryption password" | "Encryption key", "Secret" |
+
+### Spanish Adaptation Notes
+
+The Spanish locale follows the same voice principles with these adjustments:
+
+- **"Tú" form throughout.** Never "usted."
+- **"Entrar" for log in**, not "Iniciar sesión."
+- **"Inténtalo de nuevo"** is the standard retry phrase.
+- **"Esta acción no se puede deshacer"** for irreversible actions.
+- **First-person plural** ("ajustemos", "vamos") is appropriate in encouraging contexts but not in errors — errors stay direct and user-addressed.
+- **Avoid calques.** Don't translate English idioms literally. "Give your money a job" becomes "Dale un trabajo a tu dinero" or similar natural phrasing.

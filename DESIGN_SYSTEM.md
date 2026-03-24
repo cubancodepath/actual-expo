@@ -337,9 +337,9 @@ All reusable UI lives in `src/ui/`, organized by atomic design:
 
 ```
 src/ui/
-  atoms/       ← Smallest building blocks (Button, Text, Input, Icon, Badge, Avatar, Divider)
-  molecules/   ← Composed atoms (SearchBar, ListItem, Banner, EmptyState, FormField)
-  organisms/   ← Complex compositions (TransactionRow, BudgetCard, AccountHeader)
+  atoms/       ← Smallest building blocks
+  molecules/   ← Composed atoms
+  organisms/   ← Complex compositions
   index.ts     ← Barrel export
 ```
 
@@ -348,6 +348,48 @@ src/ui/
 - Atoms: zero business logic, purely visual, max 1–2 props beyond styling
 - Molecules: compose 2+ atoms, may accept data props but no store access
 - Organisms: may access stores, compose molecules, screen-specific but reusable
+
+### Atoms
+
+| Component | Source | Brand customization |
+|-----------|--------|---------------------|
+| `Button` | HeroUI wrap | `rounded-lg` (14px), compound: `Button.Label` |
+| `Card` | HeroUI wrap | `rounded-xl` (20px), compound: `Card.Header`, `Card.Body`, `Card.Footer`, `Card.Title`, `Card.Description` |
+| `TextField` | HeroUI re-export | Also exports: `Input`, `Label`, `Description`, `FieldError` |
+| `Icon` | Lucide wrap | Props: `name`, `size` (default 20), `themeColor` (default "foreground"), `color` (raw override) |
+| `Badge` | Custom | Variants: default, primary, danger, success, warning. Light/dark text contrast |
+| `Avatar` | Custom | Sizes: sm (32px), md (40px), lg (56px). Shows initials from label |
+| `Chip` | HeroUI wrap | `rounded-sm` (8px), `bg-accent`, white text. Compound: `Chip.Label`, `Chip.CloseButton` |
+| `Divider` | Custom | 1px line using `bg-separator` |
+| `Switch` | HeroUI wrap | Compound: `Switch.Thumb`, `Switch.StartContent`, `Switch.EndContent` |
+| `Spinner` | HeroUI wrap | Props: `themeColor` (default "accent"), `color` (raw override) |
+| `Skeleton` | HeroUI re-export | Also exports: `SkeletonGroup` |
+
+### Molecules
+
+| Component | Description | Key props |
+|-----------|-------------|-----------|
+| `SearchBar` | HeroUI SearchField wrap with `rounded-md` | `value`, `onChange`, `placeholder` |
+| `ListItem` | Pressable row with icon, title, subtitle, trailing, chevron | `icon`, `title`, `subtitle`, `trailing`, `showChevron`, `onPress` |
+| `EmptyState` | Centered layout with icon, text, and optional action button | `icon` (IconName), `title`, `description`, `actionLabel`, `onAction` |
+| `SectionHeader` | Title with optional action link | `title`, `action`, `onAction` |
+
+### Theme Color Access
+
+```tsx
+// In Icon — use themeColor prop
+<Icon name="Wallet" themeColor="accent" />
+
+// Anywhere else — use useThemeColor hook
+import { useThemeColor } from "@/ui";
+const color = useThemeColor("accent");
+```
+
+### Organisms (planned)
+
+- `TransactionRow` — transaction list item with amount, category, date
+- `AccountCard` — account summary with balance
+- `BudgetCategoryRow` — budget progress with bar
 
 ---
 

@@ -14,6 +14,10 @@ export default function PublicLayout() {
         name="local-setup"
         options={{ headerShown: false, animation: "fade_from_bottom" }}
       />
+      <Stack.Screen
+        name="design-system"
+        options={{ title: "Design System", animation: "fade_from_bottom" }}
+      />
     </Stack>
   );
 }

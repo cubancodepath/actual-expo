@@ -343,6 +343,16 @@ export default function LoginScreen() {
                 </Text>
               </Pressable>
             )}
+            {__DEV__ && (
+              <Pressable
+                onPress={() => router.push("/(public)/design-system")}
+                style={{ marginTop: 12, alignSelf: "center" }}
+              >
+                <Text variant="caption" color={theme.colors.primary}>
+                  Design System
+                </Text>
+              </Pressable>
+            )}
           </View>
         </Animated.View>
       </ScrollView>

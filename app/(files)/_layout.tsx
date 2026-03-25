@@ -12,7 +12,7 @@ export default function FilesLayout() {
     <>
       <Stack screenOptions={themedScreenOptions(theme)}>
         <Stack.Screen name="files" options={{ headerShown: false }} />
-        <Stack.Screen name="new-budget" options={{ headerShown: false }} />
+        <Stack.Screen name="new-budget" options={{ headerShown: false, presentation: "modal" }} />
       </Stack>
       <EncryptionPasswordPrompt />
     </>

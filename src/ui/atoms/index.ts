@@ -5,6 +5,7 @@ export { Badge } from "./Badge";
 export { Button } from "./Button";
 export { Card } from "./Card";
 export { Chip } from "./Chip";
+export { CurrencyInput } from "./CurrencyInput";
 export { Divider } from "./Divider";
 export { default as Icon } from "./Icon";
 export { Skeleton, SkeletonGroup } from "./Skeleton";

@@ -1,34 +1,12 @@
 {
-  "name": {
-    "heading": "What should we call your budget?",
-    "subtext": "You can always change this later.",
-    "placeholder": "My Budget"
-  },
-  "account": {
-    "heading": "Add your first account",
-    "subtext": "This is usually your main checking account.",
-    "nameLabel": "Account name",
-    "balanceLabel": "Current balance",
-    "placeholder": "Checking"
-  },
-  "categories": {
-    "heading": "Choose your categories",
-    "subtext": "Uncheck any you don't need. You can add more later.",
-    "buttonLocal": "Set Up Budget",
-    "buttonServer": "Create & Sync"
-  },
-  "ready": {
-    "heading": "You're all set!",
-    "subtextLocal": "Your budget is ready to go.",
-    "subtextServer": "Your budget has been created and is syncing.",
-    "budget": "Budget",
-    "account": "Account",
-    "categories": "Categories",
-    "categoriesCount": "{{count}} categories",
-    "button": "Start Budgeting"
-  },
-  "continue": "Continue",
-  "cancel": "Cancel",
-  "back": "Back",
-  "stepOf": "Step {{step}} of {{total}}"
+  "heading": "Let's set up your budget",
+  "subtext": "Tell us about your main account and we'll handle the rest.",
+  "budgetName": "Budget name",
+  "budgetNamePlaceholder": "My Budget",
+  "accountName": "Account name",
+  "accountNamePlaceholder": "Checking",
+  "balance": "Starting balance",
+  "create": "Create Budget",
+  "creating": "Setting up your budget...",
+  "footer": "Includes starter categories. You can change anything later."
 }

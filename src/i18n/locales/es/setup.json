@@ -1,34 +1,12 @@
 {
-  "name": {
-    "heading": "¿Cómo quieres llamar tu presupuesto?",
-    "subtext": "Puedes cambiarlo en cualquier momento.",
-    "placeholder": "Mi Presupuesto"
-  },
-  "account": {
-    "heading": "Agrega tu primera cuenta",
-    "subtext": "Por lo general es tu cuenta corriente principal.",
-    "nameLabel": "Nombre de la cuenta",
-    "balanceLabel": "Saldo actual",
-    "placeholder": "Corriente"
-  },
-  "categories": {
-    "heading": "Elige tus categorías",
-    "subtext": "Desmarca las que no necesites. Puedes agregar más después.",
-    "buttonLocal": "Crear Presupuesto",
-    "buttonServer": "Crear y Sincronizar"
-  },
-  "ready": {
-    "heading": "¡Todo listo!",
-    "subtextLocal": "Tu presupuesto está listo.",
-    "subtextServer": "Tu presupuesto se ha creado y se está sincronizando.",
-    "budget": "Presupuesto",
-    "account": "Cuenta",
-    "categories": "Categorías",
-    "categoriesCount": "{{count}} categorías",
-    "button": "Comenzar a Presupuestar"
-  },
-  "continue": "Continuar",
-  "cancel": "Cancelar",
-  "back": "Atrás",
-  "stepOf": "Paso {{step}} de {{total}}"
+  "heading": "Vamos a crear tu presupuesto",
+  "subtext": "Cuéntanos sobre tu cuenta principal y nos encargamos del resto.",
+  "budgetName": "Nombre del presupuesto",
+  "budgetNamePlaceholder": "Mi Presupuesto",
+  "accountName": "Nombre de la cuenta",
+  "accountNamePlaceholder": "Cuenta corriente",
+  "balance": "Saldo inicial",
+  "create": "Crear Presupuesto",
+  "creating": "Preparando tu presupuesto...",
+  "footer": "Incluye categorías iniciales. Puedes cambiar todo después."
 }

@@ -53,13 +53,14 @@ export function useLogin() {
     throw lastError;
   }
 
-  async function saveLoginAndRedirect(serverUrl: string, token: string) {
+  async function saveLoginAndNavigate(serverUrl: string, token: string) {
     setPrefs({ serverUrl });
     await saveToken(token);
-    getServerInfo(serverUrl).then((info) => {
-      usePrefsStore.getState().setServerVersion(info.version);
-    });
-    router.replace("/(files)/files");
+    // Navigation is automatic — Stack.Protected guard switches to (files)
+    // when hasToken becomes true via saveToken
+    getServerInfo(serverUrl)
+      .then((info) => usePrefsStore.getState().setServerVersion(info.version))
+      .catch(() => {});
   }
 
   // ── Actions ───────────────────────────────────────────────────────────────
@@ -109,7 +110,7 @@ export function useLogin() {
     await handleError(
       async () => {
         const token = await login(urlRef.current, password.trim());
-        await saveLoginAndRedirect(urlRef.current, token);
+        await saveLoginAndNavigate(urlRef.current, token);
       },
       { silenceNetwork: false },
     );
@@ -142,7 +143,7 @@ export function useLogin() {
           return;
         }
 
-        await saveLoginAndRedirect(url, token);
+        await saveLoginAndNavigate(url, token);
       },
       { silenceNetwork: false },
     );

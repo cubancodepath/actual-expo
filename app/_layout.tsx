@@ -268,13 +268,22 @@ function RootLayout() {
                 <ThemeProvider>
                   <Stack>
                     <Stack.Protected guard={!hasToken && !isLocalOnly}>
-                      <Stack.Screen name="(public)" options={{ headerShown: false }} />
+                      <Stack.Screen
+                        name="(public)"
+                        options={{ headerShown: false, animation: "fade" }}
+                      />
                     </Stack.Protected>
                     <Stack.Protected guard={hasToken && !isConfigured}>
-                      <Stack.Screen name="(files)" options={{ headerShown: false }} />
+                      <Stack.Screen
+                        name="(files)"
+                        options={{ headerShown: false, animation: "fade" }}
+                      />
                     </Stack.Protected>
                     <Stack.Protected guard={isConfigured}>
-                      <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                      <Stack.Screen
+                        name="(auth)"
+                        options={{ headerShown: false, animation: "fade" }}
+                      />
                     </Stack.Protected>
                   </Stack>
                   <UndoToast />

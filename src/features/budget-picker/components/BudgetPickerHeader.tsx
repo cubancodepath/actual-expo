@@ -14,13 +14,13 @@ export function BudgetPickerHeader({ onLogout, onNew }: BudgetPickerHeaderProps)
 
   return (
     <View
-      className="flex-row items-center justify-between px-6 pb-3"
+      className="flex-row items-center justify-between px-6 pb-6"
       style={{ paddingTop: insets.top + 8 }}
     >
       <Button variant="ghost" size="sm" feedbackVariant="none" onPress={onLogout}>
         <Button.Label className="text-muted">{t("logOut")}</Button.Label>
       </Button>
-      <Text className="text-lg font-semibold text-foreground">{t("yourBudgets")}</Text>
+      <Text className="text-xl font-bold text-foreground">{t("yourBudgets")}</Text>
       <Button variant="ghost" size="sm" onPress={onNew}>
         <Icon name="Plus" size={18} themeColor="accent" />
         <Button.Label className="text-accent">{t("new")}</Button.Label>

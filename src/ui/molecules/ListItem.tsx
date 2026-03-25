@@ -26,7 +26,7 @@ export function ListItem({
     <View className={cn("flex-row items-center px-4 py-3 gap-3", className)}>
       {icon && <View className="items-center justify-center">{icon}</View>}
       <View className="flex-1 gap-0.5">
-        <Text className="text-foreground text-base">{title}</Text>
+        <Text className="text-foreground text-base font-medium">{title}</Text>
         {subtitle && <Text className="text-muted text-sm">{subtitle}</Text>}
       </View>
       {trailing && <View>{trailing}</View>}

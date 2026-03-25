@@ -6,6 +6,8 @@
   "ok": "OK",
   "error": "Error",
   "loading": "Cargando…",
+  "downloadingBudget": "Descargando presupuesto…",
+  "openingBudget": "Abriendo presupuesto…",
   "never": "Nunca",
   "search": "Buscar…",
   "create": "Crear",

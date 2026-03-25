@@ -1,7 +1,8 @@
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
-import { Button, Icon, Spinner } from "@/ui";
+import { Icon, Spinner } from "@/ui";
 import { ListItem } from "@/ui/molecules";
+import { BudgetFileMenu } from "./BudgetFileMenu";
 import type { BudgetFileState, ReconciledBudgetFile } from "@/services/budgetfiles";
 import type { IconName } from "@/ui/atoms/Icon";
 import type { ThemeColor } from "@/ui/types";
@@ -25,7 +26,11 @@ type BudgetFileRowProps = {
   isSelecting?: boolean;
   isActionInProgress?: boolean;
   onPress?: () => void;
-  onActionPress?: () => void;
+  onUpload: (file: ReconciledBudgetFile) => void;
+  onDelete: (file: ReconciledBudgetFile, fromServer?: boolean) => void;
+  onDownload: (file: ReconciledBudgetFile) => void;
+  onConvertToLocal: (file: ReconciledBudgetFile) => void;
+  onReRegister: (file: ReconciledBudgetFile) => void;
 };
 
 export const BudgetFileRow = memo(function BudgetFileRow({
@@ -33,7 +38,11 @@ export const BudgetFileRow = memo(function BudgetFileRow({
   isSelecting,
   isActionInProgress,
   onPress,
-  onActionPress,
+  onUpload,
+  onDelete,
+  onDownload,
+  onConvertToLocal,
+  onReRegister,
 }: BudgetFileRowProps) {
   const { t } = useTranslation("auth");
   const { t: tc } = useTranslation("common");
@@ -46,14 +55,18 @@ export const BudgetFileRow = memo(function BudgetFileRow({
     .filter(Boolean)
     .join(" \u00b7 ");
 
-  const trailing =
-    isSelecting || isActionInProgress ? (
-      <Spinner themeColor="accent" />
-    ) : onActionPress ? (
-      <Button variant="ghost" size="sm" isIconOnly feedbackVariant="none" onPress={onActionPress}>
-        <Icon name="EllipsisVertical" size={18} themeColor="muted" />
-      </Button>
-    ) : null;
+  const trailing = isActionInProgress ? (
+    <Spinner themeColor="accent" />
+  ) : (
+    <BudgetFileMenu
+      file={file}
+      onUpload={onUpload}
+      onDelete={onDelete}
+      onDownload={onDownload}
+      onConvertToLocal={onConvertToLocal}
+      onReRegister={onReRegister}
+    />
+  );
 
   return (
     <ListItem

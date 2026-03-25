@@ -15,9 +15,11 @@ type BudgetSectionListProps = {
   selecting: string | null;
   actionInProgress: string | null;
   onSelect: (file: ReconciledBudgetFile) => void;
-  onDelete: (file: ReconciledBudgetFile) => void;
+  onDelete: (file: ReconciledBudgetFile, fromServer?: boolean) => void;
   onUpload: (file: ReconciledBudgetFile) => void;
-  onActions: (file: ReconciledBudgetFile) => void;
+  onDownload: (file: ReconciledBudgetFile) => void;
+  onConvertToLocal: (file: ReconciledBudgetFile) => void;
+  onReRegister: (file: ReconciledBudgetFile) => void;
 };
 
 function FileSection({
@@ -29,7 +31,9 @@ function FileSection({
   onSelect,
   onDelete,
   onUpload,
-  onActions,
+  onDownload,
+  onConvertToLocal,
+  onReRegister,
 }: {
   title: string;
   files: ReconciledBudgetFile[];
@@ -37,9 +41,11 @@ function FileSection({
   selecting: string | null;
   actionInProgress: string | null;
   onSelect: (file: ReconciledBudgetFile) => void;
-  onDelete: (file: ReconciledBudgetFile) => void;
-  onUpload?: (file: ReconciledBudgetFile) => void;
-  onActions: (file: ReconciledBudgetFile) => void;
+  onDelete: (file: ReconciledBudgetFile, fromServer?: boolean) => void;
+  onUpload: (file: ReconciledBudgetFile) => void;
+  onDownload: (file: ReconciledBudgetFile) => void;
+  onConvertToLocal: (file: ReconciledBudgetFile) => void;
+  onReRegister: (file: ReconciledBudgetFile) => void;
 }) {
   const accentColor = useThemeColor("accent");
 
@@ -54,16 +60,20 @@ function FileSection({
           <SwipeableRow
             key={fileKey(file)}
             onDelete={() => onDelete(file)}
-            onSwipeRight={onUpload && file.state === "local" ? () => onUpload(file) : undefined}
-            swipeRightIcon={onUpload ? "cloudUploadOutline" : undefined}
-            swipeRightColor={onUpload ? accentColor : undefined}
+            onSwipeRight={file.state === "local" ? () => onUpload(file) : undefined}
+            swipeRightIcon={file.state === "local" ? "cloudUploadOutline" : undefined}
+            swipeRightColor={file.state === "local" ? accentColor : undefined}
           >
             <BudgetFileRow
               file={file}
               isSelecting={selecting === fileKey(file)}
               isActionInProgress={actionInProgress === fileKey(file)}
               onPress={() => onSelect(file)}
-              onActionPress={() => onActions(file)}
+              onUpload={onUpload}
+              onDelete={onDelete}
+              onDownload={onDownload}
+              onConvertToLocal={onConvertToLocal}
+              onReRegister={onReRegister}
             />
           </SwipeableRow>
         ))}
@@ -76,12 +86,7 @@ export function BudgetSectionList({
   localFiles,
   remoteFiles,
   hasDetached,
-  selecting,
-  actionInProgress,
-  onSelect,
-  onDelete,
-  onUpload,
-  onActions,
+  ...rest
 }: BudgetSectionListProps) {
   const { t } = useTranslation("auth");
 
@@ -91,22 +96,9 @@ export function BudgetSectionList({
         title={t("onThisDevice")}
         files={localFiles}
         banner={hasDetached ? <DetachedBanner /> : undefined}
-        selecting={selecting}
-        actionInProgress={actionInProgress}
-        onSelect={onSelect}
-        onDelete={onDelete}
-        onUpload={onUpload}
-        onActions={onActions}
+        {...rest}
       />
-      <FileSection
-        title={t("availableOnServer")}
-        files={remoteFiles}
-        selecting={selecting}
-        actionInProgress={actionInProgress}
-        onSelect={onSelect}
-        onDelete={onDelete}
-        onActions={onActions}
-      />
+      <FileSection title={t("availableOnServer")} files={remoteFiles} {...rest} />
     </View>
   );
 }

@@ -49,9 +49,11 @@ export default function FilesScreen() {
             selecting={picker.selecting}
             actionInProgress={picker.actionInProgress}
             onSelect={picker.handleSelect}
-            onDelete={picker.handleDelete}
-            onUpload={picker.handleUpload}
-            onActions={picker.showActions}
+            onDelete={picker.deleteFile}
+            onUpload={picker.uploadFile}
+            onDownload={picker.handleSelect}
+            onConvertToLocal={picker.convertToLocal}
+            onReRegister={picker.reRegister}
           />
         )}
       </ScrollView>

@@ -1,4 +1,5 @@
 export { BudgetPickerHeader } from "./BudgetPickerHeader";
+export { BudgetFileMenu } from "./BudgetFileMenu";
 export { BudgetFileRow } from "./BudgetFileRow";
 export { BudgetSectionList } from "./BudgetSectionList";
 export { BudgetEmptyState } from "./BudgetEmptyState";

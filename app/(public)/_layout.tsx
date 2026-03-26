@@ -15,6 +15,10 @@ export default function PublicLayout() {
         options={{ headerShown: false, animation: "fade_from_bottom" }}
       />
       <Stack.Screen
+        name="new-local-budget"
+        options={{ headerShown: false, presentation: "modal" }}
+      />
+      <Stack.Screen
         name="design-system"
         options={{ title: "Design System", animation: "fade_from_bottom" }}
       />

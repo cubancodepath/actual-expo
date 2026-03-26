@@ -7,7 +7,7 @@ import {
   Pressable,
   ScrollView,
   StatusBar,
-  Text as RNText,
+  Text,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -22,15 +22,13 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useTranslation } from "react-i18next";
-import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
-import { Text } from "@/presentation/components/atoms/Text";
-import { Icon } from "@/presentation/components/atoms/Icon";
-import type { IconName } from "@/presentation/components/atoms/iconRegistry";
+import { useTheme } from "@/presentation/providers/ThemeProvider";
+import { Icon } from "@/ui";
+import type { IconName } from "@/ui/atoms/Icon";
 import { usePrefsStore } from "@/stores/prefsStore";
 import { palette } from "@/theme";
-import type { Theme } from "@/theme";
 
-const AnimatedText = Animated.createAnimatedComponent(RNText);
+const AnimatedText = Animated.createAnimatedComponent(Text);
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const TOTAL_PAGES = 3;
@@ -128,10 +126,8 @@ function FeatureRow({ label, delay: delayMs = 0 }: { label: string; delay?: numb
         animStyle,
       ]}
     >
-      <Icon name="checkmarkCircleOutline" size={20} color={theme.colors.positive} />
-      <Text variant="bodyLg" color={theme.colors.textPrimary}>
-        {label}
-      </Text>
+      <Icon name="CircleCheck" size={20} color={theme.colors.positive} />
+      <Text className="text-[15px] font-medium text-foreground">{label}</Text>
     </Animated.View>
   );
 }
@@ -192,12 +188,8 @@ function FeatureCard({
         <Icon name={iconName} size={22} color={theme.colors.primary} />
       </View>
       <View style={{ flex: 1, gap: theme.spacing.xs }}>
-        <Text variant="headingSm" color={theme.colors.textPrimary}>
-          {title}
-        </Text>
-        <Text variant="bodySm" color={theme.colors.textSecondary}>
-          {body}
-        </Text>
+        <Text className="text-[17px] font-semibold text-foreground">{title}</Text>
+        <Text className="text-[13px] text-muted">{body}</Text>
       </View>
     </Animated.View>
   );
@@ -245,10 +237,13 @@ function HeroScreen() {
           style={{ width: 96, height: 96, resizeMode: "contain", tintColor: "#ffffff" }}
           accessibilityIgnoresInvertColors
         />
-        <Text variant="displayLg" color="#ffffff" align="center" style={{ letterSpacing: -1 }}>
+        <Text
+          className="text-3xl font-semibold text-white text-center"
+          style={{ letterSpacing: -1 }}
+        >
           {t("heroTitle")}
         </Text>
-        <Text variant="headingSm" color="rgba(255,255,255,0.80)" align="center">
+        <Text className="text-[17px] font-semibold text-white/80 text-center">
           {t("heroSubtitle")}
         </Text>
       </Animated.View>
@@ -263,31 +258,18 @@ function HeroScreen() {
       />
 
       <Animated.View style={[{ flexDirection: "row", gap: theme.spacing.sm }, pillsStyle]}>
-        <FeaturePill icon="lockClosedOutline" label={t("pillPrivate")} />
-        <FeaturePill icon="serverOutline" label={t("pillNoSub")} />
+        <FeaturePill icon="Lock" label={t("pillPrivate")} />
+        <FeaturePill icon="Server" label={t("pillNoSub")} />
       </Animated.View>
     </View>
   );
 }
 
 function FeaturePill({ icon, label }: { icon: IconName; label: string }) {
-  const theme = useTheme();
   return (
-    <View
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        gap: theme.spacing.xs,
-        paddingVertical: 6,
-        paddingHorizontal: theme.spacing.md,
-        backgroundColor: "rgba(255,255,255,0.14)",
-        borderRadius: theme.borderRadius.full,
-      }}
-    >
+    <View className="flex-row items-center gap-1 py-1.5 px-3 bg-white/[0.14] rounded-full">
       <Icon name={icon} size={14} color="rgba(255,255,255,0.8)" />
-      <Text variant="captionSm" color="rgba(255,255,255,0.8)" style={{ fontWeight: "500" }}>
-        {label}
-      </Text>
+      <Text className="text-[10px] font-medium text-white/80">{label}</Text>
     </View>
   );
 }
@@ -345,22 +327,12 @@ function PrivacyScreen() {
             justifyContent: "center",
           }}
         >
-          <Icon name="serverOutline" size={32} color={theme.colors.primary} />
+          <Icon name="Server" size={32} color={theme.colors.primary} />
         </View>
-        <Text
-          variant="headingLg"
-          color={theme.colors.textPrimary}
-          align="center"
-          accessibilityRole="header"
-        >
+        <Text className="text-xl font-bold text-foreground text-center" accessibilityRole="header">
           {t("privacyHeading")}
         </Text>
-        <Text
-          variant="body"
-          color={theme.colors.textSecondary}
-          align="center"
-          style={{ lineHeight: 22 }}
-        >
+        <Text className="text-sm text-muted text-center" style={{ lineHeight: 22 }}>
           {t("privacyBody")}
         </Text>
       </Animated.View>
@@ -391,33 +363,30 @@ function FeaturesScreen() {
     >
       <View style={{ gap: theme.spacing.sm }}>
         <Text
-          variant="displaySm"
-          color={theme.colors.textPrimary}
+          className="text-2xl font-bold text-foreground"
           style={{ letterSpacing: -0.5 }}
           accessibilityRole="header"
         >
           {t("featuresHeading")}
         </Text>
-        <Text variant="body" color={theme.colors.textSecondary}>
-          {t("featuresSubtitle")}
-        </Text>
+        <Text className="text-sm text-muted">{t("featuresSubtitle")}</Text>
       </View>
 
       <View style={{ gap: theme.spacing.md }}>
         <FeatureCard
-          iconName="layersOutline"
+          iconName="Layers"
           title={t("cardEnvelopeTitle")}
           body={t("cardEnvelopeBody")}
           delay={0}
         />
         <FeatureCard
-          iconName="wallet"
+          iconName="Wallet"
           title={t("cardAccountsTitle")}
           body={t("cardAccountsBody")}
           delay={60}
         />
         <FeatureCard
-          iconName="barChartOutline"
+          iconName="ChartColumn"
           title={t("cardInsightsTitle")}
           body={t("cardInsightsBody")}
           delay={120}
@@ -431,7 +400,6 @@ function FeaturesScreen() {
 
 export default function OnboardingScreen() {
   const theme = useTheme();
-  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const markOnboardingSeen = usePrefsStore((s) => s.markOnboardingSeen);
@@ -493,7 +461,7 @@ export default function OnboardingScreen() {
   }
 
   return (
-    <Animated.View style={[styles.root, rootAnimStyle]}>
+    <Animated.View style={[{ flex: 1 }, rootAnimStyle]}>
       <StatusBar barStyle="light-content" />
 
       <ScrollView
@@ -518,8 +486,11 @@ export default function OnboardingScreen() {
         </View>
       </ScrollView>
 
-      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, theme.spacing.xl) }]}>
-        <View style={styles.dotsRow}>
+      <View
+        className="px-6 gap-3"
+        style={{ paddingBottom: Math.max(insets.bottom, theme.spacing.xl) }}
+      >
+        <View className="flex-row justify-between items-center">
           <PageDots currentPage={page} isHeroScreen={isHeroScreen} />
           <Pressable
             onPress={finish}
@@ -539,7 +510,19 @@ export default function OnboardingScreen() {
           onPress={() => (isLastPage ? finish() : goToPage(page + 1))}
           style={({ pressed }) => [pressed && { opacity: 0.8 }]}
         >
-          <Animated.View style={[styles.ctaButton, ctaStyle]}>
+          <Animated.View
+            style={[
+              {
+                alignItems: "center",
+                justifyContent: "center",
+                minHeight: 44,
+                paddingVertical: 14,
+                paddingHorizontal: 24,
+                borderRadius: 9999,
+              },
+              ctaStyle,
+            ]}
+          >
             <AnimatedText style={[{ fontSize: 16, fontWeight: "600" }, ctaTextStyle]}>
               {isLastPage ? t("letsGo") : page === 0 ? t("getStarted") : tc("continue")}
             </AnimatedText>
@@ -549,29 +532,3 @@ export default function OnboardingScreen() {
     </Animated.View>
   );
 }
-
-// ─── Styles ─────────────────────────────────────────────────────────────────
-
-const createStyles = (theme: Theme) => ({
-  root: {
-    flex: 1,
-    backgroundColor: theme.colors.pageBackground,
-  },
-  footer: {
-    paddingHorizontal: theme.spacing.xl,
-    gap: theme.spacing.md,
-  },
-  dotsRow: {
-    flexDirection: "row" as const,
-    justifyContent: "space-between" as const,
-    alignItems: "center" as const,
-  },
-  ctaButton: {
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
-    minHeight: 44,
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: theme.borderRadius.full,
-  },
-});

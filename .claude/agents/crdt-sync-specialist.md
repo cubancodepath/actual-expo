@@ -1,8 +1,8 @@
 ---
 name: crdt-sync-specialist
 description: "Use this agent when working on CRDT synchronization, Merkle tree diffing, protobuf encoding/decoding, HLC (Hybrid Logical Clock) timestamps, or debugging sync failures. This includes any work in src/crdt/, src/sync/, src/encryption/, or related sync infrastructure.\\n\\nExamples:\\n\\n<example>\\nContext: User is debugging a sync failure where messages aren't being applied correctly.\\nuser: \"Sync is failing silently — remote changes aren't showing up after fullSync() completes\"\\nassistant: \"Let me use the crdt-sync-specialist agent to diagnose the sync failure.\"\\n<commentary>\\nSince this involves sync debugging, use the Agent tool to launch the crdt-sync-specialist agent to trace the sync pipeline.\\n</commentary>\\n</example>\\n\\n<example>\\nContext: User wants to optimize the sync payload size.\\nuser: \"The sync request is sending too much data, can we reduce bandwidth?\"\\nassistant: \"I'll use the crdt-sync-specialist agent to analyze the sync encoding and optimize the payload.\"\\n<commentary>\\nSince this involves protobuf encoding and sync bandwidth optimization, use the Agent tool to launch the crdt-sync-specialist agent.\\n</commentary>\\n</example>\\n\\n<example>\\nContext: User is seeing timestamp conflicts or clock drift issues.\\nuser: \"I'm getting duplicate CRDT messages with similar timestamps after syncing two devices\"\\nassistant: \"Let me use the crdt-sync-specialist agent to investigate the HLC timestamp and message deduplication logic.\"\\n<commentary>\\nSince this involves HLC timestamps and CRDT conflict resolution, use the Agent tool to launch the crdt-sync-specialist agent.\\n</commentary>\\n</example>\\n\\n<example>\\nContext: User modifies the Merkle tree implementation.\\nuser: \"I need to change how the Merkle tree buckets are computed for better diff performance\"\\nassistant: \"I'll use the crdt-sync-specialist agent to work on the Merkle tree diffing implementation.\"\\n<commentary>\\nSince this involves Merkle tree internals, use the Agent tool to launch the crdt-sync-specialist agent.\\n</commentary>\\n</example>"
-model: sonnet
-color: blue
+model: opus
+color: red
 memory: project
 ---
 
@@ -193,7 +193,7 @@ type: {{user, feedback, project, reference}}
 {{memory content — for feedback/project types, structure as: rule/fact, then **Why:** and **How to apply:** lines}}
 ```
 
-**Step 2** — add a pointer to that file in `MEMORY.md`. `MEMORY.md` is an index, not a memory — it should contain only links to memory files with brief descriptions. It has no frontmatter. Never write memory content directly into `MEMORY.md`.
+**Step 2** — add a pointer to that file in `MEMORY.md`. `MEMORY.md` is an index, not a memory — each entry should be one line, under ~150 characters: `- [Title](file.md) — one-line hook`. It has no frontmatter. Never write memory content directly into `MEMORY.md`.
 
 - `MEMORY.md` is always loaded into your conversation context — lines after 200 will be truncated, so keep the index concise
 - Keep the name, description, and type fields in memory files up-to-date with the content
@@ -204,7 +204,7 @@ type: {{user, feedback, project, reference}}
 ## When to access memories
 - When memories seem relevant, or the user references prior-conversation work.
 - You MUST access memory when the user explicitly asks you to check, recall, or remember.
-- If the user asks you to *ignore* memory: don't cite, compare against, or mention it — answer as if absent.
+- If the user says to *ignore* or *not use* memory: proceed as if MEMORY.md were empty. Do not apply remembered facts, cite, compare against, or mention memory content.
 - Memory records can become stale over time. Use memory as context for what was true at a given point in time. Before answering the user or building assumptions based solely on information in memory records, verify that the memory is still correct and up-to-date by reading the current state of the files or resources. If a recalled memory conflicts with current information, trust what you observe now — and update or remove the stale memory rather than acting on it.
 
 ## Before recommending from memory

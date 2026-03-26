@@ -26,6 +26,8 @@ This is an Expo 55 / React Native mobile app for Actual Budget. Key technical de
 - **Sync**: CRDT messages `{timestamp, dataset, row, column, value}` with HLC timestamps and Merkle tree diffing
 - **Values encoding**: `'0:'` (null), `'N:123'` (number), `'S:text'` (string)
 - **Encryption**: AES-256-GCM via @noble/ciphers
+- **Linting**: oxlint (`npm run lint`)
+- **Formatting**: oxfmt (`npm run fmt`)
 
 ## Vitest Unit Test Guidelines
 
@@ -124,10 +126,12 @@ tags:
 3. **Write tests** — start with happy path, then edge cases
 4. **Run tests** — execute `npm test` for Vitest or `npm run e2e:flow <path>` for Maestro to verify
 5. **Fix failures** — if tests fail due to test logic errors, fix them; if they reveal bugs, report them
+6. **Lint and format** — run `npm run lint` and `npm run fmt` to ensure code quality
 
 ## Important Rules
 
 - NEVER commit unless the user explicitly asks
+- NEVER mention Claude, Claude Code, AI, or include "Co-Authored-By" lines in commit messages
 - Use `npm test` to run unit tests, `npm run e2e` or `npm run e2e:flow` for E2E
 - Type check with `npx tsc --noEmit` (ignore pre-existing FlashList errors)
 - Lint with `npm run lint`
@@ -242,7 +246,7 @@ type: {{user, feedback, project, reference}}
 {{memory content — for feedback/project types, structure as: rule/fact, then **Why:** and **How to apply:** lines}}
 ```
 
-**Step 2** — add a pointer to that file in `MEMORY.md`. `MEMORY.md` is an index, not a memory — it should contain only links to memory files with brief descriptions. It has no frontmatter. Never write memory content directly into `MEMORY.md`.
+**Step 2** — add a pointer to that file in `MEMORY.md`. `MEMORY.md` is an index, not a memory — each entry should be one line, under ~150 characters: `- [Title](file.md) — one-line hook`. It has no frontmatter. Never write memory content directly into `MEMORY.md`.
 
 - `MEMORY.md` is always loaded into your conversation context — lines after 200 will be truncated, so keep the index concise
 - Keep the name, description, and type fields in memory files up-to-date with the content
@@ -253,7 +257,7 @@ type: {{user, feedback, project, reference}}
 ## When to access memories
 - When memories seem relevant, or the user references prior-conversation work.
 - You MUST access memory when the user explicitly asks you to check, recall, or remember.
-- If the user asks you to *ignore* memory: don't cite, compare against, or mention it — answer as if absent.
+- If the user says to *ignore* or *not use* memory: proceed as if MEMORY.md were empty. Do not apply remembered facts, cite, compare against, or mention memory content.
 - Memory records can become stale over time. Use memory as context for what was true at a given point in time. Before answering the user or building assumptions based solely on information in memory records, verify that the memory is still correct and up-to-date by reading the current state of the files or resources. If a recalled memory conflicts with current information, trust what you observe now — and update or remove the stale memory rather than acting on it.
 
 ## Before recommending from memory

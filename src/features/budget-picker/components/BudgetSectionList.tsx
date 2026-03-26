@@ -1,8 +1,8 @@
 import { View } from "react-native";
 import { useTranslation } from "react-i18next";
+import Animated, { FadeOutLeft, LinearTransition } from "react-native-reanimated";
 import { useThemeColor } from "@/ui";
-import { SectionHeader } from "@/ui/molecules";
-import { SwipeableRow } from "@/presentation/components";
+import { SectionHeader, SwipeableRow } from "@/ui/molecules";
 import { BudgetFileRow } from "./BudgetFileRow";
 import { DetachedBanner } from "./DetachedBanner";
 import { fileKey } from "../hooks/useBudgetPicker";
@@ -55,29 +55,34 @@ function FileSection({
     <View className="gap-2">
       <SectionHeader title={title} />
       {banner}
-      <View className="gap-1">
+      <Animated.View className="gap-1" layout={LinearTransition}>
         {files.map((file) => (
-          <SwipeableRow
+          <Animated.View
             key={fileKey(file)}
-            onDelete={() => onDelete(file)}
-            onSwipeRight={file.state === "local" ? () => onUpload(file) : undefined}
-            swipeRightIcon={file.state === "local" ? "cloudUploadOutline" : undefined}
-            swipeRightColor={file.state === "local" ? accentColor : undefined}
+            exiting={FadeOutLeft.duration(200)}
+            layout={LinearTransition}
           >
-            <BudgetFileRow
-              file={file}
-              isSelecting={selecting === fileKey(file)}
-              isActionInProgress={actionInProgress === fileKey(file)}
-              onPress={() => onSelect(file)}
-              onUpload={onUpload}
-              onDelete={onDelete}
-              onDownload={onDownload}
-              onConvertToLocal={onConvertToLocal}
-              onReRegister={onReRegister}
-            />
-          </SwipeableRow>
+            <SwipeableRow
+              onDelete={() => onDelete(file)}
+              onSwipeRight={file.state === "local" ? () => onUpload(file) : undefined}
+              swipeRightIcon={file.state === "local" ? "CloudUpload" : undefined}
+              swipeRightColor={file.state === "local" ? accentColor : undefined}
+            >
+              <BudgetFileRow
+                file={file}
+                isSelecting={selecting === fileKey(file)}
+                isActionInProgress={actionInProgress === fileKey(file)}
+                onPress={() => onSelect(file)}
+                onUpload={onUpload}
+                onDelete={onDelete}
+                onDownload={onDownload}
+                onConvertToLocal={onConvertToLocal}
+                onReRegister={onReRegister}
+              />
+            </SwipeableRow>
+          </Animated.View>
         ))}
-      </View>
+      </Animated.View>
     </View>
   );
 }

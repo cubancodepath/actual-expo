@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { usePrefsStore } from "@/stores/prefsStore";
 import { getServerInfo } from "@/services/serverInfo";
+import { triggerHaptic } from "@/lib/haptics";
 import { resetAllStores } from "@/stores/resetStores";
 import { resetSyncState, clearSwitchingFlag } from "@core/sync";
 import { useBudgetFiles, fileKey } from "./useBudgetFiles";
@@ -44,6 +45,7 @@ export function useBudgetPicker() {
 
   const handleSelect = useCallback(
     async (file: ReconciledBudgetFile) => {
+      triggerHaptic("light");
       setOverlay({ name: file.name, phase: file.state === "remote" ? "downloading" : "opening" });
       try {
         await budget.selectFile(file);

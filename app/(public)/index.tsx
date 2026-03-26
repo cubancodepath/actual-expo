@@ -1,5 +1,5 @@
 import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
-import Animated, { FadeInDown } from "react-native-reanimated";
+import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 import * as WebBrowser from "expo-web-browser";
 import { Alert } from "@/ui/molecules";
 import {
@@ -23,12 +23,12 @@ export default function LoginScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView
-        contentContainerClassName="flex-grow px-6 pt-20 pb-12"
+        contentContainerClassName="flex-grow px-6 pt-safe-offset-8 pb-12"
         keyboardShouldPersistTaps="handled"
       >
         <LoginHero />
 
-        <View className="gap-4">
+        <Animated.View className="gap-4" entering={FadeIn.duration(250).delay(350)}>
           <ServerUrlField
             value={login.serverUrl}
             onChange={login.handleServerUrlChange}
@@ -40,16 +40,22 @@ export default function LoginScreen() {
           />
 
           {login.step === "password" && (
-            <PasswordField
-              value={login.password}
-              onChange={login.handlePasswordChange}
-              onSubmit={login.handlePasswordLogin}
-              isInvalid={login.error?.category === "validation"}
-              errorMessage={login.error?.message}
-            />
+            <Animated.View entering={FadeInDown.duration(200)}>
+              <PasswordField
+                value={login.password}
+                onChange={login.handlePasswordChange}
+                onSubmit={login.handlePasswordLogin}
+                isInvalid={login.error?.category === "validation"}
+                errorMessage={login.error?.message}
+              />
+            </Animated.View>
           )}
 
-          {login.step === "openid" && <OpenIdInfo />}
+          {login.step === "openid" && (
+            <Animated.View entering={FadeInDown.duration(200)}>
+              <OpenIdInfo />
+            </Animated.View>
+          )}
 
           {login.error && login.error.category !== "validation" && (
             <Animated.View entering={FadeInDown.duration(200)}>
@@ -65,7 +71,7 @@ export default function LoginScreen() {
             onPasswordLogin={login.handlePasswordLogin}
             onOpenIdLogin={login.handleOpenIdLogin}
           />
-        </View>
+        </Animated.View>
 
         <SecondaryLinks onLocalMode={login.handleLocalMode} />
       </ScrollView>

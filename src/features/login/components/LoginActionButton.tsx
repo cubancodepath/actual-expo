@@ -1,4 +1,5 @@
 import { Text, View } from "react-native";
+import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { useTranslation } from "react-i18next";
 import { Button, Spinner, useThemeColor } from "@/ui";
 import type { LoginStep } from "../hooks/useLogin";
@@ -25,10 +26,15 @@ export function LoginActionButton({
 
   if (step === "probing") {
     return (
-      <View className="flex-row items-center gap-2 py-2">
+      <Animated.View
+        entering={FadeIn.duration(150)}
+        exiting={FadeOut.duration(100)}
+        className="flex-row items-center justify-center gap-2"
+        style={{ minHeight: 44 }}
+      >
         <Spinner themeColor="accent" />
         <Text className="text-sm text-muted">{t("connecting")}</Text>
-      </View>
+      </Animated.View>
     );
   }
 
@@ -41,7 +47,7 @@ export function LoginActionButton({
 
   return (
     <Button variant="primary" size="lg" onPress={config.onPress} isDisabled={config.isDisabled}>
-      {loading ? <Spinner color={accentFg} /> : config.label}
+      {loading ? <Spinner color={accentFg} /> : <Button.Label>{config.label}</Button.Label>}
     </Button>
   );
 }

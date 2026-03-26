@@ -12,6 +12,7 @@ import {
 import { getServerInfo } from "@/services/serverInfo";
 import { usePrefsStore } from "@/stores/prefsStore";
 import { useErrorHandler } from "@/hooks/useErrorHandler";
+import { triggerHaptic } from "@/lib/haptics";
 
 export type LoginStep = "idle" | "probing" | LoginMethod;
 
@@ -54,6 +55,7 @@ export function useLogin() {
   }
 
   async function saveLoginAndNavigate(serverUrl: string, token: string) {
+    triggerHaptic("success");
     setPrefs({ serverUrl });
     await saveToken(token);
     // Navigation is automatic — Stack.Protected guard switches to (files)
@@ -83,6 +85,7 @@ export function useLogin() {
       setServerUrl(url);
     }
 
+    triggerHaptic("light");
     setStep("probing");
     const info = await handleError(() => probeWithRetry(url), { silenceNetwork: false });
     if (!info) {

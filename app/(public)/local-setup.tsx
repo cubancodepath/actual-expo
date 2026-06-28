@@ -6,11 +6,11 @@ import { useTranslation } from "react-i18next";
 import { listLocalBudgets, type BudgetMetadata } from "@/services/budgetMetadata";
 import { openBudget } from "@/services/budgetfiles";
 import { usePrefsStore } from "@/stores/prefsStore";
-import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
-import { Text, Card, SectionHeader, Button, BudgetFileRow } from "@/presentation/components";
-import { BudgetSetupWizard } from "@/presentation/components/budget/BudgetSetupWizard";
+import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvider";
+import { Text, Card, SectionHeader, Button, BudgetFileRow } from "@/design-system";
+import { BudgetSetupWizard } from "@/features/budget/components/BudgetSetupWizard";
 import type { ReconciledBudgetFile } from "@/services/budgetfiles";
-import type { Theme } from "@/theme";
+import type { Theme } from "@/design-system/tokens";
 
 type ScreenState = "loading" | "picker" | "wizard";
 

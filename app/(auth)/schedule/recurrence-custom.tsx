@@ -1,19 +1,23 @@
 import { useState, useMemo } from "react";
 import { ScrollView, View } from "react-native";
-import { Icon } from "@/presentation/components/atoms/Icon";
+import { Icon } from "@/design-system/atoms/Icon";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Host, DatePicker, Picker, Text as SwiftText } from "@expo/ui/swift-ui";
 import { datePickerStyle, frame, pickerStyle, tag, tint } from "@expo/ui/swift-ui/modifiers";
-import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { Text, Card, SectionHeader } from "@/presentation/components";
-import { ListItem } from "@/presentation/components/molecules/ListItem";
-import { GlassButton } from "@/presentation/components/atoms/GlassButton";
+import { useTheme } from "@/design-system/providers/ThemeProvider";
+import { Text, Card, SectionHeader } from "@/design-system";
+import { ListItem } from "@/design-system/molecules/ListItem";
+import { GlassButton } from "@/design-system/atoms/GlassButton";
 import { usePickerStore } from "@/stores/pickerStore";
-import { getRecurringDescription } from "@/schedules";
-import { getUpcomingDates, dayFromDate, getDateWithSkippedWeekend } from "@/schedules/recurrence";
+import { getRecurringDescription } from "@/core/domain/schedules";
+import {
+  getUpcomingDates,
+  dayFromDate,
+  getDateWithSkippedWeekend,
+} from "@/core/domain/schedules/recurrence";
 import { todayStr } from "@/lib/date";
 import { formatDateLong, strToInt } from "@/lib/date";
-import type { RecurConfig } from "@/schedules/types";
+import type { RecurConfig } from "@/core/domain/schedules/types";
 
 // ---------------------------------------------------------------------------
 // Constants

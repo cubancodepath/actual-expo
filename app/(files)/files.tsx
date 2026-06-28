@@ -6,8 +6,8 @@ import { useTranslation } from "react-i18next";
 import { usePrefsStore } from "@/stores/prefsStore";
 import { getServerInfo } from "@/services/serverInfo";
 import { resetAllStores } from "@/stores/resetStores";
-import { resetSyncState, clearSwitchingFlag } from "@/sync";
-import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
+import { resetSyncState, clearSwitchingFlag } from "@/core/sync";
+import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvider";
 import {
   Text,
   Card,
@@ -19,11 +19,11 @@ import {
   BudgetOpeningOverlay,
   SwipeableRow,
   GlassButton,
-} from "@/presentation/components";
-import { useBudgetFiles, fileKey } from "@/presentation/hooks/useBudgetFiles";
-import { useFileActionSheet } from "@/presentation/hooks/useFileActionSheet";
+} from "@/design-system";
+import { useBudgetFiles, fileKey } from "@/features/settings/hooks/useBudgetFiles";
+import { useFileActionSheet } from "@/features/settings/hooks/useFileActionSheet";
 import type { ReconciledBudgetFile } from "@/services/budgetfiles";
-import type { Theme } from "@/theme";
+import type { Theme } from "@/design-system/tokens";
 
 export default function FilesScreen() {
   const router = useRouter();

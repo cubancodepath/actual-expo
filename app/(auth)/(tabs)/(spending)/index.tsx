@@ -10,42 +10,42 @@ import {
   duplicateTransaction,
   toggleCleared,
   updateTransaction,
-} from "@/transactions";
+} from "@/core/domain/transactions";
 import { usePrivacyStore } from "@/stores/privacyStore";
 import { useUndoStore } from "@/stores/undoStore";
-import { useCommonMenuActions } from "@/presentation/hooks/useCommonMenuItems";
+import { useCommonMenuActions } from "@/shared/hooks/useCommonMenuItems";
 import { useTabBarStore } from "@/stores/tabBarStore";
-import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { EmptyState } from "@/presentation/components";
-import { UnclearedPill } from "@/presentation/components/transaction/UnclearedPill";
-import { TransactionRow } from "@/presentation/components/account/TransactionRow";
-import { DateSectionHeader } from "@/presentation/components/account/DateSectionHeader";
-import { UpcomingSectionHeader } from "@/presentation/components/account/UpcomingSectionHeader";
-import { UpcomingScheduleRow } from "@/presentation/components/account/UpcomingScheduleRow";
-import { AddTransactionButton } from "@/presentation/components/molecules/AddTransactionButton";
-import { useTags } from "@/presentation/hooks/useTags";
+import { useTheme } from "@/design-system/providers/ThemeProvider";
+import { EmptyState } from "@/design-system";
+import { UnclearedPill } from "@/features/transactions/components/UnclearedPill";
+import { TransactionListItem } from "@/features/accounts/components/TransactionListItem";
+import { DateSectionHeader } from "@/features/accounts/components/DateSectionHeader";
+import { UpcomingSectionHeader } from "@/features/accounts/components/UpcomingSectionHeader";
+import { UpcomingScheduleRow } from "@/features/accounts/components/UpcomingScheduleRow";
+import { AddTransactionButton } from "@/design-system/molecules/AddTransactionButton";
+import { useTags } from "@/features/transactions/hooks/useTags";
 import { usePickerStore } from "@/stores/pickerStore";
-import { useRefreshControl } from "@/presentation/hooks/useRefreshControl";
+import { useRefreshControl } from "@/shared/hooks/useRefreshControl";
 import {
   buildListData,
   useSelectModeHeader,
   type ListItem,
-} from "@/presentation/hooks/transactionList";
-import { SelectModeToolbar } from "@/presentation/components/transaction/SelectModeToolbar";
+} from "@/features/transactions/hooks/transactionList";
+import { SelectModeToolbar } from "@/features/transactions/components/SelectModeToolbar";
 import {
   skipNextDate,
   postTransactionForSchedule,
   postTransactionForScheduleToday,
   deleteSchedule,
   updateSchedule,
-} from "@/schedules";
-import { useTransactions } from "@/presentation/hooks/useTransactions";
-import { q } from "@/queries";
-import { useSelectionMode } from "@/presentation/hooks/useSelectionMode";
-import { usePreviewTransactions } from "@/presentation/hooks/usePreviewTransactions";
-import { useLiveQuery } from "@/presentation/hooks/useQuery";
-import { useTransactionBatchActions } from "@/presentation/hooks/useTransactionBatchActions";
-import type { TransactionDisplay } from "@/transactions/types";
+} from "@/core/domain/schedules";
+import { useTransactions } from "@/features/transactions/hooks/useTransactions";
+import { q } from "@/core/queries";
+import { useSelectionMode } from "@/shared/hooks/useSelectionMode";
+import { usePreviewTransactions } from "@/shared/hooks/usePreviewTransactions";
+import { useLiveQuery } from "@/shared/hooks/useQuery";
+import { useTransactionBatchActions } from "@/shared/hooks/useTransactionBatchActions";
+import type { TransactionDisplay } from "@/core/domain/transactions/types";
 
 // ---------------------------------------------------------------------------
 // Screen
@@ -369,7 +369,7 @@ export default function SpendingScreen() {
           }
           if (item.type !== "transaction") return null;
           return (
-            <TransactionRow
+            <TransactionListItem
               item={item.data}
               onPress={handleEditTransaction}
               onDelete={handleDelete}

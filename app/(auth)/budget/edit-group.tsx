@@ -2,13 +2,13 @@ import { useEffect, useState } from "react";
 import { Alert, ScrollView } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { useTheme } from "@/presentation/providers/ThemeProvider";
+import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { useUndoStore } from "@/stores/undoStore";
-import { updateCategoryGroup, deleteCategoryGroup } from "@/categories";
-import { useCategories } from "@/presentation/hooks/useCategories";
-import { Text } from "@/presentation/components/atoms/Text";
-import { Button } from "@/presentation/components/atoms/Button";
-import { Input } from "@/presentation/components/atoms/Input";
+import { updateCategoryGroup, deleteCategoryGroup } from "@/core/domain/categories";
+import { useCategories } from "@/features/budget/hooks/useCategories";
+import { Text } from "@/design-system/atoms/Text";
+import { Button } from "@/design-system/atoms/Button";
+import { Input } from "@/design-system/atoms/Input";
 
 export default function EditGroupScreen() {
   const { t } = useTranslation("budget");

@@ -1,6 +1,6 @@
 import { NativeTabs } from "expo-router/unstable-native-tabs";
 import { useTranslation } from "react-i18next";
-import { useTheme } from "@/presentation/providers/ThemeProvider";
+import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { useTabBarStore } from "@/stores/tabBarStore";
 
 export default function TabsLayout() {
@@ -26,12 +26,6 @@ export default function TabsLayout() {
         <NativeTabs.Trigger.Icon sf="chart.bar.xaxis" md="bar_chart" />
         <NativeTabs.Trigger.Label>{t("tabs.reports")}</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
-      {__DEV__ && (
-        <NativeTabs.Trigger name="(test)">
-          <NativeTabs.Trigger.Icon sf="flask" md="science" />
-          <NativeTabs.Trigger.Label>Test</NativeTabs.Trigger.Label>
-        </NativeTabs.Trigger>
-      )}
     </NativeTabs>
   );
 }

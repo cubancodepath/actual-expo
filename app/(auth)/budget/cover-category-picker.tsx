@@ -3,14 +3,14 @@ import { Pressable, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
-import { useCategories } from "@/presentation/hooks/useCategories";
-import { useSheetValueNumber } from "@/presentation/hooks/useSheetValue";
-import { sheetForMonth, envelopeBudget } from "@/spreadsheet/bindings";
-import { getSpreadsheet } from "@/spreadsheet/instance";
-import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { Text } from "@/presentation/components/atoms/Text";
-import { Amount } from "@/presentation/components/atoms/Amount";
-import { CategoryPickerList, type GroupedCategory } from "@/presentation/components";
+import { useCategories } from "@/features/budget/hooks/useCategories";
+import { useSheetValueNumber } from "@/shared/hooks/useSheetValue";
+import { sheetForMonth, envelopeBudget } from "@/core/domain/spreadsheet/bindings";
+import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
+import { useTheme } from "@/design-system/providers/ThemeProvider";
+import { Text } from "@/design-system/atoms/Text";
+import { Amount } from "@/design-system/atoms/Amount";
+import { CategoryPickerList, type GroupedCategory } from "@/design-system";
 
 export const TO_BUDGET_ID = "__to_budget__";
 

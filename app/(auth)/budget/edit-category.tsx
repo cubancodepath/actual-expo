@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Alert, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { Icon } from "@/presentation/components/atoms/Icon";
+import { Icon } from "@/design-system/atoms/Icon";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import Animated, {
@@ -11,26 +11,26 @@ import Animated, {
   interpolate,
   Extrapolation,
 } from "react-native-reanimated";
-import { useTheme } from "@/presentation/providers/ThemeProvider";
+import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
-import { useSheetValueNumber, useSheetValue } from "@/presentation/hooks/useSheetValue";
-import { sheetForMonth, envelopeBudget } from "@/spreadsheet/bindings";
-import { getSpreadsheet } from "@/spreadsheet/instance";
-import { setBudgetAmount } from "@/budgets";
+import { useSheetValueNumber, useSheetValue } from "@/shared/hooks/useSheetValue";
+import { sheetForMonth, envelopeBudget } from "@/core/domain/spreadsheet/bindings";
+import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
+import { setBudgetAmount } from "@/core/domain/budgets";
 import { useUndoStore } from "@/stores/undoStore";
-import { updateCategory, deleteCategory } from "@/categories";
-import { useCategories } from "@/presentation/hooks/useCategories";
-import { Text } from "@/presentation/components/atoms/Text";
-import { Button } from "@/presentation/components/atoms/Button";
-import { Amount } from "@/presentation/components/atoms/Amount";
-import { GlassButton } from "@/presentation/components/atoms/GlassButton";
-import { CircularProgress } from "@/presentation/components/atoms/CircularProgress";
-import { parseGoalDef } from "@/goals";
-import { describeTemplate, translateDescription } from "@/goals/describe";
+import { updateCategory, deleteCategory } from "@/core/domain/categories";
+import { useCategories } from "@/features/budget/hooks/useCategories";
+import { Text } from "@/design-system/atoms/Text";
+import { Button } from "@/design-system/atoms/Button";
+import { Amount } from "@/design-system/atoms/Amount";
+import { GlassButton } from "@/design-system/atoms/GlassButton";
+import { CircularProgress } from "@/design-system/atoms/CircularProgress";
+import { parseGoalDef } from "@/core/domain/goals";
+import { describeTemplate, translateDescription } from "@/core/domain/goals/describe";
 import i18n from "@/i18n/config";
-import { useFeatureFlag } from "@/hooks/useFeatureFlag";
-import type { BudgetCategory } from "@/budgets/types";
-import type { ThemeColors } from "@/theme/colors";
+import { useFeatureFlag } from "@/shared/hooks/useFeatureFlag";
+import type { BudgetCategory } from "@/core/domain/budgets/types";
+import type { ThemeColors } from "@/design-system/tokens/colors";
 
 // ---------------------------------------------------------------------------
 // Constants

@@ -1,6 +1,6 @@
 import { Stack } from "expo-router";
-import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { themedScreenOptions } from "@/presentation/navigation/screenOptions";
+import { useTheme } from "@/design-system/providers/ThemeProvider";
+import { themedScreenOptions } from "@/shared/navigation/screenOptions";
 
 export default function ScheduleLayout() {
   const theme = useTheme();

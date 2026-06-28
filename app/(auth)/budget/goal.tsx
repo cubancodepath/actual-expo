@@ -1,26 +1,26 @@
 import { useEffect, useRef, useState } from "react";
 import { Alert, Pressable, ScrollView, Switch, View } from "react-native";
-import { Icon } from "@/presentation/components/atoms/Icon";
+import { Icon } from "@/design-system/atoms/Icon";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Host, DatePicker, Picker, Text as SwiftText } from "@expo/ui/swift-ui";
 import { useTranslation } from "react-i18next";
 import { datePickerStyle, frame, pickerStyle, tag, tint } from "@expo/ui/swift-ui/modifiers";
-import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { useCategories } from "@/presentation/hooks/useCategories";
+import { useTheme } from "@/design-system/providers/ThemeProvider";
+import { useCategories } from "@/features/budget/hooks/useCategories";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
-import { Text } from "@/presentation/components/atoms/Text";
-import { Button } from "@/presentation/components/atoms/Button";
-import { Card } from "@/presentation/components/atoms/Card";
-import { ListItem } from "@/presentation/components/molecules/ListItem";
-import { Divider } from "@/presentation/components/atoms/Divider";
-import { CurrencyInput, type CurrencyInputRef } from "@/presentation/components/currency-input";
-import { getGoalTemplates, setGoalTemplates } from "@/goals";
-import { updateGoalIndicator } from "@/goals/apply";
-import { amountToInteger, integerToAmount } from "@/goals/engine";
-import { batchMessages } from "@/sync";
+import { Text } from "@/design-system/atoms/Text";
+import { Button } from "@/design-system/atoms/Button";
+import { Card } from "@/design-system/atoms/Card";
+import { ListItem } from "@/design-system/molecules/ListItem";
+import { Divider } from "@/design-system/atoms/Divider";
+import { CurrencyInput, type CurrencyInputRef } from "@/design-system";
+import { getGoalTemplates, setGoalTemplates } from "@/core/domain/goals";
+import { updateGoalIndicator } from "@/core/domain/goals/apply";
+import { amountToInteger, integerToAmount } from "@/core/domain/goals/engine";
+import { batchMessages } from "@/core/sync";
 import { formatDateLong } from "@/lib/date";
 import { formatBalance } from "@/lib/format";
-import type { Template } from "@/goals/types";
+import type { Template } from "@/core/domain/goals/types";
 
 // ---------------------------------------------------------------------------
 // Type options
@@ -222,7 +222,7 @@ export default function GoalEditorScreen() {
       // - `simple` with `limit` but no `monthly` (#template up to X)
       // - legacy `[limit, refill]` pair from older Expo saves
       const simpleWithLimitOnly = templates.find(
-        (t): t is import("@/goals/types").SimpleTemplate =>
+        (t): t is import("@/core/domain/goals/types").SimpleTemplate =>
           t.type === "simple" && !!t.limit && t.monthly == null,
       );
       if (simpleWithLimitOnly?.limit) {

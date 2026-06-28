@@ -12,24 +12,24 @@ import Animated, {
 } from "react-native-reanimated";
 import { SymbolView } from "expo-symbols";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { useCategories } from "@/presentation/hooks/useCategories";
-import { deleteCategory as deleteCategoryFn, deleteCategoryGroup } from "@/categories";
+import { useTheme } from "@/design-system/providers/ThemeProvider";
+import { useCategories } from "@/features/budget/hooks/useCategories";
+import { deleteCategory as deleteCategoryFn, deleteCategoryGroup } from "@/core/domain/categories";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
-import { sheetForMonth, envelopeBudget } from "@/spreadsheet/bindings";
-import { getSpreadsheet } from "@/spreadsheet/instance";
-import { inferGoalFromDef, parseGoalDef } from "@/goals";
+import { sheetForMonth, envelopeBudget } from "@/core/domain/spreadsheet/bindings";
+import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
+import { inferGoalFromDef, parseGoalDef } from "@/core/domain/goals";
 import { useUndoStore } from "@/stores/undoStore";
-import { Text } from "@/presentation/components/atoms/Text";
-import { Amount } from "@/presentation/components/atoms/Amount";
-import { Button } from "@/presentation/components/atoms/Button";
-import { SwipeableRow } from "@/presentation/components/molecules/SwipeableRow";
-import { GlassButton } from "@/presentation/components/atoms/GlassButton";
-import { RowSeparator } from "@/presentation/components/atoms/RowSeparator";
-import { describeTemplate, translateDescription } from "@/goals/describe";
+import { Text } from "@/design-system/atoms/Text";
+import { Amount } from "@/design-system/atoms/Amount";
+import { Button } from "@/design-system/atoms/Button";
+import { SwipeableRow } from "@/design-system/molecules/SwipeableRow";
+import { GlassButton } from "@/design-system/atoms/GlassButton";
+import { RowSeparator } from "@/design-system/atoms/RowSeparator";
+import { describeTemplate, translateDescription } from "@/core/domain/goals/describe";
 import i18n from "@/i18n/config";
-import { useFeatureFlag } from "@/hooks/useFeatureFlag";
-import type { Category, CategoryGroup } from "@/categories/types";
+import { useFeatureFlag } from "@/shared/hooks/useFeatureFlag";
+import type { Category, CategoryGroup } from "@/core/domain/categories/types";
 
 // ---------- Section types ----------
 

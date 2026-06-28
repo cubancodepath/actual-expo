@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { Platform, ScrollView, Switch, View } from "react-native";
-import { Input } from "@/presentation/components/atoms/Input";
+import { Input } from "@/design-system/atoms/Input";
 import { Stack, useRouter } from "expo-router";
-import { createAccount } from "@/accounts";
-import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
-import { Text } from "@/presentation/components/atoms/Text";
-import { Button } from "@/presentation/components/atoms/Button";
-import { ErrorBanner } from "@/presentation/components/molecules/ErrorBanner";
-import { useErrorHandler } from "@/presentation/hooks/useErrorHandler";
+import { createAccount } from "@/core/domain/accounts";
+import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvider";
+import { Text } from "@/design-system/atoms/Text";
+import { Button } from "@/design-system/atoms/Button";
+import { ErrorBanner } from "@/design-system/molecules/ErrorBanner";
+import { useErrorHandler } from "@/shared/hooks/useErrorHandler";
 import { useTranslation } from "react-i18next";
-import type { Theme } from "@/theme";
+import type { Theme } from "@/design-system/tokens";
 
 /** Parse a user-typed balance string like "1,234.56" or "-50" into cents */
 function parseToCents(raw: string): number {

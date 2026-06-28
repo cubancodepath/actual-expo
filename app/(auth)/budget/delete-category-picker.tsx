@@ -3,14 +3,14 @@ import { Alert, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
-import { useCategories } from "@/presentation/hooks/useCategories";
-import { sheetForMonth, envelopeBudget } from "@/spreadsheet/bindings";
-import { getSpreadsheet } from "@/spreadsheet/instance";
-import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { Amount } from "@/presentation/components/atoms/Amount";
-import { Text } from "@/presentation/components/atoms/Text";
-import { GlassButton } from "@/presentation/components/atoms/GlassButton";
-import { CategoryPickerList, type GroupedCategory } from "@/presentation/components";
+import { useCategories } from "@/features/budget/hooks/useCategories";
+import { sheetForMonth, envelopeBudget } from "@/core/domain/spreadsheet/bindings";
+import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
+import { useTheme } from "@/design-system/providers/ThemeProvider";
+import { Amount } from "@/design-system/atoms/Amount";
+import { Text } from "@/design-system/atoms/Text";
+import { GlassButton } from "@/design-system/atoms/GlassButton";
+import { CategoryPickerList, type GroupedCategory } from "@/design-system";
 
 export default function DeleteCategoryPickerScreen() {
   const { t } = useTranslation("budget");

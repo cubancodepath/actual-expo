@@ -1,0 +1,63 @@
+import { TextInput, View } from "react-native";
+import { Icon } from "@/design-system/atoms/Icon";
+import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvider";
+import type { Theme } from "@/design-system/tokens";
+
+interface NotesFieldProps {
+  value: string;
+  onChangeText: (text: string) => void;
+}
+
+export function NotesField({ value, onChangeText }: NotesFieldProps) {
+  const theme = useTheme();
+  const styles = useThemedStyles(createStyles);
+
+  return (
+    <View style={styles.row}>
+      <View style={styles.container}>
+        <Icon
+          name="documentTextOutline"
+          size={18}
+          color={theme.colors.textMuted}
+          style={{ marginTop: 2 }}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Add a note..."
+          placeholderTextColor={theme.colors.textMuted}
+          value={value}
+          onChangeText={onChangeText}
+          multiline
+          numberOfLines={3}
+          textAlignVertical="top"
+          blurOnSubmit
+          returnKeyType="done"
+        />
+      </View>
+    </View>
+  );
+}
+
+const createStyles = (theme: Theme) => ({
+  row: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    minHeight: 44,
+  },
+  container: {
+    flexDirection: "row" as const,
+    alignItems: "flex-start" as const,
+    flex: 1,
+  },
+  input: {
+    flex: 1,
+    color: theme.colors.textPrimary,
+    fontSize: 16,
+    marginLeft: theme.spacing.sm,
+    padding: 0,
+    minHeight: 60,
+  },
+});

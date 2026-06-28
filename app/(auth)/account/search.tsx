@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRefreshControl } from "@/presentation/hooks/useRefreshControl";
+import { useRefreshControl } from "@/shared/hooks/useRefreshControl";
 import {
   ActivityIndicator,
   Alert,
@@ -20,24 +20,24 @@ import {
   toggleCleared,
   updateTransaction,
   type TransactionDisplay,
-} from "@/transactions";
+} from "@/core/domain/transactions";
 import { useUndoStore } from "@/stores/undoStore";
-import { useAccounts } from "@/presentation/hooks/useAccounts";
-import type { SearchToken } from "@/transactions/types";
-import { useCategories } from "@/presentation/hooks/useCategories";
-import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { EmptyState } from "@/presentation/components";
-import { TransactionRow } from "@/presentation/components/account/TransactionRow";
-import { DateSectionHeader } from "@/presentation/components/account/DateSectionHeader";
-import { TokenSearchBar } from "@/presentation/components/transaction/TokenSearchBar";
-import { SearchSuggestions } from "@/presentation/components/transaction/SearchSuggestions";
-import { useTags } from "@/presentation/hooks/useTags";
-import { GlassButton } from "@/presentation/components/atoms/GlassButton";
-import { useSelectModeHeader } from "@/presentation/hooks/transactionList";
-import { useSelectionMode } from "@/presentation/hooks/useSelectionMode";
-import { useTransactionBatchActions } from "@/presentation/hooks/useTransactionBatchActions";
+import { useAccounts } from "@/features/accounts/hooks/useAccounts";
+import type { SearchToken } from "@/core/domain/transactions/types";
+import { useCategories } from "@/features/budget/hooks/useCategories";
+import { useTheme } from "@/design-system/providers/ThemeProvider";
+import { EmptyState } from "@/design-system";
+import { TransactionListItem } from "@/features/accounts/components/TransactionListItem";
+import { DateSectionHeader } from "@/features/accounts/components/DateSectionHeader";
+import { TokenSearchBar } from "@/features/transactions/components/TokenSearchBar";
+import { SearchSuggestions } from "@/features/transactions/components/SearchSuggestions";
+import { useTags } from "@/features/transactions/hooks/useTags";
+import { GlassButton } from "@/design-system/atoms/GlassButton";
+import { useSelectModeHeader } from "@/features/transactions/hooks/transactionList";
+import { useSelectionMode } from "@/shared/hooks/useSelectionMode";
+import { useTransactionBatchActions } from "@/shared/hooks/useTransactionBatchActions";
 import { usePickerStore } from "@/stores/pickerStore";
-import { SelectModeToolbar } from "@/presentation/components/transaction/SelectModeToolbar";
+import { SelectModeToolbar } from "@/features/transactions/components/SelectModeToolbar";
 import { useTranslation } from "react-i18next";
 
 // ---------------------------------------------------------------------------
@@ -493,7 +493,7 @@ export default function AccountSearchScreen() {
             }
             if (item.type !== "transaction") return null;
             return (
-              <TransactionRow
+              <TransactionListItem
                 item={item.data}
                 onPress={handleEditTransaction}
                 onDelete={handleDelete}

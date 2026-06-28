@@ -3,7 +3,7 @@ import { ActionSheetIOS, Alert, Platform, ScrollView, Switch, TextInput, View } 
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
-import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvider";
 import {
   Text,
   Card,
@@ -12,20 +12,20 @@ import {
   Button,
   ErrorBanner,
   promptToEnableEncryption,
-} from "@/presentation/components";
-import { useErrorHandler } from "@/presentation/hooks/useErrorHandler";
-import { useSyncedPref, useFeatureFlag } from "@/presentation/hooks/useSyncedPref";
+} from "@/design-system";
+import { useErrorHandler } from "@/shared/hooks/useErrorHandler";
+import { useSyncedPrefs, useFeatureFlag } from "@/shared/hooks/useSyncedPrefs";
 import { usePrefsStore } from "@/stores/prefsStore";
 import {
   ALL_FEATURE_FLAGS,
   FEATURE_FLAG_LABELS,
   type FeatureFlag,
-} from "@/preferences/featureFlags";
+} from "@/core/domain/preferences/featureFlags";
 import {
   DATE_FORMAT_OPTIONS,
   NUMBER_FORMAT_OPTIONS,
   DAY_OF_WEEK_OPTIONS,
-} from "@/preferences/types";
+} from "@/core/domain/preferences/types";
 import { currencies, getCurrency } from "@/lib/currencies";
 import {
   deleteBudget,
@@ -33,7 +33,7 @@ import {
   uploadBudget,
   convertToLocalOnly,
 } from "@/services/budgetfiles";
-import type { Theme } from "@/theme";
+import type { Theme } from "@/design-system/tokens";
 
 // Conditionally import SwiftUI Picker on iOS
 let SwiftPicker: typeof import("@expo/ui/swift-ui").Picker | null = null;
@@ -179,16 +179,16 @@ export default function BudgetSettingsScreen() {
   const { activeBudgetId, budgetName, isLocalOnly, groupId, fileId, serverUrl, token } =
     usePrefsStore();
 
-  const [dateFormat, setDateFormat] = useSyncedPref("dateFormat");
-  const [numberFormat, setNumberFormat] = useSyncedPref("numberFormat");
-  const [firstDayOfWeekIdx, setFirstDayOfWeekIdx] = useSyncedPref("firstDayOfWeekIdx");
-  const [hideFraction, setHideFraction] = useSyncedPref("hideFraction");
-  const [defaultCurrencyCode, setDefaultCurrencyCode] = useSyncedPref("defaultCurrencyCode");
+  const [dateFormat, setDateFormat] = useSyncedPrefs("dateFormat");
+  const [numberFormat, setNumberFormat] = useSyncedPrefs("numberFormat");
+  const [firstDayOfWeekIdx, setFirstDayOfWeekIdx] = useSyncedPrefs("firstDayOfWeekIdx");
+  const [hideFraction, setHideFraction] = useSyncedPrefs("hideFraction");
+  const [defaultCurrencyCode, setDefaultCurrencyCode] = useSyncedPrefs("defaultCurrencyCode");
   const [currencySymbolPosition, setCurrencySymbolPosition] =
-    useSyncedPref("currencySymbolPosition");
+    useSyncedPrefs("currencySymbolPosition");
   const [currencySpaceBetweenAmountAndSymbol, setCurrencySpaceBetweenAmountAndSymbol] =
-    useSyncedPref("currencySpaceBetweenAmountAndSymbol");
-  const [defaultCurrencyCustomSymbol, setDefaultCurrencyCustomSymbol] = useSyncedPref(
+    useSyncedPrefs("currencySpaceBetweenAmountAndSymbol");
+  const [defaultCurrencyCustomSymbol, setDefaultCurrencyCustomSymbol] = useSyncedPrefs(
     "defaultCurrencyCustomSymbol",
   );
 

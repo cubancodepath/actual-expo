@@ -2,11 +2,11 @@ import { useState } from "react";
 import { View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { updateCategory } from "@/categories";
-import { Text } from "@/presentation/components/atoms/Text";
-import { Button } from "@/presentation/components/atoms/Button";
-import { Input } from "@/presentation/components/atoms/Input";
+import { useTheme } from "@/design-system/providers/ThemeProvider";
+import { updateCategory } from "@/core/domain/categories";
+import { Text } from "@/design-system/atoms/Text";
+import { Button } from "@/design-system/atoms/Button";
+import { Input } from "@/design-system/atoms/Input";
 
 export default function RenameCategoryScreen() {
   const { t } = useTranslation("budget");

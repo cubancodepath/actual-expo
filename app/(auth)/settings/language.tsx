@@ -2,11 +2,11 @@ import { ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { getLocales } from "expo-localization";
-import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
-import { Card, ListItem, SectionHeader } from "@/presentation/components";
+import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvider";
+import { Card, ListItem, SectionHeader } from "@/design-system";
 import { usePrefsStore } from "@/stores/prefsStore";
 import i18n from "@/i18n/config";
-import type { Theme } from "@/theme";
+import type { Theme } from "@/design-system/tokens";
 
 const LANGUAGE_OPTIONS = [
   { value: "system", labelKey: "languageSystem" },

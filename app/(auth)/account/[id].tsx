@@ -10,46 +10,47 @@ import {
   duplicateTransaction,
   toggleCleared,
   updateTransaction,
-} from "@/transactions";
-import { useAccounts, useAccountBalance } from "@/presentation/hooks/useAccounts";
-import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
-import { EmptyState } from "@/presentation/components";
-import type { Theme } from "@/theme";
-import { BalanceSummary } from "@/presentation/components/account/BalanceSummary";
-import { TransactionRow } from "@/presentation/components/account/TransactionRow";
-import { DateSectionHeader } from "@/presentation/components/account/DateSectionHeader";
-import { UpcomingSectionHeader } from "@/presentation/components/account/UpcomingSectionHeader";
-import { UpcomingScheduleRow } from "@/presentation/components/account/UpcomingScheduleRow";
-import { AddTransactionButton } from "@/presentation/components/molecules/AddTransactionButton";
-import { UnclearedPill } from "@/presentation/components/transaction/UnclearedPill";
+} from "@/core/domain/transactions";
+import { useAccounts, useAccountBalance } from "@/features/accounts/hooks/useAccounts";
+import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvider";
+import { EmptyState } from "@/design-system";
+import type { Theme } from "@/design-system/tokens";
+import { Balance } from "@/features/accounts/components/Balance";
+import { TransactionListItem } from "@/features/accounts/components/TransactionListItem";
+import { DateSectionHeader } from "@/features/accounts/components/DateSectionHeader";
+import { UpcomingSectionHeader } from "@/features/accounts/components/UpcomingSectionHeader";
+import { UpcomingScheduleRow } from "@/features/accounts/components/UpcomingScheduleRow";
+import { AddTransactionButton } from "@/design-system/molecules/AddTransactionButton";
+import { UnclearedPill } from "@/features/transactions/components/UnclearedPill";
 import { usePrefsStore } from "@/stores/prefsStore";
-import { useAccountPref } from "@/presentation/hooks/useAccountPref";
+import { useAccountPref } from "@/features/accounts/hooks/useAccountPref";
 import { usePrivacyStore } from "@/stores/privacyStore";
 import { useUndoStore } from "@/stores/undoStore";
-import { useCommonMenuActions } from "@/presentation/hooks/useCommonMenuItems";
-import { useTags } from "@/presentation/hooks/useTags";
-import { useRefreshControl } from "@/presentation/hooks/useRefreshControl";
+import { useCommonMenuActions } from "@/shared/hooks/useCommonMenuItems";
+import { useTags } from "@/features/transactions/hooks/useTags";
+import { useRefreshControl } from "@/shared/hooks/useRefreshControl";
 import { usePickerStore } from "@/stores/pickerStore";
 import {
   buildListData,
   useSelectModeHeader,
   type ListItem,
-} from "@/presentation/hooks/transactionList";
-import { SelectModeToolbar } from "@/presentation/components/transaction/SelectModeToolbar";
+} from "@/features/transactions/hooks/transactionList";
+import { SelectModeToolbar } from "@/features/transactions/components/SelectModeToolbar";
 import {
   skipNextDate,
   postTransactionForSchedule,
   postTransactionForScheduleToday,
   deleteSchedule,
   updateSchedule,
-} from "@/schedules";
-import { useTransactions } from "@/presentation/hooks/useTransactions";
-import { useSelectionMode } from "@/presentation/hooks/useSelectionMode";
-import { useTransactionBatchActions } from "@/presentation/hooks/useTransactionBatchActions";
-import { usePreviewTransactions } from "@/presentation/hooks/usePreviewTransactions";
-import { useLiveQuery } from "@/presentation/hooks/useQuery";
-import { q } from "@/queries";
-import type { TransactionDisplay } from "@/transactions/types";
+} from "@/core/domain/schedules";
+import { useTransactions } from "@/features/transactions/hooks/useTransactions";
+import { useRunningBalances } from "@/features/accounts/hooks/useRunningBalances";
+import { useSelectionMode } from "@/shared/hooks/useSelectionMode";
+import { useTransactionBatchActions } from "@/shared/hooks/useTransactionBatchActions";
+import { usePreviewTransactions } from "@/shared/hooks/usePreviewTransactions";
+import { useLiveQuery } from "@/shared/hooks/useQuery";
+import { q } from "@/core/queries";
+import type { TransactionDisplay } from "@/core/domain/transactions/types";
 
 export default function AccountTransactionsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -84,6 +85,9 @@ export default function AccountTransactionsScreen() {
       options: { pageSize: 25, key: `account-${id}` },
     },
   );
+
+  // ---- Running balance per transaction ----
+  const runningBalances = useRunningBalances(transactions, balance);
 
   // ---- Cleared balance (reactive via liveQuery) ----
   const clearedBalanceQuery = useMemo(
@@ -331,7 +335,7 @@ export default function AccountTransactionsScreen() {
   // ---- Render ----
   return (
     <View style={styles.container}>
-      <BalanceSummary
+      <Balance
         balance={balance}
         clearedBalance={clearedBalance}
         lastReconciled={account?.lastReconciled}
@@ -413,7 +417,7 @@ export default function AccountTransactionsScreen() {
           }
           if (item.type !== "transaction") return null;
           return (
-            <TransactionRow
+            <TransactionListItem
               item={item.data}
               onPress={handleEditTransaction}
               onDelete={handleDelete}
@@ -426,6 +430,7 @@ export default function AccountTransactionsScreen() {
               onMove={handleMove}
               onSetCategory={handleSetCategory}
               onAddTag={handleAddTag}
+              runningBalance={runningBalances.get(item.data.id)}
               tags={tags}
               isFirst={item.isFirst}
               isLast={item.isLast}

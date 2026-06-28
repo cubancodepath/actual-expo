@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { useFocusEffect } from "expo-router";
 import { Alert, Keyboard, Pressable, TextInput, View, useColorScheme } from "react-native";
-import { Icon } from "@/presentation/components/atoms/Icon";
+import { Icon } from "@/design-system/atoms/Icon";
 import { Host, HStack, VStack, Spacer, ContextMenu, Button as SUIButton } from "@expo/ui/swift-ui";
-import { Amount } from "@/presentation/components/atoms/Amount";
+import { Amount } from "@/design-system/atoms/Amount";
 import {
   foregroundStyle,
   padding,
@@ -17,27 +17,27 @@ import {
 import { shapes } from "@expo/ui/swift-ui/modifiers";
 import { Stack, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { useTheme } from "@/presentation/providers/ThemeProvider";
+import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { useSharedValue } from "react-native-reanimated";
-import { AddTransactionButton } from "@/presentation/components/molecules/AddTransactionButton";
-import { SharedAmountInput } from "@/presentation/components/transaction/SharedAmountInput";
-import type { CurrencyInputRef } from "@/presentation/components/currency-input/CurrencyInput";
+import { AddTransactionButton } from "@/design-system/molecules/AddTransactionButton";
+import { SharedAmountInput } from "@/features/transactions/components/SharedAmountInput";
+import type { CurrencyInputRef } from "@/features/transactions/components/currency-input/CurrencyInput";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
-import { setCategoryCarryover, setBudgetAmount, holdForNextMonth } from "@/budgets";
-import { computeGoalAllocations, persistGoalAllocations } from "@/goals/apply";
+import { setCategoryCarryover, setBudgetAmount, holdForNextMonth } from "@/core/domain/budgets";
+import { computeGoalAllocations, persistGoalAllocations } from "@/core/domain/goals/apply";
 import * as Haptics from "expo-haptics";
-import { useCategories } from "@/presentation/hooks/useCategories";
+import { useCategories } from "@/features/budget/hooks/useCategories";
 import {
   useSheetValue,
   useSheetValueNumber,
   useSpreadsheetVersion,
-} from "@/presentation/hooks/useSheetValue";
-import { sheetForMonth, envelopeBudget } from "@/spreadsheet/bindings";
-import { getSpreadsheet } from "@/spreadsheet/instance";
-import { useRefreshControl } from "@/presentation/hooks/useRefreshControl";
-import { useKeyboardHeight } from "@/presentation/hooks/useKeyboardHeight";
-import { useExpressionMode } from "@/presentation/hooks/useExpressionMode";
-import { useKeyboardBlur } from "@/presentation/hooks/useKeyboardBlur";
+} from "@/shared/hooks/useSheetValue";
+import { sheetForMonth, envelopeBudget } from "@/core/domain/spreadsheet/bindings";
+import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
+import { useRefreshControl } from "@/shared/hooks/useRefreshControl";
+import { useKeyboardHeight } from "@/shared/hooks/useKeyboardHeight";
+import { useExpressionMode } from "@/shared/hooks/useExpressionMode";
+import { useKeyboardBlur } from "@/shared/hooks/useKeyboardBlur";
 import { MAX_CENTS } from "@/lib/currency";
 import { formatBalance, formatPrivacyAware } from "@/lib/format";
 import {
@@ -48,26 +48,27 @@ import {
 } from "../../../../modules/actual-ui";
 import { usePrivacyStore } from "@/stores/privacyStore";
 import { useUndoStore } from "@/stores/undoStore";
-import { computeProgressBar } from "@/goals/progressBar";
-import { ProgressBar } from "@/presentation/components/atoms/ProgressBar";
-import { inferGoalFromDef } from "@/goals";
-import { getGoalProgressLabel } from "@/goals/progress";
-import type { BudgetCategoryData, BudgetGroupData } from "@/budgets/types";
+import { computeProgressBar } from "@/core/domain/goals/progressBar";
+import { ProgressBar } from "@/design-system/atoms/ProgressBar";
+import { inferGoalFromDef } from "@/core/domain/goals";
+import { getGoalProgressLabel } from "@/core/domain/goals/progress";
+import type { BudgetCategoryData, BudgetGroupData } from "@/core/domain/budgets/types";
 
 const BUDGET_ACCESSORY_ID = "budgetSharedCalcToolbar";
 
-import { BudgetGroupHeader } from "@/presentation/components/budget/BudgetGroupHeader";
-import { BudgetCategoryRow } from "@/presentation/components/budget/BudgetCategoryRow";
-import { SReadyToAssignPill } from "@/presentation/swift-ui/molecules";
-import { OverspentPill } from "@/presentation/components/budget/OverspentPill";
-import { UncategorizedPill } from "@/presentation/components/budget/UncategorizedPill";
-import { useUncategorizedCount } from "@/presentation/hooks/useUncategorizedCount";
-import { Text } from "@/presentation/components/atoms/Text";
-import { SText, SAmount, SPill } from "@/presentation/swift-ui/atoms";
-import { SSectionHeader } from "@/presentation/swift-ui/molecules";
+import { ExpenseGroupListItem } from "@/features/budget/components/ExpenseGroupListItem";
+import { ExpenseCategoryListItem } from "@/features/budget/components/ExpenseCategoryListItem";
+import { IncomeGroup } from "@/features/budget/components/IncomeGroup";
+import { SReadyToAssignPill } from "@/design-system/swift-ui";
+import { OverspentPill } from "@/features/budget/components/OverspentPill";
+import { UncategorizedPill } from "@/features/budget/components/UncategorizedPill";
+import { useUncategorizedCount } from "@/shared/hooks/useUncategorizedCount";
+import { Text } from "@/design-system/atoms/Text";
+import { SText, SAmount, SPill } from "@/design-system/swift-ui";
+import { SSectionHeader } from "@/design-system/swift-ui";
 import { usePrefsStore } from "@/stores/prefsStore";
-import { useFeatureFlag } from "@/hooks/useFeatureFlag";
-import { BudgetListSkeleton } from "@/presentation/components/skeletons/BudgetListSkeleton";
+import { useFeatureFlag } from "@/shared/hooks/useFeatureFlag";
+import { BudgetListSkeleton } from "@/features/budget/components/BudgetListSkeleton";
 
 // ---------------------------------------------------------------------------
 // Types

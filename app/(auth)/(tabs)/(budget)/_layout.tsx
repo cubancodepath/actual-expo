@@ -1,6 +1,6 @@
 import { Stack, useRouter } from "expo-router";
-import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { MonthSelector } from "@/presentation/components/budget/MonthSelector";
+import { useTheme } from "@/design-system/providers/ThemeProvider";
+import { MonthSelector } from "@/features/budget/components/MonthSelector";
 
 export default function BudgetStack() {
   const { colors } = useTheme();

@@ -1,4 +1,4 @@
-import { PostError } from "../errors";
+import { PostError } from "@/core/errors";
 
 export type BudgetFile = {
   fileId: string;
@@ -126,7 +126,7 @@ export async function listFiles(serverUrl: string, token: string): Promise<Budge
   });
 
   if (res.status === 401 || res.status === 403) {
-    const { usePrefsStore } = await import("../stores/prefsStore");
+    const { usePrefsStore } = await import("@/stores/prefsStore");
     usePrefsStore.getState().clearAll();
     throw new PostError("token-expired");
   }

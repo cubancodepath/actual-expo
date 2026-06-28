@@ -16,7 +16,8 @@
 
   "groups": {
     "budgetAccounts": "Cuentas de presupuesto",
-    "offBudget": "Fuera de presupuesto"
+    "offBudget": "Fuera de presupuesto",
+    "closedAccounts": "Cuentas Cerradas"
   },
 
   "newAccount": {
@@ -52,7 +53,9 @@
     "deleteScheduleTitle": "Eliminar programación",
     "deleteScheduleMessage": "¿Eliminar esta programación y todas las ocurrencias futuras?",
     "unclearedBanner_one": "{{count}} transacción sin conciliar",
-    "unclearedBanner_other": "{{count}} transacciones sin conciliar"
+    "unclearedBanner_other": "{{count}} transacciones sin conciliar",
+    "clearedLabel": "Conciliado",
+    "unclearedLabel": "Sin conciliar"
   },
 
   "search": {

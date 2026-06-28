@@ -2,10 +2,10 @@ import { useState } from "react";
 import { ScrollView, View } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { createCategoryGroup } from "@/categories";
-import { Text } from "@/presentation/components/atoms/Text";
-import { Input } from "@/presentation/components/atoms/Input";
+import { useTheme } from "@/design-system/providers/ThemeProvider";
+import { createCategoryGroup } from "@/core/domain/categories";
+import { Text } from "@/design-system/atoms/Text";
+import { Input } from "@/design-system/atoms/Input";
 
 export default function NewGroupScreen() {
   const { t } = useTranslation("budget");

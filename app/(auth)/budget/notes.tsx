@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import { SectionList, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { Icon } from "@/presentation/components/atoms/Icon";
+import { Icon } from "@/design-system/atoms/Icon";
 import { useTranslation } from "react-i18next";
-import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { Text } from "@/presentation/components/atoms/Text";
-import { RowSeparator } from "@/presentation/components/atoms/RowSeparator";
-import { Button } from "@/presentation/components/atoms/Button";
+import { useTheme } from "@/design-system/providers/ThemeProvider";
+import { Text } from "@/design-system/atoms/Text";
+import { RowSeparator } from "@/design-system/atoms/RowSeparator";
+import { Button } from "@/design-system/atoms/Button";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
-import { first } from "@/db";
+import { first } from "@/core/db";
 
 // ---------------------------------------------------------------------------
 // Parse "on <date>" from the end of a note line

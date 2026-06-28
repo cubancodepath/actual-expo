@@ -10,13 +10,13 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
-import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { lockTransactions, reconcileAccount } from "@/transactions";
-import { Text } from "@/presentation/components/atoms/Text";
-import { Amount } from "@/presentation/components/atoms/Amount";
-import { useAmountInput } from "@/presentation/components/transaction/useAmountInput";
-import { HiddenAmountInput } from "@/presentation/components/transaction/HiddenAmountInput";
-import { CurrencyAmountDisplay } from "@/presentation/components/currency-input/CurrencyAmountDisplay";
+import { useTheme } from "@/design-system/providers/ThemeProvider";
+import { lockTransactions, reconcileAccount } from "@/core/domain/transactions";
+import { Text } from "@/design-system/atoms/Text";
+import { Amount } from "@/design-system/atoms/Amount";
+import { useAmountInput } from "@/features/transactions/components/useAmountInput";
+import { HiddenAmountInput } from "@/features/transactions/components/HiddenAmountInput";
+import { CurrencyAmountDisplay } from "@/features/transactions/components/currency-input/CurrencyAmountDisplay";
 import { formatAmount } from "@/lib/format";
 import { formatDistanceToNow, format } from "date-fns";
 import { useTranslation } from "react-i18next";

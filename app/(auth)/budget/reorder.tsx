@@ -5,14 +5,14 @@ import { useTranslation } from "react-i18next";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { useAnimatedRef } from "react-native-reanimated";
 import Sortable from "react-native-sortables";
-import { Icon } from "@/presentation/components/atoms/Icon";
+import { Icon } from "@/design-system/atoms/Icon";
 import * as Haptics from "expo-haptics";
-import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { useCategories } from "@/presentation/hooks/useCategories";
-import { moveCategory, moveCategoryGroup } from "@/categories";
-import { Text } from "@/presentation/components/atoms/Text";
-import { Button } from "@/presentation/components/atoms/Button";
-import type { Category, CategoryGroup } from "@/categories/types";
+import { useTheme } from "@/design-system/providers/ThemeProvider";
+import { useCategories } from "@/features/budget/hooks/useCategories";
+import { moveCategory, moveCategoryGroup } from "@/core/domain/categories";
+import { Text } from "@/design-system/atoms/Text";
+import { Button } from "@/design-system/atoms/Button";
+import type { Category, CategoryGroup } from "@/core/domain/categories/types";
 
 type GroupWithCats = {
   id: string;

@@ -3,22 +3,22 @@ import { Alert, Keyboard, Pressable, ScrollView, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { randomUUID } from "expo-crypto";
-import { Icon } from "@/presentation/components/atoms/Icon";
+import { Icon } from "@/design-system/atoms/Icon";
 import Animated, { useAnimatedStyle } from "react-native-reanimated";
 import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
 import { BlurView } from "expo-blur";
 import { usePickerStore, type SplitLine } from "@/stores/pickerStore";
-import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
-import { useKeyboardHeight } from "@/presentation/hooks/useKeyboardHeight";
-import { useSharedAmountInput } from "@/presentation/hooks/useSharedAmountInput";
-import { Text } from "@/presentation/components/atoms/Text";
-import { Amount } from "@/presentation/components/atoms/Amount";
-import { Button } from "@/presentation/components/atoms/Button";
-import { GlassButton } from "@/presentation/components/atoms/GlassButton";
-import { SharedAmountInput } from "@/presentation/components/transaction/SharedAmountInput";
-import { CurrencyAmountDisplay } from "@/presentation/components/currency-input/CurrencyAmountDisplay";
+import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvider";
+import { useKeyboardHeight } from "@/shared/hooks/useKeyboardHeight";
+import { useSharedAmountInput } from "@/shared/hooks/useSharedAmountInput";
+import { Text } from "@/design-system/atoms/Text";
+import { Amount } from "@/design-system/atoms/Amount";
+import { Button } from "@/design-system/atoms/Button";
+import { GlassButton } from "@/design-system/atoms/GlassButton";
+import { SharedAmountInput } from "@/features/transactions/components/SharedAmountInput";
+import { CurrencyAmountDisplay } from "@/features/transactions/components/currency-input/CurrencyAmountDisplay";
 import { formatAmount } from "@/lib/format";
-import type { Theme } from "@/theme";
+import type { Theme } from "@/design-system/tokens";
 
 // ---------------------------------------------------------------------------
 // Split Line Row — display only (no TextInput inside)

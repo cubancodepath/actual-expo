@@ -2,17 +2,17 @@ import { useState } from "react";
 import { ActivityIndicator, Alert, Pressable, ScrollView, Switch, View } from "react-native";
 
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { useAccounts } from "@/presentation/hooks/useAccounts";
-import { updateAccount } from "@/accounts";
-import { Icon } from "@/presentation/components/atoms/Icon";
-import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
-import { Text } from "@/presentation/components/atoms/Text";
-import { Button } from "@/presentation/components/atoms/Button";
-import { Input } from "@/presentation/components/atoms/Input";
-import { ErrorBanner } from "@/presentation/components/molecules/ErrorBanner";
-import { useErrorHandler } from "@/presentation/hooks/useErrorHandler";
+import { useAccounts } from "@/features/accounts/hooks/useAccounts";
+import { updateAccount } from "@/core/domain/accounts";
+import { Icon } from "@/design-system/atoms/Icon";
+import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvider";
+import { Text } from "@/design-system/atoms/Text";
+import { Button } from "@/design-system/atoms/Button";
+import { Input } from "@/design-system/atoms/Input";
+import { ErrorBanner } from "@/design-system/molecules/ErrorBanner";
+import { useErrorHandler } from "@/shared/hooks/useErrorHandler";
 import { useTranslation } from "react-i18next";
-import type { Theme } from "@/theme";
+import type { Theme } from "@/design-system/tokens";
 
 export default function AccountSettingsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

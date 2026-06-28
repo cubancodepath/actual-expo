@@ -8,7 +8,7 @@
  */
 
 import { create } from "zustand";
-import { currentMonth } from "../lib/date";
+import { currentMonth } from "@/lib/date";
 
 type CoverTarget = { catId: string; catName: string; balance: number };
 

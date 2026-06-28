@@ -8,24 +8,24 @@ import Animated, {
   interpolate,
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
-import { useAccounts } from "@/presentation/hooks/useAccounts";
+import { useAccounts } from "@/features/accounts/hooks/useAccounts";
 import { usePickerStore } from "@/stores/pickerStore";
 // categories no longer needed from store — picker handles selection
-import { getRecurringDescription, createSchedule } from "@/schedules";
+import { getRecurringDescription, createSchedule } from "@/core/domain/schedules";
 import { todayStr } from "@/lib/date";
 import { withOpacity } from "@/lib/colors";
-import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { Button } from "@/presentation/components/atoms/Button";
-import { Text } from "@/presentation/components/atoms/Text";
-import { GlassButton } from "@/presentation/components/atoms/GlassButton";
-import { AmountHeader } from "@/presentation/components/transaction/AmountHeader";
-import { HiddenAmountInput } from "@/presentation/components/transaction/HiddenAmountInput";
-import { useAmountInput } from "@/presentation/components/transaction/useAmountInput";
-import { ErrorBanner } from "@/presentation/components/molecules/ErrorBanner";
-import { useErrorHandler } from "@/presentation/hooks/useErrorHandler";
-import type { TransactionType } from "@/presentation/components/transaction/TypeToggle";
-import { DetailRow } from "@/presentation/components/transaction/DetailRow";
-import type { RecurConfig, RuleCondition, RuleAction } from "@/schedules/types";
+import { useTheme } from "@/design-system/providers/ThemeProvider";
+import { Button } from "@/design-system/atoms/Button";
+import { Text } from "@/design-system/atoms/Text";
+import { GlassButton } from "@/design-system/atoms/GlassButton";
+import { AmountHeader } from "@/features/transactions/components/AmountHeader";
+import { HiddenAmountInput } from "@/features/transactions/components/HiddenAmountInput";
+import { useAmountInput } from "@/features/transactions/components/useAmountInput";
+import { ErrorBanner } from "@/design-system/molecules/ErrorBanner";
+import { useErrorHandler } from "@/shared/hooks/useErrorHandler";
+import type { TransactionType } from "@/features/transactions/components/TypeToggle";
+import { DetailRow } from "@/features/transactions/components/DetailRow";
+import type { RecurConfig, RuleCondition, RuleAction } from "@/core/domain/schedules/types";
 
 export default function NewScheduleScreen() {
   const router = useRouter();

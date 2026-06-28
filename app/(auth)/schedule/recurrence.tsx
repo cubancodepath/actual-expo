@@ -1,16 +1,16 @@
 import { useMemo } from "react";
 import { Pressable, ScrollView, View } from "react-native";
-import { Icon } from "@/presentation/components/atoms/Icon";
+import { Icon } from "@/design-system/atoms/Icon";
 
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { Text, Card, Divider } from "@/presentation/components";
-import { GlassButton } from "@/presentation/components/atoms/GlassButton";
+import { useTheme } from "@/design-system/providers/ThemeProvider";
+import { Text, Card, Divider } from "@/design-system";
+import { GlassButton } from "@/design-system/atoms/GlassButton";
 import { usePickerStore } from "@/stores/pickerStore";
-import { getRecurringDescription } from "@/schedules";
+import { getRecurringDescription } from "@/core/domain/schedules";
 import { todayStr } from "@/lib/date";
-import type { RecurConfig } from "@/schedules/types";
+import type { RecurConfig } from "@/core/domain/schedules/types";
 
 // ---------------------------------------------------------------------------
 // Presets

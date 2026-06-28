@@ -1,19 +1,19 @@
 import { useCallback, useEffect, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { Icon } from "@/presentation/components/atoms/Icon";
-import { AnimatedCheckmark } from "@/presentation/components/atoms/AnimatedCheckmark";
-import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
-import { useTags } from "@/presentation/hooks/useTags";
-import { createTag } from "@/tags";
+import { Icon } from "@/design-system/atoms/Icon";
+import { AnimatedCheckmark } from "@/design-system/atoms/AnimatedCheckmark";
+import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvider";
+import { useTags } from "@/features/transactions/hooks/useTags";
+import { createTag } from "@/core/domain/tags";
 import { usePickerStore } from "@/stores/pickerStore";
-import { Text } from "@/presentation/components/atoms/Text";
-import { Button } from "@/presentation/components/atoms/Button";
-import { TagPill } from "@/presentation/components/atoms/TagPill";
-import { SearchBar } from "@/presentation/components/molecules/SearchBar";
-import { getTransactionById, updateTransaction } from "@/transactions";
-import { extractTagsFromNotes } from "@/tags";
-import type { Theme } from "@/theme";
+import { Text } from "@/design-system/atoms/Text";
+import { Button } from "@/design-system/atoms/Button";
+import { TagPill } from "@/design-system/atoms/TagPill";
+import { SearchBar } from "@/design-system/molecules/SearchBar";
+import { getTransactionById, updateTransaction } from "@/core/domain/transactions";
+import { extractTagsFromNotes } from "@/core/domain/tags";
+import type { Theme } from "@/design-system/tokens";
 
 const TAG_COLORS = [
   "#8719e0",

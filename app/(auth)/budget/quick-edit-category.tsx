@@ -2,18 +2,18 @@ import { useEffect, useRef, useState } from "react";
 import { Alert, Pressable, ScrollView, type TextInput, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { useTheme } from "@/presentation/providers/ThemeProvider";
+import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { useUndoStore } from "@/stores/undoStore";
-import { updateCategory, deleteCategory } from "@/categories";
-import { useCategories } from "@/presentation/hooks/useCategories";
-import { Text } from "@/presentation/components/atoms/Text";
-import { Button } from "@/presentation/components/atoms/Button";
-import { Input } from "@/presentation/components/atoms/Input";
-import { parseGoalDef } from "@/goals";
-import { describeTemplate, translateDescription } from "@/goals/describe";
+import { updateCategory, deleteCategory } from "@/core/domain/categories";
+import { useCategories } from "@/features/budget/hooks/useCategories";
+import { Text } from "@/design-system/atoms/Text";
+import { Button } from "@/design-system/atoms/Button";
+import { Input } from "@/design-system/atoms/Input";
+import { parseGoalDef } from "@/core/domain/goals";
+import { describeTemplate, translateDescription } from "@/core/domain/goals/describe";
 import i18n from "@/i18n/config";
-import { useFeatureFlag } from "@/hooks/useFeatureFlag";
+import { useFeatureFlag } from "@/shared/hooks/useFeatureFlag";
 
 export default function QuickEditCategoryScreen() {
   const { t } = useTranslation("budget");

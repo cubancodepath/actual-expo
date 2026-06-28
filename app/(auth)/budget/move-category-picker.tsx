@@ -2,11 +2,11 @@ import { useMemo } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
-import { useCategories } from "@/presentation/hooks/useCategories";
-import { sheetForMonth, envelopeBudget } from "@/spreadsheet/bindings";
-import { getSpreadsheet } from "@/spreadsheet/instance";
-import { Amount } from "@/presentation/components/atoms/Amount";
-import { CategoryPickerList, type GroupedCategory } from "@/presentation/components";
+import { useCategories } from "@/features/budget/hooks/useCategories";
+import { sheetForMonth, envelopeBudget } from "@/core/domain/spreadsheet/bindings";
+import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
+import { Amount } from "@/design-system/atoms/Amount";
+import { CategoryPickerList, type GroupedCategory } from "@/design-system";
 
 export default function MoveCategoryPickerScreen() {
   const { t } = useTranslation("budget");

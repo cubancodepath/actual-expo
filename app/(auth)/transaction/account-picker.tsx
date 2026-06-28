@@ -1,16 +1,16 @@
 import { Pressable, ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useAccounts, useAccountBalance } from "@/presentation/hooks/useAccounts";
-import { Icon } from "@/presentation/components/atoms/Icon";
+import { useAccounts, useAccountBalance } from "@/features/accounts/hooks/useAccounts";
+import { Icon } from "@/design-system/atoms/Icon";
 
 import { usePickerStore } from "@/stores/pickerStore";
-import { groupAccounts } from "@/accounts";
-import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
-import { Text } from "@/presentation/components/atoms/Text";
-import { GlassButton } from "@/presentation/components/atoms/GlassButton";
-import { Amount } from "@/presentation/components/atoms/Amount";
-import type { Account } from "@/accounts/types";
-import type { Theme } from "@/theme";
+import { groupAccounts } from "@/core/domain/accounts";
+import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvider";
+import { Text } from "@/design-system/atoms/Text";
+import { GlassButton } from "@/design-system/atoms/GlassButton";
+import { Amount } from "@/design-system/atoms/Amount";
+import type { Account } from "@/core/domain/accounts/types";
+import type { Theme } from "@/design-system/tokens";
 
 function AccountPickerRow({
   account,

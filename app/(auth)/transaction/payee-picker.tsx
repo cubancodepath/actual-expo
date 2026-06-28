@@ -3,18 +3,18 @@ import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, View } fro
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { SymbolView } from "expo-symbols";
-import { Icon } from "@/presentation/components/atoms/Icon";
+import { Icon } from "@/design-system/atoms/Icon";
 
-import { usePayees } from "@/presentation/hooks/usePayees";
+import { usePayees } from "@/features/transactions/hooks/usePayees";
 import { usePickerStore } from "@/stores/pickerStore";
-import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
-import { Text } from "@/presentation/components/atoms/Text";
-import { GlassButton } from "@/presentation/components/atoms/GlassButton";
-import { SearchBar } from "@/presentation/components/molecules/SearchBar";
-import { useNearbyPayees } from "@/presentation/hooks/useNearbyPayees";
-import { useLocationPermission } from "@/presentation/hooks/useLocationPermission";
-import { formatDistance } from "@/payee-locations/location-utils";
-import type { Theme } from "@/theme";
+import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvider";
+import { Text } from "@/design-system/atoms/Text";
+import { GlassButton } from "@/design-system/atoms/GlassButton";
+import { SearchBar } from "@/design-system/molecules/SearchBar";
+import { useNearbyPayees } from "@/shared/hooks/useNearbyPayees";
+import { useLocationPermission } from "@/shared/hooks/useLocationPermission";
+import { formatDistance } from "@/core/domain/payee-locations/location-utils";
+import type { Theme } from "@/design-system/tokens";
 
 export default function PayeePickerScreen() {
   const { selectedId, selectedName, accountId } = useLocalSearchParams<{

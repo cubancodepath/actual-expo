@@ -9,9 +9,9 @@ import Animated, {
   interpolate,
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
-import { useAccounts } from "@/presentation/hooks/useAccounts";
-import { usePayees } from "@/presentation/hooks/usePayees";
-import { useCategories } from "@/presentation/hooks/useCategories";
+import { useAccounts } from "@/features/accounts/hooks/useAccounts";
+import { usePayees } from "@/features/transactions/hooks/usePayees";
+import { useCategories } from "@/features/budget/hooks/useCategories";
 import { usePickerStore } from "@/stores/pickerStore";
 import { useUndoStore } from "@/stores/undoStore";
 import {
@@ -23,21 +23,26 @@ import {
   deleteSchedule,
   skipNextDate,
   postTransactionForSchedule,
-} from "@/schedules";
+} from "@/core/domain/schedules";
 import { withOpacity } from "@/lib/colors";
-import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { Button } from "@/presentation/components/atoms/Button";
-import { Text } from "@/presentation/components/atoms/Text";
-import { GlassButton } from "@/presentation/components/atoms/GlassButton";
-import { AmountHeader } from "@/presentation/components/transaction/AmountHeader";
-import { HiddenAmountInput } from "@/presentation/components/transaction/HiddenAmountInput";
-import { useAmountInput } from "@/presentation/components/transaction/useAmountInput";
-import { ScheduleStatusBadge } from "@/presentation/components/atoms/ScheduleStatusBadge";
-import { ErrorBanner } from "@/presentation/components/molecules/ErrorBanner";
-import { useErrorHandler } from "@/presentation/hooks/useErrorHandler";
-import type { TransactionType } from "@/presentation/components/transaction/TypeToggle";
-import { DetailRow } from "@/presentation/components/transaction/DetailRow";
-import type { Schedule, RecurConfig, RuleCondition, RuleAction } from "@/schedules/types";
+import { useTheme } from "@/design-system/providers/ThemeProvider";
+import { Button } from "@/design-system/atoms/Button";
+import { Text } from "@/design-system/atoms/Text";
+import { GlassButton } from "@/design-system/atoms/GlassButton";
+import { AmountHeader } from "@/features/transactions/components/AmountHeader";
+import { HiddenAmountInput } from "@/features/transactions/components/HiddenAmountInput";
+import { useAmountInput } from "@/features/transactions/components/useAmountInput";
+import { ScheduleStatusBadge } from "@/design-system/atoms/ScheduleStatusBadge";
+import { ErrorBanner } from "@/design-system/molecules/ErrorBanner";
+import { useErrorHandler } from "@/shared/hooks/useErrorHandler";
+import type { TransactionType } from "@/features/transactions/components/TypeToggle";
+import { DetailRow } from "@/features/transactions/components/DetailRow";
+import type {
+  Schedule,
+  RecurConfig,
+  RuleCondition,
+  RuleAction,
+} from "@/core/domain/schedules/types";
 
 export default function ScheduleDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

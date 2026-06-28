@@ -1,16 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useCategories } from "@/presentation/hooks/useCategories";
-import { Icon } from "@/presentation/components/atoms/Icon";
+import { useCategories } from "@/features/budget/hooks/useCategories";
+import { Icon } from "@/design-system/atoms/Icon";
 
 import { usePickerStore } from "@/stores/pickerStore";
-import { getCategoryBalancesForMonth } from "@/budgets";
-import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { Text } from "@/presentation/components/atoms/Text";
-import { Amount } from "@/presentation/components/atoms/Amount";
-import { GlassButton } from "@/presentation/components/atoms/GlassButton";
-import { CategoryPickerList, type GroupedCategory } from "@/presentation/components";
+import { getCategoryBalancesForMonth } from "@/core/domain/budgets";
+import { useTheme } from "@/design-system/providers/ThemeProvider";
+import { Text } from "@/design-system/atoms/Text";
+import { Amount } from "@/design-system/atoms/Amount";
+import { GlassButton } from "@/design-system/atoms/GlassButton";
+import { CategoryPickerList, type GroupedCategory } from "@/design-system";
 import { currentMonth } from "@/lib/date";
 
 export default function CategoryPickerScreen() {

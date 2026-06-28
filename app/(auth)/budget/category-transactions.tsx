@@ -3,21 +3,21 @@ import { ActivityIndicator, RefreshControl, View } from "react-native";
 import { LegendList } from "@legendapp/list";
 import { Stack, useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { EmptyState } from "@/presentation/components";
-import { Button } from "@/presentation/components/atoms/Button";
-import { TransactionRow } from "@/presentation/components/account/TransactionRow";
-import { DateSectionHeader } from "@/presentation/components/account/DateSectionHeader";
-import { SelectModeToolbar } from "@/presentation/components/transaction/SelectModeToolbar";
-import { transactionQuery } from "@/transactions/query";
+import { useTheme } from "@/design-system/providers/ThemeProvider";
+import { EmptyState } from "@/design-system";
+import { Button } from "@/design-system/atoms/Button";
+import { TransactionListItem } from "@/features/accounts/components/TransactionListItem";
+import { DateSectionHeader } from "@/features/accounts/components/DateSectionHeader";
+import { SelectModeToolbar } from "@/features/transactions/components/SelectModeToolbar";
+import { transactionQuery } from "@/core/domain/transactions/query";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { useUndoStore } from "@/stores/undoStore";
-import { useTags } from "@/presentation/hooks/useTags";
+import { useTags } from "@/features/transactions/hooks/useTags";
 import {
   useSelectModeHeader,
   useTransactionList,
   type ListItem,
-} from "@/presentation/hooks/transactionList";
+} from "@/features/transactions/hooks/transactionList";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -144,7 +144,7 @@ export default function CategoryTransactionsScreen() {
             }
             if (item.type !== "transaction") return null;
             return (
-              <TransactionRow
+              <TransactionListItem
                 item={item.data}
                 onPress={txnList.handleEditTransaction}
                 onDelete={txnList.handleDelete}

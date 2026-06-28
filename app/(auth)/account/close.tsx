@@ -1,22 +1,22 @@
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, ScrollView, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { Icon } from "@/presentation/components/atoms/Icon";
+import { Icon } from "@/design-system/atoms/Icon";
 
-import { useAccounts } from "@/presentation/hooks/useAccounts";
-import { closeAccount } from "@/accounts";
-import { useCategories } from "@/presentation/hooks/useCategories";
+import { useAccounts } from "@/features/accounts/hooks/useAccounts";
+import { closeAccount } from "@/core/domain/accounts";
+import { useCategories } from "@/features/budget/hooks/useCategories";
 import { useUndoStore } from "@/stores/undoStore";
-import { getAccountProperties, groupAccounts } from "@/accounts";
-import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
-import { Text } from "@/presentation/components/atoms/Text";
-import { Button } from "@/presentation/components/atoms/Button";
+import { getAccountProperties, groupAccounts } from "@/core/domain/accounts";
+import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvider";
+import { Text } from "@/design-system/atoms/Text";
+import { Button } from "@/design-system/atoms/Button";
 import { formatBalance } from "@/lib/format";
-import { Divider } from "@/presentation/components/atoms/Divider";
-import type { Account } from "@/accounts/types";
-import type { Category, CategoryGroup } from "@/categories/types";
+import { Divider } from "@/design-system/atoms/Divider";
+import type { Account } from "@/core/domain/accounts/types";
+import type { Category, CategoryGroup } from "@/core/domain/categories/types";
 import { useTranslation } from "react-i18next";
-import type { Theme } from "@/theme";
+import type { Theme } from "@/design-system/tokens";
 
 function needsCategory(account: Account, transferAccountId: string, accounts: Account[]): boolean {
   const transferAcct = accounts.find((a) => a.id === transferAccountId);

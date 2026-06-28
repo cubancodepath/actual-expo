@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePrefsStore } from "@/stores/prefsStore";
-import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvider";
 import {
   Text,
   Card,
@@ -14,10 +14,10 @@ import {
   BudgetFileRow,
   BudgetOpeningOverlay,
   GlassButton,
-} from "@/presentation/components";
-import { useBudgetFiles, fileKey } from "@/presentation/hooks/useBudgetFiles";
+} from "@/design-system";
+import { useBudgetFiles, fileKey } from "@/features/settings/hooks/useBudgetFiles";
 import type { ReconciledBudgetFile } from "@/services/budgetfiles";
-import type { Theme } from "@/theme";
+import type { Theme } from "@/design-system/tokens";
 
 type SwitchPhase = "downloading" | "opening" | null;
 

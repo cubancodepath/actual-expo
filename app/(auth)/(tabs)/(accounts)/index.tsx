@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { View, useColorScheme } from "react-native";
 import {
   Host,
@@ -23,24 +23,29 @@ import {
   useAccounts,
   useAccountBalance,
   useAccountGroupBalance,
-} from "@/presentation/hooks/useAccounts";
-import { updateAccount, groupAccounts, type AccountGroup } from "@/accounts";
-import { useRefreshControl } from "@/presentation/hooks/useRefreshControl";
-import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { EmptyState } from "@/presentation/components/molecules/EmptyState";
-import { AddTransactionButton } from "@/presentation/components/molecules/AddTransactionButton";
+} from "@/features/accounts/hooks/useAccounts";
+import {
+  updateAccount,
+  groupAccounts,
+  getClosedAccountCount,
+  type AccountGroup,
+} from "@/core/domain/accounts";
+import { useRefreshControl } from "@/shared/hooks/useRefreshControl";
+import { useTheme } from "@/design-system/providers/ThemeProvider";
+import { EmptyState } from "@/design-system/molecules/EmptyState";
+import { AddTransactionButton } from "@/design-system/molecules/AddTransactionButton";
 import { useUndoStore } from "@/stores/undoStore";
 import { usePrivacyStore } from "@/stores/privacyStore";
 import { usePrefsStore } from "@/stores/prefsStore";
 import { useTranslation } from "react-i18next";
-import type { Account } from "@/accounts/types";
+import type { Account } from "@/core/domain/accounts/types";
 import {
   ActualList,
   ActualSection,
   ActualNavigationStack,
   ScalableText,
 } from "../../../../modules/actual-ui";
-import { SText, SAmount } from "@/presentation/swift-ui/atoms";
+import { SText, SAmount } from "@/design-system/swift-ui";
 
 // ---------------------------------------------------------------------------
 // Account Row
@@ -78,7 +83,12 @@ function AccountSectionHeader({ group }: { group: AccountGroup }) {
   const { t } = useTranslation("accounts");
   const accountIds = useMemo(() => group.accounts.map((a) => a.id), [group.accounts]);
   const groupTotal = useAccountGroupBalance(accountIds);
-  const groupLabel = group.type === "budget" ? t("groups.budgetAccounts") : t("groups.offBudget");
+  const groupLabel =
+    group.type === "budget"
+      ? t("groups.budgetAccounts")
+      : group.type === "closed"
+        ? t("groups.closedAccounts", { defaultValue: "Closed Accounts" })
+        : t("groups.offBudget");
 
   return (
     <HStack alignment="center" spacing={8}>
@@ -107,7 +117,9 @@ export default function AccountsScreen() {
   const { privacyMode, toggle: togglePrivacy } = usePrivacyStore();
   const isLocalOnly = usePrefsStore((s) => s.isLocalOnly);
 
-  const groups = groupAccounts(accounts);
+  const [showClosed, setShowClosed] = useState(false);
+  const closedCount = getClosedAccountCount(accounts);
+  const groups = groupAccounts(accounts, showClosed);
 
   function handlePressAccount(account: Account) {
     router.push(`/(auth)/account/${account.id}`);
@@ -159,6 +171,17 @@ export default function AccountsScreen() {
                       label={tc("nav.switchBudget")}
                       systemImage="arrow.2.squarepath"
                       onPress={() => router.push("/(auth)/change-budget")}
+                    />
+                  )}
+                  {closedCount > 0 && (
+                    <SUIButton
+                      label={
+                        showClosed
+                          ? "Hide Closed Accounts"
+                          : `Show Closed Accounts (${closedCount})`
+                      }
+                      systemImage={showClosed ? "eye.slash" : "archivebox"}
+                      onPress={() => setShowClosed((v) => !v)}
                     />
                   )}
                   <SUIButton

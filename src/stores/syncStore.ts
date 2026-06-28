@@ -1,7 +1,7 @@
 import { create } from "zustand";
-import { fullSync } from "../sync";
-import { toAppError } from "../errors";
-import type { AppError } from "../errors";
+import { fullSync } from "@/core/sync";
+import { toAppError } from "@/core/errors";
+import type { AppError } from "@/core/errors";
 
 type SyncStatus = "idle" | "syncing" | "error" | "success";
 

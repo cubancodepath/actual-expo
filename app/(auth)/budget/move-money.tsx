@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { Icon } from "@/presentation/components/atoms/Icon";
+import { Icon } from "@/design-system/atoms/Icon";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import Animated, {
@@ -12,20 +12,20 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { palette } from "@/theme/colors";
+import { useTheme } from "@/design-system/providers/ThemeProvider";
+import { palette } from "@/design-system/tokens/colors";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
-import { transferMultipleCategories, transferAvailable } from "@/budgets";
-import { useSheetValueNumber } from "@/presentation/hooks/useSheetValue";
-import { sheetForMonth, envelopeBudget } from "@/spreadsheet/bindings";
-import { batchMessages } from "@/sync/batch";
-import { Text } from "@/presentation/components/atoms/Text";
-import { Amount } from "@/presentation/components/atoms/Amount";
-import { Button } from "@/presentation/components/atoms/Button";
-import { GlassButton } from "@/presentation/components/atoms/GlassButton";
-import { SharedAmountInput } from "@/presentation/components/transaction/SharedAmountInput";
-import { EditableAmountRow } from "@/presentation/components/currency-input/EditableAmountRow";
-import { useSharedAmountInput } from "@/presentation/hooks/useSharedAmountInput";
+import { transferMultipleCategories, transferAvailable } from "@/core/domain/budgets";
+import { useSheetValueNumber } from "@/shared/hooks/useSheetValue";
+import { sheetForMonth, envelopeBudget } from "@/core/domain/spreadsheet/bindings";
+import { batchMessages } from "@/core/sync/batch";
+import { Text } from "@/design-system/atoms/Text";
+import { Amount } from "@/design-system/atoms/Amount";
+import { Button } from "@/design-system/atoms/Button";
+import { GlassButton } from "@/design-system/atoms/GlassButton";
+import { SharedAmountInput } from "@/features/transactions/components/SharedAmountInput";
+import { EditableAmountRow } from "@/features/transactions/components/currency-input/EditableAmountRow";
+import { useSharedAmountInput } from "@/shared/hooks/useSharedAmountInput";
 
 type SourceEntry = {
   id: string;

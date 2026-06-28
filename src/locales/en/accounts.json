@@ -16,7 +16,8 @@
 
   "groups": {
     "budgetAccounts": "Budget Accounts",
-    "offBudget": "Off Budget"
+    "offBudget": "Off Budget",
+    "closedAccounts": "Closed Accounts"
   },
 
   "newAccount": {
@@ -52,7 +53,9 @@
     "deleteScheduleTitle": "Delete Schedule",
     "deleteScheduleMessage": "Delete this schedule and all future occurrences?",
     "unclearedBanner_one": "{{count}} uncleared transaction",
-    "unclearedBanner_other": "{{count}} uncleared transactions"
+    "unclearedBanner_other": "{{count}} uncleared transactions",
+    "clearedLabel": "Cleared",
+    "unclearedLabel": "Uncleared"
   },
 
   "search": {

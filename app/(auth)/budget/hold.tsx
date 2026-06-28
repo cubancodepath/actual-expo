@@ -2,16 +2,16 @@ import { useEffect, useState } from "react";
 import { Pressable, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { useTheme } from "@/presentation/providers/ThemeProvider";
+import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
-import { holdForNextMonth } from "@/budgets";
-import { useSheetValueNumber } from "@/presentation/hooks/useSheetValue";
-import { sheetForMonth, envelopeBudget } from "@/spreadsheet/bindings";
-import { Text } from "@/presentation/components/atoms/Text";
-import { Amount } from "@/presentation/components/atoms/Amount";
-import { HiddenAmountInput } from "@/presentation/components/transaction/HiddenAmountInput";
-import { useAmountInput } from "@/presentation/components/transaction/useAmountInput";
-import { CurrencyAmountDisplay } from "@/presentation/components/currency-input/CurrencyAmountDisplay";
+import { holdForNextMonth } from "@/core/domain/budgets";
+import { useSheetValueNumber } from "@/shared/hooks/useSheetValue";
+import { sheetForMonth, envelopeBudget } from "@/core/domain/spreadsheet/bindings";
+import { Text } from "@/design-system/atoms/Text";
+import { Amount } from "@/design-system/atoms/Amount";
+import { HiddenAmountInput } from "@/features/transactions/components/HiddenAmountInput";
+import { useAmountInput } from "@/features/transactions/components/useAmountInput";
+import { CurrencyAmountDisplay } from "@/features/transactions/components/currency-input/CurrencyAmountDisplay";
 
 function AmountDisplay({
   cents,

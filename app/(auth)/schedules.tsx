@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Alert, Pressable, SectionList, View } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvider";
 import {
   Text,
   Amount,
@@ -10,17 +10,17 @@ import {
   SectionHeader,
   ScheduleStatusBadge,
   RowSeparator,
-} from "@/presentation/components";
-import { Icon } from "@/presentation/components/atoms/Icon";
-import { SwipeableRow } from "@/presentation/components";
-import { useSchedules } from "@/presentation/hooks/useSchedules";
-import { deleteSchedule } from "@/schedules";
-import { usePayees } from "@/presentation/hooks/usePayees";
-import { useAccounts } from "@/presentation/hooks/useAccounts";
+} from "@/design-system";
+import { Icon } from "@/design-system/atoms/Icon";
+import { SwipeableRow } from "@/design-system";
+import { useSchedules } from "@/features/schedules/hooks/useSchedules";
+import { deleteSchedule } from "@/core/domain/schedules";
+import { usePayees } from "@/features/transactions/hooks/usePayees";
+import { useAccounts } from "@/features/accounts/hooks/useAccounts";
 import { useUndoStore } from "@/stores/undoStore";
-import { getStatus, getScheduledAmount, getRecurringDescription } from "@/schedules";
-import type { Schedule, ScheduleStatus, RecurConfig } from "@/schedules/types";
-import type { Theme } from "@/theme";
+import { getStatus, getScheduledAmount, getRecurringDescription } from "@/core/domain/schedules";
+import type { Schedule, ScheduleStatus, RecurConfig } from "@/core/domain/schedules/types";
+import type { Theme } from "@/design-system/tokens";
 
 type ScheduleSection = {
   title: string;

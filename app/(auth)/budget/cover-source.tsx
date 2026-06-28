@@ -1,22 +1,22 @@
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { Icon } from "@/presentation/components/atoms/Icon";
+import { Icon } from "@/design-system/atoms/Icon";
 import { useTranslation } from "react-i18next";
-import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { palette } from "@/theme/colors";
+import { useTheme } from "@/design-system/providers/ThemeProvider";
+import { palette } from "@/design-system/tokens/colors";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
-import { transferMultipleCategories, setBudgetAmount } from "@/budgets";
-import { sheetForMonth, envelopeBudget } from "@/spreadsheet/bindings";
-import { getSpreadsheet } from "@/spreadsheet/instance";
+import { transferMultipleCategories, setBudgetAmount } from "@/core/domain/budgets";
+import { sheetForMonth, envelopeBudget } from "@/core/domain/spreadsheet/bindings";
+import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
 import { TO_BUDGET_ID } from "./cover-category-picker";
-import { Text } from "@/presentation/components/atoms/Text";
-import { Amount } from "@/presentation/components/atoms/Amount";
-import { Button } from "@/presentation/components/atoms/Button";
-import { GlassButton } from "@/presentation/components/atoms/GlassButton";
-import { SharedAmountInput } from "@/presentation/components/transaction/SharedAmountInput";
-import { EditableAmountRow } from "@/presentation/components/currency-input/EditableAmountRow";
-import { useSharedAmountInput } from "@/presentation/hooks/useSharedAmountInput";
+import { Text } from "@/design-system/atoms/Text";
+import { Amount } from "@/design-system/atoms/Amount";
+import { Button } from "@/design-system/atoms/Button";
+import { GlassButton } from "@/design-system/atoms/GlassButton";
+import { SharedAmountInput } from "@/features/transactions/components/SharedAmountInput";
+import { EditableAmountRow } from "@/features/transactions/components/currency-input/EditableAmountRow";
+import { useSharedAmountInput } from "@/shared/hooks/useSharedAmountInput";
 
 type SourceEntry = {
   id: string;

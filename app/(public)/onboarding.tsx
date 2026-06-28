@@ -22,13 +22,13 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useTranslation } from "react-i18next";
-import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
-import { Text } from "@/presentation/components/atoms/Text";
-import { Icon } from "@/presentation/components/atoms/Icon";
-import type { IconName } from "@/presentation/components/atoms/iconRegistry";
+import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvider";
+import { Text } from "@/design-system/atoms/Text";
+import { Icon } from "@/design-system/atoms/Icon";
+import type { IconName } from "@/design-system/atoms/iconRegistry";
 import { usePrefsStore } from "@/stores/prefsStore";
-import { palette } from "@/theme";
-import type { Theme } from "@/theme";
+import { palette } from "@/design-system/tokens";
+import type { Theme } from "@/design-system/tokens";
 
 const AnimatedText = Animated.createAnimatedComponent(RNText);
 

@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { BudgetSetupWizard } from "@/presentation/components/budget/BudgetSetupWizard";
+import { BudgetSetupWizard } from "@/features/budget/components/BudgetSetupWizard";
 import { openBudget } from "@/services/budgetfiles";
 import { usePrefsStore } from "@/stores/prefsStore";
 

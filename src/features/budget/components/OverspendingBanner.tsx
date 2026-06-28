@@ -1,0 +1,17 @@
+import { formatPrivacyAware } from "@/lib/format";
+import { Banner } from "@/design-system/molecules/Banner";
+
+interface OverspendingBannerProps {
+  count: number;
+  total: number; // negative cents
+}
+
+export function OverspendingBanner({ count, total }: OverspendingBannerProps) {
+  const label = count === 1 ? "category" : "categories";
+  return (
+    <Banner
+      variant="error"
+      message={`${count} overspent ${label} — ${formatPrivacyAware(total)} over budget`}
+    />
+  );
+}

@@ -15,7 +15,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import { Input } from "@/presentation/components/atoms/Input";
+import { Input } from "@/design-system/atoms/Input";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import Constants from "expo-constants";
@@ -28,13 +28,13 @@ import {
 } from "@/services/authService";
 import { getServerInfo } from "@/services/serverInfo";
 import { usePrefsStore } from "@/stores/prefsStore";
-import { useTheme, useThemedStyles } from "@/presentation/providers/ThemeProvider";
-import { Text } from "@/presentation/components/atoms/Text";
-import { Button } from "@/presentation/components/atoms/Button";
-import { Banner } from "@/presentation/components/molecules/Banner";
-import { ErrorBanner } from "@/presentation/components/molecules/ErrorBanner";
-import { useErrorHandler } from "@/presentation/hooks/useErrorHandler";
-import type { Theme } from "@/theme";
+import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvider";
+import { Text } from "@/design-system/atoms/Text";
+import { Button } from "@/design-system/atoms/Button";
+import { Banner } from "@/design-system/molecules/Banner";
+import { ErrorBanner } from "@/design-system/molecules/ErrorBanner";
+import { useErrorHandler } from "@/shared/hooks/useErrorHandler";
+import type { Theme } from "@/design-system/tokens";
 
 WebBrowser.maybeCompleteAuthSession();
 

@@ -9,19 +9,19 @@ import Animated, {
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { withOpacity } from "@/lib/colors";
-import { useTheme } from "@/presentation/providers/ThemeProvider";
-import { Button } from "@/presentation/components/atoms/Button";
-import { ErrorBanner } from "@/presentation/components/molecules/ErrorBanner";
-import { Text } from "@/presentation/components/atoms/Text";
-import { GlassButton } from "@/presentation/components/atoms/GlassButton";
-import { NotesField } from "@/presentation/components/transaction/NotesField";
-import { ClearedToggle } from "@/presentation/components/transaction/ClearedToggle";
-import { DetailRow } from "@/presentation/components/transaction/DetailRow";
-import { AmountHeader } from "@/presentation/components/transaction/AmountHeader";
-import { HiddenAmountInput } from "@/presentation/components/transaction/HiddenAmountInput";
-import { TransactionDetailsCard } from "@/presentation/components/transaction/TransactionDetailsCard";
-import { useAmountInput } from "@/presentation/components/transaction/useAmountInput";
-import { useTransactionForm } from "@/presentation/components/transaction/useTransactionForm";
+import { useTheme } from "@/design-system/providers/ThemeProvider";
+import { Button } from "@/design-system/atoms/Button";
+import { ErrorBanner } from "@/design-system/molecules/ErrorBanner";
+import { Text } from "@/design-system/atoms/Text";
+import { GlassButton } from "@/design-system/atoms/GlassButton";
+import { NotesField } from "@/features/transactions/components/NotesField";
+import { ClearedToggle } from "@/features/transactions/components/ClearedToggle";
+import { DetailRow } from "@/features/transactions/components/DetailRow";
+import { AmountHeader } from "@/features/transactions/components/AmountHeader";
+import { HiddenAmountInput } from "@/features/transactions/components/HiddenAmountInput";
+import { TransactionDetailsCard } from "@/features/transactions/components/TransactionDetailsCard";
+import { useAmountInput } from "@/features/transactions/components/useAmountInput";
+import { useTransactionForm } from "@/features/transactions/components/useTransactionForm";
 
 export default function NewTransactionScreen() {
   const params = useLocalSearchParams<{

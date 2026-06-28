@@ -1,10 +1,10 @@
 import { useBudgetUIStore } from "./budgetUIStore";
 import { usePickerStore } from "./pickerStore";
 import { useSyncStore } from "./syncStore";
-import { clearQueryCache } from "../queries/queryCache";
-import { currentMonth } from "../lib/date";
-import { PREFERENCE_DEFAULTS } from "../preferences/types";
-import { FEATURE_FLAG_DEFAULTS } from "../preferences/featureFlags";
+import { clearQueryCache } from "@/core/queries/queryCache";
+import { currentMonth } from "@/lib/date";
+import { PREFERENCE_DEFAULTS } from "@/core/domain/preferences/types";
+import { FEATURE_FLAG_DEFAULTS } from "@/core/domain/preferences/featureFlags";
 
 /**
  * Reset all Zustand stores to their initial state.
@@ -14,7 +14,7 @@ import { FEATURE_FLAG_DEFAULTS } from "../preferences/featureFlags";
 export function resetAllStores(): void {
   clearQueryCache();
   // Reset spreadsheet engine
-  import("../spreadsheet/instance").then(({ resetSpreadsheet }) => resetSpreadsheet());
+  import("@/core/domain/spreadsheet/instance").then(({ resetSpreadsheet }) => resetSpreadsheet());
   useBudgetUIStore.setState({ month: currentMonth(), coverTarget: null });
   usePickerStore.getState().clear();
   useSyncStore.setState({ status: "idle", error: null, lastSync: null });
@@ -24,7 +24,7 @@ export function resetAllStores(): void {
   for (const [flag, val] of Object.entries(FEATURE_FLAG_DEFAULTS)) {
     initial[`flags.${flag}`] = String(val);
   }
-  import("../presentation/hooks/useSyncedPref").then(({ useSyncedPrefsStore }) => {
+  import("@/shared/hooks/useSyncedPrefs").then(({ useSyncedPrefsStore }) => {
     useSyncedPrefsStore.setState({ prefs: initial, loaded: false });
   });
 }

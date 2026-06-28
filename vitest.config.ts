@@ -1,3 +1,4 @@
+import path from "path";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
@@ -14,11 +15,13 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      // Path aliases matching tsconfig.json
+      "@": path.resolve(__dirname, "src"),
       // Stub native modules that can't run in Node
-      "expo-sqlite": new URL("src/__mocks__/expo-sqlite.ts", import.meta.url).pathname,
-      "expo-crypto": new URL("src/__mocks__/expo-crypto.ts", import.meta.url).pathname,
-      "expo-secure-store": new URL("src/__mocks__/expo-secure-store.ts", import.meta.url).pathname,
-      "react-native-mmkv": new URL("src/__mocks__/react-native-mmkv.ts", import.meta.url).pathname,
+      "expo-sqlite": path.resolve(__dirname, "src/__mocks__/expo-sqlite.ts"),
+      "expo-crypto": path.resolve(__dirname, "src/__mocks__/expo-crypto.ts"),
+      "expo-secure-store": path.resolve(__dirname, "src/__mocks__/expo-secure-store.ts"),
+      "react-native-mmkv": path.resolve(__dirname, "src/__mocks__/react-native-mmkv.ts"),
     },
   },
 });

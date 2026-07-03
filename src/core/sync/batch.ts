@@ -91,10 +91,12 @@ export async function batchMessages(fn: () => Promise<void>): Promise<void> {
 
 const BUDGET_TABLES = new Set([
   "zero_budgets",
+  "reflect_budgets",
   "zero_budget_months",
   "transactions",
   "accounts",
   "category_mapping",
+  "preferences", // watched for the budgetType row — see triggerBudgetChanges
 ]);
 
 async function _applyAndRecord(messages: SyncMessage[]): Promise<void> {

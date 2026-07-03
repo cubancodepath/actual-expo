@@ -48,3 +48,35 @@ export const envelopeBudget = {
   catGoal: field("goal"),
   catLongGoal: field("long-goal"),
 };
+
+/**
+ * Tracking/report budget cell names.
+ * Ported from Actual Budget's desktop-client/src/spreadsheet/bindings.ts
+ * (report-budget variant). Per-category/per-group names reuse the exact
+ * same naming convention as envelope (same underlying prefixes, e.g.
+ * "budget-<id>", "sum-amount-<id>"), so those are aliased rather than
+ * redefined. Tracking mode has no to-budget/buffered/from-last-month
+ * concept at all — those cells simply don't exist on a tracking sheet.
+ */
+export const trackingBudget = {
+  // ---- Summary-level (one per month) ----
+  totalBudgeted: envelopeBudget.totalBudgeted, // NOT negated in tracking mode (see tracking.ts)
+  totalSpent: envelopeBudget.totalSpent,
+  totalIncome: envelopeBudget.totalIncome,
+  totalLeftover: envelopeBudget.totalBalance, // same cell name: "total-leftover"
+  totalBudgetIncome: "total-budget-income",
+  totalSaved: "total-saved",
+  realSaved: "real-saved",
+
+  // ---- Group-level (one per group per month) ----
+  groupBudgeted: envelopeBudget.groupBudgeted,
+  groupSpent: envelopeBudget.groupSpent,
+  groupBalance: envelopeBudget.groupBalance,
+
+  // ---- Category-level (one per category per month) ----
+  catBudgeted: envelopeBudget.catBudgeted,
+  catSpent: envelopeBudget.catSpent,
+  catBalance: envelopeBudget.catBalance,
+  catCarryover: envelopeBudget.catCarryover,
+  spentWithCarryover: field("spent-with-carryover"),
+};

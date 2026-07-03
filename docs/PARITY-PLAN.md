@@ -2,6 +2,14 @@
 
 > **Entregable**: este documento se guardará en `actual-expo/docs/PARITY-PLAN.md` como primer paso de la ejecución.
 
+## Estado de ejecución (actualizado)
+
+- **Fase 0** ✅ completa — mocks de `expo-sqlite`/`expo-crypto`/`expo-localization`, harness de tests con SQLite real.
+- **Fase 1** ✅ completa — fixes #1-8, #16. 16 tests nuevos en `src/core/sync/__tests__/` y `src/core/db/__tests__/`.
+- **Fase 2** ✅ completa — fixes #10, #11, #13, #14. Bug adicional encontrado y arreglado: el índice de prefijos de `Spreadsheet` (`sum-amount-` con IDs tipo UUID) nunca hacía match, así que el gasto de categorías no se recalculaba en vivo tras una transacción. 13 tests nuevos.
+- **Fase 3.1** ⚠️ **parcial** — el MOTOR de cálculo tracking/report está completo y testeado (`spreadsheet/tracking.ts`, `spreadsheet/shared.ts`, `getBudgetType()` en preferences, dispatch por tipo en `spreadsheet/sync.ts`, reacción a `reflect_budgets`/`preferences.budgetType` en `triggerBudgetChanges`). Un archivo tracking sincronizado desde desktop ahora renderiza los números correctos en el motor de celdas (12 tests nuevos). **NO incluido**: el write-path (`setBudgetAmount`/`setCategoryCarryover`/`holdForNextMonth`/etc. en `budgets/index.ts` siguen escribiendo solo `zero_budgets`/`zero_budget_months`, no hay variante que escriba `reflect_budgets`) ni la UI (las pantallas de budget no seleccionan bindings condicionalmente por tipo — mostrarían campos envelope-only como `to-budget`/`buffered` en un archivo tracking). Ambos quedan como trabajo de seguimiento.
+- **Fase 3.2, 3.3, 3.4, Fase 4**: pendientes.
+
 ## Contexto
 
 `actual-expo` es un port a React Native (Expo/Hermes) de Actual Budget. Se reimplementó el core (CRDT, sync, spreadsheet, encryption) porque las dependencias originales (better-sqlite3, HyperFormula, WebCrypto, PEG.js…) no funcionan en Hermes. La sospecha del usuario era que la sincronización y los cálculos "no están 100% bien". La exploración comparativa de ambos códigos (3 agentes: sync/CRDT, motor de cálculo, capa de datos) lo confirma: la arquitectura es fiel al modelo local-first (cada mutación es un mensaje CRDT, HLC + merkle idénticos al upstream, protobuf y cifrado wire-compatibles), pero hay **2 bugs P0 que rompen la convergencia**, varios bugs P1 de corrección, y huecos de paridad de features.

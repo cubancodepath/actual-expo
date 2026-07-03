@@ -66,6 +66,24 @@ export async function setFeatureFlag(name: FeatureFlag, enabled: boolean): Promi
   ]);
 }
 
+export type BudgetType = "envelope" | "tracking";
+
+/**
+ * Which budgeting model this file uses — drives which spreadsheet formulas
+ * (envelope.ts vs tracking.ts) and which table (zero_budgets vs
+ * reflect_budgets) budget cells are read from. Stored as the synced
+ * "budgetType" preferences row, same as upstream (server/budget/base.ts).
+ * Older files may have the pre-rename value "report" (see upstream
+ * migration 1745425408000_update_budgetType_pref.sql) — normalize
+ * defensively in case a peer on an older version writes it directly.
+ */
+export async function getBudgetType(): Promise<BudgetType> {
+  const row = await first<{ value: string }>("SELECT value FROM preferences WHERE id = ?", [
+    "budgetType",
+  ]);
+  return row?.value === "tracking" || row?.value === "report" ? "tracking" : "envelope";
+}
+
 /** Read/write arbitrary preferences (e.g. per-account settings like hide-cleared-{id}). */
 export async function getArbitraryPref(key: string): Promise<string | null> {
   const row = await first<{ value: string }>("SELECT value FROM preferences WHERE id = ?", [key]);

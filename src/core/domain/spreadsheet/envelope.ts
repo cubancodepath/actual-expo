@@ -10,22 +10,14 @@
  * - Static cells: set once, only change via ss.setByName()
  */
 
-import { Spreadsheet, type CellValue } from "./spreadsheet";
+import { Spreadsheet } from "./spreadsheet";
 import { sheetForMonth, envelopeBudget } from "./bindings";
-import { runQuery, first, firstSync } from "@/core/db";
-import { monthToInt, currentMonth, intToStr } from "@/lib/date";
-import { ALIVE_TX_FILTER } from "@/core/db/filters";
+import { runQuery, firstSync } from "@/core/db";
+import { monthToInt, addMonths } from "@/lib/date";
 import { getCategories, getCategoryGroups } from "../categories";
 import type { Category, CategoryGroup } from "../categories/types";
 import { safeNumber } from "@/lib/number";
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function num(v: CellValue): number {
-  return typeof v === "number" ? v : 0;
-}
+import { num, createSpentCells, getBudgetRange } from "./shared";
 
 // ---------------------------------------------------------------------------
 // Create all budget cells for a single month
@@ -46,11 +38,9 @@ export async function createBudgetCells(
   groups: CategoryGroup[],
 ): Promise<void> {
   const sheet = sheetForMonth(month);
-  const prevMonth = getPrevMonth(month);
+  const prevMonth = addMonths(month, -1);
   const prevSheet = sheetForMonth(prevMonth);
   const monthInt = monthToInt(month);
-  const startDate = monthInt * 100 + 1;
-  const endDate = monthInt * 100 + 31;
 
   const expenseGroups = groups.filter((g) => !g.is_income);
   const incomeGroup = groups.find((g) => g.is_income);
@@ -69,23 +59,7 @@ export async function createBudgetCells(
   });
 
   // ── Per-category: catSpent for ALL categories (income + expense) ──
-  for (const cat of categories) {
-    ss.createDynamic(sheet, envelopeBudget.catSpent(cat.id), {
-      dependencies: [],
-      run: () => {
-        const row = firstSync<{ total: number }>(
-          `SELECT SUM(t.amount) AS total
-           FROM transactions t
-           LEFT JOIN category_mapping cm ON cm.id = t.category
-           LEFT JOIN accounts a ON a.id = t.acct
-           WHERE ${ALIVE_TX_FILTER} AND t.date >= ? AND t.date <= ? AND a.offbudget = 0
-             AND COALESCE(cm.transferId, t.category) = ?`,
-          [startDate, endDate, cat.id],
-        );
-        return row?.total ?? 0;
-      },
-    });
-  }
+  createSpentCells(ss, month, categories);
 
   // ── Per-category: budget/carryover/balance for expense categories only ──
   for (const cat of categories) {
@@ -264,12 +238,6 @@ export async function createBudgetCells(
 // Helpers
 // ---------------------------------------------------------------------------
 
-function getPrevMonth(month: string): string {
-  const [y, m] = month.split("-").map(Number);
-  if (m === 1) return `${y - 1}-12`;
-  return `${y}-${String(m - 1).padStart(2, "0")}`;
-}
-
 /** Infer goal amount from goal_def JSON. */
 function inferGoalFromDef(goalDef: string | null): { amount: number; longGoal: boolean } | null {
   if (!goalDef) return null;
@@ -293,36 +261,7 @@ function inferGoalFromDef(goalDef: string | null): { amount: number; longGoal: b
 // Multi-month loading
 // ---------------------------------------------------------------------------
 
-export async function getBudgetRange(): Promise<{ start: string; end: string; months: string[] }> {
-  const row = await first<{ d: number | null }>(
-    "SELECT MIN(date) as d FROM transactions WHERE tombstone = 0",
-  );
-
-  const today = currentMonth();
-  let startMonth: string;
-
-  if (row?.d) {
-    const dateStr = intToStr(row.d);
-    if (dateStr) {
-      startMonth = subMonths(dateStr.slice(0, 7), 3);
-    } else {
-      startMonth = subMonths(today, 3);
-    }
-  } else {
-    startMonth = subMonths(today, 3);
-  }
-
-  // On mobile we default to a tighter initial range (2 before → 3 ahead)
-  // to reduce startup time. Cells for earlier/later months are created
-  // on demand via createBudgetCells() when the user navigates to them.
-  const endMonth = addMonths(today, 3);
-
-  return {
-    start: startMonth,
-    end: endMonth,
-    months: monthRange(startMonth, endMonth),
-  };
-}
+export { getBudgetRange } from "./shared";
 
 /**
  * Create budget cells for ALL months in the budget range.
@@ -343,38 +282,4 @@ export async function createAllBudgetCells(
   ss.endTransaction();
 
   return { start, end };
-}
-
-// ---------------------------------------------------------------------------
-// Month math helpers
-// ---------------------------------------------------------------------------
-
-function subMonths(month: string, n: number): string {
-  let [y, m] = month.split("-").map(Number);
-  m -= n;
-  while (m <= 0) {
-    y--;
-    m += 12;
-  }
-  return `${y}-${String(m).padStart(2, "0")}`;
-}
-
-function addMonths(month: string, n: number): string {
-  let [y, m] = month.split("-").map(Number);
-  m += n;
-  while (m > 12) {
-    y++;
-    m -= 12;
-  }
-  return `${y}-${String(m).padStart(2, "0")}`;
-}
-
-function monthRange(start: string, end: string): string[] {
-  const months: string[] = [];
-  let current = start;
-  while (current <= end) {
-    months.push(current);
-    current = addMonths(current, 1);
-  }
-  return months;
 }

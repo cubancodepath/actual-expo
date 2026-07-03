@@ -11,9 +11,27 @@
 import { listen } from "@/core/sync/syncEvents";
 import type { SyncMessage } from "@/core/sync/encoder";
 import { getSpreadsheet } from "./instance";
-import { createAllBudgetCells, createBudgetCells } from "./envelope";
+import * as envelopeEngine from "./envelope";
+import * as trackingEngine from "./tracking";
 import { getCategories, getCategoryGroups } from "../categories";
+import { getBudgetType } from "../preferences";
 import { addMonths } from "@/lib/date";
+
+type BudgetEngine = {
+  createBudgetCells: typeof envelopeEngine.createBudgetCells;
+  createAllBudgetCells: typeof envelopeEngine.createAllBudgetCells;
+};
+
+/**
+ * The active budget-type formula module (envelope.ts or tracking.ts) — both
+ * export the same createBudgetCells/createAllBudgetCells contract, so every
+ * call site here just needs to know which one to dispatch to for the
+ * currently-open file.
+ */
+async function getEngine(): Promise<BudgetEngine> {
+  const type = await getBudgetType();
+  return type === "tracking" ? trackingEngine : envelopeEngine;
+}
 
 /** Timestamp of last initSpreadsheet — suppresses structural refresh cooldown. */
 let lastInitTime = 0;
@@ -27,6 +45,8 @@ const INIT_COOLDOWN = 500; // ms — brief cooldown to prevent double-init, shor
 // requested month must be built in ascending order before it's usable.
 let builtStart: string | null = null;
 let builtEnd: string | null = null;
+/** Which engine (envelope/tracking) built the current cells — see runStructuralRefresh. */
+let lastEngine: BudgetEngine | null = null;
 
 /**
  * Initialize the spreadsheet with budget cells for all months.
@@ -35,7 +55,9 @@ let builtEnd: string | null = null;
 export async function initSpreadsheet(): Promise<void> {
   const ss = getSpreadsheet();
   ss.clear();
-  const range = await createAllBudgetCells(ss);
+  const engine = await getEngine();
+  lastEngine = engine;
+  const range = await engine.createAllBudgetCells(ss);
   builtStart = range.start;
   builtEnd = range.end;
   lastInitTime = Date.now();
@@ -43,6 +65,7 @@ export async function initSpreadsheet(): Promise<void> {
 
 /** Ascending walk from `from` to `to` (inclusive), building each month's cells in order. */
 async function buildMonthsAscending(
+  engine: BudgetEngine,
   ss: ReturnType<typeof getSpreadsheet>,
   from: string,
   to: string,
@@ -51,7 +74,7 @@ async function buildMonthsAscending(
 ): Promise<void> {
   let cursor = from;
   while (cursor <= to) {
-    await createBudgetCells(ss, cursor, cats, groups);
+    await engine.createBudgetCells(ss, cursor, cats, groups);
     cursor = addMonths(cursor, 1);
   }
 }
@@ -67,19 +90,23 @@ export async function ensureMonthRange(month: string): Promise<void> {
   if (builtStart === null || builtEnd === null) return; // not initialized yet
   if (month >= builtStart && month <= builtEnd) return; // already built
 
-  const [cats, groups] = await Promise.all([getCategories(), getCategoryGroups()]);
+  const [engine, cats, groups] = await Promise.all([
+    getEngine(),
+    getCategories(),
+    getCategoryGroups(),
+  ]);
   const ss = getSpreadsheet();
 
   ss.startTransaction();
   try {
     if (month > builtEnd) {
-      await buildMonthsAscending(ss, addMonths(builtEnd, 1), month, cats, groups);
+      await buildMonthsAscending(engine, ss, addMonths(builtEnd, 1), month, cats, groups);
       builtEnd = month;
     } else if (month < builtStart) {
       // Walk forward from the new earliest month up to (but not including)
       // the old start, so each month's prevSheet is always already built
       // by the time it's needed.
-      await buildMonthsAscending(ss, month, addMonths(builtStart, -1), cats, groups);
+      await buildMonthsAscending(engine, ss, month, addMonths(builtStart, -1), cats, groups);
       builtStart = month;
     }
   } finally {
@@ -125,7 +152,7 @@ export function triggerBudgetChanges(messages: SyncMessage[]): void {
       ) {
         touchTransactions = true;
       }
-    } else if (msg.dataset === "zero_budgets") {
+    } else if (msg.dataset === "zero_budgets" || msg.dataset === "reflect_budgets") {
       if (msg.column === "amount" || msg.column === "carryover") {
         touchBudgets = true;
       }
@@ -137,6 +164,13 @@ export function triggerBudgetChanges(messages: SyncMessage[]): void {
       }
     } else if (msg.dataset === "category_mapping") {
       touchAccountsOrMapping = true;
+    } else if (msg.dataset === "preferences" && msg.row === "budgetType") {
+      // The entire formula set differs between envelope and tracking mode —
+      // no amount of granular cell invalidation covers that, only a full
+      // structural rebuild (upstream: base.ts reads getBudgetType() fresh
+      // on every triggerBudgetChanges call for the same reason).
+      if (!refreshing) runStructuralRefresh();
+      else pendingRefresh = true;
     }
   }
 
@@ -194,7 +228,17 @@ async function runStructuralRefresh(): Promise<void> {
     const prevStart = builtStart;
     const prevEnd = builtEnd;
 
-    const range = await createAllBudgetCells(getSpreadsheet());
+    const ss = getSpreadsheet();
+    const engine = await getEngine();
+    if (engine !== lastEngine) {
+      // Budget type changed since the last build — the entire formula set
+      // differs (envelope vs tracking cell names/deps), so the old cells
+      // must not linger. A plain categories/groups change reuses the same
+      // engine and keeps the cheaper incremental (no-clear) rebuild below.
+      ss.clear();
+      lastEngine = engine;
+    }
+    const range = await engine.createAllBudgetCells(ss);
     builtStart = range.start;
     builtEnd = range.end;
 

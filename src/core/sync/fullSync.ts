@@ -23,10 +23,12 @@ function normalizeTables(datasets: string[]): string[] {
 
 const BUDGET_TABLES = new Set([
   "zero_budgets",
+  "reflect_budgets",
   "zero_budget_months",
   "transactions",
   "accounts",
   "category_mapping",
+  "preferences", // watched for the budgetType row — see triggerBudgetChanges
 ]);
 
 /**

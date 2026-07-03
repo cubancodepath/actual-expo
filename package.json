@@ -105,5 +105,10 @@
       "oxlint --fix",
       "oxfmt"
     ]
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3"
+    ]
   }
 }

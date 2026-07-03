@@ -1,9 +1,9 @@
 import { useState, useRef, type ReactNode } from "react";
 import { TextInput, type ViewStyle } from "react-native";
-import { useExpressionMode } from "@/shared/hooks/useExpressionMode";
-import { useCursorBlink } from "@/shared/hooks/useCursorBlink";
-import { useKeyboardBlur } from "@/shared/hooks/useKeyboardBlur";
-import { useSyncedPrefs } from "@/shared/hooks/useSyncedPrefs";
+import { useExpressionMode } from "@/hooks/useExpressionMode";
+import { useCursorBlink } from "@/hooks/useCursorBlink";
+import { useKeyboardBlur } from "@/hooks/useKeyboardBlur";
+import { useSyncedPrefs } from "@/hooks/useSyncedPrefs";
 import { MAX_CENTS } from "@/lib/currency";
 
 interface UseCurrencyInputOptions {

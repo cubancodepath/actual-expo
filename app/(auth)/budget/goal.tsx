@@ -13,7 +13,10 @@ import { Button } from "@/design-system/atoms/Button";
 import { Card } from "@/design-system/atoms/Card";
 import { ListItem } from "@/design-system/molecules/ListItem";
 import { Divider } from "@/design-system/atoms/Divider";
-import { CurrencyInput, type CurrencyInputRef } from "@/design-system";
+import {
+  CurrencyInput,
+  type CurrencyInputRef,
+} from "@/features/transactions/components/currency-input";
 import { getGoalTemplates, setGoalTemplates } from "@/core/domain/goals";
 import { updateGoalIndicator } from "@/core/domain/goals/apply";
 import { amountToInteger, integerToAmount } from "@/core/domain/goals/engine";

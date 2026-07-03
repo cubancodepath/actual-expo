@@ -1,7 +1,7 @@
 import { Stack, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
-import { themedScreenOptions } from "@/shared/navigation/screenOptions";
+import { themedScreenOptions } from "@/lib/screenOptions";
 import { Button, EncryptionPasswordPrompt } from "@/design-system";
 
 export default function SettingsLayout() {

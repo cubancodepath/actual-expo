@@ -3,7 +3,7 @@ import { TextInput } from "react-native";
 import { useExpressionMode } from "./useExpressionMode";
 import { useKeyboardBlur } from "./useKeyboardBlur";
 import { MAX_CENTS } from "@/lib/currency";
-import type { CurrencyInputRef } from "@/design-system";
+import type { CurrencyInputRef } from "@/features/transactions/components/currency-input";
 
 interface UseSharedAmountInputOptions {
   /** Current active amount in cents (derived from the active row's state) */

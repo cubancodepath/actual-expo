@@ -27,17 +27,13 @@ import { setCategoryCarryover, setBudgetAmount, holdForNextMonth } from "@/core/
 import { computeGoalAllocations, persistGoalAllocations } from "@/core/domain/goals/apply";
 import * as Haptics from "expo-haptics";
 import { useCategories } from "@/features/budget/hooks/useCategories";
-import {
-  useSheetValue,
-  useSheetValueNumber,
-  useSpreadsheetVersion,
-} from "@/shared/hooks/useSheetValue";
+import { useSheetValue, useSheetValueNumber, useSpreadsheetVersion } from "@/hooks/useSheetValue";
 import { sheetForMonth, envelopeBudget } from "@/core/domain/spreadsheet/bindings";
 import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
-import { useRefreshControl } from "@/shared/hooks/useRefreshControl";
-import { useKeyboardHeight } from "@/shared/hooks/useKeyboardHeight";
-import { useExpressionMode } from "@/shared/hooks/useExpressionMode";
-import { useKeyboardBlur } from "@/shared/hooks/useKeyboardBlur";
+import { useRefreshControl } from "@/hooks/useRefreshControl";
+import { useKeyboardHeight } from "@/hooks/useKeyboardHeight";
+import { useExpressionMode } from "@/hooks/useExpressionMode";
+import { useKeyboardBlur } from "@/hooks/useKeyboardBlur";
 import { MAX_CENTS } from "@/lib/currency";
 import { formatBalance, formatPrivacyAware } from "@/lib/format";
 import {
@@ -62,12 +58,12 @@ import { IncomeGroup } from "@/features/budget/components/IncomeGroup";
 import { SReadyToAssignPill } from "@/design-system/swift-ui";
 import { OverspentPill } from "@/features/budget/components/OverspentPill";
 import { UncategorizedPill } from "@/features/budget/components/UncategorizedPill";
-import { useUncategorizedCount } from "@/shared/hooks/useUncategorizedCount";
+import { useUncategorizedCount } from "@/hooks/useUncategorizedCount";
 import { Text } from "@/design-system/atoms/Text";
 import { SText, SAmount, SPill } from "@/design-system/swift-ui";
 import { SSectionHeader } from "@/design-system/swift-ui";
 import { usePrefsStore } from "@/stores/prefsStore";
-import { useFeatureFlag } from "@/shared/hooks/useFeatureFlag";
+import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { BudgetListSkeleton } from "@/features/budget/components/BudgetListSkeleton";
 
 // ---------------------------------------------------------------------------

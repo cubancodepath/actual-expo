@@ -1,11 +1,11 @@
 import { useId, useImperativeHandle, useRef, useState } from "react";
 import { TextInput } from "react-native";
-import { useSyncedPrefs } from "@/shared/hooks/useSyncedPrefs";
+import { useSyncedPrefs } from "@/hooks/useSyncedPrefs";
 import { MAX_CENTS } from "@/lib/currency";
-import { useExpressionMode } from "@/shared/hooks/useExpressionMode";
-import { useCursorBlink } from "@/shared/hooks/useCursorBlink";
-import { useKeyboardBlur } from "@/shared/hooks/useKeyboardBlur";
-import type { CurrencyInputRef } from "@/design-system";
+import { useExpressionMode } from "@/hooks/useExpressionMode";
+import { useCursorBlink } from "@/hooks/useCursorBlink";
+import { useKeyboardBlur } from "@/hooks/useKeyboardBlur";
+import type { CurrencyInputRef } from "@/features/transactions/components/currency-input";
 
 export function useAmountInput(initialCents = 0) {
   const accessoryID = useId();

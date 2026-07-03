@@ -14,7 +14,7 @@ import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { lockTransactions, reconcileAccount } from "@/core/domain/transactions";
 import { Text } from "@/design-system/atoms/Text";
 import { Amount } from "@/design-system/atoms/Amount";
-import { useAmountInput } from "@/features/transactions/components/useAmountInput";
+import { useAmountInput } from "@/features/transactions/hooks/useAmountInput";
 import { HiddenAmountInput } from "@/features/transactions/components/HiddenAmountInput";
 import { CurrencyAmountDisplay } from "@/features/transactions/components/currency-input/CurrencyAmountDisplay";
 import { formatAmount } from "@/lib/format";

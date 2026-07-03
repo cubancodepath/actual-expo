@@ -2,8 +2,8 @@ import { useEffect, useRef } from "react";
 import { Alert, AppState } from "react-native";
 import { Accelerometer } from "expo-sensors";
 import * as Haptics from "expo-haptics";
-import i18n from "../../i18n/config";
-import { useUndoStore } from "../../stores/undoStore";
+import i18n from "@/i18n/config";
+import { useUndoStore } from "@/stores/undoStore";
 
 const SHAKE_THRESHOLD = 2.5; // magnitude threshold (gravity ≈ 1.0, so net > 1.5g)
 const SHAKE_COUNT = 3; // required threshold crossings

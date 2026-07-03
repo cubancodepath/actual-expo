@@ -13,8 +13,8 @@ import {
   ErrorBanner,
   promptToEnableEncryption,
 } from "@/design-system";
-import { useErrorHandler } from "@/shared/hooks/useErrorHandler";
-import { useSyncedPrefs, useFeatureFlag } from "@/shared/hooks/useSyncedPrefs";
+import { useErrorHandler } from "@/hooks/useErrorHandler";
+import { useSyncedPrefs, useFeatureFlag } from "@/hooks/useSyncedPrefs";
 import { usePrefsStore } from "@/stores/prefsStore";
 import {
   ALL_FEATURE_FLAGS,

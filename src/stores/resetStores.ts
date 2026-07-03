@@ -24,7 +24,7 @@ export function resetAllStores(): void {
   for (const [flag, val] of Object.entries(FEATURE_FLAG_DEFAULTS)) {
     initial[`flags.${flag}`] = String(val);
   }
-  import("@/shared/hooks/useSyncedPrefs").then(({ useSyncedPrefsStore }) => {
+  import("@/hooks/useSyncedPrefs").then(({ useSyncedPrefsStore }) => {
     useSyncedPrefsStore.setState({ prefs: initial, loaded: false });
   });
 }

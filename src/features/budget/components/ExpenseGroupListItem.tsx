@@ -2,7 +2,7 @@ import { View } from "react-native";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { Text } from "@/design-system/atoms/Text";
 import { Amount } from "@/design-system/atoms/Amount";
-import { useSheetValueNumber } from "@/shared/hooks/useSheetValue";
+import { useSheetValueNumber } from "@/hooks/useSheetValue";
 import { envelopeBudget } from "@/core/domain/spreadsheet/bindings";
 import type { BudgetGroupData } from "@/core/domain/budgets/types";
 

@@ -11,8 +11,8 @@ import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvid
 import { Text } from "@/design-system/atoms/Text";
 import { GlassButton } from "@/design-system/atoms/GlassButton";
 import { SearchBar } from "@/design-system/molecules/SearchBar";
-import { useNearbyPayees } from "@/shared/hooks/useNearbyPayees";
-import { useLocationPermission } from "@/shared/hooks/useLocationPermission";
+import { useNearbyPayees } from "@/hooks/useNearbyPayees";
+import { useLocationPermission } from "@/hooks/useLocationPermission";
 import { formatDistance } from "@/core/domain/payee-locations/location-utils";
 import type { Theme } from "@/design-system/tokens";
 

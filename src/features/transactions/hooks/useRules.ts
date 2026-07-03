@@ -6,7 +6,7 @@
 
 import { useMemo } from "react";
 import { q } from "@/core/queries";
-import { useLiveQuery } from "@/shared/hooks/useQuery";
+import { useLiveQuery } from "@/hooks/useQuery";
 import { Rule } from "@/core/domain/rules/rule";
 import { RuleError } from "@/core/domain/rules/errors";
 import type { RuleStage } from "@/core/domain/rules/types";

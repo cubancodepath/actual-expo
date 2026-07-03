@@ -4,7 +4,7 @@
  */
 
 import { q } from "@/core/queries";
-import { useLiveQuery } from "@/shared/hooks/useQuery";
+import { useLiveQuery } from "@/hooks/useQuery";
 import type { Payee } from "@/core/domain/payees/types";
 
 export function usePayees() {

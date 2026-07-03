@@ -30,7 +30,7 @@ import {
   getClosedAccountCount,
   type AccountGroup,
 } from "@/core/domain/accounts";
-import { useRefreshControl } from "@/shared/hooks/useRefreshControl";
+import { useRefreshControl } from "@/hooks/useRefreshControl";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { EmptyState } from "@/design-system/molecules/EmptyState";
 import { AddTransactionButton } from "@/design-system/molecules/AddTransactionButton";

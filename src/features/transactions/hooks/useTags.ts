@@ -4,7 +4,7 @@
  */
 
 import { q } from "@/core/queries";
-import { useLiveQuery } from "@/shared/hooks/useQuery";
+import { useLiveQuery } from "@/hooks/useQuery";
 import type { Tag } from "@/core/domain/tags/types";
 
 export function useTags() {

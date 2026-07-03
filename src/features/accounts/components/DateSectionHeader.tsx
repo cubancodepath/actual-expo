@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { Text } from "@/design-system";
 import { formatDateHuman, todayInt } from "@/lib/date";
-import { useSyncedPrefs } from "@/shared/hooks/useSyncedPrefs";
+import { useSyncedPrefs } from "@/hooks/useSyncedPrefs";
 
 function yesterdayInt(): number {
   const d = new Date();

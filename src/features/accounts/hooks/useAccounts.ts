@@ -8,7 +8,7 @@
 
 import { useMemo } from "react";
 import { q } from "@/core/queries";
-import { useLiveQuery } from "@/shared/hooks/useQuery";
+import { useLiveQuery } from "@/hooks/useQuery";
 import type { Account } from "@/core/domain/accounts/types";
 
 /**

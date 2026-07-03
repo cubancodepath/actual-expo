@@ -1,7 +1,7 @@
 import { Keyboard } from "react-native";
 import Animated, { useAnimatedStyle } from "react-native-reanimated";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
-import { useKeyboardHeight } from "@/shared/hooks/useKeyboardHeight";
+import { useKeyboardHeight } from "@/hooks/useKeyboardHeight";
 import { GlassButton } from "./GlassButton";
 
 /**

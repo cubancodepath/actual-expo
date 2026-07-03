@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { q } from "@/core/queries";
-import { useLiveQuery } from "@/shared/hooks/useQuery";
+import { useLiveQuery } from "@/hooks/useQuery";
 import { addMonths } from "@/lib/date";
 
 export type SavingsRatePoint = { month: string; rate: number; saved: number; overspent: number };

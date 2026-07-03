@@ -28,7 +28,7 @@ import { GlassButton } from "@/design-system/atoms/GlassButton";
 import { RowSeparator } from "@/design-system/atoms/RowSeparator";
 import { describeTemplate, translateDescription } from "@/core/domain/goals/describe";
 import i18n from "@/i18n/config";
-import { useFeatureFlag } from "@/shared/hooks/useFeatureFlag";
+import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import type { Category, CategoryGroup } from "@/core/domain/categories/types";
 
 // ---------- Section types ----------

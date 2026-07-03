@@ -16,7 +16,7 @@ import { Button } from "@/design-system/atoms/Button";
 import { GlassButton } from "@/design-system/atoms/GlassButton";
 import { SharedAmountInput } from "@/features/transactions/components/SharedAmountInput";
 import { EditableAmountRow } from "@/features/transactions/components/currency-input/EditableAmountRow";
-import { useSharedAmountInput } from "@/shared/hooks/useSharedAmountInput";
+import { useSharedAmountInput } from "@/hooks/useSharedAmountInput";
 
 type SourceEntry = {
   id: string;

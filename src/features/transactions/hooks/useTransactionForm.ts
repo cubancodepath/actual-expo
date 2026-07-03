@@ -15,7 +15,7 @@ import { extractTagsFromNotes } from "@/core/domain/tags";
 import { suggestCategoryForPayee, applyRulesToForm } from "@/core/domain/rules/apply";
 import { findPayeeByName } from "@/core/domain/payees";
 import { todayInt, intToStr, strToInt } from "@/lib/date";
-import { useErrorHandler } from "@/shared/hooks/useErrorHandler";
+import { useErrorHandler } from "@/hooks/useErrorHandler";
 import type { TransactionType } from "@/features/transactions/components/TypeToggle";
 
 interface RouteParams {

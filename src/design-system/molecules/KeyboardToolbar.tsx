@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import type { ViewStyle, StyleProp } from "react-native";
 import Animated, { useAnimatedStyle } from "react-native-reanimated";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
-import { useKeyboardHeight } from "@/shared/hooks/useKeyboardHeight";
+import { useKeyboardHeight } from "@/hooks/useKeyboardHeight";
 
 type KeyboardToolbarProps = {
   children: ReactNode;

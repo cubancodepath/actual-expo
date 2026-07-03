@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { evalArithmetic } from "../../lib/arithmetic";
-import { MAX_CENTS, centsToDollars, dollarsToCents } from "../../lib/currency";
+import { evalArithmetic } from "@/lib/arithmetic";
+import { MAX_CENTS, centsToDollars, dollarsToCents } from "@/lib/currency";
 
 interface UseExpressionModeOptions {
   /** Current value in cents */

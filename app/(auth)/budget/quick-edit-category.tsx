@@ -13,7 +13,7 @@ import { Input } from "@/design-system/atoms/Input";
 import { parseGoalDef } from "@/core/domain/goals";
 import { describeTemplate, translateDescription } from "@/core/domain/goals/describe";
 import i18n from "@/i18n/config";
-import { useFeatureFlag } from "@/shared/hooks/useFeatureFlag";
+import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 
 export default function QuickEditCategoryScreen() {
   const { t } = useTranslation("budget");

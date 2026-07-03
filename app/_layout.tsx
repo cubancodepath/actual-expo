@@ -23,8 +23,8 @@ import { openBudget } from "@/services/budgetfiles";
 import { updateAppBadge } from "@/lib/badge";
 import { syncShortcutCache } from "@/lib/syncShortcutCache";
 import { UndoToast } from "@/design-system";
-import { ErrorBoundary } from "@/shared/ErrorBoundary";
-import { useShakeUndo } from "@/shared/hooks/useShakeUndo";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { useShakeUndo } from "@/hooks/useShakeUndo";
 import { loadAllPersistedKeys } from "@/services/encryptionService";
 
 import { queryClient } from "@/core/queries/queryClient";

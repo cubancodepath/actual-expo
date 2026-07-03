@@ -62,12 +62,13 @@ src/
 │   ├── molecules/          # Composite components: ListItem, SearchBar, Banner, CategoryPickerList...
 │   ├── swift-ui/           # Native SwiftUI bridge components (SText, SAmount, SPill, SSectionHeader...)
 │   ├── providers/          # ThemeProvider
-│   └── index.ts            # Barrel export for atoms + molecules
+│   └── index.ts            # Barrel export for atoms + molecules ONLY (no feature re-exports —
+│                           #   dependency direction is app → features → design-system, never back)
 │
 ├── features/               # Feature-Sliced: each feature owns its components and hooks
 │   ├── accounts/           # components/ (TransactionListItem, Balance...) + hooks/
 │   ├── budget/             # components/ (ExpenseCategoryListItem, MonthPicker...) + hooks/
-│   ├── transactions/       # components/ (TransactionForm, CurrencyInput...) + hooks/transactionList/
+│   ├── transactions/       # components/ (TransactionForm, CurrencyInput...) + hooks/ (useTransactionForm, useAmountInput, transactionList/)
 │   ├── spending/           # components/ (SpendingOverviewCard, CategoryBreakdownRow)
 │   ├── reports/            # components/ (dashboard cards) + hooks/ (useNetWorth, useCashFlow...)
 │   ├── schedules/          # hooks/ (useSchedules)
@@ -82,10 +83,10 @@ src/
 │   ├── pickerStore.ts      # Picker state
 │   └── tabBarStore.ts      # Tab bar visibility
 │
-├── shared/                 # Cross-feature utilities (not specific to any feature)
-│   ├── hooks/              # useSheetValue, useSyncedPrefs, useErrorHandler, useSelectionMode...
-│   ├── navigation/         # screenOptions (themedScreenOptions, themedModalOptions)
-│   └── ErrorBoundary.tsx
+├── hooks/                  # Cross-feature React hooks (useQuery, useSheetValue, useSyncedPrefs,
+│                           #   useErrorHandler, useSelectionMode...) — was src/shared/hooks
+│
+├── components/             # Shared custom components not tied to a feature (ErrorBoundary...)
 │
 ├── services/               # Side-effect services (auth, file management, encryption)
 │   ├── authService.ts      # Login, bootstrap (connect to server, download budget)
@@ -94,7 +95,8 @@ src/
 │   └── encryptionService.ts# Key derivation, key storage, per-budget keys
 │
 ├── i18n/                   # react-i18next config + locale files (en/, es/)
-├── lib/                    # Pure utilities: currency, date, format, colors, badge, syncShortcutCache
+├── lib/                    # Pure utilities: currency, date, format, colors, badge, syncShortcutCache,
+│                           #   screenOptions (themedScreenOptions/themedModalOptions) — was src/shared/navigation
 └── __mocks__/              # Vitest stubs for native modules
 ```
 
@@ -111,32 +113,32 @@ Auth guard uses `<Stack.Protected guard={condition}>` in root `_layout.tsx`.
 ### Architecture Rules
 
 1. **`src/core/` has zero UI imports** — pure logic, safe to test in Node
-2. **`src/features/` owns domain-specific UI** — import from `@/core/domain/`, `@/design-system/`, `@/stores/`
+2. **`src/features/` owns domain-specific UI** — import from `@/core/domain/`, `@/design-system/`, `@/components/`, `@/hooks/`, `@/stores/`
 3. **`src/stores/` holds only UI state** — never queries the DB directly
-4. **`app/` routes are thin** — no business logic, call into features/ hooks
+4. **`app/` routes are thin** — no business logic, call into features/ hooks (target: extract screen bodies into `features/*/screens/`)
+5. **`src/components/` never imports `@/features/`** — shared components stay feature-agnostic
+
+Dependency direction: `app → features → components|hooks|stores → core`. Enforced by `scripts/check-arch.sh` (husky pre-commit): hard-fails on core→UI and components→features; warns on core→stores (known port debt) and fat routes.
 
 ### Path Aliases
 
 ```
 @/*          → src/*
-@core/*      → src/core/*
-@ds/*        → src/design-system/*
-@features/*  → src/features/*
-@shared/*    → src/shared/*
+@modules/*   → modules/*
 ```
 
-Import from the barrel `@/design-system` for atoms/molecules. Import specific files for features.
+Single alias `@/` for everything under `src/` (the old `@core`/`@ds`/`@features`/`@shared` aliases were removed — they had zero usages). Import specific files (`@/design-system/atoms/Button`, `@/hooks/useQuery`, `@/features/budget/components/MonthPicker`); the `@/design-system` barrel exists but is optional and no longer re-exports feature components.
 
 ### Key Patterns
 
 - **Raw SQL everywhere**: No ORM. Queries use `db/index.ts` helpers (`runQuery`, `first`, `run`, `transaction`). Schema column names match Actual's original.
-- **AQL queries**: `src/core/queries/` has a full query compiler + liveQuery system. `useQuery(q)` in `src/shared/hooks/useQuery.ts` wraps it for React.
+- **AQL queries**: `src/core/queries/` has a full query compiler + liveQuery system. `useQuery(q)` in `src/hooks/useQuery.ts` wraps it for React.
 - **Zustand stores**: Pure UI state. After mutations, re-query via hooks rather than `.getState().load()`.
 - **Bootstrap flow** (`app/_layout.tsx`): Load prefs → open DB → load CRDT clock → open budget → show UI. Sync runs in background after ready.
 - **Sync on foreground**: AppState listener triggers `fullSync()` when app returns to foreground. Also polls every 60s.
 - **CRDT messages**: Each change = `{timestamp, dataset, row, column, value}`. Values serialized as `'0:'` (null), `'N:123'` (number), `'S:text'` (string).
 - **Theme system**: `useTheme()` from `@/design-system/providers/ThemeProvider`. `useThemedStyles(fn)` creates memoized themed StyleSheets. Colors follow Actual Budget's palette (purple accent `#8719e0`). Light/dark mode via system `useColorScheme()`.
-- **Screen options**: Use `themedScreenOptions(theme)` / `themedModalOptions(theme)` from `@/shared/navigation/screenOptions`.
+- **Screen options**: Use `themedScreenOptions(theme)` / `themedModalOptions(theme)` from `@/lib/screenOptions`.
 - **Modals**: Use Expo Router `presentation: "modal"` on Stack.Screen.
 - **Icons**: `@expo/vector-icons` (Ionicons) — wrapped in `Icon` atom in `@/design-system/atoms/Icon`.
 - **Preferences**: Non-sensitive in MMKV, auth token in expo-secure-store.

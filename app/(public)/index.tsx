@@ -33,7 +33,7 @@ import { Text } from "@/design-system/atoms/Text";
 import { Button } from "@/design-system/atoms/Button";
 import { Banner } from "@/design-system/molecules/Banner";
 import { ErrorBanner } from "@/design-system/molecules/ErrorBanner";
-import { useErrorHandler } from "@/shared/hooks/useErrorHandler";
+import { useErrorHandler } from "@/hooks/useErrorHandler";
 import type { Theme } from "@/design-system/tokens";
 
 WebBrowser.maybeCompleteAuthSession();

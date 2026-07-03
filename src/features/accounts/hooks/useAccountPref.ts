@@ -6,7 +6,7 @@
  */
 
 import { useCallback } from "react";
-import { useSyncedPrefs } from "@/shared/hooks/useSyncedPrefs";
+import { useSyncedPrefs } from "@/hooks/useSyncedPrefs";
 
 export function useAccountPref(
   accountId: string | undefined,

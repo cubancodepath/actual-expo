@@ -428,7 +428,7 @@ export async function openBudget(budgetId: string): Promise<void> {
     }
 
     // 4. Load synced prefs (format config, feature flags)
-    const { useSyncedPrefsStore } = await import("@/shared/hooks/useSyncedPrefs");
+    const { useSyncedPrefsStore } = await import("@/hooks/useSyncedPrefs");
     await useSyncedPrefsStore.getState().load();
 
     // 5. Pre-fetch core queries into cache — gives instant first render with local data.

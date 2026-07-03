@@ -45,19 +45,6 @@ export {
   promptForPassword,
   promptToEnableEncryption,
 } from "./molecules/EncryptionPasswordPrompt";
-
-// Currency input
-export {
-  CurrencyInput,
-  type CurrencyInputRef,
-} from "../features/transactions/components/currency-input";
-
-// Budget feature components (re-exported for convenience)
-export { MonthPicker } from "../features/budget/components/MonthPicker";
-export { OverspentPill } from "../features/budget/components/OverspentPill";
-export { ExpenseGroupListItem } from "../features/budget/components/ExpenseGroupListItem";
-export { ExpenseCategoryListItem } from "../features/budget/components/ExpenseCategoryListItem";
-export { IncomeGroup } from "../features/budget/components/IncomeGroup";
-export { IncomeCategoryListItem } from "../features/budget/components/IncomeCategoryListItem";
-export { OverspendingBanner } from "../features/budget/components/OverspendingBanner";
-export { UncategorizedBanner } from "../features/budget/components/UncategorizedBanner";
+// NOTE: feature components (CurrencyInput, MonthPicker, budget list items, banners)
+// are NOT re-exported here. Import them directly from @/features/... to keep the
+// dependency direction app → features → design-system (no design-system → features).

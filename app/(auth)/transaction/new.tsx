@@ -20,8 +20,8 @@ import { DetailRow } from "@/features/transactions/components/DetailRow";
 import { AmountHeader } from "@/features/transactions/components/AmountHeader";
 import { HiddenAmountInput } from "@/features/transactions/components/HiddenAmountInput";
 import { TransactionDetailsCard } from "@/features/transactions/components/TransactionDetailsCard";
-import { useAmountInput } from "@/features/transactions/components/useAmountInput";
-import { useTransactionForm } from "@/features/transactions/components/useTransactionForm";
+import { useAmountInput } from "@/features/transactions/hooks/useAmountInput";
+import { useTransactionForm } from "@/features/transactions/hooks/useTransactionForm";
 
 export default function NewTransactionScreen() {
   const params = useLocalSearchParams<{

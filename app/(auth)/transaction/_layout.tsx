@@ -1,6 +1,6 @@
 import { Stack } from "expo-router";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
-import { themedScreenOptions } from "@/shared/navigation/screenOptions";
+import { themedScreenOptions } from "@/lib/screenOptions";
 
 export default function TransactionLayout() {
   const theme = useTheme();

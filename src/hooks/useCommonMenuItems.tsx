@@ -1,7 +1,7 @@
 import { Stack, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { useUndoStore } from "../../stores/undoStore";
-import { usePrivacyStore } from "../../stores/privacyStore";
+import { useUndoStore } from "@/stores/undoStore";
+import { usePrivacyStore } from "@/stores/privacyStore";
 import { usePrefsStore } from "@/stores/prefsStore";
 
 import type { ReactNode } from "react";

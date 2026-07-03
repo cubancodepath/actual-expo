@@ -13,7 +13,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
-import { useSheetValueNumber, useSheetValue } from "@/shared/hooks/useSheetValue";
+import { useSheetValueNumber, useSheetValue } from "@/hooks/useSheetValue";
 import { sheetForMonth, envelopeBudget } from "@/core/domain/spreadsheet/bindings";
 import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
 import { setBudgetAmount } from "@/core/domain/budgets";
@@ -28,7 +28,7 @@ import { CircularProgress } from "@/design-system/atoms/CircularProgress";
 import { parseGoalDef } from "@/core/domain/goals";
 import { describeTemplate, translateDescription } from "@/core/domain/goals/describe";
 import i18n from "@/i18n/config";
-import { useFeatureFlag } from "@/shared/hooks/useFeatureFlag";
+import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import type { BudgetCategory } from "@/core/domain/budgets/types";
 import type { ThemeColors } from "@/design-system/tokens/colors";
 

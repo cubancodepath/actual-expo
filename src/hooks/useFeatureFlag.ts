@@ -1,4 +1,4 @@
-import { useSyncedPrefs } from "@/shared/hooks/useSyncedPrefs";
+import { useSyncedPrefs } from "@/hooks/useSyncedPrefs";
 import type { FeatureFlag } from "@/core/domain/preferences/featureFlags";
 
 export function useFeatureFlag(name: FeatureFlag): boolean {

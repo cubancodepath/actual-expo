@@ -8,7 +8,7 @@
 
 import { useMemo } from "react";
 import { q } from "@/core/queries";
-import { useLiveQuery } from "@/shared/hooks/useQuery";
+import { useLiveQuery } from "@/hooks/useQuery";
 import type { Category, CategoryGroup } from "@/core/domain/categories/types";
 
 export function useCategories() {

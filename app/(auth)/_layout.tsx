@@ -2,7 +2,7 @@ import { Stack } from "expo-router";
 import { useQuickActionRouting } from "expo-quick-actions/router";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
-import { themedScreenOptions, themedModalOptions } from "@/shared/navigation/screenOptions";
+import { themedScreenOptions, themedModalOptions } from "@/lib/screenOptions";
 
 export default function AuthLayout() {
   useQuickActionRouting();

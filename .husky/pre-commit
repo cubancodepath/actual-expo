@@ -1,1 +1,2 @@
+bash scripts/check-arch.sh
 npx lint-staged

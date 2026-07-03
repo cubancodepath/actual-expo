@@ -9,7 +9,7 @@
 
 import { useMemo } from "react";
 import { q } from "@/core/queries";
-import { useLiveQuery } from "@/shared/hooks/useQuery";
+import { useLiveQuery } from "@/hooks/useQuery";
 import { getStatus } from "@/core/domain/schedules/helpers";
 import { getHasTransactionsQuery, type ScheduleStatuses } from "@/core/domain/schedules/status";
 import { mapScheduleRow } from "@/core/domain/schedules/mapRow";

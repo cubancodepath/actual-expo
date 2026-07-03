@@ -13,7 +13,7 @@ import {
 } from "@/core/domain/transactions";
 import { usePrivacyStore } from "@/stores/privacyStore";
 import { useUndoStore } from "@/stores/undoStore";
-import { useCommonMenuActions } from "@/shared/hooks/useCommonMenuItems";
+import { useCommonMenuActions } from "@/hooks/useCommonMenuItems";
 import { useTabBarStore } from "@/stores/tabBarStore";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { EmptyState } from "@/design-system";
@@ -25,7 +25,7 @@ import { UpcomingScheduleRow } from "@/features/accounts/components/UpcomingSche
 import { AddTransactionButton } from "@/design-system/molecules/AddTransactionButton";
 import { useTags } from "@/features/transactions/hooks/useTags";
 import { usePickerStore } from "@/stores/pickerStore";
-import { useRefreshControl } from "@/shared/hooks/useRefreshControl";
+import { useRefreshControl } from "@/hooks/useRefreshControl";
 import {
   buildListData,
   useSelectModeHeader,
@@ -41,10 +41,10 @@ import {
 } from "@/core/domain/schedules";
 import { useTransactions } from "@/features/transactions/hooks/useTransactions";
 import { q } from "@/core/queries";
-import { useSelectionMode } from "@/shared/hooks/useSelectionMode";
-import { usePreviewTransactions } from "@/shared/hooks/usePreviewTransactions";
-import { useLiveQuery } from "@/shared/hooks/useQuery";
-import { useTransactionBatchActions } from "@/shared/hooks/useTransactionBatchActions";
+import { useSelectionMode } from "@/hooks/useSelectionMode";
+import { usePreviewTransactions } from "@/hooks/usePreviewTransactions";
+import { useLiveQuery } from "@/hooks/useQuery";
+import { useTransactionBatchActions } from "@/hooks/useTransactionBatchActions";
 import type { TransactionDisplay } from "@/core/domain/transactions/types";
 
 // ---------------------------------------------------------------------------

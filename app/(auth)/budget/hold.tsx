@@ -5,12 +5,12 @@ import { useTranslation } from "react-i18next";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { holdForNextMonth } from "@/core/domain/budgets";
-import { useSheetValueNumber } from "@/shared/hooks/useSheetValue";
+import { useSheetValueNumber } from "@/hooks/useSheetValue";
 import { sheetForMonth, envelopeBudget } from "@/core/domain/spreadsheet/bindings";
 import { Text } from "@/design-system/atoms/Text";
 import { Amount } from "@/design-system/atoms/Amount";
 import { HiddenAmountInput } from "@/features/transactions/components/HiddenAmountInput";
-import { useAmountInput } from "@/features/transactions/components/useAmountInput";
+import { useAmountInput } from "@/features/transactions/hooks/useAmountInput";
 import { CurrencyAmountDisplay } from "@/features/transactions/components/currency-input/CurrencyAmountDisplay";
 
 function AmountDisplay({

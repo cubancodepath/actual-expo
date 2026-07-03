@@ -1,7 +1,7 @@
 import { StyleSheet, View } from "react-native";
 import { Text } from "@/design-system/atoms/Text";
-import { useCursorBlink } from "@/shared/hooks/useCursorBlink";
-import { useSyncedPrefs } from "@/shared/hooks/useSyncedPrefs";
+import { useCursorBlink } from "@/hooks/useCursorBlink";
+import { useSyncedPrefs } from "@/hooks/useSyncedPrefs";
 import { formatCents, formatExpression } from "@/lib/currency";
 
 interface CurrencyAmountDisplayProps {

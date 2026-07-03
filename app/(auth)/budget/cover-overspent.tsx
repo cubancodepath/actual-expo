@@ -7,7 +7,7 @@ import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { useCategories } from "@/features/budget/hooks/useCategories";
 import { sheetForMonth, envelopeBudget } from "@/core/domain/spreadsheet/bindings";
 import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
-import { useSpreadsheetVersion } from "@/shared/hooks/useSheetValue";
+import { useSpreadsheetVersion } from "@/hooks/useSheetValue";
 import { Text } from "@/design-system/atoms/Text";
 import { Amount } from "@/design-system/atoms/Amount";
 import { Button } from "@/design-system/atoms/Button";

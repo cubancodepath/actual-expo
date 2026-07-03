@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRefreshControl } from "@/shared/hooks/useRefreshControl";
+import { useRefreshControl } from "@/hooks/useRefreshControl";
 import {
   ActivityIndicator,
   Alert,
@@ -34,8 +34,8 @@ import { SearchSuggestions } from "@/features/transactions/components/SearchSugg
 import { useTags } from "@/features/transactions/hooks/useTags";
 import { GlassButton } from "@/design-system/atoms/GlassButton";
 import { useSelectModeHeader } from "@/features/transactions/hooks/transactionList";
-import { useSelectionMode } from "@/shared/hooks/useSelectionMode";
-import { useTransactionBatchActions } from "@/shared/hooks/useTransactionBatchActions";
+import { useSelectionMode } from "@/hooks/useSelectionMode";
+import { useTransactionBatchActions } from "@/hooks/useTransactionBatchActions";
 import { usePickerStore } from "@/stores/pickerStore";
 import { SelectModeToolbar } from "@/features/transactions/components/SelectModeToolbar";
 import { useTranslation } from "react-i18next";

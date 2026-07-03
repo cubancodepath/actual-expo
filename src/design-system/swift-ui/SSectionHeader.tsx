@@ -17,7 +17,7 @@ import { SText } from "./SText";
 import { SAmount } from "./SAmount";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { usePrivacyStore } from "@/stores/privacyStore";
-import { useSheetValueNumber } from "@/shared/hooks/useSheetValue";
+import { useSheetValueNumber } from "@/hooks/useSheetValue";
 import { envelopeBudget } from "@/core/domain/spreadsheet/bindings";
 import { useTranslation } from "react-i18next";
 

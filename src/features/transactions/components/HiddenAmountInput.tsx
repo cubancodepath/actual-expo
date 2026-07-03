@@ -1,6 +1,6 @@
 import { InputAccessoryView, Platform, TextInput } from "react-native";
 import { CalculatorPill } from "@/features/transactions/components/currency-input/CalculatorPill";
-import type { useAmountInput } from "./useAmountInput";
+import type { useAmountInput } from "../hooks/useAmountInput";
 
 interface HiddenAmountInputProps {
   /** The return value of useAmountInput() */

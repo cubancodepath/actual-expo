@@ -31,10 +31,10 @@ import { Text } from "@/design-system/atoms/Text";
 import { GlassButton } from "@/design-system/atoms/GlassButton";
 import { AmountHeader } from "@/features/transactions/components/AmountHeader";
 import { HiddenAmountInput } from "@/features/transactions/components/HiddenAmountInput";
-import { useAmountInput } from "@/features/transactions/components/useAmountInput";
+import { useAmountInput } from "@/features/transactions/hooks/useAmountInput";
 import { ScheduleStatusBadge } from "@/design-system/atoms/ScheduleStatusBadge";
 import { ErrorBanner } from "@/design-system/molecules/ErrorBanner";
-import { useErrorHandler } from "@/shared/hooks/useErrorHandler";
+import { useErrorHandler } from "@/hooks/useErrorHandler";
 import type { TransactionType } from "@/features/transactions/components/TypeToggle";
 import { DetailRow } from "@/features/transactions/components/DetailRow";
 import type {

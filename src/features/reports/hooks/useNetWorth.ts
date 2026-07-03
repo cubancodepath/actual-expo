@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { q } from "@/core/queries";
-import { useLiveQuery } from "@/shared/hooks/useQuery";
+import { useLiveQuery } from "@/hooks/useQuery";
 import { useAccounts } from "@/features/accounts/hooks/useAccounts";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { addMonths } from "@/lib/date";

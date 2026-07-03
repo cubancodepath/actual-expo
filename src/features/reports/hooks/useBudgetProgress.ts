@@ -1,5 +1,5 @@
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
-import { useSheetValueNumber } from "@/shared/hooks/useSheetValue";
+import { useSheetValueNumber } from "@/hooks/useSheetValue";
 import { sheetForMonth, envelopeBudget } from "@/core/domain/spreadsheet/bindings";
 
 /**

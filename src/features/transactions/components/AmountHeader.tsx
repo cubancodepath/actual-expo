@@ -1,6 +1,6 @@
 import { memo, type ReactNode } from "react";
 import { Pressable, View, type ViewStyle } from "react-native";
-import { useSyncedPrefs } from "@/shared/hooks/useSyncedPrefs";
+import { useSyncedPrefs } from "@/hooks/useSyncedPrefs";
 import { formatCents, formatExpression } from "@/lib/currency";
 import { Text } from "@/design-system/atoms/Text";
 import { TypeToggle, type TransactionType } from "./TypeToggle";

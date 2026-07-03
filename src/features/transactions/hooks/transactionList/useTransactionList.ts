@@ -14,7 +14,7 @@ import { batchMessages } from "@/core/sync";
 import { undoable } from "@/core/sync/undo";
 import { useUndoStore } from "@/stores/undoStore";
 import { usePickerStore } from "@/stores/pickerStore";
-import { useRefreshControl } from "@/shared/hooks/useRefreshControl";
+import { useRefreshControl } from "@/hooks/useRefreshControl";
 import { buildListData, type ListItem } from "./types";
 
 // ---------------------------------------------------------------------------

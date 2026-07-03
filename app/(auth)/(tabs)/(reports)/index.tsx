@@ -2,7 +2,7 @@ import { ScrollView } from "react-native";
 import { Stack } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
-import { useCommonMenuActions } from "@/shared/hooks/useCommonMenuItems";
+import { useCommonMenuActions } from "@/hooks/useCommonMenuItems";
 import { NetWorthCard } from "@/features/reports/components/NetWorthCard";
 import { CashFlowCard } from "@/features/reports/components/CashFlowCard";
 import { SpendingByCategoryCard } from "@/features/reports/components/SpendingByCategoryCard";

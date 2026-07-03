@@ -3,7 +3,7 @@ import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { Text, type TextProps } from "./Text";
 import { formatAmount, formatBalance, PRIVACY_MASK } from "@/lib/format";
 import { usePrivacyStore } from "@/stores/privacyStore";
-import { useSyncedPrefs } from "@/shared/hooks/useSyncedPrefs";
+import { useSyncedPrefs } from "@/hooks/useSyncedPrefs";
 import type { TypographyVariant } from "@/design-system/tokens";
 
 export interface AmountProps extends Omit<TextProps, "children" | "variant"> {

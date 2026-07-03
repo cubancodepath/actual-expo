@@ -1,3 +1,4 @@
+import "../global.css";
 import "@/i18n/config";
 import * as Sentry from "@sentry/react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -13,7 +14,14 @@ import {
 import { SplashScreen, Stack, useNavigationContainerRef, useRouter } from "expo-router";
 import { isRunningInExpoGo } from "expo";
 import * as QuickActions from "expo-quick-actions";
+import {
+  useFonts,
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+} from "@expo-google-fonts/inter";
 import i18n from "@/i18n/config";
+import { HeroUINativeProvider } from "heroui-native";
 import { ThemeProvider } from "@/design-system/providers/ThemeProvider";
 import { usePrefsStore } from "@/stores/prefsStore";
 import { listen } from "@/core/sync/syncEvents";
@@ -56,6 +64,7 @@ function RootLayout() {
   const isConfigured = usePrefsStore((s) => s.isConfigured);
   const isLocalOnly = usePrefsStore((s) => s.isLocalOnly);
   const [ready, setReady] = useState(false);
+  const [fontsLoaded] = useFonts({ Inter_400Regular, Inter_500Medium, Inter_600SemiBold });
   const handledTimestamp = useRef(0);
 
   useEffect(() => {
@@ -83,11 +92,15 @@ function RootLayout() {
     }
     bootstrap()
       .catch(console.error)
-      .finally(() => {
-        setReady(true);
-        SplashScreen.hideAsync();
-      });
+      .finally(() => setReady(true));
   }, []);
+
+  // Keep splash visible until both bootstrap and font loading finish
+  useEffect(() => {
+    if (ready && fontsLoaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [ready, fontsLoaded]);
 
   // Keep shortcut cache in sync when accounts or categories change
   useEffect(() => {
@@ -243,7 +256,7 @@ function RootLayout() {
 
   useShakeUndo();
 
-  if (!ready) return null;
+  if (!ready || !fontsLoaded) return null;
 
   return (
     <ErrorBoundary>
@@ -252,18 +265,20 @@ function RootLayout() {
           <KeyboardProvider>
             <NavigationThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
               <ThemeProvider>
-                <Stack>
-                  <Stack.Protected guard={!hasToken && !isLocalOnly}>
-                    <Stack.Screen name="(public)" options={{ headerShown: false }} />
-                  </Stack.Protected>
-                  <Stack.Protected guard={hasToken && !isConfigured}>
-                    <Stack.Screen name="(files)" options={{ headerShown: false }} />
-                  </Stack.Protected>
-                  <Stack.Protected guard={isConfigured}>
-                    <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-                  </Stack.Protected>
-                </Stack>
-                <UndoToast />
+                <HeroUINativeProvider>
+                  <Stack>
+                    <Stack.Protected guard={!hasToken && !isLocalOnly}>
+                      <Stack.Screen name="(public)" options={{ headerShown: false }} />
+                    </Stack.Protected>
+                    <Stack.Protected guard={hasToken && !isConfigured}>
+                      <Stack.Screen name="(files)" options={{ headerShown: false }} />
+                    </Stack.Protected>
+                    <Stack.Protected guard={isConfigured}>
+                      <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                    </Stack.Protected>
+                  </Stack>
+                  <UndoToast />
+                </HeroUINativeProvider>
               </ThemeProvider>
             </NavigationThemeProvider>
           </KeyboardProvider>

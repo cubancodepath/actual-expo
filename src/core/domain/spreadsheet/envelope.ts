@@ -17,6 +17,7 @@ import { monthToInt, currentMonth, intToStr } from "@/lib/date";
 import { ALIVE_TX_FILTER } from "@/core/db/filters";
 import { getCategories, getCategoryGroups } from "../categories";
 import type { Category, CategoryGroup } from "../categories/types";
+import { safeNumber } from "@/lib/number";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -123,7 +124,9 @@ export async function createBudgetCells(
       ],
       run: (budgetedVal, spentVal, prevCarryoverVal, prevBalance, prevBalancePos) => {
         const prevCo = prevCarryoverVal === true || prevCarryoverVal === 1;
-        return num(budgetedVal) + num(spentVal) + (prevCo ? num(prevBalance) : num(prevBalancePos));
+        return safeNumber(
+          num(budgetedVal) + num(spentVal) + (prevCo ? num(prevBalance) : num(prevBalancePos)),
+        );
       },
     });
 
@@ -142,7 +145,7 @@ export async function createBudgetCells(
     const groupCats = categories.filter((c) => c.cat_group === group.id);
     ss.createDynamic(sheet, envelopeBudget.groupSpent(group.id), {
       dependencies: groupCats.map((c) => envelopeBudget.catSpent(c.id)),
-      run: (...vals) => vals.reduce((sum: number, v) => sum + num(v), 0),
+      run: (...vals) => safeNumber(vals.reduce((sum: number, v) => sum + num(v), 0)),
     });
   }
 
@@ -152,12 +155,12 @@ export async function createBudgetCells(
 
     ss.createDynamic(sheet, envelopeBudget.groupBudgeted(group.id), {
       dependencies: groupCats.map((c) => envelopeBudget.catBudgeted(c.id)),
-      run: (...vals) => vals.reduce((sum: number, v) => sum + num(v), 0),
+      run: (...vals) => safeNumber(vals.reduce((sum: number, v) => sum + num(v), 0)),
     });
 
     ss.createDynamic(sheet, envelopeBudget.groupBalance(group.id), {
       dependencies: groupCats.map((c) => envelopeBudget.catBalance(c.id)),
-      run: (...vals) => vals.reduce((sum: number, v) => sum + num(v), 0),
+      run: (...vals) => safeNumber(vals.reduce((sum: number, v) => sum + num(v), 0)),
     });
   }
 
@@ -174,17 +177,17 @@ export async function createBudgetCells(
   // ── Summary cells ──
   ss.createDynamic(sheet, envelopeBudget.totalBudgeted, {
     dependencies: expenseGroups.map((g) => envelopeBudget.groupBudgeted(g.id)),
-    run: (...vals) => -vals.reduce((sum: number, v) => sum + num(v), 0),
+    run: (...vals) => safeNumber(-vals.reduce((sum: number, v) => sum + num(v), 0)),
   });
 
   ss.createDynamic(sheet, envelopeBudget.totalSpent, {
     dependencies: expenseGroups.map((g) => envelopeBudget.groupSpent(g.id)),
-    run: (...vals) => vals.reduce((sum: number, v) => sum + num(v), 0),
+    run: (...vals) => safeNumber(vals.reduce((sum: number, v) => sum + num(v), 0)),
   });
 
   ss.createDynamic(sheet, envelopeBudget.totalBalance, {
     dependencies: expenseGroups.map((g) => envelopeBudget.groupBalance(g.id)),
-    run: (...vals) => vals.reduce((sum: number, v) => sum + num(v), 0),
+    run: (...vals) => safeNumber(vals.reduce((sum: number, v) => sum + num(v), 0)),
   });
 
   // ── Buffered auto/selected ──
@@ -200,7 +203,7 @@ export async function createBudgetCells(
         const co = vals[i + 1] === true || vals[i + 1] === 1;
         if (co) total += amount;
       }
-      return total;
+      return safeNumber(total);
     },
   });
 
@@ -215,7 +218,7 @@ export async function createBudgetCells(
       `${prevSheet}!${envelopeBudget.toBudget}`,
       `${prevSheet}!${envelopeBudget.bufferedSelected}`,
     ],
-    run: (prevToBudget, prevBuffered) => num(prevToBudget) + num(prevBuffered),
+    run: (prevToBudget, prevBuffered) => safeNumber(num(prevToBudget) + num(prevBuffered)),
   });
 
   ss.createDynamic(sheet, envelopeBudget.lastMonthOverspent, {
@@ -235,14 +238,14 @@ export async function createBudgetCells(
         const co = vals[i + 1] === true || vals[i + 1] === 1;
         if (balance < 0 && !co) penalty += balance;
       }
-      return penalty;
+      return safeNumber(penalty);
     },
   });
 
   // ── Final: incomeAvailable + toBudget ──
   ss.createDynamic(sheet, envelopeBudget.incomeAvailable, {
     dependencies: [envelopeBudget.totalIncome, envelopeBudget.fromLastMonth],
-    run: (income, fromLast) => num(income) + num(fromLast),
+    run: (income, fromLast) => safeNumber(num(income) + num(fromLast)),
   });
 
   ss.createDynamic(sheet, envelopeBudget.toBudget, {
@@ -253,7 +256,7 @@ export async function createBudgetCells(
       envelopeBudget.bufferedSelected,
     ],
     run: (available, lastOverspent, totalBudgeted, buffered) =>
-      num(available) + num(lastOverspent) + num(totalBudgeted) - num(buffered),
+      safeNumber(num(available) + num(lastOverspent) + num(totalBudgeted) - num(buffered)),
   });
 }
 
@@ -309,7 +312,10 @@ export async function getBudgetRange(): Promise<{ start: string; end: string; mo
     startMonth = subMonths(today, 3);
   }
 
-  const endMonth = addMonths(today, 12);
+  // On mobile we default to a tighter initial range (2 before → 3 ahead)
+  // to reduce startup time. Cells for earlier/later months are created
+  // on demand via createBudgetCells() when the user navigates to them.
+  const endMonth = addMonths(today, 3);
 
   return {
     start: startMonth,
@@ -321,9 +327,13 @@ export async function getBudgetRange(): Promise<{ start: string; end: string; mo
 /**
  * Create budget cells for ALL months in the budget range.
  * Wraps everything in a single transaction so topological sort runs once.
+ * Returns the built range so callers (spreadsheet/sync.ts) can track it for
+ * ensureMonthRange()'s gap-filling extension.
  */
-export async function createAllBudgetCells(ss: Spreadsheet): Promise<void> {
-  const { months } = await getBudgetRange();
+export async function createAllBudgetCells(
+  ss: Spreadsheet,
+): Promise<{ start: string; end: string }> {
+  const { start, end, months } = await getBudgetRange();
   const [cats, groups] = await Promise.all([getCategories(), getCategoryGroups()]);
 
   ss.startTransaction();
@@ -331,6 +341,8 @@ export async function createAllBudgetCells(ss: Spreadsheet): Promise<void> {
     await createBudgetCells(ss, month, cats, groups);
   }
   ss.endTransaction();
+
+  return { start, end };
 }
 
 // ---------------------------------------------------------------------------

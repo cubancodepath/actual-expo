@@ -3,6 +3,7 @@
  */
 
 import { getClock, makeClock, serializeClock, deserializeClock, Timestamp } from "@/core/crdt";
+import type { TrieNode } from "@/core/crdt/merkle";
 import { run, first } from "@/core/db";
 
 export async function loadClock(): Promise<void> {
@@ -27,5 +28,19 @@ export async function loadClock(): Promise<void> {
 
 export async function saveClock(): Promise<void> {
   const serialized = serializeClock(getClock());
+  await run("INSERT OR REPLACE INTO messages_clock (id, clock) VALUES (1, ?)", [serialized]);
+}
+
+/**
+ * Persist the clock with a given merkle trie, WITHOUT mutating the
+ * in-memory clock returned by getClock(). Used while applying a batch of
+ * sync messages so the persisted state and the in-memory state only ever
+ * advance together, after the enclosing DB transaction has committed —
+ * a mid-transaction throw must never leave getClock() ahead of what's on
+ * disk. Callers assign `getClock().merkle = merkleTrie` themselves once
+ * the transaction has resolved.
+ */
+export async function saveClockWith(merkleTrie: TrieNode): Promise<void> {
+  const serialized = serializeClock({ ...getClock(), merkle: merkleTrie });
   await run("INSERT OR REPLACE INTO messages_clock (id, clock) VALUES (1, ?)", [serialized]);
 }

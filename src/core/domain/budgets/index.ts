@@ -1,4 +1,4 @@
-import { runQuery, first, run } from "@/core/db";
+import { runQuery, first } from "@/core/db";
 import { formatBalance } from "@/lib/format";
 import { sendMessages } from "@/core/sync";
 import { undoable } from "@/core/sync/undo";
@@ -8,9 +8,14 @@ import type { ZeroBudgetRow, CategoryGroupRow, CategoryRow } from "@/core/db/typ
 import type { BudgetMonth, BudgetGroup, BudgetCategory } from "./types";
 import { inferGoalFromDef } from "../goals";
 import { ALIVE_TX_FILTER } from "@/core/db/filters";
-import { computeToBudgetFull } from "./toBudget";
 import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
 import { sheetForMonth, envelopeBudget } from "@/core/domain/spreadsheet/bindings";
+import { ensureMonthRange } from "@/core/domain/spreadsheet/sync";
+import type { CellValue } from "@/core/domain/spreadsheet/spreadsheet";
+
+function num(v: CellValue): number {
+  return typeof v === "number" ? v : 0;
+}
 
 // ---------------------------------------------------------------------------
 // Carryover chain computation
@@ -178,20 +183,16 @@ export async function computeCarryoverChain(
 // ---------------------------------------------------------------------------
 // Compute "To Budget" (available budget for a month)
 //
-// toBudget = cumulativeIncome - cumulativeBudgeted - bufferedSelected + overspendingPenalty
+// Reads the spreadsheet's incrementally-maintained "to-budget" cell — the
+// single source of truth for this value (see spreadsheet/envelope.ts).
+// Previously reimplemented independently in toBudget.ts; that duplicate
+// path was removed once a parity test proved the two always agreed, to
+// eliminate the risk of the two silently drifting apart over time.
 // ---------------------------------------------------------------------------
 
-export async function computeToBudget(
-  month: string,
-  opts?: { groups?: CategoryGroupRow[]; categories?: CategoryRow[] },
-): Promise<number> {
-  const result = await computeToBudgetFull({
-    month,
-    monthInt: monthToInt(month),
-    groups: opts?.groups,
-    categories: opts?.categories,
-  });
-  return result.toBudget;
+export async function computeToBudget(month: string): Promise<number> {
+  await ensureMonthRange(month);
+  return num(getSpreadsheet().getValue(sheetForMonth(month), envelopeBudget.toBudget));
 }
 
 // ---------------------------------------------------------------------------
@@ -200,8 +201,6 @@ export async function computeToBudget(
 
 export async function getBudgetMonth(month: string): Promise<BudgetMonth> {
   const monthInt = monthToInt(month);
-  const startDate = monthInt * 100 + 1;
-  const endDate = monthInt * 100 + 31;
 
   const groups = await runQuery<CategoryGroupRow>(
     "SELECT * FROM category_groups WHERE tombstone = 0 ORDER BY sort_order ASC",
@@ -209,49 +208,21 @@ export async function getBudgetMonth(month: string): Promise<BudgetMonth> {
   const categories = await runQuery<CategoryRow>(
     "SELECT * FROM categories WHERE tombstone = 0 ORDER BY sort_order ASC",
   );
+  // Still needed for goal/long_goal: the spreadsheet's catGoal/catLongGoal
+  // cells only understand a subset of template types (see goals/parse.ts's
+  // richer inferGoalFromDef, used below) — not yet a reliable read source.
   const budgetRows = await runQuery<ZeroBudgetRow>("SELECT * FROM zero_budgets WHERE month = ?", [
     monthInt,
   ]);
-  const budgetMap = new Map(budgetRows.map((r) => [r.category, r.amount]));
-  const carryoverMap = new Map(budgetRows.map((r) => [r.category, r.carryover === 1]));
   const goalMap = new Map(budgetRows.map((r) => [r.category, r.goal]));
   const longGoalMap = new Map(budgetRows.map((r) => [r.category, r.long_goal === 1]));
 
-  // Current-month transaction amounts per category (FIX #2 & #3: proper filters)
-  const currentMonthRows = await runQuery<{ category: string; amount: number }>(
-    `SELECT COALESCE(cm.transferId, t.category) AS category, SUM(t.amount) AS amount
-     FROM transactions t
-     LEFT JOIN category_mapping cm ON cm.id = t.category
-     JOIN accounts a ON t.acct = a.id AND a.offbudget = 0
-     WHERE ${ALIVE_TX_FILTER}
-       AND t.date >= ? AND t.date <= ?
-       AND t.category IS NOT NULL
-     GROUP BY COALESCE(cm.transferId, t.category)`,
-    [startDate, endDate],
-  );
-  const currentMap = new Map(currentMonthRows.map((r) => [r.category, r.amount]));
+  await ensureMonthRange(month);
+  const ss = getSpreadsheet();
+  const sheet = sheetForMonth(month);
 
-  // ── Carryover chain ──
-  const groupMap = new Map(groups.map((g) => [g.id, g]));
-  const expenseCatIds = categories
-    .filter((c) => {
-      const g = groupMap.get(c.cat_group);
-      return g && g.is_income === 0;
-    })
-    .map((c) => c.id);
-
-  const { carryIns, prevCoFlags, currentCoFlags, overspendingPenalty } =
-    await computeCarryoverChain(monthInt, expenseCatIds);
-
-  // ── Cumulative To Budget (delegated to shared computation) ──
-  const { toBudget, buffered: bufferedSelected } = await computeToBudgetFull({
-    month,
-    monthInt,
-    groups,
-    categories,
-    budgetRows,
-    currentSpendingMap: currentMap,
-  });
+  const toBudget = num(ss.getValue(sheet, envelopeBudget.toBudget));
+  const bufferedSelected = num(ss.getValue(sheet, envelopeBudget.bufferedSelected));
 
   // ── Build per-group / per-category data ──
   let displayIncome = 0;
@@ -273,12 +244,16 @@ export async function getBudgetMonth(month: string): Promise<BudgetMonth> {
     let groupCarryIn = 0;
 
     const budgetCats: BudgetCategory[] = groupCats.map((c) => {
-      const budgeted = isIncome ? 0 : (budgetMap.get(c.id) ?? 0);
-      const spent = currentMap.get(c.id) ?? 0;
-      const carryIn = isIncome ? 0 : (carryIns.get(c.id) ?? 0);
+      const spent = num(ss.getValue(sheet, envelopeBudget.catSpent(c.id)));
+      const budgeted = isIncome ? 0 : num(ss.getValue(sheet, envelopeBudget.catBudgeted(c.id)));
+      const balance = isIncome ? spent : num(ss.getValue(sheet, envelopeBudget.catBalance(c.id)));
+      // carryIn isn't its own cell — back it out of the balance invariant
+      // the cell's formula already maintains: balance = budgeted + spent + carryIn.
+      const carryIn = isIncome ? 0 : balance - budgeted - spent;
       // carryover flag: current month's setting (controls what carries to NEXT month)
-      const carryover = currentCoFlags.get(c.id) ?? carryoverMap.get(c.id) ?? false;
-      const balance = isIncome ? spent : budgeted + spent + carryIn;
+      const carryover = isIncome
+        ? false
+        : ss.getValue(sheet, envelopeBudget.catCarryover(c.id)) === true;
 
       groupBudgeted += budgeted;
       groupSpent += spent;
@@ -484,12 +459,20 @@ export async function addMovementNote(opts: {
   const line = `- Reassigned ${displayAmount} from ${opts.fromName} → ${opts.toName} on ${displayDay}`;
 
   const existing = await first<{ note: string }>("SELECT note FROM notes WHERE id = ?", [noteId]);
+  const newNote = existing ? existing.note + "\n" + line : line;
 
-  if (existing) {
-    await run("UPDATE notes SET note = ? WHERE id = ?", [existing.note + "\n" + line, noteId]);
-  } else {
-    await run("INSERT INTO notes (id, note) VALUES (?, ?)", [noteId, line]);
-  }
+  // Routed through the CRDT message pipeline (like every other write in this
+  // file) instead of a raw SQL write — `notes` is a synced dataset, so a
+  // direct run() here would silently never sync to other devices.
+  await sendMessages([
+    {
+      timestamp: Timestamp.send()!,
+      dataset: "notes",
+      row: noteId,
+      column: "note",
+      value: newNote,
+    },
+  ]);
 }
 
 // ---------------------------------------------------------------------------

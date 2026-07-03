@@ -9,7 +9,7 @@ import {
 import { Timestamp } from "@/core/crdt/timestamp";
 import * as encryption from "@/core/encryption";
 import { SyncError } from "@/core/errors";
-import { serializeValue, deserializeValue } from "./values";
+import { deserializeValue } from "./values";
 
 export type SyncMessage = {
   timestamp: Timestamp;
@@ -20,11 +20,28 @@ export type SyncMessage = {
   old?: boolean;
 };
 
+/**
+ * A message ready to upload: `value` is already wire-serialized
+ * ("N:123", "S:foo", "0:"). Used for outgoing messages read back from
+ * messages_crdt, so the exact stored string is resent byte-for-byte instead
+ * of being deserialized and re-serialized (upstream sync/index.ts:534-540
+ * resends the stored value verbatim; round-tripping it through
+ * deserializeValue/serializeValue risks a different string representation
+ * for the same logical value, e.g. across float formatting edge cases).
+ */
+export type OutgoingSyncMessage = {
+  timestamp: Timestamp;
+  dataset: string;
+  row: string;
+  column: string;
+  value: string;
+};
+
 export async function encode(
   groupId: string,
   fileId: string,
   since: Timestamp | string,
-  messages: SyncMessage[],
+  messages: OutgoingSyncMessage[],
   encryptKeyId?: string,
 ): Promise<Uint8Array> {
   const envelopes = [];
@@ -34,7 +51,7 @@ export async function encode(
       dataset: msg.dataset,
       row: msg.row,
       column: msg.column,
-      value: serializeValue(msg.value), // raw → "S:...", "N:...", "0:"
+      value: msg.value, // already wire-serialized — passed through verbatim
     } satisfies IMessage);
 
     let content: Uint8Array;

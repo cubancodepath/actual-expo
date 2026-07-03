@@ -13,7 +13,6 @@ import type { SyncMessage } from "./encoder";
 import { postBinary } from "@/core/post";
 import { PostError, SyncError, toAppError } from "@/core/errors";
 import { applyMessages, getMessagesSince } from "./apply";
-import { saveClock } from "./clock";
 import { emit } from "./syncEvents";
 import { getSyncGeneration, isSwitchingBudget, setActiveSyncPromise } from "./lifecycle";
 
@@ -22,7 +21,13 @@ function normalizeTables(datasets: string[]): string[] {
   return [...new Set(datasets.map((d) => (d === "schedules_next_date" ? "schedules" : d)))];
 }
 
-const BUDGET_TABLES = new Set(["zero_budgets", "zero_budget_months", "transactions"]);
+const BUDGET_TABLES = new Set([
+  "zero_budgets",
+  "zero_budget_months",
+  "transactions",
+  "accounts",
+  "category_mapping",
+]);
 
 /**
  * Inner sync function — may be called recursively on merkle divergence.
@@ -92,7 +97,6 @@ async function _fullSync(
 
   // Advance local clock with server timestamps (upstream: receiveMessages → Timestamp.recv)
   let receivedMessages: SyncMessage[] = [];
-  let merkleChanged = false;
   if (serverMessages.length > 0) {
     try {
       for (const msg of serverMessages) {
@@ -106,9 +110,7 @@ async function _fullSync(
     }
 
     if (gen !== getSyncGeneration()) return [];
-    const merkleBefore = getClock().merkle.hash;
     await applyMessages(serverMessages);
-    merkleChanged = getClock().merkle.hash !== merkleBefore;
     receivedMessages = serverMessages;
   }
 
@@ -116,21 +118,11 @@ async function _fullSync(
   const diffTime = merkle.diff(serverMerkle as any, getClock().merkle);
 
   if (diffTime !== null) {
-    // Only rebuild merkle if we received messages but our hash didn't change
-    // (indicates corrupted trie, not missing messages). If the hash DID change
-    // (we applied new messages), the divergence is real — retry to get the rest.
-    if (!merkleChanged && count > 0) {
-      if (__DEV__) console.log("[fullSync] merkle corrupted (no change after apply) — rebuilding");
-      const { rebuildMerkleHash } = await import("./repair");
-      const rebuilt = rebuildMerkleHash();
-      getClock().merkle = rebuilt.trie;
-      await saveClock();
-      const newDiff = merkle.diff(serverMerkle as any, getClock().merkle);
-      if (newDiff === null) {
-        if (__DEV__) console.log("[fullSync] merkle repaired — trees now match");
-        return receivedMessages;
-      }
-    }
+    // No mid-loop merkle rebuild here — upstream never repairs automatically
+    // mid-sync; it only rebuilds at the retry-cap for diagnostic logging.
+    // An automatic rebuild here can silently paper over genuine corruption
+    // instead of surfacing it. Repair is available as an explicit,
+    // user-triggered action (see repairSync() in ./repair).
 
     // Retry — upstream retries up to 10× for same diffTime, 100× total
     if ((count >= 10 && diffTime === prevDiffTime) || count >= 100) {

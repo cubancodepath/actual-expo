@@ -11,6 +11,16 @@
 
 import { DependencyGraph } from "./graph";
 
+/**
+ * The exact prefix strings triggerBudgetChanges() (spreadsheet/sync.ts)
+ * queries via getCellsByPrefix() to directly mark leaf SQL cells dirty
+ * (cells with no incoming dependency edge, so nothing else cascades into
+ * them). Cells are indexed under every one of these they start with —
+ * see indexCell(). This list must stay in sync with the prefixes actually
+ * queried; add to it if triggerBudgetChanges starts querying a new one.
+ */
+const QUERYABLE_PREFIXES = ["sum-amount-", "budget-", "carryover-", "buffered"];
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -48,11 +58,6 @@ export function unresolveName(resolved: string): { sheet: string; name: string }
   return { sheet: resolved.slice(0, idx), name: resolved.slice(idx + 1) };
 }
 
-function safeNumber(n: unknown): number {
-  if (typeof n === "number" && !Number.isNaN(n)) return n;
-  return 0;
-}
-
 // ---------------------------------------------------------------------------
 // Spreadsheet
 // ---------------------------------------------------------------------------
@@ -67,10 +72,42 @@ export class Spreadsheet {
   /** Cells that were directly set (optimistic) — skip their run() in next computation. */
   private directlySet = new Set<string>();
 
+  /**
+   * Prefix index for O(1) cell lookup by name fragment.
+   * Key = the fragment after "!" (e.g., "catSpent-", "catBudgeted-").
+   * Used by triggerBudgetChanges to avoid O(N) iteration over all cells.
+   */
+  private prefixIndex = new Map<string, Set<string>>();
+
   /** Monotonic counter incremented after every computation with changes. */
   version = 0;
 
   // ---- Cell Creation ----
+
+  /** Register a resolved cell name in the prefix index for fast lookup. */
+  private indexCell(resolved: string): void {
+    // Extract the part after "!" (cell local name), e.g., "sum-amount-abc123".
+    // Bucketing must be done against the known QUERYABLE_PREFIXES rather
+    // than by splitting at the cell's first dash — cell ids are UUIDs and
+    // routinely contain dashes themselves, and several prefixes (e.g.
+    // "sum-amount-") have an internal dash before the id even starts, so a
+    // naive first-dash split silently mis-buckets them (e.g. under "sum-"
+    // instead of "sum-amount-"), and getCellsByPrefix() would then never
+    // find them — the exact cells that most need direct invalidation,
+    // since they're leaf query cells nothing else cascades into.
+    const bang = resolved.indexOf("!");
+    if (bang === -1) return;
+    const localName = resolved.slice(bang + 1);
+    for (const prefix of QUERYABLE_PREFIXES) {
+      if (!localName.startsWith(prefix)) continue;
+      let set = this.prefixIndex.get(prefix);
+      if (!set) {
+        set = new Set();
+        this.prefixIndex.set(prefix, set);
+      }
+      set.add(resolved);
+    }
+  }
 
   createStatic(sheet: string, name: string, initialValue: CellValue = 0): void {
     const resolved = resolveName(sheet, name);
@@ -85,6 +122,7 @@ export class Spreadsheet {
     }
     this.cells.set(resolved, { type: "static", name: resolved, value: initialValue });
     this.graph.addNode(resolved);
+    this.indexCell(resolved);
     this.dirtyCells.push(resolved);
   }
 
@@ -121,7 +159,7 @@ export class Spreadsheet {
     for (const dep of resolvedDeps) {
       this.graph.addEdge(dep, resolved);
     }
-
+    this.indexCell(resolved);
     this.dirtyCells.push(resolved);
   }
 
@@ -275,10 +313,18 @@ export class Spreadsheet {
   }
 
   /**
-   * Get all cells (for inspection by triggerBudgetChanges).
+   * Get all cells (for inspection).
    */
   getCells(): Map<string, Cell> {
     return this.cells;
+  }
+
+  /**
+   * Get all resolved cell names whose local name starts with prefix (e.g., "catSpent-").
+   * O(1) lookup via the prefix index — avoids O(N) iteration in triggerBudgetChanges.
+   */
+  getCellsByPrefix(prefix: string): Set<string> {
+    return this.prefixIndex.get(prefix) ?? new Set();
   }
 
   /**

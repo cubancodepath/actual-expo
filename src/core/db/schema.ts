@@ -40,7 +40,8 @@ CREATE TABLE IF NOT EXISTS accounts (
   tombstone INTEGER DEFAULT 0,
   account_sync_source TEXT,
   last_sync TEXT,
-  last_reconciled TEXT
+  last_reconciled TEXT,
+  bank_sync_status TEXT
 );
 
 CREATE TABLE IF NOT EXISTS pending_transactions (
@@ -87,7 +88,14 @@ CREATE TABLE IF NOT EXISTS categories (
   tombstone INTEGER DEFAULT 0,
   hidden INTEGER DEFAULT 0,
   goal_def TEXT,
-  template_settings TEXT DEFAULT '{"source": "notes"}'
+  template_settings TEXT DEFAULT '{"source": "notes"}',
+  cleanup_def TEXT DEFAULT NULL
+);
+
+CREATE TABLE IF NOT EXISTS cleanup_groups (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  tombstone INTEGER DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS category_groups (
@@ -185,7 +193,8 @@ CREATE TABLE IF NOT EXISTS schedules (
   active INTEGER DEFAULT 0,
   completed INTEGER DEFAULT 0,
   posts_transaction INTEGER DEFAULT 0,
-  tombstone INTEGER DEFAULT 0
+  tombstone INTEGER DEFAULT 0,
+  custom_upcoming_length TEXT DEFAULT NULL
 );
 
 CREATE TABLE IF NOT EXISTS schedules_next_date (
@@ -238,7 +247,8 @@ CREATE TABLE IF NOT EXISTS custom_reports (
   tombstone INTEGER DEFAULT 0,
   include_current INTEGER DEFAULT 0,
   sort_by TEXT DEFAULT 'desc',
-  trim_intervals INTEGER DEFAULT 0
+  trim_intervals INTEGER DEFAULT 0,
+  show_trend_lines INTEGER DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS preferences (
@@ -269,7 +279,8 @@ CREATE TABLE IF NOT EXISTS tags (
   tag TEXT UNIQUE,
   color TEXT,
   description TEXT,
-  tombstone INTEGER DEFAULT 0
+  tombstone INTEGER DEFAULT 0,
+  hidden BOOLEAN DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS payee_locations (
@@ -292,6 +303,7 @@ CREATE INDEX IF NOT EXISTS idx_transactions_category ON transactions(category);
 CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date);
 CREATE INDEX IF NOT EXISTS idx_transactions_parent_id ON transactions(parent_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_tombstone ON transactions(tombstone);
+CREATE INDEX IF NOT EXISTS idx_transactions_acct_tombstone ON transactions(acct, tombstone);
 
 CREATE INDEX IF NOT EXISTS idx_categories_cat_group ON categories(cat_group);
 CREATE INDEX IF NOT EXISTS idx_categories_tombstone ON categories(tombstone);
@@ -307,6 +319,7 @@ CREATE INDEX IF NOT EXISTS idx_payee_mapping_targetId ON payee_mapping(targetId)
 CREATE INDEX IF NOT EXISTS idx_category_mapping_transferId ON category_mapping(transferId);
 
 CREATE INDEX IF NOT EXISTS idx_messages_crdt_dataset_row ON messages_crdt(dataset, row);
+CREATE INDEX IF NOT EXISTS idx_messages_crdt_full ON messages_crdt(dataset, row, column, timestamp);
 
 CREATE INDEX IF NOT EXISTS idx_transactions_display
   ON transactions(acct, tombstone, isChild, date DESC, sort_order DESC);
@@ -347,13 +360,58 @@ const BASE_MIGRATION_IDS = [
   1720310586000, 1720664867241, 1720665000000, 1722717601000, 1722804019000, 1723665565000,
   1730744182000, 1736640000000, 1737158400000, 1738491452000, 1739139550000, 1740506588539,
   1745425408000, 1749799110000, 1749799110001, 1754611200000, 1759260219000, 1759842823172,
-  1762178745667, 1765518577215,
+  1762178745667, 1765518577215, 1769000000000, 1778510362740, 1780099200000, 1780327681000,
+  1780606215000, 1780606215001,
 ];
 
 /** Migrations gated by server feature support. Keyed by feature name in serverFeatures. */
 const CONDITIONAL_MIGRATIONS: Record<string, number[]> = {
   payeeLocations: [1768872504000], // add_payee_locations — requires server ≥ 26.4.0
 };
+
+/**
+ * Columns added to tables that already shipped in earlier app versions.
+ * `CREATE TABLE IF NOT EXISTS` above only affects brand-new databases —
+ * existing local budgets need these added via ALTER TABLE. SQLite has no
+ * "ADD COLUMN IF NOT EXISTS", so each is guarded with a PRAGMA table_info
+ * check to keep re-running idempotent.
+ */
+const COLUMN_UPGRADES: { table: string; column: string; ddl: string }[] = [
+  {
+    table: "accounts",
+    column: "bank_sync_status",
+    ddl: "ALTER TABLE accounts ADD COLUMN bank_sync_status TEXT",
+  },
+  {
+    table: "categories",
+    column: "cleanup_def",
+    ddl: "ALTER TABLE categories ADD COLUMN cleanup_def TEXT DEFAULT NULL",
+  },
+  {
+    table: "schedules",
+    column: "custom_upcoming_length",
+    ddl: "ALTER TABLE schedules ADD COLUMN custom_upcoming_length TEXT DEFAULT NULL",
+  },
+  {
+    table: "custom_reports",
+    column: "show_trend_lines",
+    ddl: "ALTER TABLE custom_reports ADD COLUMN show_trend_lines INTEGER DEFAULT 0",
+  },
+  {
+    table: "tags",
+    column: "hidden",
+    ddl: "ALTER TABLE tags ADD COLUMN hidden BOOLEAN DEFAULT 0",
+  },
+];
+
+async function applyColumnUpgrades(db: SQLiteDatabase): Promise<void> {
+  for (const { table, column, ddl } of COLUMN_UPGRADES) {
+    const existing = await db.getAllAsync<{ name: string }>(`PRAGMA table_info(${table})`);
+    if (!existing.some((c) => c.name === column)) {
+      await db.execAsync(ddl);
+    }
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Runner
@@ -362,6 +420,7 @@ const CONDITIONAL_MIGRATIONS: Record<string, number[]> = {
 export async function runSchema(db: SQLiteDatabase): Promise<void> {
   await db.execAsync(TABLES);
   await db.execAsync(INDEXES);
+  await applyColumnUpgrades(db);
 
   // Build migration list: base + conditional based on server support
   const { serverFeatures, isLocalOnly } = usePrefsStore.getState();

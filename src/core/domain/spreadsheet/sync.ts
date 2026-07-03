@@ -11,11 +11,22 @@
 import { listen } from "@/core/sync/syncEvents";
 import type { SyncMessage } from "@/core/sync/encoder";
 import { getSpreadsheet } from "./instance";
-import { createAllBudgetCells } from "./envelope";
+import { createAllBudgetCells, createBudgetCells } from "./envelope";
+import { getCategories, getCategoryGroups } from "../categories";
+import { addMonths } from "@/lib/date";
 
 /** Timestamp of last initSpreadsheet — suppresses structural refresh cooldown. */
 let lastInitTime = 0;
 const INIT_COOLDOWN = 500; // ms — brief cooldown to prevent double-init, short enough for sync refresh
+
+// The contiguous [start, end] month range currently built in the
+// spreadsheet ("YYYY-MM" strings, compare lexicographically). Tracked so
+// ensureMonthRange() can extend it without ever leaving a gap — budget
+// cells depend on the immediately preceding month's cells (from-last-month,
+// carryover chains), so every month between the old boundary and a newly
+// requested month must be built in ascending order before it's usable.
+let builtStart: string | null = null;
+let builtEnd: string | null = null;
 
 /**
  * Initialize the spreadsheet with budget cells for all months.
@@ -24,8 +35,56 @@ const INIT_COOLDOWN = 500; // ms — brief cooldown to prevent double-init, shor
 export async function initSpreadsheet(): Promise<void> {
   const ss = getSpreadsheet();
   ss.clear();
-  await createAllBudgetCells(ss);
+  const range = await createAllBudgetCells(ss);
+  builtStart = range.start;
+  builtEnd = range.end;
   lastInitTime = Date.now();
+}
+
+/** Ascending walk from `from` to `to` (inclusive), building each month's cells in order. */
+async function buildMonthsAscending(
+  ss: ReturnType<typeof getSpreadsheet>,
+  from: string,
+  to: string,
+  cats: Awaited<ReturnType<typeof getCategories>>,
+  groups: Awaited<ReturnType<typeof getCategoryGroups>>,
+): Promise<void> {
+  let cursor = from;
+  while (cursor <= to) {
+    await createBudgetCells(ss, cursor, cats, groups);
+    cursor = addMonths(cursor, 1);
+  }
+}
+
+/**
+ * Extend the built spreadsheet range to cover `month`, filling any gap in
+ * ascending month order first. Call before reading budget cells for a month
+ * that may be outside the initially-loaded (mobile-tightened) range — e.g.
+ * on month-picker navigation — so distant months render real values instead
+ * of silently reading 0 from missing prevSheet cells.
+ */
+export async function ensureMonthRange(month: string): Promise<void> {
+  if (builtStart === null || builtEnd === null) return; // not initialized yet
+  if (month >= builtStart && month <= builtEnd) return; // already built
+
+  const [cats, groups] = await Promise.all([getCategories(), getCategoryGroups()]);
+  const ss = getSpreadsheet();
+
+  ss.startTransaction();
+  try {
+    if (month > builtEnd) {
+      await buildMonthsAscending(ss, addMonths(builtEnd, 1), month, cats, groups);
+      builtEnd = month;
+    } else if (month < builtStart) {
+      // Walk forward from the new earliest month up to (but not including)
+      // the old start, so each month's prevSheet is always already built
+      // by the time it's needed.
+      await buildMonthsAscending(ss, month, addMonths(builtStart, -1), cats, groups);
+      builtStart = month;
+    }
+  } finally {
+    ss.endTransaction();
+  }
 }
 
 // ── Granular budget invalidation (ported from loot-core/budget/base.ts) ──
@@ -40,6 +99,20 @@ export function triggerBudgetChanges(messages: SyncMessage[]): void {
   const ss = getSpreadsheet();
   const affectedCells = new Set<string>();
 
+  // Determine which cell prefixes are affected by the messages
+  let touchTransactions = false;
+  let touchBudgets = false;
+  let touchMonths = false;
+  // accounts.offbudget/closed/tombstone changes which categories' spending
+  // counts toward "on budget" totals; category_mapping (category merges)
+  // changes which category a transaction's spend is attributed to. Both
+  // affect every "sum-amount-" cell's underlying query the same way a
+  // transaction edit does (loot-core: handleAccountChange,
+  // handleCategoryMappingChange). We don't track per-account/per-category
+  // scope here — a conservative full "sum-amount-" invalidation is cheap
+  // via the prefix index and these are rare operations.
+  let touchAccountsOrMapping = false;
+
   for (const msg of messages) {
     if (msg.dataset === "transactions") {
       if (
@@ -50,45 +123,43 @@ export function triggerBudgetChanges(messages: SyncMessage[]): void {
         msg.column === "tombstone" ||
         msg.column === "isParent"
       ) {
-        // Mark all catSpent SQL cells dirty (deps=[])
-        // They cascade to: groupSpent → totalIncome → incomeAvailable → toBudget
-        // And: catBalance → groupBalance → totalBalance
-        for (const [name, cell] of ss.getCells()) {
-          if (
-            cell.type === "dynamic" &&
-            cell.dependencies.length === 0 &&
-            name.includes("!sum-amount-")
-          ) {
-            affectedCells.add(name);
-          }
-        }
+        touchTransactions = true;
       }
     } else if (msg.dataset === "zero_budgets") {
       if (msg.column === "amount" || msg.column === "carryover") {
-        // Mark catBudgeted and catCarryover SQL cells dirty (deps=[])
-        // They cascade to: catBalance → groupBudgeted/groupBalance → totals → toBudget
-        for (const [name, cell] of ss.getCells()) {
-          if (
-            cell.type === "dynamic" &&
-            cell.dependencies.length === 0 &&
-            (name.includes("!budget-") || name.includes("!carryover-"))
-          ) {
-            affectedCells.add(name);
-          }
-        }
+        touchBudgets = true;
       }
     } else if (msg.dataset === "zero_budget_months") {
-      // Mark buffered SQL cell dirty (deps=[])
-      // Cascades to: bufferedSelected → toBudget
-      for (const [name, cell] of ss.getCells()) {
-        if (
-          cell.type === "dynamic" &&
-          cell.dependencies.length === 0 &&
-          name.includes("!buffered")
-        ) {
-          affectedCells.add(name);
-        }
+      touchMonths = true;
+    } else if (msg.dataset === "accounts") {
+      if (msg.column === "offbudget" || msg.column === "closed" || msg.column === "tombstone") {
+        touchAccountsOrMapping = true;
       }
+    } else if (msg.dataset === "category_mapping") {
+      touchAccountsOrMapping = true;
+    }
+  }
+
+  // O(1) lookup via prefix index — avoids O(N) cell iteration
+  if (touchTransactions || touchAccountsOrMapping) {
+    // "sum-amount-" cells cascade to: groupSpent → totalIncome → incomeAvailable → toBudget
+    for (const name of ss.getCellsByPrefix("sum-amount-")) {
+      affectedCells.add(name);
+    }
+  }
+  if (touchBudgets) {
+    // "budget-" and "carryover-" cascade to: catBalance → groupBalance → totals → toBudget
+    for (const name of ss.getCellsByPrefix("budget-")) {
+      affectedCells.add(name);
+    }
+    for (const name of ss.getCellsByPrefix("carryover-")) {
+      affectedCells.add(name);
+    }
+  }
+  if (touchMonths) {
+    // "buffered" cascades to: bufferedSelected → toBudget
+    for (const name of ss.getCellsByPrefix("buffered")) {
+      affectedCells.add(name);
     }
   }
 
@@ -116,7 +187,21 @@ async function runStructuralRefresh(): Promise<void> {
   refreshing = true;
   pendingRefresh = false;
   try {
-    await createAllBudgetCells(getSpreadsheet());
+    // Remember any range previously widened by ensureMonthRange() — a
+    // structural rebuild only recreates the mobile-tightened default
+    // range, so without this the new category's cells for a
+    // previously-visited far month would silently go missing again.
+    const prevStart = builtStart;
+    const prevEnd = builtEnd;
+
+    const range = await createAllBudgetCells(getSpreadsheet());
+    builtStart = range.start;
+    builtEnd = range.end;
+
+    if (prevStart !== null && prevEnd !== null) {
+      if (prevStart < builtStart) await ensureMonthRange(prevStart);
+      if (prevEnd > builtEnd) await ensureMonthRange(prevEnd);
+    }
   } catch (err) {
     if (__DEV__) console.warn("[spreadsheet/sync] structural refresh failed:", err);
   } finally {

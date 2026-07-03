@@ -69,6 +69,13 @@ export async function sendMessages(messages: SyncMessage[]): Promise<void> {
 }
 
 export async function batchMessages(fn: () => Promise<void>): Promise<void> {
+  // Re-entrancy guard: a nested batchMessages() call must append to the
+  // OUTER buffer, not flush early and drop the outer call out of batching
+  // mode (upstream sync/index.ts:501-505 has the same guard).
+  if (_isBatching) {
+    await fn();
+    return;
+  }
   _isBatching = true;
   try {
     await fn();
@@ -82,7 +89,13 @@ export async function batchMessages(fn: () => Promise<void>): Promise<void> {
   }
 }
 
-const BUDGET_TABLES = new Set(["zero_budgets", "zero_budget_months", "transactions"]);
+const BUDGET_TABLES = new Set([
+  "zero_budgets",
+  "zero_budget_months",
+  "transactions",
+  "accounts",
+  "category_mapping",
+]);
 
 async function _applyAndRecord(messages: SyncMessage[]): Promise<void> {
   const oldData: OldData = await applyMessages(messages);

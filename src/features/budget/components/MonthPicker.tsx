@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { addMonths, formatMonth } from "@/lib/date";
+import { ensureMonthRange } from "@/core/domain/spreadsheet/sync";
 
 const SWIPE_THRESHOLD = 50;
 const DURATION = 120;
@@ -37,6 +38,13 @@ export function MonthPicker() {
     // starts from initialAnimate (invisible, offset) and animates to visible
     setMonth(nextMonth);
     setAnimKey((k) => k + 1);
+    // Lazily extend the spreadsheet's built range if navigating outside it
+    // (no-op when already covered) — keeps distant months from silently
+    // rendering zeros. Fire-and-forget: cells resolve to 0 until this
+    // settles, then the spreadsheet's change listeners refresh the screen.
+    ensureMonthRange(nextMonth).catch((err) => {
+      if (__DEV__) console.warn("[MonthPicker] ensureMonthRange failed:", err);
+    });
   }
 
   // Swipe gesture (Reanimated for smooth finger-follow during drag)

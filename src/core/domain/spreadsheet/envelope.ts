@@ -18,6 +18,7 @@ import { getCategories, getCategoryGroups } from "../categories";
 import type { Category, CategoryGroup } from "../categories/types";
 import { safeNumber } from "@/lib/number";
 import { num, createSpentCells, getBudgetRange } from "./shared";
+import { inferGoalFromDef } from "../goals";
 
 // ---------------------------------------------------------------------------
 // Create all budget cells for a single month
@@ -109,8 +110,14 @@ export async function createBudgetCells(
       run: (balance) => Math.max(0, num(balance)),
     });
 
-    const goalInfo = cat.goal_def ? inferGoalFromDef(cat.goal_def) : null;
-    ss.createStatic(sheet, envelopeBudget.catGoal(cat.id), goalInfo?.amount ?? 0);
+    // Uses the same inference the one-shot getBudgetMonth() read path uses
+    // (goals/parse.ts) — was previously a local copy here that only
+    // recognized simple/by/spend; sharing it picks up periodic/limit/refill
+    // too. carryIn isn't available at this synchronous cell-creation point
+    // (would need an extra query), so "by" sinking-fund goals approximate
+    // it as 0 — the function's own documented fallback.
+    const goalInfo = cat.goal_def ? inferGoalFromDef(cat.goal_def, month) : null;
+    ss.createStatic(sheet, envelopeBudget.catGoal(cat.id), goalInfo?.goal ?? 0);
     ss.createStatic(sheet, envelopeBudget.catLongGoal(cat.id), goalInfo?.longGoal ?? false);
   }
 
@@ -232,29 +239,6 @@ export async function createBudgetCells(
     run: (available, lastOverspent, totalBudgeted, buffered) =>
       safeNumber(num(available) + num(lastOverspent) + num(totalBudgeted) - num(buffered)),
   });
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/** Infer goal amount from goal_def JSON. */
-function inferGoalFromDef(goalDef: string | null): { amount: number; longGoal: boolean } | null {
-  if (!goalDef) return null;
-  try {
-    const templates = JSON.parse(goalDef);
-    if (!Array.isArray(templates) || templates.length === 0) return null;
-    const t = templates[0];
-    if (t.type === "simple") {
-      return { amount: Math.round((t.monthly ?? 0) * 100), longGoal: false };
-    }
-    if (t.type === "by" || t.type === "spend") {
-      return { amount: Math.round((t.amount ?? 0) * 100), longGoal: t.type === "by" };
-    }
-    return null;
-  } catch {
-    return null;
-  }
 }
 
 // ---------------------------------------------------------------------------

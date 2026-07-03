@@ -302,6 +302,7 @@
     "refillToLimit": "Refill to limit",
     "limitPeriod": "Limit: {{amount}} {{period}}",
     "limitPeriodHold": "Limit: {{amount}} {{period}}, hold",
+    "linkedToSchedule": "Linked to schedule",
     "period": {
       "day": "day",
       "week": "week",

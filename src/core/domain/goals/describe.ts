@@ -141,6 +141,8 @@ export function describeTemplate(tmpl: Template, locale: string = "en"): Templat
         periodKey: tmpl.period,
       };
     }
+    case "schedule":
+      return { key: "budget:describe.linkedToSchedule" };
   }
 }
 

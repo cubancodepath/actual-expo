@@ -14,8 +14,33 @@ import { monthToInt } from "@/lib/date";
 import { setBudgetAmount, computeToBudget, computeCarryoverChain } from "../budgets";
 import type { CategoryRow, ZeroBudgetRow } from "@/core/db/types";
 import { calculateGoal, type GoalContext } from "./engine";
-import { parseGoalDef } from "./parse";
+import { parseGoalDef, parseTemplateNotes } from "./parse";
 import { setGoalResult } from "./persist";
+import type { Template } from "./types";
+
+type CategoryWithNote = CategoryRow & { note: string | null };
+
+/**
+ * Templates for a category: prefer goal_def JSON (the mobile UI's source
+ * of truth), falling back to parsing legacy #template/#goal note text when
+ * goal_def is empty — a budget authored on desktop with notes-only
+ * templates (no goal_def) is otherwise invisible on mobile.
+ */
+function getCategoryTemplates(
+  cat: Pick<CategoryWithNote, "goal_def" | "note">,
+  categoryNameToId?: Map<string, string>,
+): Template[] {
+  const fromJson = parseGoalDef(cat.goal_def);
+  if (fromJson.length > 0) return fromJson;
+  return parseTemplateNotes(cat.note, categoryNameToId);
+}
+
+async function getCategoryNameToIdMap(): Promise<Map<string, string>> {
+  const rows = await runQuery<{ id: string; name: string }>(
+    "SELECT id, name FROM categories WHERE tombstone = 0",
+  );
+  return new Map(rows.map((r) => [r.name, r.id]));
+}
 
 // ---------------------------------------------------------------------------
 // Result types
@@ -59,15 +84,21 @@ export async function computeGoalAllocations(
 ): Promise<ComputeGoalsResult> {
   const monthInt = monthToInt(month);
 
-  // Get all non-hidden categories with goal_def set
+  // Get all non-hidden categories with goal_def set, OR with legacy
+  // #template/#goal note text (goal_def empty) — see getCategoryTemplates.
   // Hidden categories are excluded — they should only be processed if
   // the user explicitly selects them (matches original Actual behavior).
-  const categories = await runQuery<CategoryRow>(
-    `SELECT c.* FROM categories c
+  const categories = await runQuery<CategoryWithNote>(
+    `SELECT c.*, n.note FROM categories c
      JOIN category_groups g ON g.id = c.cat_group AND g.is_income = 0
+     LEFT JOIN notes n ON n.id = c.id
      WHERE c.tombstone = 0 AND c.hidden = 0 AND g.hidden = 0
-       AND c.goal_def IS NOT NULL AND c.goal_def != ''`,
+       AND (
+         (c.goal_def IS NOT NULL AND c.goal_def != '')
+         OR n.note LIKE '%#template%' OR n.note LIKE '%#goal%'
+       )`,
   );
+  const categoryNameToId = await getCategoryNameToIdMap();
 
   // Get current month's budget rows for previouslyBudgeted
   const budgetRows = await runQuery<ZeroBudgetRow>("SELECT * FROM zero_budgets WHERE month = ?", [
@@ -87,8 +118,8 @@ export async function computeGoalAllocations(
 
   // Track remainder categories for pass 2
   const remainderCategories: Array<{
-    cat: CategoryRow;
-    templates: import("./types").Template[];
+    cat: CategoryWithNote;
+    templates: Template[];
     fromLastMonth: number;
     previouslyBudgeted: number;
     weight: number;
@@ -97,7 +128,7 @@ export async function computeGoalAllocations(
   // ── Pass 1: Process all non-remainder categories ──────────────────────────
   for (const cat of categories) {
     try {
-      const templates = parseGoalDef(cat.goal_def);
+      const templates = getCategoryTemplates(cat, categoryNameToId);
       if (templates.length === 0) continue;
 
       const previouslyBudgeted = budgetMap.get(cat.id) ?? 0;
@@ -223,16 +254,20 @@ export async function persistGoalAllocations(
 export async function updateGoalIndicator(month: string, categoryId: string): Promise<void> {
   const monthInt = monthToInt(month);
 
-  const cat = await first<CategoryRow>("SELECT * FROM categories WHERE id = ? AND tombstone = 0", [
-    categoryId,
-  ]);
-  if (!cat || !cat.goal_def) {
-    // Goal was removed — clear the indicator
+  const cat = await first<CategoryWithNote>(
+    `SELECT c.*, n.note FROM categories c LEFT JOIN notes n ON n.id = c.id
+     WHERE c.id = ? AND c.tombstone = 0`,
+    [categoryId],
+  );
+  if (!cat) {
     await setGoalResult(month, categoryId, null, null);
     return;
   }
 
-  const templates = parseGoalDef(cat.goal_def);
+  const templates = getCategoryTemplates(
+    cat,
+    cat.goal_def ? undefined : await getCategoryNameToIdMap(),
+  );
   if (templates.length === 0) {
     await setGoalResult(month, categoryId, null, null);
     return;

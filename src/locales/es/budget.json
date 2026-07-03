@@ -282,6 +282,7 @@
     "refillToLimit": "Rellenar hasta el límite",
     "limitPeriod": "Límite: {{amount}} {{period}}",
     "limitPeriodHold": "Límite: {{amount}} {{period}}, retener",
+    "linkedToSchedule": "Vinculado a una programación",
     "period": {
       "day": "día",
       "week": "semana",

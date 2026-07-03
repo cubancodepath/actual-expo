@@ -115,6 +115,18 @@ export type RefillTemplate = {
   directive: "template";
 };
 
+/** Budget toward a linked schedule's next occurrence(s). */
+export type ScheduleTemplate = {
+  type: "schedule";
+  name?: string; // schedule name — fallback lookup when scheduleId isn't set
+  scheduleId?: string;
+  full?: boolean; // force "pay the full amount this month" classification
+  adjustment?: number;
+  adjustmentType?: "percent" | "fixed";
+  priority: number;
+  directive: "template";
+};
+
 /** Standalone spending limit — caps budget from other templates. */
 export type LimitTemplate = {
   type: "limit";
@@ -141,7 +153,8 @@ export type Template =
   | PercentageTemplate
   | RemainderTemplate
   | RefillTemplate
-  | LimitTemplate;
+  | LimitTemplate
+  | ScheduleTemplate;
 
 // ---------------------------------------------------------------------------
 // Calculation result

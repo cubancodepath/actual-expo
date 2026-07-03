@@ -9,6 +9,8 @@
 import { first, runQuery } from "@/core/db";
 import { addMonths, monthToInt } from "@/lib/date";
 import { ALIVE_TX_FILTER } from "@/core/db/filters";
+import { getScheduleById, getSchedules } from "../schedules";
+import type { RecurConfig } from "../schedules/types";
 import type {
   AverageTemplate,
   ByTemplate,
@@ -20,6 +22,7 @@ import type {
   PeriodicTemplate,
   RemainderTemplate,
   RefillTemplate,
+  ScheduleTemplate,
   SimpleTemplate,
   SpendTemplate,
   Template,
@@ -339,6 +342,100 @@ function runBy(templates: ByTemplate[], month: string, fromLastMonth: number): n
   return Math.round((totalNeeded - fromLastMonth) / (shortNum + 1));
 }
 
+// ---------------------------------------------------------------------------
+// Schedule template
+//
+// Simplified port of upstream's schedule-template.ts::runSchedule. Upstream
+// runs the schedule's attached rule (execActions, BALANCE_OF formulas) to
+// derive the amount and splits contributions into a "pay month of" bucket
+// (due this month) vs a "sinking" bucket with a remainder-carrying catch-up
+// algorithm across the whole category-template-context batch. This port
+// keeps the pay-month-of classification (same thresholds) but simplifies
+// sinking contributions to an even spread over the months remaining until
+// the next occurrence — the same amortization runBy() already uses for `by`
+// templates — rather than porting the multi-schedule remainder carry-forward
+// bookkeeping, which needs the wider rule-execution/BALANCE_OF machinery
+// this engine doesn't have.
+// ---------------------------------------------------------------------------
+
+type ScheduleTarget = {
+  target: number; // signed cents; positive = amount to budget
+  numMonths: number; // calendar months between next occurrence and current month
+  isPayMonthOf: boolean;
+};
+
+async function resolveScheduleTarget(
+  template: ScheduleTemplate,
+  month: string,
+  isIncome: boolean,
+): Promise<ScheduleTarget | null> {
+  const schedule = template.scheduleId
+    ? await getScheduleById(template.scheduleId)
+    : template.name
+      ? (await getSchedules()).find((s) => s.name?.trim() === template.name?.trim())
+      : undefined;
+
+  if (!schedule || schedule.completed || !schedule.next_date) return null;
+
+  let amount = 0;
+  if (schedule._amount && typeof schedule._amount === "object") {
+    // "isbetween" condition — average the two bounds, matching upstream.
+    amount = Math.round((schedule._amount.num1 + schedule._amount.num2) / 2);
+  } else if (typeof schedule._amount === "number") {
+    amount = schedule._amount;
+  }
+
+  if (template.adjustment !== undefined && template.adjustmentType) {
+    if (template.adjustmentType === "percent") {
+      amount = Math.round(amount * (1 + template.adjustment / 100));
+    } else {
+      const sign = amount < 0 ? -1 : 1;
+      amount += sign * amountToInteger(template.adjustment);
+    }
+  }
+
+  const target = (isIncome ? 1 : -1) * amount;
+
+  const numMonths = diffMonths(schedule.next_date.slice(0, 7), month);
+  if (numMonths < 0) return null; // occurrence is in the past — nothing to budget
+
+  const dateCfg = schedule._date;
+  const recurring =
+    dateCfg !== null && typeof dateCfg === "object" ? (dateCfg as RecurConfig) : null;
+  const frequency = recurring?.frequency;
+  const interval = recurring?.interval ?? 1;
+
+  const isPayMonthOf =
+    !!template.full ||
+    ((frequency === "monthly" || !frequency) && interval === 1 && numMonths === 0) ||
+    (frequency === "weekly" && interval <= 4) ||
+    (frequency === "daily" && interval <= 31);
+
+  return { target, numMonths, isPayMonthOf };
+}
+
+async function runSchedule(
+  templates: ScheduleTemplate[],
+  categoryId: string,
+  month: string,
+): Promise<number> {
+  if (templates.length === 0) return 0;
+
+  const catRow = await first<{ is_income: number }>(
+    "SELECT is_income FROM categories WHERE id = ?",
+    [categoryId],
+  );
+  const isIncome = catRow?.is_income === 1;
+
+  let total = 0;
+  for (const template of templates) {
+    const resolved = await resolveScheduleTarget(template, month, isIncome);
+    if (!resolved) continue;
+    total += resolved.isPayMonthOf ? resolved.target : resolved.target / (resolved.numMonths + 1);
+  }
+  return Math.round(total);
+}
+
 async function runAverage(
   template: AverageTemplate,
   categoryId: string,
@@ -403,7 +500,8 @@ type PriorityTemplate =
   | PeriodicTemplate
   | SpendTemplate
   | PercentageTemplate
-  | RefillTemplate;
+  | RefillTemplate
+  | ScheduleTemplate;
 
 /**
  * Calculate the goal result for a single category.
@@ -567,6 +665,14 @@ export async function calculateGoal(
           case "average":
             priorityBudget += await runAverage(template, categoryId, month);
             break;
+          case "schedule": {
+            const scheduleTemplates = atPriority.filter(
+              (t): t is ScheduleTemplate => t.type === "schedule",
+            );
+            priorityBudget += await runSchedule(scheduleTemplates, categoryId, month);
+            processed.add("schedule");
+            break;
+          }
         }
       }
 

@@ -243,7 +243,10 @@ export default function GoalEditorScreen() {
       }
 
       const t = templates[0];
-      if (t.type === "refill" || t.type === "limit") return;
+      // "schedule" goals aren't editable from this screen yet (no schedule
+      // picker UI) — same no-op treatment as refill/limit, which also have
+      // no dedicated editor here.
+      if (t.type === "refill" || t.type === "limit" || t.type === "schedule") return;
       setGoalType(t.type);
 
       switch (t.type) {

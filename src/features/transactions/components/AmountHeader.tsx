@@ -1,6 +1,6 @@
 import { memo, type ReactNode } from "react";
 import { Pressable, View, type ViewStyle } from "react-native";
-import { useSyncedPref } from "@/shared/hooks/useSyncedPref";
+import { useSyncedPrefs } from "@/shared/hooks/useSyncedPrefs";
 import { formatCents, formatExpression } from "@/lib/currency";
 import { Text } from "@/design-system/atoms/Text";
 import { TypeToggle, type TransactionType } from "./TypeToggle";
@@ -38,12 +38,12 @@ export const AmountHeader = memo(function AmountHeader({
   children,
 }: AmountHeaderProps) {
   // Subscribe to format prefs for reactivity (re-render when any format pref changes)
-  useSyncedPref("numberFormat");
-  useSyncedPref("hideFraction");
-  useSyncedPref("defaultCurrencyCode");
-  useSyncedPref("defaultCurrencyCustomSymbol");
-  useSyncedPref("currencySymbolPosition");
-  useSyncedPref("currencySpaceBetweenAmountAndSymbol");
+  useSyncedPrefs("numberFormat");
+  useSyncedPrefs("hideFraction");
+  useSyncedPrefs("defaultCurrencyCode");
+  useSyncedPrefs("defaultCurrencyCustomSymbol");
+  useSyncedPrefs("currencySymbolPosition");
+  useSyncedPrefs("currencySpaceBetweenAmountAndSymbol");
 
   const isExpense = type === "expense";
 

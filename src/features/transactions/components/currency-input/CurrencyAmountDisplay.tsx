@@ -1,7 +1,7 @@
 import { StyleSheet, View } from "react-native";
 import { Text } from "@/design-system/atoms/Text";
 import { useCursorBlink } from "@/shared/hooks/useCursorBlink";
-import { useSyncedPref } from "@/shared/hooks/useSyncedPref";
+import { useSyncedPrefs } from "@/shared/hooks/useSyncedPrefs";
 import { formatCents, formatExpression } from "@/lib/currency";
 
 interface CurrencyAmountDisplayProps {
@@ -32,12 +32,12 @@ export function CurrencyAmountDisplay({
   const { renderCursor } = useCursorBlink(isActive);
 
   // Subscribe to format prefs for reactivity (re-render when any format pref changes)
-  useSyncedPref("numberFormat");
-  useSyncedPref("hideFraction");
-  useSyncedPref("defaultCurrencyCode");
-  useSyncedPref("defaultCurrencyCustomSymbol");
-  useSyncedPref("currencySymbolPosition");
-  useSyncedPref("currencySpaceBetweenAmountAndSymbol");
+  useSyncedPrefs("numberFormat");
+  useSyncedPrefs("hideFraction");
+  useSyncedPrefs("defaultCurrencyCode");
+  useSyncedPrefs("defaultCurrencyCustomSymbol");
+  useSyncedPrefs("currencySymbolPosition");
+  useSyncedPrefs("currencySpaceBetweenAmountAndSymbol");
 
   const isHero = (fontSize ?? 14) >= 32;
   const amountStyle = isHero ? styles.heroText : styles.compactText;

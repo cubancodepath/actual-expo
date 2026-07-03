@@ -2,7 +2,7 @@ import { View } from "react-native";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { Text } from "@/design-system";
 import { formatDateLong } from "@/lib/date";
-import { useSyncedPref } from "@/shared/hooks/useSyncedPref";
+import { useSyncedPrefs } from "@/shared/hooks/useSyncedPrefs";
 
 interface UpcomingDateHeaderProps {
   date: number;
@@ -10,7 +10,7 @@ interface UpcomingDateHeaderProps {
 
 export function UpcomingDateHeader({ date }: UpcomingDateHeaderProps) {
   const { colors, spacing, borderWidth: bw } = useTheme();
-  useSyncedPref("dateFormat");
+  useSyncedPrefs("dateFormat");
 
   return (
     <View

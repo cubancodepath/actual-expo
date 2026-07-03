@@ -6,14 +6,14 @@
  */
 
 import { useCallback } from "react";
-import { useSyncedPref } from "@/shared/hooks/useSyncedPref";
+import { useSyncedPrefs } from "@/shared/hooks/useSyncedPrefs";
 
 export function useAccountPref(
   accountId: string | undefined,
   key: "hide-cleared" | "hide-reconciled",
 ): [boolean, () => void] {
   const prefKey = accountId ? `${key}-${accountId}` : key;
-  const [value, setValue] = useSyncedPref(prefKey);
+  const [value, setValue] = useSyncedPrefs(prefKey);
 
   const toggle = useCallback(() => {
     setValue(value === "true" ? "false" : "true");

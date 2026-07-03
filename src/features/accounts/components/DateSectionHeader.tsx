@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { Text } from "@/design-system";
 import { formatDateHuman, todayInt } from "@/lib/date";
-import { useSyncedPref } from "@/shared/hooks/useSyncedPref";
+import { useSyncedPrefs } from "@/shared/hooks/useSyncedPrefs";
 
 function yesterdayInt(): number {
   const d = new Date();
@@ -21,7 +21,7 @@ interface DateSectionHeaderProps {
 export function DateSectionHeader({ date }: DateSectionHeaderProps) {
   const { t } = useTranslation("transactions");
   const { colors, spacing } = useTheme();
-  useSyncedPref("dateFormat");
+  useSyncedPrefs("dateFormat");
 
   const today = todayInt();
   const yesterday = yesterdayInt();

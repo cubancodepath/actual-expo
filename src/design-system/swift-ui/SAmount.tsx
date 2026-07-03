@@ -9,7 +9,7 @@
 import { formatPrivacyAware } from "@/lib/format";
 import { usePrivacyStore } from "@/stores/privacyStore";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
-import { ScalableText } from "../../../../modules/actual-ui";
+import { ScalableText } from "@modules/actual-ui";
 import { sFont, type SFontVariant } from "./tokens";
 import type { CommonViewModifierProps } from "@expo/ui/swift-ui";
 

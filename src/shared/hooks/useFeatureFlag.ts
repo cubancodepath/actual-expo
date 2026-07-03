@@ -1,7 +1,7 @@
-import { useSyncedPref } from "@/shared/hooks/useSyncedPref";
+import { useSyncedPrefs } from "@/shared/hooks/useSyncedPrefs";
 import type { FeatureFlag } from "@/core/domain/preferences/featureFlags";
 
 export function useFeatureFlag(name: FeatureFlag): boolean {
-  const [value] = useSyncedPref(`flags.${name}`);
+  const [value] = useSyncedPrefs(`flags.${name}`);
   return value === "true";
 }

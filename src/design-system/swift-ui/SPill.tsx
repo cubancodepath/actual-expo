@@ -5,7 +5,7 @@
  */
 
 import { background, cornerRadius, padding, frame } from "@expo/ui/swift-ui/modifiers";
-import { ScalableText } from "../../../../modules/actual-ui";
+import { ScalableText } from "@modules/actual-ui";
 import { formatPrivacyAware } from "@/lib/format";
 import { usePrivacyStore } from "@/stores/privacyStore";
 import { useTheme } from "@/design-system/providers/ThemeProvider";

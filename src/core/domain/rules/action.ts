@@ -11,7 +11,7 @@ import { format, isValid, parseISO } from "date-fns";
 
 // Ensure helpers are registered
 import "./handlebars-helpers";
-import { evaluateFormula, amountToInteger } from "./formula";
+import { evaluateFormula, amountToInteger, type FormulaValue } from "./formula";
 import { assert, FIELD_TYPES } from "./rule-utils";
 
 const ACTION_OPS = [
@@ -95,14 +95,15 @@ export class Action {
             if (!object._ruleErrors) object._ruleErrors = [];
             const errors = object._ruleErrors as string[];
 
-            // Build variable map for formula
-            const variables: Record<string, number> = {};
+            // Build variable map for formula (pass strings as-is, numbers as-is)
+            const variables: Record<string, FormulaValue> = {};
             for (const key of Object.keys(object)) {
               const val = object[key];
-              if (typeof val === "number") variables[key] = val;
-              else if (typeof val === "string") variables[key] = 0;
+              if (typeof val === "number" || typeof val === "string") {
+                variables[key] = val;
+              }
             }
-            variables.today = 0; // placeholder
+            variables.today = new Date().toISOString().slice(0, 10);
 
             const result = evaluateFormula(this.options.formula as string, variables);
 
@@ -184,9 +185,10 @@ export class Action {
               break;
             }
             try {
-              const variables: Record<string, number> = {};
+              const variables: Record<string, FormulaValue> = {};
               for (const key of Object.keys(object)) {
-                if (typeof object[key] === "number") variables[key] = object[key] as number;
+                const v = object[key];
+                if (typeof v === "number" || typeof v === "string") variables[key] = v;
               }
               const result = evaluateFormula(this.options.formula as string, variables);
               const numValue = typeof result === "number" ? result : parseFloat(String(result));

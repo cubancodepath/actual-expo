@@ -21,7 +21,7 @@ import {
   frame,
 } from "@expo/ui/swift-ui/modifiers";
 import { shapes } from "@expo/ui/swift-ui/modifiers";
-import { ScalableText } from "../../../../modules/actual-ui";
+import { ScalableText } from "@modules/actual-ui";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { usePrivacyStore } from "@/stores/privacyStore";
 import { formatPrivacyAware } from "@/lib/format";

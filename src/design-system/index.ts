@@ -53,9 +53,11 @@ export {
 } from "../features/transactions/components/currency-input";
 
 // Budget feature components (re-exported for convenience)
-export { MonthSelector } from "../features/budget/components/MonthSelector";
+export { MonthPicker } from "../features/budget/components/MonthPicker";
 export { OverspentPill } from "../features/budget/components/OverspentPill";
-export { BudgetGroupHeader } from "../features/budget/components/BudgetGroupHeader";
-export { BudgetCategoryRow } from "../features/budget/components/BudgetCategoryRow";
+export { ExpenseGroupListItem } from "../features/budget/components/ExpenseGroupListItem";
+export { ExpenseCategoryListItem } from "../features/budget/components/ExpenseCategoryListItem";
+export { IncomeGroup } from "../features/budget/components/IncomeGroup";
+export { IncomeCategoryListItem } from "../features/budget/components/IncomeCategoryListItem";
 export { OverspendingBanner } from "../features/budget/components/OverspendingBanner";
 export { UncategorizedBanner } from "../features/budget/components/UncategorizedBanner";

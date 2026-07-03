@@ -62,7 +62,9 @@ export function firstSync<T = unknown>(sql: string, params: SQLiteBindParams = [
 }
 
 export async function transaction(fn: () => Promise<void>): Promise<void> {
-  await getDb().withExclusiveTransactionAsync(fn);
+  // DEFERRED (not EXCLUSIVE) — the sequential guard in apply.ts prevents
+  // concurrent writers, so we don't need to block all readers during sync.
+  await getDb().withTransactionAsync(fn);
 }
 
 /** Wipe all local data by deleting rows from every table. Keeps the DB connection alive. */

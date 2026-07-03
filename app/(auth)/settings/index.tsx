@@ -9,7 +9,7 @@ import { Text, Card, ListItem, SectionHeader, Button, Icon, type IconName } from
 import { usePrefsStore } from "@/stores/prefsStore";
 import { resetAllStores } from "@/stores/resetStores";
 import { useSyncStore } from "@/stores/syncStore";
-import { resetSyncState, clearSwitchingFlag, loadClock } from "@/core/sync";
+import { resetSyncState, clearSwitchingFlag, loadClock, repairSync, fullSync } from "@/core/sync";
 import { clearLocalData } from "@/core/db";
 import { closeBudget } from "@/services/budgetfiles";
 import type { Theme } from "@/design-system/tokens";
@@ -67,6 +67,7 @@ export default function SettingsScreen() {
   } = usePrefsStore();
   const lastSync = useSyncStore((s) => s.lastSync);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [repairing, setRepairing] = useState(false);
 
   const lastSyncText = lastSync
     ? lastSync.toLocaleTimeString()
@@ -115,6 +116,26 @@ export default function SettingsScreen() {
             await clearAll();
           } finally {
             setLoggingOut(false);
+          }
+        },
+      },
+    ]);
+  }
+
+  function handleRepairSync() {
+    Alert.alert(t("repairSyncTitle"), t("repairSyncMessage"), [
+      { text: tc("cancel"), style: "cancel" },
+      {
+        text: t("repairSyncConfirm"),
+        onPress: async () => {
+          setRepairing(true);
+          try {
+            await repairSync();
+            await fullSync({ force: true });
+          } catch (e) {
+            Alert.alert(tc("error"), e instanceof Error ? e.message : String(e));
+          } finally {
+            setRepairing(false);
           }
         },
       },
@@ -260,12 +281,20 @@ export default function SettingsScreen() {
             )}
           </Card>
           <Button
+            title={t("repairSync")}
+            icon="refresh"
+            buttonStyle="borderless"
+            onPress={handleRepairSync}
+            disabled={repairing}
+            style={{ marginTop: spacing.md }}
+          />
+          <Button
             title={t("disconnectFromServer")}
             icon="logOutOutline"
             buttonStyle="borderless"
             danger
             onPress={handleLogout}
-            style={{ marginTop: spacing.md }}
+            style={{ marginTop: spacing.xs }}
           />
         </>
       )}

@@ -476,6 +476,33 @@ export const skipNextDate = undoable(async function skipNextDate(id: string): Pr
   });
 });
 
+/**
+ * Build the fields for a schedule-posted transaction, running the general
+ * rule set over the schedule's own conditions-derived category/payee first
+ * (rules can override them, add notes, etc.) — matches upstream's
+ * addTransactions() bulk path, which always runs rules on system-generated
+ * transactions (only manually-typed form entries skip full rule
+ * application; see rules/apply.ts::applyRulesToNewTransaction).
+ */
+async function buildScheduledTransactionFields(
+  schedule: Schedule,
+  date: number,
+): Promise<import("../rules/apply").NewTransactionFields> {
+  const { getRules } = await import("../rules");
+  const { applyRulesToNewTransaction } = await import("../rules/apply");
+
+  const amount = getScheduledAmount(schedule._amount);
+  const rules = await getRules();
+  return applyRulesToNewTransaction(rules, {
+    account: schedule._account!,
+    date,
+    amount,
+    payee: schedule._payee ?? null,
+    category: schedule._category ?? null,
+    cleared: false,
+  });
+}
+
 export const postTransactionForSchedule = undoable(async function postTransactionForSchedule(
   id: string,
 ): Promise<void> {
@@ -483,18 +510,10 @@ export const postTransactionForSchedule = undoable(async function postTransactio
   if (!schedule || !schedule._account) return;
 
   const { addTransaction } = await import("../transactions");
-  const amount = getScheduledAmount(schedule._amount);
   const date = schedule.next_date ? toDateRepr(schedule.next_date) : todayInt();
+  const fields = await buildScheduledTransactionFields(schedule, date);
 
-  await addTransaction({
-    account: schedule._account,
-    date,
-    amount,
-    payee: schedule._payee ?? undefined,
-    category: schedule._category ?? undefined,
-    cleared: false,
-    schedule: id,
-  });
+  await addTransaction({ ...fields, schedule: id });
 });
 
 export const postTransactionForScheduleToday = undoable(
@@ -503,17 +522,9 @@ export const postTransactionForScheduleToday = undoable(
     if (!schedule || !schedule._account) return;
 
     const { addTransaction } = await import("../transactions");
-    const amount = getScheduledAmount(schedule._amount);
+    const fields = await buildScheduledTransactionFields(schedule, todayInt());
 
-    await addTransaction({
-      account: schedule._account,
-      date: todayInt(),
-      amount,
-      payee: schedule._payee ?? undefined,
-      category: schedule._category ?? undefined,
-      cleared: false,
-      schedule: id,
-    });
+    await addTransaction({ ...fields, schedule: id });
   },
 );
 

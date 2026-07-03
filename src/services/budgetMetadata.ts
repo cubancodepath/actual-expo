@@ -36,6 +36,8 @@ export type BudgetMetadata = {
   lastSyncedTimestamp?: string;
   resetClock?: boolean;
   lastOpened?: string;
+  /** ISO date of the last full-snapshot re-upload — see budgetfiles.ts::possiblyUpload. */
+  lastUploaded?: string;
 };
 
 // ---------------------------------------------------------------------------

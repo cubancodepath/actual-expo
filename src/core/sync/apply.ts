@@ -17,6 +17,7 @@ import type { SyncMessage, OutgoingSyncMessage } from "./encoder";
 import type { OldData } from "./undo";
 import { serializeValue, deserializeValue } from "./values";
 import { saveClockWith } from "./clock";
+import { checkSyncingMode } from "./syncMode";
 
 // Tables that exist in the schema purely for local bookkeeping and are
 // never legitimate CRDT sync targets — everything else in sqlite_master is
@@ -96,10 +97,49 @@ function compareMessages(messages: SyncMessage[]): SyncMessage[] {
   return result;
 }
 
+/**
+ * Fast-path bulk apply for "import" mode — skips compareMessages, the
+ * messages_crdt log, the merkle trie, and undo tracking entirely (upstream:
+ * sync/index.ts:231-250 applyMessagesForImport). Only safe for data that
+ * doesn't need to converge with synced peers: a fresh local-only bulk load,
+ * not anything that must replay to other devices. Tries INSERT first,
+ * falling back to UPDATE on conflict — avoids the existence pre-fetch the
+ * normal path needs for undo snapshots, which import mode doesn't track.
+ */
+async function applyMessagesForImport(messages: SyncMessage[]): Promise<void> {
+  const writableTables = getWritableTables();
+
+  await transaction(async () => {
+    for (const msg of messages) {
+      const { dataset, row, column } = msg;
+      if (msg.old) continue;
+      if (dataset === "prefs") {
+        throw new SyncError("invalid-schema", {
+          dataset,
+          reason: "cannot set prefs while importing",
+        });
+      }
+      if (!writableTables.has(dataset)) continue;
+
+      const value = deserializeValue(serializeValue(msg.value as string | number | null));
+      try {
+        await run(`INSERT INTO ${dataset} (id, ${column}) VALUES (?, ?)`, [row, value]);
+      } catch {
+        await run(`UPDATE ${dataset} SET ${column} = ? WHERE id = ?`, [value, row]);
+      }
+    }
+  });
+}
+
 export const applyMessages = sequential(async function applyMessages(
   messages: SyncMessage[],
 ): Promise<OldData> {
   if (messages.length === 0) return {};
+
+  if (checkSyncingMode("import")) {
+    await applyMessagesForImport(messages);
+    return {};
+  }
 
   // Deduplicate against existing CRDT log (upstream pattern)
   const deduped = compareMessages(messages);

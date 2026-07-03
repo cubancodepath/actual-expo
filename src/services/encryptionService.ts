@@ -72,6 +72,50 @@ export async function testKey({
   return { success: true };
 }
 
+export type CheckKeyResult =
+  | { valid: true }
+  | { valid: false; error: { reason: "network" | "key-mismatch" } };
+
+/**
+ * Verify the locally-configured encryption key still matches the server's
+ * current key for this file (upstream cloud-storage.ts::checkKey). A peer
+ * rotating the encryption key otherwise only surfaces as a generic
+ * "decrypt-failure" on the next sync — this lets the caller detect the
+ * mismatch proactively and prompt for the new password with a clear reason,
+ * rather than a cryptic decrypt error.
+ */
+export async function checkKey({
+  serverUrl,
+  token,
+  cloudFileId,
+  encryptKeyId,
+}: {
+  serverUrl: string;
+  token: string;
+  cloudFileId: string;
+  encryptKeyId: string | null | undefined;
+}): Promise<CheckKeyResult> {
+  let res: { id: string | null };
+  try {
+    res = (await post(`${serverUrl}/sync/user-get-key`, {
+      token,
+      fileId: cloudFileId,
+    })) as { id: string | null };
+  } catch {
+    return { valid: false, error: { reason: "network" } };
+  }
+
+  // Loose comparison is intentional — both sides can be null/undefined for
+  // an unencrypted file (matches upstream's `res.id == encryptKeyId`).
+  // eslint-disable-next-line eqeqeq
+  const idMatches = res.id == encryptKeyId;
+  const keyLoaded = encryptKeyId == null || encryption.hasKey(encryptKeyId);
+
+  return idMatches && keyLoaded
+    ? { valid: true }
+    : { valid: false, error: { reason: "key-mismatch" } };
+}
+
 function uint8ToBase64(bytes: Uint8Array): string {
   let binary = "";
   for (let i = 0; i < bytes.length; i++) {

@@ -28,6 +28,10 @@ export default defineConfig({
       "expo-crypto": path.resolve(__dirname, "src/__mocks__/expo-crypto.ts"),
       "expo-secure-store": path.resolve(__dirname, "src/__mocks__/expo-secure-store.ts"),
       "expo-localization": path.resolve(__dirname, "src/__mocks__/expo-localization.ts"),
+      "expo-file-system/legacy": path.resolve(
+        __dirname,
+        "src/__mocks__/expo-file-system/legacy.ts",
+      ),
       "react-native-mmkv": path.resolve(__dirname, "src/__mocks__/react-native-mmkv.ts"),
     },
   },

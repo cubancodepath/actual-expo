@@ -12,6 +12,7 @@ import { appendMessages as undoAppendMessages } from "./undo";
 import { applyMessages } from "./apply";
 import { emit } from "./syncEvents";
 import { isSwitchingBudget, clearSyncTimeout, setSyncTimeout, getSyncTimeout } from "./lifecycle";
+import { checkSyncingMode } from "./syncMode";
 
 const FULL_SYNC_DELAY = 1000; // ms
 
@@ -25,6 +26,10 @@ export function resetBatchState(): void {
 
 function scheduleFullSync(): void {
   if (getSyncTimeout()) clearSyncTimeout();
+  // Upstream sync/index.ts:555 — don't even schedule while offline/disabled
+  // (offline: paused after a network failure until the next foreground
+  // sync; disabled/import: local-only or bulk-loading, never syncs).
+  if (!checkSyncingMode("enabled") || checkSyncingMode("offline")) return;
   setSyncTimeout(
     setTimeout(async () => {
       if (isSwitchingBudget()) return;

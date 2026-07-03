@@ -2,11 +2,14 @@ import {
   makeDirectoryAsync,
   writeAsStringAsync,
   readAsStringAsync,
+  deleteAsync,
   EncodingType,
 } from "expo-file-system/legacy";
+import { openDatabaseAsync } from "expo-sqlite";
 import { unzipSync, zipSync } from "fflate";
+import { addDays } from "date-fns";
 import { randomUUID } from "expo-crypto";
-import { closeDatabase, openDatabase, run, getDb } from "@/core/db";
+import { closeDatabase, openDatabase, run } from "@/core/db";
 import {
   loadClock,
   saveClock,
@@ -157,18 +160,28 @@ export async function uploadBudget(
   const budgetDir = getBudgetDir(budgetId);
   if (__DEV__) console.log("[upload] Starting upload for budget:", budgetId);
 
-  // 1. Switch from WAL to DELETE journal mode so the file is self-contained.
-  const db = getDb();
-  await db.execAsync("PRAGMA journal_mode = DELETE");
+  // 1. Snapshot the live db into a standalone, non-WAL temp file via
+  // VACUUM INTO — this never touches the live connection (no journal-mode
+  // flip needed), so a concurrent write on the live db can't race with the
+  // upload. Then strip kvcache/kvcache_key from the SNAPSHOT (matches
+  // upstream cloud-storage.ts's exportBuffer(): never upload the query
+  // cache — it forces new downloads to recompute everything, which is
+  // safer and shrinks the file a lot) before reading its bytes.
+  const tempName = `upload-${randomUUID()}.sqlite`;
+  const tempPath = `${budgetDir}${tempName}`;
+  await run("VACUUM INTO ?", [tempPath]);
 
-  // 2. Read the SQLite file as base64 → Uint8Array
-  const dbBase64 = await readAsStringAsync(`${budgetDir}db.sqlite`, {
-    encoding: EncodingType.Base64,
-  });
-  const dbBytes = base64ToUint8(dbBase64);
+  let dbBytes: Uint8Array;
+  try {
+    const tempDb = await openDatabaseAsync(tempName, { useNewConnection: true }, budgetDir);
+    await tempDb.execAsync("DELETE FROM kvcache; DELETE FROM kvcache_key; VACUUM;");
+    await tempDb.closeAsync();
 
-  // Restore WAL mode for continued local use
-  await db.execAsync("PRAGMA journal_mode = WAL");
+    const dbBase64 = await readAsStringAsync(tempPath, { encoding: EncodingType.Base64 });
+    dbBytes = base64ToUint8(dbBase64);
+  } finally {
+    await deleteAsync(tempPath, { idempotent: true });
+  }
 
   // 3. Read metadata and set resetClock flag
   const meta = await readMetadata(budgetId);
@@ -237,10 +250,43 @@ export async function uploadBudget(
   const groupId = json.groupId as string;
 
   // 8. Update local metadata
-  await updateMetadata(budgetId, { cloudFileId, groupId });
+  await updateMetadata(budgetId, { cloudFileId, groupId, lastUploaded: new Date().toISOString() });
   if (__DEV__) console.log("[upload] Upload complete. groupId:", groupId);
 
   return { cloudFileId, groupId };
+}
+
+export const UPLOAD_FREQUENCY_IN_DAYS = 7;
+
+/**
+ * Pure decision function for possiblyUpload() below — separated out so the
+ * threshold logic is unit-testable without mocking file/network I/O.
+ * Mirrors upstream cloud-storage.ts::possiblyUpload's date check.
+ */
+export function shouldReupload(lastUploaded: string | undefined, now: Date = new Date()): boolean {
+  if (!lastUploaded) return true;
+  const threshold = addDays(new Date(lastUploaded), UPLOAD_FREQUENCY_IN_DAYS);
+  return now >= threshold;
+}
+
+/**
+ * Re-upload a full snapshot if it's been more than UPLOAD_FREQUENCY_IN_DAYS
+ * since the last one (upstream cloud-storage.ts::possiblyUpload, called on
+ * every budget load). Without this the server's message history for a file
+ * grows unbounded forever — periodic full-snapshot re-uploads let the
+ * server compact it. No-op for local-only, never-cloud-registered, or
+ * not-yet-due files.
+ */
+export async function possiblyUpload(budgetId: string): Promise<void> {
+  const meta = await readMetadata(budgetId);
+  if (!meta?.cloudFileId || !meta?.groupId) return;
+  if (!shouldReupload(meta.lastUploaded)) return;
+
+  const { usePrefsStore } = await import("@/stores/prefsStore");
+  const { serverUrl, token } = usePrefsStore.getState();
+  if (!serverUrl || !token) return;
+
+  await uploadBudget(serverUrl, token, budgetId);
 }
 
 // ---------------------------------------------------------------------------
@@ -473,6 +519,13 @@ export async function openBudget(budgetId: string): Promise<void> {
     if (meta?.cloudFileId && meta?.groupId) {
       fullSync({ force: true }).catch((e) => {
         if (__DEV__) console.warn("[openBudget] background sync failed:", e);
+      });
+
+      // Periodic full-snapshot re-upload (non-blocking) — matches upstream
+      // budgetfiles/app.ts:633, called on budget load. Without this the
+      // server-side message history grows unbounded forever.
+      possiblyUpload(budgetId).catch((e) => {
+        if (__DEV__) console.warn("[openBudget] possiblyUpload failed:", e);
       });
     }
   } catch (error) {

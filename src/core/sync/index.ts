@@ -18,6 +18,8 @@ export { loadClock, saveClock } from "./clock";
 export { applyMessages, getMessagesSince } from "./apply";
 export { sendMessages, batchMessages } from "./batch";
 export { fullSync } from "./fullSync";
+export { setSyncingMode, checkSyncingMode, type SyncingMode } from "./syncMode";
+export { repairSync } from "./repair";
 export {
   clearSyncTimeout,
   clearSwitchingFlag,

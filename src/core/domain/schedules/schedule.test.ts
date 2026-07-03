@@ -35,6 +35,7 @@ vi.mock("../rules", () => ({
   updateRule: vi.fn(),
   deleteRule: vi.fn(),
   getRuleById: vi.fn(),
+  getRules: vi.fn().mockResolvedValue([]),
 }));
 
 vi.mock("../payees", () => ({

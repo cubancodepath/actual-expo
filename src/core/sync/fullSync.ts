@@ -15,11 +15,20 @@ import { PostError, SyncError, toAppError } from "@/core/errors";
 import { applyMessages, getMessagesSince } from "./apply";
 import { emit } from "./syncEvents";
 import { getSyncGeneration, isSwitchingBudget, setActiveSyncPromise } from "./lifecycle";
+import { checkSyncingMode, setSyncingMode } from "./syncMode";
 
 /** Normalize table names for event emission (upstream pattern) */
 function normalizeTables(datasets: string[]): string[] {
   return [...new Set(datasets.map((d) => (d === "schedules_next_date" ? "schedules" : d)))];
 }
+
+// Set when a sync fails with decrypt-failure, so the *next* attempt can
+// proactively check whether the key actually changed server-side (a peer
+// rotated it) before retrying — turns a recurring cryptic decrypt error
+// into a clear "re-enter your password" prompt. Cleared on any successful
+// sync. Deliberately not checked on every sync (that would add a network
+// round-trip to the hot path) — only after a real decrypt failure.
+let _lastSyncHadDecryptFailure = false;
 
 const BUDGET_TABLES = new Set([
   "zero_budgets",
@@ -186,6 +195,9 @@ export function fullSync(opts?: { force?: boolean }): Promise<number> {
 
   const p = (async (): Promise<number> => {
     if (!force && isSwitchingBudget()) return 0;
+    // Upstream sync/index.ts:687-691 — disabled/offline modes skip syncing
+    // entirely, except when explicitly forced (e.g. a manual retry).
+    if (!force && (checkSyncingMode("disabled") || checkSyncingMode("offline"))) return 0;
 
     const gen = getSyncGeneration();
 
@@ -196,6 +208,31 @@ export function fullSync(opts?: { force?: boolean }): Promise<number> {
     if (prefs.isLocalOnly) return 0;
     if (!force && !prefs.isConfigured) {
       throw new Error("Server not configured — set serverUrl, token, fileId, groupId first");
+    }
+
+    // Proactively verify the key after a prior decrypt-failure — see
+    // _lastSyncHadDecryptFailure's comment.
+    if (_lastSyncHadDecryptFailure && prefs.encryptKeyId && prefs.fileId) {
+      const { checkKey } = await import("@/services/encryptionService");
+      const result = await checkKey({
+        serverUrl: prefs.serverUrl,
+        token: prefs.token,
+        cloudFileId: prefs.fileId,
+        encryptKeyId: prefs.encryptKeyId,
+      });
+      if (!result.valid && result.error.reason === "key-mismatch") {
+        emit({ type: "error", tables: [], subtype: "decrypt-failure" });
+        useSyncStore
+          .getState()
+          ._setError(
+            toAppError(new SyncError("decrypt-failure", { isMissingKey: true, keyRotated: true })),
+          );
+        return 0;
+      }
+      // Either confirmed valid, or the check itself failed (e.g. network) —
+      // don't block the sync attempt on checkKey's own failure, just retry
+      // normally and let the real sync surface whatever actually happens.
+      _lastSyncHadDecryptFailure = false;
     }
 
     useSyncStore.getState()._setStatus("syncing");
@@ -218,6 +255,8 @@ export function fullSync(opts?: { force?: boolean }): Promise<number> {
       }
 
       useSyncStore.getState()._setStatus("success");
+      setSyncingMode("enabled"); // clears any prior "offline" from a network failure
+      _lastSyncHadDecryptFailure = false;
 
       // Advance schedules after successful sync
       try {
@@ -242,6 +281,7 @@ export function fullSync(opts?: { force?: boolean }): Promise<number> {
       if (e instanceof SyncError && (e.meta as { isMissingKey?: boolean })?.isMissingKey) {
         emit({ type: "error", tables: [], subtype: "decrypt-failure" });
         useSyncStore.getState()._setError(toAppError(e));
+        _lastSyncHadDecryptFailure = true;
         return 0;
       }
 
@@ -260,6 +300,11 @@ export function fullSync(opts?: { force?: boolean }): Promise<number> {
       if (e instanceof PostError && e.type === "network-failure") {
         emit({ type: "error", tables: [], subtype: "network" });
         useSyncStore.getState()._setStatus("idle");
+        // Pause scheduled syncs until the next foreground/manual retry
+        // (app/_layout.tsx resets this back to "enabled" on foreground) —
+        // avoids hammering scheduleFullSync's 1s-debounced retry on every
+        // local mutation while there's no connectivity.
+        setSyncingMode("offline");
         return 0;
       }
 

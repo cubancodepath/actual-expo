@@ -103,3 +103,49 @@ export async function applyRulesEnriched(
   const result = runRules(rules, enriched);
   return finalizeTransactionForRules(result);
 }
+
+export type NewTransactionFields = {
+  account: string;
+  date: number; // YYYYMMDD int
+  amount: number;
+  payee?: string | null;
+  category?: string | null;
+  notes?: string | null;
+  cleared?: boolean;
+};
+
+/**
+ * Run all active rules against a system-generated transaction (schedule
+ * post, bulk import) before insertion — overrides fields rather than only
+ * filling gaps, matching upstream's addTransactions() bulk path. Manual
+ * form entry uses applyRulesToForm's fill-empty-only variant instead,
+ * since the user's own input is authoritative there (upstream never runs
+ * the full rule engine over manually-typed transactions either).
+ */
+export async function applyRulesToNewTransaction(
+  rules: Rule[],
+  fields: NewTransactionFields,
+): Promise<NewTransactionFields> {
+  if (rules.length === 0) return fields;
+
+  const txn: Record<string, unknown> = {
+    account: fields.account,
+    payee: fields.payee ?? null,
+    category: fields.category ?? null,
+    amount: fields.amount,
+    date: intDateToString(fields.date),
+    notes: fields.notes ?? "",
+    cleared: fields.cleared ?? false,
+  };
+
+  const result = await applyRulesEnriched(rules, txn);
+
+  return {
+    ...fields,
+    account: (result.account as string | null) ?? fields.account,
+    payee: (result.payee as string | null) ?? fields.payee ?? null,
+    category: (result.category as string | null) ?? fields.category ?? null,
+    notes: (result.notes as string | null) ?? fields.notes ?? null,
+    cleared: typeof result.cleared === "boolean" ? result.cleared : (fields.cleared ?? false),
+  };
+}

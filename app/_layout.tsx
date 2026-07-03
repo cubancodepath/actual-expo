@@ -17,7 +17,7 @@ import i18n from "@/i18n/config";
 import { ThemeProvider } from "@/design-system/providers/ThemeProvider";
 import { usePrefsStore } from "@/stores/prefsStore";
 import { listen } from "@/core/sync/syncEvents";
-import { fullSync, isSwitchingBudget } from "@/core/sync";
+import { fullSync, isSwitchingBudget, setSyncingMode } from "@/core/sync";
 import { ensureBudgetsDir, budgetExists } from "@/services/budgetMetadata";
 import { openBudget } from "@/services/budgetfiles";
 import { updateAppBadge } from "@/lib/badge";
@@ -214,9 +214,12 @@ function RootLayout() {
     // Single AppState listener for sync, polling, and shortcut check
     const sub = AppState.addEventListener("change", (nextState) => {
       if (nextState === "active") {
-        // Sync immediately on foreground
+        // Sync immediately on foreground — also clears any "offline" mode
+        // left over from a prior network failure, so returning to the app
+        // is always a real retry, not silently skipped.
         const p = usePrefsStore.getState();
         if (p.isConfigured && !p.isLocalOnly && !isSwitchingBudget()) {
+          setSyncingMode("enabled");
           fullSync().catch(console.warn);
         }
         startSyncPolling();

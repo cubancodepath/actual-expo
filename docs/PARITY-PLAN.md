@@ -8,7 +8,15 @@
 - **Fase 1** ✅ completa — fixes #1-8, #16. 16 tests nuevos en `src/core/sync/__tests__/` y `src/core/db/__tests__/`.
 - **Fase 2** ✅ completa — fixes #10, #11, #13, #14. Bug adicional encontrado y arreglado: el índice de prefijos de `Spreadsheet` (`sum-amount-` con IDs tipo UUID) nunca hacía match, así que el gasto de categorías no se recalculaba en vivo tras una transacción. 13 tests nuevos.
 - **Fase 3.1** ⚠️ **parcial** — el MOTOR de cálculo tracking/report está completo y testeado (`spreadsheet/tracking.ts`, `spreadsheet/shared.ts`, `getBudgetType()` en preferences, dispatch por tipo en `spreadsheet/sync.ts`, reacción a `reflect_budgets`/`preferences.budgetType` en `triggerBudgetChanges`). Un archivo tracking sincronizado desde desktop ahora renderiza los números correctos en el motor de celdas (12 tests nuevos). **NO incluido**: el write-path (`setBudgetAmount`/`setCategoryCarryover`/`holdForNextMonth`/etc. en `budgets/index.ts` siguen escribiendo solo `zero_budgets`/`zero_budget_months`, no hay variante que escriba `reflect_budgets`) ni la UI (las pantallas de budget no seleccionan bindings condicionalmente por tipo — mostrarían campos envelope-only como `to-budget`/`buffered` en un archivo tracking). Ambos quedan como trabajo de seguimiento.
-- **Fase 3.2, 3.3, 3.4, Fase 4**: pendientes.
+- **Fase 3.2** ✅ completa — fix #12: tipo de goal `schedule` (`goals/engine.ts::runSchedule`, versión simplificada del algoritmo de sinking-fund upstream), parser real de notas legacy `#template`/`#goal` (`goals/parse.ts`), `inferGoalFromDef` consolidado. 47 tests nuevos.
+- **Fase 3.3** ✅ completa — fix #15: las reglas ahora corren también al postear transacciones de schedules (`rules/apply.ts::applyRulesToNewTransaction`, `schedules/index.ts::buildScheduledTransactionFields`). La entrada manual del form sigue siendo fill-empty-only (fiel a upstream). No hay importador bulk en el port todavía, así que ese camino no aplica. 4 tests nuevos.
+- **Fase 3.4** ✅ completa — fix #5: `sync/syncMode.ts` (enabled/offline/disabled/import), fast-path `applyMessagesForImport` en `apply.ts`, gates en `scheduleFullSync`/`fullSync`, modo `offline` real ante fallo de red (se limpia en el siguiente sync exitoso o al volver a foreground). 13 tests nuevos.
+- **Fase 4.1** ✅ completa — fix #6: `uploadBudget()` ahora saca una copia standalone de la DB viva vía `VACUUM INTO` (nunca muta la conexión activa) y limpia `kvcache`/`kvcache_key` de esa copia antes de zipear. `possiblyUpload()` (7 días) llamado desde `openBudget()`.
+- **Fase 4.2** ✅ completa — fix #7: `encryptionService.ts::checkKey()` detecta rotación de clave; se invoca solo tras un `decrypt-failure` previo (no en cada sync) para no añadir latencia al camino caliente.
+- **Fase 4.3**: sin cambio de runtime necesario (documentado, no requiere código — las vistas `v_*` solo importarían si se exportara el sqlite crudo).
+- **Fase 4.4** ✅ completa — `repairSync()` (antes huérfano, sin ningún caller) expuesto como acción explícita "Reparar sincronización" en Ajustes.
+
+**Todas las fases del plan original están completas.** Trabajo de seguimiento identificado pero fuera de alcance de este plan: write-path + UI de presupuesto tracking (Fase 3.1), verificación end-to-end contra un servidor real (sección "Verificación end-to-end" del plan).
 
 ## Contexto
 

@@ -1,9 +1,10 @@
 import { Component, type ReactNode } from "react";
 import { ScrollView, View, Pressable, StyleSheet, Appearance } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import * as Sentry from "@sentry/react-native";
+import i18n from "@/i18n/config";
 import { Icon } from "@/design-system/atoms/Icon";
 import { lightColors, darkColors } from "@/design-system/tokens/colors";
+import { reportError } from "@/core/errors/report";
 
 // Use raw RN Text to avoid circular deps with themed components
 import { Text as RNText } from "react-native";
@@ -26,7 +27,13 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     console.error("[ErrorBoundary]", error, info.componentStack);
-    Sentry.captureException(error, { extra: { componentStack: info.componentStack } });
+    // inlineHandled: true — this component IS the display (its own
+    // full-screen fallback below), so skip the toast/dialog the pipeline
+    // would otherwise queue and just get the Sentry capture.
+    reportError(error, {
+      inlineHandled: true,
+      context: { componentStack: info.componentStack },
+    });
   }
 
   handleReset = () => {
@@ -49,12 +56,12 @@ export class ErrorBoundary extends Component<Props, State> {
           <View style={styles.textBlock}>
             <View>
               <RNText style={[styles.title, { color: colors.textPrimary }]}>
-                Something went wrong
+                {i18n.t("errors:fatalTitle")}
               </RNText>
             </View>
             <View>
               <RNText style={[styles.message, { color: colors.textSecondary }]}>
-                The app ran into an unexpected error. You can try again or restart the app.
+                {i18n.t("errors:fatalBody")}
               </RNText>
             </View>
           </View>
@@ -80,10 +87,10 @@ export class ErrorBoundary extends Component<Props, State> {
               pressed && { opacity: 0.85 },
             ]}
             accessibilityRole="button"
-            accessibilityLabel="Try again"
+            accessibilityLabel={i18n.t("errors:restart")}
           >
             <Icon name="refresh" size={18} color="#fff" />
-            <RNText style={styles.buttonText}>Try Again</RNText>
+            <RNText style={styles.buttonText}>{i18n.t("errors:restart")}</RNText>
           </Pressable>
         </ScrollView>
       </SafeAreaView>

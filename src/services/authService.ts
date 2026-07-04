@@ -1,3 +1,6 @@
+import { isHTTPError } from "ky";
+import { z } from "zod";
+import { http, parseResponse, toPostError } from "@/lib/http";
 import { PostError } from "@/core/errors";
 
 export type BudgetFile = {
@@ -16,73 +19,100 @@ export type BootstrapInfo = {
   loginMethod: LoginMethod;
 };
 
+/** Actual server responses come either enveloped (`{status, data}`) or flat. */
+const envelope = <S extends z.ZodType>(schema: S) =>
+  z.preprocess((json) => {
+    if (json && typeof json === "object" && "data" in json) {
+      return (json as { data: unknown }).data ?? json;
+    }
+    return json;
+  }, schema);
+
+// ---------------------------------------------------------------------------
+// Bootstrap probe
+// ---------------------------------------------------------------------------
+
+const PROBE_RETRY_DELAYS = [1500, 2500, 3000];
+
+const BootstrapResponse = envelope(
+  z.object({
+    bootstrapped: z.boolean().default(true),
+    // availableLoginMethods is the modern shape; loginMethod is the legacy scalar
+    availableLoginMethods: z
+      .array(z.object({ method: z.string(), active: z.boolean() }))
+      .default([]),
+    loginMethod: z.string().optional(),
+  }),
+);
+
 /** Probe a server to find out if it's bootstrapped and which login method is active. */
 export async function getBootstrapInfo(serverUrl: string): Promise<BootstrapInfo> {
-  let res: Response;
+  let json: unknown;
   try {
-    res = await fetch(`${serverUrl}/account/needs-bootstrap`);
-  } catch {
-    throw new PostError("network-failure");
+    json = await http
+      .get(`${serverUrl}/account/needs-bootstrap`, {
+        retry: {
+          limit: PROBE_RETRY_DELAYS.length,
+          delay: (attempt) => PROBE_RETRY_DELAYS[attempt - 1] ?? 3000,
+          // The probe is the user's first contact with an unknown server —
+          // retry on any failure (network, timeout, or bad status), like the
+          // original manual backoff loop did.
+          shouldRetry: () => true,
+        },
+      })
+      .json();
+  } catch (e) {
+    const mapped = toPostError(e);
+    // Parity with the original fetch flow: any unusable probe response reads
+    // as "can't reach a working server" except a malformed JSON body.
+    throw mapped.type === "parse-json" ? mapped : new PostError("network-failure");
   }
-  if (!res.ok) {
-    throw new PostError("network-failure");
-  }
-  let json: any;
-  try {
-    json = await res.json();
-  } catch {
-    throw new PostError("parse-json");
-  }
-  const data = json?.data ?? json;
-  const bootstrapped: boolean = data?.bootstrapped ?? true;
 
-  // availableLoginMethods is the modern shape; loginMethod is the legacy scalar
-  const methods: { method: string; active: boolean }[] = data?.availableLoginMethods ?? [];
-  const activeMethod = methods.find((m) => m.active)?.method ?? data?.loginMethod ?? "password";
+  const data = parseResponse(BootstrapResponse, json);
+  const activeMethod =
+    data.availableLoginMethods.find((m) => m.active)?.method ?? data.loginMethod ?? "password";
 
   return {
-    bootstrapped,
+    bootstrapped: data.bootstrapped,
     loginMethod: activeMethod as LoginMethod,
   };
 }
 
+// ---------------------------------------------------------------------------
+// Password login
+// ---------------------------------------------------------------------------
+
+const LoginResponse = envelope(z.object({ token: z.string().min(1) }));
+
 export async function login(serverUrl: string, password: string): Promise<string> {
-  let res: Response;
+  let json: unknown;
   try {
-    res = await fetch(`${serverUrl}/account/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password }),
-    });
-  } catch {
-    throw new PostError("network-failure");
+    json = await http.post(`${serverUrl}/account/login`, { json: { password } }).json();
+  } catch (e) {
+    if (isHTTPError(e)) {
+      // The server reports a wrong password in the error body's `reason`
+      const reason = (e.data as { reason?: string } | undefined)?.reason;
+      if (reason === "invalid-password") throw new PostError("invalid-password");
+    }
+    throw toPostError(e);
   }
 
-  if (!res.ok) {
-    // Try to extract the reason from JSON response
-    const text = await res.text().catch(() => "");
-    try {
-      const json = JSON.parse(text);
-      if (json?.reason === "invalid-password") {
-        throw new PostError("invalid-password");
-      }
-    } catch (e) {
-      if (e instanceof PostError) throw e;
-    }
-    if (res.status === 401 || res.status === 403) throw new PostError("unauthorized");
+  try {
+    return parseResponse(LoginResponse, json).token;
+  } catch {
+    // Parity with the original flow: a 2xx response without a token is a
+    // server-side problem, not a parse error
     throw new PostError("internal");
   }
-
-  let json: any;
-  try {
-    json = await res.json();
-  } catch {
-    throw new PostError("parse-json");
-  }
-  const token: string = json?.data?.token ?? json?.token;
-  if (!token) throw new PostError("internal");
-  return token;
 }
+
+// ---------------------------------------------------------------------------
+// OpenID login
+// ---------------------------------------------------------------------------
+
+const OpenIdResponse = envelope(
+  z.object({ redirectUrl: z.string().optional(), returnUrl: z.string().optional() }),
+);
 
 /**
  * Initiate an OpenID login. The server performs the PKCE OIDC dance and
@@ -91,67 +121,66 @@ export async function login(serverUrl: string, password: string): Promise<string
  * Returns the provider authorization URL to open in the system browser.
  */
 export async function initiateOpenIdLogin(serverUrl: string, returnUrl: string): Promise<string> {
-  let res: Response;
+  let json: unknown;
   try {
-    res = await fetch(`${serverUrl}/account/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ loginMethod: "openid", returnUrl }),
-    });
-  } catch {
-    throw new PostError("network-failure");
+    json = await http
+      .post(`${serverUrl}/account/login`, { json: { loginMethod: "openid", returnUrl } })
+      .json();
+  } catch (e) {
+    throw toPostError(e);
   }
 
-  if (!res.ok) {
-    if (res.status === 401 || res.status === 403) throw new PostError("unauthorized");
-    throw new PostError("internal");
-  }
-
-  let json: any;
-  try {
-    json = await res.json();
-  } catch {
-    throw new PostError("parse-json");
-  }
-  const authUrl: string = json?.data?.redirectUrl ?? json?.data?.returnUrl ?? json?.redirectUrl;
+  const data = parseResponse(OpenIdResponse, json);
+  const authUrl = data.redirectUrl ?? data.returnUrl;
   if (!authUrl) throw new PostError("internal");
   return authUrl;
 }
 
+// ---------------------------------------------------------------------------
+// File listing
+// ---------------------------------------------------------------------------
+
+const FileEntry = z.looseObject({
+  fileId: z.string().optional(),
+  id: z.string().optional(),
+  groupId: z.string().optional(),
+  name: z.string().optional(),
+  encryptKeyId: z.string().nullish(),
+  deleted: z.union([z.boolean(), z.number()]).optional(),
+  usersWithAccess: z
+    .array(z.looseObject({ owner: z.boolean().optional(), displayName: z.string().optional() }))
+    .optional(),
+});
+
+const ListFilesResponse = z.preprocess((json) => {
+  const j = json as { data?: unknown; files?: unknown } | null;
+  if (Array.isArray(j?.data)) return j.data;
+  return (j?.data as { files?: unknown } | undefined)?.files ?? j?.files ?? [];
+}, z.array(FileEntry));
+
+/**
+ * List budget files available on the server.
+ *
+ * Throws PostError("token-expired") on 401/403 — handling the expired session
+ * (clearing prefs, redirecting) is the caller's responsibility.
+ */
 export async function listFiles(serverUrl: string, token: string): Promise<BudgetFile[]> {
-  const res = await fetch(`${serverUrl}/sync/list-user-files`, {
-    headers: {
-      "x-actual-token": token,
-    },
-  });
-
-  if (res.status === 401 || res.status === 403) {
-    const { usePrefsStore } = await import("@/stores/prefsStore");
-    usePrefsStore.getState().clearAll();
-    throw new PostError("token-expired");
-  }
-
-  if (!res.ok) {
-    throw new PostError("internal");
-  }
-
-  let json: any;
+  let json: unknown;
   try {
-    json = await res.json();
-  } catch {
-    throw new PostError("parse-json");
+    json = await http
+      .get(`${serverUrl}/sync/list-user-files`, { headers: { "x-actual-token": token } })
+      .json();
+  } catch (e) {
+    const mapped = toPostError(e);
+    throw mapped.type === "unauthorized" ? new PostError("token-expired") : mapped;
   }
-  const files: BudgetFile[] = (
-    Array.isArray(json?.data) ? json.data : (json?.data?.files ?? json?.files ?? [])
-  ).map((f: Record<string, unknown>) => ({
-    fileId: f.fileId ?? f.id,
-    groupId: f.groupId,
-    name: f.name,
+
+  return parseResponse(ListFilesResponse, json).map((f) => ({
+    fileId: (f.fileId ?? f.id)!,
+    groupId: f.groupId!,
+    name: f.name!,
     encryptKeyId: f.encryptKeyId ?? undefined,
     deleted: f.deleted === 1 || f.deleted === true,
-    ownerName: Array.isArray(f.usersWithAccess)
-      ? (f.usersWithAccess as any[]).find((u) => u.owner)?.displayName
-      : undefined,
+    ownerName: f.usersWithAccess?.find((u) => u.owner)?.displayName,
   }));
-  return files;
 }

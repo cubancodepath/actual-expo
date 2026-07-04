@@ -53,6 +53,9 @@ importers:
       '@shopify/react-native-skia':
         specifier: 2.4.18
         version: 2.4.18(react-native-reanimated@4.2.1(react-native-worklets@0.7.4(@babel/core@7.29.7)(react-native@0.83.2(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.0))(react@19.2.0))(react-native@0.83.2(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.0))(react@19.2.0))(react-native@0.83.2(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.0))(react@19.2.0)
+      '@tanstack/react-form':
+        specifier: ^1.33.0
+        version: 1.33.0(react-dom@19.2.7(react@19.2.0))(react@19.2.0)
       '@tanstack/react-query':
         specifier: ^5.91.0
         version: 5.101.2(react@19.2.0)
@@ -143,6 +146,9 @@ importers:
       i18next:
         specifier: ^25.8.18
         version: 25.10.10(typescript@5.9.3)
+      ky:
+        specifier: ^2.0.2
+        version: 2.0.2
       murmurhash:
         specifier: ^2.0.1
         version: 2.0.1
@@ -153,7 +159,7 @@ importers:
         specifier: 19.2.0
         version: 19.2.0
       react-dom:
-        specifier: ^19.2.4
+        specifier: ^19.2.7
         version: 19.2.7(react@19.2.0)
       react-i18next:
         specifier: ^16.5.8
@@ -218,6 +224,9 @@ importers:
       zeego:
         specifier: ^3.0.6
         version: 3.0.6(@react-native-menu/menu@1.2.2(react-native@0.83.2(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.0))(react@19.2.0))(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.0))(react-native-ios-context-menu@3.2.1(react-native-ios-utilities@5.2.0(react-native@0.83.2(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.0))(react@19.2.0))(react-native@0.83.2(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.0))(react@19.2.0))(react-native-ios-utilities@5.2.0(react-native@0.83.2(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.0))(react@19.2.0))(react-native@0.83.2(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.0))(react@19.2.0)
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
       zustand:
         specifier: ^5.0.11
         version: 5.0.14(@types/react@19.2.17)(immer@11.1.9)(react@19.2.0)(use-sync-external-store@1.6.0(react@19.2.0))
@@ -2147,13 +2156,43 @@ packages:
     resolution: {integrity: sha512-F7HZGBeN9I0/AuuJS5PwcD8xayx5ri5GhjYUDBEVYUkexyA/giwbDNjRVrxSezE3T250OU2K/wp/ltWx3UOefg==}
     engines: {node: '>= 20'}
 
+  '@tanstack/devtools-event-client@0.4.4':
+    resolution: {integrity: sha512-6T5Yop/793YI+H+5J8Hsyj4kCih9sl4t3ElLgKioW5hk3ocn+ZdSJ94tT7vL7uabxSugWYBZlOTMPzEw2puvQw==}
+    engines: {node: '>=18'}
+    hasBin: true
+
+  '@tanstack/form-core@1.33.0':
+    resolution: {integrity: sha512-AV4Pw9Dk4orFsuPBcDssfWMJFs+yMYBae7zZ4oTqrCf4ftNGQKxvrQRZeqKHG6A4TkiLeSvf2kzIjcVkrW7E6w==}
+
+  '@tanstack/pacer-lite@0.1.1':
+    resolution: {integrity: sha512-y/xtNPNt/YeyoVxE/JCx+T7yjEzpezmbb+toK8DDD1P4m7Kzs5YR956+7OKexG3f8aXgC3rLZl7b1V+yNUSy5w==}
+    engines: {node: '>=18'}
+
   '@tanstack/query-core@5.101.2':
     resolution: {integrity: sha512-hH5MLoJhF7KaIGd7q3xTXGXvslI+GYlM1Z/35aSHHWaCJWB7XvTSHYuV3eM7tw+aE0mT/xMro4M4Q9rCGHT0lw==}
+
+  '@tanstack/react-form@1.33.0':
+    resolution: {integrity: sha512-unaee+VS4MvKo+s1dmgGUXI4902VeAhuaUbKsQbhFe3MceOpB3JpAUGCDpyzjQPXVFkFY0COKfLrUNX2XZYW4g==}
+    peerDependencies:
+      '@tanstack/react-start': '*'
+      react: ^17.0.0 || ^18.0.0 || ^19.0.0
+    peerDependenciesMeta:
+      '@tanstack/react-start':
+        optional: true
 
   '@tanstack/react-query@5.101.2':
     resolution: {integrity: sha512-seDkr6kzGzX1okaaTtZPtgA688CDPlXUz1C6xSg0ESqn04Vuc8tlrYms1s3de+znBqhPVxFRfpAfUf+6XvfPWg==}
     peerDependencies:
       react: ^18 || ^19
+
+  '@tanstack/react-store@0.11.0':
+    resolution: {integrity: sha512-tX4YXh3PDkmpvGQWkWqKpzs/MSqbtuwY9dWdWhtV9Q50PmO+jOkUKIWIX4G85dwt7lxdHLXsiaEKPdKmC8F41w==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+      react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
+  '@tanstack/store@0.11.0':
+    resolution: {integrity: sha512-WlzzCt3xi0G6pCAJu1U+2jiECwabETDpQDi3hfkFZvJii9AuZqEKbOiVarX1/bWhTNjU486yQtJCCasi/0q+Cw==}
 
   '@tybys/wasm-util@0.10.3':
     resolution: {integrity: sha512-F3fo1MYrRJYL3zER0OUOmkutjr1Vp23m7OsSgp7nq4SP6OqX6C/56XFIPAl5bt3zaBRjmW7SGz3u/6LwFpYcOg==}
@@ -3687,6 +3726,10 @@ packages:
   kleur@3.0.3:
     resolution: {integrity: sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==}
     engines: {node: '>=6'}
+
+  ky@2.0.2:
+    resolution: {integrity: sha512-/GmXpo9F9W+f8n4Ivr2iH+7h7wL7jLbLKWkMlpflcCRb6kGjBfTlASEXaZ9qUgNTn4VgS0P2pwxxzQ4EM6Ulgg==}
+    engines: {node: '>=22'}
 
   lan-network@0.2.1:
     resolution: {integrity: sha512-ONPnazC96VKDntab9j9JKwIWhZ4ZUceB4A9Epu4Ssg0hYFmtHZSeQ+n15nIwTFmcBUKtExOer8WTJ4GF9MO64A==}
@@ -5330,6 +5373,9 @@ packages:
 
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
+
+  zod@4.4.3:
+    resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
 
   zustand@5.0.14:
     resolution: {integrity: sha512-/8tAspM5LMPr28b3fwLYrtdj77ECpfZviaP75CMTnwO8ISyaE4GDIG/9rDDYq/cH9D2Xw2A2RXglLInmVBQB/g==}
@@ -7490,12 +7536,39 @@ snapshots:
       '@tailwindcss/oxide-win32-arm64-msvc': 4.3.0
       '@tailwindcss/oxide-win32-x64-msvc': 4.3.0
 
+  '@tanstack/devtools-event-client@0.4.4': {}
+
+  '@tanstack/form-core@1.33.0':
+    dependencies:
+      '@tanstack/devtools-event-client': 0.4.4
+      '@tanstack/pacer-lite': 0.1.1
+      '@tanstack/store': 0.11.0
+
+  '@tanstack/pacer-lite@0.1.1': {}
+
   '@tanstack/query-core@5.101.2': {}
+
+  '@tanstack/react-form@1.33.0(react-dom@19.2.7(react@19.2.0))(react@19.2.0)':
+    dependencies:
+      '@tanstack/form-core': 1.33.0
+      '@tanstack/react-store': 0.11.0(react-dom@19.2.7(react@19.2.0))(react@19.2.0)
+      react: 19.2.0
+    transitivePeerDependencies:
+      - react-dom
 
   '@tanstack/react-query@5.101.2(react@19.2.0)':
     dependencies:
       '@tanstack/query-core': 5.101.2
       react: 19.2.0
+
+  '@tanstack/react-store@0.11.0(react-dom@19.2.7(react@19.2.0))(react@19.2.0)':
+    dependencies:
+      '@tanstack/store': 0.11.0
+      react: 19.2.0
+      react-dom: 19.2.7(react@19.2.0)
+      use-sync-external-store: 1.6.0(react@19.2.0)
+
+  '@tanstack/store@0.11.0': {}
 
   '@tybys/wasm-util@0.10.3':
     dependencies:
@@ -9117,6 +9190,8 @@ snapshots:
       graceful-fs: 4.2.11
 
   kleur@3.0.3: {}
+
+  ky@2.0.2: {}
 
   lan-network@0.2.1: {}
 
@@ -10754,6 +10829,8 @@ snapshots:
       - react-dom
 
   zod@3.25.76: {}
+
+  zod@4.4.3: {}
 
   zustand@5.0.14(@types/react@19.2.17)(immer@11.1.9)(react@19.2.0)(use-sync-external-store@1.6.0(react@19.2.0)):
     optionalDependencies:

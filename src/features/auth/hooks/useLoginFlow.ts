@@ -13,29 +13,6 @@ import { getServerInfo } from "@/services/serverInfo";
 import { usePrefsStore } from "@/stores/prefsStore";
 import { useErrorHandler } from "@/hooks/useErrorHandler";
 
-const PROBE_RETRY_DELAYS = [1500, 2500, 3000];
-
-async function probeWithRetry(url: string) {
-  let lastError: unknown;
-
-  try {
-    return await getBootstrapInfo(url);
-  } catch (e) {
-    lastError = e;
-  }
-
-  for (const delay of PROBE_RETRY_DELAYS) {
-    await new Promise((r) => setTimeout(r, delay));
-    try {
-      return await getBootstrapInfo(url);
-    } catch (e) {
-      lastError = e;
-    }
-  }
-
-  throw lastError;
-}
-
 export type LoginStep = "idle" | "probing" | LoginMethod;
 
 export interface UseLoginFlowReturn {
@@ -97,7 +74,8 @@ export function useLoginFlow(): UseLoginFlowReturn {
     }
 
     setStep("probing");
-    const info = await handleError(() => probeWithRetry(url));
+    // getBootstrapInfo retries with backoff internally (see authService)
+    const info = await handleError(() => getBootstrapInfo(url));
     if (!info) {
       setStep("idle");
       return;

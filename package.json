@@ -39,6 +39,7 @@
     "@rschedule/standard-date-adapter": "^1.5.0",
     "@sentry/react-native": "~7.11.0",
     "@shopify/react-native-skia": "2.4.18",
+    "@tanstack/react-form": "^1.33.0",
     "@tanstack/react-query": "^5.91.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
@@ -69,10 +70,11 @@
     "heroui-native": "^1.0.5",
     "heroui-native-pro": "1.0.0-beta.5",
     "i18next": "^25.8.18",
+    "ky": "^2.0.2",
     "murmurhash": "^2.0.1",
     "protobufjs": "^8.0.0",
     "react": "19.2.0",
-    "react-dom": "^19.2.4",
+    "react-dom": "^19.2.7",
     "react-i18next": "^16.5.8",
     "react-native": "0.83.2",
     "react-native-gesture-handler": "~2.30.0",
@@ -94,6 +96,7 @@
     "uniwind": "^1.10.0",
     "victory-native": "^41.20.2",
     "zeego": "^3.0.6",
+    "zod": "^4.4.3",
     "zustand": "^5.0.11"
   },
   "devDependencies": {

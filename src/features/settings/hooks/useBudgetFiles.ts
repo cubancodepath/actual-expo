@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import { toAppError, type AppError } from "@/core/errors";
+import { PostError, toAppError, type AppError } from "@/core/errors";
 import { usePrefsStore } from "@/stores/prefsStore";
 import { listFiles } from "@/services/authService";
 import { listLocalBudgets } from "@/services/budgetMetadata";
@@ -71,7 +71,13 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
   const fetchFiles = useCallback(async () => {
     const [local, remote] = await Promise.all([
       listLocalBudgets(),
-      listFiles(serverUrl, token).catch(() => []),
+      listFiles(serverUrl, token).catch((e: unknown) => {
+        // Expired session → full logout; the root guard redirects to login
+        if (e instanceof PostError && e.type === "token-expired") {
+          usePrefsStore.getState().clearAll();
+        }
+        return [];
+      }),
     ]);
     return reconcileFiles(local, remote);
   }, [serverUrl, token]);

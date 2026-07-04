@@ -82,6 +82,7 @@
   "stopSyncingMessage": "This will keep the budget on this device but stop syncing with the server. You can enable sync again later.",
   "noServerConfigured": "Connect to a server to enable cloud sync.",
   "syncing": "Syncing...",
+  "syncFailedTapToRetry": "Sync failed — tap to retry",
   "syncEnabled": "Synced to Server",
   "connectToServer": "Connect to Server",
   "connectToServerDescription": "Sign in to sync budgets across devices",

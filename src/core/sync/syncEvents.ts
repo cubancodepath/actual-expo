@@ -10,15 +10,13 @@
  * notifies all consumers uniformly.
  */
 
-export type SyncEventType = "start" | "applied" | "success" | "error";
+export type SyncEventType = "start" | "applied" | "success";
 
 export type SyncEvent = {
-  /** "start" = sync starting, "applied" = local mutation, "success" = remote sync completed, "error" = sync failed */
+  /** "start" = sync starting, "applied" = local mutation, "success" = remote sync completed */
   type: SyncEventType;
   /** Tables/datasets that changed */
   tables: string[];
-  /** Error subtype: out-of-sync, network, clock-drift, encrypt-failure, decrypt-failure */
-  subtype?: string;
 };
 
 type Listener = (event: SyncEvent) => void;

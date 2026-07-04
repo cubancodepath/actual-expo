@@ -8,7 +8,7 @@ import {
 } from "@/core/proto";
 import { Timestamp } from "@/core/crdt/timestamp";
 import * as encryption from "@/core/encryption";
-import { SyncError } from "@/core/errors";
+import { ActualError } from "@/core/errors";
 import { deserializeValue } from "./values";
 
 export type SyncMessage = {
@@ -63,9 +63,9 @@ export async function encode(
         result = await encryption.encrypt(msgBytes, encryptKeyId);
       } catch (e: unknown) {
         const errMsg = e instanceof Error ? e.message : String(e);
-        throw new SyncError("encrypt-failure", {
-          isMissingKey: errMsg === "missing-key",
-        });
+        throw errMsg === "missing-key"
+          ? new ActualError("sync/key-missing", { cause: e })
+          : new ActualError("sync/encrypt-failure", { cause: e });
       }
 
       content = EncryptedData.encodeToBinary({
@@ -122,9 +122,9 @@ export async function decode(
       } catch (e: unknown) {
         const errMsg = e instanceof Error ? e.message : String(e);
         if (__DEV__) console.warn("Sync decrypt error:", errMsg);
-        throw new SyncError("decrypt-failure", {
-          isMissingKey: errMsg === "missing-key",
-        });
+        throw errMsg === "missing-key"
+          ? new ActualError("sync/key-missing", { cause: e })
+          : new ActualError("sync/decrypt-failure", { cause: e });
       }
 
       msgBytes = decrypted;

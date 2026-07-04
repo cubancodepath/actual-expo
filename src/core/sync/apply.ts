@@ -12,7 +12,7 @@ import type { MessagesCrdtRow } from "@/core/db/types";
 // Imported from its own module (not the "@/core/errors" barrel) to avoid
 // pulling in toAppError.ts's i18n dependency chain, which isn't set up for
 // plain-Node unit tests.
-import { SyncError } from "@/core/errors/SyncError";
+import { ActualError } from "@/core/errors/ActualError";
 import type { SyncMessage, OutgoingSyncMessage } from "./encoder";
 import type { OldData } from "./undo";
 import { serializeValue, deserializeValue } from "./values";
@@ -114,9 +114,8 @@ async function applyMessagesForImport(messages: SyncMessage[]): Promise<void> {
       const { dataset, row, column } = msg;
       if (msg.old) continue;
       if (dataset === "prefs") {
-        throw new SyncError("invalid-schema", {
-          dataset,
-          reason: "cannot set prefs while importing",
+        throw new ActualError("sync/invalid-schema", {
+          context: { dataset, reason: "cannot set prefs while importing" },
         });
       }
       if (!writableTables.has(dataset)) continue;
@@ -239,7 +238,10 @@ export const applyMessages = sequential(async function applyMessages(
             await run(`INSERT INTO ${dataset} (id, ${column}) VALUES (?, ?)`, [row, value]);
           }
         } catch (err) {
-          throw new SyncError("invalid-schema", { dataset, column, cause: err });
+          throw new ActualError("sync/invalid-schema", {
+            context: { dataset, column },
+            cause: err,
+          });
         }
 
         added.add(dataset + row);

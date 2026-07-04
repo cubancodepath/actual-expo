@@ -17,7 +17,7 @@ export function resetAllStores(): void {
   import("@/core/domain/spreadsheet/instance").then(({ resetSpreadsheet }) => resetSpreadsheet());
   useBudgetUIStore.setState({ month: currentMonth(), coverTarget: null });
   usePickerStore.getState().clear();
-  useSyncStore.setState({ status: "idle", error: null, lastSync: null });
+  useSyncStore.setState({ status: "idle", lastErrorCode: null, lastSync: null });
 
   // Reset synced prefs store (lazy import to avoid circular deps)
   const initial: Record<string, string> = { ...PREFERENCE_DEFAULTS };

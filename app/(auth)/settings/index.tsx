@@ -25,11 +25,15 @@ function ServerRow({
   value,
   icon,
   showSeparator,
+  onPress,
+  valueColor,
 }: {
   label: string;
   value: string;
   icon: IconName;
   showSeparator?: boolean;
+  onPress?: () => void;
+  valueColor?: string;
 }) {
   const { colors, spacing } = useTheme();
   return (
@@ -37,12 +41,13 @@ function ServerRow({
       title={label}
       left={<SettingsIcon name={icon} color={colors.textMuted} />}
       right={
-        <Text variant="bodySm" color={colors.textSecondary} numberOfLines={1}>
+        <Text variant="bodySm" color={valueColor ?? colors.textSecondary} numberOfLines={1}>
           {value || "—"}
         </Text>
       }
       showSeparator={showSeparator}
       separatorInsetLeft={spacing.lg + ICON_SIZE + spacing.md}
+      onPress={onPress}
     />
   );
 }
@@ -66,14 +71,21 @@ export default function SettingsScreen() {
     clearAll,
   } = usePrefsStore();
   const lastSync = useSyncStore((s) => s.lastSync);
+  const syncStatus = useSyncStore((s) => s.status);
+  const syncNow = useSyncStore((s) => s.sync);
   const [loggingOut, setLoggingOut] = useState(false);
   const [repairing, setRepairing] = useState(false);
 
-  const lastSyncText = lastSync
-    ? lastSync.toLocaleTimeString()
-    : lastSyncedTimestamp
-      ? lastSyncedTimestamp.slice(0, 16)
-      : tc("never");
+  const lastSyncText =
+    syncStatus === "syncing"
+      ? t("syncing")
+      : syncStatus === "error"
+        ? t("syncFailedTapToRetry")
+        : lastSync
+          ? lastSync.toLocaleTimeString()
+          : lastSyncedTimestamp
+            ? lastSyncedTimestamp.slice(0, 16)
+            : tc("never");
 
   function handleDeleteLocal() {
     Alert.alert(t("deleteAllData"), t("deleteAllDataMessage"), [
@@ -259,6 +271,8 @@ export default function SettingsScreen() {
               value={lastSyncText}
               icon="syncOutline"
               showSeparator
+              onPress={syncStatus === "error" ? () => syncNow() : undefined}
+              valueColor={syncStatus === "error" ? colors.negative : undefined}
             />
             <ServerRow
               label={t("fileId")}

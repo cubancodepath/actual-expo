@@ -3,7 +3,7 @@ import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
 import { applyMessages } from "@/core/sync/apply";
 import { getClock } from "@/core/crdt";
 import { runQuery, first } from "@/core/db";
-import { SyncError } from "@/core/errors/SyncError";
+import { ActualError } from "@/core/errors/ActualError";
 import { Timestamp } from "@/core/crdt";
 
 describe("applyMessages — atomic rollback (fix #2)", () => {
@@ -53,7 +53,7 @@ describe("applyMessages — atomic rollback (fix #2)", () => {
           value: "x",
         },
       ]),
-    ).rejects.toThrow(SyncError);
+    ).rejects.toThrow(ActualError);
 
     const merkleAfter = JSON.stringify(getClock().merkle);
     const countAfter = (await runQuery<{ c: number }>("SELECT COUNT(*) as c FROM messages_crdt"))[0]

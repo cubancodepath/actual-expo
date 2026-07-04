@@ -5,7 +5,7 @@ import { setSyncingMode } from "@/core/sync/syncMode";
 import { getClock } from "@/core/crdt";
 import { Timestamp } from "@/core/crdt";
 import { runQuery } from "@/core/db";
-import { SyncError } from "@/core/errors/SyncError";
+import { ActualError } from "@/core/errors/ActualError";
 
 describe("applyMessages — import mode fast-path (Phase 3.4)", () => {
   afterEach(async () => {
@@ -77,7 +77,7 @@ describe("applyMessages — import mode fast-path (Phase 3.4)", () => {
           value: "x",
         },
       ]),
-    ).rejects.toThrow(SyncError);
+    ).rejects.toThrow(ActualError);
   });
 
   it("does not affect the normal (enabled-mode) path once switched back", async () => {

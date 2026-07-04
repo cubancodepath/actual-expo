@@ -82,6 +82,7 @@
   "stopSyncingMessage": "Esto mantendrá el presupuesto en este dispositivo pero dejará de sincronizar con el servidor. Puedes reactivar la sincronización después.",
   "noServerConfigured": "Conéctate a un servidor para habilitar la sincronización.",
   "syncing": "Sincronizando...",
+  "syncFailedTapToRetry": "La sincronización falló — toca para reintentar",
   "syncEnabled": "Sincronizado con el Servidor",
   "connectToServer": "Conectar al Servidor",
   "connectToServerDescription": "Inicia sesión para sincronizar entre dispositivos",

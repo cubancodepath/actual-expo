@@ -1,31 +1,32 @@
 import { create } from "zustand";
 import { fullSync } from "@/core/sync";
-import { toAppError } from "@/core/errors";
-import type { AppError } from "@/core/errors";
+import { reportError, type ErrorCode } from "@/core/errors";
 
 type SyncStatus = "idle" | "syncing" | "error" | "success";
 
 type SyncState = {
   status: SyncStatus;
-  error: AppError | null;
+  /** Code of the error that last put status into "error" — for SyncBadge copy. */
+  lastErrorCode: ErrorCode | null;
   lastSync: Date | null;
   sync(): Promise<void>;
   _setStatus(status: SyncStatus): void;
-  _setError(error: AppError): void;
+  _setErrorCode(code: ErrorCode): void;
 };
 
 export const useSyncStore = create<SyncState>((set) => ({
   status: "idle",
-  error: null,
+  lastErrorCode: null,
   lastSync: null,
 
   async sync() {
-    set({ status: "syncing", error: null });
+    set({ status: "syncing", lastErrorCode: null });
     try {
       await fullSync();
       set({ status: "success", lastSync: new Date() });
     } catch (e: unknown) {
-      set({ status: "error", error: toAppError(e) });
+      const error = reportError(e);
+      set({ status: "error", lastErrorCode: error.code });
     }
   },
 
@@ -34,7 +35,7 @@ export const useSyncStore = create<SyncState>((set) => ({
     if (status === "success") set({ lastSync: new Date() });
   },
 
-  _setError(error) {
-    set({ status: "error", error });
+  _setErrorCode(code) {
+    set({ status: "error", lastErrorCode: code });
   },
 }));

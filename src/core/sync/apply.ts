@@ -9,10 +9,7 @@ import { getClock, merkle, Timestamp } from "@/core/crdt";
 import type { TrieNode } from "@/core/crdt/merkle";
 import { run, runQuery, runQuerySync, first, transaction } from "@/core/db";
 import type { MessagesCrdtRow } from "@/core/db/types";
-// Imported from its own module (not the "@/core/errors" barrel) to avoid
-// pulling in toAppError.ts's i18n dependency chain, which isn't set up for
-// plain-Node unit tests.
-import { ActualError } from "@/core/errors/ActualError";
+import { ActualError } from "@/core/errors";
 import type { SyncMessage, OutgoingSyncMessage } from "./encoder";
 import type { OldData } from "./undo";
 import { serializeValue, deserializeValue } from "./values";

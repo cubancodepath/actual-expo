@@ -37,7 +37,6 @@ export {
   type PickerCategory,
 } from "./molecules/CategoryPickerList";
 export { UndoToast } from "./molecules/UndoToast";
-export { ErrorBanner } from "./molecules/ErrorBanner";
 export { BudgetFileRow, type BudgetFileRowProps } from "./molecules/BudgetFileRow";
 export { BudgetOpeningOverlay } from "./molecules/BudgetOpeningOverlay";
 export {

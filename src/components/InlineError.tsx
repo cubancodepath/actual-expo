@@ -16,7 +16,7 @@ type InlineErrorProps = {
  */
 export function InlineError({ error, onDismiss }: InlineErrorProps) {
   const { t: translate } = useTranslation();
-  // Dynamic namespaced key — same escape hatch as core/errors/toAppError.ts.
+  // Dynamic namespaced key — i18next's typed resources reject a runtime string.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const t = translate as any;
   if (!error) return null;

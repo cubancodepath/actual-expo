@@ -4,7 +4,6 @@
   "sessionExpired": "Your session has expired. Please sign in again.",
   "serverError": "Something went wrong on the server. Please try again.",
   "serverRejected": "The server couldn't process that request.",
-  "syncFailed": "Sync failed. Your data is safe locally — we'll try again soon.",
   "encryptionKeyMissing": "This budget is password-protected. Close it and open it again to enter your password.",
   "databaseUnavailable": "The app couldn't open your data. Restart the app and try again.",
   "unexpectedError": "Something went wrong. Try again, or restart the app if it keeps happening.",

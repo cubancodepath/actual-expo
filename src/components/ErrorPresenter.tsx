@@ -13,7 +13,7 @@ import { useErrorStore } from "@/stores/errorStore";
 export function ErrorPresenter() {
   const { t: translate } = useTranslation();
   // i18next's typed resources don't accept a dynamic namespaced key (messageKey
-  // is a runtime string, not a literal) — same escape hatch as core/errors/toAppError.ts.
+  // is a runtime string, not a literal).
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const t = translate as any;
   const { toast } = useToast();

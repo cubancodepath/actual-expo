@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getBootstrapInfo, listFiles, login } from "../authService";
 import { getServerInfo } from "../serverInfo";
-import { PostError } from "@/core/errors";
+import { ActualError, type ErrorCode } from "@/core/errors";
 
 const SERVER = "https://budget.example.com";
 
@@ -24,15 +24,15 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-async function expectPostError(promise: Promise<unknown>, type: string) {
+async function expectActualError(promise: Promise<unknown>, code: ErrorCode) {
   const error = await promise.then(
     () => {
       throw new Error("expected rejection");
     },
     (e: unknown) => e,
   );
-  expect(error).toBeInstanceOf(PostError);
-  expect((error as PostError).type).toBe(type);
+  expect(error).toBeInstanceOf(ActualError);
+  expect((error as ActualError).code).toBe(code);
 }
 
 describe("getBootstrapInfo", () => {
@@ -73,12 +73,12 @@ describe("getBootstrapInfo", () => {
     });
   });
 
-  it("retries with backoff and reports network-failure when the server is unreachable", async () => {
+  it("retries with backoff and reports network/offline when the server is unreachable", async () => {
     vi.useFakeTimers();
     fetchMock.mockRejectedValue(new TypeError("Network request failed"));
 
     const promise = getBootstrapInfo(SERVER);
-    const assertion = expectPostError(promise, "network-failure");
+    const assertion = expectActualError(promise, "network/offline");
     await vi.runAllTimersAsync();
     await assertion;
 
@@ -86,12 +86,12 @@ describe("getBootstrapInfo", () => {
     expect(fetchMock).toHaveBeenCalledTimes(4);
   });
 
-  it("maps a non-2xx response to network-failure", async () => {
+  it("maps a non-2xx response to network/offline", async () => {
     vi.useFakeTimers();
     fetchMock.mockResolvedValue(jsonResponse({ error: "nope" }, 500));
 
     const promise = getBootstrapInfo(SERVER);
-    const assertion = expectPostError(promise, "network-failure");
+    const assertion = expectActualError(promise, "network/offline");
     await vi.runAllTimersAsync();
     await assertion;
   });
@@ -113,19 +113,19 @@ describe("login", () => {
   it("maps the server's invalid-password reason", async () => {
     fetchMock.mockResolvedValue(jsonResponse({ status: "error", reason: "invalid-password" }, 400));
 
-    await expectPostError(login(SERVER, "wrong"), "invalid-password");
+    await expectActualError(login(SERVER, "wrong"), "auth/invalid-password");
   });
 
-  it("maps 401 without a reason to unauthorized", async () => {
+  it("maps 401 without a reason to auth/unauthorized", async () => {
     fetchMock.mockResolvedValue(jsonResponse({ status: "error" }, 401));
 
-    await expectPostError(login(SERVER, "pw"), "unauthorized");
+    await expectActualError(login(SERVER, "pw"), "auth/unauthorized");
   });
 
-  it("maps a 2xx response without a token to internal", async () => {
+  it("maps a 2xx response without a token to http/server-error", async () => {
     fetchMock.mockResolvedValue(jsonResponse({ data: {} }));
 
-    await expectPostError(login(SERVER, "pw"), "internal");
+    await expectActualError(login(SERVER, "pw"), "http/server-error");
   });
 });
 
@@ -158,10 +158,10 @@ describe("listFiles", () => {
     expect(request.headers.get("x-actual-token")).toBe("tok");
   });
 
-  it("throws token-expired on 401 without touching any store", async () => {
+  it("throws auth/token-expired on 401 without touching any store", async () => {
     fetchMock.mockResolvedValue(jsonResponse({ status: "error" }, 401));
 
-    await expectPostError(listFiles(SERVER, "stale"), "token-expired");
+    await expectActualError(listFiles(SERVER, "stale"), "auth/token-expired");
   });
 });
 

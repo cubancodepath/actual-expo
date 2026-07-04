@@ -11,7 +11,7 @@ import { getClock, merkle, Timestamp } from "@/core/crdt";
 import { encode, decode } from "./encoder";
 import type { SyncMessage } from "./encoder";
 import { postBinary } from "@/core/post";
-import { PostError, SyncError, toAppError } from "@/core/errors";
+import { ActualError, SyncError, toAppError } from "@/core/errors";
 import { applyMessages, getMessagesSince } from "./apply";
 import { emit } from "./syncEvents";
 import { getSyncGeneration, isSwitchingBudget, setActiveSyncPromise } from "./lifecycle";
@@ -270,7 +270,7 @@ export function fullSync(opts?: { force?: boolean }): Promise<number> {
     } catch (e: unknown) {
       if (gen !== getSyncGeneration()) return 0;
 
-      if (e instanceof PostError && (e.type === "unauthorized" || e.type === "token-expired")) {
+      if (e instanceof ActualError && e.code === "auth/token-expired") {
         emit({ type: "error", tables: [], subtype: "unauthorized" });
         const { closeBudget } = await import("@/services/budgetfiles");
         await closeBudget().catch(() => {});
@@ -297,7 +297,7 @@ export function fullSync(opts?: { force?: boolean }): Promise<number> {
         return 0;
       }
 
-      if (e instanceof PostError && e.type === "network-failure") {
+      if (e instanceof ActualError && e.code === "network/offline") {
         emit({ type: "error", tables: [], subtype: "network" });
         useSyncStore.getState()._setStatus("idle");
         // Pause scheduled syncs until the next foreground/manual retry

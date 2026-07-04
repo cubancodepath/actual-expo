@@ -1,7 +1,7 @@
 import { isHTTPError } from "ky";
 import { z } from "zod";
-import { http, parseResponse, toPostError } from "@/lib/http";
-import { PostError } from "@/core/errors";
+import { http, parseResponse, toTransportError } from "@/lib/http";
+import { ActualError } from "@/core/errors";
 
 export type BudgetFile = {
   fileId: string;
@@ -62,10 +62,10 @@ export async function getBootstrapInfo(serverUrl: string): Promise<BootstrapInfo
       })
       .json();
   } catch (e) {
-    const mapped = toPostError(e);
+    const mapped = toTransportError(e);
     // Parity with the original fetch flow: any unusable probe response reads
     // as "can't reach a working server" except a malformed JSON body.
-    throw mapped.type === "parse-json" ? mapped : new PostError("network-failure");
+    throw mapped.code === "http/parse-error" ? mapped : new ActualError("network/offline");
   }
 
   const data = parseResponse(BootstrapResponse, json);
@@ -92,9 +92,9 @@ export async function login(serverUrl: string, password: string): Promise<string
     if (isHTTPError(e)) {
       // The server reports a wrong password in the error body's `reason`
       const reason = (e.data as { reason?: string } | undefined)?.reason;
-      if (reason === "invalid-password") throw new PostError("invalid-password");
+      if (reason === "invalid-password") throw new ActualError("auth/invalid-password");
     }
-    throw toPostError(e);
+    throw toTransportError(e);
   }
 
   try {
@@ -102,7 +102,7 @@ export async function login(serverUrl: string, password: string): Promise<string
   } catch {
     // Parity with the original flow: a 2xx response without a token is a
     // server-side problem, not a parse error
-    throw new PostError("internal");
+    throw new ActualError("http/server-error");
   }
 }
 
@@ -127,12 +127,12 @@ export async function initiateOpenIdLogin(serverUrl: string, returnUrl: string):
       .post(`${serverUrl}/account/login`, { json: { loginMethod: "openid", returnUrl } })
       .json();
   } catch (e) {
-    throw toPostError(e);
+    throw toTransportError(e);
   }
 
   const data = parseResponse(OpenIdResponse, json);
   const authUrl = data.redirectUrl ?? data.returnUrl;
-  if (!authUrl) throw new PostError("internal");
+  if (!authUrl) throw new ActualError("http/server-error");
   return authUrl;
 }
 
@@ -161,8 +161,8 @@ const ListFilesResponse = z.preprocess((json) => {
 /**
  * List budget files available on the server.
  *
- * Throws PostError("token-expired") on 401/403 — handling the expired session
- * (clearing prefs, redirecting) is the caller's responsibility.
+ * Throws ActualError("auth/token-expired") on 401/403 — handling the expired
+ * session (clearing prefs, redirecting) is the caller's responsibility.
  */
 export async function listFiles(serverUrl: string, token: string): Promise<BudgetFile[]> {
   let json: unknown;
@@ -171,8 +171,8 @@ export async function listFiles(serverUrl: string, token: string): Promise<Budge
       .get(`${serverUrl}/sync/list-user-files`, { headers: { "x-actual-token": token } })
       .json();
   } catch (e) {
-    const mapped = toPostError(e);
-    throw mapped.type === "unauthorized" ? new PostError("token-expired") : mapped;
+    const mapped = toTransportError(e);
+    throw mapped.code === "auth/unauthorized" ? new ActualError("auth/token-expired") : mapped;
   }
 
   return parseResponse(ListFilesResponse, json).map((f) => ({

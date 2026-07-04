@@ -1,105 +1,34 @@
 import i18n from "@/i18n/config";
-import { PostError } from "./PostError";
-import { SyncError } from "./SyncError";
-import type { AppError } from "./AppError";
+import { normalizeError } from "./normalizeError";
+import type { ErrorCode } from "./codes";
+import type { AppError, ErrorCategory } from "./AppError";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- i18next strict typing doesn't accept dynamic namespaced keys
-function t(key: string): string {
-  return i18n.t(key as never) as string;
+function t(key: string, params?: Record<string, string | number>): string {
+  return i18n.t(key as never, params as never) as unknown as string;
 }
 
+function categoryFor(code: ErrorCode): ErrorCategory {
+  if (code === "auth/invalid-password") return "validation";
+  if (code === "sync/key-missing") return "encryption";
+  if (code === "db/unavailable") return "database";
+  if (code.startsWith("network/")) return "network";
+  if (code.startsWith("auth/")) return "auth";
+  if (code.startsWith("sync/")) return "sync";
+  return "unknown";
+}
+
+/**
+ * @deprecated Use `normalizeError`/`reportError` instead. Kept as a thin
+ * adapter over the new ActualError model so consumers not yet migrated to
+ * the pipeline (see plan commits 6-8) still get a correct category/message
+ * for errors thrown by already-migrated producers.
+ */
 export function toAppError(e: unknown): AppError {
-  // PostError (from src/post.ts)
-  if (e instanceof PostError) {
-    switch (e.type) {
-      case "network-failure":
-        return {
-          category: "network",
-          message: t("errors:networkFailure"),
-          recovery: "retry",
-          cause: e,
-        };
-      case "invalid-password":
-        return {
-          category: "validation",
-          message: t("errors:invalidPassword"),
-          recovery: "dismiss",
-          cause: e,
-        };
-      case "unauthorized":
-      case "token-expired":
-        return {
-          category: "auth",
-          message: t("errors:sessionExpired"),
-          recovery: "login",
-          cause: e,
-        };
-      case "internal":
-        return {
-          category: "unknown",
-          message: t("errors:serverError"),
-          recovery: "retry",
-          cause: e,
-        };
-      case "parse-json":
-        return {
-          category: "unknown",
-          message: t("errors:serverError"),
-          recovery: "retry",
-          cause: e,
-        };
-      default:
-        return {
-          category: "unknown",
-          message: t("errors:unexpectedError"),
-          recovery: "dismiss",
-          cause: e,
-        };
-    }
-  }
-
-  // SyncError (from sync/encoder.ts)
-  if (e instanceof SyncError) {
-    const meta = e.meta as { isMissingKey?: boolean } | undefined;
-    if (meta?.isMissingKey) {
-      return {
-        category: "encryption",
-        message: t("errors:encryptionKeyMissing"),
-        recovery: "reopen",
-        cause: e,
-      };
-    }
-    return { category: "sync", message: t("errors:syncFailed"), recovery: "retry", cause: e };
-  }
-
-  // Standard Error with recognizable patterns
-  if (e instanceof Error) {
-    const msg = e.message.toLowerCase();
-
-    if (msg.includes("network") || msg.includes("fetch") || msg.includes("timeout")) {
-      return {
-        category: "network",
-        message: t("errors:networkFailure"),
-        recovery: "retry",
-        cause: e,
-      };
-    }
-
-    if (msg.includes("closed resource") || msg.includes("not initialized")) {
-      return {
-        category: "database",
-        message: t("errors:databaseUnavailable"),
-        recovery: "dismiss",
-        cause: e,
-      };
-    }
-  }
-
-  // Fallback
+  const error = normalizeError(e);
   return {
-    category: "unknown",
-    message: t("errors:unexpectedError"),
-    recovery: "dismiss",
-    cause: e,
+    category: categoryFor(error.code),
+    message: t(error.messageKey, error.messageParams),
+    recovery: error.recovery,
+    cause: error.cause ?? error,
   };
 }

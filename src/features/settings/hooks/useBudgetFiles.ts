@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import { PostError, toAppError, type AppError } from "@/core/errors";
+import { ActualError, toAppError, type AppError } from "@/core/errors";
 import { usePrefsStore } from "@/stores/prefsStore";
 import { listFiles } from "@/services/authService";
 import { listLocalBudgets } from "@/services/budgetMetadata";
@@ -73,7 +73,7 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
       listLocalBudgets(),
       listFiles(serverUrl, token).catch((e: unknown) => {
         // Expired session → full logout; the root guard redirects to login
-        if (e instanceof PostError && e.type === "token-expired") {
+        if (e instanceof ActualError && e.code === "auth/token-expired") {
           usePrefsStore.getState().clearAll();
         }
         return [];

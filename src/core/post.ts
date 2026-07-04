@@ -1,107 +1,125 @@
-import { PostError } from "./errors";
+import { TimeoutError } from "ky";
+import { http } from "@/lib/http";
+import { ActualError } from "@/core/errors";
 
-function throwIfNot200(res: Response, text: string): void {
-  if (res.status !== 200) {
-    if (res.status === 500) {
-      throw new PostError("internal");
-    }
+type ServerReasonBody = { status?: string; reason?: string; description?: string };
 
-    const contentType = res.headers.get("Content-Type") ?? "";
-    if (contentType.toLowerCase().includes("application/json")) {
-      try {
-        const json = JSON.parse(text);
-        throw new PostError(json.reason);
-      } catch (e) {
-        if (e instanceof PostError) throw e;
-      }
-    }
+const AUTH_REASONS = new Set(["unauthorized", "token-expired"]);
 
-    if (res.headers.has("ngrok-error-code")) {
-      throw new PostError("network-failure");
-    }
-
-    throw new PostError(text);
+/** Map a server-provided `reason`/`description` string to a domain error. */
+function toDomainError(reason: string | undefined, fallbackText: string): ActualError {
+  if (reason && AUTH_REASONS.has(reason)) {
+    return new ActualError("auth/token-expired", { context: { serverReason: reason } });
   }
+  return new ActualError("http/rejected", {
+    context: { serverReason: reason ?? fallbackText.slice(0, 500) },
+  });
+}
+
+/**
+ * Turn a non-2xx response into the right ActualError (status, JSON reason,
+ * ngrok tunnel errors). `bodyText` must be passed when the body was already
+ * consumed by the caller (e.g. postBinary reading it via arrayBuffer) —
+ * a Response body can only be read once.
+ */
+async function toResponseError(res: Response, bodyText?: string): Promise<ActualError> {
+  if (res.status === 500) return new ActualError("http/server-error");
+
+  const text = bodyText ?? (await res.text());
+  const contentType = res.headers.get("Content-Type") ?? "";
+  if (contentType.toLowerCase().includes("application/json")) {
+    try {
+      const json: ServerReasonBody = JSON.parse(text);
+      return toDomainError(json.reason, text);
+    } catch {
+      // fall through to raw-text handling below
+    }
+  }
+
+  if (res.headers.has("ngrok-error-code")) {
+    return new ActualError("network/offline");
+  }
+
+  return toDomainError(undefined, text);
+}
+
+// Both callers below pass `throwHttpErrors: false`, so ky never throws
+// HTTPError here — non-2xx responses are handled via `!res.ok` + toResponseError.
+// This only sees genuine transport failures (offline, DNS, timeout).
+function toTransportError(e: unknown): ActualError {
+  if (e instanceof TimeoutError) return new ActualError("network/timeout");
+  return new ActualError("network/offline");
 }
 
 export async function post(
   url: string,
   data: unknown,
   headers: Record<string, string> = {},
-  timeout: number | null = null,
+  timeout: number | false = false,
 ): Promise<unknown> {
   let text: string;
-  let res: Response;
-
   try {
-    const controller = new AbortController();
-    const timeoutId = timeout ? setTimeout(() => controller.abort(), timeout) : null;
-    res = await fetch(url, {
-      method: "POST",
-      body: JSON.stringify(data),
-      signal: timeout ? controller.signal : undefined,
-      headers: { ...headers, "Content-Type": "application/json" },
+    const res = await http.post(url, {
+      json: data,
+      headers,
+      timeout,
+      retry: 0,
+      throwHttpErrors: false,
     });
-    if (timeoutId != null) clearTimeout(timeoutId);
+    if (!res.ok) throw await toResponseError(res);
     text = await res.text();
-  } catch {
-    throw new PostError("network-failure");
+  } catch (e) {
+    if (e instanceof ActualError) throw e;
+    throw toTransportError(e);
   }
 
-  throwIfNot200(res, text);
-
-  let responseData: { status: string; data?: unknown; description?: string; reason?: string };
+  let responseData: ServerReasonBody & { data?: unknown };
   try {
     responseData = JSON.parse(text);
   } catch {
-    throw new PostError("parse-json", { meta: text });
+    throw new ActualError("http/parse-error", { context: { body: text.slice(0, 500) } });
   }
 
   if (responseData.status !== "ok") {
-    if (__DEV__)
+    if (__DEV__) {
       console.warn("API call failed: " + url + "\nResponse: " + JSON.stringify(responseData));
-    throw new PostError(responseData.description ?? responseData.reason ?? "unknown");
+    }
+    throw toDomainError(responseData.description ?? responseData.reason, text);
   }
 
   return responseData.data;
 }
 
-const DEFAULT_TIMEOUT = 10_000; // 10 seconds
+const DEFAULT_BINARY_TIMEOUT = 10_000;
 
 export async function postBinary(
   url: string,
   data: Uint8Array,
   headers: Record<string, string> = {},
-  timeout: number = DEFAULT_TIMEOUT,
+  timeout: number = DEFAULT_BINARY_TIMEOUT,
 ): Promise<Uint8Array> {
   let res: Response;
-
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
-    res = await fetch(url, {
-      method: "POST",
+    res = await http.post(url, {
       body: data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer,
-      signal: controller.signal,
+      timeout,
+      retry: 0,
+      throwHttpErrors: false,
       headers: {
         "Content-Length": String(data.byteLength),
         "Content-Type": "application/actual-sync",
         ...headers,
       },
     });
-    clearTimeout(timeoutId);
-  } catch {
-    throw new PostError("network-failure");
+  } catch (e) {
+    throw toTransportError(e);
   }
 
   const arrayBuffer = await res.arrayBuffer();
   const buffer = new Uint8Array(arrayBuffer);
-  const text = new TextDecoder().decode(buffer);
-  throwIfNot200(res, text);
+  if (!res.ok) {
+    throw await toResponseError(res, new TextDecoder().decode(buffer));
+  }
 
   return buffer;
-}
-
-export function get(url: string, opts?: RequestInit): Promise<string> {
-  return fetch(url, opts).then((res) => res.text());
 }

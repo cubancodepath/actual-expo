@@ -32,15 +32,21 @@ import {
 } from "./budgetMetadata";
 import * as encryption from "@/core/encryption";
 import { loadKeyForBudget } from "./encryptionService";
+import { http } from "@/lib/http";
+import { ActualError, type ErrorCode } from "@/core/errors";
 
 // ---------------------------------------------------------------------------
 // Auth guard
 // ---------------------------------------------------------------------------
 
-function throwIfUnauthorized(res: Response): void {
+/** Throws auth/token-expired (and logs out) on 401/403, or `code` on any other non-2xx. */
+function checkResponse(res: Response, code: ErrorCode): void {
   if (res.status === 401 || res.status === 403) {
     usePrefsStore.getState().clearAll();
-    throw new Error("Session expired. Please log in again.");
+    throw new ActualError("auth/token-expired");
+  }
+  if (!res.ok) {
+    throw new ActualError(code, { context: { status: res.status } });
   }
 }
 
@@ -229,25 +235,22 @@ export async function uploadBudget(
     headers["X-ACTUAL-GROUP-ID"] = meta.groupId;
   }
 
-  const res = await fetch(url, {
-    method: "POST",
+  const res = await http.post(url, {
     headers,
     body: uploadContent.buffer as ArrayBuffer,
+    timeout: false,
+    retry: 0,
+    throwHttpErrors: false,
   });
 
-  throwIfUnauthorized(res);
+  checkResponse(res, "file/upload-failed");
 
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`Upload failed (${res.status}): ${text}`);
-  }
-
-  const json = await res.json();
+  const json = await res.json<{ status: string; groupId: string }>();
   if (json.status !== "ok") {
-    throw new Error(`Upload failed: ${JSON.stringify(json)}`);
+    throw new ActualError("file/upload-failed", { context: { body: json } });
   }
 
-  const groupId = json.groupId as string;
+  const groupId = json.groupId;
 
   // 8. Update local metadata
   await updateMetadata(budgetId, { cloudFileId, groupId, lastUploaded: new Date().toISOString() });
@@ -304,32 +307,30 @@ export async function downloadBudget(
 ): Promise<string> {
   // 1. Download file and file info in parallel
   const [res, infoRes] = await Promise.all([
-    fetch(`${serverUrl}/sync/download-user-file`, {
-      headers: {
-        "x-actual-token": token,
-        "x-actual-file-id": file.fileId,
-      },
+    http.get(`${serverUrl}/sync/download-user-file`, {
+      headers: { "x-actual-token": token, "x-actual-file-id": file.fileId },
+      timeout: false,
+      retry: 0,
+      throwHttpErrors: false,
     }),
-    fetch(`${serverUrl}/sync/get-user-file-info`, {
-      headers: {
-        "x-actual-token": token,
-        "x-actual-file-id": file.fileId,
-      },
+    http.get(`${serverUrl}/sync/get-user-file-info`, {
+      headers: { "x-actual-token": token, "x-actual-file-id": file.fileId },
+      timeout: false,
+      retry: 0,
+      throwHttpErrors: false,
     }),
   ]);
 
-  throwIfUnauthorized(res);
-
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`Download failed (${res.status}): ${text}`);
-  }
+  checkResponse(res, "file/download-failed");
 
   const rawBuffer = await res.arrayBuffer();
   let zipBytes = new Uint8Array(rawBuffer);
 
   // If encrypted, decrypt the file before unzipping
-  const fileInfo = infoRes.ok ? await infoRes.json().catch(() => null) : null;
+  type EncryptMeta = { keyId: string; algorithm: string; iv: string; authTag: string };
+  const fileInfo = infoRes.ok
+    ? await infoRes.json<{ data?: { encryptMeta?: EncryptMeta } }>().catch(() => null)
+    : null;
   const encryptMeta = fileInfo?.data?.encryptMeta;
   if (encryptMeta) {
     try {
@@ -337,27 +338,23 @@ export async function downloadBudget(
       zipBytes = new Uint8Array(decrypted);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
-      throw new Error(
-        msg === "missing-key"
-          ? "Encryption key not loaded. Please enter your password first."
-          : `Failed to decrypt budget file: ${msg}`,
-      );
+      throw msg === "missing-key"
+        ? new ActualError("sync/key-missing")
+        : new ActualError("sync/decrypt-failure", { cause: e });
     }
   }
 
   if (zipBytes[0] !== 0x50 || zipBytes[1] !== 0x4b) {
     const contentType = res.headers.get("content-type") ?? "unknown";
     const preview = new TextDecoder().decode(zipBytes.slice(0, 200));
-    throw new Error(
-      `Server did not return a ZIP file.\nContent-Type: ${contentType}\nPreview: ${preview}`,
-    );
+    throw new ActualError("file/corrupt-archive", { context: { contentType, preview } });
   }
 
   // 2. Extract db.sqlite
   const unzipped = unzipSync(zipBytes);
   const dbBytes = unzipped["db.sqlite"];
   if (!dbBytes) {
-    throw new Error("Downloaded archive does not contain db.sqlite");
+    throw new ActualError("file/corrupt-archive", { context: { reason: "missing db.sqlite" } });
   }
 
   // 3. Create budget directory and write files
@@ -577,7 +574,7 @@ export async function switchBudget(
   }
 
   if (!localId) {
-    throw new Error("Cannot switch budget: no local ID available");
+    throw new ActualError("file/switch-failed", { context: { reason: "no local ID available" } });
   }
 
   await openBudget(localId);
@@ -628,17 +625,12 @@ export async function deleteFromServer(
   token: string,
   cloudFileId: string,
 ): Promise<void> {
-  const res = await fetch(`${serverUrl}/sync/delete-user-file`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-actual-token": token,
-    },
-    body: JSON.stringify({ fileId: cloudFileId }),
+  const res = await http.post(`${serverUrl}/sync/delete-user-file`, {
+    json: { fileId: cloudFileId },
+    headers: { "x-actual-token": token },
+    timeout: false,
+    retry: 0,
+    throwHttpErrors: false,
   });
-  throwIfUnauthorized(res);
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`Server delete failed (${res.status}): ${text}`);
-  }
+  checkResponse(res, "file/delete-failed");
 }

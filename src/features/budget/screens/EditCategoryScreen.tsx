@@ -19,6 +19,7 @@ import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
 import { setBudgetAmount } from "@/core/domain/budgets";
 import { useUndoStore } from "@/stores/undoStore";
 import { updateCategory, deleteCategory } from "@/core/domain/categories";
+import { reportError } from "@/core/errors";
 import { useCategories } from "@/features/budget/hooks/useCategories";
 import { Text } from "@/design-system/atoms/Text";
 import { Button } from "@/design-system/atoms/Button";
@@ -312,7 +313,8 @@ export function EditCategoryScreen({ categoryId }: EditCategoryScreenProps) {
         setCoverTarget(null);
         setPendingDelete(false);
         router.back();
-      } catch {
+      } catch (e) {
+        reportError(e, { inlineHandled: true });
         setDeleting(false);
         setPendingDelete(false);
         setCoverTarget(null);

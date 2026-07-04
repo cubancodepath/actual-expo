@@ -9,6 +9,7 @@ import { getGoalTemplates, setGoalTemplates } from "@/core/domain/goals";
 import { updateGoalIndicator } from "@/core/domain/goals/apply";
 import { amountToInteger, integerToAmount } from "@/core/domain/goals/engine";
 import { batchMessages } from "@/core/sync";
+import { reportError } from "@/core/errors";
 import type { Template } from "@/core/domain/goals/types";
 
 // ---------------------------------------------------------------------------
@@ -335,7 +336,8 @@ export function useGoalEditor({ categoryId, dismissCount }: UseGoalEditorArgs) {
       // Update goal indicator AFTER batchMessages so it reads the fresh goal_def
       await updateGoalIndicator(useBudgetUIStore.getState().month, categoryId);
       dismiss();
-    } catch {
+    } catch (e) {
+      reportError(e, { inlineHandled: true });
       Alert.alert(t("couldNotSaveTitle"), t("couldNotSaveMessage"));
     } finally {
       setSaving(false);
@@ -353,7 +355,8 @@ export function useGoalEditor({ categoryId, dismissCount }: UseGoalEditorArgs) {
           try {
             await setGoalTemplates(categoryId, []);
             dismiss();
-          } catch {
+          } catch (e) {
+            reportError(e, { inlineHandled: true });
             Alert.alert(t("errorTitle"), t("couldNotRemoveTarget"));
           }
         },

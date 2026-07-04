@@ -11,7 +11,7 @@ import {
 } from "@/services/authService";
 import { getServerInfo } from "@/services/serverInfo";
 import { usePrefsStore } from "@/stores/prefsStore";
-import { useErrorHandler } from "@/hooks/useErrorHandler";
+import { reportError } from "@/core/errors";
 
 export type LoginStep = "idle" | "probing" | LoginMethod;
 
@@ -20,7 +20,10 @@ export interface UseLoginFlowReturn {
   password: string;
   step: LoginStep;
   loading: boolean;
-  error: ReturnType<typeof useErrorHandler>["error"];
+  /** Validation message (empty URL, no OpenID token) — not a reported error. */
+  validationMessage: string | null;
+  /** Set when a probe/login call fails with something worth showing inline. */
+  error: unknown;
   isServerLocked: boolean;
   setServerUrl: (v: string) => void;
   setPassword: (v: string) => void;
@@ -38,11 +41,17 @@ export function useLoginFlow(): UseLoginFlowReturn {
   const [password, setPasswordState] = useState("");
   const [step, setStep] = useState<LoginStep>("idle");
   const [loading, setLoading] = useState(false);
-  const { error, handleError, setValidationError, dismissError } = useErrorHandler();
+  const [validationMessage, setValidationMessage] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
 
   const urlRef = useRef("");
 
   const isServerLocked = step !== "idle" && step !== "probing";
+
+  function dismissError() {
+    setValidationMessage(null);
+    setError(null);
+  }
 
   function setServerUrl(v: string) {
     setServerUrlState(v);
@@ -65,46 +74,63 @@ export function useLoginFlow(): UseLoginFlowReturn {
     router.replace("/(files)/files");
   }
 
+  /**
+   * Reports the error to the pipeline (Sentry/breadcrumbs) but keeps display
+   * local to this screen — except network failures, which stay silent here
+   * (matches network/offline's policy; probing quietly resets instead of
+   * showing a banner).
+   */
+  function handleLoginError(e: unknown) {
+    const normalized = reportError(e, { inlineHandled: true });
+    if (normalized.code !== "network/offline") {
+      setError(e);
+    }
+  }
+
   // ── Step 1: Probe server ──────────────────────────────────────────────────
   async function handleProbe() {
     const url = serverUrl.trim().replace(/\/$/, "");
     if (!url) {
-      setValidationError(t("serverUrlRequired"));
+      setValidationMessage(t("serverUrlRequired"));
       return;
     }
 
     setStep("probing");
-    // getBootstrapInfo retries with backoff internally (see authService)
-    const info = await handleError(() => getBootstrapInfo(url));
-    if (!info) {
+    dismissError();
+    try {
+      // getBootstrapInfo retries with backoff internally (see authService)
+      const info = await getBootstrapInfo(url);
+      urlRef.current = url;
+      if (!info.bootstrapped) {
+        setValidationMessage(t("serverNotSetUp"));
+        setStep("idle");
+        return;
+      }
+      setStep(info.loginMethod);
+    } catch (e) {
+      handleLoginError(e);
       setStep("idle");
-      return;
     }
-
-    urlRef.current = url;
-    if (!info.bootstrapped) {
-      setValidationError(t("serverNotSetUp"));
-      setStep("idle");
-      return;
-    }
-
-    setStep(info.loginMethod);
   }
 
   // ── Step 2a: Password login ───────────────────────────────────────────────
   async function handlePasswordLogin() {
     setLoading(true);
-    await handleError(async () => {
+    dismissError();
+    try {
       const token = await login(urlRef.current, password.trim());
       await completeLogin(urlRef.current, token);
-    });
+    } catch (e) {
+      handleLoginError(e);
+    }
     setLoading(false);
   }
 
   // ── Step 2b: OpenID login ─────────────────────────────────────────────────
   async function handleOpenIdLogin() {
     setLoading(true);
-    await handleError(async () => {
+    dismissError();
+    try {
       const serverUrlValue = urlRef.current;
       const appScheme = "actualbudget";
       const serverHostname = new URL(serverUrlValue).hostname;
@@ -122,13 +148,15 @@ export function useLoginFlow(): UseLoginFlowReturn {
       const parsed = Linking.parse(result.url);
       const token = parsed.queryParams?.token as string | undefined;
       if (!token) {
-        setValidationError(t("openIdNoToken"));
+        setValidationMessage(t("openIdNoToken"));
         setLoading(false);
         return;
       }
 
       await completeLogin(serverUrlValue, token);
-    });
+    } catch (e) {
+      handleLoginError(e);
+    }
     setLoading(false);
   }
 
@@ -143,6 +171,7 @@ export function useLoginFlow(): UseLoginFlowReturn {
     password,
     step,
     loading,
+    validationMessage,
     error,
     isServerLocked,
     setServerUrl,

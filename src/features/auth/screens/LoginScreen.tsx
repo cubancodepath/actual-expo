@@ -25,6 +25,8 @@ import {
 } from "heroui-native";
 import { usePrefsStore } from "@/stores/prefsStore";
 import { useLoginFlow } from "@/features/auth/hooks/useLoginFlow";
+import { normalizeError } from "@/core/errors";
+import { InlineError } from "@/components/InlineError";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -38,6 +40,7 @@ export function LoginScreen() {
     password,
     step,
     loading,
+    validationMessage,
     error,
     isServerLocked,
     setServerUrl,
@@ -48,6 +51,9 @@ export function LoginScreen() {
     handleChangeServer,
     dismissError,
   } = useLoginFlow();
+
+  const normalizedError = error ? normalizeError(error) : null;
+  const isInvalidPassword = normalizedError?.code === "auth/invalid-password";
 
   const accentForeground = useThemeColor("accent-foreground");
   const accent = useThemeColor("accent");
@@ -169,7 +175,7 @@ export function LoginScreen() {
 
             {/* Password form */}
             {step === "password" && (
-              <TextField isInvalid={error?.category === "validation"}>
+              <TextField isInvalid={isInvalidPassword}>
                 <Typography
                   type="body-xs"
                   weight="semibold"
@@ -198,7 +204,11 @@ export function LoginScreen() {
                     pointerEvents="none"
                   />
                 </View>
-                {error?.category === "validation" && <FieldError>{error.message}</FieldError>}
+                {isInvalidPassword && (
+                  <FieldError>
+                    {(t as any)(normalizedError!.messageKey, normalizedError!.messageParams)}
+                  </FieldError>
+                )}
               </TextField>
             )}
 
@@ -212,15 +222,20 @@ export function LoginScreen() {
               </Alert>
             )}
 
-            {/* Error — password validation is inline; other errors show as Alert */}
-            {!(step === "password" && error?.category === "validation") && error && (
+            {/* Client-side validation (empty URL, server not set up, no OpenID token) */}
+            {validationMessage && (
               <Alert status="danger">
                 <Alert.Indicator />
                 <Alert.Content>
-                  <Alert.Description>{error.message}</Alert.Description>
+                  <Alert.Description>{validationMessage}</Alert.Description>
                 </Alert.Content>
                 <CloseButton onPress={dismissError} />
               </Alert>
+            )}
+
+            {/* Real errors from probe/login calls — invalid-password shows inline above instead */}
+            {Boolean(error) && !isInvalidPassword && (
+              <InlineError error={error} onDismiss={dismissError} />
             )}
 
             {/* Action buttons */}

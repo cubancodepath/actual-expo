@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import { ActualError, toAppError, type AppError } from "@/core/errors";
+import { ActualError, reportError } from "@/core/errors";
 import { usePrefsStore } from "@/stores/prefsStore";
 import { listFiles } from "@/services/authService";
 import { listLocalBudgets } from "@/services/budgetMetadata";
@@ -28,9 +28,15 @@ type UseBudgetFilesReturn = {
   loading: boolean;
   /** True during pull-to-refresh */
   refreshing: boolean;
-  error: AppError | null;
+  /** Set only when the list itself fails to load — shown inline on the screen. */
+  listError: unknown;
   /** Key of file currently being selected/downloaded */
   selecting: string | null;
+  /**
+   * Per-row actions. Failures report to the global pipeline (toast) instead
+   * of a shared error state — there's no good inline placement for "which
+   * row's action failed" beyond the list-level banner `listError` covers.
+   */
   selectFile: (file: ReconciledBudgetFile) => Promise<void>;
   /** Delete a file locally and/or from server */
   deleteFile: (file: ReconciledBudgetFile, fromServer?: boolean) => Promise<void>;
@@ -56,7 +62,7 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
   const [files, setFiles] = useState<ReconciledBudgetFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<AppError | null>(null);
+  const [listError, setListError] = useState<unknown>(null);
   const [selecting, setSelecting] = useState<string | null>(null);
   const [actionInProgress, setActionInProgress] = useState<string | null>(null);
   const isMounted = useRef(true);
@@ -84,13 +90,13 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
 
   const loadFiles = useCallback(() => {
     setLoading(true);
-    setError(null);
+    setListError(null);
     fetchFiles()
       .then((f) => {
         if (isMounted.current) setFiles(f);
       })
       .catch((e) => {
-        if (isMounted.current) setError(toAppError(e));
+        if (isMounted.current) setListError(reportError(e, { inlineHandled: true }));
       })
       .finally(() => {
         if (isMounted.current) setLoading(false);
@@ -103,13 +109,13 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
 
   const refreshFiles = useCallback(() => {
     setRefreshing(true);
-    setError(null);
+    setListError(null);
     fetchFiles()
       .then((f) => {
         if (isMounted.current) setFiles(f);
       })
       .catch((e) => {
-        if (isMounted.current) setError(toAppError(e));
+        if (isMounted.current) setListError(reportError(e, { inlineHandled: true }));
       })
       .finally(() => {
         if (isMounted.current) setRefreshing(false);
@@ -136,10 +142,8 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
         await switchBudget(file, serverUrl, token);
       } catch (e: unknown) {
         clearSwitchingFlag();
-        if (isMounted.current) {
-          setError(toAppError(e));
-          setSelecting(null);
-        }
+        reportError(e);
+        if (isMounted.current) setSelecting(null);
         throw e;
       }
     },
@@ -159,9 +163,7 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
         const updated = await fetchFiles();
         if (isMounted.current) setFiles(updated);
       } catch (e: unknown) {
-        if (isMounted.current) {
-          setError(toAppError(e));
-        }
+        reportError(e);
         throw e;
       }
     },
@@ -191,9 +193,7 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
         const updated = await fetchFiles();
         if (isMounted.current) setFiles(updated);
       } catch (e: unknown) {
-        if (isMounted.current) {
-          setError(toAppError(e));
-        }
+        reportError(e);
         throw e;
       }
     },
@@ -218,9 +218,7 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
         const updated = await fetchFiles();
         if (isMounted.current) setFiles(updated);
       } catch (e: unknown) {
-        if (isMounted.current) {
-          setError(toAppError(e));
-        }
+        reportError(e);
         throw e;
       } finally {
         if (isMounted.current) setActionInProgress(null);
@@ -252,9 +250,7 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
         const updated = await fetchFiles();
         if (isMounted.current) setFiles(updated);
       } catch (e: unknown) {
-        if (isMounted.current) {
-          setError(toAppError(e));
-        }
+        reportError(e);
         throw e;
       } finally {
         if (isMounted.current) setActionInProgress(null);
@@ -271,7 +267,7 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
     remoteFiles,
     loading,
     refreshing,
-    error,
+    listError,
     selecting,
     actionInProgress,
     selectFile,
@@ -281,6 +277,6 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
     reRegister: handleReRegister,
     retry: loadFiles,
     refresh: refreshFiles,
-    dismissError: () => setError(null),
+    dismissError: () => setListError(null),
   };
 }

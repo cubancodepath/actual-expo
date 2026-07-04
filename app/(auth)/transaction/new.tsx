@@ -11,7 +11,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import { withOpacity } from "@/lib/colors";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { Button } from "@/design-system/atoms/Button";
-import { ErrorBanner } from "@/design-system/molecules/ErrorBanner";
 import { Text } from "@/design-system/atoms/Text";
 import { GlassButton } from "@/design-system/atoms/GlassButton";
 import { NotesField } from "@/features/transactions/components/NotesField";
@@ -189,10 +188,14 @@ export default function NewTransactionScreen() {
           </View>
         </View>
 
-        {/* ── Error banner ── */}
-        <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.md }}>
-          <ErrorBanner error={form.error} onDismiss={form.dismissError} />
-        </View>
+        {/* ── Validation message ── */}
+        {form.formError && (
+          <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.md }}>
+            <Text variant="captionSm" color={colors.errorText}>
+              {form.formError}
+            </Text>
+          </View>
+        )}
 
         {/* ── Action buttons ── */}
         <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.xl }}>

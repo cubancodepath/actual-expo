@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ActivityIndicator, Alert, Pressable, ScrollView, Switch, View } from "react-native";
 
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { useMutation } from "@tanstack/react-query";
 import { useAccounts } from "@/features/accounts/hooks/useAccounts";
 import { updateAccount } from "@/core/domain/accounts";
 import { Icon } from "@/design-system/atoms/Icon";
@@ -9,8 +10,8 @@ import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvid
 import { Text } from "@/design-system/atoms/Text";
 import { Button } from "@/design-system/atoms/Button";
 import { Input } from "@/design-system/atoms/Input";
-import { ErrorBanner } from "@/design-system/molecules/ErrorBanner";
-import { useErrorHandler } from "@/hooks/useErrorHandler";
+import { InlineError } from "@/components/InlineError";
+import { reportError } from "@/core/errors";
 import { useTranslation } from "react-i18next";
 import type { Theme } from "@/design-system/tokens";
 
@@ -26,8 +27,22 @@ export default function AccountSettingsScreen() {
 
   const [name, setName] = useState(account?.name ?? "");
   const [offbudget, setOffbudget] = useState(account?.offbudget ?? false);
-  const [saving, setSaving] = useState(false);
-  const { error, handleError, setValidationError, dismissError } = useErrorHandler();
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [reopening, setReopening] = useState(false);
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const trimmed = name.trim();
+      const changes: Record<string, unknown> = {};
+      if (trimmed !== account!.name) changes.name = trimmed;
+      if (offbudget !== account!.offbudget) changes.offbudget = offbudget;
+      if (Object.keys(changes).length > 0) {
+        await updateAccount(id, changes);
+      }
+    },
+    onSuccess: () => router.back(),
+    meta: { inline: true },
+  });
 
   if (!account) {
     return (
@@ -39,24 +54,14 @@ export default function AccountSettingsScreen() {
 
   const hasChanges = name.trim() !== account.name || offbudget !== account.offbudget;
 
-  async function handleSave() {
+  function handleSave() {
     const trimmed = name.trim();
     if (!trimmed) {
-      setValidationError(t("settings.accountNameRequired"));
+      setNameError(t("settings.accountNameRequired"));
       return;
     }
-
-    setSaving(true);
-    await handleError(async () => {
-      const changes: Record<string, unknown> = {};
-      if (trimmed !== account!.name) changes.name = trimmed;
-      if (offbudget !== account!.offbudget) changes.offbudget = offbudget;
-      if (Object.keys(changes).length > 0) {
-        await updateAccount(id, changes);
-      }
-      router.back();
-    });
-    setSaving(false);
+    setNameError(null);
+    saveMutation.mutate();
   }
 
   function handleClose() {
@@ -67,11 +72,13 @@ export default function AccountSettingsScreen() {
         {
           text: t("settings.reopen"),
           onPress: async () => {
-            setSaving(true);
+            setReopening(true);
             try {
               await updateAccount(id, { closed: false });
+            } catch (e) {
+              reportError(e);
             } finally {
-              setSaving(false);
+              setReopening(false);
             }
           },
         },
@@ -106,12 +113,18 @@ export default function AccountSettingsScreen() {
         <Input
           placeholder={t("settings.accountNamePlaceholder")}
           value={name}
-          onChangeText={(t) => {
-            setName(t);
-            dismissError();
+          onChangeText={(text) => {
+            setName(text);
+            setNameError(null);
           }}
           returnKeyType="done"
+          error={!!nameError}
         />
+        {nameError && (
+          <Text variant="captionSm" color={theme.colors.errorText} style={styles.label}>
+            {nameError}
+          </Text>
+        )}
 
         {/* Off budget toggle */}
         <View style={styles.toggleRow}>
@@ -136,14 +149,14 @@ export default function AccountSettingsScreen() {
         </View>
 
         {/* Error */}
-        <ErrorBanner error={error} onDismiss={dismissError} />
+        <InlineError error={saveMutation.error} />
 
         {/* Save button */}
         <Button
           title={tc("save")}
           onPress={handleSave}
           size="lg"
-          loading={saving}
+          loading={saveMutation.isPending}
           disabled={!hasChanges || !name.trim()}
           style={styles.saveButton}
         />
@@ -154,7 +167,7 @@ export default function AccountSettingsScreen() {
           buttonStyle="borderless"
           icon={account.closed ? "arrowUndoOutline" : "trashOutline"}
           danger={!account.closed}
-          disabled={saving}
+          disabled={saveMutation.isPending || reopening}
           style={styles.closeButton}
         />
       </ScrollView>

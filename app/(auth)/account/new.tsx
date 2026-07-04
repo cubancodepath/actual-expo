@@ -2,12 +2,12 @@ import { useState } from "react";
 import { Platform, ScrollView, Switch, View } from "react-native";
 import { Input } from "@/design-system/atoms/Input";
 import { Stack, useRouter } from "expo-router";
+import { useMutation } from "@tanstack/react-query";
 import { createAccount } from "@/core/domain/accounts";
 import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvider";
 import { Text } from "@/design-system/atoms/Text";
 import { Button } from "@/design-system/atoms/Button";
-import { ErrorBanner } from "@/design-system/molecules/ErrorBanner";
-import { useErrorHandler } from "@/hooks/useErrorHandler";
+import { InlineError } from "@/components/InlineError";
 import { useTranslation } from "react-i18next";
 import type { Theme } from "@/design-system/tokens";
 
@@ -28,23 +28,25 @@ export default function NewAccountScreen() {
   const [name, setName] = useState("");
   const [balanceStr, setBalanceStr] = useState("");
   const [offbudget, setOffbudget] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const { error, handleError, setValidationError, dismissError } = useErrorHandler();
+  const [nameError, setNameError] = useState<string | null>(null);
 
-  async function handleCreate() {
+  const createMutation = useMutation({
+    mutationFn: async () => {
+      const startingBalance = parseToCents(balanceStr);
+      await createAccount({ name: name.trim(), offbudget, closed: false }, startingBalance);
+    },
+    onSuccess: () => router.back(),
+    meta: { inline: true },
+  });
+
+  function handleCreate() {
     const trimmed = name.trim();
     if (!trimmed) {
-      setValidationError(t("newAccount.accountNameRequired"));
+      setNameError(t("newAccount.accountNameRequired"));
       return;
     }
-
-    setLoading(true);
-    await handleError(async () => {
-      const startingBalance = parseToCents(balanceStr);
-      await createAccount({ name: trimmed, offbudget, closed: false }, startingBalance);
-      router.back();
-    });
-    setLoading(false);
+    setNameError(null);
+    createMutation.mutate();
   }
 
   return (
@@ -65,11 +67,17 @@ export default function NewAccountScreen() {
           value={name}
           onChangeText={(text) => {
             setName(text);
-            dismissError();
+            setNameError(null);
           }}
           autoFocus
           returnKeyType="next"
+          error={!!nameError}
         />
+        {nameError && (
+          <Text variant="captionSm" color={theme.colors.errorText} style={styles.hint}>
+            {nameError}
+          </Text>
+        )}
 
         {/* Starting balance */}
         <Text variant="caption" color={theme.colors.textSecondary} style={styles.label}>
@@ -108,14 +116,14 @@ export default function NewAccountScreen() {
         </View>
 
         {/* Error */}
-        <ErrorBanner error={error} onDismiss={dismissError} />
+        <InlineError error={createMutation.error} />
 
         {/* Create button */}
         <Button
           title={t("newAccount.createAccount")}
           onPress={handleCreate}
           size="lg"
-          loading={loading}
+          loading={createMutation.isPending}
           disabled={!name.trim()}
           style={styles.createButton}
         />

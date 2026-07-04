@@ -12,6 +12,7 @@ import { useSyncStore } from "@/stores/syncStore";
 import { resetSyncState, clearSwitchingFlag, loadClock, repairSync, fullSync } from "@/core/sync";
 import { clearLocalData } from "@/core/db";
 import { closeBudget } from "@/services/budgetfiles";
+import { reportError } from "@/core/errors";
 import type { Theme } from "@/design-system/tokens";
 
 const ICON_SIZE = 20;
@@ -145,7 +146,8 @@ export default function SettingsScreen() {
             await repairSync();
             await fullSync({ force: true });
           } catch (e) {
-            Alert.alert(tc("error"), e instanceof Error ? e.message : String(e));
+            const normalized = reportError(e, { inlineHandled: true });
+            Alert.alert(tc("error"), (tc as any)(normalized.messageKey, normalized.messageParams));
           } finally {
             setRepairing(false);
           }

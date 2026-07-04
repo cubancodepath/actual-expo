@@ -9,12 +9,12 @@ import {
   Text,
   Card,
   SectionHeader,
-  ErrorBanner,
   EmptyState,
   BudgetFileRow,
   BudgetOpeningOverlay,
   GlassButton,
 } from "@/design-system";
+import { InlineError } from "@/components/InlineError";
 import { useBudgetFiles, fileKey } from "@/features/settings/hooks/useBudgetFiles";
 import type { ReconciledBudgetFile } from "@/services/budgetfiles";
 import type { Theme } from "@/design-system/tokens";
@@ -35,7 +35,7 @@ export default function ChangeBudgetScreen() {
     remoteFiles,
     loading,
     refreshing,
-    error,
+    listError,
     selecting,
     selectFile,
     retry,
@@ -95,7 +95,7 @@ export default function ChangeBudgetScreen() {
         }
       >
         <View style={{ marginTop: spacing.md }}>
-          <ErrorBanner error={error} onDismiss={dismissError} />
+          <InlineError error={listError} onDismiss={dismissError} />
         </View>
 
         {loading ? (

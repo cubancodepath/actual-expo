@@ -13,13 +13,13 @@ import {
   Card,
   SectionHeader,
   Banner,
-  ErrorBanner,
   EmptyState,
   BudgetFileRow,
   BudgetOpeningOverlay,
   SwipeableRow,
   GlassButton,
 } from "@/design-system";
+import { InlineError } from "@/components/InlineError";
 import { useBudgetFiles, fileKey } from "@/features/settings/hooks/useBudgetFiles";
 import { useFileActionSheet } from "@/features/settings/hooks/useFileActionSheet";
 import type { ReconciledBudgetFile } from "@/services/budgetfiles";
@@ -38,7 +38,7 @@ export default function FilesScreen() {
     remoteFiles,
     loading,
     refreshing,
-    error,
+    listError,
     selecting,
     actionInProgress,
     selectFile,
@@ -152,7 +152,7 @@ export default function FilesScreen() {
         }
       >
         <View style={{ marginTop: spacing.md }}>
-          <ErrorBanner error={error} onDismiss={dismissError} />
+          <InlineError error={listError} onDismiss={dismissError} />
         </View>
 
         {loading ? (

@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { ActionSheetIOS, Alert, Platform, ScrollView, Switch, TextInput, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -10,10 +9,10 @@ import {
   ListItem,
   SectionHeader,
   Button,
-  ErrorBanner,
   promptToEnableEncryption,
 } from "@/design-system";
-import { useErrorHandler } from "@/hooks/useErrorHandler";
+import { useMutation } from "@tanstack/react-query";
+import { InlineError } from "@/components/InlineError";
 import { useSyncedPrefs, useFeatureFlag } from "@/hooks/useSyncedPrefs";
 import { usePrefsStore } from "@/stores/prefsStore";
 import {
@@ -198,52 +197,44 @@ export default function BudgetSettingsScreen() {
   const hasServer = !!serverUrl && !!token;
   const showEnableSync = hasServer && (isLocalOnly || (!fileId && !groupId));
   const showStopSync = hasServer && !isLocalOnly && !!fileId && !!groupId;
-  const [syncAction, setSyncAction] = useState(false);
-  const { error, handleError, dismissError } = useErrorHandler();
+  const enableSyncMutation = useMutation({
+    mutationFn: async () => {
+      const { cloudFileId, groupId: newGroupId } = await uploadBudget(
+        serverUrl,
+        token,
+        activeBudgetId,
+      );
+      usePrefsStore.getState().setPrefs({
+        fileId: cloudFileId,
+        groupId: newGroupId,
+        isLocalOnly: false,
+      });
+    },
+    meta: { inline: true },
+  });
+
+  const stopSyncingMutation = useMutation({
+    mutationFn: async () => {
+      await convertToLocalOnly(activeBudgetId);
+      usePrefsStore.getState().setPrefs({ fileId: "", groupId: "", isLocalOnly: true });
+    },
+    meta: { inline: true },
+  });
+
+  const syncAction = enableSyncMutation.isPending || stopSyncingMutation.isPending;
+  const syncActionError = enableSyncMutation.error ?? stopSyncingMutation.error;
 
   function handleEnableCloudSync() {
     Alert.alert(t("enableCloudSync"), t("enableCloudSyncMessage"), [
       { text: tc("cancel"), style: "cancel" },
-      {
-        text: tc("confirm"),
-        onPress: async () => {
-          setSyncAction(true);
-          await handleError(async () => {
-            const { cloudFileId, groupId: newGroupId } = await uploadBudget(
-              serverUrl,
-              token,
-              activeBudgetId,
-            );
-            usePrefsStore.getState().setPrefs({
-              fileId: cloudFileId,
-              groupId: newGroupId,
-              isLocalOnly: false,
-            });
-          });
-          setSyncAction(false);
-        },
-      },
+      { text: tc("confirm"), onPress: () => enableSyncMutation.mutate() },
     ]);
   }
 
   function handleStopSyncing() {
     Alert.alert(t("stopSyncing"), t("stopSyncingMessage"), [
       { text: tc("cancel"), style: "cancel" },
-      {
-        text: tc("confirm"),
-        onPress: async () => {
-          setSyncAction(true);
-          await handleError(async () => {
-            await convertToLocalOnly(activeBudgetId);
-            usePrefsStore.getState().setPrefs({
-              fileId: "",
-              groupId: "",
-              isLocalOnly: true,
-            });
-          });
-          setSyncAction(false);
-        },
-      },
+      { text: tc("confirm"), onPress: () => stopSyncingMutation.mutate() },
     ]);
   }
 
@@ -315,7 +306,7 @@ export default function BudgetSettingsScreen() {
       contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xl }}
       contentInsetAdjustmentBehavior="automatic"
     >
-      <ErrorBanner error={error} onDismiss={dismissError} />
+      <InlineError error={syncActionError} />
 
       {/* Formatting */}
       <SectionHeader title={t("formatting")} style={{ marginTop: spacing.lg }} />

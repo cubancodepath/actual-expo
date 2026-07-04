@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Alert, Keyboard, Pressable, Switch, useColorScheme, View } from "react-native";
 import { useRouter } from "expo-router";
+import { useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import Animated, {
   useAnimatedScrollHandler,
@@ -33,8 +34,7 @@ import { AmountHeader } from "@/features/transactions/components/AmountHeader";
 import { HiddenAmountInput } from "@/features/transactions/components/HiddenAmountInput";
 import { useAmountInput } from "@/features/transactions/hooks/useAmountInput";
 import { ScheduleStatusBadge } from "@/design-system/atoms/ScheduleStatusBadge";
-import { ErrorBanner } from "@/design-system/molecules/ErrorBanner";
-import { useErrorHandler } from "@/hooks/useErrorHandler";
+import { InlineError } from "@/components/InlineError";
 import type { TransactionType } from "@/features/transactions/components/TypeToggle";
 import { DetailRow } from "@/features/transactions/components/DetailRow";
 import type {
@@ -68,8 +68,6 @@ export function ScheduleDetailScreen({ id }: ScheduleDetailScreenProps) {
 
   const [schedule, setSchedule] = useState<Schedule | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const { error, handleError, dismissError } = useErrorHandler();
 
   // Amount input hook
   const amountInput = useAmountInput(0);
@@ -250,19 +248,14 @@ export function ScheduleDetailScreen({ id }: ScheduleDetailScreenProps) {
     marginHorizontal: spacing.lg,
   };
 
-  async function handleSave() {
-    if (!schedule || !acctId) return;
-
-    Keyboard.dismiss();
-    setSaving(true);
-
-    await handleError(async () => {
+  const saveMutation = useMutation({
+    mutationFn: async () => {
       const conditions: RuleCondition[] = [];
 
       if (payeeId) {
         conditions.push({ field: "payee", op: "is", value: payeeId });
       }
-      conditions.push({ field: "account", op: "is", value: acctId });
+      conditions.push({ field: "account", op: "is", value: acctId! });
 
       const signedAmount =
         type === "expense" ? -Math.abs(amountInput.cents) : Math.abs(amountInput.cents);
@@ -281,7 +274,7 @@ export function ScheduleDetailScreen({ id }: ScheduleDetailScreenProps) {
 
       await updateSchedule({
         schedule: {
-          id: schedule.id,
+          id: schedule!.id,
           name: name.trim() || null,
           posts_transaction: postsTransaction,
         },
@@ -289,9 +282,15 @@ export function ScheduleDetailScreen({ id }: ScheduleDetailScreenProps) {
         actions,
         resetNextDate: recurrenceChanged,
       });
-      router.dismiss();
-    });
-    setSaving(false);
+    },
+    onSuccess: () => router.dismiss(),
+    meta: { inline: true },
+  });
+
+  function handleSave() {
+    if (!schedule || !acctId) return;
+    Keyboard.dismiss();
+    saveMutation.mutate();
   }
 
   function handleSkip() {
@@ -498,7 +497,7 @@ export function ScheduleDetailScreen({ id }: ScheduleDetailScreenProps) {
 
         {/* ── Error banner ── */}
         <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.md }}>
-          <ErrorBanner error={error} onDismiss={dismissError} />
+          <InlineError error={saveMutation.error} />
         </View>
 
         {/* ── Buttons ── */}
@@ -507,8 +506,8 @@ export function ScheduleDetailScreen({ id }: ScheduleDetailScreenProps) {
             title={t("saveChanges")}
             onPress={handleSave}
             size="lg"
-            loading={saving}
-            disabled={!hasChanges || saving}
+            loading={saveMutation.isPending}
+            disabled={!hasChanges || saveMutation.isPending}
           />
 
           {isRecurring && (

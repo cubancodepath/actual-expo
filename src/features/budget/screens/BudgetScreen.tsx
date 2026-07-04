@@ -42,6 +42,7 @@ import { useUndoStore } from "@/stores/undoStore";
 import { computeProgressBar } from "@/core/domain/goals/progressBar";
 import { ProgressBar } from "@/design-system/atoms/ProgressBar";
 import { inferGoalFromDef } from "@/core/domain/goals";
+import { reportError } from "@/core/errors";
 import { getGoalProgressLabel } from "@/core/domain/goals/progress";
 import type { BudgetCategoryData, BudgetGroupData } from "@/core/domain/budgets/types";
 
@@ -549,7 +550,8 @@ export function BudgetScreen() {
       }
       await persistGoalAllocations(month, result.allocations);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch {
+    } catch (e) {
+      reportError(e, { inlineHandled: true });
       Alert.alert(t("errorTitle"), t("autoAssignError"));
     }
   }

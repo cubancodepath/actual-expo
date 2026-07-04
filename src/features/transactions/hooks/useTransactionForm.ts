@@ -15,7 +15,6 @@ import { extractTagsFromNotes } from "@/core/domain/tags";
 import { suggestCategoryForPayee, applyRulesToForm } from "@/core/domain/rules/apply";
 import { findPayeeByName } from "@/core/domain/payees";
 import { todayInt, intToStr, strToInt } from "@/lib/date";
-import { useErrorHandler } from "@/hooks/useErrorHandler";
 import type { TransactionType } from "@/features/transactions/components/TypeToggle";
 
 interface RouteParams {
@@ -80,7 +79,8 @@ export function useTransactionForm(params: RouteParams, amountInput: AmountInput
   const [cleared, setCleared] = useState(false);
   const [reconciled, setReconciled] = useState(false);
   const [recurConfig, setRecurConfig] = useState<RecurConfig | null>(null);
-  const { error, setValidationError, dismissError } = useErrorHandler();
+  const [formError, setFormError] = useState<string | null>(null);
+  const clearFormError = useCallback(() => setFormError(null), []);
   const isInitialMount = useRef(true);
   const userOverrides = useRef<Set<string>>(new Set());
 
@@ -146,7 +146,7 @@ export function useTransactionForm(params: RouteParams, amountInput: AmountInput
         setCleared(false);
         setReconciled(false);
         setRecurConfig(null);
-        dismissError();
+        clearFormError();
       }
     }, [transactionId]),
   );
@@ -290,11 +290,11 @@ export function useTransactionForm(params: RouteParams, amountInput: AmountInput
 
   function handleSave() {
     if (cents === 0) {
-      setValidationError(t("enterAmount"));
+      setFormError(t("enterAmount"));
       return;
     }
     if (!isEdit && !acctId) {
-      setValidationError(t("selectAccount"));
+      setFormError(t("selectAccount"));
       return;
     }
 
@@ -365,8 +365,8 @@ export function useTransactionForm(params: RouteParams, amountInput: AmountInput
     handleSave,
     handleDelete,
     // Error
-    error,
-    dismissError,
+    formError,
+    clearFormError,
     // Tags helper
     extractTagsFromNotes,
     // Schedule helper

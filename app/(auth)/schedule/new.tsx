@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Alert, Keyboard, Pressable, Switch, useColorScheme, View } from "react-native";
 import { useRouter } from "expo-router";
+import { useMutation } from "@tanstack/react-query";
 import Animated, {
   useAnimatedScrollHandler,
   useAnimatedStyle,
@@ -21,8 +22,7 @@ import { GlassButton } from "@/design-system/atoms/GlassButton";
 import { AmountHeader } from "@/features/transactions/components/AmountHeader";
 import { HiddenAmountInput } from "@/features/transactions/components/HiddenAmountInput";
 import { useAmountInput } from "@/features/transactions/hooks/useAmountInput";
-import { ErrorBanner } from "@/design-system/molecules/ErrorBanner";
-import { useErrorHandler } from "@/hooks/useErrorHandler";
+import { InlineError } from "@/components/InlineError";
 import type { TransactionType } from "@/features/transactions/components/TypeToggle";
 import { DetailRow } from "@/features/transactions/components/DetailRow";
 import type { RecurConfig, RuleCondition, RuleAction } from "@/core/domain/schedules/types";
@@ -59,9 +59,39 @@ export default function NewScheduleScreen() {
     frequency: "monthly",
     start: todayStr(),
   });
-  const [saving, setSaving] = useState(false);
-  const { error, handleError, setValidationError, dismissError } = useErrorHandler();
+  const [validationMessage, setValidationMessage] = useState<string | null>(null);
   const scrollY = useSharedValue(0);
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const conditions: RuleCondition[] = [];
+
+      if (payeeId) {
+        conditions.push({ field: "payee", op: "is", value: payeeId });
+      }
+      conditions.push({ field: "account", op: "is", value: acctId! });
+
+      const signedAmount =
+        type === "expense" ? -Math.abs(amountInput.cents) : Math.abs(amountInput.cents);
+      conditions.push({ field: "amount", op: "is", value: signedAmount });
+      conditions.push({ field: "date", op: "isapprox", value: recurConfig });
+
+      const actions: RuleAction[] = categoryId
+        ? [{ op: "set", field: "category", value: categoryId }]
+        : [];
+
+      await createSchedule({
+        schedule: {
+          name: name.trim() || null,
+          posts_transaction: postsTransaction,
+        },
+        conditions,
+        actions,
+      });
+    },
+    onSuccess: () => router.dismiss(),
+    meta: { inline: true },
+  });
 
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
@@ -144,48 +174,19 @@ export default function NewScheduleScreen() {
     marginHorizontal: spacing.lg,
   };
 
-  async function handleSave() {
+  function handleSave() {
     if (!acctId) {
-      setValidationError("Please select an account.");
+      setValidationMessage("Please select an account.");
       return;
     }
     if (amountInput.cents === 0) {
-      setValidationError("Enter an amount.");
+      setValidationMessage("Enter an amount.");
       return;
     }
 
+    setValidationMessage(null);
     Keyboard.dismiss();
-    setSaving(true);
-
-    await handleError(async () => {
-      const conditions: RuleCondition[] = [];
-
-      if (payeeId) {
-        conditions.push({ field: "payee", op: "is", value: payeeId });
-      }
-      conditions.push({ field: "account", op: "is", value: acctId });
-
-      const signedAmount =
-        type === "expense" ? -Math.abs(amountInput.cents) : Math.abs(amountInput.cents);
-      conditions.push({ field: "amount", op: "is", value: signedAmount });
-      conditions.push({ field: "date", op: "isapprox", value: recurConfig });
-
-      const actions: RuleAction[] = categoryId
-        ? [{ op: "set", field: "category", value: categoryId }]
-        : [];
-
-      await createSchedule({
-        schedule: {
-          name: name.trim() || null,
-          posts_transaction: postsTransaction,
-        },
-        conditions,
-        actions,
-      });
-
-      router.dismiss();
-    });
-    setSaving(false);
+    saveMutation.mutate();
   }
 
   const canSave = acctId && amountInput.cents !== 0;
@@ -335,7 +336,12 @@ export default function NewScheduleScreen() {
 
         {/* ── Error banner ── */}
         <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.md }}>
-          <ErrorBanner error={error} onDismiss={dismissError} />
+          {validationMessage && (
+            <Text variant="captionSm" color={colors.errorText}>
+              {validationMessage}
+            </Text>
+          )}
+          <InlineError error={saveMutation.error} />
         </View>
 
         {/* ── Save button ── */}
@@ -344,8 +350,8 @@ export default function NewScheduleScreen() {
             title="Create Schedule"
             onPress={handleSave}
             size="lg"
-            loading={saving}
-            disabled={!canSave || saving}
+            loading={saveMutation.isPending}
+            disabled={!canSave || saveMutation.isPending}
           />
         </View>
       </Animated.ScrollView>

@@ -23,7 +23,8 @@ import {
   Typography,
   useThemeColor,
 } from "heroui-native";
-import { usePrefsStore } from "@/stores/prefsStore";
+import { useBudgetContextStore } from "@/stores/budgetContextStore";
+import { useUiPrefsStore } from "@/stores/uiPrefsStore";
 import { useLoginFlow } from "@/features/auth/hooks/useLoginFlow";
 import { normalizeError } from "@/core/errors";
 import { InlineError } from "@/components/InlineError";
@@ -73,7 +74,7 @@ export function LoginScreen() {
 
   function handleUseWithoutServer() {
     // Clear any stale budget state so the user doesn't auto-open an old budget
-    usePrefsStore.getState().setPrefs({
+    useBudgetContextStore.getState().setBudgetContext({
       activeBudgetId: "",
       fileId: "",
       groupId: "",
@@ -289,7 +290,7 @@ export function LoginScreen() {
             {__DEV__ && (
               <Pressable
                 onPress={() => {
-                  usePrefsStore.getState().setPrefs({ hasSeenOnboarding: false });
+                  useUiPrefsStore.getState().resetOnboarding();
                 }}
                 className="mt-8 self-center"
               >

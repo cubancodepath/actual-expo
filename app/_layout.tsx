@@ -1,7 +1,7 @@
 import "../global.css";
 import "@/i18n/config";
 import * as Sentry from "@sentry/react-native";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { AppState, Settings, useColorScheme } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -23,8 +23,13 @@ import {
 import i18n from "@/i18n/config";
 import { HeroUINativeProvider } from "heroui-native";
 import { ThemeProvider } from "@/design-system/providers/ThemeProvider";
-import { usePrefsStore } from "@/stores/prefsStore";
+import { useSessionStore } from "@/stores/sessionStore";
+import { useBudgetContextStore } from "@/stores/budgetContextStore";
+import { useUiPrefsStore } from "@/stores/uiPrefsStore";
+import { useIsConfigured, getIsConfigured } from "@/stores/session.selectors";
+import { migrateLegacyPrefs } from "@/stores/migratePrefs";
 import { listen } from "@/core/sync/syncEvents";
+import { emitErrorEvent } from "@/core/errors/ErrorChannel";
 import { fullSync, isSwitchingBudget, setSyncingMode } from "@/core/sync";
 import { ensureBudgetsDir, budgetExists } from "@/services/budgetMetadata";
 import { openBudget } from "@/services/budgetfiles";
@@ -32,6 +37,7 @@ import { updateAppBadge } from "@/lib/badge";
 import { syncShortcutCache } from "@/lib/syncShortcutCache";
 import { UndoToast } from "@/design-system";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ErrorChannelConsumer } from "@/components/ErrorChannelConsumer";
 import { ErrorPresenter } from "@/components/ErrorPresenter";
 import { useShakeUndo } from "@/hooks/useShakeUndo";
 import { loadAllPersistedKeys } from "@/services/encryptionService";
@@ -63,12 +69,12 @@ installGlobalHandlers();
 function RootLayout() {
   const ref = useNavigationContainerRef();
   const systemScheme = useColorScheme();
-  const themeMode = usePrefsStore((s) => s.themeMode);
+  const themeMode = useUiPrefsStore((s) => s.themeMode);
   const colorScheme = themeMode === "system" ? systemScheme : themeMode;
   const router = useRouter();
-  const hasToken = usePrefsStore((s) => s.hasToken);
-  const isConfigured = usePrefsStore((s) => s.isConfigured);
-  const isLocalOnly = usePrefsStore((s) => s.isLocalOnly);
+  const hasToken = useSessionStore((s) => s.hasToken);
+  const isConfigured = useIsConfigured();
+  const isLocalOnly = useBudgetContextStore((s) => s.isLocalOnly);
   const [ready, setReady] = useState(false);
   const [fontsLoaded] = useFonts({ Inter_400Regular, Inter_500Medium, Inter_600SemiBold });
   const handledTimestamp = useRef(0);
@@ -82,14 +88,18 @@ function RootLayout() {
   // Bootstrap: load prefs + open last budget if available
   useEffect(() => {
     async function bootstrap() {
+      // One-time migration from the legacy monolithic prefs blob → new stores.
+      // Runs before loadToken so serverUrl/activeBudgetId are seeded first.
+      migrateLegacyPrefs();
+
       // MMKV config hydrates synchronously via persist middleware.
       // Token needs an explicit async load from SecureStore.
-      await usePrefsStore.getState().loadToken();
+      await useSessionStore.getState().loadToken();
       await ensureBudgetsDir();
       await loadAllPersistedKeys();
 
       // If a budget was previously open, reopen it
-      const { activeBudgetId } = usePrefsStore.getState();
+      const { activeBudgetId } = useBudgetContextStore.getState();
       if (activeBudgetId && (await budgetExists(activeBudgetId))) {
         await openBudget(activeBudgetId);
       }
@@ -97,7 +107,9 @@ function RootLayout() {
       syncShortcutCache();
     }
     bootstrap()
-      .catch(console.error)
+      .catch((error) => {
+        emitErrorEvent(error, { source: "STORAGE", context: { operation: "bootstrap" } });
+      })
       .finally(() => setReady(true));
   }, []);
 
@@ -215,8 +227,7 @@ function RootLayout() {
 
     const startSyncPolling = () => {
       if (syncInterval) clearInterval(syncInterval);
-      const p = usePrefsStore.getState();
-      if (p.isConfigured && !p.isLocalOnly) {
+      if (getIsConfigured() && !useBudgetContextStore.getState().isLocalOnly) {
         syncInterval = setInterval(() => {
           if (!isSwitchingBudget()) fullSync().catch(console.warn);
         }, 60_000);
@@ -236,8 +247,11 @@ function RootLayout() {
         // Sync immediately on foreground — also clears any "offline" mode
         // left over from a prior network failure, so returning to the app
         // is always a real retry, not silently skipped.
-        const p = usePrefsStore.getState();
-        if (p.isConfigured && !p.isLocalOnly && !isSwitchingBudget()) {
+        if (
+          getIsConfigured() &&
+          !useBudgetContextStore.getState().isLocalOnly &&
+          !isSwitchingBudget()
+        ) {
           setSyncingMode("enabled");
           fullSync().catch(console.warn);
         }
@@ -284,6 +298,7 @@ function RootLayout() {
                     </Stack.Protected>
                   </Stack>
                   <UndoToast />
+                  <ErrorChannelConsumer />
                   <ErrorPresenter />
                 </HeroUINativeProvider>
               </ThemeProvider>

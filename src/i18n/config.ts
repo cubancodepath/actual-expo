@@ -7,12 +7,26 @@ import es from "../locales/es";
 
 const SUPPORTED_LANGUAGES = ["en", "es"] as const;
 
-// Read stored language preference synchronously from MMKV (same store as prefsStore)
+// Read stored language preference synchronously from MMKV. Runs at import time,
+// before the store migration in bootstrap, so it checks the new "ui-prefs" key
+// first and falls back to the legacy "actual-prefs" blob for a not-yet-migrated
+// upgrade.
 const mmkv = createMMKV({ id: "actual-prefs" });
-const stored = mmkv.getString("actual-prefs");
-const prefs = stored ? JSON.parse(stored) : {};
+function readStoredLanguage(): string {
+  for (const key of ["ui-prefs", "actual-prefs"]) {
+    const raw = mmkv.getString(key);
+    if (!raw) continue;
+    try {
+      const lang = JSON.parse(raw)?.state?.language;
+      if (lang) return lang;
+    } catch {
+      // ignore malformed blob, try the next key
+    }
+  }
+  return "system";
+}
 const deviceLocale = getLocales()[0]?.languageCode ?? "en";
-const langPref: string = prefs.state?.language ?? "system";
+const langPref: string = readStoredLanguage();
 const resolved = langPref === "system" ? deviceLocale : langPref;
 const lng = (SUPPORTED_LANGUAGES as readonly string[]).includes(resolved) ? resolved : "en";
 

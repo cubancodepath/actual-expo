@@ -1,5 +1,5 @@
 import { TimeoutError } from "ky";
-import { http } from "@/lib/http";
+import { http } from "@/shared/infra/api/httpClient";
 import { ActualError } from "@/core/errors";
 
 type ServerReasonBody = { status?: string; reason?: string; description?: string };

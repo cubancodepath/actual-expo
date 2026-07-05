@@ -3,8 +3,10 @@ import { ActivityIndicator, Alert, RefreshControl, ScrollView, View } from "reac
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
-import { usePrefsStore } from "@/stores/prefsStore";
-import { getServerInfo } from "@/services/serverInfo";
+import { useSessionStore } from "@/stores/sessionStore";
+import { useServerCapabilitiesStore } from "@/stores/serverCapabilitiesStore";
+import { logout } from "@/services/authService";
+import { getServerInfo } from "@/shared/infra/api/server-info/serverInfo.api";
 import { resetAllStores } from "@/stores/resetStores";
 import { resetSyncState, clearSwitchingFlag } from "@/core/sync";
 import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvider";
@@ -30,7 +32,6 @@ export default function FilesScreen() {
   const { colors, spacing } = useTheme();
   const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
-  const { clearAll } = usePrefsStore();
   const { t } = useTranslation("auth");
   const { t: tc } = useTranslation("common");
   const {
@@ -63,10 +64,10 @@ export default function FilesScreen() {
   });
 
   useEffect(() => {
-    const serverUrl = usePrefsStore.getState().serverUrl;
+    const serverUrl = useSessionStore.getState().serverUrl;
     if (serverUrl) {
       getServerInfo(serverUrl).then((info) => {
-        usePrefsStore.getState().setServerVersion(info.version);
+        useServerCapabilitiesStore.getState().setServerVersion(info.version);
       });
     }
   }, []);
@@ -115,7 +116,7 @@ export default function FilesScreen() {
         onPress: async () => {
           resetSyncState();
           resetAllStores();
-          await clearAll();
+          await logout();
           clearSwitchingFlag();
           router.replace("/");
         },

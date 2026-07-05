@@ -2,7 +2,7 @@ import { router } from "expo-router";
 import * as Sentry from "@sentry/react-native";
 import { reportError, setErrorSink, type ReportedError } from "@/core/errors/report";
 import { useErrorStore } from "@/stores/errorStore";
-import { usePrefsStore } from "@/stores/prefsStore";
+import { logout } from "@/services/authService";
 
 /**
  * Wires reportError()'s output to real side effects: Sentry breadcrumbs/
@@ -28,11 +28,11 @@ export function installErrorPipeline(): void {
     }
 
     if (action === "redirect-login") {
-      usePrefsStore.getState().clearAll();
+      void logout();
       router.replace("/(public)/");
     }
     if (action === "logout") {
-      usePrefsStore.getState().clearAll();
+      void logout();
     }
 
     if (display === "toast" || display === "inline" || display === "dialog") {

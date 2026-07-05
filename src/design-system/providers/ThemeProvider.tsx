@@ -1,7 +1,7 @@
 import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { useColorScheme, StyleSheet } from "react-native";
 import { lightTheme, darkTheme, type Theme } from "../tokens";
-import { usePrefsStore } from "@/stores/prefsStore";
+import { useUiPrefsStore } from "@/stores/uiPrefsStore";
 
 // ── Context ───────────────────────────────────────────────────────────────────
 
@@ -11,7 +11,7 @@ const ThemeContext = createContext<Theme>(lightTheme);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const systemScheme = useColorScheme();
-  const themeMode = usePrefsStore((s) => s.themeMode);
+  const themeMode = useUiPrefsStore((s) => s.themeMode);
   const resolvedScheme = themeMode === "system" ? systemScheme : themeMode;
   const theme = resolvedScheme === "dark" ? darkTheme : lightTheme;
 

@@ -3,15 +3,9 @@ import { useRouter } from "expo-router";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import { useTranslation } from "react-i18next";
-import {
-  getBootstrapInfo,
-  login,
-  initiateOpenIdLogin,
-  type LoginMethod,
-} from "@/services/authService";
-import { getServerInfo } from "@/services/serverInfo";
-import { usePrefsStore } from "@/stores/prefsStore";
-import { reportError } from "@/core/errors";
+import { getBootstrapInfo, type LoginMethod } from "@/shared/infra/api/bootstrap/bootstrap.api";
+import { createOpenIdLoginUrl, loginWithPassword } from "@/shared/infra/api/auth/auth.api";
+import { finalizeAuthenticatedSession } from "@/services/authService";
 
 export type LoginStep = "idle" | "probing" | LoginMethod;
 
@@ -64,27 +58,21 @@ export function useLoginFlow(): UseLoginFlowReturn {
     dismissError();
   }
 
-  // ── Shared success tail: persist token, cache server version, navigate ────
+  // ── Shared success tail: finalize the session (persistence lives in the
+  //    authService use-case), then navigate. ────────────────────────────────
   async function completeLogin(url: string, token: string) {
-    usePrefsStore.getState().setPrefs({ serverUrl: url });
-    await usePrefsStore.getState().saveToken(token);
-    getServerInfo(url).then((info) => {
-      usePrefsStore.getState().setServerVersion(info.version);
-    });
+    await finalizeAuthenticatedSession({ serverUrl: url, token });
     router.replace("/(files)/files");
   }
 
-  /**
-   * Reports the error to the pipeline (Sentry/breadcrumbs) but keeps display
-   * local to this screen — except network failures, which stay silent here
-   * (matches network/offline's policy; probing quietly resets instead of
-   * showing a banner).
-   */
   function handleLoginError(e: unknown) {
-    const normalized = reportError(e, { inlineHandled: true });
-    if (normalized.code !== "network/offline") {
+    if (!hasErrorCode(e, "network/offline")) {
       setError(e);
     }
+  }
+
+  function hasErrorCode(e: unknown, code: string): boolean {
+    return typeof e === "object" && e !== null && "code" in e && e.code === code;
   }
 
   // ── Step 1: Probe server ──────────────────────────────────────────────────
@@ -98,7 +86,6 @@ export function useLoginFlow(): UseLoginFlowReturn {
     setStep("probing");
     dismissError();
     try {
-      // getBootstrapInfo retries with backoff internally (see authService)
       const info = await getBootstrapInfo(url);
       urlRef.current = url;
       if (!info.bootstrapped) {
@@ -118,7 +105,7 @@ export function useLoginFlow(): UseLoginFlowReturn {
     setLoading(true);
     dismissError();
     try {
-      const token = await login(urlRef.current, password.trim());
+      const token = await loginWithPassword(urlRef.current, password.trim());
       await completeLogin(urlRef.current, token);
     } catch (e) {
       handleLoginError(e);
@@ -137,7 +124,7 @@ export function useLoginFlow(): UseLoginFlowReturn {
       const returnUrl = `${appScheme}://${serverHostname}`;
       const callbackUrl = `${returnUrl}/openid-cb`;
 
-      const authUrl = await initiateOpenIdLogin(serverUrlValue, returnUrl);
+      const authUrl = await createOpenIdLoginUrl(serverUrlValue, returnUrl);
       const result = await WebBrowser.openAuthSessionAsync(authUrl, callbackUrl);
 
       if (result.type !== "success") {

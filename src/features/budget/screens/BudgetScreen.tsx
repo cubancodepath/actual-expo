@@ -58,7 +58,8 @@ import { useUncategorizedCount } from "@/hooks/useUncategorizedCount";
 import { Text } from "@/design-system/atoms/Text";
 import { SText, SAmount, SPill } from "@/design-system/swift-ui";
 import { SSectionHeader } from "@/design-system/swift-ui";
-import { usePrefsStore } from "@/stores/prefsStore";
+import { useUiPrefsStore } from "@/stores/uiPrefsStore";
+import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { BudgetListSkeleton } from "@/features/budget/components/BudgetListSkeleton";
 
@@ -293,9 +294,9 @@ export function BudgetScreen() {
   const ssVersion = useSpreadsheetVersion();
   const { refreshControlProps } = useRefreshControl();
   const colorScheme = useColorScheme();
-  const { showProgressBars, toggleProgressBars } = usePrefsStore();
+  const { showProgressBars, toggleProgressBars } = useUiPrefsStore();
   const { privacyMode, toggle: togglePrivacy } = usePrivacyStore();
-  const isLocalOnly = usePrefsStore((s) => s.isLocalOnly);
+  const isLocalOnly = useBudgetContextStore((s) => s.isLocalOnly);
   const goalsEnabled = useFeatureFlag("goalTemplatesEnabled");
   const uncategorizedCount = useUncategorizedCount();
 

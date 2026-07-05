@@ -1,7 +1,9 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { ActualError, reportError } from "@/core/errors";
-import { usePrefsStore } from "@/stores/prefsStore";
-import { listFiles } from "@/services/authService";
+import { useSessionStore } from "@/stores/sessionStore";
+import { useBudgetContextStore } from "@/stores/budgetContextStore";
+import { logout } from "@/services/authService";
+import { listRemoteBudgetFiles } from "@/shared/infra/api/budgetFiles.api";
 import { listLocalBudgets } from "@/services/budgetMetadata";
 import {
   type ReconciledBudgetFile,
@@ -58,7 +60,7 @@ export function fileKey(file: ReconciledBudgetFile): string {
 }
 
 export function useBudgetFiles(): UseBudgetFilesReturn {
-  const { serverUrl, token } = usePrefsStore();
+  const { serverUrl, token } = useSessionStore();
   const [files, setFiles] = useState<ReconciledBudgetFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -77,10 +79,10 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
   const fetchFiles = useCallback(async () => {
     const [local, remote] = await Promise.all([
       listLocalBudgets(),
-      listFiles(serverUrl, token).catch((e: unknown) => {
+      listRemoteBudgetFiles(serverUrl, token).catch((e: unknown) => {
         // Expired session → full logout; the root guard redirects to login
         if (e instanceof ActualError && e.code === "auth/token-expired") {
-          usePrefsStore.getState().clearAll();
+          void logout();
         }
         return [];
       }),
@@ -175,15 +177,15 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
       if (!file.localId) throw new Error("No local ID to upload");
       try {
         // Need the budget DB open to read the file
-        const { activeBudgetId } = usePrefsStore.getState();
+        const { activeBudgetId } = useBudgetContextStore.getState();
         const needsOpen = activeBudgetId !== file.localId;
         if (needsOpen) {
           await openBudget(file.localId);
         }
         const { cloudFileId, groupId } = await uploadBudget(serverUrl, token, file.localId);
         // Update prefs if this is the active budget
-        if (usePrefsStore.getState().activeBudgetId === file.localId) {
-          usePrefsStore.getState().setPrefs({
+        if (useBudgetContextStore.getState().activeBudgetId === file.localId) {
+          useBudgetContextStore.getState().setBudgetContext({
             fileId: cloudFileId,
             groupId,
             isLocalOnly: false,
@@ -208,8 +210,8 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
       try {
         await convertToLocalOnly(file.localId);
         // Update prefs if this is the active budget
-        if (usePrefsStore.getState().activeBudgetId === file.localId) {
-          usePrefsStore.getState().setPrefs({
+        if (useBudgetContextStore.getState().activeBudgetId === file.localId) {
+          useBudgetContextStore.getState().setBudgetContext({
             fileId: "",
             groupId: "",
             isLocalOnly: true,
@@ -233,15 +235,15 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
       const key = fileKey(file);
       setActionInProgress(key);
       try {
-        const { activeBudgetId } = usePrefsStore.getState();
+        const { activeBudgetId } = useBudgetContextStore.getState();
         const needsOpen = activeBudgetId !== file.localId;
         if (needsOpen) {
           await openBudget(file.localId);
         }
         const { cloudFileId, groupId } = await reRegisterBudget(serverUrl, token, file.localId);
         // Update prefs if this is the active budget
-        if (usePrefsStore.getState().activeBudgetId === file.localId) {
-          usePrefsStore.getState().setPrefs({
+        if (useBudgetContextStore.getState().activeBudgetId === file.localId) {
+          useBudgetContextStore.getState().setBudgetContext({
             fileId: cloudFileId,
             groupId,
             isLocalOnly: false,

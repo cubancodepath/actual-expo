@@ -21,7 +21,8 @@ import type { Query } from "@/core/queries/query";
 import { liveQuery, type LiveQueryInstance } from "@/core/queries/liveQuery";
 import { getQueryCache } from "@/core/queries/queryCache";
 import { pagedQuery, type PagedQueryInstance } from "@/core/queries/pagedQuery";
-import { usePrefsStore } from "@/stores/prefsStore";
+import { emitErrorEvent } from "@/core/errors/ErrorChannel";
+import { useBudgetContextStore } from "@/stores/budgetContextStore";
 
 // ---------------------------------------------------------------------------
 // useLiveQuery
@@ -39,7 +40,7 @@ export function useLiveQuery<T = Record<string, unknown>>(
   deps: DependencyList,
 ): UseLiveQueryResult<T> {
   // Recreate query when budget changes so liveQuery re-fetches from new DB
-  const activeBudgetId = usePrefsStore((s) => s.activeBudgetId);
+  const activeBudgetId = useBudgetContextStore((s) => s.activeBudgetId);
   const query = useMemo(makeQuery, [...deps, activeBudgetId]);
   // Check pre-loaded cache on first render (populated during bootstrap)
   const initialCache = useRef<T[] | null | undefined>(undefined);
@@ -73,6 +74,7 @@ export function useLiveQuery<T = Record<string, unknown>>(
       onError: (err) => {
         if (!isUnmounted.current) {
           setIsLoading(false);
+          emitErrorEvent(err, { source: "DATABASE", context: { operation: "liveQuery" } });
           if (__DEV__) console.warn("[useLiveQuery] error:", err);
         }
       },
@@ -111,7 +113,7 @@ export function usePagedLiveQuery<T = Record<string, unknown>>(
   deps: DependencyList,
   options?: UsePagedLiveQueryOptions,
 ): UsePagedLiveQueryResult<T> {
-  const activeBudgetId = usePrefsStore((s) => s.activeBudgetId);
+  const activeBudgetId = useBudgetContextStore((s) => s.activeBudgetId);
   const query = useMemo(makeQuery, [...deps, activeBudgetId]);
   const pageSize = options?.pageSize ?? 50;
 
@@ -147,6 +149,7 @@ export function usePagedLiveQuery<T = Record<string, unknown>>(
       onError: (err) => {
         if (!isUnmounted.current) {
           setIsLoading(false);
+          emitErrorEvent(err, { source: "DATABASE", context: { operation: "pagedLiveQuery" } });
           if (__DEV__) console.warn("[usePagedLiveQuery] error:", err);
         }
       },

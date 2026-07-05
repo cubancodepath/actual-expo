@@ -7,7 +7,8 @@ import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvid
 import { Text } from "../atoms/Text";
 import { Button } from "../atoms/Button";
 import * as encryptionService from "@/services/encryptionService";
-import { usePrefsStore } from "@/stores/prefsStore";
+import { useSessionStore } from "@/stores/sessionStore";
+import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import type { Theme } from "@/design-system/tokens";
 
 type PromptMode = "unlock" | "enable";
@@ -52,7 +53,7 @@ export function promptForPassword(cloudFileId: string): Promise<"success" | "can
  * Prompt to set a new encryption password for the current budget.
  */
 export function promptToEnableEncryption(): Promise<"success" | "cancelled"> {
-  const { fileId } = usePrefsStore.getState();
+  const { fileId } = useBudgetContextStore.getState();
   return usePromptStore.getState()._show("enable", fileId);
 }
 
@@ -89,7 +90,7 @@ export function EncryptionPasswordPrompt() {
     setError("");
     setLoading(true);
 
-    const { serverUrl, token } = usePrefsStore.getState();
+    const { serverUrl, token } = useSessionStore.getState();
     const result = await encryptionService.testKey({
       serverUrl,
       token,
@@ -125,7 +126,8 @@ export function EncryptionPasswordPrompt() {
     // Yield to let React render the loading state before heavy crypto work
     await new Promise((resolve) => setTimeout(resolve, 50));
 
-    const { serverUrl, token, activeBudgetId } = usePrefsStore.getState();
+    const { serverUrl, token } = useSessionStore.getState();
+    const { activeBudgetId } = useBudgetContextStore.getState();
     const result = await encryptionService.enableEncryption({
       serverUrl,
       token,
@@ -135,14 +137,14 @@ export function EncryptionPasswordPrompt() {
     });
 
     if ("success" in result) {
-      usePrefsStore.getState().setPrefs({
+      useBudgetContextStore.getState().setBudgetContext({
         encryptKeyId: undefined,
         groupId: result.groupId,
       });
       const { readMetadata } = await import("@/services/budgetMetadata");
       const meta = await readMetadata(activeBudgetId);
       if (meta?.encryptKeyId) {
-        usePrefsStore.getState().setPrefs({ encryptKeyId: meta.encryptKeyId });
+        useBudgetContextStore.getState().setBudgetContext({ encryptKeyId: meta.encryptKeyId });
       }
       _resolve?.("success");
       _hide();

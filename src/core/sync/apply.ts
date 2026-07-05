@@ -264,11 +264,11 @@ export const applyMessages = sequential(async function applyMessages(
   // in-memory clock to match what was just persisted.
   getClock().merkle = currentMerkle;
 
-  // Apply synced metadata prefs (e.g. budgetName) to the prefs store
+  // Apply synced metadata (e.g. budgetName) to the budget context store
   if (Object.keys(prefsToSet).length > 0) {
-    const { usePrefsStore } = await import("@/stores/prefsStore");
+    const { useBudgetContextStore } = await import("@/stores/budgetContextStore");
     if (typeof prefsToSet.budgetName === "string") {
-      usePrefsStore.getState().setPrefs({ budgetName: prefsToSet.budgetName });
+      useBudgetContextStore.getState().setBudgetContext({ budgetName: prefsToSet.budgetName });
     }
   }
 

@@ -1,5 +1,6 @@
 import type { SQLiteDatabase } from "expo-sqlite";
-import { usePrefsStore } from "@/stores/prefsStore";
+import { useBudgetContextStore } from "@/stores/budgetContextStore";
+import { useServerCapabilitiesStore } from "@/stores/serverCapabilitiesStore";
 
 // ---------------------------------------------------------------------------
 // Tables — matches the original Actual Budget schema (init.sql + all migrations)
@@ -423,7 +424,8 @@ export async function runSchema(db: SQLiteDatabase): Promise<void> {
   await applyColumnUpgrades(db);
 
   // Build migration list: base + conditional based on server support
-  const { serverFeatures, isLocalOnly } = usePrefsStore.getState();
+  const { serverFeatures } = useServerCapabilitiesStore.getState();
+  const { isLocalOnly } = useBudgetContextStore.getState();
   const migrations = [...BASE_MIGRATION_IDS];
 
   for (const [feature, ids] of Object.entries(CONDITIONAL_MIGRATIONS)) {

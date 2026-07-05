@@ -19,8 +19,10 @@ import {
   waitForSyncToSettle,
 } from "@/core/sync";
 import { resetAllStores } from "../stores/resetStores";
-import { usePrefsStore } from "@/stores/prefsStore";
-import type { BudgetFile } from "./authService";
+import { useSessionStore } from "@/stores/sessionStore";
+import { useBudgetContextStore } from "@/stores/budgetContextStore";
+import { logout } from "@/services/authService";
+import type { RemoteBudgetFile } from "@/shared/infra/api/budgetFiles.api";
 import {
   type BudgetMetadata,
   getBudgetDir,
@@ -32,7 +34,7 @@ import {
 } from "./budgetMetadata";
 import * as encryption from "@/core/encryption";
 import { loadKeyForBudget } from "./encryptionService";
-import { http } from "@/lib/http";
+import { http } from "@/shared/infra/api/httpClient";
 import { ActualError, type ErrorCode } from "@/core/errors";
 
 // ---------------------------------------------------------------------------
@@ -42,7 +44,7 @@ import { ActualError, type ErrorCode } from "@/core/errors";
 /** Throws auth/token-expired (and logs out) on 401/403, or `code` on any other non-2xx. */
 function checkResponse(res: Response, code: ErrorCode): void {
   if (res.status === 401 || res.status === 403) {
-    usePrefsStore.getState().clearAll();
+    void logout();
     throw new ActualError("auth/token-expired");
   }
   if (!res.ok) {
@@ -95,7 +97,7 @@ export type ReconciledBudgetFile = {
 
 export function reconcileFiles(
   local: BudgetMetadata[],
-  remote: BudgetFile[],
+  remote: RemoteBudgetFile[],
 ): ReconciledBudgetFile[] {
   const result: ReconciledBudgetFile[] = [];
   const matchedRemoteIds = new Set<string>();
@@ -285,8 +287,7 @@ export async function possiblyUpload(budgetId: string): Promise<void> {
   if (!meta?.cloudFileId || !meta?.groupId) return;
   if (!shouldReupload(meta.lastUploaded)) return;
 
-  const { usePrefsStore } = await import("@/stores/prefsStore");
-  const { serverUrl, token } = usePrefsStore.getState();
+  const { serverUrl, token } = useSessionStore.getState();
   if (!serverUrl || !token) return;
 
   await uploadBudget(serverUrl, token, budgetId);
@@ -303,7 +304,7 @@ export async function possiblyUpload(budgetId: string): Promise<void> {
 export async function downloadBudget(
   serverUrl: string,
   token: string,
-  file: BudgetFile,
+  file: RemoteBudgetFile,
 ): Promise<string> {
   // 1. Download file and file info in parallel
   const [res, infoRes] = await Promise.all([
@@ -485,8 +486,8 @@ export async function openBudget(budgetId: string): Promise<void> {
     await initSpreadsheet();
     lap("initSpreadsheet");
 
-    // 7. Set sync-related prefs (needed for fullSync)
-    usePrefsStore.getState().setPrefs({
+    // 7. Set sync-related budget context (needed for fullSync)
+    useBudgetContextStore.getState().setBudgetContext({
       fileId: meta?.cloudFileId ?? "",
       groupId: meta?.groupId ?? "",
       encryptKeyId: meta?.encryptKeyId,
@@ -502,7 +503,7 @@ export async function openBudget(budgetId: string): Promise<void> {
     }
 
     // 10. Activate UI — render with local data (upstream pattern: show before sync)
-    usePrefsStore.getState().setPrefs({
+    useBudgetContextStore.getState().setBudgetContext({
       activeBudgetId: budgetId,
       budgetName: meta?.budgetName ?? "Unnamed budget",
     });
@@ -538,7 +539,7 @@ export async function closeBudget(): Promise<void> {
   resetSyncState();
   resetAllStores();
   await closeDatabase();
-  usePrefsStore.getState().setPrefs({
+  useBudgetContextStore.getState().setBudgetContext({
     activeBudgetId: "",
     fileId: "",
     groupId: "",
@@ -564,7 +565,7 @@ export async function switchBudget(
 
   if (file.state === "remote" && file.cloudFileId) {
     // Need to download first
-    const budgetFile: BudgetFile = {
+    const budgetFile: RemoteBudgetFile = {
       fileId: file.cloudFileId,
       groupId: file.groupId ?? "",
       name: file.name,
@@ -586,7 +587,7 @@ export async function switchBudget(
 
 /** Delete a budget's local files. Closes the budget first if it's active. */
 export async function deleteBudget(budgetId: string): Promise<void> {
-  const prefs = usePrefsStore.getState();
+  const prefs = useBudgetContextStore.getState();
   if (prefs.activeBudgetId === budgetId) {
     await closeBudget();
   }

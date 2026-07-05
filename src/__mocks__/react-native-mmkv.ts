@@ -5,6 +5,7 @@ export class MMKV {
   }
   set() {}
   delete() {}
+  remove() {}
   contains() {
     return false;
   }

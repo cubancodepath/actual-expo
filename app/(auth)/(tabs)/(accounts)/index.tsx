@@ -36,7 +36,7 @@ import { EmptyState } from "@/design-system/molecules/EmptyState";
 import { AddTransactionButton } from "@/design-system/molecules/AddTransactionButton";
 import { useUndoStore } from "@/stores/undoStore";
 import { usePrivacyStore } from "@/stores/privacyStore";
-import { usePrefsStore } from "@/stores/prefsStore";
+import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import { useTranslation } from "react-i18next";
 import type { Account } from "@/core/domain/accounts/types";
 import {
@@ -115,7 +115,7 @@ export default function AccountsScreen() {
   const { t: tc } = useTranslation();
   const canUndo = useUndoStore((s) => s.canUndo);
   const { privacyMode, toggle: togglePrivacy } = usePrivacyStore();
-  const isLocalOnly = usePrefsStore((s) => s.isLocalOnly);
+  const isLocalOnly = useBudgetContextStore((s) => s.isLocalOnly);
 
   const [showClosed, setShowClosed] = useState(false);
   const closedCount = getClosedAccountCount(accounts);

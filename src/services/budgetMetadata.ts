@@ -8,6 +8,7 @@ import {
   getInfoAsync,
 } from "expo-file-system/legacy";
 import { randomUUID } from "expo-crypto";
+import { emitErrorEvent, type ErrorCode } from "@/core/errors/ErrorChannel";
 
 // ---------------------------------------------------------------------------
 // Constants & path helpers
@@ -40,24 +41,54 @@ export type BudgetMetadata = {
   lastUploaded?: string;
 };
 
+function emitStorageError(
+  error: unknown,
+  code: ErrorCode,
+  operation: string,
+  context?: Record<string, unknown>,
+): void {
+  emitErrorEvent(error, {
+    code,
+    source: "STORAGE",
+    context: { operation, ...context },
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Directory management
 // ---------------------------------------------------------------------------
 
 export async function ensureBudgetsDir(): Promise<void> {
-  const info = await getInfoAsync(BUDGETS_DIR);
-  if (!info.exists) {
-    await makeDirectoryAsync(BUDGETS_DIR, { intermediates: true });
+  try {
+    const info = await getInfoAsync(BUDGETS_DIR);
+    if (!info.exists) {
+      await makeDirectoryAsync(BUDGETS_DIR, { intermediates: true });
+    }
+  } catch (error) {
+    emitStorageError(error, "STORAGE_WRITE_FAILED", "ensureBudgetsDir", { path: BUDGETS_DIR });
+    throw error;
   }
 }
 
 export async function budgetExists(budgetId: string): Promise<boolean> {
-  const info = await getInfoAsync(getMetadataPath(budgetId));
-  return info.exists;
+  const path = getMetadataPath(budgetId);
+  try {
+    const info = await getInfoAsync(path);
+    return info.exists;
+  } catch (error) {
+    emitStorageError(error, "STORAGE_READ_FAILED", "budgetExists", { budgetId, path });
+    throw error;
+  }
 }
 
 export async function deleteBudgetDir(budgetId: string): Promise<void> {
-  await deleteAsync(getBudgetDir(budgetId), { idempotent: true });
+  const path = getBudgetDir(budgetId);
+  try {
+    await deleteAsync(path, { idempotent: true });
+  } catch (error) {
+    emitStorageError(error, "STORAGE_DELETE_FAILED", "deleteBudgetDir", { budgetId, path });
+    throw error;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -66,16 +97,34 @@ export async function deleteBudgetDir(budgetId: string): Promise<void> {
 
 export async function readMetadata(budgetId: string): Promise<BudgetMetadata | null> {
   const path = getMetadataPath(budgetId);
-  const info = await getInfoAsync(path);
-  if (!info.exists) return null;
-  const raw = await readAsStringAsync(path);
-  return JSON.parse(raw) as BudgetMetadata;
+  let raw: string;
+  try {
+    const info = await getInfoAsync(path);
+    if (!info.exists) return null;
+    raw = await readAsStringAsync(path);
+  } catch (error) {
+    emitStorageError(error, "STORAGE_READ_FAILED", "readMetadata", { budgetId, path });
+    throw error;
+  }
+
+  try {
+    return JSON.parse(raw) as BudgetMetadata;
+  } catch (error) {
+    emitStorageError(error, "STORAGE_CORRUPT_DATA", "readMetadata.parse", { budgetId, path });
+    throw error;
+  }
 }
 
 export async function writeMetadata(budgetId: string, meta: BudgetMetadata): Promise<void> {
   const dir = getBudgetDir(budgetId);
-  await makeDirectoryAsync(dir, { intermediates: true });
-  await writeAsStringAsync(getMetadataPath(budgetId), JSON.stringify(meta, null, 2));
+  const path = getMetadataPath(budgetId);
+  try {
+    await makeDirectoryAsync(dir, { intermediates: true });
+    await writeAsStringAsync(path, JSON.stringify(meta, null, 2));
+  } catch (error) {
+    emitStorageError(error, "STORAGE_WRITE_FAILED", "writeMetadata", { budgetId, path });
+    throw error;
+  }
 }
 
 export async function updateMetadata(
@@ -92,10 +141,15 @@ export async function updateMetadata(
 // ---------------------------------------------------------------------------
 
 export async function listLocalBudgets(): Promise<BudgetMetadata[]> {
-  const info = await getInfoAsync(BUDGETS_DIR);
-  if (!info.exists) return [];
-
-  const entries = await readDirectoryAsync(BUDGETS_DIR);
+  let entries: string[];
+  try {
+    const info = await getInfoAsync(BUDGETS_DIR);
+    if (!info.exists) return [];
+    entries = await readDirectoryAsync(BUDGETS_DIR);
+  } catch (error) {
+    emitStorageError(error, "STORAGE_READ_FAILED", "listLocalBudgets", { path: BUDGETS_DIR });
+    throw error;
+  }
   const budgets: BudgetMetadata[] = [];
 
   for (const entry of entries) {

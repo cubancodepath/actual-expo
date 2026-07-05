@@ -9,7 +9,6 @@
 import { findOrCreatePayee } from "../payees";
 import { batchMessages } from "@/core/sync";
 import { getCurrentPosition } from "@/services/locationService";
-import { usePrefsStore } from "@/stores/prefsStore";
 import { getAllFeatureFlags } from "../preferences";
 import { createPayeeLocation } from "../payee-locations";
 import {

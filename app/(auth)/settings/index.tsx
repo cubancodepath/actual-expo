@@ -6,12 +6,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvider";
 import { Text, Card, ListItem, SectionHeader, Button, Icon, type IconName } from "@/design-system";
-import { usePrefsStore } from "@/stores/prefsStore";
+import { useSessionStore } from "@/stores/sessionStore";
+import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import { resetAllStores } from "@/stores/resetStores";
 import { useSyncStore } from "@/stores/syncStore";
 import { resetSyncState, clearSwitchingFlag, loadClock, repairSync, fullSync } from "@/core/sync";
 import { clearLocalData } from "@/core/db";
 import { closeBudget } from "@/services/budgetfiles";
+import { logout } from "@/services/authService";
 import { reportError } from "@/core/errors";
 import type { Theme } from "@/design-system/tokens";
 
@@ -61,16 +63,9 @@ export default function SettingsScreen() {
   const { t } = useTranslation("settings");
   const { t: tc } = useTranslation("common");
 
-  const {
-    serverUrl,
-    fileId,
-    groupId,
-    encryptKeyId,
-    budgetName,
-    lastSyncedTimestamp,
-    isLocalOnly,
-    clearAll,
-  } = usePrefsStore();
+  const serverUrl = useSessionStore((s) => s.serverUrl);
+  const { fileId, groupId, encryptKeyId, budgetName, lastSyncedTimestamp, isLocalOnly } =
+    useBudgetContextStore();
   const lastSync = useSyncStore((s) => s.lastSync);
   const syncStatus = useSyncStore((s) => s.status);
   const syncNow = useSyncStore((s) => s.sync);
@@ -99,7 +94,7 @@ export default function SettingsScreen() {
           try {
             resetSyncState();
             resetAllStores();
-            await clearAll();
+            await logout();
             await clearLocalData();
             await loadClock();
           } finally {
@@ -113,7 +108,7 @@ export default function SettingsScreen() {
 
   async function handleConnectToServer() {
     await closeBudget();
-    await clearAll();
+    await logout();
   }
 
   function handleLogout() {
@@ -126,7 +121,7 @@ export default function SettingsScreen() {
           setLoggingOut(true);
           try {
             await closeBudget();
-            await clearAll();
+            await logout();
           } finally {
             setLoggingOut(false);
           }

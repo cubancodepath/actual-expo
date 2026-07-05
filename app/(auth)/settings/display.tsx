@@ -3,7 +3,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvider";
 import { Card, ListItem, SectionHeader } from "@/design-system";
-import { usePrefsStore } from "@/stores/prefsStore";
+import { useUiPrefsStore } from "@/stores/uiPrefsStore";
 import type { Theme } from "@/design-system/tokens";
 
 const THEME_OPTIONS = [
@@ -18,8 +18,8 @@ export default function DisplaySettingsScreen() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation("settings");
 
-  const themeMode = usePrefsStore((s) => s.themeMode);
-  const setPrefs = usePrefsStore((s) => s.setPrefs);
+  const themeMode = useUiPrefsStore((s) => s.themeMode);
+  const setThemeMode = useUiPrefsStore((s) => s.setThemeMode);
 
   return (
     <ScrollView
@@ -33,7 +33,7 @@ export default function DisplaySettingsScreen() {
           <ListItem
             key={opt.value}
             title={t(opt.labelKey)}
-            onPress={() => setPrefs({ themeMode: opt.value })}
+            onPress={() => setThemeMode(opt.value)}
             checkmark={themeMode === opt.value}
             showSeparator={index < THEME_OPTIONS.length - 1}
           />

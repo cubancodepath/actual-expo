@@ -201,10 +201,22 @@ export function fullSync(opts?: { force?: boolean }): Promise<number> {
 
     const gen = getSyncGeneration();
 
-    const { usePrefsStore } = await import("@/stores/prefsStore");
+    const { useSessionStore } = await import("@/stores/sessionStore");
+    const { useBudgetContextStore } = await import("@/stores/budgetContextStore");
     const { useSyncStore } = await import("@/stores/syncStore");
 
-    const prefs = usePrefsStore.getState();
+    // Combined view over session + budget context, preserving the `prefs` shape
+    // the inner _fullSync loop consumes (fields + a setPrefs that routes writes
+    // to the budget context store).
+    const session = useSessionStore.getState();
+    const budget = useBudgetContextStore.getState();
+    const prefs = {
+      ...session,
+      ...budget,
+      isConfigured: budget.isLocalOnly || (session.hasToken && !!budget.activeBudgetId),
+      setPrefs: (p: Parameters<typeof budget.setBudgetContext>[0]) =>
+        useBudgetContextStore.getState().setBudgetContext(p),
+    };
     if (prefs.isLocalOnly) return 0;
     if (!force && !prefs.isConfigured) {
       throw new Error("Server not configured — set serverUrl, token, fileId, groupId first");
@@ -273,7 +285,8 @@ export function fullSync(opts?: { force?: boolean }): Promise<number> {
         reportError(e);
         const { closeBudget } = await import("@/services/budgetfiles");
         await closeBudget().catch(() => {});
-        usePrefsStore.getState().clearAll();
+        const { logout } = await import("@/services/authService");
+        await logout();
         return 0;
       }
 

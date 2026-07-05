@@ -14,7 +14,8 @@ import {
 import { useMutation } from "@tanstack/react-query";
 import { InlineError } from "@/components/InlineError";
 import { useSyncedPrefs, useFeatureFlag } from "@/hooks/useSyncedPrefs";
-import { usePrefsStore } from "@/stores/prefsStore";
+import { useSessionStore } from "@/stores/sessionStore";
+import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import {
   ALL_FEATURE_FLAGS,
   FEATURE_FLAG_LABELS,
@@ -140,9 +141,9 @@ function FeatureFlagRow({ flag, showSeparator }: { flag: FeatureFlag; showSepara
 function EncryptionSection() {
   const { t } = useTranslation("settings");
   const { colors, spacing } = useTheme();
-  const isLocalOnly = usePrefsStore((s) => s.isLocalOnly);
-  const fileId = usePrefsStore((s) => s.fileId);
-  const encryptKeyId = usePrefsStore((s) => s.encryptKeyId);
+  const isLocalOnly = useBudgetContextStore((s) => s.isLocalOnly);
+  const fileId = useBudgetContextStore((s) => s.fileId);
+  const encryptKeyId = useBudgetContextStore((s) => s.encryptKeyId);
 
   // Don't show for local-only budgets — encryption is for server sync
   if (isLocalOnly || !fileId) return null;
@@ -175,8 +176,8 @@ export default function BudgetSettingsScreen() {
   const { t } = useTranslation("settings");
   const { t: tc } = useTranslation("common");
 
-  const { activeBudgetId, budgetName, isLocalOnly, groupId, fileId, serverUrl, token } =
-    usePrefsStore();
+  const { activeBudgetId, budgetName, isLocalOnly, groupId, fileId } = useBudgetContextStore();
+  const { serverUrl, token } = useSessionStore();
 
   const [dateFormat, setDateFormat] = useSyncedPrefs("dateFormat");
   const [numberFormat, setNumberFormat] = useSyncedPrefs("numberFormat");
@@ -204,7 +205,7 @@ export default function BudgetSettingsScreen() {
         token,
         activeBudgetId,
       );
-      usePrefsStore.getState().setPrefs({
+      useBudgetContextStore.getState().setBudgetContext({
         fileId: cloudFileId,
         groupId: newGroupId,
         isLocalOnly: false,
@@ -216,7 +217,9 @@ export default function BudgetSettingsScreen() {
   const stopSyncingMutation = useMutation({
     mutationFn: async () => {
       await convertToLocalOnly(activeBudgetId);
-      usePrefsStore.getState().setPrefs({ fileId: "", groupId: "", isLocalOnly: true });
+      useBudgetContextStore
+        .getState()
+        .setBudgetContext({ fileId: "", groupId: "", isLocalOnly: true });
     },
     meta: { inline: true },
   });

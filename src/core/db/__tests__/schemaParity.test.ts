@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { openDatabaseAsync } from "expo-sqlite";
 import { runSchema } from "@/core/db/schema";
-import { usePrefsStore } from "@/stores/prefsStore";
+import { useBudgetContextStore } from "@/stores/budgetContextStore";
 
 /**
  * Upstream schema parity guard.
@@ -36,15 +36,15 @@ describe("schema parity with upstream Actual migrations (post-1765518577215)", (
   beforeAll(async () => {
     // isLocalOnly makes runSchema apply CONDITIONAL_MIGRATIONS (payee_locations)
     // regardless of server feature detection.
-    prevIsLocalOnly = usePrefsStore.getState().isLocalOnly;
-    usePrefsStore.setState({ isLocalOnly: true });
+    prevIsLocalOnly = useBudgetContextStore.getState().isLocalOnly;
+    useBudgetContextStore.setState({ isLocalOnly: true });
 
     db = await openDatabaseAsync("db.sqlite", {}, "schema-parity-test");
     await runSchema(db);
   });
 
   afterAll(() => {
-    usePrefsStore.setState({ isLocalOnly: prevIsLocalOnly });
+    useBudgetContextStore.setState({ isLocalOnly: prevIsLocalOnly });
   });
 
   it("registers every post-freeze migration id in __migrations__", async () => {

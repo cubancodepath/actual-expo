@@ -10,7 +10,7 @@ import { useEffect, useMemo } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { listen } from "@/core/sync/syncEvents";
 import { transactionQueries } from "@/core/domain/transactions/queries";
-import { usePrefsStore } from "@/stores/prefsStore";
+import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import type { Query } from "@/core/queries/query";
 import type { TransactionDisplay } from "@/core/domain/transactions/types";
 
@@ -32,7 +32,7 @@ export function useTransactions({ query, fetchFn, options }: UseTransactionsProp
   const pageSize = options?.pageSize ?? 25;
   const key = options?.key ?? "all";
   const refetchOnSync = options?.refetchOnSync ?? true;
-  const activeBudgetId = usePrefsStore((s) => s.activeBudgetId);
+  const activeBudgetId = useBudgetContextStore((s) => s.activeBudgetId);
 
   const queryOptions = useMemo(() => {
     if (query) {

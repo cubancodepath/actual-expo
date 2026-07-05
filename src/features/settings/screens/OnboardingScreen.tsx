@@ -26,7 +26,7 @@ import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvid
 import { Text } from "@/design-system/atoms/Text";
 import { Icon } from "@/design-system/atoms/Icon";
 import type { IconName } from "@/design-system/atoms/iconRegistry";
-import { usePrefsStore } from "@/stores/prefsStore";
+import { useUiPrefsStore } from "@/stores/uiPrefsStore";
 import { palette } from "@/design-system/tokens";
 import type { Theme } from "@/design-system/tokens";
 
@@ -434,7 +434,7 @@ export function OnboardingScreen() {
   const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const markOnboardingSeen = usePrefsStore((s) => s.markOnboardingSeen);
+  const markOnboardingSeen = useUiPrefsStore((s) => s.markOnboardingSeen);
   const { t } = useTranslation("onboarding");
   const { t: tc } = useTranslation("common");
 

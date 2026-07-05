@@ -2,7 +2,7 @@ import { Stack, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useUndoStore } from "@/stores/undoStore";
 import { usePrivacyStore } from "@/stores/privacyStore";
-import { usePrefsStore } from "@/stores/prefsStore";
+import { useBudgetContextStore } from "@/stores/budgetContextStore";
 
 import type { ReactNode } from "react";
 
@@ -26,7 +26,7 @@ export function useCommonMenuActions(): ReactNode[] {
   const { t } = useTranslation();
   const canUndo = useUndoStore((s) => s.canUndo);
   const { privacyMode, toggle: togglePrivacy } = usePrivacyStore();
-  const isLocalOnly = usePrefsStore((s) => s.isLocalOnly);
+  const isLocalOnly = useBudgetContextStore((s) => s.isLocalOnly);
 
   const actions: ReactNode[] = [
     <Stack.Toolbar.MenuAction

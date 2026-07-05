@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { deleteFromServer } from "../budgetfiles";
 import { ActualError, type ErrorCode } from "@/core/errors";
-import { usePrefsStore } from "@/stores/prefsStore";
+import { useSessionStore } from "@/stores/sessionStore";
 
 let fetchMock: ReturnType<typeof vi.fn>;
 
@@ -36,14 +36,14 @@ describe("deleteFromServer", () => {
     await expectActualError(deleteFromServer("https://s", "tok", "file-1"), "file/delete-failed");
   });
 
-  it("maps 401 to auth/token-expired and clears prefs", async () => {
-    usePrefsStore.getState().setPrefs({ serverUrl: "https://s", token: "tok" });
+  it("maps 401 to auth/token-expired and clears the session", async () => {
+    useSessionStore.setState({ serverUrl: "https://s", token: "tok", hasToken: true });
     fetchMock.mockResolvedValue(new Response(null, { status: 401 }));
 
     await expectActualError(deleteFromServer("https://s", "tok", "file-1"), "auth/token-expired");
-    // clearAll() is fire-and-forget (matches the original throwIfUnauthorized
+    // logout() is fire-and-forget (matches the original throwIfUnauthorized
     // behavior) — flush microtasks so its async work has a chance to settle.
     await new Promise((r) => setTimeout(r, 0));
-    expect(usePrefsStore.getState().token).toBe("");
+    expect(useSessionStore.getState().token).toBe("");
   });
 });

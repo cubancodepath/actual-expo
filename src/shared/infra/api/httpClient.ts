@@ -2,21 +2,11 @@ import ky, { isHTTPError, isNetworkError, isTimeoutError } from "ky";
 import type { z } from "zod";
 import { ActualError } from "@/core/errors";
 
-/**
- * Shared HTTP client — transport policy only (timeout, no implicit retries).
- * Services own their endpoints, response schemas, and domain error mapping;
- * this layer knows nothing about stores, navigation, or UI.
- */
 export const http = ky.create({
   timeout: 15_000,
   retry: 0,
 });
 
-/**
- * Normalize a transport-level failure into a domain ActualError.
- * Endpoint-specific meanings (invalid-password, token-expired) are mapped
- * by each service on top of this baseline.
- */
 export function toTransportError(e: unknown): ActualError {
   if (e instanceof ActualError) return e;
   if (isHTTPError(e)) {
@@ -30,7 +20,6 @@ export function toTransportError(e: unknown): ActualError {
   return new ActualError("http/server-error", { cause: e });
 }
 
-/** Validate a response body against a schema; malformed payloads become http/parse-error. */
 export function parseResponse<S extends z.ZodType>(schema: S, json: unknown): z.output<S> {
   const result = schema.safeParse(json);
   if (!result.success) throw new ActualError("http/parse-error", { cause: result.error });

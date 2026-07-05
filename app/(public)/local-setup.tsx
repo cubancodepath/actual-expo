@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { listLocalBudgets, type BudgetMetadata } from "@/services/budgetMetadata";
 import { openBudget } from "@/services/budgetfiles";
-import { usePrefsStore } from "@/stores/prefsStore";
+import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvider";
 import { Text, Card, SectionHeader, Button, BudgetFileRow } from "@/design-system";
 import { BudgetSetupWizard } from "@/features/budget/components/BudgetSetupWizard";
@@ -48,7 +48,7 @@ export default function LocalSetupScreen() {
     setSelecting(meta.id);
     try {
       await openBudget(meta.id);
-      usePrefsStore.getState().setPrefs({
+      useBudgetContextStore.getState().setBudgetContext({
         isLocalOnly: true,
         activeBudgetId: meta.id,
         budgetName: meta.budgetName,

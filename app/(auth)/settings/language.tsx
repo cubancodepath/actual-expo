@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { getLocales } from "expo-localization";
 import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvider";
 import { Card, ListItem, SectionHeader } from "@/design-system";
-import { usePrefsStore } from "@/stores/prefsStore";
+import { useUiPrefsStore } from "@/stores/uiPrefsStore";
 import i18n from "@/i18n/config";
 import type { Theme } from "@/design-system/tokens";
 
@@ -28,8 +28,8 @@ export default function LanguageSettingsScreen() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation("settings");
 
-  const language = usePrefsStore((s) => s.language);
-  const setLanguage = usePrefsStore((s) => s.setLanguage);
+  const language = useUiPrefsStore((s) => s.language);
+  const setLanguage = useUiPrefsStore((s) => s.setLanguage);
 
   function handleSelect(value: "system" | "en" | "es") {
     setLanguage(value);

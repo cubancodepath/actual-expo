@@ -22,7 +22,6 @@ import { UpcomingSectionHeader } from "@/features/accounts/components/UpcomingSe
 import { UpcomingScheduleRow } from "@/features/accounts/components/UpcomingScheduleRow";
 import { AddTransactionButton } from "@/design-system/molecules/AddTransactionButton";
 import { UnclearedPill } from "@/features/transactions/components/UnclearedPill";
-import { usePrefsStore } from "@/stores/prefsStore";
 import { useAccountPref } from "@/features/accounts/hooks/useAccountPref";
 import { usePrivacyStore } from "@/stores/privacyStore";
 import { useUndoStore } from "@/stores/undoStore";

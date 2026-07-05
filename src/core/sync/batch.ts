@@ -34,9 +34,9 @@ function scheduleFullSync(): void {
     setTimeout(async () => {
       if (isSwitchingBudget()) return;
       try {
-        const { usePrefsStore } = await import("@/stores/prefsStore");
-        const prefs = usePrefsStore.getState();
-        if (prefs.isLocalOnly || !prefs.isConfigured) return;
+        const { useBudgetContextStore } = await import("@/stores/budgetContextStore");
+        const { getIsConfigured } = await import("@/stores/session.selectors");
+        if (useBudgetContextStore.getState().isLocalOnly || !getIsConfigured()) return;
         // Lazy import to avoid circular dependency
         const { fullSync } = await import("./fullSync");
         await fullSync();

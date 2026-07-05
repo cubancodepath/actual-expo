@@ -30,7 +30,8 @@ import {
   type CurrencyInputRef,
 } from "@/features/transactions/components/currency-input";
 import { Banner } from "@/design-system/molecules/Banner";
-import { usePrefsStore } from "@/stores/prefsStore";
+import { useSessionStore } from "@/stores/sessionStore";
+import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import {
   DEFAULT_CATEGORY_GROUPS,
   getDefaultCategorySelection,
@@ -361,7 +362,7 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
       // until the user taps "Start Budgeting" (so routing doesn't switch early)
       if (mode === "server") {
         if (__DEV__) console.log("[wizard] Uploading to server...");
-        const { serverUrl, token } = usePrefsStore.getState();
+        const { serverUrl, token } = useSessionStore.getState();
         const result = await uploadBudget(serverUrl, token, budgetId);
         uploadResultRef.current = result;
         if (__DEV__) console.log("[wizard] Upload success:", JSON.stringify(result));
@@ -388,13 +389,13 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
     await openBudget(budgetIdRef.current);
 
     if (mode === "local") {
-      usePrefsStore.getState().setPrefs({
+      useBudgetContextStore.getState().setBudgetContext({
         isLocalOnly: true,
       });
     } else {
       const result = uploadResultRef.current;
       if (__DEV__) console.log("[wizard] Setting server prefs:", JSON.stringify(result));
-      usePrefsStore.getState().setPrefs({
+      useBudgetContextStore.getState().setBudgetContext({
         fileId: result?.cloudFileId ?? "",
         groupId: result?.groupId ?? "",
         isLocalOnly: false,

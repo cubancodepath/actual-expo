@@ -3,7 +3,7 @@ import { ActivityIndicator, RefreshControl, ScrollView, View } from "react-nativ
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { usePrefsStore } from "@/stores/prefsStore";
+import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvider";
 import {
   Text,
@@ -27,7 +27,7 @@ export default function ChangeBudgetScreen() {
   const { t } = useTranslation();
   const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
-  const { activeBudgetId } = usePrefsStore();
+  const { activeBudgetId } = useBudgetContextStore();
   const [switchingName, setSwitchingName] = useState<string | null>(null);
   const [switchPhase, setSwitchPhase] = useState<SwitchPhase>(null);
   const {

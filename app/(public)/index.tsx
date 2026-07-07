@@ -1,5 +1,5 @@
-import { LoginScreen } from "@/features/auth/screens/LoginScreen";
+import { ServerConnectScreen } from "@/features/auth/screens/ServerConnectScreen";
 
-export default function LoginRoute() {
-  return <LoginScreen />;
+export default function ServerConnectRoute() {
+  return <ServerConnectScreen />;
 }

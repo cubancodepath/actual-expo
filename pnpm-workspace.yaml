@@ -1,3 +1,7 @@
 allowBuilds:
+  '@sentry/cli': set this to true or false
+  '@shopify/react-native-skia': set this to true or false
+  '@zowe/secrets-for-zowe-sdk': set this to true or false
+  better-sqlite3: set this to true or false
   heroui-native-pro: true
   heroui-pro: true

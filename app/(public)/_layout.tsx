@@ -10,6 +10,8 @@ export default function PublicLayout() {
         <Stack.Screen name="onboarding" options={{ headerShown: false, animation: "fade" }} />
       </Stack.Protected>
       <Stack.Screen name="index" options={{ headerShown: false, animation: "fade" }} />
+      <Stack.Screen name="password" options={{ headerShown: false, animation: "fade" }} />
+      <Stack.Screen name="openid" options={{ headerShown: false, animation: "fade" }} />
       <Stack.Screen
         name="local-setup"
         options={{ headerShown: false, animation: "fade_from_bottom" }}

@@ -4,7 +4,7 @@ import { useSyncStore } from "./syncStore";
 import { clearQueryCache } from "@/core/queries/queryCache";
 import { currentMonth } from "@/lib/date";
 import { PREFERENCE_DEFAULTS } from "@/core/domain/preferences/types";
-import { FEATURE_FLAG_DEFAULTS } from "@/core/domain/preferences/featureFlags";
+import { defaultFlagPrefs } from "@/core/domain/preferences/featureFlags";
 
 /**
  * Reset all Zustand stores to their initial state.
@@ -20,10 +20,7 @@ export function resetAllStores(): void {
   useSyncStore.setState({ status: "idle", lastErrorCode: null, lastSync: null });
 
   // Reset synced prefs store (lazy import to avoid circular deps)
-  const initial: Record<string, string> = { ...PREFERENCE_DEFAULTS };
-  for (const [flag, val] of Object.entries(FEATURE_FLAG_DEFAULTS)) {
-    initial[`flags.${flag}`] = String(val);
-  }
+  const initial: Record<string, string> = { ...PREFERENCE_DEFAULTS, ...defaultFlagPrefs() };
   import("@/hooks/useSyncedPrefs").then(({ useSyncedPrefsStore }) => {
     useSyncedPrefsStore.setState({ prefs: initial, loaded: false });
   });

@@ -72,6 +72,19 @@
   "categories": "Categories",
   "experimentalFeatures": "Experimental Features",
   "experimentalFeaturesWarning": "These features are still in development. They may be unstable or cause data issues. They are synced across all your devices. Use with caution.",
+  "featureFlags": {
+    "goalTemplatesEnabled": {
+      "title": "Goal Templates",
+      "subtitle": "Enable goal template processing"
+    },
+    "currency": {
+      "title": "Currency Support"
+    },
+    "payeeLocations": {
+      "title": "Nearby Payees",
+      "subtitle": "Suggests payees near you when adding a transaction"
+    }
+  },
   "deleteBudget": "Delete Budget",
   "deleteFromDevice": "Delete from Device",
   "deleteFromAllDevices": "Delete from All Devices",

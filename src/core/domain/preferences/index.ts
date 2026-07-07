@@ -2,7 +2,16 @@ import { first, runQuery } from "@/core/db";
 import { sendMessages } from "@/core/sync";
 import { Timestamp } from "@/core/crdt";
 import { PREFERENCE_DEFAULTS, type PreferenceKey } from "./types";
-import { ALL_FEATURE_FLAGS, FEATURE_FLAG_DEFAULTS, type FeatureFlag } from "./featureFlags";
+import {
+  ALL_FEATURE_FLAGS,
+  DEFAULT_FEATURE_FLAG_STATE,
+  flagFromKey,
+  flagKey,
+  parseFlagValue,
+  serializeFlagValue,
+  type FeatureFlag,
+  type FeatureFlagKey,
+} from "./featureFlags";
 
 export async function getPreference(key: PreferenceKey): Promise<string> {
   const row = await first<{ value: string }>("SELECT value FROM preferences WHERE id = ?", [key]);
@@ -38,20 +47,27 @@ export async function setPreference(key: PreferenceKey, value: string): Promise<
 }
 
 export async function getAllFeatureFlags(): Promise<Record<FeatureFlag, boolean>> {
-  const keys = ALL_FEATURE_FLAGS.map((f) => `flags.${f}`);
+  const keys = ALL_FEATURE_FLAGS.map(flagKey);
   const placeholders = keys.map(() => "?").join(",");
   const rows = await runQuery<{ id: string; value: string }>(
     `SELECT id, value FROM preferences WHERE id IN (${placeholders})`,
     keys,
   );
-  const result = { ...FEATURE_FLAG_DEFAULTS };
+  const result = { ...DEFAULT_FEATURE_FLAG_STATE };
   for (const row of rows) {
-    const name = row.id.replace("flags.", "") as FeatureFlag;
+    const name = flagFromKey(row.id as FeatureFlagKey);
     if (name in result) {
-      result[name] = row.value === "true";
+      result[name] = parseFlagValue(name, row.value);
     }
   }
   return result;
+}
+
+export async function isFeatureEnabled(name: FeatureFlag): Promise<boolean> {
+  const row = await first<{ value: string }>("SELECT value FROM preferences WHERE id = ?", [
+    flagKey(name),
+  ]);
+  return parseFlagValue(name, row?.value);
 }
 
 export async function setFeatureFlag(name: FeatureFlag, enabled: boolean): Promise<void> {
@@ -59,9 +75,9 @@ export async function setFeatureFlag(name: FeatureFlag, enabled: boolean): Promi
     {
       timestamp: Timestamp.send()!,
       dataset: "preferences",
-      row: `flags.${name}`,
+      row: flagKey(name),
       column: "value",
-      value: enabled ? "true" : "false",
+      value: serializeFlagValue(enabled),
     },
   ]);
 }
@@ -104,7 +120,13 @@ export async function setArbitraryPref(key: string, value: string): Promise<void
 
 export {
   type FeatureFlag,
+  type FeatureFlagKey,
   ALL_FEATURE_FLAGS,
-  FEATURE_FLAG_DEFAULTS,
-  FEATURE_FLAG_LABELS,
+  DEFAULT_FEATURE_FLAG_STATE,
+  flagKey,
+  flagFromKey,
+  isFlagKey,
+  parseFlagValue,
+  serializeFlagValue,
+  defaultFlagPrefs,
 } from "./featureFlags";

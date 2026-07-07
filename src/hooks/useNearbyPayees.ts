@@ -7,7 +7,7 @@
 
 import { useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useFeatureFlag } from "@/hooks/useSyncedPrefs";
+import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { getCurrentPosition } from "@/services/locationService";
 import { getNearbyPayees } from "@/core/domain/payee-locations";
 import type { NearbyPayee } from "@/core/domain/payee-locations/types";
@@ -15,7 +15,7 @@ import type { NearbyPayee } from "@/core/domain/payee-locations/types";
 const QUERY_KEY = ["payees", "nearby"] as const;
 
 export function useNearbyPayees() {
-  const [enabled] = useFeatureFlag("payeeLocations");
+  const enabled = useFeatureFlag("payeeLocations");
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery<NearbyPayee[]>({

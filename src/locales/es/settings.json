@@ -72,6 +72,19 @@
   "categories": "Categorías",
   "experimentalFeatures": "Funciones Experimentales",
   "experimentalFeaturesWarning": "Estas funciones están en desarrollo. Pueden ser inestables o causar problemas con los datos. Se sincronizan en todos tus dispositivos. Úsalas con precaución.",
+  "featureFlags": {
+    "goalTemplatesEnabled": {
+      "title": "Plantillas de Metas",
+      "subtitle": "Habilita el procesamiento de plantillas de metas"
+    },
+    "currency": {
+      "title": "Soporte de Moneda"
+    },
+    "payeeLocations": {
+      "title": "Beneficiarios Cercanos",
+      "subtitle": "Sugiere beneficiarios cercanos al agregar una transacción"
+    }
+  },
   "deleteBudget": "Eliminar Presupuesto",
   "deleteFromDevice": "Eliminar del Dispositivo",
   "deleteFromAllDevices": "Eliminar de Todos los Dispositivos",

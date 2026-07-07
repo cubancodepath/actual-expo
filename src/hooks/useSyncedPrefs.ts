@@ -18,10 +18,13 @@ import {
   setPreference,
   setArbitraryPref,
   getAllFeatureFlags,
-  setFeatureFlag,
 } from "@/core/domain/preferences";
 import { PREFERENCE_DEFAULTS, type PreferenceKey } from "@/core/domain/preferences/types";
-import { FEATURE_FLAG_DEFAULTS, type FeatureFlag } from "@/core/domain/preferences/featureFlags";
+import {
+  defaultFlagPrefs,
+  flagKey,
+  type FeatureFlag,
+} from "@/core/domain/preferences/featureFlags";
 import { applyFormatConfig } from "@/core/domain/preferences/formatConfig";
 
 // ---------------------------------------------------------------------------
@@ -35,10 +38,7 @@ type SyncedPrefsState = {
 };
 
 // Build initial defaults (prefs + flags as "flags.xxx")
-const INITIAL_PREFS: Record<string, string> = { ...PREFERENCE_DEFAULTS };
-for (const [flag, val] of Object.entries(FEATURE_FLAG_DEFAULTS)) {
-  INITIAL_PREFS[`flags.${flag}`] = String(val);
-}
+const INITIAL_PREFS: Record<string, string> = { ...PREFERENCE_DEFAULTS, ...defaultFlagPrefs() };
 
 export const useSyncedPrefsStore = create<SyncedPrefsState>((set) => ({
   prefs: { ...INITIAL_PREFS },
@@ -56,7 +56,7 @@ export const useSyncedPrefsStore = create<SyncedPrefsState>((set) => ({
 
     const merged: Record<string, string> = { ...INITIAL_PREFS, ...prefs };
     for (const [flag, val] of Object.entries(flags)) {
-      merged[`flags.${flag}`] = String(val);
+      merged[flagKey(flag as FeatureFlag)] = String(val);
     }
     // Merge arbitrary prefs (per-account settings, etc.)
     for (const row of allRows) {
@@ -103,19 +103,4 @@ export function useSyncedPrefs(key: string): [string, (value: string) => Promise
   );
 
   return [value, set];
-}
-
-/**
- * useFeatureFlag — read a feature flag as boolean.
- * Uses useSyncedPref internally so optimistic updates propagate globally.
- */
-export function useFeatureFlag(name: FeatureFlag): [boolean, (enabled: boolean) => Promise<void>] {
-  const [value, setPref] = useSyncedPrefs(`flags.${name}`);
-  const set = useCallback(
-    async (enabled: boolean) => {
-      await setPref(enabled ? "true" : "false");
-    },
-    [setPref],
-  );
-  return [value === "true", set];
 }

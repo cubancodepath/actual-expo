@@ -9,7 +9,7 @@
 import { findOrCreatePayee } from "../payees";
 import { batchMessages } from "@/core/sync";
 import { getCurrentPosition } from "@/services/locationService";
-import { getAllFeatureFlags } from "../preferences";
+import { isFeatureEnabled } from "../preferences";
 import { createPayeeLocation } from "../payee-locations";
 import {
   addTransaction,
@@ -245,9 +245,9 @@ async function linkSchedule(
 }
 
 function savePayeeLocationIfEnabled(payeeId: string): void {
-  getAllFeatureFlags()
-    .then((flags) => {
-      if (!flags.payeeLocations) return;
+  isFeatureEnabled("payeeLocations")
+    .then((enabled) => {
+      if (!enabled) return;
 
       return getCurrentPosition().then((coords) => {
         if (coords) {

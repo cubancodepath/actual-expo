@@ -13,14 +13,16 @@ import {
 } from "@/design-system";
 import { useMutation } from "@tanstack/react-query";
 import { InlineError } from "@/components/InlineError";
-import { useSyncedPrefs, useFeatureFlag } from "@/hooks/useSyncedPrefs";
+import { useSyncedPrefs } from "@/hooks/useSyncedPrefs";
+import { useFeatureFlag, useSetFeatureFlag } from "@/hooks/useFeatureFlag";
 import { useSessionStore } from "@/stores/sessionStore";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
-import {
-  ALL_FEATURE_FLAGS,
-  FEATURE_FLAG_LABELS,
-  type FeatureFlag,
-} from "@/core/domain/preferences/featureFlags";
+import type { FeatureFlag } from "@/core/domain/preferences/featureFlags";
+
+// Flags with a real feature behind them in the mobile app today. Mirrors
+// upstream's Experimental.tsx: the FeatureFlag union can list more flags
+// than any single client currently has a toggle for.
+const VISIBLE_FEATURE_FLAGS: FeatureFlag[] = ["goalTemplatesEnabled", "currency", "payeeLocations"];
 import {
   DATE_FORMAT_OPTIONS,
   NUMBER_FORMAT_OPTIONS,
@@ -108,8 +110,10 @@ function PickerRow({
 }
 
 function FeatureFlagRow({ flag, showSeparator }: { flag: FeatureFlag; showSeparator: boolean }) {
+  const { t } = useTranslation("settings");
   const { colors } = useTheme();
-  const [enabled, setEnabled] = useFeatureFlag(flag);
+  const enabled = useFeatureFlag(flag);
+  const setEnabled = useSetFeatureFlag(flag);
 
   async function handleToggle(value: boolean) {
     if (flag === "payeeLocations" && value) {
@@ -121,10 +125,15 @@ function FeatureFlagRow({ flag, showSeparator }: { flag: FeatureFlag; showSepara
     setEnabled(value);
   }
 
+  // Dynamic per-flag key: not every flag has a translated subtitle, so the
+  // literal-key type i18next infers from settings.json can't cover this call.
+  const title: string = t(`featureFlags.${flag}.title` as never);
+  const subtitle: string = t(`featureFlags.${flag}.subtitle` as never, { defaultValue: "" });
+
   return (
     <ListItem
-      title={FEATURE_FLAG_LABELS[flag].title}
-      subtitle={FEATURE_FLAG_LABELS[flag].subtitle}
+      title={title}
+      subtitle={subtitle || undefined}
       onPress={() => handleToggle(!enabled)}
       right={
         <Switch
@@ -192,7 +201,7 @@ export default function BudgetSettingsScreen() {
     "defaultCurrencyCustomSymbol",
   );
 
-  const [currencyFlagEnabled] = useFeatureFlag("currency");
+  const currencyFlagEnabled = useFeatureFlag("currency");
 
   const isSynced = !isLocalOnly && !!groupId;
   const hasServer = !!serverUrl && !!token;
@@ -485,11 +494,11 @@ export default function BudgetSettingsScreen() {
       {/* Experimental Features */}
       <SectionHeader title={t("experimentalFeatures")} style={{ marginTop: spacing.xl }} />
       <Card>
-        {ALL_FEATURE_FLAGS.map((flag, index) => (
+        {VISIBLE_FEATURE_FLAGS.map((flag, index) => (
           <FeatureFlagRow
             key={flag}
             flag={flag}
-            showSeparator={index < ALL_FEATURE_FLAGS.length - 1}
+            showSeparator={index < VISIBLE_FEATURE_FLAGS.length - 1}
           />
         ))}
       </Card>

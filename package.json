@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "main": "expo-router/entry",
+  "engines": {
+    "node": "22.18.0"
+  },
   "scripts": {
     "start": "expo start",
     "ios": "APP_VARIANT=development expo run:ios",

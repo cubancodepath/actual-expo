@@ -1,61 +1,79 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import fs from "node:fs";
+import path from "node:path";
+import { describe, it, expect, beforeAll } from "vitest";
 import { openDatabaseAsync } from "expo-sqlite";
 import { runSchema } from "@/core/db/schema";
-import { useBudgetContextStore } from "@/stores/budgetContextStore";
+import { MIGRATIONS } from "@/core/db/migrations";
 
 /**
- * Upstream schema parity guard.
+ * Upstream migration parity.
  *
- * This port doesn't run Actual's migrations incrementally — `runSchema` creates
- * the full current schema (CREATE TABLE IF NOT EXISTS + idempotent column
- * upgrades) and seeds `__migrations__` with the upstream migration IDs so the
- * server's checkDatabaseValidity() passes. This test pins the migrations that
- * shipped after the old freeze point (1765518577215) so future upstream drift is
- * caught: if Actual adds a migration, bump this list AND reflect its DDL in
- * schema.ts, or this test fails.
- *
- * Reference: ../actual/packages/loot-core/migrations (through 1780606215001).
+ * The migration registry (`src/core/db/migrations/index.ts`) must stay 1:1 with
+ * `actual/packages/loot-core/migrations/`. This test reads the upstream
+ * directory directly and fails if the port drifts — the DX signal for "add the
+ * new migration and evolve with them". When the upstream repo isn't checked out
+ * next to this one (e.g. some CI), the directory-comparison tests skip, but the
+ * runtime schema-effect tests below always run.
  */
 
-// Migration IDs added upstream after 1765518577215_multiple_dashboards, with the
-// schema effect each one must produce (verified against runSchema output below).
-const RECENT_MIGRATIONS = [
-  1768872504000, // add_payee_locations (conditional: server ≥ 26.4.0)
-  1769000000000, // add_custom_upcoming_length
-  1778510362740, // add_cleanup_groups_and_def
-  1780099200000, // add_show_trend_lines_report_setting
-  1780327681000, // add_tags_hidden
-  1780606215000, // add_bank_sync_status
-  1780606215001, // add_performance_indexes
-];
+const UPSTREAM_MIGRATIONS_DIR = path.resolve(
+  process.cwd(),
+  "../actual/packages/loot-core/migrations",
+);
 
-describe("schema parity with upstream Actual migrations (post-1765518577215)", () => {
+const hasUpstream = fs.existsSync(UPSTREAM_MIGRATIONS_DIR);
+
+function migrationId(filename: string): number {
+  return parseInt(filename.match(/^(\d+)/)![1], 10);
+}
+
+describe.skipIf(!hasUpstream)("registry parity with upstream migrations directory", () => {
+  const upstreamFiles = hasUpstream
+    ? fs
+        .readdirSync(UPSTREAM_MIGRATIONS_DIR)
+        .filter((f) => /\.(sql|js)$/.test(f))
+        .sort((a, b) => migrationId(a) - migrationId(b))
+    : [];
+
+  it("has the same migration ids, in the same order, as upstream", () => {
+    const upstreamIds = upstreamFiles.map(migrationId);
+    expect(MIGRATIONS.map((m) => m.id)).toEqual(upstreamIds);
+  });
+
+  it("names each migration exactly like its upstream filename (sans extension)", () => {
+    const upstreamNames = upstreamFiles.map((f) => f.replace(/\.(sql|js)$/, ""));
+    expect(MIGRATIONS.map((m) => m.name)).toEqual(upstreamNames);
+  });
+
+  it("carries the exact upstream SQL for every post-freeze migration", () => {
+    for (const migration of MIGRATIONS) {
+      if (typeof migration.up !== "string") continue;
+      const upstreamSql = fs.readFileSync(
+        path.join(UPSTREAM_MIGRATIONS_DIR, `${migration.name}.sql`),
+        "utf8",
+      );
+      expect(migration.up, `SQL mismatch for ${migration.name}`).toBe(upstreamSql);
+    }
+  });
+});
+
+describe("runSchema produces the full current schema", () => {
   let db: Awaited<ReturnType<typeof openDatabaseAsync>>;
-  let prevIsLocalOnly: boolean;
 
   beforeAll(async () => {
-    // isLocalOnly makes runSchema apply CONDITIONAL_MIGRATIONS (payee_locations)
-    // regardless of server feature detection.
-    prevIsLocalOnly = useBudgetContextStore.getState().isLocalOnly;
-    useBudgetContextStore.setState({ isLocalOnly: true });
-
     db = await openDatabaseAsync("db.sqlite", {}, "schema-parity-test");
     await runSchema(db);
   });
 
-  afterAll(() => {
-    useBudgetContextStore.setState({ isLocalOnly: prevIsLocalOnly });
-  });
-
-  it("registers every post-freeze migration id in __migrations__", async () => {
+  it("registers every migration id in __migrations__", async () => {
     const rows = await db.getAllAsync<{ id: number }>("SELECT id FROM __migrations__");
     const applied = new Set(rows.map((r) => r.id));
-    for (const id of RECENT_MIGRATIONS) {
-      expect(applied.has(id), `migration ${id} not registered in __migrations__`).toBe(true);
+    for (const migration of MIGRATIONS) {
+      expect(applied.has(migration.id), `migration ${migration.name} not registered`).toBe(true);
     }
   });
 
-  it("creates the tables added by those migrations", async () => {
+  it("creates the tables added by post-freeze migrations", async () => {
     const rows = await db.getAllAsync<{ name: string }>(
       "SELECT name FROM sqlite_master WHERE type = 'table'",
     );
@@ -64,7 +82,7 @@ describe("schema parity with upstream Actual migrations (post-1765518577215)", (
     expect(tables.has("payee_locations")).toBe(true); // 1768872504000
   });
 
-  it("creates the columns added by those migrations", async () => {
+  it("creates the columns added by post-freeze migrations", async () => {
     const hasColumn = async (table: string, column: string) => {
       const cols = await db.getAllAsync<{ name: string }>(`PRAGMA table_info(${table})`);
       return cols.some((c) => c.name === column);
@@ -76,7 +94,7 @@ describe("schema parity with upstream Actual migrations (post-1765518577215)", (
     expect(await hasColumn("accounts", "bank_sync_status")).toBe(true); // 1780606215000
   });
 
-  it("creates the indexes added by those migrations", async () => {
+  it("creates the indexes added by post-freeze migrations", async () => {
     const rows = await db.getAllAsync<{ name: string }>(
       "SELECT name FROM sqlite_master WHERE type = 'index'",
     );

@@ -20,7 +20,14 @@ const RemoteBudgetFileSchema = z.looseObject({
   encryptKeyId: z.string().nullish(),
   deleted: z.union([z.boolean(), z.number()]).optional(),
   usersWithAccess: z
-    .array(z.looseObject({ owner: z.boolean().optional(), displayName: z.string().optional() }))
+    .array(
+      z.looseObject({
+        // SQLite-backed servers may serialize this boolean as 0/1 (older
+        // sync-server versions), so accept both forms like `deleted` above.
+        owner: z.union([z.boolean(), z.number()]).optional(),
+        displayName: z.string().optional(),
+      }),
+    )
     .optional(),
 });
 
@@ -60,7 +67,8 @@ export async function listRemoteBudgetFiles(
       name: file.name!,
       encryptKeyId: file.encryptKeyId ?? undefined,
       deleted: file.deleted === 1 || file.deleted === true,
-      ownerName: file.usersWithAccess?.find((user) => user.owner)?.displayName,
+      ownerName: file.usersWithAccess?.find((user) => user.owner === 1 || user.owner === true)
+        ?.displayName,
     }));
   } catch (e) {
     emitBudgetFilesApiError(e, "listRemoteBudgetFiles.parseResponse");

@@ -7,20 +7,17 @@ import es from "../locales/es";
 
 const SUPPORTED_LANGUAGES = ["en", "es"] as const;
 
-// Read stored language preference synchronously from MMKV. Runs at import time,
-// before the store migration in bootstrap, so it checks the new "ui-prefs" key
-// first and falls back to the legacy "actual-prefs" blob for a not-yet-migrated
-// upgrade.
+// Read the stored language preference synchronously from MMKV at import time,
+// from the uiPrefsStore's persisted "ui-prefs" slice.
 const mmkv = createMMKV({ id: "actual-prefs" });
 function readStoredLanguage(): string {
-  for (const key of ["ui-prefs", "actual-prefs"]) {
-    const raw = mmkv.getString(key);
-    if (!raw) continue;
+  const raw = mmkv.getString("ui-prefs");
+  if (raw) {
     try {
       const lang = JSON.parse(raw)?.state?.language;
       if (lang) return lang;
     } catch {
-      // ignore malformed blob, try the next key
+      // ignore malformed blob
     }
   }
   return "system";

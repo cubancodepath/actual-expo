@@ -27,7 +27,6 @@ import { useSessionStore } from "@/stores/sessionStore";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import { useUiPrefsStore } from "@/stores/uiPrefsStore";
 import { useIsConfigured, getIsConfigured } from "@/stores/session.selectors";
-import { migrateLegacyPrefs } from "@/stores/migratePrefs";
 import { listen } from "@/core/sync/syncEvents";
 import { emitErrorEvent } from "@/core/errors/ErrorChannel";
 import { fullSync, isSwitchingBudget, setSyncingMode } from "@/core/sync";
@@ -88,10 +87,6 @@ function RootLayout() {
   // Bootstrap: load prefs + open last budget if available
   useEffect(() => {
     async function bootstrap() {
-      // One-time migration from the legacy monolithic prefs blob → new stores.
-      // Runs before loadToken so serverUrl/activeBudgetId are seeded first.
-      migrateLegacyPrefs();
-
       // MMKV config hydrates synchronously via persist middleware.
       // Token needs an explicit async load from SecureStore.
       await useSessionStore.getState().loadToken();

@@ -4,10 +4,8 @@ import { createJSONStorage } from "zustand/middleware";
 // ---------------------------------------------------------------------------
 // Shared MMKV storage for the prefs-family stores
 // ---------------------------------------------------------------------------
-// The old monolithic `prefsStore` persisted a single JSON blob under the MMKV
-// key "actual-prefs". It has been split into four concern-specific stores
-// (session / budget-context / server-capabilities / ui-prefs), each persisting
-// its own slice under its own key inside this same MMKV instance. The auth
+// Concern-specific stores (session / budget-context / ui-prefs) each persist
+// their own slice under their own key inside this one MMKV instance. The auth
 // token is NOT persisted here — it lives in expo-secure-store.
 
 export const prefsMMKV = createMMKV({ id: "actual-prefs" });

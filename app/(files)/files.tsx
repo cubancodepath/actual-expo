@@ -1,12 +1,10 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ActivityIndicator, Alert, RefreshControl, ScrollView, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { useSessionStore } from "@/stores/sessionStore";
-import { useServerCapabilitiesStore } from "@/stores/serverCapabilitiesStore";
 import { logout } from "@/services/authService";
-import { getServerInfo } from "@/shared/infra/api/server-info/serverInfo.api";
 import { resetAllStores } from "@/stores/resetStores";
 import { resetSyncState, clearSwitchingFlag } from "@/core/sync";
 import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvider";
@@ -62,15 +60,6 @@ export default function FilesScreen() {
     convertToLocal,
     reRegister,
   });
-
-  useEffect(() => {
-    const serverUrl = useSessionStore.getState().serverUrl;
-    if (serverUrl) {
-      getServerInfo(serverUrl).then((info) => {
-        useServerCapabilitiesStore.getState().setServerVersion(info.version);
-      });
-    }
-  }, []);
 
   const hasDetached = localFiles.some((f) => f.state === "detached");
 

@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { fullSync } from "@/core/sync";
-import { reportError, type ErrorCode } from "@/core/errors";
+import { normalizeError, type ErrorCode } from "@/core/errors";
+import { emitErrorEvent } from "@/core/errors/ErrorChannel";
 
 type SyncStatus = "idle" | "syncing" | "error" | "success";
 
@@ -25,8 +26,8 @@ export const useSyncStore = create<SyncState>((set) => ({
       await fullSync();
       set({ status: "success", lastSync: new Date() });
     } catch (e: unknown) {
-      const error = reportError(e);
-      set({ status: "error", lastErrorCode: error.code });
+      emitErrorEvent(e);
+      set({ status: "error", lastErrorCode: normalizeError(e).code });
     }
   },
 

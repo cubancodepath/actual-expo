@@ -1,11 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useSyncStore } from "../syncStore";
-import { ActualError, setErrorSink } from "@/core/errors";
+import { ActualError, errorChannel, type ErrorEvent } from "@/core/errors";
 import * as syncModule from "@/core/sync";
 
 beforeEach(() => {
   useSyncStore.setState({ status: "idle", lastErrorCode: null, lastSync: null });
-  setErrorSink(() => {});
 });
 
 afterEach(() => {
@@ -24,18 +23,19 @@ describe("useSyncStore.sync", () => {
     expect(state.lastErrorCode).toBeNull();
   });
 
-  it("routes a failed sync through reportError and records the code", async () => {
-    const sink = vi.fn();
-    setErrorSink(sink);
+  it("emits a failed sync to the error bus and records the code", async () => {
+    const events: ErrorEvent[] = [];
+    const unsubscribe = errorChannel.subscribe((event) => events.push(event));
     vi.spyOn(syncModule, "fullSync").mockRejectedValue(new ActualError("network/timeout"));
 
     await useSyncStore.getState().sync();
+    unsubscribe();
 
     const state = useSyncStore.getState();
     expect(state.status).toBe("error");
     expect(state.lastErrorCode).toBe("network/timeout");
-    expect(sink).toHaveBeenCalledTimes(1);
-    expect(sink.mock.calls[0][0].error.code).toBe("network/timeout");
+    expect(events).toHaveLength(1);
+    expect(events[0].code).toBe("NETWORK_TIMEOUT");
   });
 
   it("clears lastErrorCode when a new sync starts", async () => {

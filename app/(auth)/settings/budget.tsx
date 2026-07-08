@@ -12,7 +12,7 @@ import {
   promptToEnableEncryption,
 } from "@/design-system";
 import { useMutation } from "@tanstack/react-query";
-import { InlineError } from "@/components/InlineError";
+import { InlineError } from "@/ui/feedback/InlineError";
 import { useSyncedPrefs } from "@/hooks/useSyncedPrefs";
 import { useFeatureFlag, useSetFeatureFlag } from "@/hooks/useFeatureFlag";
 import { useSessionStore } from "@/stores/sessionStore";

@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import i18n from "@/i18n/config";
 import { Icon } from "@/design-system/atoms/Icon";
 import { lightColors, darkColors } from "@/design-system/tokens/colors";
-import { reportError } from "@/core/errors/report";
+import { emitErrorEvent } from "@/core/errors/ErrorChannel";
 
 // Use raw RN Text to avoid circular deps with themed components
 import { Text as RNText } from "react-native";
@@ -27,11 +27,9 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     console.error("[ErrorBoundary]", error, info.componentStack);
-    // inlineHandled: true — this component IS the display (its own
-    // full-screen fallback below), so skip the toast/dialog the pipeline
-    // would otherwise queue and just get the Sentry capture.
-    reportError(error, {
-      inlineHandled: true,
+    // This component IS the display (its own full-screen fallback below);
+    // the bus event is for logging only.
+    emitErrorEvent(error, {
       context: { componentStack: info.componentStack },
     });
   }

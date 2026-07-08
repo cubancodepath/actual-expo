@@ -7,7 +7,7 @@ import { createAccount } from "@/core/domain/accounts";
 import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvider";
 import { Text } from "@/design-system/atoms/Text";
 import { Button } from "@/design-system/atoms/Button";
-import { InlineError } from "@/components/InlineError";
+import { InlineError } from "@/ui/feedback/InlineError";
 import { useTranslation } from "react-i18next";
 import type { Theme } from "@/design-system/tokens";
 

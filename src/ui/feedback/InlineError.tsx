@@ -11,7 +11,7 @@ type InlineErrorProps = {
 
 /**
  * Renders a screen-local error banner. Pair with `useMutation({ meta: { inline: true } })`
- * so the mutation's `error` is passed straight through — reportError() still
+ * so the mutation's `error` is passed straight through — the error bus still
  * logs it (via the MutationCache's onError), this just adds the visible part.
  */
 export function InlineError({ error, onDismiss }: InlineErrorProps) {

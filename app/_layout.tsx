@@ -36,11 +36,10 @@ import { updateAppBadge } from "@/lib/badge";
 import { syncShortcutCache } from "@/lib/syncShortcutCache";
 import { UndoToast } from "@/design-system";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { ErrorChannelConsumer } from "@/components/ErrorChannelConsumer";
-import { ErrorPresenter } from "@/components/ErrorPresenter";
+import { ErrorChannelConsumer } from "@/ui/feedback/ErrorChannelConsumer";
 import { useShakeUndo } from "@/hooks/useShakeUndo";
 import { loadAllPersistedKeys } from "@/services/encryptionService";
-import { installErrorPipeline, installGlobalHandlers } from "@/lib/errors/install";
+import { installGlobalHandlers } from "@/lib/errors/install";
 
 import { queryClient } from "@/core/queries/queryClient";
 
@@ -62,7 +61,6 @@ Sentry.init({
 });
 
 // Must run after Sentry.init (chains onto the ErrorUtils handler Sentry installs).
-installErrorPipeline();
 installGlobalHandlers();
 
 function RootLayout() {
@@ -294,7 +292,6 @@ function RootLayout() {
                   </Stack>
                   <UndoToast />
                   <ErrorChannelConsumer />
-                  <ErrorPresenter />
                 </HeroUINativeProvider>
               </ThemeProvider>
             </NavigationThemeProvider>

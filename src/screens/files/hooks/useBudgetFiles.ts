@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import { ActualError, reportError } from "@/core/errors";
+import { ActualError, emitErrorEvent } from "@/core/errors";
 import { useSessionStore } from "@/stores/sessionStore";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import { logout } from "@/services/authService";
@@ -35,9 +35,9 @@ type UseBudgetFilesReturn = {
   /** Key of file currently being selected/downloaded */
   selecting: string | null;
   /**
-   * Per-row actions. Failures report to the global pipeline (toast) instead
-   * of a shared error state — there's no good inline placement for "which
-   * row's action failed" beyond the list-level banner `listError` covers.
+   * Per-row actions. Failures are emitted to the error bus (log-only for
+   * now) instead of a shared error state — there's no good inline placement
+   * for "which row's action failed" beyond the list-level banner `listError`.
    */
   selectFile: (file: ReconciledBudgetFile) => Promise<void>;
   /** Delete a file locally and/or from server */
@@ -98,7 +98,8 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
         if (isMounted.current) setFiles(f);
       })
       .catch((e) => {
-        if (isMounted.current) setListError(reportError(e, { inlineHandled: true }));
+        emitErrorEvent(e);
+        if (isMounted.current) setListError(e);
       })
       .finally(() => {
         if (isMounted.current) setLoading(false);
@@ -117,7 +118,8 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
         if (isMounted.current) setFiles(f);
       })
       .catch((e) => {
-        if (isMounted.current) setListError(reportError(e, { inlineHandled: true }));
+        emitErrorEvent(e);
+        if (isMounted.current) setListError(e);
       })
       .finally(() => {
         if (isMounted.current) setRefreshing(false);
@@ -144,7 +146,7 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
         await switchBudget(file, serverUrl, token);
       } catch (e: unknown) {
         clearSwitchingFlag();
-        reportError(e);
+        emitErrorEvent(e);
         if (isMounted.current) setSelecting(null);
         throw e;
       }
@@ -165,7 +167,7 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
         const updated = await fetchFiles();
         if (isMounted.current) setFiles(updated);
       } catch (e: unknown) {
-        reportError(e);
+        emitErrorEvent(e);
         throw e;
       }
     },
@@ -195,7 +197,7 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
         const updated = await fetchFiles();
         if (isMounted.current) setFiles(updated);
       } catch (e: unknown) {
-        reportError(e);
+        emitErrorEvent(e);
         throw e;
       }
     },
@@ -220,7 +222,7 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
         const updated = await fetchFiles();
         if (isMounted.current) setFiles(updated);
       } catch (e: unknown) {
-        reportError(e);
+        emitErrorEvent(e);
         throw e;
       } finally {
         if (isMounted.current) setActionInProgress(null);
@@ -252,7 +254,7 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
         const updated = await fetchFiles();
         if (isMounted.current) setFiles(updated);
       } catch (e: unknown) {
-        reportError(e);
+        emitErrorEvent(e);
         throw e;
       } finally {
         if (isMounted.current) setActionInProgress(null);

@@ -14,7 +14,8 @@ import { resetSyncState, clearSwitchingFlag, loadClock, repairSync, fullSync } f
 import { clearLocalData } from "@/core/db";
 import { closeBudget } from "@/services/budgetfiles";
 import { logout } from "@/services/authService";
-import { reportError } from "@/core/errors";
+import { normalizeError } from "@/core/errors";
+import { emitErrorEvent } from "@/core/errors/ErrorChannel";
 import type { Theme } from "@/design-system/tokens";
 
 const ICON_SIZE = 20;
@@ -141,7 +142,8 @@ export default function SettingsScreen() {
             await repairSync();
             await fullSync({ force: true });
           } catch (e) {
-            const normalized = reportError(e, { inlineHandled: true });
+            emitErrorEvent(e);
+            const normalized = normalizeError(e);
             Alert.alert(tc("error"), (tc as any)(normalized.messageKey, normalized.messageParams));
           } finally {
             setRepairing(false);

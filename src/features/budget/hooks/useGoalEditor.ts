@@ -9,7 +9,7 @@ import { getGoalTemplates, setGoalTemplates } from "@/core/domain/goals";
 import { updateGoalIndicator } from "@/core/domain/goals/apply";
 import { amountToInteger, integerToAmount } from "@/core/domain/goals/engine";
 import { batchMessages } from "@/core/sync";
-import { reportError } from "@/core/errors";
+import { emitErrorEvent } from "@/core/errors/ErrorChannel";
 import type { Template } from "@/core/domain/goals/types";
 
 // ---------------------------------------------------------------------------
@@ -337,7 +337,7 @@ export function useGoalEditor({ categoryId, dismissCount }: UseGoalEditorArgs) {
       await updateGoalIndicator(useBudgetUIStore.getState().month, categoryId);
       dismiss();
     } catch (e) {
-      reportError(e, { inlineHandled: true });
+      emitErrorEvent(e);
       Alert.alert(t("couldNotSaveTitle"), t("couldNotSaveMessage"));
     } finally {
       setSaving(false);
@@ -356,7 +356,7 @@ export function useGoalEditor({ categoryId, dismissCount }: UseGoalEditorArgs) {
             await setGoalTemplates(categoryId, []);
             dismiss();
           } catch (e) {
-            reportError(e, { inlineHandled: true });
+            emitErrorEvent(e);
             Alert.alert(t("errorTitle"), t("couldNotRemoveTarget"));
           }
         },

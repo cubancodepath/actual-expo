@@ -11,7 +11,8 @@ import { getClock, merkle, Timestamp } from "@/core/crdt";
 import { encode, decode } from "./encoder";
 import type { SyncMessage } from "./encoder";
 import { postBinary } from "@/core/post";
-import { ActualError, reportError } from "@/core/errors";
+import { ActualError, normalizeError } from "@/core/errors";
+import { emitErrorEvent } from "@/core/errors/ErrorChannel";
 import { applyMessages, getMessagesSince } from "./apply";
 import { emit } from "./syncEvents";
 import { getSyncGeneration, isSwitchingBudget, setActiveSyncPromise } from "./lifecycle";
@@ -233,10 +234,8 @@ export function fullSync(opts?: { force?: boolean }): Promise<number> {
         encryptKeyId: prefs.encryptKeyId,
       });
       if (!result.valid && result.error.reason === "key-mismatch") {
-        const error = reportError(
-          new ActualError("sync/key-missing", { context: { keyRotated: true } }),
-        );
-        useSyncStore.getState()._setErrorCode(error.code);
+        emitErrorEvent(new ActualError("sync/key-missing", { context: { keyRotated: true } }));
+        useSyncStore.getState()._setErrorCode("sync/key-missing");
         return 0;
       }
       // Either confirmed valid, or the check itself failed (e.g. network) —
@@ -281,8 +280,8 @@ export function fullSync(opts?: { force?: boolean }): Promise<number> {
       if (gen !== getSyncGeneration()) return 0;
 
       if (e instanceof ActualError && e.code === "auth/token-expired") {
-        // Session teardown, not a user-visible error — silent per policy anyway.
-        reportError(e);
+        // Session teardown, not a user-visible error.
+        emitErrorEvent(e);
         const { closeBudget } = await import("@/services/budgetfiles");
         await closeBudget().catch(() => {});
         const { logout } = await import("@/services/authService");
@@ -291,7 +290,8 @@ export function fullSync(opts?: { force?: boolean }): Promise<number> {
       }
 
       if (e instanceof ActualError && e.code === "sync/key-missing") {
-        useSyncStore.getState()._setErrorCode(reportError(e).code);
+        emitErrorEvent(e);
+        useSyncStore.getState()._setErrorCode(e.code);
         _lastSyncHadDecryptFailure = true;
         return 0;
       }
@@ -300,12 +300,13 @@ export function fullSync(opts?: { force?: boolean }): Promise<number> {
         e instanceof ActualError &&
         (e.code === "sync/clock-drift" || e.code === "sync/out-of-sync")
       ) {
-        useSyncStore.getState()._setErrorCode(reportError(e).code);
+        emitErrorEvent(e);
+        useSyncStore.getState()._setErrorCode(e.code);
         return 0;
       }
 
       if (e instanceof ActualError && e.code === "network/offline") {
-        reportError(e); // silent per policy — local-first, no toast
+        emitErrorEvent(e); // log only — local-first, expected condition
         useSyncStore.getState()._setStatus("idle");
         // Pause scheduled syncs until the next foreground/manual retry
         // (app/_layout.tsx resets this back to "enabled" on foreground) —
@@ -315,7 +316,7 @@ export function fullSync(opts?: { force?: boolean }): Promise<number> {
         return 0;
       }
 
-      // Deliberately bypasses reportError: a DB handle closed mid-sync (e.g.
+      // Deliberately bypasses the error bus: a DB handle closed mid-sync (e.g.
       // the user switched/closed the budget while a background sync was in
       // flight) is expected and benign here — surfacing db/unavailable's
       // dialog policy for this transient, self-resolving condition would be
@@ -327,7 +328,8 @@ export function fullSync(opts?: { force?: boolean }): Promise<number> {
         return 0;
       }
 
-      useSyncStore.getState()._setErrorCode(reportError(e).code);
+      emitErrorEvent(e);
+      useSyncStore.getState()._setErrorCode(normalizeError(e).code);
       throw e;
     }
   })().finally(() => {

@@ -22,7 +22,7 @@ import { GlassButton } from "@/design-system/atoms/GlassButton";
 import { AmountHeader } from "@/features/transactions/components/AmountHeader";
 import { HiddenAmountInput } from "@/features/transactions/components/HiddenAmountInput";
 import { useAmountInput } from "@/features/transactions/hooks/useAmountInput";
-import { InlineError } from "@/components/InlineError";
+import { InlineError } from "@/ui/feedback/InlineError";
 import type { TransactionType } from "@/features/transactions/components/TypeToggle";
 import { DetailRow } from "@/features/transactions/components/DetailRow";
 import type { RecurConfig, RuleCondition, RuleAction } from "@/core/domain/schedules/types";

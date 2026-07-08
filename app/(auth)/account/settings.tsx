@@ -10,8 +10,8 @@ import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvid
 import { Text } from "@/design-system/atoms/Text";
 import { Button } from "@/design-system/atoms/Button";
 import { Input } from "@/design-system/atoms/Input";
-import { InlineError } from "@/components/InlineError";
-import { reportError } from "@/core/errors";
+import { InlineError } from "@/ui/feedback/InlineError";
+import { emitErrorEvent } from "@/core/errors/ErrorChannel";
 import { useTranslation } from "react-i18next";
 import type { Theme } from "@/design-system/tokens";
 
@@ -76,7 +76,7 @@ export default function AccountSettingsScreen() {
             try {
               await updateAccount(id, { closed: false });
             } catch (e) {
-              reportError(e);
+              emitErrorEvent(e);
             } finally {
               setReopening(false);
             }

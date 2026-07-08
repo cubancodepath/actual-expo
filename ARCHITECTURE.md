@@ -100,6 +100,8 @@ app → screens → (ui | stores | lib | services) → core
 | `src/hooks/` | globales → `src/lib/hooks/`; de un dominio → `screens/<dominio>/hooks/` | |
 | `src/locales/` | `src/i18n/locales/` | ✅ hecho 2026-07-08 |
 | `src/features/auth/` | `src/screens/auth/` | ✅ hecho 2026-07-08 — primer dominio migrado (patrón de referencia) |
+| files.tsx + change-budget.tsx + hooks de settings | `src/screens/files/` (Budget­FilesScreen, ChangeBudgetScreen, hooks/, components/) | ✅ hecho 2026-07-09 — todo heroui; BudgetFileRow → `src/ui/`, InlineError → `src/ui/feedback/` |
+| Pipeline de errores `reportError`/policy/errorStore/ErrorPresenter | **borrado** — queda solo el bus `ErrorChannel` + `ErrorChannelConsumer` (`src/ui/feedback/`, log + Sentry) | ✅ hecho 2026-07-09 — consumers de UI se colgarán del bus cuando toque |
 | `src/stores/`, `src/services/`, `src/lib/`, `src/core/`, `src/i18n/` | se quedan donde están | |
 | Rutas gordas: `app/(auth)/account/[id].tsx` (557), `account/search.tsx` (550), `settings/budget.tsx` (532), `transaction/split.tsx` (455) | extraer a `screens/accounts/`, `screens/settings/`, `screens/transactions/` | siguiente candidato cada vez que se toquen |
 

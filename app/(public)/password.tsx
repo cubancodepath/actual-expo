@@ -1,4 +1,4 @@
-import { PasswordSignInScreen } from "@/features/auth/screens/PasswordSignInScreen";
+import { PasswordSignInScreen } from "@/screens/auth/PasswordSignInScreen";
 
 export default function PasswordRoute() {
   return <PasswordSignInScreen />;

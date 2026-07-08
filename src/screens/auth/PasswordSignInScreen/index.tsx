@@ -4,8 +4,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { withUniwind } from "uniwind";
 import { useTranslation } from "react-i18next";
 import { Button, Input, Spinner, Typography, useThemeColor } from "heroui-native";
-import { usePasswordSignIn } from "@/features/auth/hooks/usePasswordSignIn";
-import { AuthShell } from "@/features/auth/components/AuthShell";
+import { usePasswordSignIn } from "./hooks/usePasswordSignIn";
+import { AuthShell } from "@/screens/auth/components/AuthShell";
 
 const StyledIonicons = withUniwind(Ionicons);
 

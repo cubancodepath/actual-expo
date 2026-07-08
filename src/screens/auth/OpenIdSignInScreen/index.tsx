@@ -2,8 +2,8 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { useTranslation } from "react-i18next";
 import { Alert, Button, Spinner, useThemeColor } from "heroui-native";
-import { useOpenIdSignIn } from "@/features/auth/hooks/useOpenIdSignIn";
-import { AuthShell } from "@/features/auth/components/AuthShell";
+import { useOpenIdSignIn } from "./hooks/useOpenIdSignIn";
+import { AuthShell } from "@/screens/auth/components/AuthShell";
 
 WebBrowser.maybeCompleteAuthSession();
 

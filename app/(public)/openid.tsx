@@ -1,4 +1,4 @@
-import { OpenIdSignInScreen } from "@/features/auth/screens/OpenIdSignInScreen";
+import { OpenIdSignInScreen } from "@/screens/auth/OpenIdSignInScreen";
 
 export default function OpenIdRoute() {
   return <OpenIdSignInScreen />;

@@ -3,7 +3,7 @@ import { ActualError, reportError } from "@/core/errors";
 import { useSessionStore } from "@/stores/sessionStore";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import { logout } from "@/services/authService";
-import { listRemoteBudgetFiles } from "@/shared/infra/api/budgetFiles.api";
+import { listRemoteBudgetFiles } from "@/services/api/budgetFiles.api";
 import { listLocalBudgets } from "@/services/budgetMetadata";
 import {
   type ReconciledBudgetFile,

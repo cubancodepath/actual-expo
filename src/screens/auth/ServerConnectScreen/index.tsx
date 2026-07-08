@@ -7,8 +7,8 @@ import { useTranslation } from "react-i18next";
 import { Button, Input, Spinner, Typography, useThemeColor } from "heroui-native";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import { useUiPrefsStore } from "@/stores/uiPrefsStore";
-import { useServerProbe } from "@/features/auth/hooks/useServerProbe";
-import { AuthShell } from "@/features/auth/components/AuthShell";
+import { useServerProbe } from "./hooks/useServerProbe";
+import { AuthShell } from "@/screens/auth/components/AuthShell";
 
 WebBrowser.maybeCompleteAuthSession();
 

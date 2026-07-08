@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useRouter } from "expo-router";
-import { getBootstrapInfo } from "@/shared/infra/api/bootstrap/bootstrap.api";
+import { getBootstrapInfo } from "@/services/api/bootstrap/bootstrap.api";
 
 /**
  * Step 1 of auth: connect to a server and decide where to go next.

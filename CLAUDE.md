@@ -32,6 +32,11 @@ Mobile client for [Actual Budget](https://actualbudget.com/) — local-first bud
 
 ### Source Layout
 
+> **IMPORTANT — migración de arquitectura en curso**: la organización definitiva de carpetas está
+> definida en [`ARCHITECTURE.md`](./ARCHITECTURE.md) (screens-first). El layout de abajo describe el
+> estado ACTUAL (legacy). Regla strangler: todo archivo nuevo nace en su ubicación definitiva según
+> ARCHITECTURE.md, y al tocar un archivo existente se mueve a su destino y se actualizan los imports.
+
 ```
 src/
 ├── core/                   # Domain logic — NO React or UI imports allowed here

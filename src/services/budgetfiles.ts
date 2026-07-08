@@ -22,7 +22,7 @@ import { resetAllStores } from "../stores/resetStores";
 import { useSessionStore } from "@/stores/sessionStore";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import { logout } from "@/services/authService";
-import type { RemoteBudgetFile } from "@/shared/infra/api/budgetFiles.api";
+import type { RemoteBudgetFile } from "@/services/api/budgetFiles.api";
 import {
   type BudgetMetadata,
   getBudgetDir,
@@ -34,7 +34,7 @@ import {
 } from "./budgetMetadata";
 import * as encryption from "@/core/encryption";
 import { loadKeyForBudget } from "./encryptionService";
-import { http } from "@/shared/infra/api/httpClient";
+import { http } from "@/services/api/httpClient";
 import { ActualError, type ErrorCode } from "@/core/errors";
 
 // ---------------------------------------------------------------------------

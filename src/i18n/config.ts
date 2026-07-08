@@ -2,8 +2,8 @@ import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import { getLocales } from "expo-localization";
 import { createMMKV } from "react-native-mmkv";
-import en from "../locales/en";
-import es from "../locales/es";
+import en from "./locales/en";
+import es from "./locales/es";
 
 const SUPPORTED_LANGUAGES = ["en", "es"] as const;
 

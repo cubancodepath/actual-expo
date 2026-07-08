@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useRouter } from "expo-router";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
-import { createOpenIdLoginUrl } from "@/shared/infra/api/auth/auth.api";
+import { createOpenIdLoginUrl } from "@/services/api/auth/auth.api";
 import { finalizeAuthenticatedSession } from "@/services/authService";
 
 /**

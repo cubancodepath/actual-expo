@@ -1,4 +1,4 @@
-import { ServerConnectScreen } from "@/features/auth/screens/ServerConnectScreen";
+import { ServerConnectScreen } from "@/screens/auth/ServerConnectScreen";
 
 export default function ServerConnectRoute() {
   return <ServerConnectScreen />;

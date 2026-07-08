@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { useTranslation } from "react-i18next";
 import { Alert, Button, Spinner, useThemeColor } from "heroui-native";
@@ -9,14 +9,13 @@ WebBrowser.maybeCompleteAuthSession();
 
 /** Step 2b: OpenID sign-in for a server resolved by the connect screen. */
 export function OpenIdSignInScreen() {
-  const router = useRouter();
   const { t } = useTranslation("auth");
   const { serverUrl } = useLocalSearchParams<{ serverUrl: string }>();
   const { loading, signIn } = useOpenIdSignIn(serverUrl);
   const accentForeground = useThemeColor("accent-foreground");
 
   return (
-    <AuthShell onBack={() => router.back()}>
+    <AuthShell>
       <Alert status="accent">
         <Alert.Indicator />
         <Alert.Content>
@@ -24,19 +23,9 @@ export function OpenIdSignInScreen() {
         </Alert.Content>
       </Alert>
 
-      <Button
-        variant="primary"
-        size="lg"
-        onPress={signIn}
-        isDisabled={loading}
-        isIconOnly={loading}
-        className="mt-4"
-      >
-        {loading ? (
-          <Spinner color={accentForeground} />
-        ) : (
-          <Button.Label>{t("signInWithOpenId")}</Button.Label>
-        )}
+      <Button variant="primary" size="lg" onPress={signIn} isDisabled={loading} className="mt-4">
+        {loading && <Spinner size="sm" color={accentForeground} />}
+        <Button.Label>{loading ? t("signingIn") : t("signInWithOpenId")}</Button.Label>
       </Button>
     </AuthShell>
   );

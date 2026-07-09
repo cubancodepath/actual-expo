@@ -49,7 +49,7 @@ describe("post", () => {
   });
 
   it("maps a JSON error body's arbitrary reason to http/rejected with serverReason", async () => {
-    fetchMock.mockResolvedValue(jsonResponse({ status: "error", reason: "file-not-found" }, 404));
+    fetchMock.mockResolvedValue(jsonResponse({ status: "error", reason: "weird-reason" }, 404));
     const error = await post("https://s/endpoint", {}).then(
       () => {
         throw new Error("expected rejection");
@@ -57,7 +57,12 @@ describe("post", () => {
       (e: unknown) => e as ActualError,
     );
     expect(error.code).toBe("http/rejected");
-    expect(error.context?.serverReason).toBe("file-not-found");
+    expect(error.context?.serverReason).toBe("weird-reason");
+  });
+
+  it("maps a JSON file-state reason to its sync/file-* code", async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ status: "error", reason: "file-not-found" }, 404));
+    await expectActualError(post("https://s/endpoint", {}), "sync/file-not-found");
   });
 
   it("maps an ngrok tunnel error header to network/offline", async () => {
@@ -113,5 +118,35 @@ describe("postBinary", () => {
   it("maps a network failure to network/offline", async () => {
     fetchMock.mockRejectedValue(new TypeError("Network request failed"));
     await expectActualError(postBinary("https://s/sync", new Uint8Array([1])), "network/offline");
+  });
+
+  // The sync server rejects /sync/sync with res.send('file-has-reset') —
+  // a 400 whose body is the RAW reason string (Content-Type text/html, not
+  // JSON). These used to flatten to a generic, unrecoverable http/rejected.
+  it.each([
+    ["file-has-reset", "sync/file-has-reset"],
+    ["file-has-new-key", "sync/file-has-new-key"],
+    ["file-old-version", "sync/file-old-version"],
+    ["file-needs-upload", "sync/file-needs-upload"],
+    ["file-not-found", "sync/file-not-found"],
+    ["file-key-mismatch", "sync/file-key-mismatch"],
+  ] as const)("maps a plain-text 400 body %s to %s", async (body, code) => {
+    fetchMock.mockResolvedValue(
+      new Response(new TextEncoder().encode(body), {
+        status: 400,
+        headers: { "Content-Type": "text/html; charset=utf-8" },
+      }),
+    );
+    await expectActualError(postBinary("https://s/sync", new Uint8Array([1])), code);
+  });
+
+  it("still maps an unknown plain-text 400 body to http/rejected", async () => {
+    fetchMock.mockResolvedValue(
+      new Response(new TextEncoder().encode("nope"), {
+        status: 400,
+        headers: { "Content-Type": "text/html; charset=utf-8" },
+      }),
+    );
+    await expectActualError(postBinary("https://s/sync", new Uint8Array([1])), "http/rejected");
   });
 });

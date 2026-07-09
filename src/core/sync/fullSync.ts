@@ -11,8 +11,7 @@ import { getClock, merkle, Timestamp } from "@/core/crdt";
 import { encode, decode } from "./encoder";
 import type { SyncMessage } from "./encoder";
 import { postBinary } from "@/core/post";
-import { ActualError, normalizeError } from "@/core/errors";
-import { emitErrorEvent } from "@/core/errors/ErrorChannel";
+import { ActualError } from "@/core/errors";
 import { applyMessages, getMessagesSince } from "./apply";
 import { emit } from "./syncEvents";
 import { getSyncGeneration, isSwitchingBudget, setActiveSyncPromise } from "./lifecycle";
@@ -53,7 +52,6 @@ async function _fullSync(
   prevDiffTime: number | null,
   gen: number,
   prefs: any,
-  useSyncStore: any,
   force?: boolean,
 ): Promise<SyncMessage[]> {
   if (!force && isSwitchingBudget()) return [];
@@ -148,7 +146,6 @@ async function _fullSync(
       diffTime,
       gen,
       prefs,
-      useSyncStore,
       force,
     );
 
@@ -204,7 +201,6 @@ export function fullSync(opts?: { force?: boolean }): Promise<number> {
 
     const { useSessionStore } = await import("@/stores/sessionStore");
     const { useBudgetContextStore } = await import("@/stores/budgetContextStore");
-    const { useSyncStore } = await import("@/stores/syncStore");
 
     // Combined view over session + budget context, preserving the `prefs` shape
     // the inner _fullSync loop consumes (fields + a setPrefs that routes writes
@@ -220,7 +216,9 @@ export function fullSync(opts?: { force?: boolean }): Promise<number> {
     };
     if (prefs.isLocalOnly) return 0;
     if (!force && !prefs.isConfigured) {
-      throw new Error("Server not configured — set serverUrl, token, fileId, groupId first");
+      throw new ActualError("sync/not-configured", {
+        message: "Server not configured — set serverUrl, token, fileId, groupId first",
+      });
     }
 
     // Proactively verify the key after a prior decrypt-failure — see
@@ -234,9 +232,7 @@ export function fullSync(opts?: { force?: boolean }): Promise<number> {
         encryptKeyId: prefs.encryptKeyId,
       });
       if (!result.valid && result.error.reason === "key-mismatch") {
-        emitErrorEvent(new ActualError("sync/key-missing", { context: { keyRotated: true } }));
-        useSyncStore.getState()._setErrorCode("sync/key-missing");
-        return 0;
+        throw new ActualError("sync/key-missing", { context: { keyRotated: true } });
       }
       // Either confirmed valid, or the check itself failed (e.g. network) —
       // don't block the sync attempt on checkKey's own failure, just retry
@@ -244,12 +240,11 @@ export function fullSync(opts?: { force?: boolean }): Promise<number> {
       _lastSyncHadDecryptFailure = false;
     }
 
-    useSyncStore.getState()._setStatus("syncing");
     emit({ type: "start", tables: [] });
 
     try {
       // Run the sync loop (may recurse on merkle divergence)
-      const allMessages = await _fullSync(null, 0, null, gen, prefs, useSyncStore, force);
+      const allMessages = await _fullSync(null, 0, null, gen, prefs, force);
 
       if (gen !== getSyncGeneration()) return 0;
 
@@ -263,7 +258,6 @@ export function fullSync(opts?: { force?: boolean }): Promise<number> {
         triggerBudgetChanges(allMessages);
       }
 
-      useSyncStore.getState()._setStatus("success");
       setSyncingMode("enabled"); // clears any prior "offline" from a network failure
       _lastSyncHadDecryptFailure = false;
 
@@ -279,57 +273,31 @@ export function fullSync(opts?: { force?: boolean }): Promise<number> {
     } catch (e: unknown) {
       if (gen !== getSyncGeneration()) return 0;
 
-      if (e instanceof ActualError && e.code === "auth/token-expired") {
-        // Session teardown, not a user-visible error.
-        emitErrorEvent(e);
-        const { closeBudget } = await import("@/services/budgetfiles");
-        await closeBudget().catch(() => {});
-        const { logout } = await import("@/services/authService");
-        await logout();
-        return 0;
-      }
+      // Core-owned bookkeeping only — reporting and recovery policy (logout,
+      // syncRecovery, sync badge state) belong to the app layer: every error
+      // is rethrown and syncStore.sync() decides what to do with it.
 
       if (e instanceof ActualError && e.code === "sync/key-missing") {
-        emitErrorEvent(e);
-        useSyncStore.getState()._setErrorCode(e.code);
+        // Make the *next* attempt proactively verify the key server-side.
         _lastSyncHadDecryptFailure = true;
-        return 0;
-      }
-
-      if (
-        e instanceof ActualError &&
-        (e.code === "sync/clock-drift" || e.code === "sync/out-of-sync")
-      ) {
-        emitErrorEvent(e);
-        useSyncStore.getState()._setErrorCode(e.code);
-        return 0;
       }
 
       if (e instanceof ActualError && e.code === "network/offline") {
-        emitErrorEvent(e); // log only — local-first, expected condition
-        useSyncStore.getState()._setStatus("idle");
         // Pause scheduled syncs until the next foreground/manual retry
         // (app/_layout.tsx resets this back to "enabled" on foreground) —
         // avoids hammering scheduleFullSync's 1s-debounced retry on every
         // local mutation while there's no connectivity.
         setSyncingMode("offline");
-        return 0;
       }
 
-      // Deliberately bypasses the error bus: a DB handle closed mid-sync (e.g.
-      // the user switched/closed the budget while a background sync was in
-      // flight) is expected and benign here — surfacing db/unavailable's
-      // dialog policy for this transient, self-resolving condition would be
-      // a false alarm. Foreground DB failures elsewhere still go through
-      // the pipeline normally.
+      // A DB handle closed mid-sync (e.g. the user switched/closed the budget
+      // while a background sync was in flight) is expected and benign — this
+      // transient, self-resolving condition is flow control, not an error.
       const msg = e instanceof Error ? e.message : String(e);
       if (msg.includes("closed resource") || msg.includes("not initialized")) {
-        useSyncStore.getState()._setStatus("idle");
         return 0;
       }
 
-      emitErrorEvent(e);
-      useSyncStore.getState()._setErrorCode(normalizeError(e).code);
       throw e;
     }
   })().finally(() => {

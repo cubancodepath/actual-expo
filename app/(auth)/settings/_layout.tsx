@@ -2,7 +2,7 @@ import { Stack, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { themedScreenOptions } from "@/lib/screenOptions";
-import { Button, EncryptionPasswordPrompt } from "@/design-system";
+import { Button } from "@/design-system";
 
 export default function SettingsLayout() {
   const theme = useTheme();
@@ -31,7 +31,6 @@ export default function SettingsLayout() {
         <Stack.Screen name="display" options={{ title: t("display") }} />
         <Stack.Screen name="language" options={{ title: t("language") }} />
       </Stack>
-      <EncryptionPasswordPrompt />
     </>
   );
 }

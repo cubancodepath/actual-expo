@@ -42,7 +42,7 @@ import {
   deleteSchedule,
   updateSchedule,
 } from "@/core/domain/schedules";
-import { useTransactions } from "@/features/transactions/hooks/useTransactions";
+import { useTransactions } from "@/lib/hooks/useTransactions";
 import { useRunningBalances } from "@/features/accounts/hooks/useRunningBalances";
 import { useSelectionMode } from "@/hooks/useSelectionMode";
 import { useTransactionBatchActions } from "@/hooks/useTransactionBatchActions";

@@ -258,6 +258,11 @@ async function runStructuralRefresh(): Promise<void> {
 
 listen((event) => {
   if (event.tables.includes("categories") || event.tables.includes("category_groups")) {
+    // Not initialized yet (e.g. wizard seed before openBudget) — the later
+    // initSpreadsheet() builds all cells anyway, and firing async reads here
+    // just races with other work on the shared connection.
+    if (builtStart === null || builtEnd === null) return;
+
     // Skip structural refresh if we just initialized — cells are already fresh.
     // This prevents the post-open sync from triggering a massive re-render
     // that can reset Expo Router's tab navigation state.

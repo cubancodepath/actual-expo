@@ -16,7 +16,7 @@ import { ContextMenu } from "@/design-system/atoms/ContextMenu";
 import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvider";
 import { Text, Amount, NotesWithTags, RowSeparator, Pill } from "@/design-system";
 import { formatAmount } from "@/lib/format";
-import { SwipeableRow } from "@/design-system/molecules/SwipeableRow";
+import { SwipeableRow } from "@/ui/SwipeableRow";
 import type { TransactionDisplay } from "@/core/domain/transactions";
 import type { Tag } from "@/core/domain/tags/types";
 import type { Theme } from "@/design-system/tokens";
@@ -273,10 +273,8 @@ export const TransactionListItem = memo(function TransactionListItem({
     <SwipeableRow
       onDelete={() => onDelete(item.id)}
       onSwipeRight={item.reconciled ? undefined : () => onToggleCleared(item.id)}
-      swipeRightIcon={item.cleared ? "ellipseOutline" : "checkmarkCircle"}
+      swipeRightIcon={item.cleared ? "ellipse-outline" : "checkmark-circle"}
       swipeRightColor={item.cleared ? colors.textMuted : colors.positive}
-      isFirst={isFirst}
-      isLast={isLast}
     >
       {rowContent}
     </SwipeableRow>

@@ -74,6 +74,7 @@
     "heroui-native-pro": "1.0.0-beta.5",
     "i18next": "^25.8.18",
     "ky": "^2.0.2",
+    "lucide-react-native": "^1.23.0",
     "murmurhash": "^2.0.1",
     "protobufjs": "^8.0.0",
     "react": "19.2.0",

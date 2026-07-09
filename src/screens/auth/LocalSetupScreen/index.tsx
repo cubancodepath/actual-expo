@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { ScrollView, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { Button, Spinner, Typography, useThemeColor } from "heroui-native";
+import { Button, ListGroup, Spinner, Typography, useThemeColor } from "heroui-native";
 import { listLocalBudgets, type BudgetMetadata } from "@/services/budgetMetadata";
 import { openBudget, type ReconciledBudgetFile } from "@/services/budgetfiles";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
@@ -89,7 +89,7 @@ export function LocalSetupScreen() {
       >
         {t("yourBudgets")}
       </Typography>
-      <View className="bg-surface rounded-2xl overflow-hidden">
+      <ListGroup className="overflow-hidden">
         {files.map((file, index) => (
           <BudgetFileRow
             key={file.localId}
@@ -99,7 +99,7 @@ export function LocalSetupScreen() {
             showSeparator={index < files.length - 1}
           />
         ))}
-      </View>
+      </ListGroup>
 
       <Typography type="body-sm" color="muted" className="text-center mt-8 mb-3">
         {t("orCreateNew")}

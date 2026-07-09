@@ -1,27 +1,25 @@
 import type { ComponentProps } from "react";
 import { View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { withUniwind } from "uniwind";
-import { Input, Label, TextField } from "heroui-native";
-
-const StyledIonicons = withUniwind(Ionicons);
+import type { LucideIcon } from "lucide-react-native";
+import { Input, Label, TextField, useThemeColor } from "heroui-native";
 
 type AuthFieldProps = {
   label: string;
-  icon: ComponentProps<typeof Ionicons>["name"];
+  icon: LucideIcon;
 } & Omit<ComponentProps<typeof Input>, "className">;
 
 /** TextField with a leading icon inside the input — the single-field pattern of the auth screens. */
-export function AuthField({ label, icon, ...inputProps }: AuthFieldProps) {
+export function AuthField({ label, icon: Icon, ...inputProps }: AuthFieldProps) {
+  const muted = useThemeColor("muted");
   return (
     <TextField>
       <Label>{label}</Label>
       <View className="w-full flex-row items-center">
         <Input {...inputProps} className="flex-1 pl-10" />
-        <StyledIonicons
-          name={icon}
+        <Icon
           size={16}
-          className="absolute left-3.5 text-muted"
+          color={muted}
+          style={{ position: "absolute", left: 14 }}
           pointerEvents="none"
         />
       </View>

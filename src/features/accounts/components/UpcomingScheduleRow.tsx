@@ -5,7 +5,7 @@ import { ContextMenu } from "@/design-system/atoms/ContextMenu";
 import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvider";
 import { Text, Amount, Pill } from "@/design-system";
 import { ScheduleStatusBadge } from "@/design-system/atoms/ScheduleStatusBadge";
-import { SwipeableRow } from "@/design-system/molecules/SwipeableRow";
+import { SwipeableRow } from "@/ui/SwipeableRow";
 import type { PreviewTransaction } from "@/core/domain/schedules/preview";
 import type { Theme } from "@/design-system/tokens";
 
@@ -109,10 +109,8 @@ export const UpcomingScheduleRow = memo(function UpcomingScheduleRow({
     <SwipeableRow
       onDelete={() => onSkip(item.scheduleId)}
       onSwipeRight={() => onPost(item.scheduleId)}
-      swipeRightIcon="checkmarkCircle"
+      swipeRightIcon="checkmark-circle"
       swipeRightColor={colors.positive}
-      isFirst={isFirst}
-      isLast={isLast}
     >
       {rowContent}
     </SwipeableRow>

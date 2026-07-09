@@ -10,12 +10,11 @@ import { useSessionStore } from "@/stores/sessionStore";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import { resetAllStores } from "@/stores/resetStores";
 import { useSyncStore } from "@/stores/syncStore";
-import { resetSyncState, clearSwitchingFlag, loadClock, repairSync, fullSync } from "@/core/sync";
+import { resetSyncState, clearSwitchingFlag, loadClock, repairSync } from "@/core/sync";
 import { clearLocalData } from "@/core/db";
 import { closeBudget } from "@/services/budgetfiles";
 import { logout } from "@/services/authService";
-import { normalizeError } from "@/core/errors";
-import { emitErrorEvent } from "@/core/errors/ErrorChannel";
+import { emitErrorEvent, toErrorCode } from "@/lib/errors/ErrorChannel";
 import type { Theme } from "@/design-system/tokens";
 
 const ICON_SIZE = 20;
@@ -140,11 +139,15 @@ export default function SettingsScreen() {
           setRepairing(true);
           try {
             await repairSync();
-            await fullSync({ force: true });
+            await useSyncStore.getState().sync({ force: true });
+            // sync() never rejects — read the badge state it recorded.
+            const { status, lastErrorCode } = useSyncStore.getState();
+            if (status === "error" && lastErrorCode) {
+              Alert.alert(tc("error"), (tc as any)(`errors:${lastErrorCode}`));
+            }
           } catch (e) {
             emitErrorEvent(e);
-            const normalized = normalizeError(e);
-            Alert.alert(tc("error"), (tc as any)(normalized.messageKey, normalized.messageParams));
+            Alert.alert(tc("error"), (tc as any)(`errors:${toErrorCode(e)}`));
           } finally {
             setRepairing(false);
           }

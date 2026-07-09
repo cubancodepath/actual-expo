@@ -9,7 +9,7 @@ import { getGoalTemplates, setGoalTemplates } from "@/core/domain/goals";
 import { updateGoalIndicator } from "@/core/domain/goals/apply";
 import { amountToInteger, integerToAmount } from "@/core/domain/goals/engine";
 import { batchMessages } from "@/core/sync";
-import { emitErrorEvent } from "@/core/errors/ErrorChannel";
+import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import type { Template } from "@/core/domain/goals/types";
 
 // ---------------------------------------------------------------------------

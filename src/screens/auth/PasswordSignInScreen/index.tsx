@@ -1,5 +1,6 @@
 import { useLocalSearchParams } from "expo-router";
 import { useTranslation } from "react-i18next";
+import { Lock } from "lucide-react-native";
 import { Button, Spinner, useThemeColor } from "heroui-native";
 import { usePasswordSignIn } from "./hooks/usePasswordSignIn";
 import { AuthShell } from "@/screens/auth/components/AuthShell";
@@ -16,7 +17,7 @@ export function PasswordSignInScreen() {
     <AuthShell>
       <AuthField
         label={t("password")}
-        icon="lock-closed-outline"
+        icon={Lock}
         testID="password-input"
         placeholder={t("passwordPlaceholder")}
         value={password}

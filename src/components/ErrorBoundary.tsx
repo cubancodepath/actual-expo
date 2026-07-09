@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import i18n from "@/i18n/config";
 import { Icon } from "@/design-system/atoms/Icon";
 import { lightColors, darkColors } from "@/design-system/tokens/colors";
-import { emitErrorEvent } from "@/core/errors/ErrorChannel";
+import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 
 // Use raw RN Text to avoid circular deps with themed components
 import { Text as RNText } from "react-native";
@@ -29,9 +29,7 @@ export class ErrorBoundary extends Component<Props, State> {
     console.error("[ErrorBoundary]", error, info.componentStack);
     // This component IS the display (its own full-screen fallback below);
     // the bus event is for logging only.
-    emitErrorEvent(error, {
-      context: { componentStack: info.componentStack },
-    });
+    emitErrorEvent(error, { componentStack: info.componentStack });
   }
 
   handleReset = () => {

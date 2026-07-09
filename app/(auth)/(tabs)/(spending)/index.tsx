@@ -39,7 +39,7 @@ import {
   deleteSchedule,
   updateSchedule,
 } from "@/core/domain/schedules";
-import { useTransactions } from "@/features/transactions/hooks/useTransactions";
+import { useTransactions } from "@/lib/hooks/useTransactions";
 import { q } from "@/core/queries";
 import { useSelectionMode } from "@/hooks/useSelectionMode";
 import { usePreviewTransactions } from "@/hooks/usePreviewTransactions";

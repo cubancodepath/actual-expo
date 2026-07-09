@@ -11,7 +11,7 @@ import { Text } from "@/design-system/atoms/Text";
 import { Button } from "@/design-system/atoms/Button";
 import { Input } from "@/design-system/atoms/Input";
 import { InlineError } from "@/ui/feedback/InlineError";
-import { emitErrorEvent } from "@/core/errors/ErrorChannel";
+import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { useTranslation } from "react-i18next";
 import type { Theme } from "@/design-system/tokens";
 

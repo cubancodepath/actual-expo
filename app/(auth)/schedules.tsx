@@ -12,7 +12,7 @@ import {
   RowSeparator,
 } from "@/design-system";
 import { Icon } from "@/design-system/atoms/Icon";
-import { SwipeableRow } from "@/design-system";
+import { SwipeableRow } from "@/ui/SwipeableRow";
 import { useSchedules } from "@/features/schedules/hooks/useSchedules";
 import { deleteSchedule } from "@/core/domain/schedules";
 import { usePayees } from "@/features/transactions/hooks/usePayees";

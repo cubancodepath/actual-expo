@@ -1,33 +1,26 @@
-import { CODE_META, type ErrorCode, type RecoveryAction } from "./codes";
+import type { ErrorCode } from "./codes";
 
 type ActualErrorOptions = {
-  /** Interpolation params for the i18n message (resolved at render time). */
-  params?: Record<string, string | number>;
-  /** Extra data attached to Sentry breadcrumbs/context. */
+  /** Human-oriented debug message (NOT user-facing — UI translates from `code`). */
+  message?: string;
+  /** Extra data attached by the thrower (surfaced in logs/Sentry by the app). */
   context?: Record<string, unknown>;
   cause?: unknown;
 };
 
 /**
- * The one error class for anything a user can hit: transport, sync, files,
- * auth. Carries an i18n key instead of a translated string so locale changes
- * don't require re-throwing, and so `core/` never imports i18n.
+ * The one error class core throws for anything a user can hit: transport,
+ * sync, files, auth. Carries only a typed `code` — how to present or react
+ * to it (i18n message, retry, logout…) is the app's decision, not core's.
  */
 export class ActualError extends Error {
   readonly code: ErrorCode;
-  readonly messageKey: string;
-  readonly messageParams?: Record<string, string | number>;
-  readonly recovery: RecoveryAction;
   readonly context?: Record<string, unknown>;
 
   constructor(code: ErrorCode, options: ActualErrorOptions = {}) {
-    const meta = CODE_META[code];
-    super(meta.debugMessage, { cause: options.cause });
+    super(options.message ?? code, { cause: options.cause });
     this.name = "ActualError";
     this.code = code;
-    this.messageKey = meta.messageKey;
-    this.messageParams = options.params;
-    this.recovery = meta.recovery;
     this.context = options.context;
   }
 }

@@ -27,7 +27,6 @@ export { SectionHeader, type SectionHeaderProps } from "./molecules/SectionHeade
 export { SearchBar, type SearchBarProps } from "./molecules/SearchBar";
 export { EmptyState, type EmptyStateProps } from "./molecules/EmptyState";
 export { Banner, type BannerProps } from "./molecules/Banner";
-export { SwipeableRow } from "./molecules/SwipeableRow";
 export { KeyboardToolbar } from "./molecules/KeyboardToolbar";
 export { SyncBadge } from "./molecules/SyncBadge";
 export {
@@ -37,11 +36,6 @@ export {
   type PickerCategory,
 } from "./molecules/CategoryPickerList";
 export { UndoToast } from "./molecules/UndoToast";
-export {
-  EncryptionPasswordPrompt,
-  promptForPassword,
-  promptToEnableEncryption,
-} from "./molecules/EncryptionPasswordPrompt";
 // NOTE: feature components (CurrencyInput, MonthPicker, budget list items, banners)
 // are NOT re-exported here. Import them directly from @/features/... to keep the
 // dependency direction app → features → design-system (no design-system → features).

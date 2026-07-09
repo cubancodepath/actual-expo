@@ -9,7 +9,7 @@ import { openDatabaseAsync } from "expo-sqlite";
 import { unzipSync, zipSync } from "fflate";
 import { addDays } from "date-fns";
 import { randomUUID } from "expo-crypto";
-import { closeDatabase, openDatabase, run } from "@/core/db";
+import { closeDatabase, openDatabase } from "@/core/db";
 import {
   loadClock,
   saveClock,
@@ -25,6 +25,7 @@ import { logout } from "@/services/authService";
 import type { RemoteBudgetFile } from "@/services/api/budgetFiles.api";
 import {
   type BudgetMetadata,
+  ensureBudgetsDir,
   getBudgetDir,
   readMetadata,
   writeMetadata,
@@ -32,23 +33,35 @@ import {
   idFromBudgetName,
   deleteBudgetDir,
 } from "./budgetMetadata";
+import { seedLocalBudget, type CategorySelection } from "./seedBudget";
 import * as encryption from "@/core/encryption";
 import { loadKeyForBudget } from "./encryptionService";
 import { http } from "@/services/api/httpClient";
+import { mapServerReason } from "@/core/post";
 import { ActualError, type ErrorCode } from "@/core/errors";
+import { emitErrorEvent, toErrorCode } from "@/lib/errors/ErrorChannel";
 
 // ---------------------------------------------------------------------------
 // Auth guard
 // ---------------------------------------------------------------------------
 
-/** Throws auth/token-expired (and logs out) on 401/403, or `code` on any other non-2xx. */
-function checkResponse(res: Response, code: ErrorCode): void {
+/**
+ * Throws auth/token-expired (and logs out) on 401/403. On any other non-2xx,
+ * reads the body: the sync server reports file-state rejections (e.g.
+ * "file-has-reset") as the raw text body, which map to specific sync/file-*
+ * codes; anything else falls back to `code`.
+ */
+async function checkResponse(res: Response, code: ErrorCode): Promise<void> {
   if (res.status === 401 || res.status === 403) {
     void logout();
     throw new ActualError("auth/token-expired");
   }
   if (!res.ok) {
-    throw new ActualError(code, { context: { status: res.status } });
+    const text = await res.text().catch(() => "");
+    const mapped = mapServerReason(text);
+    throw new ActualError(mapped ?? code, {
+      context: { status: res.status, body: text.slice(0, 200) },
+    });
   }
 }
 
@@ -152,6 +165,38 @@ export function reconcileFiles(
 }
 
 // ---------------------------------------------------------------------------
+// Create
+// ---------------------------------------------------------------------------
+
+/**
+ * Create a new local budget: metadata + database + CRDT clock + seed data.
+ * Leaves the raw DB connection open (callers do a proper openBudget() once
+ * setup finishes). Returns the new budgetId.
+ */
+export async function createBudget(opts: {
+  budgetName: string;
+  accountName: string;
+  startingBalance: number;
+  selectedCategories: CategorySelection;
+}): Promise<string> {
+  const budgetId = idFromBudgetName(opts.budgetName);
+  if (__DEV__) console.log("[budgetfiles] Creating budget:", budgetId);
+
+  await ensureBudgetsDir();
+  await writeMetadata(budgetId, { id: budgetId, budgetName: opts.budgetName });
+  await openDatabase(getBudgetDir(budgetId));
+  await loadClock();
+
+  await seedLocalBudget({
+    accountName: opts.accountName,
+    startingBalance: opts.startingBalance,
+    selectedCategories: opts.selectedCategories,
+  });
+
+  return budgetId;
+}
+
+// ---------------------------------------------------------------------------
 // Upload
 // ---------------------------------------------------------------------------
 
@@ -168,27 +213,50 @@ export async function uploadBudget(
   const budgetDir = getBudgetDir(budgetId);
   if (__DEV__) console.log("[upload] Starting upload for budget:", budgetId);
 
-  // 1. Snapshot the live db into a standalone, non-WAL temp file via
-  // VACUUM INTO — this never touches the live connection (no journal-mode
-  // flip needed), so a concurrent write on the live db can't race with the
-  // upload. Then strip kvcache/kvcache_key from the SNAPSHOT (matches
-  // upstream cloud-storage.ts's exportBuffer(): never upload the query
-  // cache — it forces new downloads to recompute everything, which is
-  // safer and shrinks the file a lot) before reading its bytes.
+  // 1. Snapshot via sqlite3_serialize (backup API under the hood): a
+  // consistent image of the db with no VACUUM involved — VACUUM demands
+  // "no other SQL statements in progress" on its connection and kept
+  // failing under expo-sqlite even from a dedicated connection. Serialize
+  // has no such restriction and tolerates concurrent statements.
+  const srcDb = await openDatabaseAsync("db.sqlite", { useNewConnection: true }, budgetDir);
+  let snapshot: Uint8Array;
+  try {
+    snapshot = await srcDb.serializeAsync();
+  } finally {
+    await srcDb.closeAsync();
+  }
+  if (__DEV__) console.log("[upload] Serialized snapshot:", snapshot.length, "bytes");
+
+  // 2. Write the snapshot to a temp file so we can strip kvcache/kvcache_key
+  // with SQL (matches upstream cloud-storage.ts's exportBuffer(): never
+  // upload the query cache — it forces new downloads to recompute
+  // everything, which is safer), and flip it out of WAL so the upload is a
+  // standalone file.
   const tempName = `upload-${randomUUID()}.sqlite`;
   const tempPath = `${budgetDir}${tempName}`;
-  await run("VACUUM INTO ?", [tempPath]);
-
   let dbBytes: Uint8Array;
   try {
+    await writeAsStringAsync(tempPath, uint8ToBase64(snapshot), {
+      encoding: EncodingType.Base64,
+    });
     const tempDb = await openDatabaseAsync(tempName, { useNewConnection: true }, budgetDir);
-    await tempDb.execAsync("DELETE FROM kvcache; DELETE FROM kvcache_key; VACUUM;");
-    await tempDb.closeAsync();
+    try {
+      await tempDb.execAsync("PRAGMA journal_mode = DELETE");
+      await tempDb.execAsync("DELETE FROM kvcache; DELETE FROM kvcache_key;");
+    } finally {
+      await tempDb.closeAsync();
+    }
+    if (__DEV__) console.log("[upload] kvcache stripped, reading snapshot file");
 
-    const dbBase64 = await readAsStringAsync(tempPath, { encoding: EncodingType.Base64 });
+    const dbBase64 = await readAsStringAsync(tempPath, {
+      encoding: EncodingType.Base64,
+    });
     dbBytes = base64ToUint8(dbBase64);
   } finally {
     await deleteAsync(tempPath, { idempotent: true });
+    // The temp db may leave -wal/-shm siblings from before the journal flip
+    await deleteAsync(`${tempPath}-wal`, { idempotent: true });
+    await deleteAsync(`${tempPath}-shm`, { idempotent: true });
   }
 
   // 3. Read metadata and set resetClock flag
@@ -210,7 +278,12 @@ export async function uploadBudget(
 
   // 6. Encrypt ZIP if encryption key is available
   let uploadContent: Uint8Array = zipped;
-  let encryptMeta: { keyId: string; algorithm: string; iv: string; authTag: string } | null = null;
+  let encryptMeta: {
+    keyId: string;
+    algorithm: string;
+    iv: string;
+    authTag: string;
+  } | null = null;
 
   if (meta.encryptKeyId && encryption.hasKey(meta.encryptKeyId)) {
     const encrypted = await encryption.encrypt(zipped, meta.encryptKeyId);
@@ -245,7 +318,7 @@ export async function uploadBudget(
     throwHttpErrors: false,
   });
 
-  checkResponse(res, "file/upload-failed");
+  await checkResponse(res, "file/upload-failed");
 
   const json = await res.json<{ status: string; groupId: string }>();
   if (json.status !== "ok") {
@@ -255,7 +328,11 @@ export async function uploadBudget(
   const groupId = json.groupId;
 
   // 8. Update local metadata
-  await updateMetadata(budgetId, { cloudFileId, groupId, lastUploaded: new Date().toISOString() });
+  await updateMetadata(budgetId, {
+    cloudFileId,
+    groupId,
+    lastUploaded: new Date().toISOString(),
+  });
   if (__DEV__) console.log("[upload] Upload complete. groupId:", groupId);
 
   return { cloudFileId, groupId };
@@ -322,13 +399,18 @@ export async function downloadBudget(
     }),
   ]);
 
-  checkResponse(res, "file/download-failed");
+  await checkResponse(res, "file/download-failed");
 
   const rawBuffer = await res.arrayBuffer();
   let zipBytes = new Uint8Array(rawBuffer);
 
   // If encrypted, decrypt the file before unzipping
-  type EncryptMeta = { keyId: string; algorithm: string; iv: string; authTag: string };
+  type EncryptMeta = {
+    keyId: string;
+    algorithm: string;
+    iv: string;
+    authTag: string;
+  };
   const fileInfo = infoRes.ok
     ? await infoRes.json<{ data?: { encryptMeta?: EncryptMeta } }>().catch(() => null)
     : null;
@@ -348,14 +430,18 @@ export async function downloadBudget(
   if (zipBytes[0] !== 0x50 || zipBytes[1] !== 0x4b) {
     const contentType = res.headers.get("content-type") ?? "unknown";
     const preview = new TextDecoder().decode(zipBytes.slice(0, 200));
-    throw new ActualError("file/corrupt-archive", { context: { contentType, preview } });
+    throw new ActualError("file/corrupt-archive", {
+      context: { contentType, preview },
+    });
   }
 
   // 2. Extract db.sqlite
   const unzipped = unzipSync(zipBytes);
   const dbBytes = unzipped["db.sqlite"];
   if (!dbBytes) {
-    throw new ActualError("file/corrupt-archive", { context: { reason: "missing db.sqlite" } });
+    throw new ActualError("file/corrupt-archive", {
+      context: { reason: "missing db.sqlite" },
+    });
   }
 
   // 3. Create budget directory and write files
@@ -450,7 +536,11 @@ export async function openBudget(budgetId: string): Promise<void> {
     setQueryCache(q("tags").serializeAsString(), tags.data);
 
     // Pre-fetch account balances + group totals in parallel
-    const typedAccounts = accounts.data as Array<{ id: string; offbudget: number; closed: number }>;
+    const typedAccounts = accounts.data as Array<{
+      id: string;
+      offbudget: number;
+      closed: number;
+    }>;
     const openAccounts = typedAccounts.filter((a) => !a.closed);
     const budgetIds = openAccounts.filter((a) => !a.offbudget).map((a) => a.id);
     const offBudgetIds = openAccounts.filter((a) => a.offbudget).map((a) => a.id);
@@ -522,8 +612,15 @@ export async function openBudget(budgetId: string): Promise<void> {
       // Periodic full-snapshot re-upload (non-blocking) — matches upstream
       // budgetfiles/app.ts:633, called on budget load. Without this the
       // server-side message history grows unbounded forever.
-      possiblyUpload(budgetId).catch((e) => {
-        if (__DEV__) console.warn("[openBudget] possiblyUpload failed:", e);
+      possiblyUpload(budgetId).catch(async (e) => {
+        emitErrorEvent(e, { operation: "possiblyUpload" });
+        const code = toErrorCode(e);
+        if (code.startsWith("sync/file-")) {
+          // The 7-day re-upload hit a file-state rejection — same recovery
+          // flow as a rejected /sync/sync, not a silent warn.
+          const { handleSyncFileError } = await import("./syncRecovery");
+          await handleSyncFileError(code);
+        }
       });
     }
   } catch (error) {
@@ -575,7 +672,9 @@ export async function switchBudget(
   }
 
   if (!localId) {
-    throw new ActualError("file/switch-failed", { context: { reason: "no local ID available" } });
+    throw new ActualError("file/switch-failed", {
+      context: { reason: "no local ID available" },
+    });
   }
 
   await openBudget(localId);
@@ -600,7 +699,10 @@ export async function deleteBudget(budgetId: string): Promise<void> {
 
 /** Strip cloud identifiers, making the budget local-only. */
 export async function convertToLocalOnly(budgetId: string): Promise<void> {
-  await updateMetadata(budgetId, { cloudFileId: undefined, groupId: undefined });
+  await updateMetadata(budgetId, {
+    cloudFileId: undefined,
+    groupId: undefined,
+  });
 }
 
 /**
@@ -612,7 +714,10 @@ export async function reRegisterBudget(
   token: string,
   budgetId: string,
 ): Promise<{ cloudFileId: string; groupId: string }> {
-  await updateMetadata(budgetId, { cloudFileId: undefined, groupId: undefined });
+  await updateMetadata(budgetId, {
+    cloudFileId: undefined,
+    groupId: undefined,
+  });
   return uploadBudget(serverUrl, token, budgetId);
 }
 
@@ -633,5 +738,5 @@ export async function deleteFromServer(
     retry: 0,
     throwHttpErrors: false,
   });
-  checkResponse(res, "file/delete-failed");
+  await checkResponse(res, "file/delete-failed");
 }

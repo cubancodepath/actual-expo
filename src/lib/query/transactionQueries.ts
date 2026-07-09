@@ -8,7 +8,7 @@
 import { infiniteQueryOptions, keepPreviousData } from "@tanstack/react-query";
 import { executeQuery } from "@/core/queries/execute";
 import type { Query } from "@/core/queries/query";
-import type { TransactionDisplay } from "./types";
+import type { TransactionDisplay } from "@/core/domain/transactions/types";
 
 type FetchFn = (limit: number, offset: number) => Promise<TransactionDisplay[]>;
 

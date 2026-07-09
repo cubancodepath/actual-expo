@@ -8,6 +8,9 @@ export async function openDatabase(budgetDir: string): Promise<void> {
   _db = await openDatabaseAsync("db.sqlite", { useNewConnection: true }, budgetDir);
   await _db.execAsync("PRAGMA journal_mode = WAL");
   await _db.execAsync("PRAGMA foreign_keys = ON");
+  // Secondary connections (upload snapshot, temp dbs) can briefly hold the
+  // WAL writer lock — wait instead of failing with SQLITE_BUSY.
+  await _db.execAsync("PRAGMA busy_timeout = 5000");
   await runSchema(_db);
 }
 

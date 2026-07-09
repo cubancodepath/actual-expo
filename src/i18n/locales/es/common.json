@@ -180,6 +180,17 @@
     "unsupportedKeyFormat": "Este formato de encriptación no es compatible. Puede que necesites actualizar la app o el servidor."
   },
 
+  "syncConflict": {
+    "resetTitle": "La Sincronización Se Reinició",
+    "resetDescription": "El estado de sincronización de este presupuesto se reinició en el servidor — otro dispositivo lo reinició o cambió su encriptación. Elige qué versión conservar; los cambios sin sincronizar del otro lado se perderán.",
+    "oldVersionTitle": "El Formato de Sincronización Cambió",
+    "oldVersionDescription": "El servidor usa un formato de sincronización más nuevo. Reinicia la sincronización para subir este presupuesto en el nuevo formato. Los demás dispositivos tendrán que volver a descargarlo.",
+    "revertToServer": "Usar la Versión del Servidor",
+    "uploadThisDevice": "Conservar la de Este Dispositivo",
+    "resetSync": "Reiniciar Sincronización",
+    "actionFailed": "No funcionó. Verifica tu conexión e inténtalo de nuevo."
+  },
+
   "quickAction": {
     "addTransaction": "Agregar Transacción"
   },

@@ -19,7 +19,7 @@ import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
 import { setBudgetAmount } from "@/core/domain/budgets";
 import { useUndoStore } from "@/stores/undoStore";
 import { updateCategory, deleteCategory } from "@/core/domain/categories";
-import { emitErrorEvent } from "@/core/errors/ErrorChannel";
+import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { useCategories } from "@/features/budget/hooks/useCategories";
 import { Text } from "@/design-system/atoms/Text";
 import { Button } from "@/design-system/atoms/Button";

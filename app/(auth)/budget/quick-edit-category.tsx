@@ -6,7 +6,7 @@ import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { useUndoStore } from "@/stores/undoStore";
 import { updateCategory, deleteCategory } from "@/core/domain/categories";
-import { emitErrorEvent } from "@/core/errors/ErrorChannel";
+import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { useCategories } from "@/features/budget/hooks/useCategories";
 import { Text } from "@/design-system/atoms/Text";
 import { Button } from "@/design-system/atoms/Button";

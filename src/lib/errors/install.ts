@@ -1,4 +1,4 @@
-import { emitErrorEvent } from "@/core/errors/ErrorChannel";
+import { emitErrorEvent } from "./ErrorChannel";
 
 /**
  * Chains onto ErrorUtils' existing global handler (Sentry.init already
@@ -22,7 +22,7 @@ export function installGlobalHandlers(): void {
 
   const previousHandler = errorUtils.getGlobalHandler();
   errorUtils.setGlobalHandler((error, isFatal) => {
-    emitErrorEvent(error, { context: { isFatal } });
+    emitErrorEvent(error, { isFatal });
     previousHandler(error, isFatal);
   });
 }

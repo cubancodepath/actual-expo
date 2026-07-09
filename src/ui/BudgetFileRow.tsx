@@ -1,12 +1,21 @@
-import type { ComponentProps } from "react";
-import { View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { withUniwind } from "uniwind";
 import { useTranslation } from "react-i18next";
-import { Button, PressableFeedback, Spinner, Typography, useThemeColor } from "heroui-native";
+import {
+  Check,
+  CloudCheck,
+  CloudDownload,
+  CloudOff,
+  Smartphone,
+  type LucideIcon,
+} from "lucide-react-native";
+import {
+  ListGroup,
+  PressableFeedback,
+  Separator,
+  Spinner,
+  useThemeColor,
+  type ThemeColor,
+} from "heroui-native";
 import type { ReconciledBudgetFile, BudgetFileState } from "@/services/budgetfiles";
-
-const StyledIonicons = withUniwind(Ionicons);
 
 export interface BudgetFileRowProps {
   file: ReconciledBudgetFile;
@@ -14,24 +23,23 @@ export interface BudgetFileRowProps {
   isSelecting?: boolean;
   isActionInProgress?: boolean;
   onPress?: () => void;
-  onActionPress?: () => void;
+  /** Long-press: contextual actions (the actions sheet). */
+  onLongPress?: () => void;
   showSeparator?: boolean;
 }
 
-type IoniconName = ComponentProps<typeof Ionicons>["name"];
-
-const STATE_ICON: Record<BudgetFileState, IoniconName> = {
-  synced: "document-text-outline",
-  local: "document-outline",
-  detached: "alert-circle-outline",
-  remote: "cloud-download-outline",
+const STATE_ICON: Record<BudgetFileState, LucideIcon> = {
+  synced: CloudCheck,
+  local: Smartphone,
+  detached: CloudOff,
+  remote: CloudDownload,
 };
 
-const STATE_ICON_CLASS: Record<BudgetFileState, string> = {
-  synced: "text-accent",
-  local: "text-accent",
-  detached: "text-warning",
-  remote: "text-muted",
+const STATE_ICON_COLOR: Record<BudgetFileState, ThemeColor> = {
+  synced: "accent",
+  local: "muted",
+  detached: "warning",
+  remote: "muted",
 };
 
 const STATE_LABEL_KEY = {
@@ -41,19 +49,21 @@ const STATE_LABEL_KEY = {
   remote: "fileState.remote",
 } as const satisfies Record<BudgetFileState, string>;
 
-/** A budget file list row: state icon, name + state subtitle, and a busy/active/actions slot. */
+/** A budget file list row: state icon, name + state subtitle, and a busy/active suffix. */
 export function BudgetFileRow({
   file,
   isActive,
   isSelecting,
   isActionInProgress,
   onPress,
-  onActionPress,
+  onLongPress,
   showSeparator,
 }: BudgetFileRowProps) {
   const { t } = useTranslation();
   const { t: ta } = useTranslation("auth");
-  const accent = useThemeColor("accent");
+  const [accent, stateColor] = useThemeColor(["accent", STATE_ICON_COLOR[file.state]]);
+
+  const StateIcon = STATE_ICON[file.state];
 
   const subtitle = [
     t(STATE_LABEL_KEY[file.state]),
@@ -66,44 +76,34 @@ export function BudgetFileRow({
   const busy = isSelecting || isActionInProgress;
 
   return (
-    <View>
-      <PressableFeedback
-        onPress={isActive || busy ? undefined : onPress}
-        className="flex-row items-center gap-3 px-4 py-3"
-      >
-        <StyledIonicons
-          name={STATE_ICON[file.state]}
-          size={22}
-          className={STATE_ICON_CLASS[file.state]}
-        />
-        <View className="flex-1">
-          <Typography type="body" weight="medium" numberOfLines={1}>
-            {file.name || ta("unnamedBudget")}
-          </Typography>
-          <Typography type="body-xs" color="muted" numberOfLines={1}>
-            {subtitle}
-          </Typography>
-        </View>
-        {busy ? (
-          <Spinner size="sm" color={accent} />
-        ) : (
-          <View className="flex-row items-center gap-1">
-            {isActive && <StyledIonicons name="checkmark" size={20} className="text-accent" />}
-            {onActionPress && (
-              <Button
-                variant="ghost"
-                size="sm"
-                isIconOnly
-                onPress={onActionPress}
-                accessibilityLabel={ta("fileActions")}
-              >
-                <StyledIonicons name="ellipsis-horizontal" size={18} className="text-muted" />
-              </Button>
-            )}
-          </View>
-        )}
-      </PressableFeedback>
-      {showSeparator && <View className="h-px bg-separator ml-[52px]" />}
-    </View>
+    <PressableFeedback
+      animation={false}
+      onLongPress={busy ? undefined : onLongPress}
+      onPress={isActive || busy ? undefined : onPress}
+    >
+      <PressableFeedback.Scale>
+        <ListGroup.Item
+          className="flex-row items-center px-4 py-2 gap-4"
+          disabled={isActive || busy}
+        >
+          <ListGroup.ItemPrefix>
+            <StateIcon size={22} color={stateColor} />
+          </ListGroup.ItemPrefix>
+          <ListGroup.ItemContent>
+            <ListGroup.ItemTitle numberOfLines={1}>
+              {file.name || ta("unnamedBudget")}
+            </ListGroup.ItemTitle>
+            <ListGroup.ItemDescription numberOfLines={1}>{subtitle}</ListGroup.ItemDescription>
+          </ListGroup.ItemContent>
+          {(busy || isActive) && (
+            <ListGroup.ItemSuffix>
+              {busy ? <Spinner size="sm" color={accent} /> : <Check size={20} color={accent} />}
+            </ListGroup.ItemSuffix>
+          )}
+        </ListGroup.Item>
+        {showSeparator && <Separator className="ml-13" />}
+      </PressableFeedback.Scale>
+      <PressableFeedback.Ripple />
+    </PressableFeedback>
   );
 }

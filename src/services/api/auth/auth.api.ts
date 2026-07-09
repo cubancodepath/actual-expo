@@ -1,12 +1,12 @@
 import { isHTTPError } from "ky";
 import { ActualError } from "@/core/errors";
-import { emitErrorEvent } from "@/core/errors/ErrorChannel";
+import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { dataOrSelf } from "../response";
 import { http, parseResponse, toTransportError } from "../httpClient";
 import { LoginResponseDtoSchema, OpenIdResponseDtoSchema } from "./auth.dto";
 
 function emitAuthApiError(error: unknown, operation: string): void {
-  emitErrorEvent(error, { source: "AUTH", context: { operation } });
+  emitErrorEvent(error, { operation });
 }
 
 export async function loginWithPassword(serverUrl: string, password: string): Promise<string> {

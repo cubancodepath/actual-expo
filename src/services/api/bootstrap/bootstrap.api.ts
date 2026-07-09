@@ -1,5 +1,5 @@
 import { ActualError } from "@/core/errors";
-import { emitErrorEvent } from "@/core/errors/ErrorChannel";
+import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { dataOrSelf } from "../response";
 import { http, parseResponse, toTransportError } from "../httpClient";
 import { BootstrapResponseDtoSchema } from "./bootstrap.dto";
@@ -11,7 +11,7 @@ export type { BootstrapInfo, LoginMethod } from "./bootstrap.types";
 const PROBE_RETRY_DELAYS = [1500, 2500, 3000];
 
 function emitBootstrapApiError(error: unknown, operation: string): void {
-  emitErrorEvent(error, { source: "AUTH", context: { operation } });
+  emitErrorEvent(error, { operation });
 }
 
 export async function getBootstrapInfo(serverUrl: string): Promise<BootstrapInfo> {

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ActualError } from "@/core/errors";
-import { emitErrorEvent } from "@/core/errors/ErrorChannel";
+import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { http, parseResponse, toTransportError } from "./httpClient";
 
 export type RemoteBudgetFile = {
@@ -34,7 +34,7 @@ const RemoteBudgetFileSchema = z.looseObject({
 const RemoteBudgetFilesResponseSchema = z.array(RemoteBudgetFileSchema);
 
 function emitBudgetFilesApiError(error: unknown, operation: string): void {
-  emitErrorEvent(error, { source: "FILES", context: { operation } });
+  emitErrorEvent(error, { operation });
 }
 
 function filesPayload(json: unknown): unknown {

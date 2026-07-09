@@ -12,6 +12,12 @@
 #      depend on screens.
 #   3. A screen imports from another domain's screens (src/screens/<a> → @/screens/<b>)
 #      — cross-domain code must live in ui/, lib/ or stores/.
+#   4. src/core imports React-ecosystem packages (react, react-native, @tanstack/*,
+#      zustand, heroui-native, uniwind, expo-router) — react-query wiring lives in
+#      src/lib/query/. expo-sqlite and expo-crypto stay allowed (core's native deps).
+#   5. src/core imports app-side lib modules (@/lib/errors, @/lib/query) — core only
+#      THROWS typed ActualErrors; the error bus and react-query wiring are app-level.
+#      Pure utils (@/lib/format, date, currencies) stay allowed.
 #
 # WARNINGS (do not block):
 #   - src/core imports @/stores or @/services — known port compromises (prefs read from
@@ -29,6 +35,25 @@ core_ui=$(grep -rln "from ['\"]@/\(screens\|ui\|features\|components\|design-sys
 if [ -n "$core_ui" ]; then
   echo "ARCH FAIL: src/core imports UI (screens/ui/features/components/design-system):"
   echo "$core_ui" | sed 's/^/  - /'
+  fail=1
+fi
+
+# 4. core must not import React-ecosystem packages (exclude test files)
+core_react=$(grep -rln \
+  -e "from ['\"]\(react\|react-native\|zustand\|heroui-native\|uniwind\|expo-router\)['\"/]" \
+  -e "from ['\"]@tanstack/" \
+  src/core --include='*.ts*' 2>/dev/null | grep -v '\.test\.' || true)
+if [ -n "$core_react" ]; then
+  echo "ARCH FAIL: src/core imports React-ecosystem packages (react/react-native/@tanstack/zustand/heroui-native/uniwind/expo-router):"
+  echo "$core_react" | sed 's/^/  - /'
+  fail=1
+fi
+
+# 5. core must not import app-side lib modules (bus/react-query wiring)
+core_applib=$(grep -rln "from ['\"]@/lib/\(errors\|query\)" src/core --include='*.ts*' 2>/dev/null | grep -v '\.test\.' || true)
+if [ -n "$core_applib" ]; then
+  echo "ARCH FAIL: src/core imports @/lib/errors or @/lib/query (app-level wiring — core only throws):"
+  echo "$core_applib" | sed 's/^/  - /'
   fail=1
 fi
 
@@ -57,8 +82,11 @@ if [ -d src/screens ]; then
   done
 fi
 
-# WARN: core importing stores/services (known debt)
-core_impure=$(grep -rln "from ['\"]@/\(stores\|services\)" src/core --include='*.ts*' 2>/dev/null | grep -v '\.test\.' || true)
+# WARN: core importing stores/services (known debt) — static AND dynamic imports
+core_impure=$(grep -rln \
+  -e "from ['\"]@/\(stores\|services\)" \
+  -e "import(['\"]@/\(stores\|services\)" \
+  src/core --include='*.ts*' 2>/dev/null | grep -v '\.test\.' || true)
 if [ -n "$core_impure" ]; then
   echo "ARCH WARN: src/core imports @/stores or @/services (known port compromise):"
   echo "$core_impure" | sed 's/^/  · /'

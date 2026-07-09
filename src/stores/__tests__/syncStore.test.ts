@@ -1,10 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useSyncStore } from "../syncStore";
-import { ActualError, errorChannel, type ErrorEvent } from "@/core/errors";
+import { ActualError } from "@/core/errors";
+import { errorChannel, type ErrorEvent } from "@/lib/errors/ErrorChannel";
 import * as syncModule from "@/core/sync";
 
 beforeEach(() => {
-  useSyncStore.setState({ status: "idle", lastErrorCode: null, lastSync: null });
+  useSyncStore.setState({
+    status: "idle",
+    lastErrorCode: null,
+    conflictCode: null,
+    lastSync: null,
+  });
 });
 
 afterEach(() => {
@@ -35,7 +41,30 @@ describe("useSyncStore.sync", () => {
     expect(state.status).toBe("error");
     expect(state.lastErrorCode).toBe("network/timeout");
     expect(events).toHaveLength(1);
-    expect(events[0].code).toBe("NETWORK_TIMEOUT");
+    expect(events[0].code).toBe("network/timeout");
+  });
+
+  it("treats network/offline as idle, not an error", async () => {
+    const events: ErrorEvent[] = [];
+    const unsubscribe = errorChannel.subscribe((event) => events.push(event));
+    vi.spyOn(syncModule, "fullSync").mockRejectedValue(new ActualError("network/offline"));
+
+    await useSyncStore.getState().sync();
+    unsubscribe();
+
+    const state = useSyncStore.getState();
+    expect(state.status).toBe("idle");
+    expect(state.lastErrorCode).toBeNull();
+    expect(events).toHaveLength(1); // logged, but no error badge
+  });
+
+  it("bails without syncing while a conflict is pending", async () => {
+    useSyncStore.setState({ conflictCode: "sync/file-has-reset" });
+    const spy = vi.spyOn(syncModule, "fullSync").mockResolvedValue(0);
+
+    await useSyncStore.getState().sync();
+
+    expect(spy).not.toHaveBeenCalled();
   });
 
   it("clears lastErrorCode when a new sync starts", async () => {

@@ -21,7 +21,7 @@ import type { Query } from "@/core/queries/query";
 import { liveQuery, type LiveQueryInstance } from "@/core/queries/liveQuery";
 import { getQueryCache } from "@/core/queries/queryCache";
 import { pagedQuery, type PagedQueryInstance } from "@/core/queries/pagedQuery";
-import { emitErrorEvent } from "@/core/errors/ErrorChannel";
+import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
 
 // ---------------------------------------------------------------------------
@@ -74,7 +74,7 @@ export function useLiveQuery<T = Record<string, unknown>>(
       onError: (err) => {
         if (!isUnmounted.current) {
           setIsLoading(false);
-          emitErrorEvent(err, { source: "DATABASE", context: { operation: "liveQuery" } });
+          emitErrorEvent(err, { operation: "liveQuery" });
           if (__DEV__) console.warn("[useLiveQuery] error:", err);
         }
       },
@@ -149,7 +149,7 @@ export function usePagedLiveQuery<T = Record<string, unknown>>(
       onError: (err) => {
         if (!isUnmounted.current) {
           setIsLoading(false);
-          emitErrorEvent(err, { source: "DATABASE", context: { operation: "pagedLiveQuery" } });
+          emitErrorEvent(err, { operation: "pagedLiveQuery" });
           if (__DEV__) console.warn("[usePagedLiveQuery] error:", err);
         }
       },

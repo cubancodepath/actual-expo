@@ -3,14 +3,8 @@ import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvider";
-import {
-  Text,
-  Card,
-  ListItem,
-  SectionHeader,
-  Button,
-  promptToEnableEncryption,
-} from "@/design-system";
+import { Text, Card, ListItem, SectionHeader, Button } from "@/design-system";
+import { promptToEnableEncryption } from "@/ui/feedback/EncryptionPasswordPrompt";
 import { useMutation } from "@tanstack/react-query";
 import { InlineError } from "@/ui/feedback/InlineError";
 import { useSyncedPrefs } from "@/hooks/useSyncedPrefs";

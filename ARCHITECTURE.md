@@ -14,8 +14,9 @@ De ~12 carpetas top-level en `src/` bajamos a **7**, cada una con una responsabi
 app/                        # SOLO rutas de Expo Router. Cada archivo = re-export fino de una screen
                             #   export { BudgetScreen as default } from '@/screens/budget/BudgetScreen'
 src/
-├── core/                   # Dominio puro (SIN React ni UI): domain/, db/, sync/, crdt/,
-│                           # queries/, encryption/, errors/, proto/. NO SE TOCA — ya está bien.
+├── core/                   # Dominio puro (SIN React ni UI, tampoco react-query): domain/, db/, sync/,
+│                           # crdt/, queries/ (= compilador AQL puro), encryption/, errors/, proto/.
+│                           # NO SE TOCA — el wiring de react-query vive en lib/query/.
 │
 ├── screens/                # Toda la UI, organizada por pantalla (espejo del árbol de navegación)
 │   ├── budget/
@@ -50,6 +51,10 @@ src/
 │                           # manteniendo la separación .api/.dto/.mappers/.types)
 │
 ├── lib/                    # Utilidades puras sin React (currency, date, format, colors, screenOptions)
+│   ├── errors/             # bus de errores de la app (ErrorChannel, emitErrorEvent, toErrorCode)
+│   │                       # + install.ts (handler global). core NO emite: solo lanza ActualError.
+│   ├── query/              # wiring de TanStack Query: queryClient (singleton + error handlers),
+│   │                       # react-query.d.ts (ambient types) y query options multi-dominio
 │   └── hooks/              # hooks React verdaderamente globales (useQuery, useLocale…).
 │                           # Si un hook solo lo usa un dominio → screens/<dominio>/hooks/
 │
@@ -102,6 +107,8 @@ app → screens → (ui | stores | lib | services) → core
 | `src/features/auth/` | `src/screens/auth/` | ✅ hecho 2026-07-08 — primer dominio migrado (patrón de referencia) |
 | files.tsx + change-budget.tsx + hooks de settings | `src/screens/files/` (Budget­FilesScreen, ChangeBudgetScreen, hooks/, components/) | ✅ hecho 2026-07-09 — todo heroui; BudgetFileRow → `src/ui/`, InlineError → `src/ui/feedback/` |
 | Pipeline de errores `reportError`/policy/errorStore/ErrorPresenter | **borrado** — queda solo el bus `ErrorChannel` + `ErrorChannelConsumer` (`src/ui/feedback/`, log + Sentry) | ✅ hecho 2026-07-09 — consumers de UI se colgarán del bus cuando toque |
+| react-query en core (`core/queries/queryClient.ts`, `react-query.d.ts`, `core/domain/transactions/queries.ts`) | `src/lib/query/` (queryClient, ambient types, transactionQueries); `useTransactions` → `src/lib/hooks/` (multi-dominio) | ✅ hecho 2026-07-09 — check-arch regla 4 prohíbe paquetes React en core |
+| Bus de errores en core (`core/errors/ErrorChannel.ts`, `normalizeError`, `CODE_META`) | `src/lib/errors/ErrorChannel.ts` (bus slim + `toErrorCode`); core queda con `ActualError` + `ErrorCode` y solo LANZA; `syncStore.sync()` es el entry point con la política (logout, syncRecovery, offline); i18n por convención `errors:<code>` | ✅ hecho 2026-07-09 — check-arch regla 5 prohíbe `@/lib/errors\|query` en core |
 | `src/stores/`, `src/services/`, `src/lib/`, `src/core/`, `src/i18n/` | se quedan donde están | |
 | Rutas gordas: `app/(auth)/account/[id].tsx` (557), `account/search.tsx` (550), `settings/budget.tsx` (532), `transaction/split.tsx` (455) | extraer a `screens/accounts/`, `screens/settings/`, `screens/transactions/` | siguiente candidato cada vez que se toquen |
 

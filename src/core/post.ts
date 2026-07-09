@@ -1,15 +1,38 @@
 import { TimeoutError } from "ky";
 import { http } from "@/services/api/httpClient";
-import { ActualError } from "@/core/errors";
+import { ActualError, type ErrorCode } from "@/core/errors";
 
 type ServerReasonBody = { status?: string; reason?: string; description?: string };
 
 const AUTH_REASONS = new Set(["unauthorized", "token-expired"]);
 
+// File-state rejections from the sync server (sync-server validation.js).
+// These arrive as HTTP 400 with the reason as the RAW TEXT body (not JSON),
+// e.g. res.send('file-has-reset'), so callers must also try matching the
+// plain body text, not just a parsed `reason` field.
+const FILE_SYNC_REASONS: Record<string, ErrorCode> = {
+  "file-has-reset": "sync/file-has-reset",
+  "file-has-new-key": "sync/file-has-new-key",
+  "file-old-version": "sync/file-old-version",
+  "file-needs-upload": "sync/file-needs-upload",
+  "file-not-found": "sync/file-not-found",
+  "file-key-mismatch": "sync/file-key-mismatch",
+};
+
+/** Map a server file-state rejection reason to its ErrorCode, if it is one. */
+export function mapServerReason(reason: string | undefined): ErrorCode | null {
+  if (!reason) return null;
+  return FILE_SYNC_REASONS[reason.trim()] ?? null;
+}
+
 /** Map a server-provided `reason`/`description` string to a domain error. */
 function toDomainError(reason: string | undefined, fallbackText: string): ActualError {
   if (reason && AUTH_REASONS.has(reason)) {
     return new ActualError("auth/token-expired", { context: { serverReason: reason } });
+  }
+  const fileSyncCode = mapServerReason(reason) ?? mapServerReason(fallbackText);
+  if (fileSyncCode) {
+    return new ActualError(fileSyncCode, { context: { serverReason: reason ?? fallbackText } });
   }
   return new ActualError("http/rejected", {
     context: { serverReason: reason ?? fallbackText.slice(0, 500) },

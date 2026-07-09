@@ -38,7 +38,7 @@ export function SyncBadge() {
   if (status === "error") {
     return (
       <Pressable
-        onPress={sync}
+        onPress={() => sync()}
         hitSlop={10}
         style={{ paddingRight: 14 }}
         accessibilityRole="button"

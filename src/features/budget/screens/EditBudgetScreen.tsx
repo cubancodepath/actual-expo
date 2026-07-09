@@ -23,7 +23,7 @@ import { useUndoStore } from "@/stores/undoStore";
 import { Text } from "@/design-system/atoms/Text";
 import { Amount } from "@/design-system/atoms/Amount";
 import { Button } from "@/design-system/atoms/Button";
-import { SwipeableRow } from "@/design-system/molecules/SwipeableRow";
+import { SwipeableRow } from "@/ui/SwipeableRow";
 import { GlassButton } from "@/design-system/atoms/GlassButton";
 import { RowSeparator } from "@/design-system/atoms/RowSeparator";
 import { describeTemplate, translateDescription } from "@/core/domain/goals/describe";
@@ -485,8 +485,6 @@ export function EditBudgetScreen() {
       return (
         <SwipeableRow
           onDelete={() => handleDeleteCategory(item)}
-          isFirst={isFirst}
-          isLast={isLast}
           style={{ marginHorizontal: spacing.lg, opacity: isHiddenSection ? 0.5 : 1 }}
         >
           <Pressable

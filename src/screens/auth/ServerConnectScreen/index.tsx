@@ -1,6 +1,7 @@
 import { useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { useTranslation } from "react-i18next";
+import { Server } from "lucide-react-native";
 import { Button, LinkButton, Spinner, useThemeColor } from "heroui-native";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import { useServerProbe } from "./hooks/useServerProbe";
@@ -33,7 +34,7 @@ export function ServerConnectScreen() {
     <AuthShell>
       <AuthField
         label={t("serverUrl")}
-        icon="server-outline"
+        icon={Server}
         testID="server-url-input"
         placeholder={t("serverUrlPlaceholder")}
         value={serverUrl}

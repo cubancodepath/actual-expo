@@ -3,8 +3,7 @@ import * as encryption from "@/core/encryption";
 import * as keyStorage from "./encryptionKeyStorage";
 import { post } from "@/core/post";
 import { Message, type IMessage } from "@/core/proto";
-import { getDb } from "@/core/db";
-import { loadClock } from "@/core/sync";
+import { clearLocalSyncState } from "@/core/sync";
 
 type KeyTestSuccess = { success: true };
 type KeyTestError = { error: "network" | "decrypt-failure" | "old-key-style" };
@@ -201,19 +200,7 @@ export async function enableEncryption({
   }
 
   // 5. Clean local sync state
-  const db = getDb();
-  await db.execAsync(`
-    DELETE FROM messages_crdt;
-    DELETE FROM messages_clock;
-    DELETE FROM transactions WHERE tombstone = 1;
-    DELETE FROM accounts WHERE tombstone = 1;
-    DELETE FROM payees WHERE tombstone = 1;
-    DELETE FROM categories WHERE tombstone = 1;
-    DELETE FROM category_groups WHERE tombstone = 1;
-    DELETE FROM schedules WHERE tombstone = 1;
-    DELETE FROM rules WHERE tombstone = 1;
-  `);
-  await loadClock();
+  await clearLocalSyncState();
 
   // 6. Persist key locally
   await keyStorage.saveKey(cloudFileId, key.serialize());

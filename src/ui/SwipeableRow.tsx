@@ -1,4 +1,6 @@
-import { Pressable, StyleSheet, View, type ViewStyle } from "react-native";
+import type { ComponentProps } from "react";
+import { View, type ViewStyle } from "react-native";
+import { PressableFeedback } from "heroui-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   interpolate,
@@ -9,11 +11,10 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
-import { Icon } from "../atoms/Icon";
-import type { IconName } from "../atoms/iconRegistry";
+import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
-import { useTheme } from "@/design-system/providers/ThemeProvider";
+import { useThemeColor } from "heroui-native";
 
 const ACTION_WIDTH = 80;
 const SWIPE_THRESHOLD = ACTION_WIDTH * 0.8;
@@ -22,15 +23,15 @@ const CIRCLE_SIZE = 44;
 
 const SPRING_CONFIG = { damping: 20, stiffness: 200 };
 
+type IoniconName = ComponentProps<typeof Ionicons>["name"];
+
 interface SwipeableRowProps {
   children: React.ReactNode;
   onDelete: () => void;
   /** Optional right-swipe action (e.g., clear/unclear) */
   onSwipeRight?: () => void;
-  swipeRightIcon?: IconName;
+  swipeRightIcon?: IoniconName;
   swipeRightColor?: string;
-  isFirst?: boolean;
-  isLast?: boolean;
   style?: ViewStyle;
 }
 
@@ -42,18 +43,25 @@ function mediumHaptic() {
   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 }
 
+/**
+ * Swipe-left-to-delete (and optional swipe-right action) wrapper for list
+ * rows. Children must have an opaque background so the action pills are
+ * only revealed by the swipe displacement.
+ */
 export function SwipeableRow({
   children,
   onDelete,
   onSwipeRight,
-  swipeRightIcon = "checkmarkCircle",
+  swipeRightIcon = "checkmark-circle",
   swipeRightColor,
-  isFirst,
-  isLast,
   style,
 }: SwipeableRowProps) {
   const { t } = useTranslation();
-  const { colors } = useTheme();
+  const [danger, success, dangerForeground] = useThemeColor([
+    "danger",
+    "success",
+    "danger-foreground",
+  ]);
   const reducedMotion = useReducedMotion();
   const translateX = useSharedValue(0);
   const contextX = useSharedValue(0);
@@ -67,7 +75,7 @@ export function SwipeableRow({
   const passedRightOpenThreshold = useSharedValue(false);
 
   const hasRightAction = onSwipeRight != null;
-  const rightColor = swipeRightColor ?? colors.positiveFill;
+  const rightColor = swipeRightColor ?? success;
 
   function handleDelete() {
     onDelete();
@@ -292,13 +300,17 @@ export function SwipeableRow({
   });
 
   return (
-    <View style={[styles.container, style]}>
+    <View className="overflow-hidden" style={style}>
       {/* Right-swipe action behind the row (left side) */}
       {hasRightAction && (
-        <Animated.View style={[styles.rightArea, rightAreaStyle]}>
+        <Animated.View
+          className="absolute bottom-0 left-0 top-0 items-center justify-center"
+          style={rightAreaStyle}
+        >
           <Animated.View style={rightPillStyle}>
-            <Pressable
-              style={[styles.pill, { backgroundColor: rightColor }]}
+            <PressableFeedback
+              className="h-11 items-center justify-center rounded-full"
+              style={{ backgroundColor: rightColor }}
               onPress={() => {
                 translateX.value = withTiming(0, { duration: 200 });
                 handleSwipeRight();
@@ -306,18 +318,22 @@ export function SwipeableRow({
               accessibilityRole="button"
             >
               <Animated.View style={rightIconStyle}>
-                <Icon name={swipeRightIcon} size={20} color="#fff" />
+                <Ionicons name={swipeRightIcon} size={20} color={dangerForeground} />
               </Animated.View>
-            </Pressable>
+            </PressableFeedback>
           </Animated.View>
         </Animated.View>
       )}
 
       {/* Delete action behind the row (right side) */}
-      <Animated.View style={[styles.deleteArea, deleteAreaStyle]}>
+      <Animated.View
+        className="absolute bottom-0 right-0 top-0 items-center justify-center"
+        style={deleteAreaStyle}
+      >
         <Animated.View style={deletePillStyle}>
-          <Pressable
-            style={[styles.pill, { backgroundColor: colors.negativeFill }]}
+          <PressableFeedback
+            className="h-11 items-center justify-center rounded-full"
+            style={{ backgroundColor: danger }}
             onPress={() => {
               translateX.value = withTiming(0, { duration: 200 });
               handleDelete();
@@ -326,9 +342,9 @@ export function SwipeableRow({
             accessibilityLabel={t("a11y.delete")}
           >
             <Animated.View style={deleteIconStyle}>
-              <Icon name="trashOutline" size={20} color="#fff" />
+              <Ionicons name="trash-outline" size={20} color={dangerForeground} />
             </Animated.View>
-          </Pressable>
+          </PressableFeedback>
         </Animated.View>
       </Animated.View>
 
@@ -339,31 +355,3 @@ export function SwipeableRow({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    overflow: "hidden",
-  },
-  deleteArea: {
-    position: "absolute",
-    right: 0,
-    top: 0,
-    bottom: 0,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  rightArea: {
-    position: "absolute",
-    left: 0,
-    top: 0,
-    bottom: 0,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  pill: {
-    height: CIRCLE_SIZE,
-    borderRadius: CIRCLE_SIZE / 2,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-});

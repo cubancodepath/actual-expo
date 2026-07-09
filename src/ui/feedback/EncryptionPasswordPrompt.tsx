@@ -1,15 +1,19 @@
-import { useState, useEffect, useRef } from "react";
-import { Modal, View, TextInput, KeyboardAvoidingView, Platform, Pressable } from "react-native";
-import { Input } from "../atoms/Input";
+import { useEffect, useState } from "react";
+import { View } from "react-native";
 import { create } from "zustand";
 import { useTranslation } from "react-i18next";
-import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvider";
-import { Text } from "../atoms/Text";
-import { Button } from "../atoms/Button";
+import {
+  Button,
+  Dialog,
+  FieldError,
+  Input,
+  Spinner,
+  TextField,
+  useThemeColor,
+} from "heroui-native";
 import * as encryptionService from "@/services/encryptionService";
 import { useSessionStore } from "@/stores/sessionStore";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
-import type { Theme } from "@/design-system/tokens";
 
 type PromptMode = "unlock" | "enable";
 
@@ -57,17 +61,20 @@ export function promptToEnableEncryption(): Promise<"success" | "cancelled"> {
   return usePromptStore.getState()._show("enable", fileId);
 }
 
+/**
+ * heroui Dialog for the encryption password flows (unlock / enable).
+ * Mounted ONCE in app/_layout.tsx; opened imperatively via
+ * promptForPassword / promptToEnableEncryption.
+ */
 export function EncryptionPasswordPrompt() {
   const { t } = useTranslation("common");
-  const { colors, shadows } = useTheme();
-  const styles = useThemedStyles(createStyles);
+  const accentForeground = useThemeColor("accent-foreground");
 
   const { visible, mode, cloudFileId, _resolve, _hide } = usePromptStore();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const inputRef = useRef<TextInput>(null);
 
   useEffect(() => {
     if (visible) {
@@ -75,7 +82,6 @@ export function EncryptionPasswordPrompt() {
       setConfirmPassword("");
       setError("");
       setLoading(false);
-      setTimeout(() => inputRef.current?.focus(), 300);
     }
   }, [visible]);
 
@@ -156,131 +162,83 @@ export function EncryptionPasswordPrompt() {
     }
   }
 
-  const handleSubmit = mode === "unlock" ? handleUnlock : handleEnable;
   const isEnable = mode === "enable";
-
-  const title = isEnable ? t("encryption.enableTitle") : t("encryption.enterPasswordTitle");
-  const description = isEnable
-    ? t("encryption.enableDescription")
-    : t("encryption.enterPasswordDescription");
-  const submitLabel = isEnable ? t("encryption.enable") : t("encryption.unlock");
+  const handleSubmit = isEnable ? handleEnable : handleUnlock;
   const canSubmit = isEnable
     ? password.trim().length > 0 && confirmPassword.length > 0
     : password.trim().length > 0;
 
-  if (!visible) return null;
-
   return (
-    <Modal visible transparent animationType="fade" onRequestClose={handleCancel}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.overlay}
-      >
-        <Pressable style={styles.backdrop} onPress={handleCancel} />
-        <View style={[styles.card, shadows.modal]}>
-          <Text variant="headingLg" style={styles.title}>
-            {title}
-          </Text>
-          <Text variant="body" color={colors.textMuted} style={styles.description}>
-            {description}
-          </Text>
+    <Dialog isOpen={visible} onOpenChange={(open) => !open && handleCancel()}>
+      <Dialog.Portal>
+        <Dialog.Overlay />
+        <Dialog.Content>
+          <View className="mb-5 gap-1.5">
+            <Dialog.Title>
+              {isEnable ? t("encryption.enableTitle") : t("encryption.enterPasswordTitle")}
+            </Dialog.Title>
+            <Dialog.Description>
+              {isEnable
+                ? t("encryption.enableDescription")
+                : t("encryption.enterPasswordDescription")}
+            </Dialog.Description>
+          </View>
 
-          <Input
-            ref={inputRef}
-            icon="lockClosedOutline"
-            secureTextEntry
-            placeholder={t("encryption.passwordPlaceholder")}
-            value={password}
-            onChangeText={setPassword}
-            onSubmitEditing={isEnable ? undefined : handleSubmit}
-            returnKeyType={isEnable ? "next" : "done"}
-            editable={!loading}
-            autoCapitalize="none"
-            autoCorrect={false}
-            error={!!error}
-          />
-
-          {isEnable && (
+          <TextField isInvalid={!!error} isDisabled={loading}>
             <Input
-              icon="lockClosedOutline"
               secureTextEntry
-              placeholder={t("encryption.confirmPasswordPlaceholder")}
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              onSubmitEditing={handleSubmit}
-              returnKeyType="done"
-              editable={!loading}
+              autoFocus
+              placeholder={t("encryption.passwordPlaceholder")}
+              value={password}
+              onChangeText={(text) => {
+                setPassword(text);
+                setError("");
+              }}
+              onSubmitEditing={isEnable ? undefined : handleSubmit}
+              returnKeyType={isEnable ? "next" : "done"}
               autoCapitalize="none"
               autoCorrect={false}
-              error={!!error}
-              containerStyle={{ marginTop: 12 }}
             />
+            {!isEnable && !!error && <FieldError>{error}</FieldError>}
+          </TextField>
+
+          {isEnable && (
+            <TextField isInvalid={!!error} isDisabled={loading} className="mt-3">
+              <Input
+                secureTextEntry
+                placeholder={t("encryption.confirmPasswordPlaceholder")}
+                value={confirmPassword}
+                onChangeText={(text) => {
+                  setConfirmPassword(text);
+                  setError("");
+                }}
+                onSubmitEditing={handleSubmit}
+                returnKeyType="done"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              {!!error && <FieldError>{error}</FieldError>}
+            </TextField>
           )}
 
-          {error ? (
-            <Text variant="bodySm" color={colors.errorText} style={styles.error}>
-              {error}
-            </Text>
-          ) : null}
-
-          <View style={styles.buttons}>
+          <View className="mt-5 flex-row gap-3">
+            <Button variant="ghost" className="flex-1" onPress={handleCancel} isDisabled={loading}>
+              <Button.Label>{t("cancel")}</Button.Label>
+            </Button>
             <Button
-              title={t("cancel")}
-              buttonStyle="borderless"
-              onPress={handleCancel}
-              disabled={loading}
-              style={{ flex: 1 }}
-            />
-            <Button
-              title={submitLabel}
+              variant="primary"
+              className="flex-1"
               onPress={handleSubmit}
-              loading={loading}
-              disabled={!canSubmit || loading}
-              style={{ flex: 1 }}
-            />
+              isDisabled={!canSubmit || loading}
+            >
+              {loading && <Spinner size="sm" color={accentForeground} />}
+              <Button.Label>
+                {isEnable ? t("encryption.enable") : t("encryption.unlock")}
+              </Button.Label>
+            </Button>
           </View>
-        </View>
-      </KeyboardAvoidingView>
-    </Modal>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog>
   );
 }
-
-const createStyles = (theme: Theme) => ({
-  overlay: {
-    flex: 1,
-    justifyContent: "center" as const,
-    alignItems: "center" as const,
-    padding: theme.spacing.xl,
-  },
-  backdrop: {
-    ...({
-      position: "absolute",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: "rgba(0,0,0,0.5)",
-    } as const),
-  },
-  card: {
-    width: "100%" as const,
-    maxWidth: 400,
-    backgroundColor: theme.colors.cardBackground,
-    borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.xl,
-  },
-  title: {
-    marginBottom: theme.spacing.xs,
-  },
-  description: {
-    marginBottom: theme.spacing.lg,
-  },
-  error: {
-    marginTop: theme.spacing.sm,
-  },
-  buttons: {
-    flexDirection: "row" as const,
-    gap: theme.spacing.md,
-    marginTop: theme.spacing.lg,
-  },
-});

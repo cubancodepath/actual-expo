@@ -8,7 +8,8 @@ import {
   getInfoAsync,
 } from "expo-file-system/legacy";
 import { randomUUID } from "expo-crypto";
-import { emitErrorEvent, type ErrorCode } from "@/core/errors/ErrorChannel";
+import { ActualError, type ErrorCode } from "@/core/errors";
+import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 
 // ---------------------------------------------------------------------------
 // Constants & path helpers
@@ -47,11 +48,7 @@ function emitStorageError(
   operation: string,
   context?: Record<string, unknown>,
 ): void {
-  emitErrorEvent(error, {
-    code,
-    source: "STORAGE",
-    context: { operation, ...context },
-  });
+  emitErrorEvent(new ActualError(code, { cause: error, context: { operation, ...context } }));
 }
 
 // ---------------------------------------------------------------------------
@@ -65,7 +62,7 @@ export async function ensureBudgetsDir(): Promise<void> {
       await makeDirectoryAsync(BUDGETS_DIR, { intermediates: true });
     }
   } catch (error) {
-    emitStorageError(error, "STORAGE_WRITE_FAILED", "ensureBudgetsDir", { path: BUDGETS_DIR });
+    emitStorageError(error, "storage/write-failed", "ensureBudgetsDir", { path: BUDGETS_DIR });
     throw error;
   }
 }
@@ -76,7 +73,7 @@ export async function budgetExists(budgetId: string): Promise<boolean> {
     const info = await getInfoAsync(path);
     return info.exists;
   } catch (error) {
-    emitStorageError(error, "STORAGE_READ_FAILED", "budgetExists", { budgetId, path });
+    emitStorageError(error, "storage/read-failed", "budgetExists", { budgetId, path });
     throw error;
   }
 }
@@ -86,7 +83,7 @@ export async function deleteBudgetDir(budgetId: string): Promise<void> {
   try {
     await deleteAsync(path, { idempotent: true });
   } catch (error) {
-    emitStorageError(error, "STORAGE_DELETE_FAILED", "deleteBudgetDir", { budgetId, path });
+    emitStorageError(error, "storage/delete-failed", "deleteBudgetDir", { budgetId, path });
     throw error;
   }
 }
@@ -103,14 +100,14 @@ export async function readMetadata(budgetId: string): Promise<BudgetMetadata | n
     if (!info.exists) return null;
     raw = await readAsStringAsync(path);
   } catch (error) {
-    emitStorageError(error, "STORAGE_READ_FAILED", "readMetadata", { budgetId, path });
+    emitStorageError(error, "storage/read-failed", "readMetadata", { budgetId, path });
     throw error;
   }
 
   try {
     return JSON.parse(raw) as BudgetMetadata;
   } catch (error) {
-    emitStorageError(error, "STORAGE_CORRUPT_DATA", "readMetadata.parse", { budgetId, path });
+    emitStorageError(error, "storage/corrupt-data", "readMetadata.parse", { budgetId, path });
     throw error;
   }
 }
@@ -122,7 +119,7 @@ export async function writeMetadata(budgetId: string, meta: BudgetMetadata): Pro
     await makeDirectoryAsync(dir, { intermediates: true });
     await writeAsStringAsync(path, JSON.stringify(meta, null, 2));
   } catch (error) {
-    emitStorageError(error, "STORAGE_WRITE_FAILED", "writeMetadata", { budgetId, path });
+    emitStorageError(error, "storage/write-failed", "writeMetadata", { budgetId, path });
     throw error;
   }
 }
@@ -147,7 +144,7 @@ export async function listLocalBudgets(): Promise<BudgetMetadata[]> {
     if (!info.exists) return [];
     entries = await readDirectoryAsync(BUDGETS_DIR);
   } catch (error) {
-    emitStorageError(error, "STORAGE_READ_FAILED", "listLocalBudgets", { path: BUDGETS_DIR });
+    emitStorageError(error, "storage/read-failed", "listLocalBudgets", { path: BUDGETS_DIR });
     throw error;
   }
   const budgets: BudgetMetadata[] = [];

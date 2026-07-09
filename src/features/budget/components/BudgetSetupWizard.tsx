@@ -35,18 +35,10 @@ import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import {
   DEFAULT_CATEGORY_GROUPS,
   getDefaultCategorySelection,
-  seedLocalBudget,
   type CategorySelection,
 } from "@/services/seedBudget";
-import {
-  ensureBudgetsDir,
-  idFromBudgetName,
-  getBudgetDir,
-  writeMetadata,
-} from "@/services/budgetMetadata";
-import { openDatabase } from "@/core/db";
-import { loadClock, fullSync } from "@/core/sync";
-import { uploadBudget } from "@/services/budgetfiles";
+import { useSyncStore } from "@/stores/syncStore";
+import { createBudget, uploadBudget } from "@/services/budgetfiles";
 import type { Theme } from "@/design-system/tokens";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -331,6 +323,7 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
   }, []);
 
   const budgetIdRef = useRef("");
+  const seededRef = useRef(false);
   const uploadResultRef = useRef<{ cloudFileId: string; groupId: string } | null>(null);
 
   const handleSeed = useCallback(async () => {
@@ -338,32 +331,27 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
     setSeeding(true);
     setError(null);
     try {
-      const name = budgetName.trim() || "My Budget";
-      const budgetId = idFromBudgetName(name);
-      if (__DEV__) console.log("[wizard] Creating budget:", budgetId, "mode:", mode);
-
-      await ensureBudgetsDir();
-      await writeMetadata(budgetId, { id: budgetId, budgetName: name });
-      await openDatabase(getBudgetDir(budgetId));
-      if (__DEV__) console.log("[wizard] DB opened, loading clock");
-      await loadClock();
-
-      if (__DEV__) console.log("[wizard] Seeding budget data");
-      await seedLocalBudget({
-        accountName: accountName.trim() || "Checking",
-        startingBalance,
-        selectedCategories: categories,
-      });
-      if (__DEV__) console.log("[wizard] Seed complete");
-
-      budgetIdRef.current = budgetId;
+      // Skip the seed on retry (e.g. after an upload failure) — the local
+      // budget already exists and re-seeding would duplicate its data.
+      if (!seededRef.current) {
+        const name = budgetName.trim() || "My Budget";
+        if (__DEV__) console.log("[wizard] Creating budget, mode:", mode);
+        budgetIdRef.current = await createBudget({
+          budgetName: name,
+          accountName: accountName.trim() || "Checking",
+          startingBalance,
+          selectedCategories: categories,
+        });
+        seededRef.current = true;
+        if (__DEV__) console.log("[wizard] Seed complete:", budgetIdRef.current);
+      }
 
       // In server mode, upload the budget now but defer setting prefs
       // until the user taps "Start Budgeting" (so routing doesn't switch early)
       if (mode === "server") {
         if (__DEV__) console.log("[wizard] Uploading to server...");
         const { serverUrl, token } = useSessionStore.getState();
-        const result = await uploadBudget(serverUrl, token, budgetId);
+        const result = await uploadBudget(serverUrl, token, budgetIdRef.current);
         uploadResultRef.current = result;
         if (__DEV__) console.log("[wizard] Upload success:", JSON.stringify(result));
       }
@@ -400,9 +388,12 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
         groupId: result?.groupId ?? "",
         isLocalOnly: false,
       });
-      fullSync().catch((e) => {
-        if (__DEV__) console.warn(e);
-      });
+      useSyncStore
+        .getState()
+        .sync()
+        .catch((e) => {
+          if (__DEV__) console.warn(e);
+        });
     }
     onComplete?.();
   }

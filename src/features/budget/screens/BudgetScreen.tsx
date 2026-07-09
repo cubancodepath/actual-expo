@@ -42,7 +42,7 @@ import { useUndoStore } from "@/stores/undoStore";
 import { computeProgressBar } from "@/core/domain/goals/progressBar";
 import { ProgressBar } from "@/design-system/atoms/ProgressBar";
 import { inferGoalFromDef } from "@/core/domain/goals";
-import { emitErrorEvent } from "@/core/errors/ErrorChannel";
+import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { getGoalProgressLabel } from "@/core/domain/goals/progress";
 import type { BudgetCategoryData, BudgetGroupData } from "@/core/domain/budgets/types";
 

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
-import { fullSync } from "@/core/sync";
+import { useSyncStore } from "@/stores/syncStore";
 
 type UseRefreshControlOptions = {
   /** Screen-specific data reload. Runs AFTER fullSync() completes. */
@@ -37,11 +37,8 @@ export function useRefreshControl(options?: UseRefreshControlOptions) {
 
     try {
       if (syncFirst) {
-        try {
-          await fullSync();
-        } catch {
-          // fullSync already records the error in syncStore
-        }
+        // sync() owns error reporting/badge state — it never rejects.
+        await useSyncStore.getState().sync();
       }
 
       if (onRefresh) {

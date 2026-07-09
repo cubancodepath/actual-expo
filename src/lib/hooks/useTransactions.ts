@@ -9,7 +9,7 @@
 import { useEffect, useMemo } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { listen } from "@/core/sync/syncEvents";
-import { transactionQueries } from "@/core/domain/transactions/queries";
+import { transactionQueries } from "@/lib/query/transactionQueries";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import type { Query } from "@/core/queries/query";
 import type { TransactionDisplay } from "@/core/domain/transactions/types";

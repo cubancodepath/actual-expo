@@ -15,6 +15,7 @@
 
 export { serializeValue, deserializeValue } from "./values";
 export { loadClock, saveClock } from "./clock";
+export { clearLocalSyncState } from "./reset";
 export { applyMessages, getMessagesSince } from "./apply";
 export { sendMessages, batchMessages } from "./batch";
 export { fullSync } from "./fullSync";

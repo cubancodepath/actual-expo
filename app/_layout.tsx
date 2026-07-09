@@ -25,11 +25,12 @@ import { HeroUINativeProvider } from "heroui-native";
 import { ThemeProvider } from "@/design-system/providers/ThemeProvider";
 import { useSessionStore } from "@/stores/sessionStore";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
+import { useSyncStore } from "@/stores/syncStore";
 import { useUiPrefsStore } from "@/stores/uiPrefsStore";
 import { useIsConfigured, getIsConfigured } from "@/stores/session.selectors";
 import { listen } from "@/core/sync/syncEvents";
-import { emitErrorEvent } from "@/core/errors/ErrorChannel";
-import { fullSync, isSwitchingBudget, setSyncingMode } from "@/core/sync";
+import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
+import { isSwitchingBudget, setSyncingMode } from "@/core/sync";
 import { ensureBudgetsDir, budgetExists } from "@/services/budgetMetadata";
 import { openBudget } from "@/services/budgetfiles";
 import { updateAppBadge } from "@/lib/badge";
@@ -37,11 +38,13 @@ import { syncShortcutCache } from "@/lib/syncShortcutCache";
 import { UndoToast } from "@/design-system";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ErrorChannelConsumer } from "@/ui/feedback/ErrorChannelConsumer";
+import { EncryptionPasswordPrompt } from "@/ui/feedback/EncryptionPasswordPrompt";
+import { SyncConflictDialog } from "@/ui/feedback/SyncConflictDialog";
 import { useShakeUndo } from "@/hooks/useShakeUndo";
 import { loadAllPersistedKeys } from "@/services/encryptionService";
 import { installGlobalHandlers } from "@/lib/errors/install";
 
-import { queryClient } from "@/core/queries/queryClient";
+import { queryClient } from "@/lib/query/queryClient";
 
 // Keep splash screen visible until bootstrap + data pre-load completes
 SplashScreen.preventAutoHideAsync();
@@ -101,7 +104,7 @@ function RootLayout() {
     }
     bootstrap()
       .catch((error) => {
-        emitErrorEvent(error, { source: "STORAGE", context: { operation: "bootstrap" } });
+        emitErrorEvent(error, { operation: "bootstrap" });
       })
       .finally(() => setReady(true));
   }, []);
@@ -222,7 +225,7 @@ function RootLayout() {
       if (syncInterval) clearInterval(syncInterval);
       if (getIsConfigured() && !useBudgetContextStore.getState().isLocalOnly) {
         syncInterval = setInterval(() => {
-          if (!isSwitchingBudget()) fullSync().catch(console.warn);
+          if (!isSwitchingBudget()) useSyncStore.getState().sync().catch(console.warn);
         }, 60_000);
       }
     };
@@ -239,14 +242,17 @@ function RootLayout() {
       if (nextState === "active") {
         // Sync immediately on foreground — also clears any "offline" mode
         // left over from a prior network failure, so returning to the app
-        // is always a real retry, not silently skipped.
+        // is always a real retry, not silently skipped. Except while a
+        // file-state conflict is pending: that "offline" is deliberate
+        // (sync stays paused until the user resolves SyncConflictDialog).
         if (
           getIsConfigured() &&
           !useBudgetContextStore.getState().isLocalOnly &&
-          !isSwitchingBudget()
+          !isSwitchingBudget() &&
+          !useSyncStore.getState().conflictCode
         ) {
           setSyncingMode("enabled");
-          fullSync().catch(console.warn);
+          useSyncStore.getState().sync().catch(console.warn);
         }
         startSyncPolling();
         // Check shortcut action with debounced timer
@@ -291,6 +297,8 @@ function RootLayout() {
                     </Stack.Protected>
                   </Stack>
                   <UndoToast />
+                  <EncryptionPasswordPrompt />
+                  <SyncConflictDialog />
                   <ErrorChannelConsumer />
                 </HeroUINativeProvider>
               </ThemeProvider>

@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Alert as HeroAlert, CloseButton } from "heroui-native";
-import { normalizeError } from "@/core/errors";
+import { toErrorCode } from "@/lib/errors/ErrorChannel";
 
 type InlineErrorProps = {
   /** Typically a TanStack `mutation.error` / `query.error` — or null/undefined. */
@@ -21,14 +21,19 @@ export function InlineError({ error, onDismiss }: InlineErrorProps) {
   const t = translate as any;
   if (!error) return null;
 
-  const normalized = normalizeError(error);
+  // Message convention: one i18n key per error code, `errors:<code>`.
+  const code = toErrorCode(error);
 
   return (
     <HeroAlert status="danger">
       <HeroAlert.Indicator />
       <HeroAlert.Content>
         <HeroAlert.Description>
-          {t(normalized.messageKey, normalized.messageParams) as string}
+          {
+            t(`errors:${code}`, {
+              defaultValue: t("errors:unknown/unexpected"),
+            }) as string
+          }
         </HeroAlert.Description>
       </HeroAlert.Content>
       {onDismiss && <CloseButton onPress={onDismiss} />}

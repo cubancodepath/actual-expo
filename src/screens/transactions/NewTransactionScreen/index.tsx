@@ -33,7 +33,7 @@ export function NewTransactionScreen() {
   const { t } = useTranslation("transactions");
   const danger = useThemeColor("danger");
 
-  const { form, isEdit, actions, submit, remove, isSaving, accounts, tags } = useTransactionForm();
+  const { form, isEdit, actions, submit, remove, isSaving, tags } = useTransactionForm();
 
   const values = useSelector(form.store, (s) => s.values);
   const canSubmit = useSelector(form.store, (s) => s.canSubmit);
@@ -41,7 +41,6 @@ export function NewTransactionScreen() {
   const heroTint = values.type === "income" ? "bg-success/70" : "bg-muted/15";
   const split = isSplitLines(values.splitLines);
   const splitSummary = split ? t("splitCategories", { count: values.splitLines?.length ?? 0 }) : "";
-  const canClearCategory = !split && !values.isTransfer && !!values.categoryId;
 
   return (
     <KeyboardAvoidingView
@@ -76,13 +75,6 @@ export function NewTransactionScreen() {
 
           <View className="gap-2 px-4" style={{ marginTop: -CARD_OVERLAP }}>
             <Surface className="overflow-hidden rounded-2xl">
-              <AccountField
-                accountId={values.accountId}
-                accountName={values.accountName}
-                accounts={accounts}
-                onSelect={actions.selectAccount}
-              />
-              <Separator />
               <FieldRow
                 icon={ArrowLeftRight}
                 label={t("payee")}
@@ -112,7 +104,12 @@ export function NewTransactionScreen() {
                       })
                     : router.push("/(auth)/transaction/category-select")
                 }
-                onClear={canClearCategory ? actions.clearCategory : undefined}
+              />
+              <Separator />
+              <AccountField
+                accountId={values.accountId}
+                accountName={values.accountName}
+                onSelect={actions.selectAccount}
               />
               <Separator />
               <DateField value={values.date} onChange={(d) => form.setFieldValue("date", d)} />

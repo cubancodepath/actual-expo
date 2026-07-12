@@ -5,6 +5,8 @@
   "deleteTransaction": "Delete Transaction",
 
   "account": "Account",
+  "budgetAccounts": "Budget Accounts",
+  "offBudgetAccounts": "Off-Budget Accounts",
   "payee": "Payee",
   "category": "Category",
   "repeat": "Repeat",

@@ -27,7 +27,18 @@ const HEADER_HEIGHT_FALLBACK = 120;
  * offset (a shared value) and the measured header height, and exposes them to
  * {@link ScreenHeaderBody} and {@link ScreenHeaderFloating} via context.
  */
-export function ScreenHeaderScrollArea({ children }: { children: ReactNode }) {
+export function ScreenHeaderScrollArea({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  /**
+   * Container classes. Replaces the default background — pass e.g.
+   * `"bg-transparent"` when the area sits inside a surface that paints its own
+   * (rounded) background, like a bottom sheet.
+   */
+  className?: string;
+}) {
   const scrollOffset = useSharedValue(0);
   const [headerHeight, setHeaderHeight] = useState(HEADER_HEIGHT_FALLBACK);
 
@@ -38,7 +49,7 @@ export function ScreenHeaderScrollArea({ children }: { children: ReactNode }) {
 
   return (
     <ScreenHeaderScrollContext value={value}>
-      <View className="flex-1 bg-background">{children}</View>
+      <View className={`flex-1 ${className ?? "bg-background"}`}>{children}</View>
     </ScreenHeaderScrollContext>
   );
 }

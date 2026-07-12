@@ -5,6 +5,8 @@
   "deleteTransaction": "Eliminar Transacción",
 
   "account": "Cuenta",
+  "budgetAccounts": "Cuentas presupuestadas",
+  "offBudgetAccounts": "Cuentas fuera de presupuesto",
   "payee": "Beneficiario",
   "category": "Categoría",
   "repeat": "Repetir",

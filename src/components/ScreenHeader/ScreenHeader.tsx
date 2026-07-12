@@ -24,9 +24,20 @@ import { ChevronLeft } from "lucide-react-native";
  * this row in {@link ScreenHeaderFloating} inside a {@link ScreenHeaderScrollArea}.
  */
 
-export function ScreenHeaderBack({ onPress }: { onPress?: () => void }) {
+/**
+ * Leading (left) slot. Defaults to a back chevron, but accepts `children` to
+ * substitute the control — e.g. a close button inside a bottom sheet.
+ */
+export function ScreenHeaderBack({
+  onPress,
+  children,
+}: {
+  onPress?: () => void;
+  children?: ReactNode;
+}) {
   const router = useRouter();
   const foreground = useThemeColor("foreground");
+  if (children) return <>{children}</>;
   return (
     <Button
       variant="secondary"

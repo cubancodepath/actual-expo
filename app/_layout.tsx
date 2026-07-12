@@ -40,6 +40,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ErrorChannelConsumer } from "@/ui/feedback/ErrorChannelConsumer";
 import { EncryptionPasswordPrompt } from "@/ui/feedback/EncryptionPasswordPrompt";
 import { SyncConflictDialog } from "@/ui/feedback/SyncConflictDialog";
+import { DialogHost } from "@/ui/feedback/dialog";
 import { useShakeUndo } from "@/hooks/useShakeUndo";
 import { loadAllPersistedKeys } from "@/services/encryptionService";
 import { installGlobalHandlers } from "@/lib/errors/install";
@@ -303,6 +304,7 @@ function RootLayout() {
                   <UndoToast />
                   <EncryptionPasswordPrompt />
                   <SyncConflictDialog />
+                  <DialogHost />
                   <ErrorChannelConsumer />
                 </HeroUINativeProvider>
               </ThemeProvider>

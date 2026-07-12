@@ -3,17 +3,10 @@ import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "re
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "@tanstack/react-store";
-import {
-  Button,
-  Dialog,
-  ListGroup,
-  Menu,
-  Separator,
-  Typography,
-  useThemeColor,
-} from "heroui-native";
+import { Button, ListGroup, Menu, Separator, Typography, useThemeColor } from "heroui-native";
 import { Check, CircleMinus, Minus, MoreHorizontal, Plus } from "lucide-react-native";
 import { formatCents } from "@/lib/currency";
+import { dialog } from "@/ui/feedback/dialog";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { AmountInput } from "@/screens/transactions/components/AmountInput";
 import { AmountText } from "@/screens/transactions/components/AmountText";
@@ -67,10 +60,6 @@ export function SplitAmountsScreen() {
   const [draft, setDraft] = useState<DraftLine[]>(() =>
     initial.map((l) => ({ ...l, inflow: type === "income" })),
   );
-  // Shown (as a HeroUI Dialog) when Save is attempted but the amounts don't sum
-  // to the transaction total.
-  const [mismatchOpen, setMismatchOpen] = useState(false);
-
   // A single category is a plain assignment, not a split: hide the running
   // total and the (irrelevant) per-line amount inputs.
   const isSplit = draft.length > 1;
@@ -134,7 +123,10 @@ export function SplitAmountsScreen() {
 
     // Real split (2+ lines): the signed amounts must balance the transaction.
     if (remaining !== 0) {
-      setMismatchOpen(true);
+      dialog.alert({
+        title: t("amountsDontMatchTitle"),
+        message: t("amountsDontMatchMessage", { amount: formatCents(remaining) }),
+      });
       return;
     }
     actions.setSplitLines(cleaned.length ? cleaned : null);
@@ -262,25 +254,6 @@ export function SplitAmountsScreen() {
           <Button.Label>{t("addCategory")}</Button.Label>
         </Button>
       </ScrollView>
-
-      <Dialog isOpen={mismatchOpen} onOpenChange={setMismatchOpen}>
-        <Dialog.Portal>
-          <Dialog.Overlay />
-          <Dialog.Content>
-            <View className="mb-5 gap-1.5">
-              <Dialog.Title>{t("amountsDontMatchTitle")}</Dialog.Title>
-              <Dialog.Description>
-                {t("amountsDontMatchMessage", {
-                  amount: formatCents(remaining),
-                })}
-              </Dialog.Description>
-            </View>
-            <Button onPress={() => setMismatchOpen(false)}>
-              <Button.Label>{t("ok", { ns: "common" })}</Button.Label>
-            </Button>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog>
     </KeyboardAvoidingView>
   );
 }

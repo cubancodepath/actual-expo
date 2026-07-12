@@ -15,7 +15,6 @@ import { ClearedField } from "./components/ClearedField";
 import { FieldRow } from "./components/FieldRow";
 import { AccountField } from "./components/sheets/AccountField";
 import { RecurrenceField } from "./components/sheets/RecurrenceField";
-import { TagsField } from "./components/sheets/TagsField";
 import { CloseButton } from "@/components/CloseButton";
 
 const CARD_OVERLAP = 36;
@@ -33,7 +32,7 @@ export function NewTransactionScreen() {
   const { t } = useTranslation("transactions");
   const danger = useThemeColor("danger");
 
-  const { form, isEdit, actions, submit, remove, isSaving, tags } = useTransactionForm();
+  const { form, isEdit, actions, submit, remove, isSaving } = useTransactionForm();
 
   const values = useSelector(form.store, (s) => s.values);
   const canSubmit = useSelector(form.store, (s) => s.canSubmit);
@@ -136,12 +135,6 @@ export function NewTransactionScreen() {
                   />
                 </>
               ) : null}
-              <Separator />
-              <TagsField
-                notes={values.notes}
-                tags={tags}
-                onChangeNotes={(n) => form.setFieldValue("notes", n)}
-              />
             </Surface>
 
             <View className="gap-2">

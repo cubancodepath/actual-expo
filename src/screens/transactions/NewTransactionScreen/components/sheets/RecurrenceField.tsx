@@ -1,11 +1,13 @@
-import { useState } from "react";
-import { Pressable, View } from "react-native";
+import { Fragment, useState } from "react";
+import { View } from "react-native";
 import { useTranslation } from "react-i18next";
-import { BottomSheet, Separator, Typography, useThemeColor } from "heroui-native";
+import { BottomSheet, ListGroup, Separator, useThemeColor } from "heroui-native";
 import { Check, Repeat } from "lucide-react-native";
 import { getRecurringDescription } from "@/core/domain/schedules";
 import type { RecurConfig } from "@/core/domain/schedules/types";
 import { intToStr, todayInt } from "@/lib/date";
+import { CloseButton } from "@/components/CloseButton";
+import { ScreenHeader } from "@/components/ScreenHeader";
 import { FieldRow } from "../FieldRow";
 
 const FREQUENCIES = ["daily", "weekly", "monthly", "yearly"] as const;
@@ -54,22 +56,35 @@ export function RecurrenceField({ value, onChange }: RecurrenceFieldProps) {
       <BottomSheet isOpen={open} onOpenChange={setOpen}>
         <BottomSheet.Portal>
           <BottomSheet.Overlay />
-          <BottomSheet.Content>
-            <BottomSheet.Title className="mb-3">{t("repeat")}</BottomSheet.Title>
-            {options.map((o, i) => (
-              <View key={o.value ?? "never"}>
-                <Pressable
-                  className="flex-row items-center py-3.5 active:opacity-60"
-                  onPress={() => select(o.value)}
-                >
-                  <Typography className="flex-1 text-base text-foreground">{o.label}</Typography>
-                  {(value?.frequency ?? null) === o.value ? (
-                    <Check size={18} color={accent} />
-                  ) : null}
-                </Pressable>
-                {i < options.length - 1 ? <Separator /> : null}
-              </View>
-            ))}
+          <BottomSheet.Content
+            backgroundClassName="bg-background"
+            contentContainerClassName="px-0 pt-0"
+          >
+            <ScreenHeader>
+              <ScreenHeader.Back>
+                <CloseButton onPress={() => setOpen(false)} />
+              </ScreenHeader.Back>
+              <ScreenHeader.Title>{t("repeat")}</ScreenHeader.Title>
+            </ScreenHeader>
+            <View className="px-4 pb-4">
+              <ListGroup>
+                {options.map((o, i) => (
+                  <Fragment key={o.value ?? "never"}>
+                    {i > 0 ? <Separator className="mx-4" /> : null}
+                    <ListGroup.Item onPress={() => select(o.value)}>
+                      <ListGroup.ItemContent>
+                        <ListGroup.ItemTitle>{o.label}</ListGroup.ItemTitle>
+                      </ListGroup.ItemContent>
+                      {(value?.frequency ?? null) === o.value ? (
+                        <ListGroup.ItemSuffix>
+                          <Check size={18} color={accent} />
+                        </ListGroup.ItemSuffix>
+                      ) : null}
+                    </ListGroup.Item>
+                  </Fragment>
+                ))}
+              </ListGroup>
+            </View>
           </BottomSheet.Content>
         </BottomSheet.Portal>
       </BottomSheet>

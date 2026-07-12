@@ -19,9 +19,12 @@ import { ChevronLeft } from "lucide-react-native";
  * so the Title stays screen-centered whether or not Actions are present, without
  * absolute positioning. No safe-area padding here: these screens are pushed inside
  * the transaction modal card, which already clears the status bar.
+ *
+ * For a header whose frosted blur ramps up as content scrolls underneath, wrap
+ * this row in {@link ScreenHeaderFloating} inside a {@link ScreenHeaderScrollArea}.
  */
 
-function ScreenHeaderBack({ onPress }: { onPress?: () => void }) {
+export function ScreenHeaderBack({ onPress }: { onPress?: () => void }) {
   const router = useRouter();
   const foreground = useThemeColor("foreground");
   return (
@@ -36,7 +39,7 @@ function ScreenHeaderBack({ onPress }: { onPress?: () => void }) {
   );
 }
 
-function ScreenHeaderTitle({ children }: { children: ReactNode }) {
+export function ScreenHeaderTitle({ children }: { children: ReactNode }) {
   return (
     <Typography numberOfLines={1} className="text-lg font-semibold text-foreground">
       {children}
@@ -44,7 +47,7 @@ function ScreenHeaderTitle({ children }: { children: ReactNode }) {
   );
 }
 
-function ScreenHeaderActions({ children }: { children?: ReactNode }) {
+export function ScreenHeaderActions({ children }: { children?: ReactNode }) {
   return <View className="flex-row items-center gap-1">{children}</View>;
 }
 
@@ -55,7 +58,7 @@ function findSlot(children: ReactNode, type: unknown): ReactNode {
   );
 }
 
-function ScreenHeaderRoot({ children }: { children: ReactNode }) {
+export function ScreenHeaderRoot({ children }: { children: ReactNode }) {
   const back = findSlot(children, ScreenHeaderBack);
   const title = findSlot(children, ScreenHeaderTitle);
   const actions = findSlot(children, ScreenHeaderActions);
@@ -67,9 +70,3 @@ function ScreenHeaderRoot({ children }: { children: ReactNode }) {
     </View>
   );
 }
-
-export const ScreenHeader = Object.assign(ScreenHeaderRoot, {
-  Back: ScreenHeaderBack,
-  Title: ScreenHeaderTitle,
-  Actions: ScreenHeaderActions,
-});

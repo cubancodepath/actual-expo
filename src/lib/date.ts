@@ -135,6 +135,27 @@ export function formatMonth(month: string, locale?: string): string {
   });
 }
 
+/** Build a "YYYY-MM" key from a year and a 1-based month. */
+export function monthKey(year: number, month1: number): string {
+  return `${year}-${String(month1).padStart(2, "0")}`;
+}
+
+const shortNamesCache = new Map<string, string[]>();
+
+/**
+ * 12 localized short month names, indexed 0–11 (Jan…Dec / Ene…Dic).
+ * Cached per locale — the result only depends on the locale.
+ */
+export function monthShortNames(locale?: string): string[] {
+  const key = locale ?? "en";
+  const cached = shortNamesCache.get(key);
+  if (cached) return cached;
+  const fmt = new Intl.DateTimeFormat(key, { month: "short" });
+  const names = Array.from({ length: 12 }, (_, i) => fmt.format(new Date(2000, i, 1)));
+  shortNamesCache.set(key, names);
+  return names;
+}
+
 /** "YYYY-MM" → YYYYMM integer. */
 export function monthToInt(month: string): number {
   return parseInt(month.replace("-", ""), 10);

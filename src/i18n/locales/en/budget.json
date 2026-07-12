@@ -10,6 +10,10 @@
   "filterMoneyAvailable": "Money Available",
   "hideProgress": "Hide Progress",
   "showProgress": "Show Progress",
+  "undo": "Undo",
+  "hideAmounts": "Hide Amounts",
+  "switchBudget": "Switch Budget",
+  "settings": "Settings",
   "hideHiddenCategories": "Hide Hidden Categories",
   "showHiddenCategories": "Show Hidden Categories",
 

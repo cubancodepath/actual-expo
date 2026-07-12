@@ -1,10 +1,8 @@
-import { Stack, useRouter } from "expo-router";
+import { Stack } from "expo-router";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
-import { MonthPicker } from "@/features/budget/components/MonthPicker";
 
 export default function BudgetStack() {
   const { colors } = useTheme();
-  const router = useRouter();
 
   return (
     <Stack
@@ -15,12 +13,8 @@ export default function BudgetStack() {
         contentStyle: { backgroundColor: colors.pageBackground },
       }}
     >
-      <Stack.Screen
-        name="index"
-        options={{
-          headerTitle: () => <MonthPicker />,
-        }}
-      />
+      {/* The budget header is now a custom in-body component (BudgetHeader). */}
+      <Stack.Screen name="index" options={{ headerShown: false }} />
     </Stack>
   );
 }

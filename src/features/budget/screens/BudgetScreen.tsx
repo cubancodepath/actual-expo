@@ -15,7 +15,7 @@ import {
   refreshable,
 } from "@expo/ui/swift-ui/modifiers";
 import { shapes } from "@expo/ui/swift-ui/modifiers";
-import { Stack, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { useSharedValue } from "react-native-reanimated";
@@ -38,7 +38,6 @@ import { MAX_CENTS } from "@/lib/currency";
 import { formatBalance, formatPrivacyAware } from "@/lib/format";
 import { StripedProgressBar, ActualList, ActualSection, ScalableText } from "@modules/actual-ui";
 import { usePrivacyStore } from "@/stores/privacyStore";
-import { useUndoStore } from "@/stores/undoStore";
 import { computeProgressBar } from "@/core/domain/goals/progressBar";
 import { ProgressBar } from "@/design-system/atoms/ProgressBar";
 import { inferGoalFromDef } from "@/core/domain/goals";
@@ -59,9 +58,9 @@ import { Text } from "@/design-system/atoms/Text";
 import { SText, SAmount, SPill } from "@/design-system/swift-ui";
 import { SSectionHeader } from "@/design-system/swift-ui";
 import { useUiPrefsStore } from "@/stores/uiPrefsStore";
-import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { BudgetListSkeleton } from "@/features/budget/components/BudgetListSkeleton";
+import { BudgetHeader } from "@/screens/budget/components/BudgetHeader";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -294,9 +293,7 @@ export function BudgetScreen() {
   const ssVersion = useSpreadsheetVersion();
   const { refreshControlProps } = useRefreshControl();
   const colorScheme = useColorScheme();
-  const { showProgressBars, toggleProgressBars } = useUiPrefsStore();
-  const { privacyMode, toggle: togglePrivacy } = usePrivacyStore();
-  const isLocalOnly = useBudgetContextStore((s) => s.isLocalOnly);
+  const { showProgressBars } = useUiPrefsStore();
   const goalsEnabled = useFeatureFlag("goalTemplatesEnabled");
   const uncategorizedCount = useUncategorizedCount();
 
@@ -567,6 +564,7 @@ export function BudgetScreen() {
   return (
     <>
       <View style={{ flex: 1, backgroundColor: colors.pageBackground }}>
+        <BudgetHeader />
         {dataReady && (
           <View
             style={{
@@ -722,55 +720,6 @@ export function BudgetScreen() {
         onChangeText={handleChangeText}
         onBlur={handleBlur}
       />
-
-      <Stack.Toolbar placement="left">
-        <Stack.Toolbar.Button
-          icon="slider.horizontal.3"
-          onPress={() => router.push("/(auth)/budget/edit")}
-        />
-      </Stack.Toolbar>
-      <Stack.Toolbar placement="right">
-        <Stack.Toolbar.Menu icon="ellipsis">
-          {goalsEnabled && (
-            <Stack.Toolbar.MenuAction
-              icon={
-                showProgressBars ? "chart.line.text.clipboard.fill" : "chart.line.text.clipboard"
-              }
-              onPress={toggleProgressBars}
-            >
-              {showProgressBars ? t("hideProgress") : t("showProgress")}
-            </Stack.Toolbar.MenuAction>
-          )}
-          <Stack.Toolbar.MenuAction
-            icon="arrow.uturn.backward"
-            onPress={async () => {
-              await useUndoStore.getState().undo();
-            }}
-          >
-            Undo
-          </Stack.Toolbar.MenuAction>
-          <Stack.Toolbar.MenuAction
-            icon={privacyMode ? "eye" : "eye.slash"}
-            onPress={togglePrivacy}
-          >
-            {privacyMode ? "Show Amounts" : "Hide Amounts"}
-          </Stack.Toolbar.MenuAction>
-          {!isLocalOnly && (
-            <Stack.Toolbar.MenuAction
-              icon="arrow.2.squarepath"
-              onPress={() => router.push("/(auth)/change-budget")}
-            >
-              Switch Budget
-            </Stack.Toolbar.MenuAction>
-          )}
-          <Stack.Toolbar.MenuAction
-            icon="gearshape"
-            onPress={() => router.push("/(auth)/settings")}
-          >
-            Settings
-          </Stack.Toolbar.MenuAction>
-        </Stack.Toolbar.Menu>
-      </Stack.Toolbar>
     </>
   );
 }

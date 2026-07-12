@@ -10,6 +10,10 @@
   "filterMoneyAvailable": "Dinero disponible",
   "hideProgress": "Ocultar progreso",
   "showProgress": "Mostrar progreso",
+  "undo": "Deshacer",
+  "hideAmounts": "Ocultar importes",
+  "switchBudget": "Cambiar presupuesto",
+  "settings": "Ajustes",
   "hideHiddenCategories": "Ocultar categorías ocultas",
   "showHiddenCategories": "Mostrar categorías ocultas",
 

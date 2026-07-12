@@ -1,75 +1,61 @@
+/*
+ * HeroUI Native Theme
+ * Paste into global.css after your HeroUI Native imports.
+ * @see https://heroui.com/docs/native/getting-started/theming
+ */
 @import "tailwindcss";
 @import "uniwind";
-
 @import "heroui-native/styles";
+@import "heroui-native/styles/vibrant";
 @import "heroui-native-pro/styles";
 
 @source "./node_modules/heroui-native/lib";
 @source "./node_modules/heroui-native-pro/lib";
 
-@theme {
-  --font-light: "PlusJakartaSans_300Light";
-  --font-normal: "PlusJakartaSans_400Regular";
-  --font-medium: "PlusJakartaSans_500Medium";
-  --font-semibold: "PlusJakartaSans_600SemiBold";
-  --font-bold: "PlusJakartaSans_700Bold";
-
-  --font-display: "BricolageGrotesque_800ExtraBold";
-  --font-display-semibold: "BricolageGrotesque_600SemiBold";
-
-  --color-metric-steps: #c6f432;
-  --color-metric-calories: #ff6b4a;
-  --color-metric-water: #38bdf8;
-  --color-metric-sleep: #8b7cf6;
-  --color-metric-floors: #fbbf24;
-  --color-metric-heart: #fb5e7e;
+@layer theme {
+@variant light {
+  /* Theme Colors */
+  --background: oklch(97.02% 0.0060 286.11);
+  --muted: oklch(55.17% 0.0120 286.11);
+  --surface-secondary: oklch(95.24% 0.0090 286.11);
+  --surface-tertiary: oklch(93.73% 0.0090 286.11);
+  --default: oklch(94.00% 0.0060 286.11);
+  --accent: oklch(65.69% 0.1759 286.11);
+  --success: oklch(90.33% 0.2084 122.94);
+  /* Readable green for text on the background (success is too light as text). */
+  --positive: oklch(58.00% 0.1700 122.94);
+  --warning: oklch(78.19% 0.1584 72.32);
+  --danger: oklch(65.32% 0.2328 25.73);
+  --border: oklch(90.00% 0.0060 286.11);
+  --separator: oklch(92.00% 0.0060 286.11);
 }
 
-@layer theme {
-  :root {
-    @variant light {
-      --background: oklch(97.02% 0.0000 286.11);
-      --muted: oklch(55.17% 0.0000 286.11);
-      --scrollbar: oklch(87.10% 0.0000 286.11);
-      --surface-secondary: oklch(95.24% 0.0000 286.11);
-      --surface-tertiary: oklch(93.73% 0.0000 286.11);
-      --default: oklch(94.00% 0.0000 286.11);
-      --accent: oklch(65.69% 0.1759 286.11);
-      --success: oklch(90.33% 0.2084 122.94);
-      --warning: oklch(78.19% 0.1584 72.32);
-      --danger: oklch(65.32% 0.2328 25.73);
-      --field-border: oklch(90.00% 0.0000 286.11);
-      --border: oklch(90.00% 0.0000 286.11);
-      --separator: oklch(92.00% 0.0000 286.11);
+@variant dark {
+  /* Theme Colors */
+  --background: oklch(12.00% 0.0060 286.11);
+  --muted: oklch(70.50% 0.0120 286.11);
+  --surface: oklch(21.03% 0.0120 286.11);
+  --surface-secondary: oklch(25.70% 0.0090 286.11);
+  --surface-secondary-foreground: oklch(25.70% 0.0000 286.11);
+  --surface-tertiary: oklch(27.21% 0.0090 286.11);
+  --surface-tertiary-foreground: oklch(27.21% 0.0000 286.11);
+  --overlay: oklch(21.03% 0.0120 286.11);
+  --default: oklch(27.40% 0.0060 286.11);
+  --accent: oklch(65.69% 0.1759 286.11);
+  --success: oklch(90.33% 0.2084 122.94);
+  /* Readable green for text on the dark background. */
+  --positive: oklch(82.00% 0.2000 122.94);
+  --warning: oklch(83.69% 0.1643 84.43);
+  --danger: oklch(69.40% 0.1918 11.32);
+  --field-background: oklch(21.03% 0.0120 286.11);
+  --segment: oklch(39.64% 0.0060 286.11);
+  --border: oklch(28.00% 0.0060 286.11);
+  --separator: oklch(25.00% 0.0060 286.11);
+}
+}
 
-      /* Flat surfaces: drop the elevation shadow (matches dark mode's none). */
-      --surface-shadow: 0 0 0 0 transparent inset;
-    }
-
-    @variant dark {
-      --background: oklch(12.00% 0.0000 286.11);
-      --muted: oklch(70.50% 0.0000 286.11);
-      --scrollbar: oklch(70.50% 0.0000 286.11);
-      --surface: oklch(21.03% 0.0000 286.11);
-      --surface-secondary: oklch(25.70% 0.0000 286.11);
-      --surface-secondary-foreground: oklch(25.70% 0.0000 286.11);
-      --surface-tertiary: oklch(27.21% 0.0000 286.11);
-      --surface-tertiary-foreground: oklch(27.21% 0.0000 286.11);
-      --overlay: oklch(21.03% 0.0000 286.11);
-      --default: oklch(27.40% 0.0000 286.11);
-      --accent: oklch(65.69% 0.1759 286.11);
-      --success: oklch(90.33% 0.2084 122.94);
-      --warning: oklch(83.69% 0.1643 84.43);
-      --danger: oklch(69.40% 0.1918 11.32);
-      --danger-foreground: var(--eclipse);
-      --field-background: oklch(21.03% 0.0000 286.11);
-      --field-placeholder: oklch(70.50% 0.0000 286.11);
-      --field-border: oklch(28.00% 0.0000 286.11);
-      --segment: oklch(39.64% 0.0000 286.11);
-      --border: oklch(28.00% 0.0000 286.11);
-      --separator: oklch(25.00% 0.0000 286.11);
-
-      --surface-shadow: 0 0 0 0 transparent inset;
-    }
-  }
+/* Register the custom token as a color utility (text-positive / bg-positive),
+   resolving to the theme-aware --positive variable above. */
+@theme {
+  --color-positive: var(--positive);
 }

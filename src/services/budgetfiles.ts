@@ -9,7 +9,7 @@ import { openDatabaseAsync } from "expo-sqlite";
 import { unzipSync, zipSync } from "fflate";
 import { addDays } from "date-fns";
 import { randomUUID } from "expo-crypto";
-import { closeDatabase, openDatabase } from "@/core/db";
+import { closeDatabase, openDatabase, isDatabaseOpen } from "@/core/db";
 import {
   loadClock,
   saveClock,
@@ -473,12 +473,28 @@ export async function downloadBudget(
 
 /**
  * Open an existing local budget. Closes any currently open budget first.
+ *
+ * Idempotent by default: if `budgetId` is already the active, open budget it
+ * returns immediately. This is critical for Fast Refresh — the bootstrap effect
+ * remounts and re-calls openBudget(activeBudgetId); without this guard it would
+ * closeDatabase() while the previous open's spreadsheet/liveQueries/sync are
+ * still in flight, crashing natively on expo.module.sqlite.AsyncQueue. Pass
+ * `{ force: true }` to reopen an already-open budget (e.g. after a data reset).
  */
-export async function openBudget(budgetId: string): Promise<void> {
+export async function openBudget(budgetId: string, opts?: { force?: boolean }): Promise<void> {
   const t0 = Date.now();
   const lap = (label: string) => {
     if (__DEV__) console.log(`[openBudget] ${label}: ${Date.now() - t0}ms`);
   };
+
+  if (
+    !opts?.force &&
+    isDatabaseOpen(getBudgetDir(budgetId)) &&
+    useBudgetContextStore.getState().activeBudgetId === budgetId
+  ) {
+    if (__DEV__) console.log("[openBudget] already open, skipping", budgetId);
+    return;
+  }
 
   try {
     // 1. Close previous budget — settle sync + close DB, but do NOT resetAllStores()

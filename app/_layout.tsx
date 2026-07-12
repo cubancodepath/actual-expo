@@ -76,7 +76,11 @@ function RootLayout() {
   const isConfigured = useIsConfigured();
   const isLocalOnly = useBudgetContextStore((s) => s.isLocalOnly);
   const [ready, setReady] = useState(false);
-  const [fontsLoaded] = useFonts({ Inter_400Regular, Inter_500Medium, Inter_600SemiBold });
+  const [fontsLoaded] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+  });
   const handledTimestamp = useRef(0);
 
   useEffect(() => {

@@ -1,67 +1,111 @@
 import { openDatabaseAsync, type SQLiteDatabase, type SQLiteBindParams } from "expo-sqlite";
 import { runSchema } from "./schema";
 
-let _db: SQLiteDatabase | undefined;
+// The connection lives on globalThis, not a module-level `let`, so it survives
+// Fast Refresh. When Metro re-evaluates this module (or a dependency) the old
+// module state is discarded — a plain `let _db` would reset to undefined and
+// orphan the still-open native connection. Hermes then GCs that orphan and
+// finalizes its lingering prepared statements while in-flight liveQueries are
+// still running on it → use-after-free crash on expo.module.sqlite.AsyncQueue.
+const _dbState = globalThis as typeof globalThis & {
+  __actualDb?: SQLiteDatabase;
+  __actualDbDir?: string;
+};
 
 export async function openDatabase(budgetDir: string): Promise<void> {
+  // Idempotent: the same budget already open (e.g. bootstrap re-running after a
+  // Fast Refresh remount) reuses the live connection. Reopening with
+  // useNewConnection:true would spawn a second connection and orphan the first.
+  if (_dbState.__actualDb && _dbState.__actualDbDir === budgetDir) {
+    if (__DEV__) console.log("[db] openDatabase (reuse)", budgetDir);
+    return;
+  }
+  // Switching budgets, or a stale handle from a previous reload: close the old
+  // connection and AWAIT it, so no statement finalize races the close.
+  if (_dbState.__actualDb) {
+    const stale = _dbState.__actualDb;
+    _dbState.__actualDb = undefined;
+    _dbState.__actualDbDir = undefined;
+    try {
+      await stale.closeAsync();
+    } catch {
+      // Already closed/invalid — nothing to do.
+    }
+  }
+
   if (__DEV__) console.log("[db] openDatabase", budgetDir);
-  _db = await openDatabaseAsync("db.sqlite", { useNewConnection: true }, budgetDir);
-  await _db.execAsync("PRAGMA journal_mode = WAL");
-  await _db.execAsync("PRAGMA foreign_keys = ON");
+  const db = await openDatabaseAsync("db.sqlite", { useNewConnection: true }, budgetDir);
+  await db.execAsync("PRAGMA journal_mode = WAL");
+  await db.execAsync("PRAGMA foreign_keys = ON");
   // Secondary connections (upload snapshot, temp dbs) can briefly hold the
   // WAL writer lock — wait instead of failing with SQLITE_BUSY.
-  await _db.execAsync("PRAGMA busy_timeout = 5000");
-  await runSchema(_db);
+  await db.execAsync("PRAGMA busy_timeout = 5000");
+  await runSchema(db);
+  _dbState.__actualDb = db;
+  _dbState.__actualDbDir = budgetDir;
 }
 
 export async function closeDatabase(): Promise<void> {
-  if (_db) {
+  if (_dbState.__actualDb) {
     if (__DEV__) console.log("[db] closeDatabase");
-    const dbToClose = _db;
-    _db = undefined; // Null first so getDb() throws JS error, not native "closed resource"
+    const dbToClose = _dbState.__actualDb;
+    // Null first so getDb() throws a JS error, not a native "closed resource".
+    _dbState.__actualDb = undefined;
+    _dbState.__actualDbDir = undefined;
     await dbToClose.closeAsync();
   }
 }
 
 export function getDb(): SQLiteDatabase {
-  if (!_db) {
+  if (!_dbState.__actualDb) {
     if (__DEV__) console.trace("[db] getDb() called but _db is undefined");
     throw new Error("Database not initialized — call openDatabase() first");
   }
-  return _db as SQLiteDatabase;
+  return _dbState.__actualDb;
+}
+
+/** True when a connection is open. Use to make open flows idempotent (Fast Refresh). */
+export function isDatabaseOpen(budgetDir?: string): boolean {
+  if (!_dbState.__actualDb) return false;
+  return budgetDir === undefined || _dbState.__actualDbDir === budgetDir;
 }
 
 export async function runQuery<T = unknown>(
   sql: string,
   params: SQLiteBindParams = [],
 ): Promise<T[]> {
-  if (!_db) return [];
-  return _db.getAllAsync<T>(sql, params);
+  const db = _dbState.__actualDb;
+  if (!db) return [];
+  return db.getAllAsync<T>(sql, params);
 }
 
 export async function first<T = unknown>(
   sql: string,
   params: SQLiteBindParams = [],
 ): Promise<T | null> {
-  if (!_db) return null;
-  return _db.getFirstAsync<T>(sql, params);
+  const db = _dbState.__actualDb;
+  if (!db) return null;
+  return db.getFirstAsync<T>(sql, params);
 }
 
 export async function run(sql: string, params: SQLiteBindParams = []): Promise<void> {
-  if (!_db) return;
-  await _db.runAsync(sql, params);
+  const db = _dbState.__actualDb;
+  if (!db) return;
+  await db.runAsync(sql, params);
 }
 
 // ── Synchronous queries (for spreadsheet dynamic cells) ──
 
 export function runQuerySync<T = unknown>(sql: string, params: SQLiteBindParams = []): T[] {
-  if (!_db) return [];
-  return _db.getAllSync<T>(sql, params);
+  const db = _dbState.__actualDb;
+  if (!db) return [];
+  return db.getAllSync<T>(sql, params);
 }
 
 export function firstSync<T = unknown>(sql: string, params: SQLiteBindParams = []): T | null {
-  if (!_db) return null;
-  return _db.getFirstSync<T>(sql, params);
+  const db = _dbState.__actualDb;
+  if (!db) return null;
+  return db.getFirstSync<T>(sql, params);
 }
 
 export async function transaction(fn: () => Promise<void>): Promise<void> {

@@ -10,6 +10,18 @@
   "repeat": "Repetir",
   "tags": "Etiquetas",
 
+  "expense": "Gasto",
+  "income": "Ingreso",
+  "notes": "Notas",
+  "notesPlaceholder": "Añade una nota…",
+  "date": "Fecha",
+  "addTag": "Añadir etiqueta",
+  "recurNever": "No se repite",
+  "recur_daily": "Diario",
+  "recur_weekly": "Semanal",
+  "recur_monthly": "Mensual",
+  "recur_yearly": "Anual",
+
   "noCategoryNeeded": "No se necesita categoría",
   "splitCategories": "Dividida ({{count}} categorías)",
 
@@ -34,6 +46,7 @@
   "transferNoCategoryMessage": "Las transferencias entre cuentas no necesitan una categoría.",
 
   "splitTransaction": "Dividir Transacción",
+  "next": "Siguiente",
   "selectCategory": "Seleccionar categoría",
   "categories": "CATEGORÍAS",
   "remaining": "{{amount}} restante",
@@ -73,11 +86,18 @@
   "changeAnyway": "Cambiar de Todos Modos",
 
   "searchPayees": "Buscar beneficiarios o cuentas...",
+  "searchCategories": "Buscar categorías...",
+  "noResults": "Sin resultados",
   "nearbyPayees": "BENEFICIARIOS CERCANOS",
   "enableLocationAccess": "Permitir acceso a ubicación",
   "transferToAccount": "TRANSFERIR A CUENTA",
   "payees": "BENEFICIARIOS",
   "noPayee": "Sin beneficiario",
+  "noPayeeSet": "Sin beneficiario asignado",
+  "addCategory": "Añadir categoría",
+  "removeCategory": "Quitar categoría",
+  "makeIncome": "Convertir a ingreso",
+  "makeExpense": "Convertir a gasto",
   "createPayee": "Crear \"{{name}}\"",
 
   "transfer": "Transferencia"

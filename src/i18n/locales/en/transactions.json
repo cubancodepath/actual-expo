@@ -10,6 +10,18 @@
   "repeat": "Repeat",
   "tags": "Tags",
 
+  "expense": "Expense",
+  "income": "Income",
+  "notes": "Notes",
+  "notesPlaceholder": "Add a note…",
+  "date": "Date",
+  "addTag": "Add tag",
+  "recurNever": "Does not repeat",
+  "recur_daily": "Daily",
+  "recur_weekly": "Weekly",
+  "recur_monthly": "Monthly",
+  "recur_yearly": "Yearly",
+
   "noCategoryNeeded": "No category needed",
   "splitCategories": "Split ({{count}} categories)",
 
@@ -34,6 +46,7 @@
   "transferNoCategoryMessage": "Transfers between accounts don\u2019t need a category.",
 
   "splitTransaction": "Split Transaction",
+  "next": "Next",
   "selectCategory": "Select category",
   "categories": "CATEGORIES",
   "remaining": "{{amount}} remaining",
@@ -73,11 +86,18 @@
   "changeAnyway": "Change Anyway",
 
   "searchPayees": "Search payees or accounts...",
+  "searchCategories": "Search categories...",
+  "noResults": "No results",
   "nearbyPayees": "NEARBY PAYEES",
   "enableLocationAccess": "Allow Location Access",
   "transferToAccount": "TRANSFER TO ACCOUNT",
   "payees": "PAYEES",
   "noPayee": "No payee",
+  "noPayeeSet": "No Payee Set",
+  "addCategory": "Add Category",
+  "removeCategory": "Remove Category",
+  "makeIncome": "Make Income",
+  "makeExpense": "Make Expense",
   "createPayee": "Create \"{{name}}\"",
 
   "contextEdit": "Edit",

@@ -12,6 +12,7 @@ import {
   Undo2,
 } from "lucide-react-native";
 import { MonthYearPicker } from "@/screens/budget/components/MonthYearPicker";
+import { useBudgetMonth } from "@/screens/budget/hooks/useBudgetMonth";
 
 /** No-op placeholder for the header actions that aren't wired yet. */
 const noop = () => {};
@@ -26,13 +27,14 @@ export function BudgetHeader() {
   const insets = useSafeAreaInsets();
   const foreground = useThemeColor("foreground");
   const muted = useThemeColor("muted");
+  const { month, setMonth } = useBudgetMonth();
 
   return (
     <View
       className="flex-row items-center justify-between px-4 pb-2"
       style={{ paddingTop: insets.top + 4 }}
     >
-      <MonthYearPicker />
+      <MonthYearPicker value={month} onChange={setMonth} />
 
       <View className="flex-row items-center gap-1">
         <Button isIconOnly variant="ghost" onPress={noop} accessibilityLabel={t("editBudget")}>

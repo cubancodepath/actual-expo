@@ -3,31 +3,33 @@ import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { cn, Popover, PressableFeedback, Typography, useThemeColor } from "heroui-native";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react-native";
-import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { currentMonth, formatMonth, monthKey, monthShortNames } from "@/lib/date";
-import { ensureMonthRange } from "@/core/domain/spreadsheet/sync";
+
+interface MonthYearPickerProps {
+  /** Selected budget month, "YYYY-MM". */
+  value: string;
+  /** Called with the picked month, "YYYY-MM". */
+  onChange: (month: string) => void;
+}
 
 /**
  * Budget month selector rendered as a Popover: the trigger shows the current
  * month ("July 2026 ⌄") and the panel is a custom year navigator with a 3×4
  * grid of months — the HeroUI Pro Calendar is day-based, so month selection is
- * built by hand here.
+ * built by hand here. Purely presentational: state lives in the parent.
  */
-export function MonthYearPicker() {
+export function MonthYearPicker({ value, onChange }: MonthYearPickerProps) {
   const { i18n } = useTranslation();
   const foreground = useThemeColor("foreground");
   const muted = useThemeColor("muted");
 
-  const month = useBudgetUIStore((s) => s.month);
-  const setMonth = useBudgetUIStore((s) => s.setMonth);
-
   const [open, setOpen] = useState(false);
   // Year shown in the grid. Re-seeds from the selected month each time the
   // popover opens so it always lands on the active year.
-  const [year, setYear] = useState(() => Number(month.slice(0, 4)));
+  const [year, setYear] = useState(() => Number(value.slice(0, 4)));
 
-  const selectedYear = Number(month.slice(0, 4));
-  const selectedMonth1 = Number(month.slice(5, 7));
+  const selectedYear = Number(value.slice(0, 4));
+  const selectedMonth1 = Number(value.slice(5, 7));
   const [curYear, curMonth1] = [
     Number(currentMonth().slice(0, 4)),
     Number(currentMonth().slice(5, 7)),
@@ -36,19 +38,12 @@ export function MonthYearPicker() {
   const names = monthShortNames(i18n.language);
 
   function handleOpenChange(next: boolean) {
-    if (next) setYear(Number(month.slice(0, 4)));
+    if (next) setYear(Number(value.slice(0, 4)));
     setOpen(next);
   }
 
   function pick(month1: number) {
-    const next = monthKey(year, month1);
-    setMonth(next);
-    // Lazily extend the spreadsheet's built range when jumping outside it
-    // (no-op when already covered) — mirrors the legacy MonthPicker.
-    ensureMonthRange(next).catch((err) => {
-      // eslint-disable-next-line no-console
-      if (__DEV__) console.warn("[MonthYearPicker] ensureMonthRange failed:", err);
-    });
+    onChange(monthKey(year, month1));
     setOpen(false);
   }
 
@@ -57,7 +52,7 @@ export function MonthYearPicker() {
       <Popover.Trigger asChild>
         <PressableFeedback className="flex-row items-center gap-1">
           <Typography className="text-lg font-semibold text-foreground">
-            {formatMonth(month, i18n.language)}
+            {formatMonth(value, i18n.language)}
           </Typography>
           <ChevronDown size={18} color={muted} />
         </PressableFeedback>

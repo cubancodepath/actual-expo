@@ -1,31 +1,39 @@
+import { Tabs } from "expo-router";
 import { NativeTabs } from "expo-router/unstable-native-tabs";
+import { useThemeColor } from "heroui-native";
 import { useTranslation } from "react-i18next";
-import { useTheme } from "@/design-system/providers/ThemeProvider";
+import { Platform } from "react-native";
+import { FloatingTabBar } from "@/components/navigation/FloatingTabBar";
+import { TABS } from "@/lib/config/tabs";
 import { useTabBarStore } from "@/stores/tabBarStore";
 
 export default function TabsLayout() {
-  const { colors } = useTheme();
+  const accent = useThemeColor("accent");
+  const muted = useThemeColor("muted");
   const tabBarHidden = useTabBarStore((s) => s.hidden);
   const { t } = useTranslation();
 
+  if (Platform.OS === "ios") {
+    return (
+      <NativeTabs tintColor={accent} iconColor={muted} hidden={tabBarHidden}>
+        {TABS.map((tab) => (
+          <NativeTabs.Trigger key={tab.name} name={tab.name}>
+            <NativeTabs.Trigger.Icon sf={tab.sf} md={tab.md} />
+            <NativeTabs.Trigger.Label>{t(tab.labelKey)}</NativeTabs.Trigger.Label>
+          </NativeTabs.Trigger>
+        ))}
+      </NativeTabs>
+    );
+  }
+
   return (
-    <NativeTabs tintColor={colors.primary} hidden={tabBarHidden}>
-      <NativeTabs.Trigger name="(budget)">
-        <NativeTabs.Trigger.Icon sf="wallet.bifold.fill" md="account_balance_wallet" />
-        <NativeTabs.Trigger.Label>{t("tabs.budget")}</NativeTabs.Trigger.Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="(spending)">
-        <NativeTabs.Trigger.Icon sf="list.bullet" md="receipt_long" />
-        <NativeTabs.Trigger.Label>{t("tabs.spending")}</NativeTabs.Trigger.Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="(accounts)">
-        <NativeTabs.Trigger.Icon sf="building.columns" md="account_balance" />
-        <NativeTabs.Trigger.Label>{t("tabs.accounts")}</NativeTabs.Trigger.Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="(reports)">
-        <NativeTabs.Trigger.Icon sf="chart.bar.xaxis" md="bar_chart" />
-        <NativeTabs.Trigger.Label>{t("tabs.reports")}</NativeTabs.Trigger.Label>
-      </NativeTabs.Trigger>
-    </NativeTabs>
+    <Tabs
+      screenOptions={{ headerShown: false, tabBarStyle: { display: "none" } }}
+      tabBar={(props) => <FloatingTabBar {...props} />}
+    >
+      {TABS.map((tab) => (
+        <Tabs.Screen key={tab.name} name={tab.name} />
+      ))}
+    </Tabs>
   );
 }

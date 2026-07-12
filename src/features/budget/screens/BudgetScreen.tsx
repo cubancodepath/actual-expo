@@ -18,8 +18,7 @@ import { shapes } from "@expo/ui/swift-ui/modifiers";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
-import { useSharedValue } from "react-native-reanimated";
-import { AddTransactionButton } from "@/design-system/molecules/AddTransactionButton";
+import { AddTransactionFab } from "@/ui/AddTransactionFab";
 import { SharedAmountInput } from "@/features/transactions/components/SharedAmountInput";
 import type { CurrencyInputRef } from "@/features/transactions/components/currency-input/CurrencyInput";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
@@ -327,8 +326,6 @@ export function BudgetScreen() {
   }, [categories, rawGroups]);
 
   const dataReady = budgetGroups.length > 0 || (!categoriesLoading && rawGroups.length === 0);
-
-  const fabCollapsed = useSharedValue(false);
 
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set([HIDDEN_GROUP_ID]));
 
@@ -709,7 +706,7 @@ export function BudgetScreen() {
           </Host>
         )}
 
-        {!keyboardVisible && <AddTransactionButton collapsed={fabCollapsed} />}
+        {!keyboardVisible && <AddTransactionFab />}
       </View>
 
       <SharedAmountInput

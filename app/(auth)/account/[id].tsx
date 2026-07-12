@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { useSharedValue } from "react-native-reanimated";
 import { ActivityIndicator, Alert, LayoutAnimation, RefreshControl, View } from "react-native";
 import { LegendList } from "@legendapp/list";
 import { Stack, useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from "expo-router";
@@ -20,7 +19,7 @@ import { TransactionListItem } from "@/features/accounts/components/TransactionL
 import { DateSectionHeader } from "@/features/accounts/components/DateSectionHeader";
 import { UpcomingSectionHeader } from "@/features/accounts/components/UpcomingSectionHeader";
 import { UpcomingScheduleRow } from "@/features/accounts/components/UpcomingScheduleRow";
-import { AddTransactionButton } from "@/design-system/molecules/AddTransactionButton";
+import { AddTransactionFab } from "@/ui/AddTransactionFab";
 import { UnclearedPill } from "@/features/transactions/components/UnclearedPill";
 import { useAccountPref } from "@/features/accounts/hooks/useAccountPref";
 import { usePrivacyStore } from "@/stores/privacyStore";
@@ -157,12 +156,6 @@ export default function AccountTransactionsScreen() {
     selectedTotal,
     onDoneSelection: selection.exit,
   });
-
-  // ---- Scroll-driven FAB collapse ----
-  const fabCollapsed = useSharedValue(false);
-  const handleScroll = useCallback((e: { nativeEvent: { contentOffset: { y: number } } }) => {
-    fabCollapsed.value = e.nativeEvent.contentOffset.y > 100;
-  }, []);
 
   // Reset selection on blur
   useFocusEffect(
@@ -361,8 +354,6 @@ export default function AccountTransactionsScreen() {
         keyExtractor={(item: ListItem) => item.key}
         getItemType={(item: ListItem) => item.type}
         extraData={`${selection.isSelectMode}-${selection.selectedIds.size}`}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
         renderItem={({ item }: { item: ListItem }) => {
           if (item.type === "upcoming-header") {
             return (
@@ -474,9 +465,7 @@ export default function AccountTransactionsScreen() {
         }
       />
 
-      {!selection.isSelectMode && (
-        <AddTransactionButton accountId={id as string} bottom={28} collapsed={fabCollapsed} />
-      )}
+      {!selection.isSelectMode && <AddTransactionFab accountId={id as string} bottom={28} />}
 
       {selection.isSelectMode && (
         <SelectModeToolbar

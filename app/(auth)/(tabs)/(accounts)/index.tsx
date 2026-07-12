@@ -33,7 +33,6 @@ import {
 import { useRefreshControl } from "@/hooks/useRefreshControl";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { EmptyState } from "@/design-system/molecules/EmptyState";
-import { AddTransactionButton } from "@/design-system/molecules/AddTransactionButton";
 import { useUndoStore } from "@/stores/undoStore";
 import { usePrivacyStore } from "@/stores/privacyStore";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
@@ -261,7 +260,6 @@ export default function AccountsScreen() {
           />
         </View>
       )}
-      <AddTransactionButton />
     </>
   );
 }

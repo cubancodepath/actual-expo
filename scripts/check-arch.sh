@@ -58,7 +58,7 @@ if [ -n "$core_applib" ]; then
 fi
 
 # 2. shared UI must not import screens/features
-for dir in src/ui src/components; do
+for dir in src/ui; do
   [ -d "$dir" ] || continue
   ui_up=$(grep -rln "from ['\"]@/\(screens\|features\)" "$dir" --include='*.ts*' 2>/dev/null || true)
   if [ -n "$ui_up" ]; then
@@ -67,6 +67,12 @@ for dir in src/ui src/components; do
     fail=1
   fi
 done
+
+# 2b. src/components/ was migrated to src/ui/ — it must not come back
+if [ -d src/components ]; then
+  echo "ARCH FAIL: src/components/ is legacy and was emptied into src/ui/ — do not recreate it."
+  fail=1
+fi
 
 # 3. no cross-domain imports between screens
 if [ -d src/screens ]; then

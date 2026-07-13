@@ -36,7 +36,7 @@ import { openBudget } from "@/services/budgetfiles";
 import { updateAppBadge } from "@/lib/badge";
 import { syncShortcutCache } from "@/lib/syncShortcutCache";
 import { UndoToast } from "@/design-system";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ErrorBoundary } from "@/ui/feedback/ErrorBoundary";
 import { ErrorChannelConsumer } from "@/ui/feedback/ErrorChannelConsumer";
 import { EncryptionPasswordPrompt } from "@/ui/feedback/EncryptionPasswordPrompt";
 import { SyncConflictDialog } from "@/ui/feedback/SyncConflictDialog";

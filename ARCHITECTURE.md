@@ -99,7 +99,7 @@ app → screens → (ui | stores | lib | services) → core
 | `src/design-system/*` (atoms/molecules) | **desaparecen**: se sustituyen por componentes heroui-native usados directamente en las screens; solo lo que heroui no traiga Y usen 2+ dominios va a `src/ui/` | ritmo marcado por `docs/DX-HEROUI-MIGRATION-PLAN.md` |
 | `src/design-system/swift-ui/` | `src/ui/swift-ui/` | |
 | `src/design-system/providers/ThemeProvider` + `tokens/` | `src/ui/theme/` | |
-| `src/components/` (ErrorBoundary etc.) | `src/ui/feedback/` | |
+| `src/components/` (ErrorBoundary, CloseButton, ScreenHeader, navigation) | `src/ui/` (feedback/ErrorBoundary, CloseButton, ScreenHeader/, navigation/) | ✅ hecho 2026-07-12 — carpeta borrada |
 | `src/shared/infra/api/` | `src/services/api/` | ✅ hecho 2026-07-08 |
 | `src/shared/` (resto, .gitkeep) | **borrado** | ✅ hecho 2026-07-08 |
 | `src/hooks/` | globales → `src/lib/hooks/`; de un dominio → `screens/<dominio>/hooks/` | |

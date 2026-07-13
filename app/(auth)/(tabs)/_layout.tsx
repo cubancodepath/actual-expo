@@ -3,7 +3,7 @@ import { NativeTabs } from "expo-router/unstable-native-tabs";
 import { useThemeColor } from "heroui-native";
 import { useTranslation } from "react-i18next";
 import { Platform } from "react-native";
-import { FloatingTabBar } from "@/components/navigation/FloatingTabBar";
+import { FloatingTabBar } from "@/ui/navigation/FloatingTabBar";
 import { TABS } from "@/lib/config/tabs";
 import { useTabBarStore } from "@/stores/tabBarStore";
 

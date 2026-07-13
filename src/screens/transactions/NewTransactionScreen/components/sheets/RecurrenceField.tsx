@@ -6,8 +6,8 @@ import { Check, Repeat } from "lucide-react-native";
 import { getRecurringDescription } from "@/core/domain/schedules";
 import type { RecurConfig } from "@/core/domain/schedules/types";
 import { intToStr, todayInt } from "@/lib/date";
-import { CloseButton } from "@/components/CloseButton";
-import { ScreenHeader } from "@/components/ScreenHeader";
+import { CloseButton } from "@/ui/CloseButton";
+import { ScreenHeader } from "@/ui/ScreenHeader";
 import { FieldRow } from "../FieldRow";
 
 const FREQUENCIES = ["daily", "weekly", "monthly", "yearly"] as const;

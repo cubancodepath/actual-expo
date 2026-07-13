@@ -1,7 +1,7 @@
 import { type ReactNode } from "react";
 import { View } from "react-native";
 import { SearchField } from "heroui-native";
-import { ScreenHeader } from "@/components/ScreenHeader";
+import { ScreenHeader } from "@/ui/ScreenHeader";
 
 type PickerScreenProps = {
   title: string;

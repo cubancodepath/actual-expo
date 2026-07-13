@@ -5,9 +5,9 @@ import { useTranslation } from "react-i18next";
 import { BottomSheet, ListGroup, Separator, Typography, useThemeColor } from "heroui-native";
 import { Banknote, ChartSpline, Check, Landmark } from "lucide-react-native";
 import type { Account } from "@/core/domain/accounts/types";
-import { CloseButton } from "@/components/CloseButton";
-import { Money } from "@/components/Money";
-import { ScreenHeader, useScreenHeaderScroll } from "@/components/ScreenHeader";
+import { CloseButton } from "@/ui/CloseButton";
+import { Money } from "@/ui/Money";
+import { ScreenHeader, useScreenHeaderScroll } from "@/ui/ScreenHeader";
 import { useAccountsWithBalances } from "@/screens/transactions/hooks/useAccountsWithBalances";
 import { FieldRow } from "../FieldRow";
 

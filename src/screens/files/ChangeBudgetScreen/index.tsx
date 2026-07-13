@@ -4,7 +4,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTranslation } from "react-i18next";
 import {
-  CloseButton,
   LinkButton,
   ListGroup,
   ScrollShadow,
@@ -13,6 +12,7 @@ import {
   useThemeColor,
 } from "heroui-native";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
+import { CloseButton } from "@/ui/CloseButton";
 import { InlineError } from "@/ui/feedback/InlineError";
 import { BudgetFileRow } from "@/ui/BudgetFileRow";
 import { BudgetOpeningOverlay } from "@/screens/files/components/BudgetOpeningOverlay";

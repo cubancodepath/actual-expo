@@ -5,7 +5,7 @@ import type { ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ScreenFade } from "@/components/navigation/ScreenFade";
+import { ScreenFade } from "@/ui/navigation/ScreenFade";
 import { TABS } from "@/lib/config/tabs";
 import { useTabBarStore } from "@/stores/tabBarStore";
 

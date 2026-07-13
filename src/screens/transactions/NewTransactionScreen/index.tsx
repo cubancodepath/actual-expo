@@ -15,7 +15,7 @@ import { ClearedField } from "./components/ClearedField";
 import { FieldRow } from "./components/FieldRow";
 import { AccountField } from "./components/sheets/AccountField";
 import { RecurrenceField } from "./components/sheets/RecurrenceField";
-import { CloseButton } from "@/components/CloseButton";
+import { CloseButton } from "@/ui/CloseButton";
 
 const CARD_OVERLAP = 36;
 

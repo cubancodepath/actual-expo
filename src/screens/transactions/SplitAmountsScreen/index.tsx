@@ -7,7 +7,7 @@ import { Button, ListGroup, Menu, Separator, Typography, useThemeColor } from "h
 import { Check, CircleMinus, Minus, MoreHorizontal, Plus } from "lucide-react-native";
 import { formatCents } from "@/lib/currency";
 import { dialog } from "@/ui/feedback/dialog";
-import { ScreenHeader } from "@/components/ScreenHeader";
+import { ScreenHeader } from "@/ui/ScreenHeader";
 import { AmountInput } from "@/screens/transactions/components/AmountInput";
 import { AmountText } from "@/screens/transactions/components/AmountText";
 import { useTransactionForm } from "@/screens/transactions/NewTransactionScreen/context/TransactionFormProvider";

@@ -23,22 +23,22 @@ export function MonthYearPicker({ value, onChange }: MonthYearPickerProps) {
   const foreground = useThemeColor("foreground");
   const muted = useThemeColor("muted");
 
+  const selectedYear = Number(value.slice(0, 4));
+  const selectedMonth1 = Number(value.slice(5, 7));
+
   const [open, setOpen] = useState(false);
   // Year shown in the grid. Re-seeds from the selected month each time the
   // popover opens so it always lands on the active year.
-  const [year, setYear] = useState(() => Number(value.slice(0, 4)));
+  const [year, setYear] = useState(selectedYear);
 
-  const selectedYear = Number(value.slice(0, 4));
-  const selectedMonth1 = Number(value.slice(5, 7));
-  const [curYear, curMonth1] = [
-    Number(currentMonth().slice(0, 4)),
-    Number(currentMonth().slice(5, 7)),
-  ];
+  const cur = currentMonth();
+  const curYear = Number(cur.slice(0, 4));
+  const curMonth1 = Number(cur.slice(5, 7));
 
   const names = monthShortNames(i18n.language);
 
   function handleOpenChange(next: boolean) {
-    if (next) setYear(Number(value.slice(0, 4)));
+    if (next) setYear(selectedYear);
     setOpen(next);
   }
 

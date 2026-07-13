@@ -277,3 +277,23 @@ Uso: `className="bg-page-background text-text-primary"`, `text-negative` para im
 ## Verificación transversal
 
 `pnpm test` (742/743) · `npx tsc --noEmit` (sin errores nuevos sobre los 6 pre-existentes) · `pnpm lint` · recorrer budget→spending→account→schedule→settings en simulador vs screenshots baseline light/dark · `pnpm e2e` (Maestro) al cierre de F2 y F5 · `pnpm build:preview` al cierre de F4.
+
+---
+
+## Cleanups diferidos (deuda conocida — anotado 2026-07-13)
+
+Detectados durante `/simplify` de la migración de BudgetScreen. Se dejaron a propósito (cambian
+comportamiento o tocan legacy); abordar cuando toque la pieza correspondiente:
+
+1. **`src/ui/Money.tsx` no respeta las prefs de moneda/formato/privacidad.** Usa `NumberValue`
+   (Intl) con `currency="USD"` hardcodeado, así ignora `numberFormat` / `defaultCurrencyCode` /
+   `hideFraction` / privacy mask que sí honran `Amount` (`src/design-system/atoms/Amount.tsx`) y
+   `AmountText` (`src/screens/transactions/components/AmountText.tsx` → `formatCents`). Afecta a
+   Budget + 3 pantallas de transacciones que ya consumen `Money`. **Al tocar:** hacer `Money`
+   pref-aware (o migrarlo a `formatCents`/`AmountText`) en un cambio dedicado, no mecánico.
+2. **Regla "tono por signo" duplicada en 4 sitios.** `Money` (`tone="auto"`), `AvailableChip`
+   (success/danger/default), `AmountText` (inflow) y `SPill.tsx`. Cuando un 3.er consumidor necesite
+   sign-coloring, promover un helper único (p.ej. en `src/lib/colors.ts`) en vez de re-implementarlo.
+3. **Agrupación de categorías duplicada.** `src/screens/budget/hooks/useBudgetSections.ts` repite la
+   lógica de `EditBudgetScreen.tsx` (grupo sintético `__hidden__`, income al final). `useBudgetSections`
+   es el hogar canónico nuevo; al migrar `EditBudgetScreen` (F5), que consuma ese hook.

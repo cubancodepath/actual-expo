@@ -19,7 +19,14 @@ import { DependencyGraph } from "./graph";
  * see indexCell(). This list must stay in sync with the prefixes actually
  * queried; add to it if triggerBudgetChanges starts querying a new one.
  */
-const QUERYABLE_PREFIXES = ["sum-amount-", "budget-", "carryover-", "buffered"];
+const QUERYABLE_PREFIXES = [
+  "sum-amount-",
+  "budget-",
+  "carryover-",
+  "buffered",
+  "goal-",
+  "long-goal-",
+];
 
 // ---------------------------------------------------------------------------
 // Types

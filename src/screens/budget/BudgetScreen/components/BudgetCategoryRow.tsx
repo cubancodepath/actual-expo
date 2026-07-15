@@ -1,9 +1,10 @@
 import { memo } from "react";
 import { View } from "react-native";
 import { cn, PressableFeedback, Typography } from "heroui-native";
-import { useSheetValueNumber } from "@/hooks/useSheetValue";
+import { useSheetValue, useSheetValueNumber } from "@/hooks/useSheetValue";
 import { envelopeBudget } from "@/core/domain/spreadsheet/bindings";
 import { Money } from "@/ui/Money";
+import { categoryChipStatus } from "../chipStatus";
 import { AvailableChip } from "./AvailableChip";
 import { BudgetAssignedField } from "./BudgetAssignedField";
 import { COL_ASSIGNED, COL_AVAILABLE, NumericCell } from "./columns";
@@ -22,6 +23,8 @@ interface BudgetCategoryRowProps {
    * `pageY` is the touch's screen position, used to scroll the row above the keyboard.
    */
   onPressRow: (catId: string, budgeted: number, pageY: number) => void;
+  /** Whether goal templates are enabled (drives goal-aware chip colours). */
+  goalsEnabled: boolean;
 }
 
 /**
@@ -39,10 +42,13 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
   isEditing,
   draft,
   onPressRow,
+  goalsEnabled,
 }: BudgetCategoryRowProps) {
   const budgeted = useSheetValueNumber(sheet, envelopeBudget.catBudgeted(catId));
   const spent = useSheetValueNumber(sheet, envelopeBudget.catSpent(catId));
   const balance = useSheetValueNumber(sheet, envelopeBudget.catBalance(catId));
+  const goal = useSheetValueNumber(sheet, envelopeBudget.catGoal(catId));
+  const longGoalRaw = useSheetValue(sheet, envelopeBudget.catLongGoal(catId));
 
   if (isIncome) {
     return (
@@ -79,7 +85,16 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
           <BudgetAssignedField value={budgeted} draft={draft} isEditing={isEditing} />
         </NumericCell>
         <NumericCell width={COL_AVAILABLE}>
-          <AvailableChip cents={balance} />
+          <AvailableChip
+            cents={balance}
+            status={categoryChipStatus({
+              balance,
+              budgeted,
+              goal,
+              longGoal: longGoalRaw === true || longGoalRaw === 1,
+              goalsEnabled,
+            })}
+          />
         </NumericCell>
       </View>
     </PressableFeedback>

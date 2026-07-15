@@ -11,6 +11,7 @@ import { BudgetHeader } from "@/screens/budget/components/BudgetHeader";
 import { BudgetListSkeleton } from "@/features/budget/components/BudgetListSkeleton";
 import { AddTransactionFab } from "@/ui/AddTransactionFab";
 import { AmountKeyboard, useAmountKeyboardAvoidance } from "@/ui/amount-keyboard";
+import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { useTabBarStore } from "@/stores/tabBarStore";
 import { BudgetGroup } from "./components/BudgetGroup";
 import { ReadyToAssignBar } from "./components/ReadyToAssignBar";
@@ -19,6 +20,7 @@ export function BudgetScreen() {
   const { month } = useBudgetMonth();
   const sheet = sheetForMonth(month);
   const { sections, isLoading } = useBudgetSections();
+  const goalsEnabled = useFeatureFlag("goalTemplatesEnabled");
 
   // Persist an edited assigned amount: update the spreadsheet for instant UI,
   // then setBudgetAmount for the CRDT/undoable write.
@@ -143,6 +145,7 @@ export function BudgetScreen() {
                   editingCatId={editingCatId}
                   draft={draft}
                   onPressRow={onPressRow}
+                  goalsEnabled={goalsEnabled}
                 />
               ))}
             </Accordion>

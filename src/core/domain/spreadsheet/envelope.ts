@@ -12,7 +12,7 @@
 
 import { Spreadsheet } from "./spreadsheet";
 import { sheetForMonth, envelopeBudget } from "./bindings";
-import { runQuery, firstSync } from "@/core/db";
+import { firstSync } from "@/core/db";
 import { monthToInt, addMonths } from "@/lib/date";
 import { getCategories, getCategoryGroups } from "../categories";
 import type { Category, CategoryGroup } from "../categories/types";
@@ -110,15 +110,37 @@ export async function createBudgetCells(
       run: (balance) => Math.max(0, num(balance)),
     });
 
-    // Uses the same inference the one-shot getBudgetMonth() read path uses
-    // (goals/parse.ts) — was previously a local copy here that only
-    // recognized simple/by/spend; sharing it picks up periodic/limit/refill
-    // too. carryIn isn't available at this synchronous cell-creation point
-    // (would need an extra query), so "by" sinking-fund goals approximate
-    // it as 0 — the function's own documented fallback.
-    const goalInfo = cat.goal_def ? inferGoalFromDef(cat.goal_def, month) : null;
-    ss.createStatic(sheet, envelopeBudget.catGoal(cat.id), goalInfo?.goal ?? 0);
-    ss.createStatic(sheet, envelopeBudget.catLongGoal(cat.id), goalInfo?.longGoal ?? false);
+    // Goal cells mirror zero_budgets.goal/long_goal — the values applyGoals()
+    // persists — so applying templates / remote sync updates category colors
+    // live (parity with upstream handleBudgetChange, which re-sets these cells
+    // on every budget change). Dynamic (not static) so triggerBudgetChanges can
+    // invalidate them via the "goal-"/"long-goal-" prefixes.
+    //
+    // Fallback when no zero_budgets row/value yet (month before applyGoals):
+    // infer from goal_def, the same inference the getBudgetMonth() read path
+    // uses. carryIn isn't available at this synchronous point, so "by"
+    // sinking-fund goals approximate it as 0 — the function's documented fallback.
+    const inferred = cat.goal_def ? inferGoalFromDef(cat.goal_def, month) : null;
+    ss.createDynamic(sheet, envelopeBudget.catGoal(cat.id), {
+      dependencies: [],
+      run: () => {
+        const row = firstSync<{ goal: number | null }>(
+          "SELECT goal FROM zero_budgets WHERE month = ? AND category = ?",
+          [monthInt, cat.id],
+        );
+        return row?.goal ?? inferred?.goal ?? 0;
+      },
+    });
+    ss.createDynamic(sheet, envelopeBudget.catLongGoal(cat.id), {
+      dependencies: [],
+      run: () => {
+        const row = firstSync<{ long_goal: number | null }>(
+          "SELECT long_goal FROM zero_budgets WHERE month = ? AND category = ?",
+          [monthInt, cat.id],
+        );
+        return row?.long_goal != null ? row.long_goal === 1 : (inferred?.longGoal ?? false);
+      },
+    });
   }
 
   // ── Per-group: groupSpent for ALL groups (income + expense) ──

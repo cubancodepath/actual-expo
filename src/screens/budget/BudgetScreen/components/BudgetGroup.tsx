@@ -15,6 +15,7 @@ interface BudgetGroupProps {
   editingCatId: string | null;
   draft: number;
   onPressRow: (catId: string, budgeted: number, pageY: number) => void;
+  goalsEnabled: boolean;
 }
 
 /** Small muted column label, right-aligned over its numeric column. */
@@ -39,6 +40,7 @@ export const BudgetGroup = memo(function BudgetGroup({
   editingCatId,
   draft,
   onPressRow,
+  goalsEnabled,
 }: BudgetGroupProps) {
   const { t } = useTranslation("budget");
   const budgeted = useSheetValueNumber(sheet, envelopeBudget.groupBudgeted(group.id));
@@ -104,6 +106,7 @@ export const BudgetGroup = memo(function BudgetGroup({
                 isEditing={editingCatId === cat.id}
                 draft={editingCatId === cat.id ? draft : 0}
                 onPressRow={onPressRow}
+                goalsEnabled={goalsEnabled}
               />
             </Fragment>
           ))}

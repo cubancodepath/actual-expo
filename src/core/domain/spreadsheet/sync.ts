@@ -129,6 +129,7 @@ export function triggerBudgetChanges(messages: SyncMessage[]): void {
   // Determine which cell prefixes are affected by the messages
   let touchTransactions = false;
   let touchBudgets = false;
+  let touchGoals = false;
   let touchMonths = false;
   // accounts.offbudget/closed/tombstone changes which categories' spending
   // counts toward "on budget" totals; category_mapping (category merges)
@@ -155,6 +156,8 @@ export function triggerBudgetChanges(messages: SyncMessage[]): void {
     } else if (msg.dataset === "zero_budgets" || msg.dataset === "reflect_budgets") {
       if (msg.column === "amount" || msg.column === "carryover") {
         touchBudgets = true;
+      } else if (msg.column === "goal" || msg.column === "long_goal") {
+        touchGoals = true;
       }
     } else if (msg.dataset === "zero_budget_months") {
       touchMonths = true;
@@ -187,6 +190,16 @@ export function triggerBudgetChanges(messages: SyncMessage[]): void {
       affectedCells.add(name);
     }
     for (const name of ss.getCellsByPrefix("carryover-")) {
+      affectedCells.add(name);
+    }
+  }
+  if (touchGoals) {
+    // "goal-" and "long-goal-" feed the category chip colour (funded/underfunded).
+    // Separate prefixes: "long-goal-" does not start with "goal-".
+    for (const name of ss.getCellsByPrefix("goal-")) {
+      affectedCells.add(name);
+    }
+    for (const name of ss.getCellsByPrefix("long-goal-")) {
       affectedCells.add(name);
     }
   }

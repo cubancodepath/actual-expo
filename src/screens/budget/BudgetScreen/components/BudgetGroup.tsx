@@ -12,6 +12,9 @@ import { COL_ASSIGNED, COL_AVAILABLE, NumericCell } from "./columns";
 interface BudgetGroupProps {
   group: BudgetSection;
   sheet: string;
+  editingCatId: string | null;
+  draft: number;
+  onPressRow: (catId: string, budgeted: number, pageY: number) => void;
 }
 
 /** Small muted column label, right-aligned over its numeric column. */
@@ -30,7 +33,13 @@ function ColumnLabel({ width, children }: { width: number; children: string }) {
  * stable ref from useBudgetSections and `sheet` a string, so groups skip
  * re-render on accordion toggles.
  */
-export const BudgetGroup = memo(function BudgetGroup({ group, sheet }: BudgetGroupProps) {
+export const BudgetGroup = memo(function BudgetGroup({
+  group,
+  sheet,
+  editingCatId,
+  draft,
+  onPressRow,
+}: BudgetGroupProps) {
   const { t } = useTranslation("budget");
   const budgeted = useSheetValueNumber(sheet, envelopeBudget.groupBudgeted(group.id));
   const spent = useSheetValueNumber(sheet, envelopeBudget.groupSpent(group.id));
@@ -42,8 +51,8 @@ export const BudgetGroup = memo(function BudgetGroup({ group, sheet }: BudgetGro
         {/* Column wrapper so the two rows stack vertically regardless of the
             trigger's default (row) layout. */}
         <View className="flex-1">
-          {/* Row 1 — column labels */}
-          <View className="flex-row justify-end pb-0.5">
+          {/* Row 1 — column labels (gap-2 matches the numeric row's column gap). */}
+          <View className="flex-row justify-end gap-2 pb-0.5">
             {group.is_income ? (
               <ColumnLabel width={COL_AVAILABLE}>{t("columnReceived")}</ColumnLabel>
             ) : (
@@ -71,11 +80,10 @@ export const BudgetGroup = memo(function BudgetGroup({ group, sheet }: BudgetGro
                 <NumericCell width={COL_ASSIGNED}>
                   <Money cents={budgeted} tone="plain" className="text-sm font-semibold" />
                 </NumericCell>
-                {/* Group total is a plain number (not a chip). tone="auto" uses
-                    the app's `positive` token (green, visible on the bg) like the
-                    category picker — success/danger tokens don't read on the bg. */}
+                {/* Group total: plain number, normal text colour regardless of sign
+                    (no positive/negative scheme — that lives on the per-row chips). */}
                 <NumericCell width={COL_AVAILABLE}>
-                  <Money cents={balance} className="text-sm font-semibold" />
+                  <Money cents={balance} tone="plain" className="text-sm font-semibold" />
                 </NumericCell>
               </>
             )}
@@ -93,6 +101,9 @@ export const BudgetGroup = memo(function BudgetGroup({ group, sheet }: BudgetGro
                 catName={cat.name}
                 sheet={sheet}
                 isIncome={group.is_income}
+                isEditing={editingCatId === cat.id}
+                draft={editingCatId === cat.id ? draft : 0}
+                onPressRow={onPressRow}
               />
             </Fragment>
           ))}

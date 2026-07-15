@@ -13,6 +13,7 @@ import { AddTransactionFab } from "@/ui/AddTransactionFab";
 import { AmountKeyboard, useAmountKeyboardAvoidance } from "@/ui/amount-keyboard";
 import { useTabBarStore } from "@/stores/tabBarStore";
 import { BudgetGroup } from "./components/BudgetGroup";
+import { ReadyToAssignBar } from "./components/ReadyToAssignBar";
 
 export function BudgetScreen() {
   const { month } = useBudgetMonth();
@@ -111,7 +112,10 @@ export function BudgetScreen() {
     <View className="flex-1 bg-background">
       <BudgetHeader />
 
-      {/* TODO: ready-to-assign / uncategorized / overspent summary (next step) */}
+      <View className="px-4 pt-1 pb-2">
+        <ReadyToAssignBar sheet={sheet} />
+      </View>
+      {/* TODO: uncategorized / overspent summary (next step) */}
 
       {!dataReady ? (
         <BudgetListSkeleton />

@@ -1,43 +1,52 @@
-import { useMemo, type ReactNode } from "react";
-import { Platform, StyleSheet, View } from "react-native";
+import { useId, useMemo, type ReactNode } from "react";
+import { Keyboard, Platform, Pressable, StyleSheet, View, type ViewProps } from "react-native";
 import Animated, { SlideInDown, SlideOutDown } from "react-native-reanimated";
 import { FullWindowOverlay } from "react-native-screens";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { cn, useThemeColor } from "heroui-native";
+import { Portal, useThemeColor } from "heroui-native";
 import { NumberPad } from "heroui-native-pro";
 import { Check } from "lucide-react-native";
 import { MAX_CENTS } from "@/lib/currency";
-import { Money } from "@/ui/Money";
-import { BlinkingCursor } from "@/ui/BlinkingCursor";
-import { AmountKeyboardContext, useAmountKeyboard } from "./context";
+import {
+  AmountKeyboardActionsContext,
+  AmountKeyboardStateContext,
+  useAmountKeyboardActions,
+  useAmountKeyboardState,
+  type AmountKeyboardActions,
+  type AmountKeyboardState,
+} from "./context";
 
 /**
- * In-app amount keyboard, composed of compound parts. The root is a pure
- * provider — the consumer owns the state (dependency injection): a screen wires
- * it to local state, a store draft, or a form.
+ * In-app amount keyboard with the Popover anatomy: the compound lives WITH the
+ * amount field and only composes its own pieces — the panel escapes to window
+ * level through a portal. The consumer owns the state (dependency injection).
+ *
+ * Why not HeroUI's `BottomSheet`? `@gorhom/bottom-sheet` is modal and captures
+ * gestures, so it can't serve the non-modal multi-field case (budget, split),
+ * where taps must reach the other rows and there is no system keyboard. So the
+ * portal/overlay/panel anatomy is composed here instead of reused wholesale.
  *
  * ```tsx
- * // Inline editing over a list (see useAmountKeyboardAvoidance for the scroll):
- * <AmountKeyboard value={draft} onChange={setDraft} onDone={commit}>
- *   <AmountKeyboard.Panel onHeightChange={onKeyboardHeightChange}>
- *     <AmountKeyboard.Pad />
- *   </AmountKeyboard.Panel>
+ * // Single-amount screen — everything sits where the field sits:
+ * <AmountKeyboard isOpen={editing} onOpenChange={setEditing}
+ *   value={cents} onValueChange={setCents}>
+ *   <AmountKeyboard.Trigger>
+ *     <MyAmountDisplay value={cents} isEditing={editing} />
+ *   </AmountKeyboard.Trigger>
+ *   <AmountKeyboard.DismissArea>…form fields…</AmountKeyboard.DismissArea>
+ *   <AmountKeyboard.Portal>
+ *     <AmountKeyboard.Panel />
+ *   </AmountKeyboard.Portal>
  * </AmountKeyboard>
  *
- * // Modal-style screen with an integrated display (move-money, hold…):
- * <AmountKeyboard value={amount} onChange={setAmount} onDone={confirm}>
- *   <AmountKeyboard.Display className="self-center my-8" />
- *   <AmountKeyboard.Panel>
- *     <AmountKeyboard.Pad />
- *   </AmountKeyboard.Panel>
+ * // Multi-field screen (budget, split) — rows are their own triggers, so no
+ * // Trigger and no Overlay (taps must reach rows); close via `onClose`:
+ * <AmountKeyboard isOpen={editingRow != null} onClose={stopEdit}
+ *   value={draft} onValueChange={setDraft}>
+ *   <AmountKeyboard.Portal>
+ *     <AmountKeyboard.Panel />
+ *   </AmountKeyboard.Portal>
  * </AmountKeyboard>
- *
- * // Extending the pad (e.g. a future calculator row) without touching this file:
- * <AmountKeyboard.Pad>
- *   <AmountKeyboard.Row>
- *     <AmountKeyboard.Key value="" onPress={() => injectOperator("+")}>…</AmountKeyboard.Key>
- *   </AmountKeyboard.Row>
- * </AmountKeyboard.Pad>
  * ```
  */
 
@@ -46,23 +55,136 @@ import { AmountKeyboardContext, useAmountKeyboard } from "./context";
 // ---------------------------------------------------------------------------
 
 interface AmountKeyboardRootProps {
+  /** Whether the keyboard is open (controlled). */
+  isOpen: boolean;
+  /** Requested open state change (Trigger → true, ✓/Overlay → false). */
+  onOpenChange?: (isOpen: boolean) => void;
+  /** Convenience for close-only consumers (fires when the pad requests close). */
+  onClose?: () => void;
   /** Current amount in cents. */
   value: number;
-  onChange: (cents: number) => void;
-  onDone: () => void;
+  onValueChange: (cents: number) => void;
   children: ReactNode;
 }
 
-function AmountKeyboardRoot({ value, onChange, onDone, children }: AmountKeyboardRootProps) {
-  const ctx = useMemo(
-    () => ({ state: { value }, actions: { setValue: onChange, done: onDone } }),
-    [value, onChange, onDone],
+function AmountKeyboardRoot({
+  isOpen,
+  onOpenChange,
+  onClose,
+  value,
+  onValueChange,
+  children,
+}: AmountKeyboardRootProps) {
+  // Actions are stable across keystrokes (deps are the handler identities), so
+  // actions-only consumers (Trigger) never re-render while typing.
+  const actions = useMemo<AmountKeyboardActions>(
+    () => ({
+      setValue: onValueChange,
+      onOpenChange: (next) => {
+        onOpenChange?.(next);
+        if (!next) onClose?.();
+      },
+    }),
+    [onValueChange, onOpenChange, onClose],
   );
-  return <AmountKeyboardContext value={ctx}>{children}</AmountKeyboardContext>;
+  const state = useMemo<AmountKeyboardState>(() => ({ value, isOpen }), [value, isOpen]);
+
+  return (
+    <AmountKeyboardActionsContext value={actions}>
+      <AmountKeyboardStateContext value={state}>{children}</AmountKeyboardStateContext>
+    </AmountKeyboardActionsContext>
+  );
 }
 
 // ---------------------------------------------------------------------------
-// Panel — window-anchored sliding container
+// Trigger — the amount field itself
+// ---------------------------------------------------------------------------
+
+interface AmountKeyboardTriggerProps {
+  children: ReactNode;
+  className?: string;
+}
+
+/** Pressable around the amount display: opens the pad (closing any system keyboard). */
+function AmountKeyboardTrigger({ children, className }: AmountKeyboardTriggerProps) {
+  const { onOpenChange } = useAmountKeyboardActions();
+  return (
+    <Pressable
+      className={className}
+      onPress={() => {
+        Keyboard.dismiss();
+        onOpenChange(true);
+      }}
+    >
+      {children}
+    </Pressable>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Portal — teleports overlay + panel to window level
+// ---------------------------------------------------------------------------
+
+/**
+ * Renders its children (Overlay/Panel) at the root of the app via the HeroUI
+ * portal host — above all screens and tab bars. On iOS the content is
+ * additionally wrapped in a FullWindowOverlay so it covers the native tabs.
+ * Always mounted so exit animations can play.
+ *
+ * The portal host mounts the children in a different tree, so both contexts are
+ * re-provided inside (same as HeroUI's own portaled compounds do).
+ */
+function AmountKeyboardPortal({ children }: { children: ReactNode }) {
+  const name = useId();
+  const actions = useAmountKeyboardActions();
+  const state = useAmountKeyboardState();
+  const content = (
+    <AmountKeyboardActionsContext value={actions}>
+      <AmountKeyboardStateContext value={state}>
+        <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+          {children}
+        </View>
+      </AmountKeyboardStateContext>
+    </AmountKeyboardActionsContext>
+  );
+  return (
+    <Portal name={name}>
+      {Platform.OS === "ios" ? <FullWindowOverlay>{content}</FullWindowOverlay> : content}
+    </Portal>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// DismissArea — one-tap outside-to-close (real-keyboard behaviour)
+// ---------------------------------------------------------------------------
+
+/**
+ * Wrap the *other* content of a single-amount screen (the form fields, NOT the
+ * amount Trigger). While the pad is open, the first touch here closes it — and,
+ * because it's capture-phase + returns false, the same tap still reaches the
+ * field (open the date sheet, focus notes…). This is why it must live in the
+ * content tree: a portal backdrop sits above the content and can't pass the tap
+ * through, forcing a two-tap "close, then open". Multi-field screens (budget,
+ * split) switch fields on tap instead and don't use this.
+ */
+function AmountKeyboardDismissArea({ children, ...viewProps }: ViewProps) {
+  const { isOpen } = useAmountKeyboardState();
+  const { onOpenChange } = useAmountKeyboardActions();
+  return (
+    <View
+      onStartShouldSetResponderCapture={() => {
+        if (isOpen) onOpenChange(false);
+        return false;
+      }}
+      {...viewProps}
+    >
+      {children}
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Panel — bottom sliding container
 // ---------------------------------------------------------------------------
 
 interface AmountKeyboardPanelProps {
@@ -72,15 +194,16 @@ interface AmountKeyboardPanelProps {
 }
 
 /**
- * Bottom panel that behaves like a real keyboard. On iOS it renders inside a
- * FullWindowOverlay so it anchors to the physical window bottom and covers the
- * native tab bar — the screen frame never changes, so it slides in exactly once.
- * On Android it anchors inside the screen (the host hides its floating tab bar).
+ * Bottom panel that behaves like a real keyboard. Mounted permanently (inside
+ * the Portal); the inner animated view mounts/unmounts with `isOpen`, so both
+ * the slide-in and slide-out animations play. Defaults to the `Pad`.
  */
 function AmountKeyboardPanel({ children, onHeightChange }: AmountKeyboardPanelProps) {
   const insets = useSafeAreaInsets();
+  const { isOpen } = useAmountKeyboardState();
 
-  const panel = (
+  if (!isOpen) return null;
+  return (
     <Animated.View
       entering={SlideInDown}
       exiting={SlideOutDown}
@@ -91,17 +214,6 @@ function AmountKeyboardPanel({ children, onHeightChange }: AmountKeyboardPanelPr
       {children ?? <AmountKeyboardPad />}
     </Animated.View>
   );
-
-  if (Platform.OS === "ios") {
-    return (
-      <FullWindowOverlay>
-        <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-          {panel}
-        </View>
-      </FullWindowOverlay>
-    );
-  }
-  return panel;
 }
 
 // ---------------------------------------------------------------------------
@@ -116,13 +228,11 @@ interface AmountKeyboardPadProps {
 /**
  * Digit pad wired to the context's cents value. Calculator-style entry: each
  * digit fills cents from the right; backspace deletes from the right and
- * long-press clears. The bottom-left key confirms (Done).
+ * long-press clears. The bottom-left ✓ key confirms (closes the keyboard).
  */
 function AmountKeyboardPad({ children }: AmountKeyboardPadProps) {
-  const {
-    state: { value },
-    actions: { setValue, done },
-  } = useAmountKeyboard();
+  const { value } = useAmountKeyboardState();
+  const { setValue, onOpenChange } = useAmountKeyboardActions();
   const foreground = useThemeColor("foreground");
   const accent = useThemeColor("accent");
 
@@ -140,7 +250,7 @@ function AmountKeyboardPad({ children }: AmountKeyboardPadProps) {
       value={digitString}
       onValueChange={handleValueChange}
       maxLength={9}
-      onSpacerPress={done}
+      onSpacerPress={() => onOpenChange(false)}
     >
       {children}
       <NumberPad.Row>
@@ -170,30 +280,15 @@ function AmountKeyboardPad({ children }: AmountKeyboardPadProps) {
 }
 
 // ---------------------------------------------------------------------------
-// Display — formatted amount + caret (for screens without their own cell)
-// ---------------------------------------------------------------------------
-
-function AmountKeyboardDisplay({ className }: { className?: string }) {
-  const {
-    state: { value },
-  } = useAmountKeyboard();
-  const accent = useThemeColor("accent");
-  return (
-    <View className={cn("flex-row items-center", className)}>
-      <Money cents={value} tone="plain" className="text-accent" />
-      <BlinkingCursor active color={accent} />
-    </View>
-  );
-}
-
-// ---------------------------------------------------------------------------
 // Compound export
 // ---------------------------------------------------------------------------
 
 export const AmountKeyboard = Object.assign(AmountKeyboardRoot, {
+  Trigger: AmountKeyboardTrigger,
+  DismissArea: AmountKeyboardDismissArea,
+  Portal: AmountKeyboardPortal,
   Panel: AmountKeyboardPanel,
   Pad: AmountKeyboardPad,
-  Display: AmountKeyboardDisplay,
   /** NumberPad parts re-exported so consumers can extend the pad with custom keys. */
   Row: NumberPad.Row,
   Key: NumberPad.Key,

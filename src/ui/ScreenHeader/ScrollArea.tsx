@@ -1,11 +1,12 @@
-import { useMemo, useState, type ReactNode } from "react";
-import { StyleSheet, View } from "react-native";
+import { useMemo, useState, type Ref, type ReactNode } from "react";
+import { StyleSheet, View, type ScrollView } from "react-native";
 import MaskedView from "@react-native-masked-view/masked-view";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, {
   Extrapolation,
   interpolate,
+  runOnJS,
   useAnimatedProps,
   useAnimatedScrollHandler,
   useSharedValue,
@@ -59,20 +60,34 @@ export function ScreenHeaderScrollArea({
  * reports its offset to the header (native thread) and reserves top padding for
  * the header's measured height. Extra `contentContainerStyle` is merged on top.
  */
+type ScreenHeaderBodyProps = AnimatedScrollViewProps & {
+  ref?: Ref<ScrollView>;
+  /**
+   * Called with the scroll offset on the JS thread — a bridge for consumers that
+   * need it (e.g. the in-app keyboard avoidance) without owning `onScroll`, which
+   * this component already uses to drive the header blur.
+   */
+  onScrollY?: (y: number) => void;
+};
+
 export function ScreenHeaderBody({
+  ref,
   children,
   style,
   contentContainerStyle,
+  onScrollY,
   ...rest
-}: AnimatedScrollViewProps) {
+}: ScreenHeaderBodyProps) {
   const { scrollOffset, headerHeight } = useScreenHeaderScrollContext();
 
   const onScroll = useAnimatedScrollHandler((e) => {
     scrollOffset.value = e.contentOffset.y;
+    if (onScrollY) runOnJS(onScrollY)(e.contentOffset.y);
   });
 
   return (
     <Animated.ScrollView
+      ref={ref}
       scrollEventThrottle={16}
       showsVerticalScrollIndicator={false}
       {...rest}

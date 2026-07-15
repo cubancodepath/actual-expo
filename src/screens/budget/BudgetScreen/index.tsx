@@ -153,15 +153,20 @@ export function BudgetScreen() {
         </Animated.ScrollView>
       )}
 
-      {editingCatId ? (
-        <AmountKeyboard value={draft} onChange={handleDraftChange} onDone={closeEditing}>
-          <AmountKeyboard.Panel onHeightChange={onKeyboardHeightChange}>
-            <AmountKeyboard.Pad />
-          </AmountKeyboard.Panel>
-        </AmountKeyboard>
-      ) : (
-        <AddTransactionFab />
-      )}
+      {/* Multi-field screen: rows are their own triggers (seed/switch), so no
+          Trigger and no Overlay — taps must reach the other rows. */}
+      <AmountKeyboard
+        isOpen={editingCatId != null}
+        onClose={closeEditing}
+        value={draft}
+        onValueChange={handleDraftChange}
+      >
+        <AmountKeyboard.Portal>
+          <AmountKeyboard.Panel onHeightChange={onKeyboardHeightChange} />
+        </AmountKeyboard.Portal>
+      </AmountKeyboard>
+
+      {editingCatId == null && <AddTransactionFab />}
     </View>
   );
 }

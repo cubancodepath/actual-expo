@@ -69,6 +69,12 @@ export function useAmountKeyboardAvoidance({
     keyboardHeightRef.current = height;
   }, []);
 
+  // For scrolls whose host owns `onScroll` (e.g. ScreenHeader.Body drives the
+  // header blur): feed the offset directly instead of via `scrollProps.onScroll`.
+  const setScrollY = useCallback((y: number) => {
+    scrollYRef.current = y;
+  }, []);
+
   const scrollProps = useMemo(
     () => ({
       onScroll: (e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -88,6 +94,7 @@ export function useAmountKeyboardAvoidance({
   return {
     scrollRef,
     scrollProps,
+    setScrollY,
     bottomPadding: editing ? editingPadding : basePadding,
     scrollIntoView,
     onKeyboardHeightChange,

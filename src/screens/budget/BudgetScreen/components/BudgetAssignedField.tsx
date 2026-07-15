@@ -25,7 +25,7 @@ export function BudgetAssignedField({ value, draft, isEditing }: BudgetAssignedF
         tone="plain"
         className={isEditing ? "text-sm text-accent" : "text-sm"}
       />
-      {isEditing && <BlinkingCursor active color={accent} />}
+      {isEditing && <BlinkingCursor color={accent} />}
     </View>
   );
 }

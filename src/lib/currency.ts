@@ -3,6 +3,10 @@ import { formatBalance } from "./format";
 /** Max value: $9,999,999.99 = 999999999 cents */
 export const MAX_CENTS = 999999999;
 
+/** Apply direction to a magnitude: inflow stays positive, outflow negates. */
+export const signedCents = (magnitude: number, inflow: boolean): number =>
+  inflow ? magnitude : -magnitude;
+
 /**
  * Format cents as a display string using the configured number format.
  * 152 → "1.52" (comma-dot) or "1,52" (dot-comma)

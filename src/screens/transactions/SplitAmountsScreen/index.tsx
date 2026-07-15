@@ -1,15 +1,16 @@
 import { Fragment, useCallback, useMemo, useState } from "react";
-import { KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
+import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from "react-native";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "@tanstack/react-store";
 import { Button, ListGroup, Menu, Separator, Typography, useThemeColor } from "heroui-native";
 import { Check, CircleMinus, Minus, MoreHorizontal, Plus } from "lucide-react-native";
-import { formatCents } from "@/lib/currency";
+import { formatCents, signedCents } from "@/lib/currency";
 import { dialog } from "@/ui/feedback/dialog";
 import { ScreenHeader } from "@/ui/ScreenHeader";
-import { AmountInput } from "@/screens/transactions/components/AmountInput";
-import { AmountText } from "@/screens/transactions/components/AmountText";
+import { BlinkingCursor } from "@/ui/BlinkingCursor";
+import { AmountKeyboard, useAmountKeyboardAvoidance } from "@/ui/amount-keyboard";
+import { Money } from "@/ui/Money";
 import { useTransactionForm } from "@/screens/transactions/NewTransactionScreen/context/TransactionFormProvider";
 import type { SplitLineForm } from "@/screens/transactions/NewTransactionScreen/validation/transactionForm.schema";
 
@@ -26,6 +27,7 @@ export function SplitAmountsScreen() {
   const { t } = useTranslation("transactions");
   const router = useRouter();
   const accentForeground = useThemeColor("accent-foreground");
+  const accent = useThemeColor("accent");
   const foreground = useThemeColor("foreground");
   const muted = useThemeColor("muted");
   const danger = useThemeColor("danger");
@@ -66,19 +68,50 @@ export function SplitAmountsScreen() {
   // Signed maths so `remaining` conveys direction, not just magnitude: inflow
   // adds, outflow subtracts, and the total's sign follows the transaction type.
   // → remaining > 0 means "still needs inflow", < 0 means "still needs outflow".
-  const signedTotal = type === "income" ? total : -total;
-  const signedSum = draft.reduce((acc, l) => acc + (l.inflow ? l.amount : -l.amount), 0);
-  const remaining = signedTotal - signedSum;
-
   const setAmount = (i: number, cents: number) =>
     setDraft((d) => d.map((l, idx) => (idx === i ? { ...l, amount: cents } : l)));
 
-  const toggleInflow = (i: number) =>
+  // Per-line amount editing via the in-app pad — the pad writes the line's draft
+  // amount directly (few lines, so a per-keystroke map is cheap), so the row and
+  // `remaining` stay live with no separate edit buffer.
+  const [editingLine, setEditingLine] = useState<number | null>(null);
+  const closePad = useCallback(() => setEditingLine(null), []);
+
+  const {
+    scrollRef,
+    scrollProps,
+    setScrollY,
+    bottomPadding,
+    scrollIntoView,
+    onKeyboardHeightChange,
+  } = useAmountKeyboardAvoidance({
+    basePadding: 24,
+    editingPadding: 380,
+    editing: editingLine != null,
+  });
+
+  // Signed maths so `remaining` conveys direction, not just magnitude: inflow
+  // adds, outflow subtracts, and the total's sign follows the transaction type.
+  // → remaining > 0 means "still needs inflow", < 0 means "still needs outflow".
+  const signedTotal = signedCents(total, type === "income");
+  const signedSum = draft.reduce((acc, l) => acc + signedCents(l.amount, l.inflow), 0);
+  const remaining = signedTotal - signedSum;
+
+  // Explicit actions close the pad (tapping another line just switches).
+  const toggleInflow = (i: number) => {
+    closePad();
     setDraft((d) => d.map((l, idx) => (idx === i ? { ...l, inflow: !l.inflow } : l)));
+  };
 
-  const removeLine = (i: number) => setDraft((d) => d.filter((_, idx) => idx !== i));
+  const removeLine = (i: number) => {
+    closePad();
+    setDraft((d) => d.filter((_, idx) => idx !== i));
+  };
 
-  const addCategory = () => router.push("/(auth)/transaction/split-add-category");
+  const addCategory = () => {
+    closePad();
+    router.push("/(auth)/transaction/split-add-category");
+  };
 
   // Consume a category picked on the "Add category" screen (returned via context,
   // since expo-router can't pass values back through `router.back()`).
@@ -141,7 +174,11 @@ export function SplitAmountsScreen() {
     >
       <ScreenHeader.ScrollArea>
         <ScreenHeader.Body
-          contentContainerStyle={styles.content}
+          ref={scrollRef}
+          onScrollY={setScrollY}
+          onContentSizeChange={scrollProps.onContentSizeChange}
+          scrollEventThrottle={scrollProps.scrollEventThrottle}
+          contentContainerStyle={[styles.content, { paddingBottom: bottomPadding }]}
           keyboardShouldPersistTaps="handled"
         >
           {/* Payee card — info only (not tappable): the payee (or a placeholder)
@@ -154,9 +191,9 @@ export function SplitAmountsScreen() {
                 </ListGroup.ItemTitle>
               </ListGroup.ItemContent>
               <ListGroup.ItemSuffix>
-                <AmountText
-                  value={total}
-                  inflow={type === "income"}
+                {/* Signed cents: outflow renders as "-$12.00" via Intl; inflow stays green. */}
+                <Money
+                  cents={signedCents(total, type === "income")}
                   className="text-base font-semibold"
                 />
               </ListGroup.ItemSuffix>
@@ -189,12 +226,20 @@ export function SplitAmountsScreen() {
                   <ListGroup.ItemSuffix>
                     <View className="flex-row items-center gap-1">
                       {isSplit ? (
-                        <AmountInput
-                          value={line.amount}
-                          inflow={line.inflow}
-                          onChange={(c) => setAmount(i, c)}
-                          className="w-24"
-                        />
+                        <Pressable
+                          className="w-24 flex-row items-center justify-end"
+                          onPress={(e) => {
+                            setEditingLine(i);
+                            scrollIntoView(e.nativeEvent.pageY);
+                          }}
+                        >
+                          {/* Signed cents: outflow renders as "-$12.00" via Intl. */}
+                          <Money
+                            cents={signedCents(line.amount, line.inflow)}
+                            className="text-base"
+                          />
+                          {editingLine === i ? <BlinkingCursor color={accent} /> : null}
+                        </Pressable>
                       ) : null}
                       <Menu>
                         <Menu.Trigger asChild>
@@ -256,6 +301,21 @@ export function SplitAmountsScreen() {
           </ScreenHeader>
         </ScreenHeader.Floating>
       </ScreenHeader.ScrollArea>
+
+      {/* Multi-field screen: rows are their own triggers (tap switches), and only
+          explicit actions close the pad — so no Overlay/DismissArea. */}
+      <AmountKeyboard
+        isOpen={editingLine != null}
+        onClose={closePad}
+        value={editingLine != null ? (draft[editingLine]?.amount ?? 0) : 0}
+        onValueChange={(cents) => {
+          if (editingLine != null) setAmount(editingLine, cents);
+        }}
+      >
+        <AmountKeyboard.Portal>
+          <AmountKeyboard.Panel onHeightChange={onKeyboardHeightChange} />
+        </AmountKeyboard.Portal>
+      </AmountKeyboard>
     </KeyboardAvoidingView>
   );
 }

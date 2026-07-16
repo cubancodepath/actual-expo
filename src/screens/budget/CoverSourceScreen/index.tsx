@@ -84,11 +84,12 @@ export function CoverSourceScreen() {
   );
 
   const handleAddCategory = useCallback(() => {
+    closePad(); // don't leave the amount pad open under the picker sheet
     router.push({
       pathname: "/(auth)/budget/cover-category-picker",
       params: { excludeIds: sources.map((s) => s.id).join(","), overspentCatId: catId },
     });
-  }, [router, sources, catId]);
+  }, [closePad, router, sources, catId]);
 
   // Open the picker shortly after mount when arriving with no sources yet.
   useEffect(() => {

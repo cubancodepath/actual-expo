@@ -46,6 +46,8 @@ export function CoverCategoryPickerScreen() {
   const ssVersion = useSpreadsheetVersion();
 
   const [query, setQuery] = useState("");
+  // Fixed header (title + search) height, measured so the list starts below it.
+  const [headerHeight, setHeaderHeight] = useState(120);
 
   const excludeSet = useMemo(
     () => new Set([...(excludeIds?.split(",") ?? []), overspentCatId].filter(Boolean)),
@@ -83,18 +85,68 @@ export function CoverCategoryPickerScreen() {
   };
 
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerClassName="px-4 pb-10"
-      showsVerticalScrollIndicator={false}
-    >
-      <View className="pb-3 pt-5">
-        <Typography className="text-lg font-semibold text-foreground">
+    <>
+      <ScrollView
+        className="flex-1 bg-background"
+        contentContainerClassName="px-4 pb-10"
+        contentContainerStyle={{ paddingTop: headerHeight }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {showToBudget && (
+          <ListGroup className="mb-3 overflow-hidden">
+            <ListGroup.Item onPress={() => select(TO_BUDGET_ID, t("readyToAssignLabel"), toBudget)}>
+              <ListGroup.ItemContent>
+                <ListGroup.ItemTitle className="font-semibold">
+                  {t("readyToAssignLabel")}
+                </ListGroup.ItemTitle>
+              </ListGroup.ItemContent>
+              <ListGroup.ItemSuffix>
+                <Money cents={toBudget} className="text-sm" />
+              </ListGroup.ItemSuffix>
+            </ListGroup.Item>
+          </ListGroup>
+        )}
+
+        {grouped.map((group) => (
+          <View key={group.id} className="mb-3">
+            <Typography className="mb-1 ml-2 text-xs font-semibold uppercase text-muted">
+              {group.name}
+            </Typography>
+            <ListGroup className="overflow-hidden">
+              {group.categories.map((c, i) => (
+                <Fragment key={c.id}>
+                  {i > 0 ? <Separator className="mx-4" /> : null}
+                  <ListGroup.Item onPress={() => select(c.id, c.name, c.balance)}>
+                    <ListGroup.ItemContent>
+                      <ListGroup.ItemTitle>{c.name}</ListGroup.ItemTitle>
+                    </ListGroup.ItemContent>
+                    <ListGroup.ItemSuffix>
+                      <Money cents={c.balance} className="text-sm" />
+                    </ListGroup.ItemSuffix>
+                  </ListGroup.Item>
+                </Fragment>
+              ))}
+            </ListGroup>
+          </View>
+        ))}
+
+        {grouped.length === 0 && !showToBudget ? (
+          <Typography className="py-6 text-center text-base text-muted">
+            {t("noCategoriesWithBalance")}
+          </Typography>
+        ) : null}
+      </ScrollView>
+
+      {/* Fixed header (title + search): an opaque absolute overlay the list
+          scrolls behind; the ScrollView reserves its measured height. */}
+      <View
+        className="absolute inset-x-0 top-0 z-10 bg-background px-4 pb-3 pt-5"
+        onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
+      >
+        <Typography className="pb-3 text-lg font-semibold text-foreground">
           {t("coverOverspendingFrom")}
         </Typography>
-      </View>
-
-      <View className="pb-4">
         <SearchField value={query} onChange={setQuery}>
           <SearchField.Group>
             <SearchField.SearchIcon />
@@ -103,50 +155,6 @@ export function CoverCategoryPickerScreen() {
           </SearchField.Group>
         </SearchField>
       </View>
-
-      {showToBudget && (
-        <ListGroup className="mb-3 overflow-hidden">
-          <ListGroup.Item onPress={() => select(TO_BUDGET_ID, t("readyToAssignLabel"), toBudget)}>
-            <ListGroup.ItemContent>
-              <ListGroup.ItemTitle className="font-semibold">
-                {t("readyToAssignLabel")}
-              </ListGroup.ItemTitle>
-            </ListGroup.ItemContent>
-            <ListGroup.ItemSuffix>
-              <Money cents={toBudget} className="text-sm" />
-            </ListGroup.ItemSuffix>
-          </ListGroup.Item>
-        </ListGroup>
-      )}
-
-      {grouped.map((group) => (
-        <View key={group.id} className="mb-3">
-          <Typography className="mb-1 ml-2 text-xs font-semibold uppercase text-muted">
-            {group.name}
-          </Typography>
-          <ListGroup className="overflow-hidden">
-            {group.categories.map((c, i) => (
-              <Fragment key={c.id}>
-                {i > 0 ? <Separator className="mx-4" /> : null}
-                <ListGroup.Item onPress={() => select(c.id, c.name, c.balance)}>
-                  <ListGroup.ItemContent>
-                    <ListGroup.ItemTitle>{c.name}</ListGroup.ItemTitle>
-                  </ListGroup.ItemContent>
-                  <ListGroup.ItemSuffix>
-                    <Money cents={c.balance} className="text-sm" />
-                  </ListGroup.ItemSuffix>
-                </ListGroup.Item>
-              </Fragment>
-            ))}
-          </ListGroup>
-        </View>
-      ))}
-
-      {grouped.length === 0 && !showToBudget ? (
-        <Typography className="py-6 text-center text-base text-muted">
-          {t("noCategoriesWithBalance")}
-        </Typography>
-      ) : null}
-    </ScrollView>
+    </>
   );
 }

@@ -6,7 +6,7 @@ import { useSelector } from "@tanstack/react-store";
 import { ListGroup, Separator, Typography, useThemeColor } from "heroui-native";
 import { Check, CirclePlus } from "lucide-react-native";
 import { groupByInitial } from "@/lib/groupByInitial";
-import { PickerScreen } from "@/screens/transactions/components/PickerScreen";
+import { PickerScreen } from "@/ui/PickerScreen";
 import { useTransactionForm } from "@/screens/transactions/NewTransactionScreen/context/TransactionFormProvider";
 import type { PayeeSelection } from "@/screens/transactions/NewTransactionScreen/hooks/useNewTransactionForm";
 import type { Payee } from "@/core/domain/payees/types";

@@ -144,11 +144,9 @@ export default function AuthLayout() {
       <Stack.Screen
         name="budget/cover-overspent"
         options={{
-          ...screen,
-          title: t("nav.overspentCategories"),
+          headerShown: false,
           presentation: "formSheet",
-          sheetAllowedDetents: [0.3, 1.0],
-          sheetGrabberVisible: true,
+          sheetAllowedDetents: [0.45],
           contentStyle: { backgroundColor: theme.colors.pageBackground },
         }}
       />

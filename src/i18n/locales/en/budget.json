@@ -215,6 +215,9 @@
   "addAnother": "Add Another",
   "coveringEllipsis": "Covering...",
   "cover": "Cover",
+  "covered": "Covered",
+  "remainingToCover": "Left to cover",
+  "searchCategories": "Search categories",
 
   "assignToCategories": "Assign to Categories",
   "fixOverbudgeting": "Fix Overbudgeting",

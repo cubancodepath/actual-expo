@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "@tanstack/react-store";
 import { ListGroup, Separator, Typography, useThemeColor } from "heroui-native";
 import { Money } from "@/ui/Money";
-import { PickerScreen } from "@/screens/transactions/components/PickerScreen";
+import { PickerScreen } from "@/ui/PickerScreen";
 import { useCategoryBalances } from "@/screens/transactions/hooks/useCategoryBalances";
 import { useGroupedCategories } from "@/screens/transactions/hooks/useGroupedCategories";
 import { useTransactionForm } from "@/screens/transactions/NewTransactionScreen/context/TransactionFormProvider";

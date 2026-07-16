@@ -219,6 +219,9 @@
   "addAnother": "Agregar otra",
   "coveringEllipsis": "Cubriendo...",
   "cover": "Cubrir",
+  "covered": "Cubierto",
+  "remainingToCover": "Falta por cubrir",
+  "searchCategories": "Buscar categorías",
 
   "reserveDescription": "Reserva dinero de Por presupuestar para llevarlo al próximo mes.",
   "availableToHold": "Disponible para reservar: ",

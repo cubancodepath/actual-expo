@@ -14,7 +14,9 @@ import { AddTransactionFab } from "@/ui/AddTransactionFab";
 import { AmountKeyboard, useAmountKeyboardAvoidance } from "@/ui/amount-keyboard";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { useTabBarStore } from "@/stores/tabBarStore";
+import { useOverspentCount } from "@/screens/budget/hooks/useOverspentCount";
 import { BudgetGroup } from "./components/BudgetGroup";
+import { OverspentPill } from "./components/OverspentPill";
 import { ReadyToAssignBar } from "./components/ReadyToAssignBar";
 
 export function BudgetScreen() {
@@ -23,6 +25,7 @@ export function BudgetScreen() {
   const sheet = sheetForMonth(month);
   const { sections, isLoading } = useBudgetSections();
   const goalsEnabled = useFeatureFlag("goalTemplatesEnabled");
+  const overspentCount = useOverspentCount(sheet);
 
   // Persist an edited assigned amount: update the spreadsheet for instant UI,
   // then setBudgetAmount for the CRDT/undoable write.
@@ -133,6 +136,15 @@ export function BudgetScreen() {
           contentContainerStyle={{ paddingBottom: bottomPadding }}
           showsVerticalScrollIndicator={false}
         >
+          {overspentCount > 0 && (
+            <View className="px-4 pb-3">
+              <OverspentPill
+                count={overspentCount}
+                onPress={() => router.push("/(auth)/budget/cover-overspent")}
+              />
+            </View>
+          )}
+
           {/* The accordion layout transition lives on an inner wrapper — NOT on
               the ScrollView — so frame changes apply instantly instead of springing. */}
           <Animated.View layout={AccordionLayoutTransition}>

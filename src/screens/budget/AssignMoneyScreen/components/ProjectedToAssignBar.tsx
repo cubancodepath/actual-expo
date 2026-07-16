@@ -28,7 +28,7 @@ export function ProjectedToAssignBar({ projectedToBudget }: ProjectedToAssignBar
       : "fullyAssigned";
 
   return (
-    <Chip variant="primary" color={color} size="lg" className="w-full justify-between px-4 py-3">
+    <Chip variant="primary" color={color} size="lg" className="w-full justify-between px-4 py-5">
       <Money cents={projectedToBudget} tone="plain" className={cn("text-xl font-bold", fg)} />
       <Chip.Label className={cn("text-sm font-medium", fg)}>{t(label)}</Chip.Label>
     </Chip>

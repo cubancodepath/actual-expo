@@ -121,6 +121,8 @@
   "readyToAssign": "To Budget",
   "overassigned": "Overbudgeted",
   "fullyAssigned": "Fully Budgeted",
+  "assignMoneyTitle": "Assign Money",
+  "saveAssignments": "Save Assignments",
   "toFullyFundGoals": " needed to fund all goals",
   "reserve": "Reserve",
   "autoAssign": "Apply Templates",

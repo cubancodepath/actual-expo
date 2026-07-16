@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Platform, View } from "react-native";
+import { useRouter } from "expo-router";
 import Animated from "react-native-reanimated";
 import { Accordion, AccordionLayoutTransition } from "heroui-native";
 import { envelopeBudget, sheetForMonth } from "@/core/domain/spreadsheet/bindings";
@@ -17,6 +18,7 @@ import { BudgetGroup } from "./components/BudgetGroup";
 import { ReadyToAssignBar } from "./components/ReadyToAssignBar";
 
 export function BudgetScreen() {
+  const router = useRouter();
   const { month } = useBudgetMonth();
   const sheet = sheetForMonth(month);
   const { sections, isLoading } = useBudgetSections();
@@ -115,7 +117,10 @@ export function BudgetScreen() {
       <BudgetHeader />
 
       <View className="px-4 pt-1 pb-2">
-        <ReadyToAssignBar sheet={sheet} />
+        <ReadyToAssignBar
+          sheet={sheet}
+          onPress={() => router.push("/(auth)/budget/assign-money")}
+        />
       </View>
       {/* TODO: uncategorized / overspent summary (next step) */}
 

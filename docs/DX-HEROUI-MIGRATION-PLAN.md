@@ -84,7 +84,7 @@ npx tsc --noEmit   # 6 errores pre-existentes (@react-navigation, sf-symbols-typ
 pnpm lint
 ```
 
-Screenshots light/dark de budget, spending, account, schedule, settings, onboarding → `docs/screenshots-baseline/`. Anotar qué flujos Maestro pasan (`pnpm e2e`).
+Screenshots light/dark de budget, spending, account, schedule, settings, onboarding → `docs/screenshots-baseline/`.
 
 ## FASE 1 — Saneamiento + esqueleto nueva estructura (M, 2-3 días, riesgo bajo)
 
@@ -155,7 +155,7 @@ Backlog 2ª pasada: `account/[id].tsx` (558), `account/search.tsx` (550), `setti
 
 Se hace ANTES de HeroUI: mover código con estilos viejos es mecánico; luego cada screen se migra a className in-situ sin volver a moverla.
 
-**Gate por ruta**: tsc, tests, flujo Maestro correspondiente, comparación visual vs baseline.
+**Gate por ruta**: tsc, tests, comparación visual vs baseline.
 
 ## FASE 3 — 7 migraciones de schema upstream (M, ~1 semana)
 
@@ -242,7 +242,7 @@ Uso: `className="bg-page-background text-text-primary"`, `text-negative` para im
 
 **Cierre**: `grep -rn "design-system\|useThemedStyles" src/ app/` = 0 → `rm -rf src/design-system`, eliminar el hook y `StyleSheet.create` restantes.
 
-**Gate por PR**: tests + Maestro del flujo + screenshot-diff light/dark vs baseline. Al cierre: `pnpm e2e` completo.
+**Gate por PR**: tests + screenshot-diff light/dark vs baseline.
 
 ## FASE 6 — Proceso de paridad con upstream (M, 3-4 días setup; **paralelo desde Fase 1**)
 
@@ -271,7 +271,7 @@ Uso: `className="bg-page-background text-text-primary"`, `text-negative` para im
 | ---- | --------------------------------------------------- | --------------- | ------------------------------------ |
 | 0    | Baseline (tag, tests, screenshots)                  | XS              | Números registrados                  |
 | 1    | Saneamiento + esqueleto estructura                  | M               | tsc + 742/743, diff solo estructural |
-| 2    | Rutas thin → features/\*/screens/                   | M-L             | Maestro + screenshots por ruta       |
+| 2    | Rutas thin → features/\*/screens/                   | M-L             | Screenshots por ruta                 |
 | 3    | 7 migraciones schema upstream                       | M               | Tests migración + fixture paridad    |
 | 4    | Spike + infra HeroUI/Uniwind/theme                  | M (riesgo alto) | Toggle tema dual, EAS preview        |
 | 5    | Strangler pantalla a pantalla; borrar design-system | L (incremental) | grep design-system = 0               |
@@ -289,7 +289,7 @@ Uso: `className="bg-page-background text-text-primary"`, `text-negative` para im
 
 ## Verificación transversal
 
-`pnpm test` (742/743) · `npx tsc --noEmit` (sin errores nuevos sobre los 6 pre-existentes) · `pnpm lint` · recorrer budget→spending→account→schedule→settings en simulador vs screenshots baseline light/dark · `pnpm e2e` (Maestro) al cierre de F2 y F5 · `pnpm build:preview` al cierre de F4.
+`pnpm test` (742/743) · `npx tsc --noEmit` (sin errores nuevos sobre los 6 pre-existentes) · `pnpm lint` · recorrer budget→spending→account→schedule→settings en simulador vs screenshots baseline light/dark · `pnpm build:preview` al cierre de F4.
 
 ---
 

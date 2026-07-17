@@ -75,9 +75,6 @@ npm test
 
 # Type checking
 npx tsc --noEmit
-
-# E2E tests (Maestro — requires app running in simulator)
-npm run e2e
 ```
 
 ## Tech Stack
@@ -92,7 +89,7 @@ npm run e2e
 | Encryption      | AES-256-GCM via @noble/ciphers                                               |
 | Crash reporting | [Sentry](https://sentry.io/)                                                 |
 | i18n            | [react-i18next](https://react.i18next.com/)                                  |
-| Testing         | [Vitest](https://vitest.dev/) + [Maestro](https://maestro.mobile.dev/)       |
+| Testing         | [Vitest](https://vitest.dev/)                                               |
 
 ## Architecture
 

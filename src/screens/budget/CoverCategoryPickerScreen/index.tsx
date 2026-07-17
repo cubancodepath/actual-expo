@@ -5,7 +5,8 @@ import { useTranslation } from "react-i18next";
 import { ListGroup, SearchField, Separator, Typography } from "heroui-native";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { useCategories } from "@/screens/budget/hooks/useCategories";
-import { useSheetValueNumber, useSpreadsheetVersion } from "@/hooks/useSheetValue";
+import { useSheetValueNumber, useSpreadsheetVersionWhere } from "@/hooks/useSheetValue";
+import { makeCategoryCellMatcher } from "@/screens/budget/hooks/useOverspentCategories";
 import { envelopeBudget, sheetForMonth } from "@/core/domain/spreadsheet/bindings";
 import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
 import { TO_BUDGET_ID } from "@/screens/budget/constants";
@@ -43,7 +44,9 @@ export function CoverCategoryPickerScreen() {
   const { categories, groups } = useCategories();
   const sheet = sheetForMonth(month);
   const toBudget = useSheetValueNumber(sheet, envelopeBudget.toBudget);
-  const ssVersion = useSpreadsheetVersion();
+  const ssVersion = useSpreadsheetVersionWhere(
+    useMemo(() => makeCategoryCellMatcher(sheet), [sheet]),
+  );
 
   const [query, setQuery] = useState("");
   // Fixed header (title + search) height, measured so the list starts below it.

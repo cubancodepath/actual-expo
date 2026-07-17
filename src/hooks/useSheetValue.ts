@@ -9,7 +9,7 @@
  * const catBalance = useSheetValue(sheetForMonth(month), envelopeBudget.catBalance(catId));
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { resolveName, type CellValue } from "@/core/domain/spreadsheet/spreadsheet";
 import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
 
@@ -53,6 +53,28 @@ export function useSpreadsheetVersion(): number {
   useEffect(() => {
     return ss.onCellsChanged(() => {
       setVersion(ss.version);
+    });
+  }, [ss]);
+
+  return version;
+}
+
+/**
+ * Like useSpreadsheetVersion, but only bumps when a changed cell name passes
+ * `matches`. Use for screens that scan many cells of one kind (e.g. all
+ * category balances) so unrelated computations don't re-render them.
+ */
+export function useSpreadsheetVersionWhere(matches: (name: string) => boolean): number {
+  const ss = getSpreadsheet();
+  const [version, setVersion] = useState(() => ss.version);
+  const matchesRef = useRef(matches);
+  matchesRef.current = matches;
+
+  useEffect(() => {
+    return ss.onCellsChanged((changedNames) => {
+      if (changedNames.some((n) => matchesRef.current(n))) {
+        setVersion(ss.version);
+      }
     });
   }, [ss]);
 

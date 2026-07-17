@@ -1,3 +1,8 @@
+overrides:
+  "@xmldom/xmldom@<0.8.13": ">=0.8.13"
+  "uuid@<11.1.1": ">=11.1.1"
+  "tar@<7.5.16": ">=7.5.16"
+
 allowBuilds:
   "@sentry/cli": true
   "@shopify/react-native-skia": true

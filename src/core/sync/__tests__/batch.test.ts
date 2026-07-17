@@ -4,6 +4,78 @@ import { sendMessages, batchMessages, resetBatchState } from "@/core/sync/batch"
 import { runQuery } from "@/core/db";
 import { Timestamp } from "@/core/crdt";
 
+describe("batchMessages — error semantics", () => {
+  afterEach(async () => {
+    resetBatchState();
+    await closeTestDb();
+  });
+
+  it("applies all buffered messages once the batch body completes successfully", async () => {
+    await openTestDb();
+
+    await batchMessages(async () => {
+      await sendMessages([
+        {
+          timestamp: Timestamp.send()!,
+          dataset: "accounts",
+          row: "acc1",
+          column: "name",
+          value: "First",
+        },
+      ]);
+      await sendMessages([
+        {
+          timestamp: Timestamp.send()!,
+          dataset: "accounts",
+          row: "acc2",
+          column: "name",
+          value: "Second",
+        },
+      ]);
+    });
+
+    const rows = await runQuery<{ id: string }>("SELECT id FROM accounts ORDER BY id");
+    expect(rows.map((r) => r.id)).toEqual(["acc1", "acc2"]);
+  });
+
+  it("discards the buffered messages and rejects when the batch body throws — nothing is applied", async () => {
+    await openTestDb();
+
+    const boom = new Error("boom");
+    await expect(
+      batchMessages(async () => {
+        await sendMessages([
+          {
+            timestamp: Timestamp.send()!,
+            dataset: "accounts",
+            row: "acc1",
+            column: "name",
+            value: "Should not persist",
+          },
+        ]);
+        throw boom;
+      }),
+    ).rejects.toThrow(boom);
+
+    const rowsAfterThrow = await runQuery<{ id: string }>("SELECT id FROM accounts");
+    expect(rowsAfterThrow).toEqual([]);
+
+    // The buffer and batching flag must be fully reset so a subsequent
+    // standalone sendMessages() applies normally.
+    await sendMessages([
+      {
+        timestamp: Timestamp.send()!,
+        dataset: "accounts",
+        row: "acc3",
+        column: "name",
+        value: "Standalone",
+      },
+    ]);
+    const rowsAfterRecovery = await runQuery<{ id: string }>("SELECT id FROM accounts");
+    expect(rowsAfterRecovery.map((r) => r.id)).toEqual(["acc3"]);
+  });
+});
+
 describe("batchMessages — nested re-entrancy (fix #4)", () => {
   afterEach(async () => {
     resetBatchState();

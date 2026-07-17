@@ -12,6 +12,13 @@ import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
 import { TO_BUDGET_ID } from "@/screens/budget/constants";
 import { Money } from "@/ui/Money";
 
+/**
+ * Which side of a transfer the picked category will be on. A `funder` gives
+ * money, so only categories with a positive balance qualify; a `receiver` takes
+ * it, and any expense category can.
+ */
+export type PickerRole = "funder" | "receiver";
+
 interface PickableCategory {
   id: string;
   name: string;
@@ -25,22 +32,28 @@ interface PickableGroup {
 }
 
 /**
- * Funding-source picker for the cover-overspent flow: expense categories with a
- * positive balance (minus already-picked ones), plus the "To Budget" pool when
- * it has money. Same sheet language as the overspent list (root ScrollView —
- * plain flex containers collapse inside a formSheet with custom detents —
- * left-aligned title, swipe to dismiss) but with HeroUI ListGroup rows. Returns
- * the selection through `budgetUIStore.setCoverTarget`, consumed by cover-source.
+ * Category picker for the transfer flows: expense categories minus the excluded
+ * ones, plus the "To Budget" pool. Knows nothing about the flow that opened it —
+ * `role` says which side of the transfer the pick lands on (which is all the
+ * filtering depends on) and the caller brings its own `title`. Same sheet
+ * language as the overspent list (root ScrollView — plain flex containers
+ * collapse inside a formSheet with custom detents — left-aligned title, swipe to
+ * dismiss) but with HeroUI ListGroup rows. Returns the selection through
+ * `budgetUIStore.setPickedCategory`, consumed by the calling screen.
  */
-export function CoverCategoryPickerScreen() {
+export function CategoryPickerScreen() {
   const { t } = useTranslation("budget");
   const router = useRouter();
-  const { excludeIds, overspentCatId } = useLocalSearchParams<{
+  const { excludeIds, role, title } = useLocalSearchParams<{
+    /** Comma-separated category ids to leave out (already picked, or the target). */
     excludeIds: string;
-    overspentCatId: string;
+    role: PickerRole;
+    title: string;
   }>();
+  /** Whether the picked category has to fund the transfer (needs a balance). */
+  const picksFunder = role !== "receiver";
   const month = useBudgetUIStore((s) => s.month);
-  const setCoverTarget = useBudgetUIStore((s) => s.setCoverTarget);
+  const setPickedCategory = useBudgetUIStore((s) => s.setPickedCategory);
   const { categories, groups } = useCategories();
   const sheet = sheetForMonth(month);
   const toBudget = useSheetValueNumber(sheet, envelopeBudget.toBudget);
@@ -53,8 +66,8 @@ export function CoverCategoryPickerScreen() {
   const [headerHeight, setHeaderHeight] = useState(120);
 
   const excludeSet = useMemo(
-    () => new Set([...(excludeIds?.split(",") ?? []), overspentCatId].filter(Boolean)),
-    [excludeIds, overspentCatId],
+    () => new Set((excludeIds?.split(",") ?? []).filter(Boolean)),
+    [excludeIds],
   );
 
   const grouped = useMemo<PickableGroup[]>(() => {
@@ -74,16 +87,22 @@ export function CoverCategoryPickerScreen() {
             name: c.name,
             balance: (ss.getValue(sheet, envelopeBudget.catBalance(c.id)) as number) ?? 0,
           }))
-          .filter((c) => c.balance > 0 && (needle === "" || c.name.toLowerCase().includes(needle))),
+          .filter(
+            (c) =>
+              (!picksFunder || c.balance > 0) &&
+              (needle === "" || c.name.toLowerCase().includes(needle)),
+          ),
       }))
       .filter((g) => g.categories.length > 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categories, groups, excludeSet, sheet, query, ssVersion]);
+  }, [categories, groups, excludeSet, sheet, query, ssVersion, picksFunder]);
 
-  const showToBudget = toBudget > 0 && !excludeSet.has(TO_BUDGET_ID) && query.trim() === "";
+  // To Budget can always receive money back; it can only fund when it has some.
+  const showToBudget =
+    (picksFunder ? toBudget > 0 : true) && !excludeSet.has(TO_BUDGET_ID) && query.trim() === "";
 
   const select = (catId: string, catName: string, balance: number) => {
-    setCoverTarget({ catId, catName, balance });
+    setPickedCategory({ catId, catName, balance });
     router.back();
   };
 
@@ -136,7 +155,7 @@ export function CoverCategoryPickerScreen() {
 
         {grouped.length === 0 && !showToBudget ? (
           <Typography className="py-6 text-center text-base text-muted">
-            {t("noCategoriesWithBalance")}
+            {t(picksFunder ? "noCategoriesWithBalance" : "noCategories")}
           </Typography>
         ) : null}
       </ScrollView>
@@ -147,9 +166,7 @@ export function CoverCategoryPickerScreen() {
         className="absolute inset-x-0 top-0 z-10 bg-background px-4 pb-3 pt-5"
         onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
       >
-        <Typography className="pb-3 text-lg font-semibold text-foreground">
-          {t("coverOverspendingFrom")}
-        </Typography>
+        <Typography className="pb-3 text-lg font-semibold text-foreground">{title}</Typography>
         <SearchField value={query} onChange={setQuery}>
           <SearchField.Group>
             <SearchField.SearchIcon />

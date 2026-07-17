@@ -1,22 +1,26 @@
+import { useState } from "react";
 import { View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Button } from "heroui-native";
 import { AmountSheet } from "@/screens/budget/components/AmountSheet";
 import { TransferEntryList } from "@/screens/budget/components/TransferEntryList";
-import { useTransferFlow } from "@/screens/budget/hooks/useTransferFlow";
+import { useTransferFlow, type TransferDirection } from "@/screens/budget/hooks/useTransferFlow";
 import { AmountKeyboard } from "@/ui/amount-keyboard";
+import { DirectionToggle } from "./components/DirectionToggle";
 
-/** Hero height before its first onLayout measurement (title + amount). */
-const HERO_HEIGHT_FALLBACK = 180;
+/** Hero height before its first onLayout measurement (title + amount + toggle). */
+const HERO_HEIGHT_FALLBACK = 250;
 
 /**
- * Cover-source screen: pick funding sources and how much to take from each to
- * cover an overspent category. A {@link useTransferFlow} pinned to `"to"` — money
- * only ever comes in — inside an {@link AmountSheet} whose hero shows what's still
- * missing, tinted danger while money is needed and success once covered.
+ * Move-money screen: move budgeted money between the category it was opened for
+ * and one or more counterparts, in either direction. The same
+ * {@link useTransferFlow} the cover sheet runs on, but with the direction under
+ * the user's control, and an {@link AmountSheet} whose hero carries the toggle
+ * and whose tint tracks the projected balance — danger when the category would
+ * end up negative, success when positive, balanced at zero.
  */
-export function CoverSourceScreen() {
+export function MoveMoneyScreen() {
   const { t } = useTranslation("budget");
   const router = useRouter();
   const { catId, catName, balance } = useLocalSearchParams<{
@@ -25,18 +29,26 @@ export function CoverSourceScreen() {
     balance: string;
   }>();
 
+  const balanceCents = Number(balance);
+  // Overspent categories need money, everything else has some to give.
+  const [direction, setDirection] = useState<TransferDirection>(balanceCents < 0 ? "to" : "from");
+
   const flow = useTransferFlow({
     catId,
     catName,
-    balanceCents: Number(balance),
-    direction: "to",
-    pickerTitle: t("coverOverspendingFrom"),
+    balanceCents,
+    direction,
+    // Named for the counterparts: they're where the money comes from, or goes to.
+    pickerTitle: t(direction === "to" ? "moveFrom" : "moveTo"),
   });
 
-  const isCovered = flow.projected >= 0 && flow.entries.length > 0;
+  const { projected } = flow;
 
   return (
-    <AmountSheet status={isCovered ? "success" : "danger"} fallbackHeight={HERO_HEIGHT_FALLBACK}>
+    <AmountSheet
+      status={projected < 0 ? "danger" : projected > 0 ? "success" : "balanced"}
+      fallbackHeight={HERO_HEIGHT_FALLBACK}
+    >
       <AmountSheet.Backdrop />
 
       <AmountSheet.Body
@@ -47,7 +59,8 @@ export function CoverSourceScreen() {
         <View className="gap-2 px-4">
           <TransferEntryList
             entries={flow.entries}
-            flow="gives"
+            // Money coming INTO the category is money the rows give away.
+            flow={direction === "to" ? "gives" : "receives"}
             editingId={flow.editingId}
             onPressAmount={flow.onPressAmount}
             onAddCategory={flow.handleAddCategory}
@@ -57,22 +70,24 @@ export function CoverSourceScreen() {
 
       <AmountSheet.Hero>
         <AmountSheet.Title>{catName}</AmountSheet.Title>
-        <AmountSheet.Amount cents={flow.projected} />
+        <AmountSheet.Amount cents={projected} />
+        <View className="mt-2">
+          <DirectionToggle value={direction} onChange={setDirection} />
+        </View>
       </AmountSheet.Hero>
 
       <AmountSheet.Close onPress={() => router.back()} />
 
-      {/* Cover as a labelled FAB (AddTransactionFab pattern), hidden while the
+      {/* Move as a labelled FAB (AddTransactionFab pattern), hidden while the
           amount pad is open. */}
       {flow.editingId == null && (
         <View className="absolute bottom-8 right-5">
           <Button
             isDisabled={flow.total === 0 || flow.saving}
-            // Closes cover-source + cover-overspent.
-            onPress={() => flow.handleSave(() => router.dismiss(2))}
+            onPress={() => flow.handleSave(() => router.back())}
             className="h-14 rounded-full px-8 shadow-lg"
           >
-            <Button.Label>{t(flow.saving ? "coveringEllipsis" : "cover")}</Button.Label>
+            <Button.Label>{t(flow.saving ? "movingEllipsis" : "move")}</Button.Label>
           </Button>
         </View>
       )}

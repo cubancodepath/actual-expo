@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Platform, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import { useRouter } from "expo-router";
 import Animated from "react-native-reanimated";
-import { Accordion, AccordionLayoutTransition } from "heroui-native";
+import { Accordion, AccordionLayoutTransition, Menu } from "heroui-native";
 import { envelopeBudget, sheetForMonth } from "@/core/domain/spreadsheet/bindings";
 import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
 import { setBudgetAmount } from "@/core/domain/budgets";
@@ -16,9 +16,21 @@ import { AmountKeyboard, useAmountKeyboardAvoidance } from "@/ui/amount-keyboard
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { useTabBarStore } from "@/stores/tabBarStore";
 import { useOverspentCount } from "@/screens/budget/hooks/useOverspentCount";
+import { noop } from "@/screens/budget/constants";
+import { BudgetCategoryRow } from "./components/BudgetCategoryRow";
 import { BudgetGroup } from "./components/BudgetGroup";
+import { CategoryRowMenu, type RowRect } from "./components/CategoryRowMenu";
 import { OverspentPill } from "./components/OverspentPill";
 import { ReadyToAssignBar } from "./components/ReadyToAssignBar";
+
+/** The long-pressed row the category menu is currently open on. */
+interface MenuTarget {
+  catId: string;
+  catName: string;
+  balance: number;
+  /** The row's window frame, measured at long-press. */
+  rect: RowRect;
+}
 
 export function BudgetScreen() {
   const router = useRouter();
@@ -100,6 +112,29 @@ export function BudgetScreen() {
     setTabBarHidden(false);
   }, [setTabBarHidden]);
 
+  // The category menu lives here rather than in each row: one Menu instance for
+  // the whole list instead of one per row (each carries shared values, a
+  // controllable-state hook and native views, and the list isn't virtualised).
+  // `menuTarget` names the long-pressed row and its measured frame; the menu
+  // anchors to that frame through a phantom trigger, and the row hides itself
+  // once the floating preview is up (`isPreviewShown`), so there's no blink.
+  const [menuTarget, setMenuTarget] = useState<MenuTarget | null>(null);
+  const [isPreviewShown, setPreviewShown] = useState(false);
+
+  const onLongPressRow = useCallback(
+    (catId: string, catName: string, balance: number, rect: RowRect) => {
+      cancelEditing(); // an in-progress amount edit is dropped, not committed
+      setPreviewShown(false);
+      setMenuTarget({ catId, catName, balance, rect });
+    },
+    [cancelEditing],
+  );
+
+  const closeMenu = useCallback(() => {
+    setMenuTarget(null);
+    setPreviewShown(false);
+  }, []);
+
   // Drop any in-progress edit when the month changes (values belong to a month),
   // and never leave the tab bar hidden when unmounting mid-edit.
   useEffect(() => {
@@ -175,7 +210,8 @@ export function BudgetScreen() {
                   editingCatId={editingCatId}
                   draft={draft}
                   onPressRow={onPressRow}
-                  onCancelEditing={cancelEditing}
+                  onLongPressRow={onLongPressRow}
+                  liftedCatId={isPreviewShown ? (menuTarget?.catId ?? null) : null}
                   goalsEnabled={goalsEnabled}
                 />
               ))}
@@ -196,6 +232,57 @@ export function BudgetScreen() {
           <AmountKeyboard.Panel onHeightChange={onKeyboardHeightChange} />
         </AmountKeyboard.Portal>
       </AmountKeyboard>
+
+      {/* One menu for the whole list, mounted only while a row is long-pressed.
+          `isDefaultOpen` makes it measure its trigger and open on mount, so the
+          menu is laid over the pressed row's frame and its trigger fills it —
+          the popover anchors to the row without every row having to own a Menu.
+          The frame and the trigger's own measure are both page coordinates, and
+          this screen's root sits at the page origin, so the two agree. */}
+      {menuTarget && (
+        <Menu
+          isDefaultOpen
+          onOpenChange={(open) => {
+            if (!open) closeMenu();
+          }}
+          pointerEvents="none" // purely a measuring anchor; never takes touches
+          style={{
+            position: "absolute",
+            left: menuTarget.rect.x,
+            top: menuTarget.rect.y,
+            width: menuTarget.rect.width,
+            height: menuTarget.rect.height,
+          }}
+        >
+          <Menu.Trigger pointerEvents="none" style={StyleSheet.absoluteFill} />
+          <CategoryRowMenu
+            rect={menuTarget.rect}
+            onPreviewLayout={() => setPreviewShown(true)}
+            onMoveMoney={() =>
+              router.push({
+                pathname: "/(auth)/budget/move-money",
+                params: {
+                  catId: menuTarget.catId,
+                  catName: menuTarget.catName,
+                  balance: String(menuTarget.balance),
+                },
+              })
+            }
+            preview={
+              <BudgetCategoryRow
+                catId={menuTarget.catId}
+                catName={menuTarget.catName}
+                sheet={sheet}
+                isEditing={false}
+                draft={0}
+                onPressRow={noop}
+                onLongPressRow={noop}
+                goalsEnabled={goalsEnabled}
+              />
+            }
+          />
+        </Menu>
+      )}
 
       {editingCatId == null && <AddTransactionFab />}
     </View>

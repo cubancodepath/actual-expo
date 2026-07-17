@@ -12,9 +12,9 @@ import Animated, {
 } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
 import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import { useThemeColor } from "heroui-native";
+import { lightHaptic, mediumHaptic } from "@/ui/haptics";
 
 const ACTION_WIDTH = 80;
 const SWIPE_THRESHOLD = ACTION_WIDTH * 0.8;
@@ -33,14 +33,6 @@ interface SwipeableRowProps {
   swipeRightIcon?: IoniconName;
   swipeRightColor?: string;
   style?: ViewStyle;
-}
-
-function lightHaptic() {
-  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-}
-
-function mediumHaptic() {
-  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 }
 
 /**

@@ -160,7 +160,16 @@ export default function AuthLayout() {
         }}
       />
       <Stack.Screen
-        name="budget/cover-category-picker"
+        name="budget/move-money"
+        options={{
+          headerShown: false,
+          presentation: "formSheet",
+          sheetAllowedDetents: [1.0],
+          contentStyle: { backgroundColor: theme.colors.pageBackground },
+        }}
+      />
+      <Stack.Screen
+        name="budget/category-picker"
         options={{
           headerShown: false,
           presentation: "formSheet",

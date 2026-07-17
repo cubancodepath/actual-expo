@@ -30,7 +30,7 @@ export default function DeleteCategoryPickerScreen() {
     moveCatId: string;
   }>();
   const month = useBudgetUIStore((s) => s.month);
-  const setCoverTarget = useBudgetUIStore((s) => s.setCoverTarget);
+  const setPickedCategory = useBudgetUIStore((s) => s.setPickedCategory);
   const { categories, groups } = useCategories();
   const sheet = sheetForMonth(month);
   const [query, setQuery] = useState("");
@@ -75,7 +75,7 @@ export default function DeleteCategoryPickerScreen() {
         text: t("delete"),
         style: "destructive",
         onPress: () => {
-          setCoverTarget({ catId: cat.id, catName: cat.name, balance: cat.balance });
+          setPickedCategory({ catId: cat.id, catName: cat.name, balance: cat.balance });
           router.back();
         },
       },

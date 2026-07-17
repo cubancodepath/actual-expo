@@ -764,5 +764,9 @@ export const transferAvailable = undoable(async function transferAvailable(
   const ss = getSpreadsheet();
   const sheet = sheetForMonth(month);
   const current = (ss.getValue(sheet, envelopeBudget.catBudgeted(categoryId)) as number) ?? 0;
-  await setBudgetAmount(month, categoryId, current + amountCents);
+  const next = current + amountCents;
+  // Paint the new figure before the write lands; the recompute that follows
+  // setBudgetAmount confirms it (or corrects it, if the write fails).
+  ss.setByName(sheet, envelopeBudget.catBudgeted(categoryId), next);
+  await setBudgetAmount(month, categoryId, next);
 });

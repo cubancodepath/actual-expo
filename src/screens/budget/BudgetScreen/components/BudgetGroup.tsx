@@ -9,6 +9,7 @@ import type { BudgetSection } from "@/screens/budget/hooks/useBudgetSections";
 import { BudgetCategoryRow } from "./BudgetCategoryRow";
 import { IncomeCategoryRow } from "./IncomeCategoryRow";
 import { COL_ASSIGNED, COL_AVAILABLE, NumericCell } from "./columns";
+import type { RowRect } from "./CategoryRowMenu";
 
 interface BudgetGroupProps {
   group: BudgetSection;
@@ -16,8 +17,10 @@ interface BudgetGroupProps {
   editingCatId: string | null;
   draft: number;
   onPressRow: (catId: string, budgeted: number, pageY: number) => void;
-  /** Discard any in-progress amount edit (e.g. when a row's long-press menu opens). */
-  onCancelEditing: () => void;
+  /** Open the category menu for a row; `rect` is its measured window frame. */
+  onLongPressRow: (catId: string, catName: string, balance: number, rect: RowRect) => void;
+  /** The category whose menu preview is currently floating, if any. */
+  liftedCatId: string | null;
   goalsEnabled: boolean;
 }
 
@@ -43,7 +46,8 @@ export const BudgetGroup = memo(function BudgetGroup({
   editingCatId,
   draft,
   onPressRow,
-  onCancelEditing,
+  onLongPressRow,
+  liftedCatId,
   goalsEnabled,
 }: BudgetGroupProps) {
   const { t } = useTranslation("budget");
@@ -112,7 +116,8 @@ export const BudgetGroup = memo(function BudgetGroup({
                   isEditing={editingCatId === cat.id}
                   draft={editingCatId === cat.id ? draft : 0}
                   onPressRow={onPressRow}
-                  onCancelEditing={onCancelEditing}
+                  onLongPressRow={onLongPressRow}
+                  isLifted={liftedCatId === cat.id}
                   goalsEnabled={goalsEnabled}
                 />
               )}

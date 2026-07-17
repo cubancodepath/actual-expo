@@ -13,18 +13,24 @@ import { Money } from "@/ui/Money";
 interface SourceRowProps {
   id: string;
   name: string;
-  /** The source's available balance in cents (before this cover). */
+  /** The counterpart's available balance in cents (before this move). */
   balance: number;
-  /** Cents taken from this source. */
+  /** Cents moved to or from this counterpart. */
   amount: number;
+  /**
+   * Which way the money flows for this row — drives the projected balance chip.
+   * `gives` (default): the row funds the target, so its balance goes down.
+   * `receives`: the target funds the row, so its balance goes up.
+   */
+  flow?: "gives" | "receives";
   isEditing: boolean;
   /** Start editing this row's amount; `pageY` scrolls it above the pad. */
   onPressAmount: (id: string, pageY: number) => void;
 }
 
 /**
- * One funding source, laid out as budget-table columns (shared widths from
- * BudgetScreen's columns): name | editable amount | what's left of the source.
+ * One transfer counterpart, laid out as budget-table columns (shared widths from
+ * BudgetScreen's columns): name | editable amount | the balance it's left with.
  * The editable amount carries a dotted underline as its affordance; input comes
  * from the in-app pad (the amount Pressable is its own trigger). Memoised —
  * only the row being edited re-renders per keystroke.
@@ -34,11 +40,12 @@ export const SourceRow = memo(function SourceRow({
   name,
   balance,
   amount,
+  flow = "gives",
   isEditing,
   onPressAmount,
 }: SourceRowProps) {
   const accent = useThemeColor("accent");
-  const leftAfter = balance - amount;
+  const leftAfter = flow === "gives" ? balance - amount : balance + amount;
 
   return (
     <ListGroup.Item>

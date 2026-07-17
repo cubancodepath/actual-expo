@@ -26,8 +26,8 @@ export default function QuickEditCategoryScreen() {
   const { categories, groups } = useCategories();
   const category = categories.find((c) => c.id === categoryId);
   const isIncome = groups.find((g) => g.id === category?.cat_group)?.is_income ?? false;
-  const coverTarget = useBudgetUIStore((s) => s.coverTarget);
-  const setCoverTarget = useBudgetUIStore((s) => s.setCoverTarget);
+  const pickedCategory = useBudgetUIStore((s) => s.pickedCategory);
+  const setPickedCategory = useBudgetUIStore((s) => s.setPickedCategory);
 
   const [name, setName] = useState("");
   const [editing, setEditing] = useState(false);
@@ -68,7 +68,7 @@ export default function QuickEditCategoryScreen() {
         {
           text: t("selectCategory"),
           onPress: () => {
-            setCoverTarget(null);
+            setPickedCategory(null);
             setPendingDelete(true);
             router.push({
               pathname: "/(auth)/budget/delete-category-picker",
@@ -82,22 +82,22 @@ export default function QuickEditCategoryScreen() {
 
   // Complete deletion after user picks a transfer category
   useEffect(() => {
-    if (!pendingDelete || !coverTarget || !categoryId) return;
+    if (!pendingDelete || !pickedCategory || !categoryId) return;
     (async () => {
       try {
-        await deleteCategory(categoryId, coverTarget.catId);
+        await deleteCategory(categoryId, pickedCategory.catId);
         useUndoStore.getState().showUndo(t("categoryDeleted"));
-        setCoverTarget(null);
+        setPickedCategory(null);
         setPendingDelete(false);
         router.back();
       } catch (e) {
         emitErrorEvent(e);
         setPendingDelete(false);
-        setCoverTarget(null);
+        setPickedCategory(null);
         Alert.alert(t("errorTitle"), t("couldNotDeleteCategory"));
       }
     })();
-  }, [pendingDelete, coverTarget, categoryId, setCoverTarget, router]);
+  }, [pendingDelete, pickedCategory, categoryId, setPickedCategory, router]);
 
   const labelStyle = {
     marginBottom: spacing.xs,

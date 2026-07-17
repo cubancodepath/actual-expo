@@ -24,6 +24,9 @@
     --success: oklch(90.33% 0.2084 122.94);
     /* Readable green for text on the background (success is too light as text). */
     --positive: oklch(58% 0.17 122.94);
+    /* "Nothing to flag" state, next to success/danger: the brand hue at a calmer
+       chroma, so a balanced (zero) amount reads as a real tint but never alarms. */
+    --balanced: oklch(74% 0.09 286.11);
     --warning: oklch(78.19% 0.1584 72.32);
     --danger: oklch(65.32% 0.2328 25.73);
     --border: oklch(90% 0.006 286.11);
@@ -45,6 +48,8 @@
     --success: oklch(90.33% 0.2084 122.94);
     /* Readable green for text on the dark background. */
     --positive: oklch(82% 0.2 122.94);
+    /* See the light block: calmer brand hue for the balanced (zero) state. */
+    --balanced: oklch(62% 0.08 286.11);
     --warning: oklch(83.69% 0.1643 84.43);
     --danger: oklch(69.4% 0.1918 11.32);
     --field-background: oklch(21.03% 0.012 286.11);
@@ -54,8 +59,9 @@
   }
 }
 
-/* Register the custom token as a color utility (text-positive / bg-positive),
-   resolving to the theme-aware --positive variable above. */
+/* Register the custom tokens as color utilities (text-positive / bg-balanced…),
+   resolving to the theme-aware variables above. */
 @theme {
   --color-positive: var(--positive);
+  --color-balanced: var(--balanced);
 }

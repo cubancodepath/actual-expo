@@ -4,30 +4,35 @@
  * This is the minimal Zustand store that remains after migrating budget
  * data to the spreadsheet engine. Only holds shared UI state:
  * - `month`: which month is being viewed
- * - `coverTarget`: transient state for cover-overspent modal flow
+ * - `pickedCategory`: the category a picker sheet handed back to its opener
  */
 
 import { create } from "zustand";
 import { currentMonth } from "@/lib/date";
 
-type CoverTarget = { catId: string; catName: string; balance: number };
+/**
+ * A category chosen in a picker sheet. The picker writes it and pops itself; the
+ * screen underneath reads it and clears it. A store rather than route params
+ * because the selection travels *back* down the stack.
+ */
+type PickedCategory = { catId: string; catName: string; balance: number };
 
 type BudgetUIState = {
   month: string;
-  coverTarget: CoverTarget | null;
+  pickedCategory: PickedCategory | null;
   setMonth(month: string): void;
-  setCoverTarget(target: CoverTarget | null): void;
+  setPickedCategory(picked: PickedCategory | null): void;
 };
 
 export const useBudgetUIStore = create<BudgetUIState>((set) => ({
   month: currentMonth(),
-  coverTarget: null,
+  pickedCategory: null,
 
   setMonth(month) {
     set({ month });
   },
 
-  setCoverTarget(target) {
-    set({ coverTarget: target });
+  setPickedCategory(picked) {
+    set({ pickedCategory: picked });
   },
 }));

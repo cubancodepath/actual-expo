@@ -13,9 +13,7 @@ import {
 } from "lucide-react-native";
 import { MonthYearPicker } from "@/screens/budget/components/MonthYearPicker";
 import { useBudgetMonth } from "@/screens/budget/hooks/useBudgetMonth";
-
-/** No-op placeholder for the header actions that aren't wired yet. */
-const noop = () => {};
+import { noop } from "@/screens/budget/constants";
 
 /**
  * Budget screen header (HeroUI Native): month selector on the left, actions on

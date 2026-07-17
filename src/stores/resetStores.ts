@@ -15,7 +15,7 @@ export function resetAllStores(): void {
   clearQueryCache();
   // Reset spreadsheet engine
   import("@/core/domain/spreadsheet/instance").then(({ resetSpreadsheet }) => resetSpreadsheet());
-  useBudgetUIStore.setState({ month: currentMonth(), coverTarget: null });
+  useBudgetUIStore.setState({ month: currentMonth(), pickedCategory: null });
   usePickerStore.getState().clear();
   useSyncStore.setState({
     status: "idle",

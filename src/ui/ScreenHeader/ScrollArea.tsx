@@ -1,5 +1,6 @@
 import { useMemo, useState, type Ref, type ReactNode } from "react";
-import { StyleSheet, View, type ScrollView } from "react-native";
+import { StyleSheet, View, type ScrollView, type ScrollViewProps } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import MaskedView from "@react-native-masked-view/masked-view";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
@@ -81,6 +82,15 @@ type ScreenHeaderBodyProps = AnimatedScrollViewProps & {
    * this component already uses to drive the header blur.
    */
   onScrollY?: (y: number) => void;
+  /**
+   * Scroll a focused input above the *system* keyboard (via
+   * react-native-keyboard-controller). Opt-in: pass it on screens with real
+   * text fields near the bottom. Screens driven by the custom AmountKeyboard
+   * don't need it — that panel isn't the system keyboard.
+   */
+  keyboardAware?: boolean;
+  /** Gap kept between the focused field and the keyboard top. */
+  bottomOffset?: number;
 };
 
 export function ScreenHeaderBody({
@@ -89,6 +99,8 @@ export function ScreenHeaderBody({
   style,
   contentContainerStyle,
   onScrollY,
+  keyboardAware = false,
+  bottomOffset = 24,
   ...rest
 }: ScreenHeaderBodyProps) {
   const { scrollOffset, headerHeight } = useScreenHeaderScrollContext();
@@ -98,19 +110,34 @@ export function ScreenHeaderBody({
     if (onScrollY) runOnJS(onScrollY)(e.contentOffset.y);
   });
 
-  return (
-    <Animated.ScrollView
-      ref={ref}
-      scrollEventThrottle={16}
-      showsVerticalScrollIndicator={false}
-      {...rest}
-      onScroll={onScroll}
-      style={[styles.fill, style]}
-      contentContainerStyle={[{ paddingTop: headerHeight }, contentContainerStyle]}
-    >
-      {children}
-    </Animated.ScrollView>
-  );
+  const scrollProps = {
+    ref,
+    scrollEventThrottle: 16,
+    showsVerticalScrollIndicator: false,
+    ...rest,
+    onScroll,
+    style: [styles.fill, style],
+    contentContainerStyle: [{ paddingTop: headerHeight }, contentContainerStyle],
+  };
+
+  // Keyboard-aware variant renders the same Animated.ScrollView underneath (so
+  // our `onScroll` worklet still drives the header blur) but lets the keyboard
+  // controller scroll the focused field into view above the system keyboard.
+  if (keyboardAware) {
+    return (
+      <KeyboardAwareScrollView
+        ScrollViewComponent={Animated.ScrollView}
+        bottomOffset={bottomOffset}
+        // KAV's public props are ScrollViewProps, narrower than the
+        // Animated.ScrollView it actually renders (animated onScroll/style).
+        {...(scrollProps as unknown as ScrollViewProps)}
+      >
+        {children as ReactNode}
+      </KeyboardAwareScrollView>
+    );
+  }
+
+  return <Animated.ScrollView {...scrollProps}>{children}</Animated.ScrollView>;
 }
 
 const styles = StyleSheet.create({

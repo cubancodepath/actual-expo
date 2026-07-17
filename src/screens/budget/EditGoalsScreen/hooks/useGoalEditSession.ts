@@ -37,15 +37,11 @@ export function useGoalEditSession({
   categoryId,
   savedEntries,
   schedules,
-  categoryNames,
-  categoryNameToId,
   validPercentageSources,
 }: {
   categoryId: string;
   savedEntries: AutomationEntry[];
   schedules: GoalValidationCtx["schedules"];
-  categoryNames: Map<string, string>;
-  categoryNameToId: Map<string, string>;
   validPercentageSources: Set<string>;
 }) {
   const router = useRouter();
@@ -62,7 +58,7 @@ export function useGoalEditSession({
   /** Write the given entries as the category's goals; returns them. */
   const persist = async (next: AutomationEntry[]) => {
     await batchMessages(async () => {
-      await setGoalTemplates(categoryId, entriesToTemplates(next), categoryNames, categoryNameToId);
+      await setGoalTemplates(categoryId, entriesToTemplates(next));
     });
     await updateGoalIndicator(month, categoryId);
     return next;

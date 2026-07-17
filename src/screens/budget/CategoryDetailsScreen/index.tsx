@@ -23,12 +23,7 @@ import { useCategories } from "@/hooks/useCategories";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { deleteCategory, updateCategory } from "@/core/domain/categories";
 import { setNote } from "@/core/domain/notes";
-import {
-  extractTemplateLines,
-  getCategoryNote,
-  parseGoalDef,
-  stripTemplateLines,
-} from "@/core/domain/goals";
+import { getCategoryNote, parseGoalDef } from "@/core/domain/goals";
 import { describeTemplate, translateDescription } from "@/core/domain/goals/describe";
 import { dialog } from "@/ui/feedback/dialog/dialogStore";
 import { useUndoStore } from "@/stores/undoStore";
@@ -111,21 +106,18 @@ export function CategoryDetailsScreen({ categoryId }: CategoryDetailsScreenProps
   const goalDescription = goalDesc ? translateDescription(goalDesc, t) : null;
 
   // ── Category note (editable, autosaved on blur / unmount) ──
-  // We edit only the user's plain text; any legacy #template/#goal lines are
-  // stripped for display and re-attached on save so goals stored in the notes
-  // format are never clobbered.
+  // The note is plain user text — a separate entity from the goal. Legacy
+  // #template/#goal lines (only present in budgets authored on desktop) show
+  // and edit verbatim, matching upstream's notes editor.
   const [noteText, setNoteText] = useState("");
   const [noteBaseline, setNoteBaseline] = useState("");
-  const templateLinesRef = useRef("");
   useEffect(() => {
     let active = true;
     getCategoryNote(categoryId)
       .then((full) => {
         if (!active) return;
-        const plain = stripTemplateLines(full);
-        templateLinesRef.current = extractTemplateLines(full);
-        setNoteText(plain);
-        setNoteBaseline(plain);
+        setNoteText(full ?? "");
+        setNoteBaseline(full ?? "");
       })
       .catch(() => {});
     return () => {
@@ -134,12 +126,10 @@ export function CategoryDetailsScreen({ categoryId }: CategoryDetailsScreenProps
   }, [categoryId]);
 
   async function saveNote() {
-    const next = noteText.trim();
-    if (next === noteBaseline) return;
-    const composed = [next, templateLinesRef.current].filter(Boolean).join("\n") || null;
+    if (noteText === noteBaseline) return;
     try {
-      await setNote(categoryId, composed);
-      setNoteBaseline(next);
+      await setNote(categoryId, noteText.trim() ? noteText : null);
+      setNoteBaseline(noteText);
     } catch (e) {
       emitErrorEvent(e);
     }
@@ -218,6 +208,7 @@ export function CategoryDetailsScreen({ categoryId }: CategoryDetailsScreenProps
       <ScreenHeader.Body
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 40 }}
         keyboardShouldPersistTaps="handled"
+        keyboardAware
       >
         {/* ── Balance card ── */}
         <ListGroup className="mb-6">

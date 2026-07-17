@@ -13,7 +13,7 @@ import { Timestamp } from "@/core/crdt";
 import { monthToInt } from "@/lib/date";
 import { updateCategory } from "../categories";
 import type { Template } from "./types";
-import { parseGoalDef, stripTemplateLines, templatesToNoteText } from "./parse";
+import { parseGoalDef } from "./parse";
 
 // ---------------------------------------------------------------------------
 // Read templates from DB
@@ -45,58 +45,24 @@ export async function getCategoryNote(categoryId: string): Promise<string | null
 }
 
 // ---------------------------------------------------------------------------
-// Write note text to the notes table (via CRDT)
-// ---------------------------------------------------------------------------
-
-async function setNote(entityId: string, note: string | null): Promise<void> {
-  await sendMessages([
-    {
-      timestamp: Timestamp.send()!,
-      dataset: "notes",
-      row: entityId,
-      column: "note",
-      value: note,
-    },
-  ]);
-}
-
-// ---------------------------------------------------------------------------
 // Write templates to a category's goal_def (via CRDT)
 // ---------------------------------------------------------------------------
 
 /**
  * Save goal templates for a category.
- * Serializes to JSON and persists via CRDT messages for sync.
- * Also writes #template/#goal note text to the notes table for
- * compatibility with the desktop Actual Budget app.
  *
- * The notes field is shared with the user's own text about the category, so
- * only the #template/#goal lines are rewritten — any other line (plain notes,
- * or directives this app doesn't manage such as #cleanup) is kept verbatim.
- *
- * @param categoryNameToId Reverse of `categoryNames`, used to recognize
- *   percentage lines by category name when stripping the old mirror. Without
- *   it an existing "#template 10% of Salary" line is treated as plain text
- *   and would survive alongside its own replacement.
+ * Serializes to `goal_def` JSON and marks `template_settings.source = "ui"`,
+ * mirroring upstream Actual's `storeTemplates({ source: "ui" })`. The category
+ * note is deliberately left untouched: notes are a separate, user-owned entity,
+ * and the goal engine reads `goal_def` (the `#template`/`#goal` note format is
+ * only a legacy input parsed as a fallback when `goal_def` is empty).
  */
-export async function setGoalTemplates(
-  categoryId: string,
-  templates: Template[],
-  categoryNames?: Map<string, string>,
-  categoryNameToId?: Map<string, string>,
-): Promise<void> {
+export async function setGoalTemplates(categoryId: string, templates: Template[]): Promise<void> {
   const goalDef = templates.length > 0 ? JSON.stringify(templates) : null;
   await updateCategory(categoryId, {
     goal_def: goalDef,
     template_settings: JSON.stringify({ source: "ui" }),
   });
-
-  // Rewrite the note mirror for desktop compatibility, keeping user text
-  const existing = await getCategoryNote(categoryId);
-  const preserved = stripTemplateLines(existing, categoryNameToId);
-  const mirror = templates.length > 0 ? templatesToNoteText(templates, categoryNames) : "";
-  const noteText = [preserved, mirror].filter(Boolean).join("\n");
-  await setNote(categoryId, noteText || null);
 }
 
 // ---------------------------------------------------------------------------

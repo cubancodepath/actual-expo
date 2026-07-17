@@ -39,11 +39,6 @@ function useGoalAutomationsValue() {
   const router = useRouter();
 
   const { categories } = useCategories();
-  const categoryNames = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories]);
-  const categoryNameToId = useMemo(
-    () => new Map(categories.map((c) => [c.name, c.id])),
-    [categories],
-  );
   // Income categories are the only valid percentage sources, alongside the
   // 'all-income' alias the engine understands.
   const validPercentageSources = useMemo(
@@ -64,8 +59,6 @@ function useGoalAutomationsValue() {
     categoryId,
     savedEntries: entries,
     schedules,
-    categoryNames,
-    categoryNameToId,
     validPercentageSources,
   });
 

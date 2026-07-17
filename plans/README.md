@@ -15,8 +15,8 @@ Commit style: conventional commits; **never add AI attribution lines**.
 
 ## Execution order & status
 
-| Plan | Title                                                           | Priority | Effort | Depends on  | Status                                                                                                                                                                                                                  |
-| ---- | --------------------------------------------------------------- | -------- | ------ | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Plan | Title                                                           | Priority | Effort | Depends on  | Status                   |
+| ---- | --------------------------------------------------------------- | -------- | ------ | ----------- | ------------------------ |
 | 001  | Make CI green and complete (pnpm, red test, lint/arch gates)    | P1       | M      | —           | DONE (merged to develop) |
 | 002  | batchMessages discards its buffer when the body throws          | P1       | S      | 001 (rec.)  | DONE (merged to develop) |
 | 003  | Allowlist CRDT column identifiers in sync SQL                   | P1       | S      | —           | DONE (merged to develop) |
@@ -24,14 +24,14 @@ Commit style: conventional commits; **never add AI attribution lines**.
 | 004  | Await/handle setBudgetAmount in BudgetScreen commit             | P2       | S      | —           | DONE (merged to develop) |
 | 006  | SecureStore accessibility hardening (token + keys)              | P2       | S      | —           | DONE (merged to develop) |
 | 011  | Encryption round-trip tests                                     | P2       | S      | —           | DONE (merged to develop) |
-| 007  | Delete the unreachable move-money flow + orphaned legacy inputs | P2       | S      | —           | TODO                                                                                                                                                                                                                    |
-| 008  | Promote useCategories/skeleton/wizard out of features/          | P2       | S      | —           | TODO                                                                                                                                                                                                                    |
-| 014  | Sync CLAUDE.md + feature-roadmap.md with reality                | P2       | S      | 012 (order) | TODO                                                                                                                                                                                                                    |
-| 012  | Remove Maestro completely (scripts + docs)                      | P3       | S      | —           | IN PROGRESS |
-| 013  | liveQuery/pagedQuery stale-result hardening                     | P3       | S      | 001         | IN PROGRESS |
-| 009  | Cell-targeted spreadsheet invalidation (perf)                   | P3       | M      | 001         | TODO                                                                                                                                                                                                                    |
-| 010  | Consolidate category/payee pickers on PickerScreen              | P3       | M      | 001         | TODO                                                                                                                                                                                                                    |
-| 015  | pnpm overrides for build-tooling advisories                     | P3       | S      | —           | TODO                                                                                                                                                                                                                    |
+| 007  | Delete the unreachable move-money flow + orphaned legacy inputs | P2       | S      | —           | DONE (merged to develop) |
+| 008  | Promote useCategories/skeleton/wizard out of features/          | P2       | S      | —           | DONE (merged to develop) |
+| 014  | Sync CLAUDE.md + feature-roadmap.md with reality                | P2       | S      | 012 (order) | DONE (merged to develop) |
+| 012  | Remove Maestro completely (scripts + docs)                      | P3       | S      | —           | DONE (merged to develop) |
+| 013  | liveQuery/pagedQuery stale-result hardening                     | P3       | S      | 001         | DONE (merged to develop) |
+| 009  | Cell-targeted spreadsheet invalidation (perf)                   | P3       | M      | 001         | DONE (merged to develop) |
+| 010  | Consolidate category/payee pickers on PickerScreen              | P3       | M      | 001         | DONE (merged to develop) |
+| 015  | pnpm overrides for build-tooling advisories                     | P3       | S      | —           | DONE (merged to develop) |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) |
 REJECTED (with one-line rationale).

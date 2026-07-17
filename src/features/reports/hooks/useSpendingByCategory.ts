@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { q } from "@/core/queries";
 import { useLiveQuery } from "@/hooks/useQuery";
-import { useCategoryList } from "@/features/budget/hooks/useCategories";
+import { useCategoryList } from "@/screens/budget/hooks/useCategories";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
 

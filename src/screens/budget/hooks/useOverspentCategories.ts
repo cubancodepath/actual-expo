@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useCategories } from "@/features/budget/hooks/useCategories";
+import { useCategories } from "@/screens/budget/hooks/useCategories";
 import { envelopeBudget } from "@/core/domain/spreadsheet/bindings";
 import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
 import { useSpreadsheetVersion } from "@/hooks/useSheetValue";

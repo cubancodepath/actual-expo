@@ -3,7 +3,7 @@ import { Alert, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
-import { useCategories } from "@/features/budget/hooks/useCategories";
+import { useCategories } from "@/screens/budget/hooks/useCategories";
 import { sheetForMonth, envelopeBudget } from "@/core/domain/spreadsheet/bindings";
 import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
 import { useTheme } from "@/design-system/providers/ThemeProvider";

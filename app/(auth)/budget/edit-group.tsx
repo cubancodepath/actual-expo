@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { useUndoStore } from "@/stores/undoStore";
 import { updateCategoryGroup, deleteCategoryGroup } from "@/core/domain/categories";
-import { useCategories } from "@/features/budget/hooks/useCategories";
+import { useCategories } from "@/screens/budget/hooks/useCategories";
 import { Text } from "@/design-system/atoms/Text";
 import { Button } from "@/design-system/atoms/Button";
 import { Input } from "@/design-system/atoms/Input";

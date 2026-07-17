@@ -5,7 +5,7 @@ import { Icon } from "@/design-system/atoms/Icon";
 
 import { useAccounts } from "@/features/accounts/hooks/useAccounts";
 import { closeAccount } from "@/core/domain/accounts";
-import { useCategories } from "@/features/budget/hooks/useCategories";
+import { useCategories } from "@/screens/budget/hooks/useCategories";
 import { useUndoStore } from "@/stores/undoStore";
 import { getAccountProperties, groupAccounts } from "@/core/domain/accounts";
 import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvider";

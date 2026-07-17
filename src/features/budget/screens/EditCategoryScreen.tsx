@@ -20,7 +20,7 @@ import { setBudgetAmount } from "@/core/domain/budgets";
 import { useUndoStore } from "@/stores/undoStore";
 import { updateCategory, deleteCategory } from "@/core/domain/categories";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
-import { useCategories } from "@/features/budget/hooks/useCategories";
+import { useCategories } from "@/screens/budget/hooks/useCategories";
 import { Text } from "@/design-system/atoms/Text";
 import { Button } from "@/design-system/atoms/Button";
 import { Amount } from "@/design-system/atoms/Amount";

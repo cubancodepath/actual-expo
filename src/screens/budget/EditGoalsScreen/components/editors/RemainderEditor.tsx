@@ -1,13 +1,14 @@
 import { useTranslation } from "react-i18next";
-import { ListGroup } from "heroui-native";
+import { Split } from "lucide-react-native";
 import type { RemainderTemplate } from "@/core/domain/goals/types";
-import { StepperRow } from "../fields/StepperRow";
+import { StepperFieldRow } from "../fields/StepperFieldRow";
 
 /**
- * Takes whatever is left once every other category is funded. The weight is
- * relative: a category with weight 2 gets twice the share of one with weight 1.
+ * Row for a leftovers-derived amount — rendered inside the goal editor's card
+ * when Custom's "Based on" picks whatever is left. The weight is relative: a
+ * category with weight 2 gets twice the share of one with weight 1.
  */
-export function RemainderEditor({
+export function RemainderRows({
   template,
   onChange,
 }: {
@@ -16,15 +17,13 @@ export function RemainderEditor({
 }) {
   const { t } = useTranslation("budget");
   return (
-    <ListGroup>
-      <StepperRow
-        label={t("goals.fields.weight")}
-        description={t("goals.fields.weightHint")}
-        value={template.weight}
-        onChange={(weight) => onChange({ ...template, weight })}
-        minValue={1}
-        maxValue={10}
-      />
-    </ListGroup>
+    <StepperFieldRow
+      icon={Split}
+      label={t("goals.fields.weight")}
+      value={template.weight}
+      onChange={(weight) => onChange({ ...template, weight })}
+      minValue={1}
+      maxValue={10}
+    />
   );
 }

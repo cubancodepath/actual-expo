@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
-import { Alert, View } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { View } from "react-native";
+import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+import { useStore } from "@tanstack/react-form";
 import { Button } from "heroui-native";
 import { CircleCheck, Trash2 } from "lucide-react-native";
 import { amountCentsOf, withAmountCents } from "@/core/domain/goals";
@@ -21,9 +22,10 @@ const BUTTON_KEYBOARD_GAP = 16;
 
 /**
  * One automation of the category — a pushed screen of the goal stack, so
- * entering and leaving it get the native transition. Edits mutate the shared
- * draft; the floating button is the screen's single action and reads the
- * state: with unsaved changes it saves the target, otherwise it deletes it.
+ * entering and leaving it get the native transition. Edits live in the
+ * session's form; back simply pops and the draft evaporates. The floating
+ * button is the screen's single action: a new or dirty draft saves, an
+ * untouched saved target deletes.
  *
  * The screen owns the AmountKeyboard: our keypad isn't the system keyboard,
  * so no KeyboardAvoidingView will move the button — instead the button's
@@ -32,25 +34,18 @@ const BUTTON_KEYBOARD_GAP = 16;
 export function GoalEditorScreen() {
   const { t } = useTranslation("budget");
   const router = useRouter();
-  const { entryId } = useLocalSearchParams<{ entryId: string }>();
 
-  const {
-    entries,
-    schedules,
-    usedTypes,
-    errorsByEntry,
-    moveRangeFor,
-    isDirty,
-    isSaving,
-    hasErrors,
-    updateEntry,
-    changeEntryType,
-    moveEntry,
-    deleteEntry,
-    save,
-  } = useGoalAutomationsContext();
+  const { form, schedules, changeType, deleteEntry, validateDraftValues, isSaving } =
+    useGoalAutomationsContext();
 
-  const entry = entries.find((e) => e.id === entryId);
+  const values = useStore(form.store, (s) => s.values);
+  const isDirty = useStore(form.store, (s) => s.isDirty);
+  const { template, displayType, entryId } = values;
+
+  // The display side of the form's zod gate — same domain validators, but as
+  // rich error objects the messages can interpolate.
+  const draft = useMemo(() => validateDraftValues(values), [values, validateDraftValues]);
+  const isValid = draft.error == null && draft.conflicts.length === 0;
 
   const [amountOpen, setAmountOpen] = useState(false);
   const keyboardHeight = useSharedValue(KEYBOARD_HEIGHT_FALLBACK);
@@ -65,60 +60,42 @@ export function GoalEditorScreen() {
 
   const buttonStyle = useAnimatedStyle(() => ({ bottom: buttonBottom.value }));
 
-  // Deleted (or state got reset) while this screen was up — nothing to edit.
-  useEffect(() => {
-    if (!entry) router.back();
-  }, [entry, router]);
+  // Save navigates back itself (the mutation's onSuccess) — a failed save
+  // stays here with the draft intact.
+  const handleSave = useCallback(() => form.handleSubmit(), [form]);
 
-  const handleSave = useCallback(async () => {
-    await save();
+  // No confirmation: deleting persists at once.
+  const handleDelete = useCallback(async () => {
+    if (entryId == null) return;
+    await deleteEntry(entryId);
     router.back();
-  }, [save, router]);
+  }, [entryId, deleteEntry, router]);
 
-  const confirmDelete = useCallback(() => {
-    if (!entry) return;
-    Alert.alert(t("goals.deleteTitle"), t("goals.deleteMessage"), [
-      { text: t("goals.cancel"), style: "cancel" },
-      {
-        text: t("goals.delete"),
-        style: "destructive",
-        onPress: () => {
-          deleteEntry(entry.id);
-          router.back();
-        },
-      },
-    ]);
-  }, [entry, deleteEntry, router, t]);
-
-  if (!entry) return null;
-
-  const { canMoveUp, canMoveDown } = moveRangeFor(entry.id);
-  const cents = amountCentsOf(entry.template);
+  const cents = amountCentsOf(template);
+  const showSave = entryId == null || isDirty;
 
   return (
     <AmountKeyboard
       isOpen={amountOpen}
       onOpenChange={setAmountOpen}
       value={cents ?? 0}
-      onValueChange={(next) => updateEntry(entry.id, withAmountCents(entry.template, next))}
+      onValueChange={(next) => form.setFieldValue("template", withAmountCents(template, next))}
     >
       <View className="flex-1">
         <ScreenHeader.ScrollArea>
           <ScreenHeader.Body contentContainerStyle={{ paddingBottom: 140 }}>
             <GoalEditorPane
-              entry={entry}
+              template={template}
+              displayType={displayType}
               schedules={schedules}
-              usedTypes={usedTypes}
-              error={errorsByEntry.get(entry.id)}
-              canMoveUp={canMoveUp}
-              canMoveDown={canMoveDown}
-              onChange={(template) => updateEntry(entry.id, template)}
-              onChangeType={(displayType) => changeEntryType(entry.id, displayType)}
-              onMove={(direction) => moveEntry(entry.id, direction)}
+              error={draft.error ?? undefined}
+              conflicts={draft.conflicts}
+              onChange={(next) => form.setFieldValue("template", next)}
+              onChangeType={changeType}
               onOpenModePane={(custom) =>
                 router.push({
                   pathname: "/(auth)/budget/goal/mode",
-                  params: { entryId: entry.id, ...(custom ? { custom: "1" } : {}) },
+                  params: custom ? { custom: "1" } : {},
                 })
               }
             />
@@ -126,21 +103,22 @@ export function GoalEditorScreen() {
 
           <ScreenHeader.Floating>
             <ScreenHeader>
+              {/* Back discards by construction: the draft only exists in the
+                  form, so popping the screen is the whole revert. */}
               <ScreenHeader.Back onPress={() => router.back()} />
-              <ScreenHeader.Title>
-                {t(displayTypeMeta[entry.displayType].labelKey)}
-              </ScreenHeader.Title>
+              <ScreenHeader.Title>{t(displayTypeMeta[displayType].labelKey)}</ScreenHeader.Title>
             </ScreenHeader>
           </ScreenHeader.Floating>
         </ScreenHeader.ScrollArea>
 
-        {/* The screen's single action: unsaved changes save the target,
-            otherwise the target can be deleted. Rides above the keypad. */}
+        {/* The screen's single action: a new or edited draft saves the
+            target, an untouched saved one can be deleted. Rides above the
+            keypad. */}
         <Animated.View className="absolute right-5" style={buttonStyle}>
-          {isDirty ? (
+          {showSave ? (
             <Button
               className="h-14 rounded-full px-6 shadow-lg"
-              isDisabled={hasErrors || isSaving}
+              isDisabled={!isValid || isSaving}
               onPress={handleSave}
             >
               <CircleCheck size={18} color="white" />
@@ -150,7 +128,8 @@ export function GoalEditorScreen() {
             <Button
               variant="danger"
               className="h-14 rounded-full px-6 shadow-lg"
-              onPress={confirmDelete}
+              isDisabled={isSaving}
+              onPress={handleDelete}
             >
               <Trash2 size={18} color="white" />
               <Button.Label>{t("goals.delete")}</Button.Label>

@@ -1,17 +1,20 @@
-import { useMemo } from "react";
+import { Fragment, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { ListGroup, Separator } from "heroui-native";
+import { Separator, Switch } from "heroui-native";
+import { HandCoins, Percent } from "lucide-react-native";
 import type { PercentageTemplate } from "@/core/domain/goals/types";
 import { useCategories } from "@/hooks/useCategories";
-import { SelectRow } from "../fields/SelectRow";
-import { StepperRow } from "../fields/StepperRow";
-import { SwitchRow } from "../fields/SwitchRow";
+import { FieldRow } from "../fields/FieldRow";
+import { SelectFieldRow } from "../fields/SelectFieldRow";
+import { StepperFieldRow } from "../fields/StepperFieldRow";
 
 /**
- * Budget a share of income. The source is either every income category at once
- * ('all-income', the alias the engine understands) or one specific paycheck.
+ * Rows for a share-of-income amount — rendered inside the goal editor's card
+ * when Custom's "Based on" picks income. The source is either every income
+ * category at once ('all-income', the alias the engine understands) or one
+ * specific paycheck.
  */
-export function PercentageEditor({
+export function PercentageRows({
   template,
   onChange,
 }: {
@@ -32,8 +35,9 @@ export function PercentageEditor({
   );
 
   return (
-    <ListGroup>
-      <StepperRow
+    <Fragment>
+      <StepperFieldRow
+        icon={Percent}
         label={t("goals.fields.percent")}
         value={template.percent}
         onChange={(percent) => onChange({ ...template, percent })}
@@ -43,19 +47,25 @@ export function PercentageEditor({
         formatValue={(v) => `${v}%`}
       />
       <Separator className="mx-4" />
-      <SelectRow
+      <SelectFieldRow
+        icon={HandCoins}
         label={t("goals.fields.incomeSource")}
         value={template.category}
         choices={sources}
         onChange={(category) => onChange({ ...template, category })}
       />
       <Separator className="mx-4" />
-      <SwitchRow
-        label={t("goals.fields.previousMonth")}
-        description={t("goals.fields.previousMonthHint")}
-        isSelected={template.previous}
-        onChange={(previous) => onChange({ ...template, previous })}
-      />
-    </ListGroup>
+      {/* The label is this row's value — the switch says the rest. */}
+      <FieldRow isMuted={!template.previous}>
+        <FieldRow.Icon icon={HandCoins} />
+        <FieldRow.Title>{t("goals.fields.previousMonth")}</FieldRow.Title>
+        <FieldRow.Suffix>
+          <Switch
+            isSelected={template.previous}
+            onSelectedChange={(previous) => onChange({ ...template, previous })}
+          />
+        </FieldRow.Suffix>
+      </FieldRow>
+    </Fragment>
   );
 }

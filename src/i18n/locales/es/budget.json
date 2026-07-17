@@ -298,32 +298,14 @@
   "goals": {
     "title": "Objetivos",
     "done": "Hecho",
-    "cancel": "Cancelar",
     "delete": "Eliminar objetivo",
-    "deleteTitle": "¿Eliminar este objetivo?",
-    "deleteMessage": "El objetivo se eliminará al guardar.",
     "addGoal": "Añadir objetivo",
-    "changeType": "Cambiar tipo de objetivo",
-    "changeTypeTitle": "Cambiar tipo de objetivo",
-    "alreadyAdded": "Ya añadido a esta categoría",
     "sectionGoals": "Objetivos",
-    "sectionOptions": "Opciones",
-    "priorityHint": "Se financian en este orden cuando no hay dinero para todos.",
     "emptyTitle": "Aún no hay objetivos",
     "emptyMessage": "Añade un objetivo y Actual presupuestará esta categoría cada mes por ti.",
-    "removeAll": "Eliminar todos los objetivos",
-    "removeAllTitle": "¿Eliminar todos los objetivos?",
-    "removeAllMessage": "Esta categoría dejará de presupuestarse automáticamente.",
-    "removeAllConfirm": "Eliminar todos",
-    "discardTitle": "¿Descartar los cambios?",
-    "discardMessage": "Los cambios en los objetivos de esta categoría no se han guardado.",
-    "discard": "Descartar",
-    "keepEditing": "Seguir editando",
     "importedFromNotes": "Estos objetivos se han leído de las notas de la categoría. Al guardar se convertirán en objetivos editables.",
     "notSet": "Sin definir",
     "notLinked": "Elige una programación",
-    "today": "Hoy",
-    "clearDate": "Quitar fecha",
     "pickSchedule": "Vincular una programación",
     "noSchedules": "Aún no tienes programaciones. Crea una para financiarla desde esta categoría.",
     "manageSchedules": "Ir a programaciones",
@@ -397,13 +379,9 @@
       "percent": "Porcentaje",
       "incomeSource": "Fuente de ingresos",
       "previousMonth": "Usar los ingresos del mes pasado",
-      "previousMonthHint": "Presupuesta según lo que ingresaste el mes pasado en vez de este.",
-      "basedOn": "Basado en",
       "lookBackMonths": "Meses a promediar",
       "copyFrom": "Meses atrás",
-      "copyFromHint": "Copia el presupuesto que pusiste hace esos meses.",
       "schedule": "Programación",
-      "savingsMode": "Cómo financiarlo",
       "adjust": "Ajustar",
       "adjustHint": "Presupuesta un poco más o menos que la cantidad.",
       "adjustBy": "Ajustar por",
@@ -414,7 +392,7 @@
       "keepSurplus": "Guardar el sobrante",
       "keepSurplusHint": "Mantiene el dinero sobrante en vez de devolverlo para asignar.",
       "weight": "Parte",
-      "weightHint": "Una parte mayor se lleva más de lo que sobra que otras categorías de resto."
+      "method": "Método"
     },
     "errors": {
       "amount-zero": "Introduce una cantidad.",
@@ -434,8 +412,6 @@
       "percent-over-100": "Estos objetivos suman el {{total}}% de una misma fuente de ingresos: más de lo que ingresas.",
       "schedule-priority-mismatch": "Los objetivos de programación y de ahorro por fecha deben financiarse juntos."
     },
-    "fundEarlier": "Financiar antes",
-    "fundLater": "Financiar después",
     "loadError": "No se pudieron cargar los objetivos de esta categoría. Cierra e inténtalo de nuevo.",
     "fixed": {
       "onDay": "El",
@@ -457,10 +433,17 @@
       "spendDown": "Gastar {{amount}}",
       "spendDownHint": "Lo aparta durante un periodo, pensado para irse gastando.",
       "spendFrom": "Gastar desde",
-      "keepSurplus": "Guardar el sobrante"
+      "keepSurplus": "Guardar el sobrante",
+      "basedOn": "Basado en"
     },
     "saveTarget": "Guardar objetivo",
-    "sectionKnown": "Sé la cantidad",
-    "sectionCalculate": "Calcúlalo por mí"
+    "sources": {
+      "fixed": "Una cantidad que pongo yo",
+      "percentage": "% de mis ingresos",
+      "historical": "Mi gasto anterior",
+      "schedule": "Una programación",
+      "remainder": "Lo que sobre"
+    },
+    "sectionTracking": "Límites y seguimiento"
   }
 }

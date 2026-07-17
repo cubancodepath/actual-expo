@@ -1,6 +1,6 @@
-import { useEffect } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
+import { useStore } from "@tanstack/react-form";
 import { ScreenHeader } from "@/ui/ScreenHeader";
 import type { FixedTemplate } from "@/core/domain/goals";
 import { FixedModePane } from "./components/FixedModePane";
@@ -8,29 +8,24 @@ import { useGoalAutomationsContext } from "./context/GoalAutomationsProvider";
 
 /**
  * "Next time I want to…" — the fixed goal's mode, as its own pushed screen so
- * the choice reads like a page of the flow, not a popover.
+ * the choice reads like a page of the flow, not a popover. Edits the same
+ * form the editor holds.
  */
 export function GoalModeScreen() {
   const { t } = useTranslation("budget");
   const router = useRouter();
-  const { entryId, custom } = useLocalSearchParams<{ entryId: string; custom?: string }>();
-  const { entries, updateEntry } = useGoalAutomationsContext();
+  const { custom } = useLocalSearchParams<{ custom?: string }>();
+  const { form } = useGoalAutomationsContext();
 
-  const entry = entries.find((e) => e.id === entryId);
-
-  useEffect(() => {
-    if (!entry) router.back();
-  }, [entry, router]);
-
-  if (!entry) return null;
+  const template = useStore(form.store, (s) => s.values.template);
 
   return (
     <ScreenHeader.ScrollArea>
       <ScreenHeader.Body contentContainerStyle={{ paddingBottom: 40 }}>
         <FixedModePane
-          template={entry.template as FixedTemplate}
+          template={template as FixedTemplate}
           preferCustom={custom === "1"}
-          onChange={(template) => updateEntry(entry.id, template)}
+          onChange={(next) => form.setFieldValue("template", next)}
           onDone={() => router.back()}
         />
       </ScreenHeader.Body>

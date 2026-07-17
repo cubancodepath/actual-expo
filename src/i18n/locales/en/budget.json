@@ -311,32 +311,14 @@
   "goals": {
     "title": "Goals",
     "done": "Done",
-    "cancel": "Cancel",
     "delete": "Delete goal",
-    "deleteTitle": "Delete this goal?",
-    "deleteMessage": "This goal will be removed when you save.",
     "addGoal": "Add goal",
-    "changeType": "Change goal type",
-    "changeTypeTitle": "Change goal type",
-    "alreadyAdded": "Already added to this category",
     "sectionGoals": "Goals",
-    "sectionOptions": "Options",
-    "priorityHint": "Funded in this order when there isn't enough money to go around.",
     "emptyTitle": "No goals yet",
     "emptyMessage": "Add a goal and Actual will budget this category for you each month.",
-    "removeAll": "Remove all goals",
-    "removeAllTitle": "Remove all goals?",
-    "removeAllMessage": "This category will stop being budgeted automatically.",
-    "removeAllConfirm": "Remove all",
-    "discardTitle": "Discard changes?",
-    "discardMessage": "Your edits to this category's goals haven't been saved.",
-    "discard": "Discard",
-    "keepEditing": "Keep editing",
     "importedFromNotes": "These goals were read from this category's notes. Saving converts them to editable goals.",
     "notSet": "Not set",
     "notLinked": "Choose a schedule",
-    "today": "Today",
-    "clearDate": "Clear date",
     "pickSchedule": "Link a schedule",
     "noSchedules": "You don't have any schedules yet. Create one to fund it from this category.",
     "manageSchedules": "Go to schedules",
@@ -410,13 +392,9 @@
       "percent": "Percentage",
       "incomeSource": "Income source",
       "previousMonth": "Use last month's income",
-      "previousMonthHint": "Budget from what you earned last month instead of this one.",
-      "basedOn": "Based on",
       "lookBackMonths": "Months to average",
       "copyFrom": "Months back",
-      "copyFromHint": "Copies the budget you set that many months ago.",
       "schedule": "Schedule",
-      "savingsMode": "How to fund it",
       "adjust": "Adjust it",
       "adjustHint": "Budget a bit more or less than the amount.",
       "adjustBy": "Adjust by",
@@ -427,7 +405,7 @@
       "keepSurplus": "Keep surplus",
       "keepSurplusHint": "Carry leftover money over instead of returning it to be assigned.",
       "weight": "Share",
-      "weightHint": "A higher share takes more of what's left than other remainder categories."
+      "method": "Method"
     },
     "errors": {
       "amount-zero": "Enter an amount.",
@@ -447,8 +425,6 @@
       "percent-over-100": "These goals add up to {{total}}% of one income source — more than you earn.",
       "schedule-priority-mismatch": "Schedule and save-by-date goals must be funded together."
     },
-    "fundEarlier": "Fund earlier",
-    "fundLater": "Fund later",
     "loadError": "Couldn't load this category's goals. Close and try again.",
     "fixed": {
       "onDay": "On",
@@ -470,10 +446,17 @@
       "spendDown": "Spend down {{amount}}",
       "spendDownHint": "Sets it aside over a window, meant to be spent as it goes.",
       "spendFrom": "Spend from",
-      "keepSurplus": "Keep surplus"
+      "keepSurplus": "Keep surplus",
+      "basedOn": "Based on"
     },
     "saveTarget": "Save target",
-    "sectionKnown": "I know the amount",
-    "sectionCalculate": "Calculate it for me"
+    "sources": {
+      "fixed": "An amount I set",
+      "percentage": "% of my income",
+      "historical": "My past spending",
+      "schedule": "A schedule",
+      "remainder": "Whatever is left"
+    },
+    "sectionTracking": "Limits & tracking"
   }
 }

@@ -5,31 +5,47 @@ import { ListGroup, Separator, Switch, useThemeColor } from "heroui-native";
 import { Segment } from "heroui-native-pro";
 import {
   Archive,
-  Banknote,
   CalendarDays,
   CalendarRange,
   ChevronRight,
   Repeat2,
+  Sigma,
 } from "lucide-react-native";
 import {
   allowedCustomModes,
   defaultYearlyDate,
   fixedConfigFromTemplate,
+  isFixedTemplate,
   templateFromFixedConfig,
+  type DisplayTemplateType,
   type FixedGoalConfig,
-  type FixedTemplate,
   type RecurrenceSegment,
 } from "@/core/domain/goals";
-import type { Template } from "@/core/domain/goals/types";
-import { AmountKeyboard, useAmountKeyboardState } from "@/ui/amount-keyboard";
-import { Money } from "@/ui/Money";
-import { BlinkingCursor } from "@/ui/BlinkingCursor";
+import type {
+  AverageTemplate,
+  CopyTemplate,
+  PercentageTemplate,
+  RemainderTemplate,
+  ScheduleTemplate,
+  Template,
+} from "@/core/domain/goals/types";
+import type { Schedule } from "@/core/domain/schedules/types";
 import { formatCents } from "@/lib/currency";
 import { currentMonth } from "@/lib/date";
+import { AmountRow } from "../fields/AmountRow";
 import { DateFieldRow } from "../fields/DateFieldRow";
 import { FieldRow } from "../fields/FieldRow";
 import { RepeatWheels } from "../fields/RepeatWheels";
 import { SelectFieldRow } from "../fields/SelectFieldRow";
+import { HistoricalRows } from "./HistoricalEditor";
+import { PercentageRows } from "./PercentageEditor";
+import { RemainderRows } from "./RemainderEditor";
+import { ScheduleRows } from "./ScheduleEditor";
+
+/** Where a Custom goal's amount comes from. "fixed" = the user types it. */
+type AmountSource = "fixed" | "percentage" | "historical" | "schedule" | "remainder";
+
+const SOURCES: AmountSource[] = ["fixed", "percentage", "historical", "schedule", "remainder"];
 
 /** Localized weekday names, Sunday-first to match Date.getDay(). */
 function weekdayNames(locale: string): string[] {
@@ -39,76 +55,87 @@ function weekdayNames(locale: string): string[] {
 }
 
 /**
- * The amount, styled like the budget list's inline editor: the value grows a
- * caret while the in-app keypad is open — no color change.
- */
-function AmountRow({ label, cents }: { label: string; cents: number }) {
-  const accent = useThemeColor("accent");
-  const { isOpen } = useAmountKeyboardState();
-  return (
-    <AmountKeyboard.Trigger>
-      <FieldRow>
-        <FieldRow.Icon icon={Banknote} />
-        <FieldRow.Content>
-          <FieldRow.Label>{label}</FieldRow.Label>
-          {/* Money renders the text, so this is Value's styling by hand. */}
-          <View className="flex-row items-center">
-            <Money cents={cents} tone="plain" className="text-base" />
-            {isOpen ? <BlinkingCursor color={accent} /> : null}
-          </View>
-        </FieldRow.Content>
-      </FieldRow>
-    </AmountKeyboard.Trigger>
-  );
-}
-
-/**
- * Fixed recurring amount — the everyday goal, in user terms.
+ * The one goal editor, in user terms.
  *
- * Weekly/Monthly/Yearly are one card: cadence, amount, the day it lands on,
- * and what to do next period. Custom adds a second card for an arbitrary due
- * date and repeat, since that's a different question (when is this due, and
- * does it come back?) rather than more of the same fields.
+ * Weekly/Monthly/Yearly are the simple presets that cover most goals: cadence,
+ * amount, the day it lands on, what to do next period. Custom is the power
+ * area — an arbitrary due date and repeat, and a "Based on" row that swaps the
+ * typed amount for a derived one (a share of income, past spending, a
+ * schedule, whatever is left), whose settings appear right there. No type
+ * catalogue anywhere.
  */
-export function FixedEditor({
+export function GoalEditor({
   template,
+  displayType,
+  schedules,
   onChange,
+  onChangeType,
   onOpenModePane,
 }: {
-  template: FixedTemplate;
+  template: Template;
+  displayType: DisplayTemplateType;
+  schedules: Schedule[];
   onChange: (next: Template) => void;
+  /** Swap the amount's source (Custom's "Based on" row). */
+  onChangeType: (next: DisplayTemplateType) => void;
   /** Open the "Next time I want to…" pane; `custom` = editor is on Custom. */
   onOpenModePane: (custom: boolean) => void;
 }) {
   const { t, i18n } = useTranslation("budget");
   const muted = useThemeColor("muted");
 
-  // "Custom" isn't a distinct stored shape: "every 1 month" IS the Monthly
-  // preset's template. So being in Custom is UI state, and the config is read
-  // through it — otherwise the editor would jump back to a preset (taking the
-  // second card with it) the moment an interval landed on 1.
-  const [isCustom, setIsCustom] = useState(
-    () => fixedConfigFromTemplate(template).segment === "custom",
-  );
-  const config = fixedConfigFromTemplate(template, isCustom);
-  const segment: RecurrenceSegment = config.segment;
+  const source: AmountSource = displayType === "fixed" ? "fixed" : (displayType as AmountSource);
 
-  const apply = (next: FixedGoalConfig) => onChange(templateFromFixedConfig(next, template));
+  // "Custom" isn't a distinct stored shape: "every 1 month" IS the Monthly
+  // preset's template, and every derived source lives under Custom. So being
+  // in Custom is UI state, and the fixed config is read through it.
+  const [isCustom, setIsCustom] = useState(
+    () => !isFixedTemplate(template) || fixedConfigFromTemplate(template).segment === "custom",
+  );
+
+  const config = isFixedTemplate(template) ? fixedConfigFromTemplate(template, isCustom) : null;
+  const segment: RecurrenceSegment = config ? config.segment : "custom";
+
+  const apply = (next: FixedGoalConfig) => {
+    if (config) onChange(templateFromFixedConfig(next, template));
+  };
 
   const selectSegment = (next: RecurrenceSegment) => {
     setIsCustom(next === "custom");
-    if (next === segment) return;
-    const amountCents = config.amountCents;
+    if (next === segment && config) return;
+
+    // Leaving a derived source for a preset means "no — my own amount, this
+    // cadence". Retype first, then shape the preset; the two functional
+    // updates land in order.
+    if (!config && next !== "custom") onChangeType("fixed");
+    if (!config && next === "custom") return;
+
+    const amountCents = config?.amountCents ?? 0;
     switch (next) {
       case "weekly":
-        apply({ segment: "weekly", mode: "setAside", amountCents, weekday: 1 });
+        onChange(
+          templateFromFixedConfig(
+            { segment: "weekly", mode: "setAside", amountCents, weekday: 1 },
+            template,
+          ),
+        );
         break;
       case "monthly":
-        apply({ segment: "monthly", mode: "setAside", amountCents, dayOfMonth: 1 });
+        onChange(
+          templateFromFixedConfig(
+            { segment: "monthly", mode: "setAside", amountCents, dayOfMonth: 1 },
+            template,
+          ),
+        );
         break;
       case "yearly":
         // Spreading toward the date is the friendlier default for a yearly sum.
-        apply({ segment: "yearly", mode: "refill", amountCents, date: defaultYearlyDate() });
+        onChange(
+          templateFromFixedConfig(
+            { segment: "yearly", mode: "refill", amountCents, date: defaultYearlyDate() },
+            template,
+          ),
+        );
         break;
       case "custom":
         apply({
@@ -122,19 +149,52 @@ export function FixedEditor({
     }
   };
 
-  const modeValue = t(
-    config.mode === "refill"
-      ? "goals.fixed.refillUpTo"
-      : config.mode === "spend"
-        ? "goals.fixed.spendDown"
-        : "goals.fixed.setAside",
-    { amount: formatCents(config.amountCents) },
-  );
+  const selectSource = (next: AmountSource) => {
+    setIsCustom(true);
+    onChangeType(next === "fixed" ? "fixed" : next);
+  };
+
+  const modeValue = config
+    ? t(
+        config.mode === "refill"
+          ? "goals.fixed.refillUpTo"
+          : config.mode === "spend"
+            ? "goals.fixed.spendDown"
+            : "goals.fixed.setAside",
+        { amount: formatCents(config.amountCents) },
+      )
+    : null;
 
   // Only worth opening the pane when there's actually a choice: a one-shot
   // target can only be refill, a daily/weekly repeat can only be set-aside.
   const modeIsChoosable =
-    config.segment !== "custom" || allowedCustomModes(config.repeat).length > 1;
+    config != null && (config.segment !== "custom" || allowedCustomModes(config.repeat).length > 1);
+
+  const renderSourceRows = () => {
+    switch (source) {
+      case "percentage":
+        return <PercentageRows template={template as PercentageTemplate} onChange={onChange} />;
+      case "historical":
+        return (
+          <HistoricalRows
+            template={template as AverageTemplate | CopyTemplate}
+            onChange={onChange}
+          />
+        );
+      case "schedule":
+        return (
+          <ScheduleRows
+            template={template as ScheduleTemplate}
+            schedules={schedules}
+            onChange={onChange}
+          />
+        );
+      case "remainder":
+        return <RemainderRows template={template as RemainderTemplate} onChange={onChange} />;
+      case "fixed":
+        return null;
+    }
+  };
 
   return (
     <View className="gap-3">
@@ -160,9 +220,26 @@ export function FixedEditor({
         </View>
         <Separator className="mx-4" />
 
-        <AmountRow label={t("goals.fields.amount")} cents={config.amountCents} />
+        {segment === "custom" ? (
+          <Fragment>
+            <SelectFieldRow<AmountSource>
+              icon={Sigma}
+              label={t("goals.fixed.basedOn")}
+              value={source}
+              choices={SOURCES.map((s) => ({ value: s, label: t(`goals.sources.${s}`) }))}
+              onChange={selectSource}
+            />
+            <Separator className="mx-4" />
+          </Fragment>
+        ) : null}
 
-        {config.segment === "weekly" ? (
+        {config ? (
+          <AmountRow label={t("goals.fields.amount")} cents={config.amountCents} />
+        ) : (
+          renderSourceRows()
+        )}
+
+        {config?.segment === "weekly" ? (
           <Fragment>
             <Separator className="mx-4" />
             <SelectFieldRow<string>
@@ -178,7 +255,7 @@ export function FixedEditor({
           </Fragment>
         ) : null}
 
-        {config.segment === "monthly" && config.mode === "refill" ? (
+        {config?.segment === "monthly" && config.mode === "refill" ? (
           <Fragment>
             <Separator className="mx-4" />
             {/* The label is this row's value — the switch says the rest. */}
@@ -195,7 +272,7 @@ export function FixedEditor({
           </Fragment>
         ) : null}
 
-        {config.segment === "monthly" && config.mode === "setAside" ? (
+        {config?.segment === "monthly" && config.mode === "setAside" ? (
           <Fragment>
             <Separator className="mx-4" />
             <SelectFieldRow<string>
@@ -211,7 +288,7 @@ export function FixedEditor({
           </Fragment>
         ) : null}
 
-        {config.segment === "yearly" ? (
+        {config?.segment === "yearly" ? (
           <Fragment>
             <Separator className="mx-4" />
             <DateFieldRow
@@ -226,24 +303,28 @@ export function FixedEditor({
           </Fragment>
         ) : null}
 
-        <Separator className="mx-4" />
-        <FieldRow
-          onPress={modeIsChoosable ? () => onOpenModePane(segment === "custom") : undefined}
-        >
-          <FieldRow.Icon icon={Repeat2} />
-          <FieldRow.Content>
-            <FieldRow.Label>{t("goals.fixed.nextTime")}</FieldRow.Label>
-            <FieldRow.Value>{modeValue}</FieldRow.Value>
-          </FieldRow.Content>
-          {modeIsChoosable ? (
-            <FieldRow.Suffix>
-              <ChevronRight size={16} color={muted} />
-            </FieldRow.Suffix>
-          ) : null}
-        </FieldRow>
+        {modeValue ? (
+          <Fragment>
+            <Separator className="mx-4" />
+            <FieldRow
+              onPress={modeIsChoosable ? () => onOpenModePane(segment === "custom") : undefined}
+            >
+              <FieldRow.Icon icon={Repeat2} />
+              <FieldRow.Content>
+                <FieldRow.Label>{t("goals.fixed.nextTime")}</FieldRow.Label>
+                <FieldRow.Value>{modeValue}</FieldRow.Value>
+              </FieldRow.Content>
+              {modeIsChoosable ? (
+                <FieldRow.Suffix>
+                  <ChevronRight size={16} color={muted} />
+                </FieldRow.Suffix>
+              ) : null}
+            </FieldRow>
+          </Fragment>
+        ) : null}
       </ListGroup>
 
-      {config.segment === "custom" ? (
+      {config?.segment === "custom" ? (
         <ListGroup>
           <DateFieldRow
             icon={CalendarDays}

@@ -1,10 +1,13 @@
+import { Fragment } from "react";
 import { useTranslation } from "react-i18next";
-import { ListGroup, Separator } from "heroui-native";
+import { ListGroup, Separator, Switch } from "heroui-native";
+import { Archive, CalendarDays, RotateCcw } from "lucide-react-native";
 import { todayStr } from "@/lib/date";
 import type { LimitTemplate } from "@/core/domain/goals/types";
-import { DayField } from "../fields/DayField";
-import { SelectRow } from "../fields/SelectRow";
-import { SwitchRow } from "../fields/SwitchRow";
+import { AmountRow } from "../fields/AmountRow";
+import { DateFieldRow } from "../fields/DateFieldRow";
+import { FieldRow } from "../fields/FieldRow";
+import { SelectFieldRow } from "../fields/SelectFieldRow";
 
 type Period = LimitTemplate["period"];
 
@@ -36,7 +39,11 @@ export function LimitEditor({
 
   return (
     <ListGroup>
-      <SelectRow<Period>
+      <AmountRow label={t("goals.fields.capAmount")} cents={Math.round(template.amount * 100)} />
+      <Separator className="mx-4" />
+
+      <SelectFieldRow<Period>
+        icon={RotateCcw}
         label={t("goals.fields.resetPeriod")}
         value={template.period}
         choices={[
@@ -48,27 +55,32 @@ export function LimitEditor({
       />
 
       {template.period === "weekly" ? (
-        <>
+        <Fragment>
           <Separator className="mx-4" />
-          <DayField
+          <DateFieldRow
+            icon={CalendarDays}
             label={t("goals.fields.weekStartsOn")}
-            description={t("goals.fields.weekStartsOnHint")}
             value={template.start}
             onChange={(start) => onChange({ ...template, start })}
           />
-        </>
+        </Fragment>
       ) : null}
 
       {template.period === "monthly" ? (
-        <>
+        <Fragment>
           <Separator className="mx-4" />
-          <SwitchRow
-            label={t("goals.fields.keepSurplus")}
-            description={t("goals.fields.keepSurplusHint")}
-            isSelected={template.hold}
-            onChange={(hold) => onChange({ ...template, hold })}
-          />
-        </>
+          {/* The label is this row's value — the switch says the rest. */}
+          <FieldRow isMuted={!template.hold}>
+            <FieldRow.Icon icon={Archive} />
+            <FieldRow.Title>{t("goals.fixed.keepSurplus")}</FieldRow.Title>
+            <FieldRow.Suffix>
+              <Switch
+                isSelected={template.hold}
+                onSelectedChange={(hold) => onChange({ ...template, hold })}
+              />
+            </FieldRow.Suffix>
+          </FieldRow>
+        </Fragment>
       ) : null}
     </ListGroup>
   );

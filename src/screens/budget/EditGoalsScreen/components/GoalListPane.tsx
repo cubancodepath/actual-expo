@@ -1,21 +1,27 @@
 import { Fragment } from "react";
-import { Alert, View } from "react-native";
+import { View } from "react-native";
 import { useTranslation } from "react-i18next";
-import { Button, ListGroup, Separator, Typography, useThemeColor } from "heroui-native";
-import { Info, Plus, Target, TriangleAlert } from "lucide-react-native";
+import { Button, ListGroup, Separator, Switch, Typography, useThemeColor } from "heroui-native";
+import { EmptyState } from "heroui-native-pro";
+import { Info, Target, TriangleAlert } from "lucide-react-native";
 import {
+  describeTemplate,
   NON_CONTRIBUTION_TYPES,
+  translateDescription,
   type AutomationEntry,
   type AutomationErrorKind,
   type GlobalConflictKind,
 } from "@/core/domain/goals";
 import type { Schedule } from "@/core/domain/schedules/types";
 import { GoalListRow } from "./GoalListRow";
-import { conflictMessageKey } from "../messages";
+import { displayTypeMeta } from "../displayTypeMeta";
+import { conflictMessageKey, isSilentError } from "../messages";
 
 /**
- * The category's automations. Contributing goals come first, in the order the
- * engine funds them, then the options that cap or observe those goals.
+ * Two parallel sections, always both: the goals that budget money (a tappable
+ * add-first-goal card when there are none — no floating hero, so the layout
+ * holds its shape empty or full) and the category-wide limits & tracking
+ * switches.
  */
 export function GoalListPane({
   entries,
@@ -23,26 +29,28 @@ export function GoalListPane({
   errorsByEntry,
   conflicts,
   importedFromNotes,
-  isSaving,
   onOpenEntry,
   onAddGoal,
-  onRemoveAll,
+  onAddOption,
+  onRemoveOption,
 }: {
   entries: AutomationEntry[];
   schedules: Schedule[];
   errorsByEntry: Map<string, AutomationErrorKind>;
   conflicts: GlobalConflictKind[];
   importedFromNotes: boolean;
-  isSaving: boolean;
   onOpenEntry: (entryId: string) => void;
-  /** Create a goal and open its editor — no type question, Fixed is the default. */
+  /** Start a fresh goal — same flow as the header's ＋. */
   onAddGoal: () => void;
-  onRemoveAll: () => void;
+  /** Switch a cap/target on: create it and open its editor. */
+  onAddOption: (type: "limit" | "goal") => void;
+  /** Switch it off: remove it (persists at once). */
+  onRemoveOption: (entryId: string) => void;
 }) {
-  const { t } = useTranslation("budget");
+  const { t, i18n } = useTranslation("budget");
   const muted = useThemeColor("muted");
-  const danger = useThemeColor("danger");
   const foreground = useThemeColor("foreground");
+  const danger = useThemeColor("danger");
 
   const scheduleNameFor = (entry: AutomationEntry) => {
     if (entry.template.type !== "schedule") return undefined;
@@ -52,34 +60,70 @@ export function GoalListPane({
   };
 
   const goals = entries.filter((e) => !NON_CONTRIBUTION_TYPES.has(e.displayType));
-  const options = entries.filter((e) => NON_CONTRIBUTION_TYPES.has(e.displayType));
-
-  const confirmRemoveAll = () =>
-    Alert.alert(t("goals.removeAllTitle"), t("goals.removeAllMessage"), [
-      { text: t("goals.cancel"), style: "cancel" },
-      { text: t("goals.removeAllConfirm"), style: "destructive", onPress: onRemoveAll },
-    ]);
-
-  const renderRows = (list: AutomationEntry[]) => (
-    <ListGroup>
-      {list.map((entry, i) => (
-        <Fragment key={entry.id}>
-          {i > 0 ? <Separator className="mx-4" /> : null}
-          <GoalListRow
-            entry={entry}
-            error={errorsByEntry.get(entry.id)}
-            scheduleName={scheduleNameFor(entry)}
-            onPress={() => onOpenEntry(entry.id)}
-          />
-        </Fragment>
-      ))}
-    </ListGroup>
+  const capEntry = entries.find((e) => e.displayType === "limit");
+  const targetEntry = entries.find((e) => e.displayType === "goal");
+  // Externally-authored leftovers (an unfused refill) — still shown as rows.
+  const strayOptions = entries.filter(
+    (e) => NON_CONTRIBUTION_TYPES.has(e.displayType) && e !== capEntry && e !== targetEntry,
   );
 
+  /**
+   * A category-wide setting, switched like one: on creates it and opens its
+   * editor, off removes it. The cap's switch disables without a contributing
+   * goal — a ceiling with nothing under it budgets nothing, and the greyed
+   * switch says so before the user trips on it.
+   */
+  const renderOptionSlot = (
+    type: "limit" | "goal",
+    entry: AutomationEntry | undefined,
+    isDisabled = false,
+  ) => {
+    const meta = displayTypeMeta[type];
+    const Icon = meta.icon;
+    const error = entry ? errorsByEntry.get(entry.id) : undefined;
+    const flagged = error != null && !isSilentError(error);
+    const summary = entry
+      ? translateDescription(describeTemplate(entry.template, i18n.language), t)
+      : null;
+
+    return (
+      <ListGroup.Item
+        disabled={isDisabled}
+        onPress={entry ? () => onOpenEntry(entry.id) : () => onAddOption(type)}
+      >
+        <ListGroup.ItemPrefix>
+          <View className="w-6 items-center justify-center">
+            <Icon size={18} color={flagged ? danger : entry ? foreground : muted} />
+          </View>
+        </ListGroup.ItemPrefix>
+        <ListGroup.ItemContent>
+          <ListGroup.ItemTitle className={entry && !isDisabled ? undefined : "text-muted"}>
+            {t(meta.labelKey)}
+          </ListGroup.ItemTitle>
+          {summary ? (
+            <Typography className="text-sm text-muted" numberOfLines={2}>
+              {summary}
+            </Typography>
+          ) : null}
+        </ListGroup.ItemContent>
+        <ListGroup.ItemSuffix>
+          <Switch
+            isSelected={entry != null}
+            isDisabled={isDisabled}
+            onSelectedChange={(on) => {
+              if (on) onAddOption(type);
+              else if (entry) onRemoveOption(entry.id);
+            }}
+          />
+        </ListGroup.ItemSuffix>
+      </ListGroup.Item>
+    );
+  };
+
   return (
-    <View className="px-4 pb-8">
+    <View className="gap-6 px-4 pt-2 pb-8">
       {importedFromNotes ? (
-        <View className="mb-3 flex-row gap-2 rounded-xl bg-surface p-3">
+        <View className="flex-row gap-2 rounded-xl bg-surface p-3">
           <Info size={18} color={muted} />
           <Typography className="flex-1 text-sm text-muted">
             {t("goals.importedFromNotes")}
@@ -88,7 +132,7 @@ export function GoalListPane({
       ) : null}
 
       {conflicts.map((conflict) => (
-        <View key={conflict.kind} className="mb-3 flex-row gap-2 rounded-xl bg-surface p-3">
+        <View key={conflict.kind} className="flex-row gap-2 rounded-xl bg-surface p-3">
           <TriangleAlert size={18} color={danger} />
           <Typography className="flex-1 text-sm text-danger">
             {t(conflictMessageKey(conflict), conflict as Record<string, unknown>)}
@@ -96,51 +140,55 @@ export function GoalListPane({
         </View>
       ))}
 
-      {entries.length === 0 ? (
-        <View className="items-center gap-2 px-6 py-10">
-          <Target size={40} color={muted} />
-          <Typography className="text-center text-lg font-semibold text-foreground">
-            {t("goals.emptyTitle")}
-          </Typography>
-          <Typography className="text-center text-sm text-muted">
-            {t("goals.emptyMessage")}
-          </Typography>
-        </View>
-      ) : null}
+      <View>
+        <Typography className="mb-1 ml-2 text-xs font-semibold uppercase text-muted">
+          {t("goals.sectionGoals")}
+        </Typography>
+        {goals.length > 0 || strayOptions.length > 0 ? (
+          <ListGroup>
+            {[...goals, ...strayOptions].map((entry, i) => (
+              <Fragment key={entry.id}>
+                {i > 0 ? <Separator className="mx-4" /> : null}
+                <GoalListRow
+                  entry={entry}
+                  error={errorsByEntry.get(entry.id)}
+                  scheduleName={scheduleNameFor(entry)}
+                  onPress={() => onOpenEntry(entry.id)}
+                />
+              </Fragment>
+            ))}
+          </ListGroup>
+        ) : (
+          <EmptyState className="rounded-2xl border border-dashed border-border">
+            <EmptyState.Header>
+              <EmptyState.Media variant="icon">
+                <Target size={20} color={muted} />
+              </EmptyState.Media>
+              <EmptyState.Title>{t("goals.emptyTitle")}</EmptyState.Title>
+              <EmptyState.Description>{t("goals.emptyMessage")}</EmptyState.Description>
+            </EmptyState.Header>
+            <EmptyState.Content>
+              <Button size="sm" onPress={onAddGoal}>
+                {t("goals.addGoal")}
+              </Button>
+            </EmptyState.Content>
+          </EmptyState>
+        )}
+      </View>
 
-      {goals.length > 0 ? (
-        <View className="mb-3">
-          <Typography className="mb-1 ml-2 text-xs font-semibold uppercase text-muted">
-            {t("goals.sectionGoals")}
-          </Typography>
-          {renderRows(goals)}
-          {goals.length > 1 ? (
-            <Typography className="mt-1 ml-2 text-xs text-muted">
-              {t("goals.priorityHint")}
-            </Typography>
-          ) : null}
-        </View>
-      ) : null}
-
-      {options.length > 0 ? (
-        <View className="mb-3">
-          <Typography className="mb-1 ml-2 text-xs font-semibold uppercase text-muted">
-            {t("goals.sectionOptions")}
-          </Typography>
-          {renderRows(options)}
-        </View>
-      ) : null}
-
-      <Button variant="secondary" onPress={onAddGoal}>
-        <Plus size={18} color={foreground} />
-        <Button.Label>{t("goals.addGoal")}</Button.Label>
-      </Button>
-
-      {entries.length > 0 ? (
-        <Button variant="ghost" className="mt-2" isDisabled={isSaving} onPress={confirmRemoveAll}>
-          <Button.Label className="text-danger">{t("goals.removeAll")}</Button.Label>
-        </Button>
-      ) : null}
+      {/* Category-level settings, apart from the goals that budget: the cap
+          tops the whole category (disabled until a goal exists to top) and
+          the target redefines its progress bar. */}
+      <View>
+        <Typography className="mb-1 ml-2 text-xs font-semibold uppercase text-muted">
+          {t("goals.sectionTracking")}
+        </Typography>
+        <ListGroup>
+          {renderOptionSlot("limit", capEntry, goals.length === 0 && capEntry == null)}
+          <Separator className="mx-4" />
+          {renderOptionSlot("goal", targetEntry)}
+        </ListGroup>
+      </View>
     </View>
   );
 }

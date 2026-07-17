@@ -1,21 +1,24 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
+import { View } from "react-native";
 import { useTranslation } from "react-i18next";
-import { ListGroup, Separator } from "heroui-native";
+import { Separator, Typography, useThemeColor } from "heroui-native";
+import { CalendarClock, ChevronDown, Repeat2 } from "lucide-react-native";
 import type { ScheduleTemplate } from "@/core/domain/goals/types";
 import type { Schedule } from "@/core/domain/schedules/types";
 import { AdjustmentField } from "../fields/AdjustmentField";
-import { OptionRow } from "../fields/OptionRow";
-import { SelectRow } from "../fields/SelectRow";
+import { FieldRow } from "../fields/FieldRow";
+import { SelectFieldRow } from "../fields/SelectFieldRow";
 import { SchedulePickerSheet } from "../SchedulePickerSheet";
 
 type SavingsMode = "saveUp" | "full";
 
 /**
- * Fund an existing schedule. Both the id and the name are stored: the engine
- * matches on either, and desktop's note format (`#template schedule Internet`)
- * only carries the name.
+ * Rows for a schedule-derived amount — rendered inside the goal editor's card
+ * when Custom's "Based on" picks a schedule. Both the id and the name are
+ * stored: the engine matches on either, and desktop's note format
+ * (`#template schedule Internet`) only carries the name.
  */
-export function ScheduleEditor({
+export function ScheduleRows({
   template,
   schedules,
   onChange,
@@ -25,6 +28,7 @@ export function ScheduleEditor({
   onChange: (next: ScheduleTemplate) => void;
 }) {
   const { t } = useTranslation("budget");
+  const muted = useThemeColor("muted");
   const [pickerOpen, setPickerOpen] = useState(false);
 
   const linked = schedules.find((s) =>
@@ -32,29 +36,34 @@ export function ScheduleEditor({
   );
 
   return (
-    <>
-      <ListGroup>
-        <OptionRow
-          label={t("goals.fields.schedule")}
-          value={linked?.name ?? t("goals.notLinked")}
-          onPress={() => setPickerOpen(true)}
-        />
-        <Separator className="mx-4" />
-        <SelectRow<SavingsMode>
-          label={t("goals.fields.savingsMode")}
-          description={
-            template.full ? t("goals.savingsMode.fullHint") : t("goals.savingsMode.saveUpHint")
-          }
-          value={template.full ? "full" : "saveUp"}
-          choices={[
-            { value: "saveUp", label: t("goals.savingsMode.saveUp") },
-            { value: "full", label: t("goals.savingsMode.full") },
-          ]}
-          onChange={(mode) => onChange({ ...template, full: mode === "full" })}
-        />
-        <Separator className="mx-4" />
-        <AdjustmentField value={template} onChange={(adj) => onChange({ ...template, ...adj })} />
-      </ListGroup>
+    <Fragment>
+      <FieldRow onPress={() => setPickerOpen(true)}>
+        <FieldRow.Icon icon={CalendarClock} />
+        <FieldRow.Content>
+          <FieldRow.Label>{t("goals.fields.schedule")}</FieldRow.Label>
+          <View className="flex-row items-center justify-between">
+            <Typography className="text-base text-foreground">
+              {linked?.name ?? t("goals.notLinked")}
+            </Typography>
+            <ChevronDown size={16} color={muted} />
+          </View>
+        </FieldRow.Content>
+      </FieldRow>
+      <Separator className="mx-4" />
+      {/* The schedule's own "next time I want to": save toward it, or pay it
+          whole when it lands. */}
+      <SelectFieldRow<SavingsMode>
+        icon={Repeat2}
+        label={t("goals.fixed.nextTime")}
+        value={template.full ? "full" : "saveUp"}
+        choices={[
+          { value: "saveUp", label: t("goals.savingsMode.saveUp") },
+          { value: "full", label: t("goals.savingsMode.full") },
+        ]}
+        onChange={(mode) => onChange({ ...template, full: mode === "full" })}
+      />
+      <Separator className="mx-4" />
+      <AdjustmentField value={template} onChange={(adj) => onChange({ ...template, ...adj })} />
 
       <SchedulePickerSheet
         isOpen={pickerOpen}
@@ -65,6 +74,6 @@ export function ScheduleEditor({
           onChange({ ...template, scheduleId: schedule.id, name: schedule.name ?? undefined })
         }
       />
-    </>
+    </Fragment>
   );
 }

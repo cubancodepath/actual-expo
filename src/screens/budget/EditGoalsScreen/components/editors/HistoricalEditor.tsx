@@ -1,19 +1,21 @@
+import { Fragment } from "react";
 import { useTranslation } from "react-i18next";
-import { ListGroup, Separator } from "heroui-native";
-import { Segment } from "heroui-native-pro";
+import { Separator } from "heroui-native";
+import { CalendarSearch, History } from "lucide-react-native";
 import type { AverageTemplate, CopyTemplate } from "@/core/domain/goals/types";
 import { AdjustmentField } from "../fields/AdjustmentField";
-import { OptionRow } from "../fields/OptionRow";
-import { StepperRow } from "../fields/StepperRow";
+import { SelectFieldRow } from "../fields/SelectFieldRow";
+import { StepperFieldRow } from "../fields/StepperFieldRow";
 
 type Template = AverageTemplate | CopyTemplate;
-type Mode = "average" | "copy";
+type Method = "average" | "copy";
 
 /**
- * Budget from what this category did before: the average of the last N months,
- * or a straight copy of one earlier month.
+ * Rows for a history-derived amount — rendered inside the goal editor's card
+ * when Custom's "Based on" picks past spending: the average of the last N
+ * months, or a straight copy of one earlier month.
  */
-export function HistoricalEditor({
+export function HistoricalRows({
   template,
   onChange,
 }: {
@@ -22,10 +24,10 @@ export function HistoricalEditor({
 }) {
   const { t } = useTranslation("budget");
 
-  const mode: Mode = template.type === "average" ? "average" : "copy";
+  const method: Method = template.type === "average" ? "average" : "copy";
 
-  const setMode = (next: Mode) => {
-    if (next === mode) return;
+  const setMethod = (next: Method) => {
+    if (next === method) return;
     if (next === "average") {
       onChange({
         type: "average",
@@ -34,35 +36,28 @@ export function HistoricalEditor({
         directive: "template",
       });
     } else {
-      onChange({
-        type: "copy",
-        lookBack: 1,
-        priority: template.priority,
-        directive: "template",
-      });
+      onChange({ type: "copy", lookBack: 1, priority: template.priority, directive: "template" });
     }
   };
 
   return (
-    <ListGroup>
-      <OptionRow label={t("goals.fields.basedOn")}>
-        <Segment value={mode} size="sm" onValueChange={(v) => setMode(v as Mode)}>
-          <Segment.Group>
-            <Segment.Indicator />
-            <Segment.Item value="average">
-              <Segment.Label>{t("goals.historical.average")}</Segment.Label>
-            </Segment.Item>
-            <Segment.Item value="copy">
-              <Segment.Label>{t("goals.historical.copy")}</Segment.Label>
-            </Segment.Item>
-          </Segment.Group>
-        </Segment>
-      </OptionRow>
+    <Fragment>
+      <SelectFieldRow<Method>
+        icon={History}
+        label={t("goals.fields.method")}
+        value={method}
+        choices={[
+          { value: "average", label: t("goals.historical.average") },
+          { value: "copy", label: t("goals.historical.copy") },
+        ]}
+        onChange={setMethod}
+      />
       <Separator className="mx-4" />
 
       {template.type === "average" ? (
-        <>
-          <StepperRow
+        <Fragment>
+          <StepperFieldRow
+            icon={CalendarSearch}
             label={t("goals.fields.lookBackMonths")}
             value={template.numMonths}
             onChange={(numMonths) => onChange({ ...template, numMonths })}
@@ -71,17 +66,17 @@ export function HistoricalEditor({
           />
           <Separator className="mx-4" />
           <AdjustmentField value={template} onChange={(adj) => onChange({ ...template, ...adj })} />
-        </>
+        </Fragment>
       ) : (
-        <StepperRow
+        <StepperFieldRow
+          icon={CalendarSearch}
           label={t("goals.fields.copyFrom")}
-          description={t("goals.fields.copyFromHint")}
           value={template.lookBack}
           onChange={(lookBack) => onChange({ ...template, lookBack })}
           minValue={1}
           maxValue={24}
         />
       )}
-    </ListGroup>
+    </Fragment>
   );
 }

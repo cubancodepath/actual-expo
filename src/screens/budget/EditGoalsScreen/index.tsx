@@ -1,8 +1,9 @@
 import { useCallback } from "react";
-import { Alert, View } from "react-native";
+import { View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Button, Spinner, Typography } from "heroui-native";
+import { Plus } from "lucide-react-native";
 import { ScreenHeader } from "@/ui/ScreenHeader";
 import { CloseButton } from "@/ui/CloseButton";
 import { useCategories } from "@/hooks/useCategories";
@@ -13,8 +14,12 @@ import { useGoalAutomationsContext } from "./context/GoalAutomationsProvider";
  * Edit Goals — the list screen of the goal stack (`/(auth)/budget/goal`).
  *
  * The stack mirrors the transaction modal: a card modal containing its own
- * native stack (list → editor → mode), with the draft held above it in
+ * native stack (list → editor → mode), with the edit session held above it in
  * GoalAutomationsProvider so pushes and pops keep the in-progress edits.
+ *
+ * Everything this list shows is saved state — edits live in the session's
+ * form until their save lands — so closing from here never has anything to
+ * discard.
  */
 export function GoalsListScreen() {
   const { t } = useTranslation("budget");
@@ -28,52 +33,43 @@ export function GoalsListScreen() {
     schedules,
     isLoading,
     loadError,
-    isSaving,
-    isDirty,
     importedFromNotes,
     errorsByEntry,
     conflicts,
-    hasErrors,
-    addEntry,
-    save,
-    removeAll,
+    startNew,
+    startEdit,
+    deleteEntry,
     dismiss,
   } = useGoalAutomationsContext();
 
+  const pushEditor = useCallback(() => {
+    router.push("/(auth)/budget/goal/editor");
+  }, [router]);
+
   const openEntry = useCallback(
     (entryId: string) => {
-      router.push({ pathname: "/(auth)/budget/goal/editor", params: { entryId } });
+      const entry = entries.find((e) => e.id === entryId);
+      if (!entry) return;
+      startEdit(entry);
+      pushEditor();
     },
-    [router],
+    [entries, startEdit, pushEditor],
   );
 
   // No type question on the way in: a recurring amount is what a goal almost
-  // always is, and the editor's "Change goal type" covers the rest.
+  // always is, and the editor's "Based on" row covers the rest.
   const handleAdd = useCallback(() => {
-    const entry = addEntry("fixed");
-    openEntry(entry.id);
-  }, [addEntry, openEntry]);
+    startNew("fixed");
+    pushEditor();
+  }, [startNew, pushEditor]);
 
-  const handleClose = useCallback(() => {
-    if (!isDirty) {
-      dismiss();
-      return;
-    }
-    Alert.alert(t("goals.discardTitle"), t("goals.discardMessage"), [
-      { text: t("goals.keepEditing"), style: "cancel" },
-      { text: t("goals.discard"), style: "destructive", onPress: dismiss },
-    ]);
-  }, [isDirty, dismiss, t]);
-
-  const handleSave = useCallback(async () => {
-    await save();
-    dismiss();
-  }, [save, dismiss]);
-
-  const handleRemoveAll = useCallback(async () => {
-    await removeAll();
-    dismiss();
-  }, [removeAll, dismiss]);
+  const handleAddOption = useCallback(
+    (type: "limit" | "goal") => {
+      startNew(type);
+      pushEditor();
+    },
+    [startNew, pushEditor],
+  );
 
   return (
     <ScreenHeader.ScrollArea>
@@ -95,10 +91,10 @@ export function GoalsListScreen() {
             errorsByEntry={errorsByEntry}
             conflicts={conflicts}
             importedFromNotes={importedFromNotes}
-            isSaving={isSaving}
             onOpenEntry={openEntry}
             onAddGoal={handleAdd}
-            onRemoveAll={handleRemoveAll}
+            onAddOption={handleAddOption}
+            onRemoveOption={(entryId) => void deleteEntry(entryId)}
           />
         )}
       </ScreenHeader.Body>
@@ -106,12 +102,15 @@ export function GoalsListScreen() {
       <ScreenHeader.Floating>
         <ScreenHeader>
           <ScreenHeader.Back>
-            <CloseButton onPress={handleClose} />
+            <CloseButton onPress={dismiss} />
           </ScreenHeader.Back>
           <ScreenHeader.Title>{category?.name ?? t("goals.title")}</ScreenHeader.Title>
           <ScreenHeader.Actions>
-            <Button isDisabled={!isDirty || hasErrors || isSaving} onPress={handleSave}>
-              <Button.Label>{t("goals.done")}</Button.Label>
+            {/* Saving is per-target now — the header's action is adding. It
+                stays put on empty lists: the empty state's CTA duplicates it
+                rather than replacing the persistent anchor. */}
+            <Button isIconOnly accessibilityLabel={t("goals.addGoal")} onPress={handleAdd}>
+              <Plus size={22} color="white" />
             </Button>
           </ScreenHeader.Actions>
         </ScreenHeader>

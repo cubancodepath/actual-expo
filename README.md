@@ -89,7 +89,7 @@ npx tsc --noEmit
 | Encryption      | AES-256-GCM via @noble/ciphers                                               |
 | Crash reporting | [Sentry](https://sentry.io/)                                                 |
 | i18n            | [react-i18next](https://react.i18next.com/)                                  |
-| Testing         | [Vitest](https://vitest.dev/)                                               |
+| Testing         | [Vitest](https://vitest.dev/)                                                |
 
 ## Architecture
 

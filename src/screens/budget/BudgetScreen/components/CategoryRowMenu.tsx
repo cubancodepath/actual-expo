@@ -28,6 +28,8 @@ interface CategoryRowMenuProps {
   rect: RowRect;
   /** Fired once the floating clone has laid out — the live row hides itself then. */
   onPreviewLayout: () => void;
+  /** Open the new-transaction form seeded with the row's category. */
+  onAddTransaction: () => void;
   /** Open the move-money screen for the row the menu belongs to. */
   onMoveMoney: () => void;
 }
@@ -44,15 +46,15 @@ const PREVIEW_IN = FadeIn.duration(50);
 /**
  * Popover content for a budget category's long-press menu, plus the iOS-style
  * "lift": a clone of the pressed row rendered inside the portal — above the dim
- * overlay — at the row's measured frame, slightly scaled down as if held. Only
- * Move Money is wired up; the other actions render label + icon and call `noop`
- * until they're implemented. Mounted inside the single `<Menu>` that
- * `BudgetScreen` opens for whichever row was long-pressed.
+ * overlay — at the row's measured frame, slightly scaled down as if held. The
+ * actions still on `noop` are the ones not implemented yet. Mounted inside the
+ * single `<Menu>` that `BudgetScreen` opens for whichever row was long-pressed.
  */
 export function CategoryRowMenu({
   preview,
   rect,
   onPreviewLayout,
+  onAddTransaction,
   onMoveMoney,
 }: CategoryRowMenuProps) {
   const { t } = useTranslation("budget");
@@ -86,7 +88,7 @@ export function CategoryRowMenu({
         {preview}
       </Animated.View>
       <Menu.Content presentation="popover" width={240} placement={placement} align="start">
-        <Menu.Item className="gap-3" onPress={noop}>
+        <Menu.Item className="gap-3" onPress={onAddTransaction}>
           <CirclePlus size={18} color={foreground} />
           <Menu.ItemTitle>{t("categoryMenu.addTransaction")}</Menu.ItemTitle>
         </Menu.Item>

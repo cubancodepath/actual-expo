@@ -258,6 +258,14 @@ export function BudgetScreen() {
           <CategoryRowMenu
             rect={menuTarget.rect}
             onPreviewLayout={() => setPreviewShown(true)}
+            // The form seeds from these params; the name goes along because,
+            // unlike accountName, it isn't looked up from the id.
+            onAddTransaction={() =>
+              router.push({
+                pathname: "/(auth)/transaction/new",
+                params: { categoryId: menuTarget.catId, categoryName: menuTarget.catName },
+              })
+            }
             onMoveMoney={() =>
               router.push({
                 pathname: "/(auth)/budget/move-money",

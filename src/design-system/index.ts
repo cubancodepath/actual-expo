@@ -29,12 +29,6 @@ export { EmptyState, type EmptyStateProps } from "./molecules/EmptyState";
 export { Banner, type BannerProps } from "./molecules/Banner";
 export { KeyboardToolbar } from "./molecules/KeyboardToolbar";
 export { SyncBadge } from "./molecules/SyncBadge";
-export {
-  CategoryPickerList,
-  type CategoryPickerListProps,
-  type GroupedCategory,
-  type PickerCategory,
-} from "./molecules/CategoryPickerList";
 export { UndoToast } from "./molecules/UndoToast";
 // NOTE: feature components (CurrencyInput, MonthPicker, budget list items, banners)
 // are NOT re-exported here. Import them directly from @/features/... to keep the

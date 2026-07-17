@@ -11,7 +11,6 @@ export default function TransactionLayout() {
     <TransactionFormProvider>
       <Stack screenOptions={{ ...screen, headerBackButtonDisplayMode: "minimal" }}>
         <Stack.Screen name="new" options={{ title: "New Transaction", headerShown: false }} />
-        <Stack.Screen name="payee-picker" options={{ headerShown: false }} />
         <Stack.Screen name="category-picker" options={{ headerShown: false }} />
         <Stack.Screen name="payee-select" options={{ headerShown: false }} />
         <Stack.Screen name="category-select" options={{ headerShown: false }} />

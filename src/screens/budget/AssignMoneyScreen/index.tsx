@@ -12,7 +12,7 @@ import { batchMessages } from "@/core/sync/batch";
 import { useSheetValueNumber } from "@/hooks/useSheetValue";
 import { useBudgetMonth } from "@/screens/budget/hooks/useBudgetMonth";
 import { HIDDEN_GROUP_ID, useBudgetSections } from "@/screens/budget/hooks/useBudgetSections";
-import { BudgetListSkeleton } from "@/features/budget/components/BudgetListSkeleton";
+import { BudgetListSkeleton } from "@/screens/budget/components/BudgetListSkeleton";
 import { AmountKeyboard, useAmountKeyboardAvoidance } from "@/ui/amount-keyboard";
 import {
   ScreenHeaderBack,

@@ -25,7 +25,7 @@ import {
 import { useUndoStore } from "@/stores/undoStore";
 import type { SearchToken } from "@/core/domain/transactions/types";
 import { useAccounts } from "@/features/accounts/hooks/useAccounts";
-import { useCategories } from "@/features/budget/hooks/useCategories";
+import { useCategories } from "@/screens/budget/hooks/useCategories";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { EmptyState } from "@/design-system";
 import { TransactionListItem } from "@/features/accounts/components/TransactionListItem";

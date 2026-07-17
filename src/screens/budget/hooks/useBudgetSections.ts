@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useCategories } from "@/features/budget/hooks/useCategories";
+import { useCategories } from "@/screens/budget/hooks/useCategories";
 
 /** Synthetic group id that collects hidden categories at the bottom of the list. */
 export const HIDDEN_GROUP_ID = "__hidden__";

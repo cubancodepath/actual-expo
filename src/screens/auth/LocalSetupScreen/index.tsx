@@ -7,7 +7,7 @@ import { listLocalBudgets, type BudgetMetadata } from "@/services/budgetMetadata
 import { openBudget, type ReconciledBudgetFile } from "@/services/budgetfiles";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import { BudgetFileRow } from "@/ui/BudgetFileRow";
-import { BudgetSetupWizard } from "@/features/budget/components/BudgetSetupWizard";
+import { BudgetSetupWizard } from "@/screens/auth/components/BudgetSetupWizard";
 
 type ScreenState = "loading" | "picker" | "wizard";
 

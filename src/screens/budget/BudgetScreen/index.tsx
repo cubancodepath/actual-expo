@@ -10,7 +10,7 @@ import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { useBudgetMonth } from "@/screens/budget/hooks/useBudgetMonth";
 import { HIDDEN_GROUP_ID, useBudgetSections } from "@/screens/budget/hooks/useBudgetSections";
 import { BudgetHeader } from "@/screens/budget/components/BudgetHeader";
-import { BudgetListSkeleton } from "@/features/budget/components/BudgetListSkeleton";
+import { BudgetListSkeleton } from "@/screens/budget/components/BudgetListSkeleton";
 import { AddTransactionFab } from "@/ui/AddTransactionFab";
 import { AmountKeyboard, useAmountKeyboardAvoidance } from "@/ui/amount-keyboard";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";

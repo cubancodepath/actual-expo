@@ -9,6 +9,7 @@
   "offBudgetAccounts": "Off-Budget Accounts",
   "payee": "Payee",
   "category": "Category",
+  "noCategoryOption": "No category",
   "repeat": "Repeat",
   "tags": "Tags",
 
@@ -48,6 +49,7 @@
   "transferNoCategoryMessage": "Transfers between accounts don\u2019t need a category.",
 
   "splitTransaction": "Split Transaction",
+  "split": "Split",
   "next": "Next",
   "selectCategory": "Select category",
   "categories": "CATEGORIES",

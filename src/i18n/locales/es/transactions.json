@@ -9,6 +9,8 @@
   "offBudgetAccounts": "Cuentas fuera de presupuesto",
   "payee": "Beneficiario",
   "category": "Categoría",
+  "noCategoryOption": "Sin categoría",
+  "split": "Dividir",
   "repeat": "Repetir",
   "tags": "Etiquetas",
 

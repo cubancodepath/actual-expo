@@ -84,13 +84,18 @@ export async function batchMessages(fn: () => Promise<void>): Promise<void> {
   _isBatching = true;
   try {
     await fn();
+  } catch (err) {
+    // A failed batch must apply nothing: discard the buffer (upstream
+    // loot-core only sends after the body completes).
+    _batched = [];
+    throw err;
   } finally {
     _isBatching = false;
-    const batched = _batched;
-    _batched = [];
-    if (batched.length > 0) {
-      await _applyAndRecord(batched);
-    }
+  }
+  const batched = _batched;
+  _batched = [];
+  if (batched.length > 0) {
+    await _applyAndRecord(batched);
   }
 }
 

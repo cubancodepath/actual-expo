@@ -102,10 +102,7 @@ describe("budgets/index — setBudgetAmount / transferAvailable / transfer* char
 
       // Direction semantics verified by reading index.ts:572-697 directly:
       // for direction "to", each source's amount -= amountCents and the
-      // target's amount += amountCents (sources give TO the target). This
-      // matches the categories→categories path in
-      // app/(auth)/budget/move-money.tsx:294-322, which passes
-      // `direction === "to" ? "to" : "from"` straight through unchanged.
+      // target's amount += amountCents (sources give TO the target).
       await transferMultipleCategories(
         month,
         catB,

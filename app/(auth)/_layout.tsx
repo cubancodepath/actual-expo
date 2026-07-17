@@ -180,29 +180,10 @@ export default function AuthLayout() {
         }}
       />
       <Stack.Screen
-        name="budget/move-money"
-        options={{
-          headerShown: false,
-          presentation: "formSheet",
-          sheetAllowedDetents: [1.0],
-          contentStyle: { backgroundColor: theme.colors.pageBackground },
-        }}
-      />
-      <Stack.Screen
         name="budget/delete-category-picker"
         options={{
           headerShown: false,
           ...modal,
-        }}
-      />
-      <Stack.Screen
-        name="budget/move-category-picker"
-        options={{
-          headerShown: false,
-          presentation: "formSheet",
-          sheetAllowedDetents: [0.5, 1.0],
-          sheetGrabberVisible: true,
-          contentStyle: { backgroundColor: theme.colors.pageBackground },
         }}
       />
       <Stack.Screen name="schedules" options={{ title: t("nav.schedules"), ...modal }} />

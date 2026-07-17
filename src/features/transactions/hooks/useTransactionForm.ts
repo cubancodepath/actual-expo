@@ -4,7 +4,7 @@ import { useRouter, useFocusEffect } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useAccounts } from "@/features/accounts/hooks/useAccounts";
 import { deleteTransaction } from "@/core/domain/transactions";
-import { useCategories } from "@/screens/budget/hooks/useCategories";
+import { useCategories } from "@/hooks/useCategories";
 import { usePickerStore } from "@/stores/pickerStore";
 import { useRules } from "@/features/transactions/hooks/useRules";
 import { getTransactionById, getChildTransactions } from "@/core/domain/transactions";

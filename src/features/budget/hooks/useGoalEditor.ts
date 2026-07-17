@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { useCategories } from "@/screens/budget/hooks/useCategories";
+import { useCategories } from "@/hooks/useCategories";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import type { CurrencyInputRef } from "@/features/transactions/components/currency-input";
 import { getGoalTemplates, setGoalTemplates } from "@/core/domain/goals";

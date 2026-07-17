@@ -8,7 +8,7 @@ import Sortable from "react-native-sortables";
 import { Icon } from "@/design-system/atoms/Icon";
 import * as Haptics from "expo-haptics";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
-import { useCategories } from "@/screens/budget/hooks/useCategories";
+import { useCategories } from "@/hooks/useCategories";
 import { moveCategory, moveCategoryGroup } from "@/core/domain/categories";
 import { Text } from "@/design-system/atoms/Text";
 import { Button } from "@/design-system/atoms/Button";

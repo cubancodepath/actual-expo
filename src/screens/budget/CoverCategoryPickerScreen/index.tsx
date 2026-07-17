@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { ListGroup, SearchField, Separator, Typography } from "heroui-native";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
-import { useCategories } from "@/screens/budget/hooks/useCategories";
+import { useCategories } from "@/hooks/useCategories";
 import { useSheetValueNumber, useSpreadsheetVersion } from "@/hooks/useSheetValue";
 import { envelopeBudget, sheetForMonth } from "@/core/domain/spreadsheet/bindings";
 import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";

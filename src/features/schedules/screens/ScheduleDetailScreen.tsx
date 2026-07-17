@@ -12,7 +12,7 @@ import Animated, {
 import { LinearGradient } from "expo-linear-gradient";
 import { useAccounts } from "@/features/accounts/hooks/useAccounts";
 import { usePayees } from "@/features/transactions/hooks/usePayees";
-import { useCategories } from "@/screens/budget/hooks/useCategories";
+import { useCategories } from "@/hooks/useCategories";
 import { usePickerStore } from "@/stores/pickerStore";
 import { useUndoStore } from "@/stores/undoStore";
 import {

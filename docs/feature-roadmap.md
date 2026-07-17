@@ -15,10 +15,12 @@ Documento vivo para trackear features futuras y su progreso.
 - [x] Auto-sugerir categoria al seleccionar payee en transaction/new
 - [x] Aplicar rules al guardar transacciones nuevas (categoria, notas, cuenta)
 - [x] `userOverrides` ref para no pisar valores de URL params / Apple Intents / picks manuales
+- [x] Pantalla de rules en Settings (`app/(auth)/settings/rules.tsx`) — lista condiciones/acciones en
+      formato legible, con delete (edit/create todavía no existen)
 
 ### Pendiente
 
-- [ ] Pantalla de rules (read-only en Settings) — mostrar condiciones y acciones en formato legible
+- [ ] Editar/crear rules desde la pantalla de Settings (hoy es view + delete)
 - [ ] Aplicar rules en sync — cuando llegan transacciones del servidor (bank sync), pasarlas por el engine
 - [ ] Soporte para condiciones `onBudget`/`offBudget` (requiere enrichment de account)
 - [ ] Soporte para condiciones de fecha recurrente (`RecurConfig`)
@@ -70,12 +72,15 @@ Documento vivo para trackear features futuras y su progreso.
 
 ## Reportes y Graficos
 
+### Completado
+
+- [x] Dashboard de reportes (`app/(auth)/(tabs)/(reports)/index.tsx`) con seis cards:
+      `BudgetProgressCard`, `NetWorthCard`, `CashFlowCard`, `SpendingByCategoryCard`,
+      `SavingsRateCard`, `AgeOfMoneyCard`
+
 ### Pendiente
 
-- [ ] Spending by category (grafico de torta/barras)
-- [ ] Net worth over time
-- [ ] Cash flow mensual
-- [ ] Exportar reportes
+- [ ] Exportar reportes (CSV/PDF) — no implementado todavia
 
 ---
 

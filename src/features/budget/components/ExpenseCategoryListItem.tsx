@@ -33,7 +33,6 @@ interface ExpenseCategoryListItemProps {
   isFirst?: boolean;
   isLast?: boolean;
   onCategoryDetails?: (catId: string, catName: string) => void;
-  onMoveMoney?: (catId: string, catName: string, balance: number) => void;
   onToggleCarryover?: (catId: string, carryover: boolean) => void;
   onViewTransactions?: (catId: string, catName: string) => void;
   onBudgetNotes?: (catName: string) => void;
@@ -55,7 +54,6 @@ export const ExpenseCategoryListItem = memo(function ExpenseCategoryListItem({
   isFirst = false,
   isLast = false,
   onCategoryDetails,
-  onMoveMoney,
   onToggleCarryover,
   onViewTransactions,
   onBudgetNotes,
@@ -344,10 +342,6 @@ export const ExpenseCategoryListItem = memo(function ExpenseCategoryListItem({
         <ContextMenu.Item key="details" onSelect={() => onCategoryDetails?.(cat.id, cat.name)}>
           <ContextMenu.ItemTitle>{t("categoryDetails")}</ContextMenu.ItemTitle>
           <ContextMenu.ItemIcon ios={{ name: "info.circle" }} />
-        </ContextMenu.Item>
-        <ContextMenu.Item key="move" onSelect={() => onMoveMoney?.(cat.id, cat.name, balance)}>
-          <ContextMenu.ItemTitle>{t("moveMoney")}</ContextMenu.ItemTitle>
-          <ContextMenu.ItemIcon ios={{ name: "arrow.left.arrow.right" }} />
         </ContextMenu.Item>
         <ContextMenu.Item key="carryover" onSelect={() => onToggleCarryover?.(cat.id, carryover)}>
           <ContextMenu.ItemTitle>{carryoverLabel}</ContextMenu.ItemTitle>

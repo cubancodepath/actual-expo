@@ -20,7 +20,7 @@ interface UseSharedAmountInputOptions {
 
 /**
  * Composes the shared hidden-input setup pattern used across multi-row
- * currency editing screens (cover-source, move-money, split, assign).
+ * currency editing screens (cover-source, split, assign).
  *
  * Internally wires up: useId, refs, useExpressionMode, useKeyboardBlur,
  * useImperativeHandle (for CalculatorPill), handleChangeText, and currentInputValue.

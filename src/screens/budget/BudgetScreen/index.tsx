@@ -6,6 +6,7 @@ import { Accordion, AccordionLayoutTransition } from "heroui-native";
 import { envelopeBudget, sheetForMonth } from "@/core/domain/spreadsheet/bindings";
 import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
 import { setBudgetAmount } from "@/core/domain/budgets";
+import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { useBudgetMonth } from "@/screens/budget/hooks/useBudgetMonth";
 import { HIDDEN_GROUP_ID, useBudgetSections } from "@/screens/budget/hooks/useBudgetSections";
 import { BudgetHeader } from "@/screens/budget/components/BudgetHeader";
@@ -32,7 +33,11 @@ export function BudgetScreen() {
   const commit = useCallback(
     (catId: string, cents: number) => {
       getSpreadsheet().setByName(sheet, envelopeBudget.catBudgeted(catId), cents);
-      setBudgetAmount(month, catId, cents);
+      setBudgetAmount(month, catId, cents).catch((err) => {
+        // The optimistic cell now lies — surface the failure; the next
+        // spreadsheet recompute from DB will restore the real value.
+        emitErrorEvent(err instanceof Error ? err : new Error(String(err)));
+      });
     },
     [sheet, month],
   );

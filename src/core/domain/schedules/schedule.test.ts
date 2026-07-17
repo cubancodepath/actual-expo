@@ -490,13 +490,15 @@ describe("buildListData", () => {
       previewTransactions: previews,
       upcomingExpanded: true,
     });
-    // header + 2 date headers + 2 upcoming items = 5
-    expect(items).toHaveLength(5);
+    // header + 2 date headers + 2 upcoming items + empty-state (no visible
+    // transactions alongside the schedules) = 6
+    expect(items).toHaveLength(6);
     expect(items[0].type).toBe("upcoming-header");
     expect(items[1].type).toBe("upcoming-date");
     expect(items[2].type).toBe("upcoming");
     expect(items[3].type).toBe("upcoming-date");
     expect(items[4].type).toBe("upcoming");
+    expect(items[5].type).toBe("empty-state");
   });
 
   it("isFirst/isLast flags correct on upcoming items (each is alone in its date group)", () => {

@@ -32,10 +32,15 @@ describe("applyMessages — atomic rollback (fix #2)", () => {
       "SELECT clock FROM messages_clock WHERE id = 1",
     );
 
-    // A column that doesn't exist on `accounts` — the table write inside
-    // the transaction throws, which must roll back the whole batch,
-    // including the messages_crdt inserts and clock persistence for every
-    // message in the same call (even ones before the bad one).
+    // A genuine SQL constraint violation on a real, allowlisted column — the
+    // first message inserts acc2, the second updates acc2's id to acc1's id
+    // (a real PRIMARY KEY collision, since acc1 already exists from the setup
+    // call above). This throws at the SQL layer, which must roll back the
+    // whole batch, including the messages_crdt inserts and clock persistence
+    // for every message in the same call (even ones before the bad one).
+    // (Previously this used an unknown/non-existent column name as the throw
+    // trigger; the column allowlist now intercepts unknown columns before
+    // they reach SQL, so the trigger must be a real failure instead.)
     await expect(
       applyMessages([
         {
@@ -49,8 +54,8 @@ describe("applyMessages — atomic rollback (fix #2)", () => {
           timestamp: Timestamp.send()!,
           dataset: "accounts",
           row: "acc2",
-          column: "definitely_not_a_real_column",
-          value: "x",
+          column: "id",
+          value: "acc1",
         },
       ]),
     ).rejects.toThrow(ActualError);

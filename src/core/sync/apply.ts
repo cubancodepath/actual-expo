@@ -51,6 +51,21 @@ function getWritableTables(): Set<string> {
 }
 
 /**
+ * Column allowlist per writable table. Like getWritableTables, derived from
+ * the live schema so schema migrations stay the single source of truth.
+ * Unknown columns are treated like unknown datasets: recorded in the CRDT
+ * log + merkle (so peers converge) but never spliced into SQL.
+ */
+function getWritableColumns(tables: Set<string>): Map<string, Set<string>> {
+  const map = new Map<string, Set<string>>();
+  for (const table of tables) {
+    const rows = runQuerySync<{ name: string }>(`PRAGMA table_info(${table})`);
+    map.set(table, new Set(rows.map((r) => r.name)));
+  }
+  return map;
+}
+
+/**
  * Sequential execution guard — prevents concurrent applyMessages calls
  * from corrupting the merkle trie or DB. Upstream wraps applyMessages
  * with sequential() for the same reason.
@@ -105,6 +120,7 @@ function compareMessages(messages: SyncMessage[]): SyncMessage[] {
  */
 async function applyMessagesForImport(messages: SyncMessage[]): Promise<void> {
   const writableTables = getWritableTables();
+  const writableColumns = getWritableColumns(writableTables);
 
   await transaction(async () => {
     for (const msg of messages) {
@@ -116,6 +132,11 @@ async function applyMessagesForImport(messages: SyncMessage[]): Promise<void> {
         });
       }
       if (!writableTables.has(dataset)) continue;
+      if (!writableColumns.get(dataset)?.has(column)) {
+        // Unknown column for this client's schema version — keep CRDT/merkle
+        // convergence, skip the table write (same policy as unknown datasets).
+        continue;
+      }
 
       const value = deserializeValue(serializeValue(msg.value as string | number | null));
       try {
@@ -156,6 +177,7 @@ export const applyMessages = sequential(async function applyMessages(
 
   const prefsToSet: Record<string, string | number | null> = {};
   const writableTables = getWritableTables();
+  const writableColumns = getWritableColumns(writableTables);
 
   // Capture current DB state for each affected row BEFORE mutating (needed for undo)
   const oldData: OldData = {};
@@ -213,15 +235,16 @@ export const applyMessages = sequential(async function applyMessages(
         continue;
       }
 
-      // Unknown/unsupported dataset: we can't write it to a table (would be
-      // arbitrary SQL), but it MUST still fold into messages_crdt + the
-      // merkle below so this client's merkle can converge with peers that
-      // use features or schema this client doesn't (yet) understand.
+      // Unknown/unsupported dataset or column: we can't write it to a table
+      // (would be arbitrary SQL), but it MUST still fold into messages_crdt +
+      // the merkle below so this client's merkle can converge with peers
+      // that use features or schema this client doesn't (yet) understand.
       // Matches upstream: every message is recorded regardless of dataset.
-      if (!writableTables.has(dataset)) {
+      const isWritableColumn = writableColumns.get(dataset)?.has(column) ?? false;
+      if (!writableTables.has(dataset) || !isWritableColumn) {
         if (__DEV__)
           console.warn(
-            `[applyMessages] unknown dataset "${dataset}" row=${row} column=${column} — recording in CRDT log only, no table write`,
+            `[applyMessages] unknown dataset/column "${dataset}"."${column}" row=${row} — recording in CRDT log only, no table write`,
           );
       } else if (!msg.old) {
         // Old messages (already superseded in CRDT log) skip DB writes

@@ -2,7 +2,6 @@
   "columnBudgeted": "Presupuestado",
   "columnAvailable": "Disponible",
   "columnReceived": "Recibido",
-
   "categoryMenu": {
     "addTransaction": "Añadir transacción",
     "viewActivity": "Ver actividad",
@@ -11,7 +10,6 @@
     "editGoals": "Editar objetivos",
     "viewDetails": "Ver detalles"
   },
-
   "filter": "Filtro",
   "filterAll": "Todo",
   "filterUnderfunded": "Subfinanciado",
@@ -25,25 +23,21 @@
   "settings": "Ajustes",
   "hideHiddenCategories": "Ocultar categorías ocultas",
   "showHiddenCategories": "Mostrar categorías ocultas",
-
   "releaseHoldTitle": "Liberar reserva",
   "releaseHoldMessage": "¿Liberar los fondos reservados de vuelta a \"Por presupuestar\"?",
   "release": "Liberar",
   "cancel": "Cancelar",
-
   "noMatchingCategories": "Sin categorías coincidentes",
   "tryDifferentFilter": "Prueba un filtro diferente o cambia a Todo",
   "noCategoriesYet": "Aún no hay categorías",
   "syncToLoad": "Sincroniza para cargar los datos del presupuesto",
   "uncategorized": "sin categorizar",
-
   "categoryDetails": "Detalles de categoría",
   "moveMoney": "Mover dinero",
   "removeOverspendingRollover": "Eliminar arrastre de sobregasto",
   "rolloverOverspending": "Arrastrar sobregasto",
   "viewTransactions": "Ver transacciones",
   "budgetMovements": "Movimientos del presupuesto",
-
   "goalType": "Tipo de meta",
   "goalTypeSimple": "Mensual",
   "goalTypeGoal": "Saldo objetivo",
@@ -55,7 +49,6 @@
   "goalTypePercentage": "Porcentaje",
   "goalTypeRemainder": "Restante",
   "goalTypeLimit": "Límite de gasto",
-
   "goalDescSimple": "Presupuesta una cantidad fija cada mes, o rellena hasta un objetivo. Ej. $200/mes para comida.",
   "goalDescGoal": "Sigue el progreso hacia una meta de ahorro. Muestra una barra de progreso — tú controlas el presupuesto.",
   "goalDescBy": "Ahorra una cantidad total para una fecha específica, dividida equitativamente entre los meses restantes.",
@@ -66,7 +59,6 @@
   "goalDescPercentage": "Presupuesta un porcentaje de tus ingresos. Ej. ahorrar el 10% de tu sueldo.",
   "goalDescRemainder": "Recibe lo que queda después de que todas las demás categorías estén financiadas.",
   "goalDescLimit": "Limita el gasto en esta categoría. Opcionalmente se rellena automáticamente.",
-
   "refillTo": "Rellenar hasta",
   "monthlyAmount": "Cantidad mensual",
   "refillMode": "Modo recarga",
@@ -102,7 +94,6 @@
   "maximumSpending": "Gasto máximo",
   "resetPeriod": "Período de reinicio",
   "keepSurplus": "Mantener excedente",
-
   "balanceCapMustBeGreater": "El tope de saldo debe ser mayor que la cantidad mensual.",
   "budgetedUntilReaches": "Se presupuestará {{budgeted}} cada mes hasta que el saldo alcance {{cap}}.",
   "onceBalanceHits": "Una vez que el saldo alcance esta cantidad, no se presupuestará más.",
@@ -115,7 +106,6 @@
   "periodDay": "día",
   "periodWeek": "semana",
   "periodMonth": "mes",
-
   "saveTarget": "Guardar meta",
   "addTarget": "Agregar meta",
   "removeTarget": "Eliminar meta",
@@ -126,7 +116,6 @@
   "couldNotSaveMessage": "Ocurrió un error al guardar. Por favor, inténtalo de nuevo.",
   "errorTitle": "Error",
   "couldNotRemoveTarget": "No se pudo eliminar la meta. Por favor, inténtalo de nuevo.",
-
   "readyToAssign": "Por presupuestar",
   "overassigned": "Sobrepresupuestado",
   "fullyAssigned": "Todo presupuestado",
@@ -144,7 +133,6 @@
   "autoAssignError": "No se pudieron aplicar las plantillas de presupuesto. Verifica que tus categorías tengan metas configuradas.",
   "savingEllipsis": "Guardando...",
   "saveAssignment": "Guardar presupuesto",
-
   "editBudget": "Editar presupuesto",
   "neededToFundGoals": "necesario para financiar todas las metas",
   "allGoalsFunded": "todas las metas financiadas",
@@ -174,7 +162,6 @@
   "organizeByCreating": "Organiza tu presupuesto creando grupos",
   "reorder": "Reordenar",
   "addGroup": "Agregar grupo",
-
   "fromMonth": "De {{month}}",
   "assignedForMonth": "Presupuestado para {{month}}",
   "activityInMonth": "Actividad en {{month}}",
@@ -198,32 +185,24 @@
   "selectCategory": "Seleccionar categoría",
   "couldNotDeleteCategory": "No se pudo eliminar la categoría. Por favor, inténtalo de nuevo.",
   "category": "Categoría",
-
   "groupNameLabel": "Nombre del grupo",
   "groupNamePlaceholder": "Nombre del grupo",
   "save": "Guardar",
   "hidden": "Oculto",
-
   "newGroupPlaceholder": "ej. Facturas, Ahorros, Diversión",
-
   "categoryNameLabel": "Nombre de categoría",
   "categoryNamePlaceholder": "Nombre de categoría",
   "newCategoryPlaceholder": "ej. Alquiler, Comida, Internet",
-
   "selectCategoryTocover": "Selecciona categoría para cubrir sobregasto",
   "coverOverspendingAccessibility": "Cubrir sobregasto de {{name}}",
-
   "coverOverspendingFrom": "Cubrir sobregasto con",
   "readyToAssignLabel": "Por presupuestar",
   "noCategoriesWithBalance": "Sin categorías con saldo positivo",
-
   "moveFrom": "Mover desde",
   "moveTo": "Mover a",
-
   "moveTransactionsTo": "Mover transacciones a",
   "confirmDeleteTitle": "Confirmar eliminación",
   "confirmDeleteMessage": "Las transacciones se moverán a \"{{name}}\". Esta acción no se puede deshacer.",
-
   "addCategory": "Agregar categoría",
   "addAnother": "Agregar otra",
   "coveringEllipsis": "Cubriendo...",
@@ -231,43 +210,33 @@
   "covered": "Cubierto",
   "remainingToCover": "Falta por cubrir",
   "searchCategories": "Buscar categorías",
-
   "reserveDescription": "Reserva dinero de Por presupuestar para llevarlo al próximo mes.",
   "availableToHold": "Disponible para reservar: ",
   "hold": "Reservar",
-
   "from": "De",
   "to": "A",
   "movingEllipsis": "Moviendo...",
   "move": "Mover",
-
-  "moveCategoryTo": "Mover \"{{name}}\" a\u2026",
+  "moveCategoryTo": "Mover \"{{name}}\" a…",
   "noCategories": "Sin categorías",
-
   "categoryName": "Nombre de categoría",
   "noTargetSet": "Sin meta establecida",
   "setTarget": "Establecer meta",
   "show": "Mostrar",
   "hide": "Ocultar",
-
   "noMovementsForCategory": "Sin movimientos para {{name}} este mes",
   "noMovementsThisMonth": "Sin movimientos de presupuesto este mes",
   "other": "Otro",
-
   "transactions": "Transacciones",
   "noTransactions": "Sin transacciones",
   "noTransactionsForCategory": "Sin transacciones para {{name}} este mes",
   "select": "Seleccionar",
-
   "assign": "Presupuestar",
-
   "uncategorizedBanner_one": "{{count}} transacción sin categorizar — {{total}} necesita una categoría",
   "uncategorizedBanner_other": "{{count}} transacciones sin categorizar — {{total}} necesitan una categoría",
-
   "summaryIncome": "Ingresos",
   "summaryBudgeted": "Presupuestado",
   "summarySpent": "Gastado",
-
   "progress": {
     "noSpending": "Sin gastos",
     "spent": "Gastado ",
@@ -282,7 +251,6 @@
     "onTrack": "En camino",
     "moreNeededThisMonth": " más necesario este mes"
   },
-
   "describe": {
     "budgetMonthly": "Presupuesto {{amount}} mensual",
     "budgetMonthlyBase": "Presupuesto mensual",
@@ -314,19 +282,185 @@
       "weeks": "semanas",
       "months": "meses",
       "years": "años"
-    }
+    },
+    "refillUpTo": "Rellenar hasta {{amount}} cada {{period}}"
   },
-
   "overspent_one": "Categoría sobregastada",
   "overspent_other": "Categorías sobregastadas",
   "coverAction": "Cubrir",
-
   "uncategorizedTransactions_one": "Transacción sin categorizar",
   "uncategorizedTransactions_other": "Transacciones sin categorizar",
-
   "holding": "Reservando ",
   "nextMonth": " próximo mes",
   "editAction": "Editar",
   "clearAction": "Borrar",
-  "reviewAction": "Revisar"
+  "reviewAction": "Revisar",
+  "goals": {
+    "title": "Objetivos",
+    "done": "Hecho",
+    "cancel": "Cancelar",
+    "delete": "Eliminar objetivo",
+    "deleteTitle": "¿Eliminar este objetivo?",
+    "deleteMessage": "El objetivo se eliminará al guardar.",
+    "addGoal": "Añadir objetivo",
+    "changeType": "Cambiar tipo de objetivo",
+    "changeTypeTitle": "Cambiar tipo de objetivo",
+    "alreadyAdded": "Ya añadido a esta categoría",
+    "sectionGoals": "Objetivos",
+    "sectionOptions": "Opciones",
+    "priorityHint": "Se financian en este orden cuando no hay dinero para todos.",
+    "emptyTitle": "Aún no hay objetivos",
+    "emptyMessage": "Añade un objetivo y Actual presupuestará esta categoría cada mes por ti.",
+    "removeAll": "Eliminar todos los objetivos",
+    "removeAllTitle": "¿Eliminar todos los objetivos?",
+    "removeAllMessage": "Esta categoría dejará de presupuestarse automáticamente.",
+    "removeAllConfirm": "Eliminar todos",
+    "discardTitle": "¿Descartar los cambios?",
+    "discardMessage": "Los cambios en los objetivos de esta categoría no se han guardado.",
+    "discard": "Descartar",
+    "keepEditing": "Seguir editando",
+    "importedFromNotes": "Estos objetivos se han leído de las notas de la categoría. Al guardar se convertirán en objetivos editables.",
+    "notSet": "Sin definir",
+    "notLinked": "Elige una programación",
+    "today": "Hoy",
+    "clearDate": "Quitar fecha",
+    "pickSchedule": "Vincular una programación",
+    "noSchedules": "Aún no tienes programaciones. Crea una para financiarla desde esta categoría.",
+    "manageSchedules": "Ir a programaciones",
+    "nextOn": "Siguiente el {{date}}",
+    "allIncome": "Todos los ingresos",
+    "types": {
+      "fixed": "Cantidad recurrente",
+      "schedule": "Cubrir una programación",
+      "percentage": "Porcentaje de ingresos",
+      "historical": "Según el historial",
+      "remainder": "Lo que sobre",
+      "limit": "Tope de gasto",
+      "refill": "Rellenar hasta el tope",
+      "goal": "Objetivo a largo plazo"
+    },
+    "descriptions": {
+      "fixed": "Presupuesta la misma cantidad cada semana, mes o año.",
+      "schedule": "Aparta dinero para una transacción programada.",
+      "percentage": "Presupuesta una parte de lo que ingresas.",
+      "historical": "Presupuesta según lo que gastaste en meses anteriores.",
+      "remainder": "Se lleva una parte de lo que sobre cuando todo lo demás está financiado.",
+      "limit": "Nunca presupuestar más de esto. Otros objetivos financian la categoría; esto la limita.",
+      "refill": "Rellena la categoría hasta su tope cada mes. Necesita un tope de gasto.",
+      "goal": "Muestra el progreso hacia un saldo. No presupuesta nada por sí solo: tú decides cuándo financiarlo."
+    },
+    "segments": {
+      "weekly": "Semanal",
+      "monthly": "Mensual",
+      "yearly": "Anual",
+      "custom": "Personalizado"
+    },
+    "units": {
+      "day_one": "Día",
+      "day_other": "Días",
+      "week_one": "Semana",
+      "week_other": "Semanas",
+      "month_one": "Mes",
+      "month_other": "Meses",
+      "year_one": "Año",
+      "year_other": "Años"
+    },
+    "limitPeriod": {
+      "daily": "Cada día",
+      "weekly": "Cada semana",
+      "monthly": "Cada mes"
+    },
+    "historical": {
+      "average": "Media",
+      "copy": "Copiar"
+    },
+    "adjust": {
+      "none": "No",
+      "increase": "Más",
+      "decrease": "Menos",
+      "percent": "Porcentaje",
+      "fixed": "Cantidad"
+    },
+    "savingsMode": {
+      "saveUp": "Ahorrar poco a poco",
+      "saveUpHint": "Aparta dinero durante los meses previos a cada ocurrencia.",
+      "full": "Pagar al vencer",
+      "fullHint": "Presupuesta el importe completo en el mes en que vence."
+    },
+    "summary": {
+      "linkedToScheduleNamed": "Cubre la programación {{name}}"
+    },
+    "fields": {
+      "amount": "Cantidad",
+      "capAmount": "Tope",
+      "targetBalance": "Saldo objetivo",
+      "percent": "Porcentaje",
+      "incomeSource": "Fuente de ingresos",
+      "previousMonth": "Usar los ingresos del mes pasado",
+      "previousMonthHint": "Presupuesta según lo que ingresaste el mes pasado en vez de este.",
+      "basedOn": "Basado en",
+      "lookBackMonths": "Meses a promediar",
+      "copyFrom": "Meses atrás",
+      "copyFromHint": "Copia el presupuesto que pusiste hace esos meses.",
+      "schedule": "Programación",
+      "savingsMode": "Cómo financiarlo",
+      "adjust": "Ajustar",
+      "adjustHint": "Presupuesta un poco más o menos que la cantidad.",
+      "adjustBy": "Ajustar por",
+      "adjustAmount": "Cantidad del ajuste",
+      "resetPeriod": "Se reinicia",
+      "weekStartsOn": "Las semanas empiezan el",
+      "weekStartsOnHint": "La fecha desde la que se cuentan las semanas del tope.",
+      "keepSurplus": "Guardar el sobrante",
+      "keepSurplusHint": "Mantiene el dinero sobrante en vez de devolverlo para asignar.",
+      "weight": "Parte",
+      "weightHint": "Una parte mayor se lleva más de lo que sobra que otras categorías de resto."
+    },
+    "errors": {
+      "amount-zero": "Introduce una cantidad.",
+      "schedule-not-found": "Elige una programación para este objetivo: la vinculada ya no existe.",
+      "refill-no-cap": "Añade un tope de gasto que este objetivo pueda rellenar.",
+      "limit-no-contributor": "Añade un objetivo que presupueste dinero: un tope por sí solo no presupuesta nada.",
+      "percentage-out-of-range": "Introduce un porcentaje entre 1 y 100.",
+      "percentage-no-source": "Elige de qué ingresos sale.",
+      "percentage-source-not-found": "Esa fuente de ingresos ya no existe. Elige otra.",
+      "by-no-month": "Elige un mes objetivo.",
+      "by-target-past": "Ese mes ya pasó. Elige uno posterior o haz que el objetivo se repita.",
+      "spend-no-from": "Elige el mes desde el que empezar a gastar.",
+      "spend-from-after-target": "El mes de inicio debe ser anterior al mes objetivo.",
+      "adjustment-out-of-range": "Introduce un ajuste entre -99% y 1000%."
+    },
+    "conflicts": {
+      "percent-over-100": "Estos objetivos suman el {{total}}% de una misma fuente de ingresos: más de lo que ingresas.",
+      "schedule-priority-mismatch": "Los objetivos de programación y de ahorro por fecha deben financiarse juntos."
+    },
+    "fundEarlier": "Financiar antes",
+    "fundLater": "Financiar después",
+    "loadError": "No se pudieron cargar los objetivos de esta categoría. Cierra e inténtalo de nuevo.",
+    "fixed": {
+      "onDay": "El",
+      "dayOfMonth": "Día {{day}}",
+      "nextTime": "La próxima vez quiero",
+      "nextTimeTitle": "La próxima vez quiero…",
+      "setAside": "Apartar {{amount}}",
+      "setAsideHint": "Añade esta cantidad encima de lo que ya haya.",
+      "refillUpTo": "Rellenar hasta {{amount}}",
+      "refillUpToHint": "Completa la categoría hasta esta cantidad, contando lo que queda.",
+      "setAsideYearlyHint": "Presupuesta el importe completo cuando llega la fecha, cada año — se empieza de cero.",
+      "refillYearlyHint": "Reparte el ahorro entre los meses y cuenta lo que ya tienes — se sigue acumulando.",
+      "dueOn": "Vence el",
+      "repeat": "Repetir",
+      "repeatEvery_one": "Cada {{unit}}",
+      "repeatEvery_other": "Cada {{count}} {{unit}}",
+      "every": "Cada",
+      "repeatEveryTitle": "Repetir cada",
+      "spendDown": "Gastar {{amount}}",
+      "spendDownHint": "Lo aparta durante un periodo, pensado para irse gastando.",
+      "spendFrom": "Gastar desde",
+      "keepSurplus": "Guardar el sobrante"
+    },
+    "saveTarget": "Guardar objetivo",
+    "sectionKnown": "Sé la cantidad",
+    "sectionCalculate": "Calcúlalo por mí"
+  }
 }

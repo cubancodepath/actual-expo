@@ -57,6 +57,19 @@ export function describeTemplate(tmpl: Template, locale: string = "en"): Templat
           params: { amount: formatDisplayAmount(tmpl.monthly) },
         };
       }
+      if (tmpl.limit) {
+        // No contribution, only a cap: refill up to the cap each period.
+        return {
+          key: "budget:describe.refillUpTo",
+          params: { amount: formatDisplayAmount(tmpl.limit.amount) },
+          periodKey:
+            tmpl.limit.period === "weekly"
+              ? "week"
+              : tmpl.limit.period === "daily"
+                ? "day"
+                : "month",
+        };
+      }
       return { key: "budget:describe.budgetMonthlyBase" };
     }
     case "goal":

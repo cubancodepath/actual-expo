@@ -126,16 +126,9 @@ export default function AuthLayout() {
           ...modal,
         }}
       />
-      <Stack.Screen
-        name="budget/goal"
-        options={{
-          ...screen,
-          title: t("nav.goalTarget"),
-          presentation: "formSheet",
-          sheetAllowedDetents: [1.0],
-          contentStyle: { backgroundColor: theme.colors.pageBackground },
-        }}
-      />
+      {/* A directory route with its own nested stack (list → editor → mode),
+          presented as one card modal — same arrangement as `transaction`. */}
+      <Stack.Screen name="budget/goal" options={{ headerShown: false, ...modal }} />
       <Stack.Screen name="budget/notes" options={{ title: t("nav.budgetMovements"), ...modal }} />
       <Stack.Screen
         name="budget/category-transactions"

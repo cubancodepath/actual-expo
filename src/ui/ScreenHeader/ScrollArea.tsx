@@ -31,14 +31,24 @@ const HEADER_HEIGHT_FALLBACK = 120;
 export function ScreenHeaderScrollArea({
   children,
   className,
+  frameless = false,
 }: {
   children: ReactNode;
   /**
    * Container classes. Replaces the default background — pass e.g.
    * `"bg-transparent"` when the area sits inside a surface that paints its own
-   * (rounded) background, like a bottom sheet.
+   * (rounded) background, like a bottom sheet. Ignored with `frameless`.
    */
   className?: string;
+  /**
+   * Render only the context provider, no container View — for screens
+   * presented as a native formSheet, where a plain flex-1 View root does not
+   * paint its scroll content (same quirk AmountSheet.Body documents). The
+   * Body becomes the screen's root-level scroll and the Floating header
+   * positions against the screen itself; the sheet's `contentStyle` owns the
+   * background.
+   */
+  frameless?: boolean;
 }) {
   const scrollOffset = useSharedValue(0);
   const [headerHeight, setHeaderHeight] = useState(HEADER_HEIGHT_FALLBACK);
@@ -48,6 +58,9 @@ export function ScreenHeaderScrollArea({
     [scrollOffset, headerHeight],
   );
 
+  if (frameless) {
+    return <ScreenHeaderScrollContext value={value}>{children}</ScreenHeaderScrollContext>;
+  }
   return (
     <ScreenHeaderScrollContext value={value}>
       <View className={`flex-1 ${className ?? "bg-background"}`}>{children}</View>

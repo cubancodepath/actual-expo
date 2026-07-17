@@ -13,7 +13,7 @@ import { Timestamp } from "@/core/crdt";
 import { monthToInt } from "@/lib/date";
 import { updateCategory } from "../categories";
 import type { Template } from "./types";
-import { parseGoalDef, templatesToNoteText } from "./parse";
+import { parseGoalDef, stripTemplateLines, templatesToNoteText } from "./parse";
 
 // ---------------------------------------------------------------------------
 // Read templates from DB
@@ -28,6 +28,20 @@ export async function getGoalTemplates(categoryId: string): Promise<Template[]> 
     [categoryId],
   );
   return parseGoalDef(row?.goal_def ?? null);
+}
+
+/**
+ * Get a category's note text.
+ *
+ * Read path for the legacy notes-based template format: a budget authored on
+ * desktop before the goal_def UI existed keeps its templates as #template
+ * lines here, with no goal_def to read.
+ */
+export async function getCategoryNote(categoryId: string): Promise<string | null> {
+  const row = await first<{ note: string | null }>("SELECT note FROM notes WHERE id = ?", [
+    categoryId,
+  ]);
+  return row?.note ?? null;
 }
 
 // ---------------------------------------------------------------------------
@@ -55,11 +69,21 @@ async function setNote(entityId: string, note: string | null): Promise<void> {
  * Serializes to JSON and persists via CRDT messages for sync.
  * Also writes #template/#goal note text to the notes table for
  * compatibility with the desktop Actual Budget app.
+ *
+ * The notes field is shared with the user's own text about the category, so
+ * only the #template/#goal lines are rewritten — any other line (plain notes,
+ * or directives this app doesn't manage such as #cleanup) is kept verbatim.
+ *
+ * @param categoryNameToId Reverse of `categoryNames`, used to recognize
+ *   percentage lines by category name when stripping the old mirror. Without
+ *   it an existing "#template 10% of Salary" line is treated as plain text
+ *   and would survive alongside its own replacement.
  */
 export async function setGoalTemplates(
   categoryId: string,
   templates: Template[],
   categoryNames?: Map<string, string>,
+  categoryNameToId?: Map<string, string>,
 ): Promise<void> {
   const goalDef = templates.length > 0 ? JSON.stringify(templates) : null;
   await updateCategory(categoryId, {
@@ -67,9 +91,12 @@ export async function setGoalTemplates(
     template_settings: JSON.stringify({ source: "ui" }),
   });
 
-  // Write note text for desktop compatibility
-  const noteText = templates.length > 0 ? templatesToNoteText(templates, categoryNames) : null;
-  await setNote(categoryId, noteText);
+  // Rewrite the note mirror for desktop compatibility, keeping user text
+  const existing = await getCategoryNote(categoryId);
+  const preserved = stripTemplateLines(existing, categoryNameToId);
+  const mirror = templates.length > 0 ? templatesToNoteText(templates, categoryNames) : "";
+  const noteText = [preserved, mirror].filter(Boolean).join("\n");
+  await setNote(categoryId, noteText || null);
 }
 
 // ---------------------------------------------------------------------------

@@ -10,6 +10,11 @@ interface MonthYearPickerProps {
   value: string;
   /** Called with the picked month, "YYYY-MM". */
   onChange: (month: string) => void;
+  /**
+   * Classes for the trigger's label. Defaults to the budget header's size;
+   * pass e.g. `"text-base text-muted"` to sit inside a form row.
+   */
+  triggerClassName?: string;
 }
 
 /**
@@ -18,7 +23,7 @@ interface MonthYearPickerProps {
  * grid of months — the HeroUI Pro Calendar is day-based, so month selection is
  * built by hand here. Purely presentational: state lives in the parent.
  */
-export function MonthYearPicker({ value, onChange }: MonthYearPickerProps) {
+export function MonthYearPicker({ value, onChange, triggerClassName }: MonthYearPickerProps) {
   const { i18n } = useTranslation();
   const foreground = useThemeColor("foreground");
   const muted = useThemeColor("muted");
@@ -51,7 +56,7 @@ export function MonthYearPicker({ value, onChange }: MonthYearPickerProps) {
     <Popover isOpen={open} onOpenChange={handleOpenChange}>
       <Popover.Trigger asChild>
         <PressableFeedback className="flex-row items-center gap-1">
-          <Typography className="text-lg font-semibold text-foreground">
+          <Typography className={cn("text-lg font-semibold text-foreground", triggerClassName)}>
             {formatMonth(value, i18n.language)}
           </Typography>
           <ChevronDown size={18} color={muted} />

@@ -32,6 +32,8 @@ interface CategoryRowMenuProps {
   onAddTransaction: () => void;
   /** Open the move-money screen for the row the menu belongs to. */
   onMoveMoney: () => void;
+  /** Open the goals editor for the row's category. Hidden when unset. */
+  onEditGoals?: () => void;
 }
 
 /** Roughly how tall the menu renders; only used to choose which side to open on. */
@@ -56,6 +58,7 @@ export function CategoryRowMenu({
   onPreviewLayout,
   onAddTransaction,
   onMoveMoney,
+  onEditGoals,
 }: CategoryRowMenuProps) {
   const { t } = useTranslation("budget");
   const foreground = useThemeColor("foreground");
@@ -104,10 +107,12 @@ export function CategoryRowMenu({
           <ArrowLeftRight size={18} color={foreground} />
           <Menu.ItemTitle>{t("categoryMenu.moveMoney")}</Menu.ItemTitle>
         </Menu.Item>
-        <Menu.Item className="gap-3" onPress={noop}>
-          <Target size={18} color={foreground} />
-          <Menu.ItemTitle>{t("categoryMenu.editGoals")}</Menu.ItemTitle>
-        </Menu.Item>
+        {onEditGoals ? (
+          <Menu.Item className="gap-3" onPress={onEditGoals}>
+            <Target size={18} color={foreground} />
+            <Menu.ItemTitle>{t("categoryMenu.editGoals")}</Menu.ItemTitle>
+          </Menu.Item>
+        ) : null}
         <Menu.Item className="gap-3" onPress={noop}>
           <Ellipsis size={18} color={foreground} />
           <Menu.ItemTitle>{t("categoryMenu.viewDetails")}</Menu.ItemTitle>

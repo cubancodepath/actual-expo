@@ -276,6 +276,15 @@ export function BudgetScreen() {
                 },
               })
             }
+            onEditGoals={
+              goalsEnabled
+                ? () =>
+                    router.push({
+                      pathname: "/(auth)/budget/goal",
+                      params: { categoryId: menuTarget.catId },
+                    })
+                : undefined
+            }
             preview={
               <BudgetCategoryRow
                 catId={menuTarget.catId}

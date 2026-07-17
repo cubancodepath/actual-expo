@@ -461,3 +461,29 @@ export function parseTemplateNotes(
     .map((line) => parseTemplateNoteLine(line, categoryNameToId))
     .filter((t): t is Template => t !== null);
 }
+
+/**
+ * Drop every line that parses as a template, keeping the rest of a category's
+ * notes verbatim.
+ *
+ * The notes field is shared: it holds both the #template mirror we write for
+ * desktop compatibility and whatever the user typed about the category. When
+ * rewriting the mirror we replace only the lines we own — anything we don't
+ * recognize (plain notes, and directives we don't manage like #cleanup) is
+ * the user's and survives.
+ *
+ * `categoryNameToId` should match what was passed to parseTemplateNotes, so a
+ * percentage line whose category can't be resolved is treated the same by
+ * both (left alone as plain text rather than silently dropped).
+ */
+export function stripTemplateLines(
+  notes: string | null,
+  categoryNameToId?: Map<string, string>,
+): string {
+  if (!notes) return "";
+  return notes
+    .split("\n")
+    .filter((line) => parseTemplateNoteLine(line, categoryNameToId) === null)
+    .join("\n")
+    .trim();
+}

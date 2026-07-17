@@ -3,6 +3,12 @@ import { persist } from "zustand/middleware";
 import * as SecureStore from "expo-secure-store";
 import { mmkvStorage, SECURE_TOKEN_KEY } from "./prefsStorage";
 
+// Key material must not leave this device (no backup migration) and must be
+// unreadable while locked. Applied at write time; items re-adopt it on rewrite.
+const SECURE_OPTS = {
+  keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+} as const;
+
 // ---------------------------------------------------------------------------
 // Session store — the connection to a server: URL + auth token.
 // ---------------------------------------------------------------------------
@@ -42,7 +48,7 @@ export const useSessionStore = create<SessionState>()(
 
       async saveToken(token: string) {
         if (token) {
-          await SecureStore.setItemAsync(SECURE_TOKEN_KEY, token);
+          await SecureStore.setItemAsync(SECURE_TOKEN_KEY, token, SECURE_OPTS);
         } else {
           await SecureStore.deleteItemAsync(SECURE_TOKEN_KEY);
         }

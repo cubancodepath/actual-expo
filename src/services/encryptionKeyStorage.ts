@@ -3,6 +3,12 @@ import * as SecureStore from "expo-secure-store";
 const INDEX_KEY = "encrypt-key-index";
 const KEY_PREFIX = "encrypt-key-";
 
+// Key material must not leave this device (no backup migration) and must be
+// unreadable while locked. Applied at write time; items re-adopt it on rewrite.
+const SECURE_OPTS = {
+  keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+} as const;
+
 export type SerializedKey = { id: string; base64: string };
 
 async function getIndex(): Promise<string[]> {
@@ -16,11 +22,11 @@ async function getIndex(): Promise<string[]> {
 }
 
 async function setIndex(ids: string[]): Promise<void> {
-  await SecureStore.setItemAsync(INDEX_KEY, JSON.stringify(ids));
+  await SecureStore.setItemAsync(INDEX_KEY, JSON.stringify(ids), SECURE_OPTS);
 }
 
 export async function saveKey(cloudFileId: string, key: SerializedKey): Promise<void> {
-  await SecureStore.setItemAsync(KEY_PREFIX + cloudFileId, JSON.stringify(key));
+  await SecureStore.setItemAsync(KEY_PREFIX + cloudFileId, JSON.stringify(key), SECURE_OPTS);
   const index = await getIndex();
   if (!index.includes(cloudFileId)) {
     index.push(cloudFileId);

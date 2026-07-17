@@ -7,6 +7,7 @@ import { envelopeBudget } from "@/core/domain/spreadsheet/bindings";
 import { Money } from "@/ui/Money";
 import type { BudgetSection } from "@/screens/budget/hooks/useBudgetSections";
 import { BudgetCategoryRow } from "./BudgetCategoryRow";
+import { IncomeCategoryRow } from "./IncomeCategoryRow";
 import { COL_ASSIGNED, COL_AVAILABLE, NumericCell } from "./columns";
 
 interface BudgetGroupProps {
@@ -15,6 +16,8 @@ interface BudgetGroupProps {
   editingCatId: string | null;
   draft: number;
   onPressRow: (catId: string, budgeted: number, pageY: number) => void;
+  /** Discard any in-progress amount edit (e.g. when a row's long-press menu opens). */
+  onCancelEditing: () => void;
   goalsEnabled: boolean;
 }
 
@@ -40,6 +43,7 @@ export const BudgetGroup = memo(function BudgetGroup({
   editingCatId,
   draft,
   onPressRow,
+  onCancelEditing,
   goalsEnabled,
 }: BudgetGroupProps) {
   const { t } = useTranslation("budget");
@@ -98,16 +102,20 @@ export const BudgetGroup = memo(function BudgetGroup({
           {group.categories.map((cat, i) => (
             <Fragment key={cat.id}>
               {i > 0 && <Separator className="ml-4" />}
-              <BudgetCategoryRow
-                catId={cat.id}
-                catName={cat.name}
-                sheet={sheet}
-                isIncome={group.is_income}
-                isEditing={editingCatId === cat.id}
-                draft={editingCatId === cat.id ? draft : 0}
-                onPressRow={onPressRow}
-                goalsEnabled={goalsEnabled}
-              />
+              {group.is_income ? (
+                <IncomeCategoryRow catId={cat.id} catName={cat.name} sheet={sheet} />
+              ) : (
+                <BudgetCategoryRow
+                  catId={cat.id}
+                  catName={cat.name}
+                  sheet={sheet}
+                  isEditing={editingCatId === cat.id}
+                  draft={editingCatId === cat.id ? draft : 0}
+                  onPressRow={onPressRow}
+                  onCancelEditing={onCancelEditing}
+                  goalsEnabled={goalsEnabled}
+                />
+              )}
             </Fragment>
           ))}
         </Surface>

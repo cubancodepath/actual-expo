@@ -3,6 +3,14 @@
   "columnAvailable": "Available",
   "columnReceived": "Received",
 
+  "categoryMenu": {
+    "addTransaction": "Add Transaction",
+    "viewActivity": "View Activity",
+    "viewMoves": "View Moves",
+    "editTargets": "Edit Targets",
+    "viewDetails": "View Details"
+  },
+
   "filter": "Filter",
   "filterAll": "All",
   "filterUnderfunded": "Underfunded",

@@ -3,6 +3,14 @@
   "columnAvailable": "Disponible",
   "columnReceived": "Recibido",
 
+  "categoryMenu": {
+    "addTransaction": "Añadir transacción",
+    "viewActivity": "Ver actividad",
+    "viewMoves": "Ver movimientos",
+    "editTargets": "Editar objetivos",
+    "viewDetails": "Ver detalles"
+  },
+
   "filter": "Filtro",
   "filterAll": "Todo",
   "filterUnderfunded": "Subfinanciado",

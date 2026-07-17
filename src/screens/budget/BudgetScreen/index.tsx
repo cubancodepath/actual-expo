@@ -92,6 +92,14 @@ export function BudgetScreen() {
     setTabBarHidden(false);
   }, [commit, setTabBarHidden]);
 
+  // Discard the in-progress edit without committing — used when another
+  // interaction (e.g. a row's long-press menu) takes over the screen.
+  const cancelEditing = useCallback(() => {
+    editingRef.current = null;
+    setEditingCatId(null);
+    setTabBarHidden(false);
+  }, [setTabBarHidden]);
+
   // Drop any in-progress edit when the month changes (values belong to a month),
   // and never leave the tab bar hidden when unmounting mid-edit.
   useEffect(() => {
@@ -167,6 +175,7 @@ export function BudgetScreen() {
                   editingCatId={editingCatId}
                   draft={draft}
                   onPressRow={onPressRow}
+                  onCancelEditing={cancelEditing}
                   goalsEnabled={goalsEnabled}
                 />
               ))}

@@ -39,6 +39,8 @@ interface CategoryRowMenuProps {
   carryover: boolean;
   /** Toggle overspending rollover for the row's category. */
   onToggleCarryover: () => void;
+  /** Open the category details modal for the row's category. */
+  onViewDetails: () => void;
 }
 
 /** Roughly how tall the menu renders; only used to choose which side to open on. */
@@ -66,6 +68,7 @@ export function CategoryRowMenu({
   onEditGoals,
   carryover,
   onToggleCarryover,
+  onViewDetails,
 }: CategoryRowMenuProps) {
   const { t } = useTranslation("budget");
   const foreground = useThemeColor("foreground");
@@ -126,7 +129,7 @@ export function CategoryRowMenu({
             <Menu.ItemTitle>{t("categoryMenu.editGoals")}</Menu.ItemTitle>
           </Menu.Item>
         ) : null}
-        <Menu.Item className="gap-3" onPress={noop}>
+        <Menu.Item className="gap-3" onPress={onViewDetails}>
           <Ellipsis size={18} color={foreground} />
           <Menu.ItemTitle>{t("categoryMenu.viewDetails")}</Menu.ItemTitle>
         </Menu.Item>

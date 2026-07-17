@@ -301,6 +301,12 @@ export function BudgetScreen() {
             }
             carryover={menuTarget.carryover}
             onToggleCarryover={() => toggleCarryover(menuTarget.catId, !menuTarget.carryover)}
+            onViewDetails={() =>
+              router.push({
+                pathname: "/(auth)/budget/category-details",
+                params: { categoryId: menuTarget.catId },
+              })
+            }
             preview={
               <BudgetCategoryRow
                 catId={menuTarget.catId}

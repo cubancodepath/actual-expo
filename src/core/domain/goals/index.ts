@@ -14,6 +14,7 @@ export {
   parseTemplateNotes,
   hasLegacyTemplateNotes,
   stripTemplateLines,
+  extractTemplateLines,
 } from "./parse";
 export { getGoalTemplates, getCategoryNote, setGoalTemplates, setGoalResult } from "./persist";
 export {

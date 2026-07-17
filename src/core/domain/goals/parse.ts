@@ -487,3 +487,23 @@ export function stripTemplateLines(
     .join("\n")
     .trim();
 }
+
+/**
+ * The complement of {@link stripTemplateLines}: keep only the lines that parse
+ * as a template (`#template`/`#goal`), dropping the user's plain text.
+ *
+ * Used when a UI edits only the plain note text: strip to show the user's part,
+ * extract here to re-attach the template mirror on save so goals stored in the
+ * legacy notes format are never clobbered.
+ */
+export function extractTemplateLines(
+  notes: string | null,
+  categoryNameToId?: Map<string, string>,
+): string {
+  if (!notes) return "";
+  return notes
+    .split("\n")
+    .filter((line) => parseTemplateNoteLine(line, categoryNameToId) !== null)
+    .join("\n")
+    .trim();
+}

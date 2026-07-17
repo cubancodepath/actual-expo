@@ -92,11 +92,8 @@ export default function AuthLayout() {
       <Stack.Screen
         name="budget/rename-category"
         options={{
-          ...screen,
-          title: t("nav.renameCategory"),
-          presentation: "formSheet",
-          sheetAllowedDetents: "fitToContents",
-          contentStyle: { backgroundColor: theme.colors.pageBackground },
+          headerShown: false,
+          ...modal,
         }}
       />
       <Stack.Screen
@@ -120,7 +117,7 @@ export default function AuthLayout() {
         }}
       />
       <Stack.Screen
-        name="budget/edit-category"
+        name="budget/category-details"
         options={{
           headerShown: false,
           ...modal,

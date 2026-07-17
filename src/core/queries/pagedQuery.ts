@@ -111,9 +111,10 @@ export function pagedQuery<T = Record<string, unknown>>(
 
     fetchNextPromise = (async () => {
       isLoadingMore = true;
+      const startId = inflightId;
       try {
         const result = await executeQuery<T>(query.limit(pageCount).offset(data.length));
-        if (isUnsubscribed) return;
+        if (isUnsubscribed || inflightId !== startId) return;
 
         if (result.data.length === 0) {
           hasMore = false;
@@ -138,6 +139,7 @@ export function pagedQuery<T = Record<string, unknown>>(
   }
 
   function optimisticUpdate(fn: (data: T[]) => T[]) {
+    ++inflightId; // in-flight runs must not clobber the optimistic data
     const prevLen = data.length;
     prevData = data;
     data = fn(data);

@@ -79,6 +79,7 @@ export function liveQuery<T = Record<string, unknown>>(
   }
 
   function optimisticUpdate(fn: (data: T[]) => T[]) {
+    ++inflightId; // in-flight runs must not clobber the optimistic data
     prevData = data;
     data = fn(data);
     options.onData(data, prevData);

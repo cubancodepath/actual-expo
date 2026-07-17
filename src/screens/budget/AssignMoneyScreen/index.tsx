@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Alert, View } from "react-native";
+import { View } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -7,7 +7,10 @@ import Animated from "react-native-reanimated";
 import { Accordion, AccordionLayoutTransition, Button } from "heroui-native";
 import { envelopeBudget, sheetForMonth } from "@/core/domain/spreadsheet/bindings";
 import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
+import { resolveName } from "@/core/domain/spreadsheet/spreadsheet";
 import { setBudgetAmount } from "@/core/domain/budgets";
+import { setGoalResult } from "@/core/domain/goals";
+import type { GoalAllocation } from "@/core/domain/goals/apply";
 import { batchMessages } from "@/core/sync/batch";
 import { useSheetValueNumber } from "@/hooks/useSheetValue";
 import { useBudgetMonth } from "@/screens/budget/hooks/useBudgetMonth";
@@ -20,9 +23,14 @@ import {
   ScreenHeaderTitle,
 } from "@/ui/ScreenHeader/ScreenHeader";
 import { CloseButton } from "@/ui/CloseButton";
+import { dialog } from "@/ui/feedback/dialog";
 import { AssignGroup } from "./components/AssignGroup";
+import { AutoAssignButton } from "./components/AutoAssignButton";
 import { ProjectedToAssignBar } from "./components/ProjectedToAssignBar";
 import type { PendingEdits } from "./types";
+
+/** Goal indicators (goal/longGoal) staged by auto-assign, written on save. */
+type GoalMeta = Record<string, { goal: number | null; longGoal: boolean }>;
 
 /**
  * Assign Money modal: the same group/category list as the budget screen but with
@@ -46,6 +54,8 @@ export function AssignMoneyScreen() {
   // stay stable and post-stash reads (save/close) see the latest synchronously.
   const [pending, setPending] = useState<PendingEdits>({});
   const pendingRef = useRef<PendingEdits>({});
+  // Goal indicators to write for categories touched by auto-assign.
+  const goalMetaRef = useRef<GoalMeta>({});
   const [saving, setSaving] = useState(false);
 
   // Inline editing state (same mechanism as BudgetScreen), but on close/switch
@@ -110,8 +120,44 @@ export function AssignMoneyScreen() {
     editingRef.current = null;
     setEditingCatId(null);
     pendingRef.current = {};
+    goalMetaRef.current = {};
     setPending({});
   }, [month]);
+
+  // The live committed budgeted amount for a category (what a row shows before
+  // any staging), read straight from the spreadsheet.
+  const committedFor = useCallback(
+    (catId: string) => {
+      const v = getSpreadsheet().getResolved(resolveName(sheet, envelopeBudget.catBudgeted(catId)));
+      return typeof v === "number" ? v : 0;
+    },
+    [sheet],
+  );
+
+  // Stage a mode's allocations: each becomes a pending edit against the true
+  // committed baseline (so the projected-to-assign math stays correct), and its
+  // goal indicator is remembered for the save. An allocation equal to what's
+  // committed clears any staged edit rather than showing a no-op change.
+  const applyAllocations = useCallback(
+    (allocations: GoalAllocation[]) => {
+      const prev = pendingRef.current;
+      const next: PendingEdits = { ...prev };
+      const meta: GoalMeta = { ...goalMetaRef.current };
+      for (const alloc of allocations) {
+        const original = prev[alloc.categoryId]?.original ?? committedFor(alloc.categoryId);
+        meta[alloc.categoryId] = { goal: alloc.goal, longGoal: alloc.longGoal };
+        if (alloc.amount === original) {
+          delete next[alloc.categoryId];
+        } else {
+          next[alloc.categoryId] = { original, value: alloc.amount };
+        }
+      }
+      goalMetaRef.current = meta;
+      pendingRef.current = next;
+      setPending(next);
+    },
+    [committedFor],
+  );
 
   // Controlled expansion: seed once (all expense groups expanded except hidden).
   const [expandedIds, setExpandedIds] = useState<string[] | null>(null);
@@ -150,28 +196,39 @@ export function AssignMoneyScreen() {
     setSaving(true);
     try {
       const ss = getSpreadsheet();
+      const goalMeta = goalMetaRef.current;
       await batchMessages(async () => {
         for (const [catId, { value }] of entries) {
           ss.setByName(sheet, envelopeBudget.catBudgeted(catId), value);
           await setBudgetAmount(month, catId, value);
         }
+        // Auto-assign also sets the goal indicator, mirroring what applying a
+        // budget template does on desktop.
+        for (const [catId, { goal, longGoal }] of Object.entries(goalMeta)) {
+          await setGoalResult(month, catId, goal, longGoal);
+        }
       });
+      goalMetaRef.current = {};
       router.back();
     } finally {
       setSaving(false);
     }
   }, [closeEditing, saving, sheet, month, router]);
 
-  const handleClose = useCallback(() => {
+  const handleClose = useCallback(async () => {
     closeEditing();
     if (Object.keys(pendingRef.current).length === 0) {
       router.back();
       return;
     }
-    Alert.alert(t("discardChangesTitle"), t("discardChangesMessage"), [
-      { text: t("keepEditing"), style: "cancel" },
-      { text: t("discardAction"), style: "destructive", onPress: () => router.back() },
-    ]);
+    const discard = await dialog.confirm({
+      title: t("discardChangesTitle"),
+      message: t("discardChangesMessage"),
+      confirmLabel: t("discardAction"),
+      cancelLabel: t("keepEditing"),
+      destructive: true,
+    });
+    if (discard) router.back();
   }, [closeEditing, router, t]);
 
   const dataReady = !isLoading || groups.length > 0;
@@ -198,6 +255,17 @@ export function AssignMoneyScreen() {
           contentContainerStyle={{ paddingBottom: bottomPadding }}
           showsVerticalScrollIndicator={false}
         >
+          {/* Scrolls with the list — an action above the categories, not a
+              fixed control. */}
+          <View className="px-4 pb-3">
+            <AutoAssignButton
+              month={month}
+              pending={pending}
+              committedFor={committedFor}
+              onApply={applyAllocations}
+            />
+          </View>
+
           <Animated.View layout={AccordionLayoutTransition}>
             <Accordion
               selectionMode="multiple"

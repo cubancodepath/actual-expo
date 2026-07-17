@@ -141,7 +141,7 @@ export function SReadyToAssignPill({
         {/* Auto-Assign — when goals enabled */}
         {goalsEnabled && (
           <SUIButton
-            label={t("autoAssign")}
+            label={t("autoAssign.action")}
             systemImage="sparkles"
             onPress={action(onAutoAssign)}
           />

@@ -12,11 +12,13 @@ new stable Actual release lands (or periodically). Companion files:
    or commit (`git describe --tags`).
 
 2. **Diff.** From this repo:
+
    ```bash
    scripts/upstream-diff.sh <new-tag-or-commit>          # --stat summary
    scripts/upstream-diff.sh <new-tag-or-commit> --names  # just changed files
    scripts/upstream-diff.sh <new-tag-or-commit> --patch  # full patch for a deep look
    ```
+
    The tail lists any **new migrations** since `UPSTREAM_VERSION`.
 
 3. **Triage each change against [`upstream-map.md`](./upstream-map.md).** For every changed
@@ -41,6 +43,7 @@ new stable Actual release lands (or periodically). Companion files:
      `src/core/db/__tests__/schemaParity.test.ts`.
 
 6. **Verify.**
+
    ```bash
    npm test          # incl. schemaParity + schemaUpgrade
    npx tsc --noEmit  # no new errors over the pre-existing @react-navigation baseline

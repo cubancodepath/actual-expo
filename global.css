@@ -13,45 +13,45 @@
 @source "./node_modules/heroui-native-pro/lib";
 
 @layer theme {
-@variant light {
-  /* Theme Colors */
-  --background: oklch(97.02% 0.0060 286.11);
-  --muted: oklch(55.17% 0.0120 286.11);
-  --surface-secondary: oklch(95.24% 0.0090 286.11);
-  --surface-tertiary: oklch(93.73% 0.0090 286.11);
-  --default: oklch(94.00% 0.0060 286.11);
-  --accent: oklch(65.69% 0.1759 286.11);
-  --success: oklch(90.33% 0.2084 122.94);
-  /* Readable green for text on the background (success is too light as text). */
-  --positive: oklch(58.00% 0.1700 122.94);
-  --warning: oklch(78.19% 0.1584 72.32);
-  --danger: oklch(65.32% 0.2328 25.73);
-  --border: oklch(90.00% 0.0060 286.11);
-  --separator: oklch(92.00% 0.0060 286.11);
-}
+  @variant light {
+    /* Theme Colors */
+    --background: oklch(97.02% 0.006 286.11);
+    --muted: oklch(55.17% 0.012 286.11);
+    --surface-secondary: oklch(95.24% 0.009 286.11);
+    --surface-tertiary: oklch(93.73% 0.009 286.11);
+    --default: oklch(94% 0.006 286.11);
+    --accent: oklch(65.69% 0.1759 286.11);
+    --success: oklch(90.33% 0.2084 122.94);
+    /* Readable green for text on the background (success is too light as text). */
+    --positive: oklch(58% 0.17 122.94);
+    --warning: oklch(78.19% 0.1584 72.32);
+    --danger: oklch(65.32% 0.2328 25.73);
+    --border: oklch(90% 0.006 286.11);
+    --separator: oklch(92% 0.006 286.11);
+  }
 
-@variant dark {
-  /* Theme Colors */
-  --background: oklch(12.00% 0.0060 286.11);
-  --muted: oklch(70.50% 0.0120 286.11);
-  --surface: oklch(21.03% 0.0120 286.11);
-  --surface-secondary: oklch(25.70% 0.0090 286.11);
-  --surface-secondary-foreground: oklch(25.70% 0.0000 286.11);
-  --surface-tertiary: oklch(27.21% 0.0090 286.11);
-  --surface-tertiary-foreground: oklch(27.21% 0.0000 286.11);
-  --overlay: oklch(21.03% 0.0120 286.11);
-  --default: oklch(27.40% 0.0060 286.11);
-  --accent: oklch(65.69% 0.1759 286.11);
-  --success: oklch(90.33% 0.2084 122.94);
-  /* Readable green for text on the dark background. */
-  --positive: oklch(82.00% 0.2000 122.94);
-  --warning: oklch(83.69% 0.1643 84.43);
-  --danger: oklch(69.40% 0.1918 11.32);
-  --field-background: oklch(21.03% 0.0120 286.11);
-  --segment: oklch(39.64% 0.0060 286.11);
-  --border: oklch(28.00% 0.0060 286.11);
-  --separator: oklch(25.00% 0.0060 286.11);
-}
+  @variant dark {
+    /* Theme Colors */
+    --background: oklch(12% 0.006 286.11);
+    --muted: oklch(70.5% 0.012 286.11);
+    --surface: oklch(21.03% 0.012 286.11);
+    --surface-secondary: oklch(25.7% 0.009 286.11);
+    --surface-secondary-foreground: oklch(25.7% 0 286.11);
+    --surface-tertiary: oklch(27.21% 0.009 286.11);
+    --surface-tertiary-foreground: oklch(27.21% 0 286.11);
+    --overlay: oklch(21.03% 0.012 286.11);
+    --default: oklch(27.4% 0.006 286.11);
+    --accent: oklch(65.69% 0.1759 286.11);
+    --success: oklch(90.33% 0.2084 122.94);
+    /* Readable green for text on the dark background. */
+    --positive: oklch(82% 0.2 122.94);
+    --warning: oklch(83.69% 0.1643 84.43);
+    --danger: oklch(69.4% 0.1918 11.32);
+    --field-background: oklch(21.03% 0.012 286.11);
+    --segment: oklch(39.64% 0.006 286.11);
+    --border: oklch(28% 0.006 286.11);
+    --separator: oklch(25% 0.006 286.11);
+  }
 }
 
 /* Register the custom token as a color utility (text-positive / bg-positive),

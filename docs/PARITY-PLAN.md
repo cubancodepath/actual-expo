@@ -25,6 +25,7 @@
 ### Hallazgos verificados (resumen, con referencia a archivo)
 
 **Sync/CRDT** (port: `src/core/sync`, `src/core/crdt`):
+
 1. **[P0] `ALLOWED_TABLES` descarta datasets del merkle** — `src/core/sync/apply.ts:17-36,157-163`: un mensaje con dataset desconocido hace `continue` SIN insertarse en `messages_crdt` ni en el merkle. El original (`actual/packages/loot-core/src/server/sync/index.ts:341-371`) registra TODO mensaje en el log CRDT + merkle aunque no conozca la tabla. Faltan en la lista: `custom_reports`, `reflect_budgets`, `transaction_filters`, `banks`, `pending_transactions`. Consecuencia: si el desktop crea un filtro guardado, un reporte custom o usa presupuesto tracking → el merkle local nunca converge → `SyncError('out-of-sync')` permanente.
 2. **[P0] Merkle mutado in-place dentro de la transacción** — `apply.ts:153,186,190-191` muta `getClock().merkle` y llama `saveClock()` DENTRO de `transaction()`. Upstream acumula en un trie local y asigna `clock.merkle` solo tras el commit (index.ts:320-391). Si la transacción falla a mitad, el clock en memoria queda divergido del estado persistido hasta reiniciar la app.
 3. **[P1] `addMovementNote()` salta el CRDT** — `src/core/domain/budgets/index.ts:486-492` escribe la tabla sincronizada `notes` con SQL directo → esas notas nunca sincronizan.
@@ -34,18 +35,9 @@
 7. **[P2] Sin `checkKey()`** al inicio de sync para detectar rotación de clave de cifrado.
 8. **[P3] Rebuild de merkle a mitad de loop** (port-only, `fullSync.ts:118-133`, puede enmascarar corrupción); round-trip deserialize→re-serialize en `getMessagesSince` (riesgo de representación de floats).
 
-**Motor de cálculo** (port: `src/core/domain/spreadsheet`, `budgets`, `goals`):
-9. **[P0] Presupuesto tracking/report no existe** — el port es envelope-only (no hay equivalente a `budget/tracking.ts`: faltan celdas `spent-with-carryover`, `total-saved`, `real-saved`, `total-budget-income`) y no se lee nunca `preferences.budgetType`. Un archivo tracking abierto en móvil renderiza con semántica errónea.
-10. **[P1] `ensureBudgetCellsForMonth` es código muerto** (definido en `envelope.ts:328`, nunca llamado) y el horizonte forward es solo hoy+3 meses (original: +12). Navegar más allá muestra ceros sin mecanismo de construcción lazy.
-11. **[P1] `triggerBudgetChanges` ignora `accounts.offbudget` y `category_mapping`** (`spreadsheet/sync.ts:39`) → saldos de categoría stale tras mover una cuenta on/off budget o fusionar categorías (original: `budget/base.ts` handleAccountChange/handleCategoryMappingChange). Además `BUDGET_TABLES` excluye `reflect_budgets`.
-12. **[P2] Goals**: falta el tipo `schedule` (`goals/types.ts`, `engine.ts`); las notas `#template` legacy solo se detectan (`hasLegacyTemplateNotes`), nunca se parsean; `inferGoalFromDef` solo lee `templates[0]` y 3 tipos.
-13. **[P2] Invariante `safeNumber` perdido** — el original lanza excepción si un resultado no es entero (`shared/util.ts::safeNumber`); el port coerce en silencio (`envelope.ts::num()`).
-14. **[P2] Cálculo to-budget duplicado** — `budgets/toBudget.ts` (`computeToBudgetFull`) es un camino imperativo paralelo al spreadsheet → riesgo de drift.
+**Motor de cálculo** (port: `src/core/domain/spreadsheet`, `budgets`, `goals`): 9. **[P0] Presupuesto tracking/report no existe** — el port es envelope-only (no hay equivalente a `budget/tracking.ts`: faltan celdas `spent-with-carryover`, `total-saved`, `real-saved`, `total-budget-income`) y no se lee nunca `preferences.budgetType`. Un archivo tracking abierto en móvil renderiza con semántica errónea. 10. **[P1] `ensureBudgetCellsForMonth` es código muerto** (definido en `envelope.ts:328`, nunca llamado) y el horizonte forward es solo hoy+3 meses (original: +12). Navegar más allá muestra ceros sin mecanismo de construcción lazy. 11. **[P1] `triggerBudgetChanges` ignora `accounts.offbudget` y `category_mapping`** (`spreadsheet/sync.ts:39`) → saldos de categoría stale tras mover una cuenta on/off budget o fusionar categorías (original: `budget/base.ts` handleAccountChange/handleCategoryMappingChange). Además `BUDGET_TABLES` excluye `reflect_budgets`. 12. **[P2] Goals**: falta el tipo `schedule` (`goals/types.ts`, `engine.ts`); las notas `#template` legacy solo se detectan (`hasLegacyTemplateNotes`), nunca se parsean; `inferGoalFromDef` solo lee `templates[0]` y 3 tipos. 13. **[P2] Invariante `safeNumber` perdido** — el original lanza excepción si un resultado no es entero (`shared/util.ts::safeNumber`); el port coerce en silencio (`envelope.ts::num()`). 14. **[P2] Cálculo to-budget duplicado** — `budgets/toBudget.ts` (`computeToBudgetFull`) es un camino imperativo paralelo al spreadsheet → riesgo de drift.
 
-**Capa de datos:**
-15. **[P2] Reglas solo se aplican en el form de guardado** (`transactions/save.ts:88`, fill-empty-only); `addTransaction`, transfers, reconciliación, schedule-post e import se saltan el motor de reglas (upstream las corre en `addTransactions`).
-16. **[P3] Migraciones congeladas en `1765518577215`** — faltan 7 migraciones upstream posteriores (columnas `tags.hidden`, `accounts.bank_sync_status`, `schedules.custom_upcoming_length`, `categories.cleanup_def`, tabla `cleanup_groups`, `custom_reports.show_trend_lines`, índices). Con el fix #1, mensajes a columnas inexistentes serían el siguiente fallo → hay que subir el schema junto con el fix #1.
-17. **[P3] No hay vistas SQL `v_*` físicas** (inlined en el compilador AQL) aunque sus migration IDs están stampeados — solo importa si el sqlite crudo se entrega al desktop.
+**Capa de datos:** 15. **[P2] Reglas solo se aplican en el form de guardado** (`transactions/save.ts:88`, fill-empty-only); `addTransaction`, transfers, reconciliación, schedule-post e import se saltan el motor de reglas (upstream las corre en `addTransactions`). 16. **[P3] Migraciones congeladas en `1765518577215`** — faltan 7 migraciones upstream posteriores (columnas `tags.hidden`, `accounts.bank_sync_status`, `schedules.custom_upcoming_length`, `categories.cleanup_def`, tabla `cleanup_groups`, `custom_reports.show_trend_lines`, índices). Con el fix #1, mensajes a columnas inexistentes serían el siguiente fallo → hay que subir el schema junto con el fix #1. 17. **[P3] No hay vistas SQL `v_*` físicas** (inlined en el compilador AQL) aunque sus migration IDs están stampeados — solo importa si el sqlite crudo se entrega al desktop.
 
 **Lo que está bien (preservar):** primitivas HLC/merkle byte-idénticas, protobuf y cifrado (AES-256-GCM + PBKDF2-SHA512-10000) wire-compatibles con el servidor, undo correcto (no graba mensajes remotos), prefs de 3 niveles, transfers/splits/payee-merge fieles, prefix-index O(1) del spreadsheet, batching + debounce de fullSync.
 
@@ -58,7 +50,7 @@ El mock actual de `expo-sqlite` (`src/__mocks__/expo-sqlite.ts`) es un stub vac�
 **0.1** Reemplazar el mock por un shim respaldado por `better-sqlite3` (devDependency) que implemente la superficie que usa `src/core/db/index.ts`: `getAllAsync`, `getFirstAsync`, `runAsync`, `execAsync`, `getAllSync`, `getFirstSync` y lo que use `transaction()`. DBs `:memory:` keyed por nombre.
 **0.2** Helper `src/core/db/__tests__/testDb.ts` que corre `initSchema` + `loadClock()`.
 
-*Verificación*: los 742 tests existentes siguen en verde + smoke test insert/read vía `runQuery`.
+_Verificación_: los 742 tests existentes siguen en verde + smoke test insert/read vía `runQuery`.
 
 ## Fase 1 — Integridad de sync (P0: convergencia y atomicidad)
 
@@ -77,6 +69,7 @@ El mock actual de `expo-sqlite` (`src/__mocks__/expo-sqlite.ts`) es un stub vac�
 **1.6 Quitar el rebuild de merkle mid-loop y arreglar el round-trip de valores** (fix #8). Borrar el bloque `rebuildMerkleHash` de `fullSync.ts:118-133` (mantener `repairSync` como acción explícita en settings, Fase 4.4). Hacer que `getMessagesSince` (apply.ts:205-217) devuelva el `value` serializado tal cual está almacenado y que `encode()` (encoder.ts) lo acepte sin re-serializar, como upstream (index.ts:534-540).
 
 **Tests Fase 1** (`src/core/sync/__tests__/`):
+
 - `apply.test.ts` — round-trip de convergencia: 2 DBs en memoria, mensajes entrelazados incluyendo `custom_reports`, `banks`, `transaction_filters`, `reflect_budgets` y un dataset ficticio `future_table`, aplicados en distinto orden → mismo contenido de `messages_crdt`, mismo hash de merkle, `merkle.diff === null`. (Regresión directa del fix #1.)
 - `apply-rollback.test.ts` — mensaje con columna inexistente a mitad de batch → `SyncError('invalid-schema')`, `messages_crdt`, `messages_clock` y hash de merkle en memoria intactos. (Regresión del fix #2.)
 - `batch.test.ts` — `batchMessages` anidado aplica exactamente una vez.
@@ -86,10 +79,10 @@ El mock actual de `expo-sqlite` (`src/__mocks__/expo-sqlite.ts`) es un stub vac�
 ## Fase 2 — Corrección del motor de cálculo (P1)
 
 **2.1 Extensión lazy de meses + horizonte** (fix #10). Conectar el código muerto: añadir `ensureMonthRange(month)` en `spreadsheet/sync.ts` que trackea el rango construido `[start, end]` y construye **contiguamente** desde el borde hasta el mes pedido (las deps cross-month `prevSheet` no admiten huecos), dentro de un `startTransaction()`. Llamarlo desde el hook de navegación de mes en `src/features/budget/hooks/` antes de leer celdas. Mantener el rango inicial −3/+3 por velocidad de arranque; el lazy path hace que los meses lejanos sean correctos en vez de cero.
-*Test*: navegar a hoy+8 → `to-budget` no-cero con budgets sembrados y meses intermedios existentes.
+_Test_: navegar a hoy+8 → `to-budget` no-cero con budgets sembrados y meses intermedios existentes.
 
 **2.2 `triggerBudgetChanges` reacciona a `accounts` y `category_mapping`** (fix #11). Añadir ambos a los dos sets `BUDGET_TABLES` (batch.ts y fullSync.ts). En `triggerBudgetChanges`: mensaje de `accounts` con columna `offbudget`/`closed`/`tombstone` → invalidar todas las celdas de prefijo `sum-amount-` (conservador pero barato con el prefix index y es operación rara); `category_mapping` → igual.
-*Test*: flip de `offbudget` vía `sendMessages` → `sum-amount-{cat}` y `to-budget` recomputan excluyendo la cuenta.
+_Test_: flip de `offbudget` vía `sendMessages` → `sum-amount-{cat}` y `to-budget` recomputan excluyendo la cuenta.
 
 **2.3 Restaurar el invariante `safeNumber`** (fix #13). Portar `shared/util.ts::safeNumber` de upstream (lanza si el resultado no es entero) a `src/lib/number.ts` y envolver los resultados de las fórmulas en `envelope.ts` donde upstream lo hace. Consolidar con el `safeNumber` privado no usado de `spreadsheet.ts:51`.
 
@@ -98,19 +91,20 @@ El mock actual de `expo-sqlite` (`src/__mocks__/expo-sqlite.ts`) es un stub vac�
 ## Fase 3 — Paridad de features
 
 **3.1 Presupuesto tracking/report** (fix #9; depende de 2.x). Esfuerzo ~3-4 días: el `Spreadsheet` del port ya soporta todo lo que `tracking.ts` necesita — es un archivo de fórmulas nuevo + switch de tipo, no un cambio de motor.
+
 - Nuevo `src/core/domain/spreadsheet/tracking.ts` espejo de `envelope.ts`: `catBudgeted` lee `reflect_budgets` (ya en schema); `leftover` income-aware sin cadena `leftover-pos`; celdas extra `spent-with-carryover-{cat}`, `total-budget-income`, `total-saved`, `real-saved`; sin `to-budget`/`buffered`/`from-last-month`; honrar `hidden` en sumas de grupo/summary. Extraer el SQL de `catSpent` a un helper compartido con envelope.
 - Extender `bindings.ts` con el objeto `trackingBudget`.
 - `getBudgetType(): 'envelope' | 'report'` en `preferences/index.ts` leyendo la fila `budgetType` de `preferences` (verificar el valor exacto que guarda el desktop — históricamente `'report'|'rollover'` — y normalizar como upstream `budget/base.ts:17`).
 - `initSpreadsheet()` branch por tipo; en `apply.ts`, tras commit, si algún mensaje fue `preferences/budgetType` → `runStructuralRefresh` + evento a la UI (upstream index.ts:368).
 - Añadir `reflect_budgets` a `BUDGET_TABLES` y a `triggerBudgetChanges`.
 - UI: hooks de `src/features/budget/` seleccionan bindings por tipo; `setBudgetAmount` etc. escriben `reflect_budgets` en modo tracking (patrón `getBudgetTable()` de upstream `budget/actions.ts`).
-*Tests*: escenarios portados de upstream (carryover con `spent-with-carryover`, `total-saved = income − budgeted`, `real-saved`, signo de leftover en categorías income) + test de switch de tipo vía mensaje sincronizado.
+  _Tests_: escenarios portados de upstream (carryover con `spent-with-carryover`, `total-saved = income − budgeted`, `real-saved`, signo de leftover en categorías income) + test de switch de tipo vía mensaje sincronizado.
 
 **3.2 Goals: tipo `schedule` + parseo de notas legacy** (fix #12). Añadir el tipo `schedule` a `types.ts`/`engine.ts` (resolver el schedule por nombre; el port ya tiene motor de recurrencia completo en `domain/schedules`). Extender `parse.ts` para parsear de verdad las líneas `#template`/`#goal` cuando `goal_def` esté vacío (parser a mano del subset: `simple`, `by`, `spend`, `schedule`, `percentage`, `week`, `remainder`, `#goal`), sustituyendo el detect-only. Rehacer `inferGoalFromDef` (envelope.ts:271-287) para considerar todos los templates y los tipos nuevos.
-*Tests*: casos espejo de `goal-template.test.ts` upstream.
+_Tests_: casos espejo de `goal-template.test.ts` upstream.
 
 **3.3 Reglas en todos los caminos de creación de transacciones** (fix #15). Nuevo `rules/runRules.ts` portando la semántica de `transaction-rules.ts::applyRules` (pre → default → post stage sobre el objeto completo). Aplicar en `addTransaction`, schedule-post e importadores; verificar contra upstream `accounts/transactions.ts::addTransactions` qué caminos corren reglas exactamente antes de implementar (la entrada manual del form es autoritativa en upstream — replicar exacto).
-*Tests*: regla con acción de categoría aplica en `addTransaction` y schedule-post; el contraparte de un transfer no se toca.
+_Tests_: regla con acción de categoría aplica en `addTransaction` y schedule-post; el contraparte de un transfer no se toca.
 
 **3.4 SYNC_MODE + `applyMessagesForImport`** (fix #5). Nuevo `src/core/sync/syncMode.ts` (`setSyncingMode`/`checkSyncingMode`, upstream index.ts:41-78); gate en `apply.ts` (fast-path import: sin `compareMessages` ni log CRDT, upstream index.ts:231-250), en `scheduleFullSync` (respetar `disabled`/`offline`) y en `fullSync.ts`. Modo `import` durante descarga inicial / importación de archivo; `offline` en fallo de red.
 

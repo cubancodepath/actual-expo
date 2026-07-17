@@ -74,4 +74,4 @@ npx wrangler d1 execute actual-waitlist --remote --command "UPDATE waitlist SET 
 
 - **Does your app use encryption?**: Yes
 - **Does your app qualify for any of the exemptions?**: Yes
-- *(AES-256-GCM para sync, HTTPS para network — ya configurado con `ITSAppUsesNonExemptEncryption: false` en app.config.ts)*
+- _(AES-256-GCM para sync, HTTPS para network — ya configurado con `ITSAppUsesNonExemptEncryption: false` en app.config.ts)_

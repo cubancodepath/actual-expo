@@ -7,15 +7,15 @@
 
 La arquitectura Feature-Sliced (`src/core`, `src/design-system`, `src/features`, `src/stores`, `src/services`) **ya está implementada y sin carpetas legacy** — el problema no son las carpetas sino la disciplina:
 
-| # | Problema | Evidencia |
-|---|---|---|
-| 1 | Rutas gordas en `app/` (regla "routes thin" violada) | `budget/goal.tsx` 930 líneas, `budget/edit.tsx` 801, `(budget)/index.tsx` 782, `budget/edit-category.tsx` 781, `schedule/[id].tsx` 593, `onboarding.tsx` 577, `(spending)/search.tsx` 574; backlog: `account/[id].tsx` 558, `account/search.tsx` 550, `settings/budget.tsx` 529 |
-| 2 | Aliases muertos | `@core/`, `@ds/`, `@features/`, `@shared/` en tsconfig + CLAUDE.md con **0 usos**; todo usa `@/` (1300+) y ~440 relativos |
-| 3 | Inversión de dependencia | `src/design-system/index.ts` re-exporta de features: `CurrencyInput`, `MonthPicker`, `OverspentPill`, `ExpenseGroupListItem`, `ExpenseCategoryListItem`, `IncomeGroup` |
-| 4 | Barrels inconsistentes | core/ todos; features/ casi ninguno; stores/lib/services/shared ninguno |
-| 5 | Hooks en `components/` | `features/transactions/components/useTransactionForm.ts`, `useAmountInput.ts` |
-| 6 | Andamiaje vacío | `features/schedules/components/`, `features/settings/components/`, `features/spending/hooks/` |
-| 7 | Docs desfasados | aliases en CLAUDE.md; paths viejos en `docs/architecture-differences.md` |
+| #   | Problema                                             | Evidencia                                                                                                                                                                                                                                                                       |
+| --- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Rutas gordas en `app/` (regla "routes thin" violada) | `budget/goal.tsx` 930 líneas, `budget/edit.tsx` 801, `(budget)/index.tsx` 782, `budget/edit-category.tsx` 781, `schedule/[id].tsx` 593, `onboarding.tsx` 577, `(spending)/search.tsx` 574; backlog: `account/[id].tsx` 558, `account/search.tsx` 550, `settings/budget.tsx` 529 |
+| 2   | Aliases muertos                                      | `@core/`, `@ds/`, `@features/`, `@shared/` en tsconfig + CLAUDE.md con **0 usos**; todo usa `@/` (1300+) y ~440 relativos                                                                                                                                                       |
+| 3   | Inversión de dependencia                             | `src/design-system/index.ts` re-exporta de features: `CurrencyInput`, `MonthPicker`, `OverspentPill`, `ExpenseGroupListItem`, `ExpenseCategoryListItem`, `IncomeGroup`                                                                                                          |
+| 4   | Barrels inconsistentes                               | core/ todos; features/ casi ninguno; stores/lib/services/shared ninguno                                                                                                                                                                                                         |
+| 5   | Hooks en `components/`                               | `features/transactions/components/useTransactionForm.ts`, `useAmountInput.ts`                                                                                                                                                                                                   |
+| 6   | Andamiaje vacío                                      | `features/schedules/components/`, `features/settings/components/`, `features/spending/hooks/`                                                                                                                                                                                   |
+| 7   | Docs desfasados                                      | aliases en CLAUDE.md; paths viejos en `docs/architecture-differences.md`                                                                                                                                                                                                        |
 
 ## 2. Decisiones tomadas (usuario, 2026-07-03)
 
@@ -83,6 +83,7 @@ pnpm test          # esperado 742/743 (fallo pre-existente schedule.test.ts:493)
 npx tsc --noEmit   # 6 errores pre-existentes (@react-navigation, sf-symbols-typescript)
 pnpm lint
 ```
+
 Screenshots light/dark de budget, spending, account, schedule, settings, onboarding → `docs/screenshots-baseline/`. Anotar qué flujos Maestro pasan (`pnpm e2e`).
 
 ## FASE 1 — Saneamiento + esqueleto nueva estructura (M, 2-3 días, riesgo bajo)
@@ -129,8 +130,8 @@ Screenshots light/dark de budget, spending, account, schedule, settings, onboard
 
 ```tsx
 // app/(auth)/budget/goal.tsx  (después: ~10 líneas)
-import { useLocalSearchParams } from 'expo-router';
-import { GoalScreen } from '@/features/budget/screens/GoalScreen';
+import { useLocalSearchParams } from "expo-router";
+import { GoalScreen } from "@/features/budget/screens/GoalScreen";
 
 export default function GoalRoute() {
   const { categoryId, month } = useLocalSearchParams<{ categoryId: string; month: string }>();
@@ -140,15 +141,15 @@ export default function GoalRoute() {
 
 Orden (menor→mayor riesgo, **un commit atómico por ruta** para poder bisectar):
 
-| Ruta | Líneas | Destino |
-|---|---|---|
-| `app/(public)/onboarding.tsx` | 577 | `features/settings/screens/OnboardingScreen.tsx` |
-| `app/(auth)/(tabs)/(spending)/search.tsx` | 574 | `features/spending/screens/SearchScreen.tsx` |
-| `app/(auth)/schedule/[id].tsx` | 593 | `features/schedules/screens/ScheduleDetailScreen.tsx` |
-| `app/(auth)/budget/edit-category.tsx` | 781 | `features/budget/screens/EditCategoryScreen.tsx` |
-| `app/(auth)/budget/edit.tsx` | 801 | `features/budget/screens/EditBudgetScreen.tsx` |
-| `app/(auth)/(tabs)/(budget)/index.tsx` | 782 | `features/budget/screens/BudgetScreen.tsx` (tab principal, la más delicada) |
-| `app/(auth)/budget/goal.tsx` | 930 | `features/budget/screens/GoalScreen.tsx` + extraer `hooks/useGoalEditor.ts` (>400 líneas de lógica de formulario) |
+| Ruta                                      | Líneas | Destino                                                                                                           |
+| ----------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------- |
+| `app/(public)/onboarding.tsx`             | 577    | `features/settings/screens/OnboardingScreen.tsx`                                                                  |
+| `app/(auth)/(tabs)/(spending)/search.tsx` | 574    | `features/spending/screens/SearchScreen.tsx`                                                                      |
+| `app/(auth)/schedule/[id].tsx`            | 593    | `features/schedules/screens/ScheduleDetailScreen.tsx`                                                             |
+| `app/(auth)/budget/edit-category.tsx`     | 781    | `features/budget/screens/EditCategoryScreen.tsx`                                                                  |
+| `app/(auth)/budget/edit.tsx`              | 801    | `features/budget/screens/EditBudgetScreen.tsx`                                                                    |
+| `app/(auth)/(tabs)/(budget)/index.tsx`    | 782    | `features/budget/screens/BudgetScreen.tsx` (tab principal, la más delicada)                                       |
+| `app/(auth)/budget/goal.tsx`              | 930    | `features/budget/screens/GoalScreen.tsx` + extraer `hooks/useGoalEditor.ts` (>400 líneas de lógica de formulario) |
 
 Backlog 2ª pasada: `account/[id].tsx` (558), `account/search.tsx` (550), `settings/budget.tsx` (529), resto >400.
 
@@ -165,43 +166,55 @@ Se hace ANTES de HeroUI: mover código con estilos viejos es mecánico; luego ca
 ## FASE 4 — Infra HeroUI Native + Uniwind + theme (M, 2-3 días + spike, riesgo técnico ALTO)
 
 ### 4.1 Spike (medio día, branch desechable `spike/heroui`)
+
 ```bash
 pnpm add heroui-native uniwind tailwindcss@^4
 npx expo prebuild --clean && pnpm ios
 ```
+
 Validar (criterio de abort: incompatibilidad no resoluble → parar y decidir):
+
 - Matriz Expo 55 / RN 0.83 / New Architecture / `react-native-nitro-modules ^0.34.1` **ya instalado** (Uniwind es nitro-based — verificar que las versiones de nitro no chocan).
 - `metro.config.js` — hoy solo Sentry; componer:
   ```js
-  const { getSentryExpoConfig } = require('@sentry/react-native/metro');
-  const { withUniwind } = require('uniwind/metro'); // verificar import exacto en docs de Uniwind
+  const { getSentryExpoConfig } = require("@sentry/react-native/metro");
+  const { withUniwind } = require("uniwind/metro"); // verificar import exacto en docs de Uniwind
   module.exports = withUniwind(getSentryExpoConfig(__dirname));
   ```
 - Pantalla de prueba con TODO junto: HeroUI `Button` + componente viejo con `useThemedStyles` + Reanimated 4 + `expo-glass-effect` + vista Skia + HeroUI dentro de celdas `@legendapp/list`.
 
 ### 4.2 Theme — `src/theme/global.css`
+
 Variables semánticas Tailwind v4 con los valores de los tokens actuales (`src/theme/tokens/colors.ts` como referencia; al final el CSS es la fuente de verdad y los tokens TS quedan reducidos a lo que Skia/charts lean por JS):
+
 ```css
-@import 'tailwindcss';
+@import "tailwindcss";
 @theme {
   --color-page-background: #ffffff;
   --color-card-background: #f7f7f8;
   --color-text-primary: #1f2023;
   --color-text-secondary: #6b6f76;
-  --color-accent: #8719e0;      /* morado Actual */
+  --color-accent: #8719e0; /* morado Actual */
   --color-negative: #d32f2f;
   --color-positive: #2e7d32;
   /* ...resto de tokens semánticos: spacing/radii si se personalizan */
 }
 /* bloque dark: según mecanismo de Uniwind (dark: variant / data-theme) */
 ```
+
 Uso: `className="bg-page-background text-text-primary"`, `text-negative` para importes en rojo, etc.
 
 ### 4.3 Dark mode con prefsStore
+
 `ThemeProvider` (`src/theme/ThemeProvider.tsx`) sigue siendo el **único dueño de la decisión** (`themeMode` de `prefsStore` — `system|light|dark` — + `useColorScheme()`), y sincroniza a Uniwind con su API imperativa (equivalente a `UnistylesRuntime.setTheme`/adaptive) en un effect. Envolver en `app/_layout.tsx`:
+
 ```tsx
-<ThemeProvider>          {/* decide el scheme; MMKV es síncrono → sin flash */}
-  <HeroUINativeProvider> {/* nombre exacto según docs */}
+<ThemeProvider>
+  {" "}
+  {/* decide el scheme; MMKV es síncrono → sin flash */}
+  <HeroUINativeProvider>
+    {" "}
+    {/* nombre exacto según docs */}
     ...
   </HeroUINativeProvider>
 </ThemeProvider>
@@ -215,15 +228,15 @@ Uso: `className="bg-page-background text-text-primary"`, `text-negative` para im
 
 **Mapeo de sustitución** al migrar cada pantalla:
 
-| Hoy (design-system) | Mañana |
-|---|---|
-| `Button`, `Input`, `Card`, `Divider`, `Skeleton`, `Badge/Pill/InfoPill` | heroui-native: `Button`, `TextField`, `Card`/`Surface`, `Divider`, `Skeleton`, `Chip` |
-| `Text` (variantes typography.ts) | RN `Text` + clases; si se repite, helper con tailwind-variants en `src/lib/text-variants.ts` |
-| `Spacer`, `RowSeparator` | clases (`h-4`, `border-b border-divider`) — componentes eliminados |
-| `Amount`, `TagPill`, `NotesWithTags`, `ScheduleStatusBadge`, `CurrencySymbol`, `CurrencyInput` | mover a `src/components/`, estilos a className |
-| `CircularProgress`/`ProgressBar` (Skia), `GlassButton` (expo-glass-effect), `ContextMenu` (zeego), `Icon`+iconRegistry, `AnimatedCheckmark/View`, `haptics` | mover a `src/components/`; layout por className; props de dibujo Skia leen CSS vars vía hook de Uniwind |
+| Hoy (design-system)                                                                                                                                             | Mañana                                                                                                                          |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `Button`, `Input`, `Card`, `Divider`, `Skeleton`, `Badge/Pill/InfoPill`                                                                                         | heroui-native: `Button`, `TextField`, `Card`/`Surface`, `Divider`, `Skeleton`, `Chip`                                           |
+| `Text` (variantes typography.ts)                                                                                                                                | RN `Text` + clases; si se repite, helper con tailwind-variants en `src/lib/text-variants.ts`                                    |
+| `Spacer`, `RowSeparator`                                                                                                                                        | clases (`h-4`, `border-b border-divider`) — componentes eliminados                                                              |
+| `Amount`, `TagPill`, `NotesWithTags`, `ScheduleStatusBadge`, `CurrencySymbol`, `CurrencyInput`                                                                  | mover a `src/components/`, estilos a className                                                                                  |
+| `CircularProgress`/`ProgressBar` (Skia), `GlassButton` (expo-glass-effect), `ContextMenu` (zeego), `Icon`+iconRegistry, `AnimatedCheckmark/View`, `haptics`     | mover a `src/components/`; layout por className; props de dibujo Skia leen CSS vars vía hook de Uniwind                         |
 | `SwipeableRow`, `UndoToast`, `KeyboardToolbar`, `CategoryPickerList`, `SearchBar`, `Banner/ErrorBanner`, `ListItem`, `SectionHeader`, `EmptyState`, `SyncBadge` | mover a `src/components/`; los mapeables se reescriben sobre primitivos HeroUI por dentro (son componentes de app, no wrappers) |
-| `swift-ui/` (bridges @expo/ui) | mover a `src/components/swift-ui/` tal cual |
+| `swift-ui/` (bridges @expo/ui)                                                                                                                                  | mover a `src/components/swift-ui/` tal cual                                                                                     |
 
 **Orden de pantallas** (bajo→alto riesgo): settings → onboarding → (files)/(public) auth → schedules → accounts → transactions → spending → reports (charts) → **budget** (tab principal, al final con máxima experiencia acumulada). Un PR por pantalla o grupo pequeño; cada PR mueve a `src/components/` los custom que necesita.
 
@@ -254,15 +267,15 @@ Uso: `className="bg-page-background text-text-primary"`, `text-negative` para im
 
 ## Resumen de fases
 
-| Fase | Contenido | Esfuerzo | Gate |
-|---|---|---|---|
-| 0 | Baseline (tag, tests, screenshots) | XS | Números registrados |
-| 1 | Saneamiento + esqueleto estructura | M | tsc + 742/743, diff solo estructural |
-| 2 | Rutas thin → features/*/screens/ | M-L | Maestro + screenshots por ruta |
-| 3 | 7 migraciones schema upstream | M | Tests migración + fixture paridad |
-| 4 | Spike + infra HeroUI/Uniwind/theme | M (riesgo alto) | Toggle tema dual, EAS preview |
-| 5 | Strangler pantalla a pantalla; borrar design-system | L (incremental) | grep design-system = 0 |
-| 6 | Proceso upstream (mapa, script, checklist) | M (paralelo) | Script funcionando contra ../actual |
+| Fase | Contenido                                           | Esfuerzo        | Gate                                 |
+| ---- | --------------------------------------------------- | --------------- | ------------------------------------ |
+| 0    | Baseline (tag, tests, screenshots)                  | XS              | Números registrados                  |
+| 1    | Saneamiento + esqueleto estructura                  | M               | tsc + 742/743, diff solo estructural |
+| 2    | Rutas thin → features/\*/screens/                   | M-L             | Maestro + screenshots por ruta       |
+| 3    | 7 migraciones schema upstream                       | M               | Tests migración + fixture paridad    |
+| 4    | Spike + infra HeroUI/Uniwind/theme                  | M (riesgo alto) | Toggle tema dual, EAS preview        |
+| 5    | Strangler pantalla a pantalla; borrar design-system | L (incremental) | grep design-system = 0               |
+| 6    | Proceso upstream (mapa, script, checklist)          | M (paralelo)    | Script funcionando contra ../actual  |
 
 ## Archivos críticos
 

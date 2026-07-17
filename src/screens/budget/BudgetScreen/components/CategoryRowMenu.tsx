@@ -3,7 +3,14 @@ import { useWindowDimensions } from "react-native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { useTranslation } from "react-i18next";
 import { Menu, useThemeColor } from "heroui-native";
-import { ArrowLeftRight, ChartLine, Info, Plus, Target } from "lucide-react-native";
+import {
+  ArrowLeftRight,
+  ChartLine,
+  CirclePlus,
+  ClockArrowLeft,
+  Ellipsis,
+  Target,
+} from "lucide-react-native";
 
 /** Window-relative frame of the pressed row, measured on long-press. */
 export interface PreviewRect {
@@ -39,7 +46,7 @@ export function CategoryRowMenu({ preview, previewRect, onPreviewLayout }: Categ
 
   // Open above the row when there isn't room for the menu below it — otherwise
   // collision avoidance would slide the popover up and cover the row.
-  const MENU_HEIGHT_ESTIMATE = 300;
+  const MENU_HEIGHT_ESTIMATE = 350;
   const placement =
     previewRect && previewRect.y + previewRect.height + MENU_HEIGHT_ESTIMATE > windowHeight
       ? "top"
@@ -74,7 +81,7 @@ export function CategoryRowMenu({ preview, previewRect, onPreviewLayout }: Categ
       )}
       <Menu.Content presentation="popover" width={240} placement={placement} align="start">
         <Menu.Item className="gap-3" onPress={noop}>
-          <Plus size={18} color={foreground} />
+          <CirclePlus size={18} color={foreground} />
           <Menu.ItemTitle>{t("categoryMenu.addTransaction")}</Menu.ItemTitle>
         </Menu.Item>
         <Menu.Item className="gap-3" onPress={noop}>
@@ -82,15 +89,19 @@ export function CategoryRowMenu({ preview, previewRect, onPreviewLayout }: Categ
           <Menu.ItemTitle>{t("categoryMenu.viewActivity")}</Menu.ItemTitle>
         </Menu.Item>
         <Menu.Item className="gap-3" onPress={noop}>
-          <ArrowLeftRight size={18} color={foreground} />
+          <ClockArrowLeft size={18} color={foreground} />
           <Menu.ItemTitle>{t("categoryMenu.viewMoves")}</Menu.ItemTitle>
         </Menu.Item>
         <Menu.Item className="gap-3" onPress={noop}>
-          <Target size={18} color={foreground} />
-          <Menu.ItemTitle>{t("categoryMenu.editTargets")}</Menu.ItemTitle>
+          <ArrowLeftRight size={18} color={foreground} />
+          <Menu.ItemTitle>{t("categoryMenu.moveMoney")}</Menu.ItemTitle>
         </Menu.Item>
         <Menu.Item className="gap-3" onPress={noop}>
-          <Info size={18} color={foreground} />
+          <Target size={18} color={foreground} />
+          <Menu.ItemTitle>{t("categoryMenu.editGoals")}</Menu.ItemTitle>
+        </Menu.Item>
+        <Menu.Item className="gap-3" onPress={noop}>
+          <Ellipsis size={18} color={foreground} />
           <Menu.ItemTitle>{t("categoryMenu.viewDetails")}</Menu.ItemTitle>
         </Menu.Item>
       </Menu.Content>

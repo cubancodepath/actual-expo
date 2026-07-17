@@ -33,8 +33,15 @@ interface BudgetCategoryRowProps {
   /**
    * Open the category menu for this row. `rect` is the row's window frame, which
    * the screen uses to anchor the menu and float the lifted preview over it.
+   * `carryover` rides along like `balance` so the menu can label its toggle.
    */
-  onLongPressRow: (catId: string, catName: string, balance: number, rect: RowRect) => void;
+  onLongPressRow: (
+    catId: string,
+    catName: string,
+    balance: number,
+    carryover: boolean,
+    rect: RowRect,
+  ) => void;
   /**
    * Whether the menu is open on this row AND its floating preview is up. The row
    * hides itself then, so the preview replaces it without a seam.
@@ -67,6 +74,7 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
   const balance = useSheetValueNumber(sheet, envelopeBudget.catBalance(catId));
   const goal = useSheetValueNumber(sheet, envelopeBudget.catGoal(catId));
   const longGoalRaw = useSheetValue(sheet, envelopeBudget.catLongGoal(catId));
+  const carryover = useSheetValue(sheet, envelopeBudget.catCarryover(catId)) === true;
   const rowViewRef = useRef<View>(null);
 
   return (
@@ -78,7 +86,7 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
         // The screen anchors the menu to this frame, so it has to be measured
         // in window coordinates — the same space the menu's portal lives in.
         rowViewRef.current?.measureInWindow((x, y, width, height) => {
-          onLongPressRow(catId, catName, balance, { x, y, width, height });
+          onLongPressRow(catId, catName, balance, carryover, { x, y, width, height });
         });
       }}
     >
@@ -101,6 +109,7 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
         <NumericCell width={COL_AVAILABLE}>
           <AvailableChip
             cents={balance}
+            carryover={carryover}
             status={categoryChipStatus({
               balance,
               budgeted,

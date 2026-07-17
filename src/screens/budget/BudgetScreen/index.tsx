@@ -5,7 +5,7 @@ import Animated from "react-native-reanimated";
 import { Accordion, AccordionLayoutTransition, Menu } from "heroui-native";
 import { envelopeBudget, sheetForMonth } from "@/core/domain/spreadsheet/bindings";
 import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
-import { setBudgetAmount } from "@/core/domain/budgets";
+import { setBudgetAmount, setCategoryCarryover } from "@/core/domain/budgets";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { useBudgetMonth } from "@/screens/budget/hooks/useBudgetMonth";
 import { HIDDEN_GROUP_ID, useBudgetSections } from "@/screens/budget/hooks/useBudgetSections";
@@ -28,6 +28,7 @@ interface MenuTarget {
   catId: string;
   catName: string;
   balance: number;
+  carryover: boolean;
   /** The row's window frame, measured at long-press. */
   rect: RowRect;
 }
@@ -122,12 +123,25 @@ export function BudgetScreen() {
   const [isPreviewShown, setPreviewShown] = useState(false);
 
   const onLongPressRow = useCallback(
-    (catId: string, catName: string, balance: number, rect: RowRect) => {
+    (catId: string, catName: string, balance: number, carryover: boolean, rect: RowRect) => {
       cancelEditing(); // an in-progress amount edit is dropped, not committed
       setPreviewShown(false);
-      setMenuTarget({ catId, catName, balance, rect });
+      setMenuTarget({ catId, catName, balance, carryover, rect });
     },
     [cancelEditing],
+  );
+
+  // Toggle overspending rollover: optimistic cell write for the instant arrow,
+  // CRDT behind (like commit) — sync.ts recomputes the carried balances when
+  // the zero_budgets messages apply.
+  const toggleCarryover = useCallback(
+    (catId: string, next: boolean) => {
+      getSpreadsheet().setByName(sheet, envelopeBudget.catCarryover(catId), next);
+      setCategoryCarryover(month, catId, next).catch((err) => {
+        emitErrorEvent(err instanceof Error ? err : new Error(String(err)));
+      });
+    },
+    [sheet, month],
   );
 
   const closeMenu = useCallback(() => {
@@ -285,6 +299,8 @@ export function BudgetScreen() {
                     })
                 : undefined
             }
+            carryover={menuTarget.carryover}
+            onToggleCarryover={() => toggleCarryover(menuTarget.catId, !menuTarget.carryover)}
             preview={
               <BudgetCategoryRow
                 catId={menuTarget.catId}

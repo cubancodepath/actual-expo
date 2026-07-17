@@ -18,7 +18,13 @@ interface BudgetGroupProps {
   draft: number;
   onPressRow: (catId: string, budgeted: number, pageY: number) => void;
   /** Open the category menu for a row; `rect` is its measured window frame. */
-  onLongPressRow: (catId: string, catName: string, balance: number, rect: RowRect) => void;
+  onLongPressRow: (
+    catId: string,
+    catName: string,
+    balance: number,
+    carryover: boolean,
+    rect: RowRect,
+  ) => void;
   /** The category whose menu preview is currently floating, if any. */
   liftedCatId: string | null;
   goalsEnabled: boolean;

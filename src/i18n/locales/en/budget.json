@@ -7,6 +7,8 @@
     "viewActivity": "View Activity",
     "viewMoves": "View Moves",
     "moveMoney": "Move Money",
+    "rolloverEnable": "Rollover overspending",
+    "rolloverDisable": "Remove overspending rollover",
     "editGoals": "Edit Goals",
     "viewDetails": "View Details"
   },

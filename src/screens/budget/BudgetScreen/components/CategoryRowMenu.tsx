@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Menu, useThemeColor } from "heroui-native";
 import {
   ArrowLeftRight,
+  ArrowRight,
   ChartLine,
   CirclePlus,
   ClockArrowLeft,
@@ -34,6 +35,10 @@ interface CategoryRowMenuProps {
   onMoveMoney: () => void;
   /** Open the goals editor for the row's category. Hidden when unset. */
   onEditGoals?: () => void;
+  /** Whether this category's balance currently rolls over — picks the label. */
+  carryover: boolean;
+  /** Toggle overspending rollover for the row's category. */
+  onToggleCarryover: () => void;
 }
 
 /** Roughly how tall the menu renders; only used to choose which side to open on. */
@@ -59,6 +64,8 @@ export function CategoryRowMenu({
   onAddTransaction,
   onMoveMoney,
   onEditGoals,
+  carryover,
+  onToggleCarryover,
 }: CategoryRowMenuProps) {
   const { t } = useTranslation("budget");
   const foreground = useThemeColor("foreground");
@@ -106,6 +113,12 @@ export function CategoryRowMenu({
         <Menu.Item className="gap-3" onPress={onMoveMoney}>
           <ArrowLeftRight size={18} color={foreground} />
           <Menu.ItemTitle>{t("categoryMenu.moveMoney")}</Menu.ItemTitle>
+        </Menu.Item>
+        <Menu.Item className="gap-3" onPress={onToggleCarryover}>
+          <ArrowRight size={18} color={foreground} />
+          <Menu.ItemTitle>
+            {t(carryover ? "categoryMenu.rolloverDisable" : "categoryMenu.rolloverEnable")}
+          </Menu.ItemTitle>
         </Menu.Item>
         {onEditGoals ? (
           <Menu.Item className="gap-3" onPress={onEditGoals}>

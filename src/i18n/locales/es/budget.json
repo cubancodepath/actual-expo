@@ -7,6 +7,8 @@
     "viewActivity": "Ver actividad",
     "viewMoves": "Ver movimientos",
     "moveMoney": "Mover dinero",
+    "rolloverEnable": "Arrastrar sobregasto",
+    "rolloverDisable": "Quitar arrastre de sobregasto",
     "editGoals": "Editar objetivos",
     "viewDetails": "Ver detalles"
   },

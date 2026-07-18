@@ -7,7 +7,7 @@ import type { TransactionRow } from "@/core/db/types";
 import type { Transaction, GetTransactionsOptions, TransactionDisplay } from "./types";
 import { onInsert, onUpdate, onDelete as onDeleteTransfer } from "./transfer";
 import { todayInt, startOfMonthInt, endOfMonthInt } from "@/lib/date";
-import { transactionQuery } from "./query";
+import { q, executeQuery } from "@/core/queries";
 
 export type { TransactionDisplay } from "./types";
 
@@ -411,94 +411,12 @@ export const deleteTransaction = undoable(async function deleteTransaction(
 // ---------------------------------------------------------------------------
 
 export async function getTransactionById(id: string): Promise<TransactionDisplay | null> {
-  const rows = await transactionQuery()
-    .filter("t.id = ?", [id])
-    .filter("t.tombstone = 0")
-    .execute();
-  return rows[0] ?? null;
-}
-
-const PAGE_SIZE = 25;
-
-export async function getTransactionsForAccount(
-  accountId: string,
-  opts?: { limit?: number; offset?: number; hideReconciled?: boolean },
-): Promise<TransactionDisplay[]> {
-  return transactionQuery()
-    .forAccount(accountId)
-    .alive()
-    .when(opts?.hideReconciled, (q) => q.hideReconciled())
-    .includeSplitDetails()
-    .limit(opts?.limit ?? PAGE_SIZE)
-    .offset(opts?.offset ?? 0)
-    .execute();
-}
-
-/** All transactions across every account with pagination. */
-export async function getAllTransactions(opts?: {
-  limit?: number;
-  offset?: number;
-  hideReconciled?: boolean;
-}): Promise<TransactionDisplay[]> {
-  return transactionQuery()
-    .alive()
-    .includeAccountName()
-    .includeSplitDetails()
-    .when(opts?.hideReconciled, (q) => q.hideReconciled())
-    .limit(opts?.limit ?? PAGE_SIZE)
-    .offset(opts?.offset ?? 0)
-    .execute();
-}
-
-/** Search transactions with text + status filters across all accounts. */
-export async function searchTransactions(opts: {
-  text?: string;
-  accountId?: string;
-  categoryId?: string;
-  payeeId?: string;
-  cleared?: boolean;
-  uncleared?: boolean;
-  reconciled?: boolean;
-  unreconciled?: boolean;
-  uncategorized?: boolean;
-  tagName?: string;
-  tagNames?: string[];
-  hideReconciled?: boolean;
-  limit?: number;
-  offset?: number;
-}): Promise<TransactionDisplay[]> {
-  const q = transactionQuery()
-    .alive()
-    .includeAccountName()
-    .includeSplitDetails()
-    .when(opts.hideReconciled, (q) => q.hideReconciled())
-    .when(!!opts.accountId, (q) => q.forAccount(opts.accountId!))
-    .when(!!opts.categoryId, (q) => q.withCategory(opts.categoryId!))
-    .when(!!opts.payeeId, (q) => q.withPayee(opts.payeeId!))
-    .when(opts.uncategorized, (q) => q.uncategorized())
-    .when(!!opts.text, (q) => q.textSearch(opts.text!));
-
-  // Tag filters
-  if (opts.tagNames && opts.tagNames.length > 0) {
-    q.withTags(opts.tagNames);
-  } else if (opts.tagName) {
-    q.withTag(opts.tagName);
-  }
-
-  // Status filters
-  if (opts.cleared || opts.uncleared || opts.reconciled || opts.unreconciled) {
-    q.withStatus({
-      cleared: opts.cleared,
-      uncleared: opts.uncleared,
-      reconciled: opts.reconciled,
-      unreconciled: opts.unreconciled,
-    });
-  }
-
-  return q
-    .limit(opts.limit ?? PAGE_SIZE)
-    .offset(opts.offset ?? 0)
-    .execute();
+  // splits: "all" keeps parent-split rows (the default alive filter drops isParent=1),
+  // so this can load a parent for editing as well as normal/child rows.
+  const { data } = await executeQuery<TransactionDisplay>(
+    q("transactions").options({ splits: "all" }).filter({ id }).select(["*", "accountName"]),
+  );
+  return data[0] ?? null;
 }
 
 // ---------------------------------------------------------------------------
@@ -603,20 +521,8 @@ export async function getUnclearedCount(accountId?: string): Promise<number> {
 
 /** Fetch all child transactions for a parent split transaction. */
 export async function getChildTransactions(parentId: string): Promise<TransactionDisplay[]> {
-  return transactionQuery()
-    .filter("t.parent_id = ?", [parentId])
-    .filter("t.tombstone = 0")
-    .orderBy("t.sort_order ASC")
-    .execute();
-}
-
-/** Fetch a parent transaction with all its children grouped. */
-export async function getTransactionWithChildren(
-  id: string,
-): Promise<{ parent: TransactionDisplay; children: TransactionDisplay[] } | null> {
-  const parent = await getTransactionById(id);
-  if (!parent || !parent.is_parent) return null;
-
-  const children = await getChildTransactions(id);
-  return { parent, children };
+  const { data } = await executeQuery<TransactionDisplay>(
+    q("transactions").filter({ parent_id: parentId }).orderBy({ sort_order: "asc" }).select(["*"]),
+  );
+  return data;
 }

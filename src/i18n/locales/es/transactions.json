@@ -88,6 +88,7 @@
   "makeExpense": "Convertir a gasto",
   "createPayee": "Crear \"{{name}}\"",
   "transfer": "Transferencia",
+  "offBudget": "Fuera de presupuesto",
   "today": "Hoy",
   "yesterday": "Ayer",
   "contextCategorize": "Categorizar",

@@ -221,6 +221,28 @@ describe("compile — virtual fields", () => {
     expect(result.sql).not.toContain('"accountName"');
     expect(result.sql).not.toContain("JOIN accounts acc ON");
   });
+
+  it("SELECT * includes transfer flags", () => {
+    const result = c(q("transactions"));
+    expect(result.sql).toContain('"isTransfer"');
+    expect(result.sql).toContain('"transferAccountOffbudget"');
+    expect(result.sql).toContain('"accountOffbudget"');
+  });
+
+  it("shared payee/transfer JOINs are not duplicated across virtual fields", () => {
+    // payeeName + isTransfer + transferAccountOffbudget all need the same
+    // payees/transfer-account JOINs — they must be emitted exactly once.
+    const sql = c(q("transactions")).sql;
+    const count = (needle: string) => sql.split(needle).length - 1;
+    expect(count("LEFT JOIN payees p ON")).toBe(1);
+    expect(count("LEFT JOIN accounts tr_acc ON")).toBe(1);
+  });
+
+  it("filtering by isTransfer adds the transfer JOIN once", () => {
+    const result = c(q("transactions").select(["id"]).filter({ isTransfer: false }));
+    expect(result.sql).toContain("(tr_acc.id IS NOT NULL) =");
+    expect(result.sql.split("LEFT JOIN accounts tr_acc ON").length - 1).toBe(1);
+  });
 });
 
 // ---------------------------------------------------------------------------

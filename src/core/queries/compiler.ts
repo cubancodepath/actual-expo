@@ -96,11 +96,15 @@ function resolveField(
   throw new Error(`Unknown field "${field}" on table "${state.table}"`);
 }
 
-function addVirtualFieldJoins(state: CompilerState, name: string, vf: VirtualFieldDef): void {
-  if (state.addedVirtualJoins.has(name)) return;
-  state.addedVirtualJoins.add(name);
+function addVirtualFieldJoins(state: CompilerState, _name: string, vf: VirtualFieldDef): void {
+  // Dedupe by JOIN string, not field name: several virtual fields (e.g. payeeName,
+  // isTransfer, transferAccountOffbudget) share the same payee/transfer-account
+  // JOINs, and adding them per-field would emit duplicate table aliases.
   for (const join of vf.joins) {
-    state.extraJoins.push(join);
+    if (!state.addedVirtualJoins.has(join)) {
+      state.addedVirtualJoins.add(join);
+      state.extraJoins.push(join);
+    }
   }
   if (vf.dependencies) {
     for (const dep of vf.dependencies) {
@@ -327,7 +331,13 @@ function compileSelect(state: CompilerState, queryState: QueryState): string {
 
     // Default virtual fields included automatically in SELECT *
     const defaultVirtualsMap: Record<string, string[]> = {
-      transactions: ["payeeName", "categoryName"],
+      transactions: [
+        "payeeName",
+        "categoryName",
+        "isTransfer",
+        "transferAccountOffbudget",
+        "accountOffbudget",
+      ],
       schedules: ["next_date", "conditions", "actions"],
     };
     const defaultVirtuals = defaultVirtualsMap[state.table] ?? [];

@@ -92,6 +92,32 @@ export const views: Record<string, ViewDef> = {
         joins: ["JOIN accounts acc ON acc.id = t.acct AND acc.tombstone = 0"],
         dependencies: ["accounts"],
       },
+      // Transfer/off-budget flags — power the "special category" chip (Transfer /
+      // Off budget / Split) and the direction arrow in the ledger row.
+      isTransfer: {
+        sql: "(tr_acc.id IS NOT NULL)",
+        type: "boolean",
+        joins: [
+          "LEFT JOIN payees p ON COALESCE(pm.targetId, t.description) = p.id AND p.tombstone = 0",
+          "LEFT JOIN accounts tr_acc ON p.transfer_acct = tr_acc.id AND tr_acc.tombstone = 0",
+        ],
+        dependencies: ["payees", "accounts"],
+      },
+      transferAccountOffbudget: {
+        sql: "tr_acc.offbudget",
+        type: "boolean",
+        joins: [
+          "LEFT JOIN payees p ON COALESCE(pm.targetId, t.description) = p.id AND p.tombstone = 0",
+          "LEFT JOIN accounts tr_acc ON p.transfer_acct = tr_acc.id AND tr_acc.tombstone = 0",
+        ],
+        dependencies: ["payees", "accounts"],
+      },
+      accountOffbudget: {
+        sql: "own_acc.offbudget",
+        type: "boolean",
+        joins: ["LEFT JOIN accounts own_acc ON own_acc.id = t.acct AND own_acc.tombstone = 0"],
+        dependencies: ["accounts"],
+      },
     },
     aliveFilter: "t.tombstone = 0 AND t.isParent = 0",
     splitFilters: {

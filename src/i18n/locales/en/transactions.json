@@ -106,6 +106,7 @@
   "today": "Today",
   "yesterday": "Yesterday",
   "transfer": "Transfer",
+  "offBudget": "Off budget",
   "showUncleared_one": "Show {{count}} uncleared transaction",
   "showUncleared_other": "Show {{count}} uncleared transactions",
   "search": {

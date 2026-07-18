@@ -24,22 +24,33 @@ import {
 } from "../validation/goalForm.schema";
 
 /**
- * The single editing session of the goal stack: one TanStack form holding the
- * automation being edited, plus the mutations that write it. Lives in the
- * provider (not the editor screen) because the pushed mode screen edits the
- * same draft.
+ * The editing session of the goal stack, derived from the route: the editor is
+ * pushed with `entryId` (edit a saved automation) or `newType` (start a fresh
+ * draft), and the form is *initialized* with those values — TanStack Form's
+ * basic pattern. A changed `formId` makes `useForm` construct a brand-new form
+ * already holding the right defaults, so there is no imperative seeding and no
+ * window where `update()` could clobber values back to an empty draft (which
+ * is exactly what happened when the form was long-lived and reset from the
+ * list screen).
  *
- * Only saved entries exist outside the form — a new goal isn't in the list,
- * the cache, or anywhere else until its save lands, which is what makes
- * back-without-saving a no-op by construction.
+ * Lives in the provider (not the editor screen) because the pushed mode screen
+ * edits the same draft. Only saved entries exist outside the form — a draft is
+ * nowhere else until its save lands, which is what makes back-without-saving a
+ * no-op by construction.
  */
 export function useGoalEditSession({
   categoryId,
+  entryId,
+  newType,
   savedEntries,
   schedules,
   validPercentageSources,
 }: {
   categoryId: string;
+  /** Route param: id of the saved entry being edited (edit sessions). */
+  entryId?: string;
+  /** Route param: display type of a fresh draft (create sessions). */
+  newType?: string;
   savedEntries: AutomationEntry[];
   schedules: GoalValidationCtx["schedules"];
   validPercentageSources: Set<string>;
@@ -54,6 +65,25 @@ export function useGoalEditSession({
   ctxRef.current = { savedEntries, schedules, validPercentageSources };
 
   const schema = useMemo(() => makeGoalFormSchema(() => ctxRef.current), []);
+
+  // The session's identity + initial values, straight from the route. The key
+  // doubles as the formId: a different entry (or a new draft) is a different
+  // form. `savedEntries` is a dep only for the lookup — its identity is stable
+  // while the stack is open (staleTime: Infinity; saves replace it wholesale).
+  const seed = useMemo((): { key: string; values: GoalFormValues } => {
+    const entry = entryId ? savedEntries.find((e) => e.id === entryId) : undefined;
+    if (entry) {
+      return {
+        key: entry.id,
+        values: { entryId: entry.id, displayType: entry.displayType, template: entry.template },
+      };
+    }
+    const type = (newType ?? "fixed") as DisplayTemplateType;
+    return {
+      key: `new-${type}`,
+      values: { entryId: null, displayType: type, template: createDefaultTemplate(type) },
+    };
+  }, [entryId, newType, savedEntries]);
 
   /** Write the given entries as the category's goals; returns them. */
   const persist = async (next: AutomationEntry[]) => {
@@ -97,32 +127,13 @@ export function useGoalEditSession({
   });
 
   const form = useForm({
-    defaultValues: {
-      entryId: null,
-      displayType: "fixed",
-      template: createDefaultTemplate("fixed"),
-    } as GoalFormValues,
+    formId: seed.key,
+    defaultValues: seed.values,
     validators: { onChange: schema, onSubmit: schema },
     onSubmit: async ({ value }) => {
       await saveMutation.mutateAsync(value);
     },
   });
-
-  /** Begin creating — the caller pushes the editor route after. */
-  const startNew = useCallback(
-    (displayType: DisplayTemplateType) => {
-      form.reset({ entryId: null, displayType, template: createDefaultTemplate(displayType) });
-    },
-    [form],
-  );
-
-  /** Begin editing a saved entry — the caller pushes the editor route after. */
-  const startEdit = useCallback(
-    (entry: AutomationEntry) => {
-      form.reset({ entryId: entry.id, displayType: entry.displayType, template: entry.template });
-    },
-    [form],
-  );
 
   /** Swap the draft's amount source (the Custom "Based on" row). */
   const changeType = useCallback(
@@ -150,8 +161,6 @@ export function useGoalEditSession({
 
   return {
     form,
-    startNew,
-    startEdit,
     changeType,
     deleteEntry,
     validateDraftValues,

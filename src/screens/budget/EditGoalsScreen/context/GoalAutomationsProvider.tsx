@@ -29,11 +29,18 @@ const EMPTY_SCHEDULES: Schedule[] = [];
  *    externally-authored problems).
  *
  * The stack is always entered via the list route, so on first render the
- * active route's params are the ones we want. They're frozen so pushing an
- * inner screen (which changes the global params) never re-inits anything.
+ * active route's params are the ones we want. categoryId/dismissCount are
+ * frozen so pushing an inner screen never re-inits the query — but
+ * entryId/newType are read LIVE: they belong to the pushed editor route and
+ * are what the edit session derives its form from.
  */
 function useGoalAutomationsValue() {
-  const rawParams = useGlobalSearchParams<{ categoryId?: string; dismissCount?: string }>();
+  const rawParams = useGlobalSearchParams<{
+    categoryId?: string;
+    dismissCount?: string;
+    entryId?: string;
+    newType?: string;
+  }>();
   const params = useRef(rawParams).current;
   const categoryId = params.categoryId ?? "";
   const router = useRouter();
@@ -57,6 +64,8 @@ function useGoalAutomationsValue() {
 
   const session = useGoalEditSession({
     categoryId,
+    entryId: rawParams.entryId,
+    newType: rawParams.newType,
     savedEntries: entries,
     schedules,
     validPercentageSources,

@@ -66,12 +66,17 @@ export type AutomationEntry = {
 
 let entrySeq = 0;
 
+/**
+ * Counter ids are for entries created ad hoc (a save appending a new goal);
+ * the `-seq-` infix keeps them from ever colliding with the deterministic
+ * positional ids `templatesToEntries` assigns.
+ */
 export function createAutomationEntry(
   template: Template,
   displayType: DisplayTemplateType,
 ): AutomationEntry {
   entrySeq += 1;
-  return { id: `automation-${entrySeq}`, displayType, template };
+  return { id: `automation-seq-${entrySeq}`, displayType, template };
 }
 
 export function toDisplayType(template: Template): DisplayTemplateType {
@@ -239,7 +244,9 @@ export function templatesToEntries(
     entries.push(createAutomationEntry(template, toDisplayType(template)));
   }
 
-  return entries;
+  // Positional ids: the same goal_def always parses to the same ids, so an id
+  // held elsewhere (the editor route) survives a re-parse.
+  return entries.map((entry, i) => ({ ...entry, id: `automation-${i}` }));
 }
 
 // ---------------------------------------------------------------------------

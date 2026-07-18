@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { View } from "react-native";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { useStore } from "@tanstack/react-form";
@@ -34,6 +34,9 @@ const BUTTON_KEYBOARD_GAP = 16;
 export function GoalEditorScreen() {
   const { t } = useTranslation("budget");
   const router = useRouter();
+  // The session's identity — forwarded when pushing the mode screen so the
+  // global params (which the form derives from) keep pointing at this draft.
+  const params = useLocalSearchParams<{ entryId?: string; newType?: string }>();
 
   const { form, schedules, changeType, deleteEntry, validateDraftValues, isSaving } =
     useGoalAutomationsContext();
@@ -95,7 +98,11 @@ export function GoalEditorScreen() {
               onOpenModePane={(custom) =>
                 router.push({
                   pathname: "/(auth)/budget/goal/mode",
-                  params: custom ? { custom: "1" } : {},
+                  params: {
+                    ...(custom ? { custom: "1" } : {}),
+                    ...(params.entryId ? { entryId: params.entryId } : {}),
+                    ...(params.newType ? { newType: params.newType } : {}),
+                  },
                 })
               }
             />

@@ -36,39 +36,31 @@ export function GoalsListScreen() {
     importedFromNotes,
     errorsByEntry,
     conflicts,
-    startNew,
-    startEdit,
     deleteEntry,
     dismiss,
   } = useGoalAutomationsContext();
 
-  const pushEditor = useCallback(() => {
-    router.push("/(auth)/budget/goal/editor");
-  }, [router]);
-
+  // The editor seeds its own draft from these params on mount, so the amount
+  // (and every other field) is in place before it renders — no shared state
+  // mutated here before navigating.
   const openEntry = useCallback(
     (entryId: string) => {
-      const entry = entries.find((e) => e.id === entryId);
-      if (!entry) return;
-      startEdit(entry);
-      pushEditor();
+      router.push({ pathname: "/(auth)/budget/goal/editor", params: { entryId } });
     },
-    [entries, startEdit, pushEditor],
+    [router],
   );
 
   // No type question on the way in: a recurring amount is what a goal almost
   // always is, and the editor's "Based on" row covers the rest.
   const handleAdd = useCallback(() => {
-    startNew("fixed");
-    pushEditor();
-  }, [startNew, pushEditor]);
+    router.push({ pathname: "/(auth)/budget/goal/editor", params: { newType: "fixed" } });
+  }, [router]);
 
   const handleAddOption = useCallback(
     (type: "limit" | "goal") => {
-      startNew(type);
-      pushEditor();
+      router.push({ pathname: "/(auth)/budget/goal/editor", params: { newType: type } });
     },
-    [startNew, pushEditor],
+    [router],
   );
 
   return (

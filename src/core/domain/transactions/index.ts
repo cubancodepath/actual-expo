@@ -210,6 +210,28 @@ export const updateTransaction = undoable(async function updateTransaction(
   }
 });
 
+/**
+ * Move a transaction to another account. Split children carry their own `acct`
+ * column, so moving a parent must cascade to every child — a bare
+ * `updateTransaction(id, { account })` would desync them. Transfers stay in
+ * sync through updateTransaction's transfer hook.
+ */
+export async function moveTransaction(id: string, accountId: string): Promise<void> {
+  const row = await first<TransactionRow>(
+    "SELECT isParent FROM transactions WHERE id = ? AND tombstone = 0",
+    [id],
+  );
+  await batchMessages(async () => {
+    await updateTransaction(id, { account: accountId });
+    if (row?.isParent === 1) {
+      const children = await getChildTransactions(id);
+      for (const child of children) {
+        await updateTransaction(child.id, { account: accountId });
+      }
+    }
+  });
+}
+
 /** Toggle the cleared flag on a transaction (skips reconciled transactions). */
 export const toggleCleared = undoable(async function toggleCleared(id: string): Promise<void> {
   const row = await first<{ cleared: number; reconciled: number }>(

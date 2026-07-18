@@ -280,6 +280,12 @@ export function BudgetScreen() {
                 params: { categoryId: menuTarget.catId, categoryName: menuTarget.catName },
               })
             }
+            onViewActivity={() =>
+              router.push({
+                pathname: "/(auth)/budget/category-transactions",
+                params: { categoryId: menuTarget.catId, categoryName: menuTarget.catName, month },
+              })
+            }
             onMoveMoney={() =>
               router.push({
                 pathname: "/(auth)/budget/move-money",

@@ -15,7 +15,7 @@ export default function SpendingStack() {
         contentStyle: { backgroundColor: colors.pageBackground },
       }}
     >
-      <Stack.Screen name="index" options={{ title }} />
+      <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen
         name="search"
         options={{

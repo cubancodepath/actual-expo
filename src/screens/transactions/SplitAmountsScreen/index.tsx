@@ -1,37 +1,18 @@
-import { Fragment, useCallback, useMemo, useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from "react-native";
-import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import { useTranslation } from "react-i18next";
+import { useMemo } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSelector } from "@tanstack/react-store";
-import { Button, ListGroup, Menu, Separator, Typography, useThemeColor } from "heroui-native";
-import { Check, CircleMinus, Minus, MoreHorizontal, Plus } from "lucide-react-native";
-import { formatCents, signedCents } from "@/lib/currency";
-import { dialog } from "@/ui/feedback/dialog";
-import { ScreenHeader } from "@/ui/ScreenHeader";
-import { BlinkingCursor } from "@/ui/BlinkingCursor";
-import { AmountKeyboard, useAmountKeyboardAvoidance } from "@/ui/amount-keyboard";
-import { Money } from "@/ui/Money";
+import { SplitAmountsView } from "@/screens/transactions/components/category-select/SplitAmountsView";
+import type { SplitLineForm } from "@/screens/transactions/components/category-select/types";
 import { useTransactionForm } from "@/screens/transactions/NewTransactionScreen/context/TransactionFormProvider";
-import type { SplitLineForm } from "@/screens/transactions/NewTransactionScreen/validation/transactionForm.schema";
-
-/** A split line plus its UI-only direction (money in vs out). */
-type DraftLine = SplitLineForm & { inflow: boolean };
 
 /**
- * Split amounts screen: the categories were already chosen (checked) in the
- * category picker and passed in as `ids`. Here the user only assigns an amount to
- * each; the amounts must sum to the transaction total. Saving writes the split
- * back to the shared form and returns to the `new` screen.
+ * The transaction form's split editor: glue between the shared
+ * {@link SplitAmountsView} and the form context. The categories were chosen in
+ * the category picker (`ids` param); saving writes the split back to the shared
+ * form and returns to the `new` screen — persistence happens on the form's Save.
  */
 export function SplitAmountsScreen() {
-  const { t } = useTranslation("transactions");
   const router = useRouter();
-  const accentForeground = useThemeColor("accent-foreground");
-  const accent = useThemeColor("accent");
-  const foreground = useThemeColor("foreground");
-  const muted = useThemeColor("muted");
-  const danger = useThemeColor("danger");
-
   const { ids } = useLocalSearchParams<{ ids?: string }>();
   const { form, categories, actions, pendingSplitCategory, setPendingSplitCategory } =
     useTransactionForm();
@@ -43,7 +24,7 @@ export function SplitAmountsScreen() {
   // Build one line per selected category, pre-filling the amount from an existing
   // split (when editing) or 0 (when creating). Keyed on `ids` only — the initial
   // draft should not reset while the user types.
-  const initial = useMemo<SplitLineForm[]>(
+  const initialLines = useMemo<SplitLineForm[]>(
     () =>
       (ids ?? "")
         .split(",")
@@ -57,269 +38,30 @@ export function SplitAmountsScreen() {
     [ids],
   );
 
-  // Each line carries its own direction (money in vs out), defaulting to the
-  // transaction's type and flipped via the row's expense/income menu action.
-  const [draft, setDraft] = useState<DraftLine[]>(() =>
-    initial.map((l) => ({ ...l, inflow: type === "income" })),
-  );
-  // A single category is a plain assignment, not a split: hide the running
-  // total and the (irrelevant) per-line amount inputs.
-  const isSplit = draft.length > 1;
-  // Signed maths so `remaining` conveys direction, not just magnitude: inflow
-  // adds, outflow subtracts, and the total's sign follows the transaction type.
-  // → remaining > 0 means "still needs inflow", < 0 means "still needs outflow".
-  const setAmount = (i: number, cents: number) =>
-    setDraft((d) => d.map((l, idx) => (idx === i ? { ...l, amount: cents } : l)));
-
-  // Per-line amount editing via the in-app pad — the pad writes the line's draft
-  // amount directly (few lines, so a per-keystroke map is cheap), so the row and
-  // `remaining` stay live with no separate edit buffer.
-  const [editingLine, setEditingLine] = useState<number | null>(null);
-  const closePad = useCallback(() => setEditingLine(null), []);
-
-  const {
-    scrollRef,
-    scrollProps,
-    setScrollY,
-    bottomPadding,
-    scrollIntoView,
-    onKeyboardHeightChange,
-  } = useAmountKeyboardAvoidance({
-    basePadding: 24,
-    editingPadding: 380,
-    editing: editingLine != null,
-  });
-
-  // Signed maths so `remaining` conveys direction, not just magnitude: inflow
-  // adds, outflow subtracts, and the total's sign follows the transaction type.
-  // → remaining > 0 means "still needs inflow", < 0 means "still needs outflow".
-  const signedTotal = signedCents(total, type === "income");
-  const signedSum = draft.reduce((acc, l) => acc + signedCents(l.amount, l.inflow), 0);
-  const remaining = signedTotal - signedSum;
-
-  // Explicit actions close the pad (tapping another line just switches).
-  const toggleInflow = (i: number) => {
-    closePad();
-    setDraft((d) => d.map((l, idx) => (idx === i ? { ...l, inflow: !l.inflow } : l)));
-  };
-
-  const removeLine = (i: number) => {
-    closePad();
-    setDraft((d) => d.filter((_, idx) => idx !== i));
-  };
-
-  const addCategory = () => {
-    closePad();
-    router.push("/(auth)/transaction/split-add-category");
-  };
-
-  // Consume a category picked on the "Add category" screen (returned via context,
-  // since expo-router can't pass values back through `router.back()`).
-  useFocusEffect(
-    useCallback(() => {
-      if (!pendingSplitCategory) return;
-      const cat = pendingSplitCategory;
-      setPendingSplitCategory(null);
-      if (draft.some((l) => l.categoryId === cat.id)) return;
-      setDraft((d) => [
-        ...d,
-        { categoryId: cat.id, categoryName: cat.name, amount: 0, inflow: type === "income" },
-      ]);
-    }, [pendingSplitCategory, setPendingSplitCategory, draft, type]),
-  );
-
-  const save = () => {
-    // Persist plain SplitLineForm (drop the UI-only `inflow`).
-    const cleaned = draft
-      .filter((l) => l.amount > 0)
-      .map<SplitLineForm>((l) => ({
-        id: l.id,
-        categoryId: l.categoryId,
-        categoryName: l.categoryName,
-        amount: l.amount,
-      }));
-
-    // One category isn't a split — assign it to the parent as a normal category
-    // (amounts are irrelevant here, the parent already holds the full total).
-    if (draft.length < 2) {
-      const only = draft[0];
-      if (only?.categoryId) {
-        actions.selectCategory({
-          id: only.categoryId,
-          name: only.categoryName,
-        });
-      }
-      actions.setSplitLines(null);
-      router.dismissTo("/(auth)/transaction/new");
-      return;
-    }
-
-    // Real split (2+ lines): the signed amounts must balance the transaction.
-    if (remaining !== 0) {
-      dialog.alert({
-        title: t("amountsDontMatchTitle"),
-        message: t("amountsDontMatchMessage", { amount: formatCents(remaining) }),
-      });
-      return;
-    }
-    actions.setSplitLines(cleaned.length ? cleaned : null);
-    // Back to `new` regardless of how we got here (picker→split, or split direct).
-    router.dismissTo("/(auth)/transaction/new");
-  };
-
   return (
-    <KeyboardAvoidingView
-      className="flex-1"
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
-      <ScreenHeader.ScrollArea>
-        <ScreenHeader.Body
-          ref={scrollRef}
-          onScrollY={setScrollY}
-          onContentSizeChange={scrollProps.onContentSizeChange}
-          scrollEventThrottle={scrollProps.scrollEventThrottle}
-          contentContainerStyle={[styles.content, { paddingBottom: bottomPadding }]}
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* Payee card — info only (not tappable): the payee (or a placeholder)
-            with the transaction total on the right. */}
-          <ListGroup className="mb-4">
-            <ListGroup.Item>
-              <ListGroup.ItemContent>
-                <ListGroup.ItemTitle className={payeeName ? undefined : "text-muted"}>
-                  {payeeName || t("noPayeeSet")}
-                </ListGroup.ItemTitle>
-              </ListGroup.ItemContent>
-              <ListGroup.ItemSuffix>
-                {/* Signed cents: outflow renders as "-$12.00" via Intl; inflow stays green. */}
-                <Money
-                  cents={signedCents(total, type === "income")}
-                  className="text-base font-semibold"
-                />
-              </ListGroup.ItemSuffix>
-            </ListGroup.Item>
-          </ListGroup>
-
-          {/* Group title (outside the card): "Categories" on the left, remaining on
-            the right — followed by one row per selected category with its input. */}
-          <View className="mb-1 ml-2 mr-2 flex-row items-center justify-between">
-            <Typography className="text-xs font-semibold uppercase text-muted">
-              {t("categories")}
-            </Typography>
-            {isSplit ? (
-              <Typography className="text-xs font-semibold text-muted">
-                {t("remaining", { amount: formatCents(remaining) })}
-              </Typography>
-            ) : null}
-          </View>
-
-          <ListGroup>
-            {draft.map((line, i) => (
-              <Fragment key={line.categoryId ?? i}>
-                {i > 0 ? <Separator className="mx-4" /> : null}
-                <ListGroup.Item>
-                  <ListGroup.ItemContent>
-                    <ListGroup.ItemTitle numberOfLines={1}>
-                      {line.categoryName || t("selectCategory")}
-                    </ListGroup.ItemTitle>
-                  </ListGroup.ItemContent>
-                  <ListGroup.ItemSuffix>
-                    <View className="flex-row items-center gap-1">
-                      {isSplit ? (
-                        <Pressable
-                          className="w-24 flex-row items-center justify-end"
-                          onPress={(e) => {
-                            setEditingLine(i);
-                            scrollIntoView(e.nativeEvent.pageY);
-                          }}
-                        >
-                          {/* Signed cents: outflow renders as "-$12.00" via Intl. */}
-                          <Money
-                            cents={signedCents(line.amount, line.inflow)}
-                            className="text-base"
-                          />
-                          {editingLine === i ? <BlinkingCursor color={accent} /> : null}
-                        </Pressable>
-                      ) : null}
-                      <Menu>
-                        <Menu.Trigger asChild>
-                          <Button isIconOnly variant="ghost" size="sm" className="rounded-full">
-                            <MoreHorizontal size={18} color={muted} />
-                          </Button>
-                        </Menu.Trigger>
-                        <Menu.Portal>
-                          <Menu.Overlay />
-                          <Menu.Content
-                            presentation="popover"
-                            width={220}
-                            placement="bottom"
-                            align="end"
-                          >
-                            <Menu.Item className="gap-3" onPress={() => toggleInflow(i)}>
-                              {line.inflow ? (
-                                <Minus size={18} color={foreground} />
-                              ) : (
-                                <Plus size={18} color={foreground} />
-                              )}
-                              <Menu.ItemTitle>
-                                {line.inflow ? t("makeExpense") : t("makeIncome")}
-                              </Menu.ItemTitle>
-                            </Menu.Item>
-                            <Menu.Item
-                              className="gap-3"
-                              variant="danger"
-                              onPress={() => removeLine(i)}
-                            >
-                              <CircleMinus size={18} color={danger} />
-                              <Menu.ItemTitle>{t("removeCategory")}</Menu.ItemTitle>
-                            </Menu.Item>
-                          </Menu.Content>
-                        </Menu.Portal>
-                      </Menu>
-                    </View>
-                  </ListGroup.ItemSuffix>
-                </ListGroup.Item>
-              </Fragment>
-            ))}
-          </ListGroup>
-
-          <Button variant="outline" className="mt-3" onPress={addCategory}>
-            <Plus size={18} color={foreground} />
-            <Button.Label>{t("addCategory")}</Button.Label>
-          </Button>
-        </ScreenHeader.Body>
-
-        <ScreenHeader.Floating>
-          <ScreenHeader>
-            <ScreenHeader.Back />
-            <ScreenHeader.Title>{t("splitTransaction")}</ScreenHeader.Title>
-            <ScreenHeader.Actions>
-              <Button isIconOnly className="rounded-full" onPress={save}>
-                <Check size={22} color={accentForeground} />
-              </Button>
-            </ScreenHeader.Actions>
-          </ScreenHeader>
-        </ScreenHeader.Floating>
-      </ScreenHeader.ScrollArea>
-
-      {/* Multi-field screen: rows are their own triggers (tap switches), and only
-          explicit actions close the pad — so no Overlay/DismissArea. */}
-      <AmountKeyboard
-        isOpen={editingLine != null}
-        onClose={closePad}
-        value={editingLine != null ? (draft[editingLine]?.amount ?? 0) : 0}
-        onValueChange={(cents) => {
-          if (editingLine != null) setAmount(editingLine, cents);
-        }}
-      >
-        <AmountKeyboard.Portal>
-          <AmountKeyboard.Panel onHeightChange={onKeyboardHeightChange} />
-        </AmountKeyboard.Portal>
-      </AmountKeyboard>
-    </KeyboardAvoidingView>
+    <SplitAmountsView
+      initialLines={initialLines}
+      totalCents={total}
+      isIncome={type === "income"}
+      payeeName={payeeName}
+      onAddCategory={() => router.push("/(auth)/transaction/split-add-category")}
+      pendingCategory={pendingSplitCategory}
+      onPendingConsumed={() => setPendingSplitCategory(null)}
+      onSave={(lines) => {
+        if (lines.length < 2) {
+          // One category isn't a split — assign it to the parent as a normal
+          // category (the parent already holds the full total).
+          const only = lines[0];
+          if (only?.categoryId) {
+            actions.selectCategory({ id: only.categoryId, name: only.categoryName });
+          }
+          actions.setSplitLines(null);
+        } else {
+          actions.setSplitLines(lines);
+        }
+        // Back to `new` regardless of how we got here (picker→split, or split direct).
+        router.dismissTo("/(auth)/transaction/new");
+      }}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  content: { paddingHorizontal: 16, paddingBottom: 24 },
-});

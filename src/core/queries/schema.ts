@@ -67,6 +67,7 @@ export const schema: Schema = {
     fields: {
       id: { type: "id" },
       name: { type: "string" },
+      is_income: { type: "boolean" },
       cat_group: { type: "id", ref: "category_groups" },
       hidden: { type: "boolean" },
       sort_order: { type: "float" },

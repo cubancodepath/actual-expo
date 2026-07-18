@@ -15,7 +15,7 @@ export default function AuthLayout() {
     <Stack>
       <Stack.Screen name="(tabs)" options={{ headerShown: false, title: "" }} />
       <Stack.Screen name="account/new" options={{ title: t("nav.newAccount"), ...modal }} />
-      <Stack.Screen name="account/[id]" options={{ title: "", headerBackTitle: " ", ...screen }} />
+      <Stack.Screen name="account/[id]" options={{ ...screen, headerShown: false }} />
       <Stack.Screen
         name="account/search"
         options={{
@@ -54,6 +54,8 @@ export default function AuthLayout() {
         }}
       />
       <Stack.Screen name="transaction" options={{ headerShown: false, ...modal }} />
+      <Stack.Screen name="transaction-categorize" options={{ headerShown: false, ...modal }} />
+      <Stack.Screen name="transaction-move" options={{ headerShown: false, ...modal }} />
       <Stack.Screen
         name="budget/assign-money"
         options={{ headerShown: false, ...modal, gestureEnabled: false }}
@@ -129,7 +131,7 @@ export default function AuthLayout() {
       <Stack.Screen name="budget/notes" options={{ title: t("nav.budgetMovements"), ...modal }} />
       <Stack.Screen
         name="budget/category-transactions"
-        options={{ title: t("nav.transactions"), ...modal }}
+        options={{ ...modal, headerShown: false }}
       />
       <Stack.Screen
         name="budget/cover-overspent"

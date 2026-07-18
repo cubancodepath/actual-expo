@@ -3,7 +3,6 @@
   "editTransaction": "Edit Transaction",
   "saveChanges": "Save Changes",
   "deleteTransaction": "Delete Transaction",
-
   "account": "Account",
   "budgetAccounts": "Budget Accounts",
   "offBudgetAccounts": "Off-Budget Accounts",
@@ -12,7 +11,6 @@
   "noCategoryOption": "No category",
   "repeat": "Repeat",
   "tags": "Tags",
-
   "expense": "Expense",
   "income": "Income",
   "notes": "Notes",
@@ -24,30 +22,23 @@
   "recur_weekly": "Weekly",
   "recur_monthly": "Monthly",
   "recur_yearly": "Yearly",
-
   "noCategoryNeeded": "No category needed",
   "splitCategories": "Split ({{count}} categories)",
-
   "enterAmount": "Enter an amount",
   "selectAccount": "Select an account",
-
   "editReconciledTitle": "Edit Reconciled Transaction",
   "editReconciledMessage": "This transaction has been reconciled. Editing it could affect your reconciled balance.",
   "saveAnyway": "Save Anyway",
-
   "noCategoryTitle": "No Category",
   "noCategoryMessage": "This transaction has no category. Save anyway?",
   "save": "Save",
-
   "deleteTitle": "Delete Transaction",
-  "deleteConfirm": "Delete this transaction?",
+  "deleteConfirm": "Do you really want to delete this transaction?",
   "deleteReconciledMessage": "Deleting reconciled transactions may bring your reconciliation out of balance.",
   "delete": "Delete",
   "cancel": "Cancel",
-
   "transferTitle": "Transfer",
-  "transferNoCategoryMessage": "Transfers between accounts don\u2019t need a category.",
-
+  "transferNoCategoryMessage": "Transfers between accounts don’t need a category.",
   "splitTransaction": "Split Transaction",
   "split": "Split",
   "next": "Next",
@@ -56,14 +47,12 @@
   "remaining": "{{amount}} remaining",
   "total": "{{amount}} total",
   "addAnother": "Add Another",
-  "noPayeeSet": "No payee set",
-
-  "amountsDontMatchTitle": "Amounts don\u2019t match",
+  "noPayeeSet": "No Payee Set",
+  "amountsDontMatchTitle": "Amounts don’t match",
   "amountsDontMatchMessage": "The split amounts must equal the transaction total. {{amount}} remaining.",
   "noSplitsTitle": "No splits",
   "noSplitsMessage": "Add at least one split with an amount.",
   "remainingLabel": "remaining",
-
   "statusCleared": "Cleared",
   "statusUncleared": "Uncleared",
   "statusReconciled": "Reconciled",
@@ -73,22 +62,18 @@
   "categoryIs": "Category Is: {{name}}",
   "payeeIs": "Payee Is: {{name}}",
   "tag": "Tag: #{{name}}",
-
   "deleteTransactionsTitle": "Delete Transactions",
   "deleteTransactionsReconciledMessage": "Some of the selected transactions are reconciled. Deleting them may bring your reconciliation out of balance.\n\nDelete {{count}} transaction{{plural}}?",
   "deleteTransactionsMessage": "Delete {{count}} transaction{{plural}}?",
   "bulkDeleted_one": "{{count}} transaction deleted",
   "bulkDeleted_other": "{{count}} transactions deleted",
-
   "moveTransactionsTitle": "Move Transactions",
   "moveTransactionsReconciledMessage": "Some of the selected transactions are reconciled. Moving them may bring your reconciliation out of balance.\n\nMove {{count}} transaction{{plural}} to {{account}}?",
   "moveTransactionsMessage": "Move {{count}} transaction{{plural}} to {{account}}?",
   "move": "Move",
-
   "changeCategoryTitle": "Change Category",
   "changeCategoryReconciledMessage": "Some of the selected transactions are reconciled. Editing them may bring your reconciliation out of balance.",
   "changeAnyway": "Change Anyway",
-
   "searchPayees": "Search payees or accounts...",
   "searchCategories": "Search categories...",
   "noResults": "No results",
@@ -97,22 +82,19 @@
   "transferToAccount": "TRANSFER TO ACCOUNT",
   "payees": "PAYEES",
   "noPayee": "No payee",
-  "noPayeeSet": "No Payee Set",
   "addCategory": "Add Category",
   "removeCategory": "Remove Category",
   "makeIncome": "Make Income",
   "makeExpense": "Make Expense",
   "createPayee": "Create \"{{name}}\"",
-
   "contextEdit": "Edit",
   "contextClear": "Clear",
   "contextUnclear": "Unclear",
   "contextDuplicate": "Duplicate",
-  "contextMoveToAccount": "Move to Account…",
+  "contextMoveToAccount": "Move",
   "contextCategorize": "Categorize",
   "contextAddTag": "Add Tag",
   "contextDelete": "Delete",
-
   "selectAll": "Select All",
   "selectItems": "0 Selected",
   "selected": "{{count}} Selected",
@@ -120,12 +102,22 @@
   "bulkCategorize": "Categorize",
   "bulkMove": "Move to…",
   "bulkDelete": "Delete",
-
   "upcoming": "Upcoming",
   "today": "Today",
   "yesterday": "Yesterday",
-
   "transfer": "Transfer",
   "showUncleared_one": "Show {{count}} uncleared transaction",
-  "showUncleared_other": "Show {{count}} uncleared transactions"
+  "showUncleared_other": "Show {{count}} uncleared transactions",
+  "list": {
+    "title": "Transactions",
+    "empty": {
+      "title": "No transactions",
+      "description": "Transactions you add will show up here."
+    },
+    "incomeCategory": "Income: {{name}}"
+  },
+  "clearReconciledTitle": "Unclear Reconciled Transaction",
+  "clearReconciledMessage": "You can't unclear this transaction because it would affect the reconciled balance.",
+  "deleteReconciledTitle": "Delete Reconciled Transaction",
+  "deleteAnyway": "Delete Anyway"
 }

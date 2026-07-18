@@ -57,6 +57,16 @@ export function todayStr(): string {
   return intToStr(todayInt());
 }
 
+/** Yesterday as YYYYMMDD integer, e.g. 20250301 */
+export function yesterdayInt(): number {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return parseInt(`${y}${m}${day}`, 10);
+}
+
 // ── Format for display ────────────────────────────────────────────────────────
 
 /** YYYYMMDD → formatted with short date (no year), e.g. "03/02" or "02/03" */

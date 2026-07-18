@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTranslation } from "react-i18next";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSelector } from "@tanstack/react-store";
 import { Button, ScrollShadow, Separator, Spinner, Surface, useThemeColor } from "heroui-native";
 import { ArrowLeftRight, Trash2, WalletCards } from "lucide-react-native";
 import { AmountKeyboard } from "@/ui/amount-keyboard";
 import { useTransactionForm } from "./context/TransactionFormProvider";
+import type { NewTransactionParams } from "./hooks/useNewTransactionForm";
 import { isSplitLines } from "./validation/transactionForm.schema";
 import { Amount } from "./components/Amount";
 import { TypeSegment } from "./components/TypeSegment";
@@ -18,6 +19,7 @@ import { FieldRow } from "./components/FieldRow";
 import { AccountField } from "./components/sheets/AccountField";
 import { RecurrenceField } from "./components/sheets/RecurrenceField";
 import { CloseButton } from "@/ui/CloseButton";
+import { LoadingScreen } from "@/ui/LoadingScreen";
 
 const CARD_OVERLAP = 36;
 
@@ -26,18 +28,36 @@ export function NewTransactionScreen() {
   const { t } = useTranslation("transactions");
   const danger = useThemeColor("danger");
 
-  const { form, isEdit, actions, submit, remove, isSaving } = useTransactionForm();
+  const { form, isEdit, isHydrating, initialize, actions, submit, remove, isSaving } =
+    useTransactionForm();
+
+  // This leaf owns the URL: unlike the provider (which mounts before the leaf
+  // and would read the previous route's global params), useLocalSearchParams
+  // here is populated synchronously from this route's own params. Seed once —
+  // pushing pickers changes the URL but must never re-initialize the form.
+  const params = useLocalSearchParams() as NewTransactionParams;
+  useEffect(() => {
+    initialize(params);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const values = useSelector(form.store, (s) => s.values);
   const canSubmit = useSelector(form.store, (s) => s.canSubmit);
 
   // The amount uses our in-app numeric keyboard instead of the system one.
-  // Open from the start: the amount is the first thing you type.
-  const [amountEditing, setAmountEditing] = useState(true);
+  // Create: open from the start — the amount is the first thing you type.
+  // Edit: keep it closed; you usually came to tweak some other field.
+  const [amountEditing, setAmountEditing] = useState(() => !params.transactionId);
 
   const heroTint = values.type === "income" ? "bg-success/70" : "bg-muted/15";
   const split = isSplitLines(values.splitLines);
   const splitSummary = split ? t("splitCategories", { count: values.splitLines?.length ?? 0 }) : "";
+
+  // Edit mode gates on hydration so the form (and the amount keyboard's buffer)
+  // mounts already holding the transaction — no blank flash, no stale resets.
+  if (isHydrating) {
+    return <LoadingScreen onClose={() => router.dismiss()} />;
+  }
 
   return (
     <KeyboardAvoidingView

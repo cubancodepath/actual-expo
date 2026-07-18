@@ -9,16 +9,9 @@
 
 import { z } from "zod";
 import type { RecurConfig } from "@/core/domain/schedules/types";
+import type { SplitLineForm } from "@/screens/transactions/components/category-select/types";
 
 export type TransactionType = "expense" | "income";
-
-/** A single split line held in form state. `amount` is positive cents. */
-export type SplitLineForm = {
-  id?: string;
-  categoryId: string | null;
-  categoryName: string;
-  amount: number;
-};
 
 /** The full shape of the transaction form values (drives TanStack Form typing). */
 export type TransactionFormValues = {

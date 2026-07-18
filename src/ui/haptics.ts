@@ -18,3 +18,8 @@ export function lightHaptic() {
 export function mediumHaptic() {
   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
 }
+
+/** Success notification: an action completed in the background (e.g. duplicate). */
+export function successHaptic() {
+  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+}

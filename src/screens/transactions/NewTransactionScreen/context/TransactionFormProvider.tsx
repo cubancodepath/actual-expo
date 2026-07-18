@@ -1,11 +1,10 @@
-import { createContext, useContext, useRef, useState, type ReactNode } from "react";
-import { useGlobalSearchParams } from "expo-router";
+import { createContext, use, useState, type ReactNode } from "react";
 import { useAccounts } from "@/screens/transactions/hooks/useAccounts";
 import { useCategories } from "@/screens/transactions/hooks/useCategories";
 import { usePayees } from "@/screens/transactions/hooks/usePayees";
 import { useTags } from "@/screens/transactions/hooks/useTags";
 import { useRules } from "@/screens/transactions/hooks/useRules";
-import { useNewTransactionForm, type NewTransactionParams } from "../hooks/useNewTransactionForm";
+import { useNewTransactionForm } from "../hooks/useNewTransactionForm";
 
 /** A category picked on the split "Add category" screen, handed back to the
  *  split-amounts screen (expo-router can't return values via `router.back()`). */
@@ -27,11 +26,9 @@ const TransactionFormContext = createContext<TransactionFormContextValue | null>
  * so they share one form instance without prop-drilling or a global store.
  */
 export function TransactionFormProvider({ children }: { children: ReactNode }) {
-  // The transaction stack is always entered via `new`, so on first render the
-  // active route's params are the ones we want. Freeze them so navigating to a
-  // picker screen (which changes the global params) never re-inits the form.
-  const rawParams = useGlobalSearchParams();
-  const params = useRef(rawParams as NewTransactionParams).current;
+  // Route params are NOT read here: on this layout's first render expo-router's
+  // global routeInfo still holds the PREVIOUS route's params (the leaf writes it
+  // later). The `new` leaf screen reads its own params and calls `initialize`.
 
   // Subscribe to each data source exactly once for the whole stack.
   const { accounts } = useAccounts();
@@ -40,7 +37,7 @@ export function TransactionFormProvider({ children }: { children: ReactNode }) {
   const { tags } = useTags();
   const { rules } = useRules();
 
-  const formApi = useNewTransactionForm(params, { accounts, categories, rules });
+  const formApi = useNewTransactionForm({ accounts, categories, rules });
 
   const [pendingSplitCategory, setPendingSplitCategory] = useState<PendingSplitCategory>(null);
 
@@ -62,7 +59,7 @@ export function TransactionFormProvider({ children }: { children: ReactNode }) {
 }
 
 export function useTransactionForm(): TransactionFormContextValue {
-  const ctx = useContext(TransactionFormContext);
+  const ctx = use(TransactionFormContext);
   if (!ctx) {
     throw new Error("useTransactionForm must be used within a TransactionFormProvider");
   }

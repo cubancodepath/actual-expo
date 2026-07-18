@@ -6,18 +6,15 @@
  * (`emitErrorEvent`); the visual feedback is deferred to a global bus consumer.
  */
 
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
-import {
-  getTransactionById,
-  getChildTransactions,
-  deleteTransaction,
-} from "@/core/domain/transactions";
+import { deleteTransaction } from "@/core/domain/transactions";
+import { loadTransactionWithSplitLines } from "@/screens/transactions/components/category-select/loadTransaction";
 import { saveTransaction, type SaveTransactionInput } from "@/core/domain/transactions/save";
 import { suggestCategoryForPayee } from "@/core/domain/rules/apply";
 import { todayInt } from "@/lib/date";
@@ -28,8 +25,8 @@ import {
   transactionFormSchema,
   isSplitLines,
   type TransactionFormValues,
-  type SplitLineForm,
 } from "../validation/transactionForm.schema";
+import type { SplitLineForm } from "@/screens/transactions/components/category-select/types";
 
 /** Reference data the form needs, injected so the provider subscribes only once. */
 export interface TransactionFormData {
@@ -54,44 +51,50 @@ export type PayeeSelection = {
   transferAcct?: string | null;
 };
 
-export function useNewTransactionForm(
-  params: NewTransactionParams,
-  { accounts, categories, rules }: TransactionFormData,
-) {
+/** Blank form baseline; also the base the create-mode seeds are layered onto. */
+function makeBaseline(): TransactionFormValues {
+  return {
+    type: "expense",
+    amount: 0,
+    accountId: null,
+    accountName: "",
+    payeeId: null,
+    payeeName: "",
+    isTransfer: false,
+    categoryId: null,
+    categoryName: "",
+    date: todayInt(),
+    notes: "",
+    cleared: false,
+    reconciled: false,
+    recurConfig: null,
+    splitLines: null,
+  };
+}
+
+export function useNewTransactionForm({ accounts, categories, rules }: TransactionFormData) {
   const { t } = useTranslation("transactions");
   const router = useRouter();
 
-  const transactionId = params.transactionId;
-  const isEdit = !!transactionId;
+  // Edit mode is entered by `initialize` (the leaf screen owns the URL params —
+  // reading them here at provider-mount time sees the PREVIOUS route's params,
+  // because expo-router's global routeInfo is only written by the leaf later).
+  // The ref holds the id for async closures (save/delete); UI only needs the flag.
+  const [isEdit, setIsEdit] = useState(false);
+  const editingIdRef = useRef<string | null>(null);
 
   // Tracks fields the user set manually so auto-suggestions don't clobber them.
   const userOverrides = useRef<Set<string>>(new Set());
-  const hydratedRef = useRef(false);
 
-  const defaultValues = useMemo<TransactionFormValues>(() => {
-    const initialAccount = accounts.find((a) => a.id === params.accountId);
-    if (params.categoryId) userOverrides.current.add("category");
-    if (params.accountId) userOverrides.current.add("account");
-    return {
-      type: "expense",
-      amount: params.amount ? Number(params.amount) : 0,
-      accountId: params.accountId ?? null,
-      accountName: params.accountName ?? initialAccount?.name ?? "",
-      payeeId: null,
-      payeeName: params.payeeName ?? "",
-      isTransfer: false,
-      categoryId: params.categoryId ?? null,
-      categoryName: params.categoryName ?? "",
-      date: todayInt(),
-      notes: "",
-      cleared: false,
-      reconciled: false,
-      recurConfig: null,
-      splitLines: null,
-    };
-    // defaultValues is captured once by useForm; params are stable for a screen instance.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // useForm re-applies its options' defaultValues on EVERY render when the form
+  // isn't touched (form-core `update()`), and `form.reset(values)` moves the
+  // internal defaults to `values` — so defaults must live in state and be
+  // updated alongside every programmatic reset, or the next render silently
+  // reverts the form to blank.
+  const [defaultValues, setDefaultValues] = useState<TransactionFormValues>(makeBaseline);
+
+  /** Whether edit hydration is in flight — the screen gates the form on it. */
+  const [isHydrating, setIsHydrating] = useState(false);
 
   const form = useForm({
     defaultValues,
@@ -115,30 +118,26 @@ export function useNewTransactionForm(
     onSuccess: () => router.dismiss(),
   });
 
-  // ── Edit hydration (once) ────────────────────────────────────────────────
-  useEffect(() => {
-    if (!isEdit || hydratedRef.current) return;
-    hydratedRef.current = true;
+  // ── Initialization (called once by the `new` leaf screen with ITS params) ─
 
-    (async () => {
+  /** Programmatic reset that keeps useForm's option defaults in sync (see above). */
+  const applyValues = useCallback(
+    (values: TransactionFormValues) => {
+      setDefaultValues(values);
+      form.reset(values);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [form],
+  );
+
+  const hydrateFromTransaction = useCallback(
+    async (transactionId: string) => {
       try {
-        const txn = await getTransactionById(transactionId!);
+        const { txn, splitLines: loadedLines } = await loadTransactionWithSplitLines(transactionId);
         if (!txn) return;
+        const splitLines: SplitLineForm[] | null = loadedLines.length > 0 ? loadedLines : null;
 
-        let splitLines: SplitLineForm[] | null = null;
-        if (txn.is_parent) {
-          const children = await getChildTransactions(transactionId!);
-          if (children.length > 0) {
-            splitLines = children.map((c) => ({
-              id: c.id,
-              categoryId: c.category,
-              categoryName: c.categoryName ?? "",
-              amount: Math.abs(c.amount),
-            }));
-          }
-        }
-
-        form.reset({
+        applyValues({
           type: txn.amount < 0 ? "expense" : "income",
           amount: Math.abs(txn.amount),
           accountId: txn.account,
@@ -157,10 +156,52 @@ export function useNewTransactionForm(
         });
       } catch (e) {
         emitErrorEvent(e, { operation: "transaction.hydrate" });
+      } finally {
+        setIsHydrating(false);
       }
-    })();
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isEdit, transactionId]);
+    [applyValues],
+  );
+
+  const initializedRef = useRef(false);
+
+  /**
+   * Seed the form from the `new` screen's route params — edit hydration when
+   * `transactionId` is present, create-mode seeds (account/category/payee/
+   * amount) otherwise. Idempotent: picker navigation never re-initializes.
+   */
+  const initialize = useCallback(
+    (params: NewTransactionParams) => {
+      if (initializedRef.current) return;
+      initializedRef.current = true;
+
+      if (params.transactionId) {
+        editingIdRef.current = params.transactionId;
+        setIsEdit(true);
+        setIsHydrating(true);
+        void hydrateFromTransaction(params.transactionId);
+        return;
+      }
+
+      if (params.categoryId) userOverrides.current.add("category");
+      if (params.accountId) userOverrides.current.add("account");
+      if (!params.accountId && !params.categoryId && !params.payeeName && !params.amount) return;
+
+      const initialAccount = accounts.find((a) => a.id === params.accountId);
+      applyValues({
+        ...makeBaseline(),
+        amount: params.amount ? Number(params.amount) : 0,
+        accountId: params.accountId ?? null,
+        accountName: params.accountName ?? initialAccount?.name ?? "",
+        payeeName: params.payeeName ?? "",
+        categoryId: params.categoryId ?? null,
+        categoryName: params.categoryName ?? "",
+      });
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [applyValues, hydrateFromTransaction],
+  );
 
   // ── Persist ───────────────────────────────────────────────────────────────
   const performSave = useCallback(
@@ -188,7 +229,7 @@ export function useNewTransactionForm(
       }
 
       const input: SaveTransactionInput = {
-        transactionId: isEdit ? transactionId : undefined,
+        transactionId: editingIdRef.current ?? undefined,
         account: value.accountId!,
         date: value.date,
         amount: value.amount,
@@ -206,18 +247,19 @@ export function useNewTransactionForm(
               amount: l.amount,
             }))
           : null,
-        recurConfig: !isEdit ? value.recurConfig : undefined,
+        recurConfig: editingIdRef.current == null ? value.recurConfig : undefined,
       };
 
       // Errors are reported to the bus by the global MutationCache.onError.
       await saveMutation.mutateAsync(input);
     },
-    [isEdit, transactionId, saveMutation, t],
+    [saveMutation, t],
   );
 
   // ── Delete ──────────────────────────────────────────────────────────────
   const remove = useCallback(() => {
-    if (!isEdit) return;
+    const transactionId = editingIdRef.current;
+    if (transactionId == null) return;
     const reconciled = form.getFieldValue("reconciled");
     Alert.alert(t("deleteTitle"), reconciled ? t("deleteReconciledMessage") : t("deleteConfirm"), [
       { text: t("cancel"), style: "cancel" },
@@ -225,10 +267,10 @@ export function useNewTransactionForm(
         text: t("delete"),
         style: "destructive",
         // Errors are reported to the bus by the global MutationCache.onError.
-        onPress: () => deleteMutation.mutate(transactionId!),
+        onPress: () => deleteMutation.mutate(transactionId),
       },
     ]);
-  }, [isEdit, transactionId, form, deleteMutation, t]);
+  }, [form, deleteMutation, t]);
 
   // ── Picker-driven field actions (replace pickerStore for this flow) ───────
   const selectAccount = useCallback(
@@ -307,6 +349,8 @@ export function useNewTransactionForm(
   return {
     form,
     isEdit,
+    isHydrating,
+    initialize,
     rules,
     categories,
     accounts,

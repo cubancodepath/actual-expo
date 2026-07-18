@@ -33,6 +33,8 @@ interface CategoryRowMenuProps {
   onAddTransaction: () => void;
   /** Open the move-money screen for the row the menu belongs to. */
   onMoveMoney: () => void;
+  /** Open the category's transactions for the current month. */
+  onViewActivity: () => void;
   /** Open the goals editor for the row's category. Hidden when unset. */
   onEditGoals?: () => void;
   /** Whether this category's balance currently rolls over — picks the label. */
@@ -65,6 +67,7 @@ export function CategoryRowMenu({
   onPreviewLayout,
   onAddTransaction,
   onMoveMoney,
+  onViewActivity,
   onEditGoals,
   carryover,
   onToggleCarryover,
@@ -105,7 +108,7 @@ export function CategoryRowMenu({
           <CirclePlus size={18} color={foreground} />
           <Menu.ItemTitle>{t("categoryMenu.addTransaction")}</Menu.ItemTitle>
         </Menu.Item>
-        <Menu.Item className="gap-3" onPress={noop}>
+        <Menu.Item className="gap-3" onPress={onViewActivity}>
           <ChartLine size={18} color={foreground} />
           <Menu.ItemTitle>{t("categoryMenu.viewActivity")}</Menu.ItemTitle>
         </Menu.Item>

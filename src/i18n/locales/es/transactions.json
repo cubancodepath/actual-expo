@@ -3,7 +3,6 @@
   "editTransaction": "Editar Transacción",
   "saveChanges": "Guardar Cambios",
   "deleteTransaction": "Eliminar Transacción",
-
   "account": "Cuenta",
   "budgetAccounts": "Cuentas presupuestadas",
   "offBudgetAccounts": "Cuentas fuera de presupuesto",
@@ -13,7 +12,6 @@
   "split": "Dividir",
   "repeat": "Repetir",
   "tags": "Etiquetas",
-
   "expense": "Gasto",
   "income": "Ingreso",
   "notes": "Notas",
@@ -25,30 +23,23 @@
   "recur_weekly": "Semanal",
   "recur_monthly": "Mensual",
   "recur_yearly": "Anual",
-
   "noCategoryNeeded": "No se necesita categoría",
   "splitCategories": "Dividida ({{count}} categorías)",
-
   "enterAmount": "Ingrese un monto",
   "selectAccount": "Seleccione una cuenta",
-
   "editReconciledTitle": "Editar Transacción Conciliada",
   "editReconciledMessage": "Esta transacción ha sido conciliada. Editarla podría afectar tu saldo conciliado.",
   "saveAnyway": "Guardar de Todos Modos",
-
   "noCategoryTitle": "Sin Categoría",
   "noCategoryMessage": "Esta transacción no tiene categoría. ¿Guardar de todos modos?",
   "save": "Guardar",
-
   "deleteTitle": "Eliminar Transacción",
   "deleteConfirm": "¿Eliminar esta transacción?",
   "deleteReconciledMessage": "Eliminar transacciones conciliadas puede desequilibrar tu conciliación.",
   "delete": "Eliminar",
   "cancel": "Cancelar",
-
   "transferTitle": "Transferencia",
   "transferNoCategoryMessage": "Las transferencias entre cuentas no necesitan una categoría.",
-
   "splitTransaction": "Dividir Transacción",
   "next": "Siguiente",
   "selectCategory": "Seleccionar categoría",
@@ -56,14 +47,12 @@
   "remaining": "{{amount}} restante",
   "total": "{{amount}} total",
   "addAnother": "Agregar Otra",
-  "noPayeeSet": "Sin beneficiario",
-
+  "noPayeeSet": "Sin beneficiario asignado",
   "amountsDontMatchTitle": "Los montos no coinciden",
   "amountsDontMatchMessage": "Los montos divididos deben ser iguales al total de la transacción. {{amount}} restante.",
   "noSplitsTitle": "Sin divisiones",
   "noSplitsMessage": "Agrega al menos una división con un monto.",
   "remainingLabel": "restante",
-
   "statusCleared": "Liquidada",
   "statusUncleared": "No Liquidada",
   "statusReconciled": "Conciliada",
@@ -73,22 +62,18 @@
   "categoryIs": "Categoría Es: {{name}}",
   "payeeIs": "Beneficiario Es: {{name}}",
   "tag": "Etiqueta: #{{name}}",
-
   "deleteTransactionsTitle": "Eliminar Transacciones",
   "deleteTransactionsReconciledMessage": "Algunas de las transacciones seleccionadas están conciliadas. Eliminarlas puede desequilibrar tu conciliación.\n\nEliminar {{count}} transacción{{plural}}?",
   "deleteTransactionsMessage": "¿Eliminar {{count}} transacción{{plural}}?",
   "bulkDeleted_one": "{{count}} transacción eliminada",
   "bulkDeleted_other": "{{count}} transacciones eliminadas",
-
   "moveTransactionsTitle": "Mover Transacciones",
   "moveTransactionsReconciledMessage": "Algunas de las transacciones seleccionadas están conciliadas. Moverlas puede desequilibrar tu conciliación.\n\nMover {{count}} transacción{{plural}} a {{account}}?",
   "moveTransactionsMessage": "¿Mover {{count}} transacción{{plural}} a {{account}}?",
   "move": "Mover",
-
   "changeCategoryTitle": "Cambiar Categoría",
   "changeCategoryReconciledMessage": "Algunas de las transacciones seleccionadas están conciliadas. Editarlas puede desequilibrar tu conciliación.",
   "changeAnyway": "Cambiar de Todos Modos",
-
   "searchPayees": "Buscar beneficiarios o cuentas...",
   "searchCategories": "Buscar categorías...",
   "noResults": "Sin resultados",
@@ -97,12 +82,30 @@
   "transferToAccount": "TRANSFERIR A CUENTA",
   "payees": "BENEFICIARIOS",
   "noPayee": "Sin beneficiario",
-  "noPayeeSet": "Sin beneficiario asignado",
   "addCategory": "Añadir categoría",
   "removeCategory": "Quitar categoría",
   "makeIncome": "Convertir a ingreso",
   "makeExpense": "Convertir a gasto",
   "createPayee": "Crear \"{{name}}\"",
-
-  "transfer": "Transferencia"
+  "transfer": "Transferencia",
+  "today": "Hoy",
+  "yesterday": "Ayer",
+  "contextCategorize": "Categorizar",
+  "contextMoveToAccount": "Mover a cuenta…",
+  "contextClear": "Liquidar",
+  "contextUnclear": "Desliquidar",
+  "contextDuplicate": "Duplicar",
+  "contextDelete": "Eliminar",
+  "list": {
+    "title": "Transacciones",
+    "empty": {
+      "title": "Sin transacciones",
+      "description": "Las transacciones que añadas aparecerán aquí."
+    },
+    "incomeCategory": "Ingreso: {{name}}"
+  },
+  "clearReconciledTitle": "Transacción conciliada",
+  "clearReconciledMessage": "Esta transacción está conciliada (bloqueada). Desbloquéala desde la conciliación antes de cambiar su estado de liquidación.",
+  "deleteReconciledTitle": "Eliminar transacción conciliada",
+  "deleteAnyway": "Eliminar igualmente"
 }

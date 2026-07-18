@@ -5,6 +5,7 @@ import { Accordion, Separator, Surface, Typography } from "heroui-native";
 import { useSheetValueNumber } from "@/hooks/useSheetValue";
 import { envelopeBudget } from "@/core/domain/spreadsheet/bindings";
 import { Money } from "@/ui/Money";
+import { CollapsibleIndicator } from "@/ui/CollapsibleIndicator";
 import { COL_ASSIGNED, NumericCell } from "@/screens/budget/BudgetScreen/components/columns";
 import type { BudgetSection } from "@/screens/budget/hooks/useBudgetSections";
 import type { PendingEdits } from "../types";
@@ -56,7 +57,7 @@ export function AssignGroup({
           </View>
 
           <View className="flex-row items-center gap-2">
-            <Accordion.Indicator />
+            <CollapsibleIndicator />
             <View className="flex-1">
               <Typography className="text-sm font-semibold text-foreground" numberOfLines={1}>
                 {group.name}

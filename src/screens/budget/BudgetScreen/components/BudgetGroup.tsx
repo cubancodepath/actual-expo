@@ -5,6 +5,7 @@ import { Accordion, Separator, Surface, Typography } from "heroui-native";
 import { useSheetValueNumber } from "@/hooks/useSheetValue";
 import { envelopeBudget } from "@/core/domain/spreadsheet/bindings";
 import { Money } from "@/ui/Money";
+import { CollapsibleIndicator } from "@/ui/CollapsibleIndicator";
 import type { BudgetSection } from "@/screens/budget/hooks/useBudgetSections";
 import { BudgetCategoryRow } from "./BudgetCategoryRow";
 import { IncomeCategoryRow } from "./IncomeCategoryRow";
@@ -81,7 +82,7 @@ export const BudgetGroup = memo(function BudgetGroup({
 
           {/* Row 2 — chevron (left) + name + totals */}
           <View className="flex-row items-center gap-2">
-            <Accordion.Indicator />
+            <CollapsibleIndicator />
             <View className="flex-1">
               <Typography className="text-sm font-semibold text-foreground" numberOfLines={1}>
                 {group.name}

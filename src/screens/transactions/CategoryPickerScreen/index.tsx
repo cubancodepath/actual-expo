@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router";
 import { useSelector } from "@tanstack/react-store";
-import { CategorySelectView } from "@/screens/transactions/components/category-select/CategorySelectView";
+import { CategorySelectView } from "@/ui/entity-select/CategorySelectView";
 import { useTransactionForm } from "@/screens/transactions/NewTransactionScreen/context/TransactionFormProvider";
 
 /**

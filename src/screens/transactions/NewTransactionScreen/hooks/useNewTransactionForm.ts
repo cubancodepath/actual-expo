@@ -26,7 +26,7 @@ import {
   isSplitLines,
   type TransactionFormValues,
 } from "../validation/transactionForm.schema";
-import type { SplitLineForm } from "@/screens/transactions/components/category-select/types";
+import type { SplitLineForm } from "@/ui/entity-select/types";
 
 /** Reference data the form needs, injected so the provider subscribes only once. */
 export interface TransactionFormData {

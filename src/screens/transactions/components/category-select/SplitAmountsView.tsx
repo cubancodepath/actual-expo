@@ -10,7 +10,7 @@ import { ScreenHeader } from "@/ui/ScreenHeader";
 import { BlinkingCursor } from "@/ui/BlinkingCursor";
 import { AmountKeyboard, useAmountKeyboardAvoidance } from "@/ui/amount-keyboard";
 import { Money } from "@/ui/Money";
-import type { CategoryRef, SplitLineForm } from "./types";
+import type { CategoryRef, SplitLineForm } from "@/ui/entity-select/types";
 
 /** A split line plus its UI-only direction (money in vs out). */
 type DraftLine = SplitLineForm & { inflow: boolean };

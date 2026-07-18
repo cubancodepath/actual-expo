@@ -5,7 +5,7 @@ import { ListGroup, Separator, Typography, useThemeColor } from "heroui-native";
 import { Banknote, ChartSpline, Check } from "lucide-react-native";
 import type { Account } from "@/core/domain/accounts/types";
 import { Money } from "@/ui/Money";
-import { useAccountsWithBalances } from "@/screens/transactions/hooks/useAccountsWithBalances";
+import { useAccountsWithBalances } from "@/ui/hooks/useAccountsWithBalances";
 
 type Section = { key: "budget" | "offbudget"; title: string; accounts: Account[] };
 

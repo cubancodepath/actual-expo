@@ -1,6 +1,6 @@
 import { getChildTransactions, getTransactionById } from "@/core/domain/transactions";
 import type { TransactionDisplay } from "@/core/domain/transactions/types";
-import type { SplitLineForm } from "./types";
+import type { SplitLineForm } from "@/ui/entity-select/types";
 
 /**
  * Load a transaction plus its split lines (children mapped to the form/editor

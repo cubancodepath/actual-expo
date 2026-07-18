@@ -6,7 +6,7 @@ import { BottomSheet, Button, Chip, Input, useThemeColor } from "heroui-native";
 import { Plus, Tags as TagsIcon } from "lucide-react-native";
 import { extractTagsFromNotes } from "@/core/domain/tags";
 import type { Tag } from "@/core/domain/tags/types";
-import { FieldRow } from "../FieldRow";
+import { FieldRow } from "@/ui/money-entry/FieldRow";
 
 type TagsFieldProps = {
   notes: string;

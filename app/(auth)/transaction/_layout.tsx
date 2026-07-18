@@ -22,6 +22,7 @@ export default function TransactionLayout() {
           name="split-category-picker"
           options={{ title: "Category", headerShown: false }}
         />
+        <Stack.Screen name="notes" options={{ headerShown: false, presentation: "modal" }} />
         <Stack.Screen name="recurrence" options={{ headerShown: false }} />
         <Stack.Screen name="recurrence-custom" options={{ headerShown: false }} />
         <Stack.Screen

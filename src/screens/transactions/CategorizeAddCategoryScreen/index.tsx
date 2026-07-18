@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { CategorySelectView } from "@/screens/transactions/components/category-select/CategorySelectView";
+import { CategorySelectView } from "@/ui/entity-select/CategorySelectView";
 import { todayInt } from "@/lib/date";
 import { useCategorize } from "@/screens/transactions/CategorizeScreen/context/CategorizeProvider";
 

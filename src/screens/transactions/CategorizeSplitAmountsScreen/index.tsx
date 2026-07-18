@@ -2,8 +2,8 @@ import { useMemo } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { LoadingScreen } from "@/ui/LoadingScreen";
 import { SplitAmountsView } from "@/screens/transactions/components/category-select/SplitAmountsView";
-import type { SplitLineForm } from "@/screens/transactions/components/category-select/types";
-import { useCategories } from "@/screens/transactions/hooks/useCategories";
+import type { SplitLineForm } from "@/ui/entity-select/types";
+import { useCategories } from "@/ui/hooks/useCategories";
 import { useCategorize } from "@/screens/transactions/CategorizeScreen/context/CategorizeProvider";
 
 /**

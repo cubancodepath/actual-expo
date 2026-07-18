@@ -7,7 +7,7 @@ import { getTransactionById, moveTransaction } from "@/core/domain/transactions"
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { CloseButton } from "@/ui/CloseButton";
 import { ScreenHeader } from "@/ui/ScreenHeader";
-import { AccountSelectView } from "@/screens/transactions/components/account-select/AccountSelectView";
+import { AccountSelectView } from "@/ui/entity-select/AccountSelectView";
 import type { TransactionDisplay } from "@/core/domain/transactions/types";
 
 /**

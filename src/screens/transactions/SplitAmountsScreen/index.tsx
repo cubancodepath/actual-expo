@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSelector } from "@tanstack/react-store";
 import { SplitAmountsView } from "@/screens/transactions/components/category-select/SplitAmountsView";
-import type { SplitLineForm } from "@/screens/transactions/components/category-select/types";
+import type { SplitLineForm } from "@/ui/entity-select/types";
 import { useTransactionForm } from "@/screens/transactions/NewTransactionScreen/context/TransactionFormProvider";
 
 /**

@@ -5,19 +5,20 @@ import { useTranslation } from "react-i18next";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSelector } from "@tanstack/react-store";
 import { Button, ScrollShadow, Separator, Spinner, Surface, useThemeColor } from "heroui-native";
-import { ArrowLeftRight, Trash2, WalletCards } from "lucide-react-native";
+import { ArrowLeftRight, Inbox, Trash2 } from "lucide-react-native";
 import { AmountKeyboard } from "@/ui/amount-keyboard";
 import { useTransactionForm } from "./context/TransactionFormProvider";
 import type { NewTransactionParams } from "./hooks/useNewTransactionForm";
 import { isSplitLines } from "./validation/transactionForm.schema";
-import { Amount } from "./components/Amount";
-import { TypeSegment } from "./components/TypeSegment";
-import { DateField } from "./components/DateField";
+import { Amount } from "@/ui/money-entry/Amount";
+import { TypeSegment } from "@/ui/money-entry/TypeSegment";
+import { DateField } from "@/ui/money-entry/DateField";
 import { NotesField } from "./components/NotesField";
 import { ClearedField } from "./components/ClearedField";
-import { FieldRow } from "./components/FieldRow";
-import { AccountField } from "./components/sheets/AccountField";
-import { RecurrenceField } from "./components/sheets/RecurrenceField";
+import { FieldRow } from "@/ui/money-entry/FieldRow";
+import { AccountField } from "@/ui/money-entry/AccountField";
+import { RecurrenceField } from "@/ui/money-entry/RecurrenceField";
+import { RecurrencePatternField } from "@/ui/money-entry/RecurrencePatternField";
 import { CloseButton } from "@/ui/CloseButton";
 import { LoadingScreen } from "@/ui/LoadingScreen";
 
@@ -105,7 +106,7 @@ export function NewTransactionScreen() {
                 />
                 <Separator />
                 <FieldRow
-                  icon={WalletCards}
+                  icon={Inbox}
                   label={t("category")}
                   value={split ? splitSummary : values.categoryName}
                   placeholder={values.isTransfer ? t("noCategoryNeeded") : t("selectCategory")}
@@ -136,12 +137,10 @@ export function NewTransactionScreen() {
                 <DateField value={values.date} onChange={(d) => form.setFieldValue("date", d)} />
               </Surface>
 
-              <Surface className="overflow-hidden rounded-2xl p-4">
-                <NotesField
-                  value={values.notes}
-                  onChangeText={(n) => form.setFieldValue("notes", n)}
-                />
-              </Surface>
+              <NotesField
+                value={values.notes}
+                onChangeText={(n) => form.setFieldValue("notes", n)}
+              />
 
               <Surface className="overflow-hidden rounded-2xl">
                 <ClearedField
@@ -155,6 +154,15 @@ export function NewTransactionScreen() {
                       value={values.recurConfig}
                       onChange={(c) => form.setFieldValue("recurConfig", c)}
                     />
+                    {values.recurConfig && values.recurConfig.frequency !== "daily" ? (
+                      <>
+                        <Separator />
+                        <RecurrencePatternField
+                          value={values.recurConfig}
+                          onChange={(c) => form.setFieldValue("recurConfig", c)}
+                        />
+                      </>
+                    ) : null}
                   </>
                 ) : null}
               </Surface>

@@ -1,16 +1,12 @@
 import { useRouter } from "expo-router";
 import { useSelector } from "@tanstack/react-store";
 import { PayeeSelectView } from "@/ui/entity-select/PayeeSelectView";
-import { useTransactionForm } from "@/screens/transactions/NewTransactionScreen/context/TransactionFormProvider";
+import { useScheduleFormContext } from "../context/ScheduleFormProvider";
 
-/**
- * The transaction form's payee picker: glue between the shared
- * {@link PayeeSelectView} and the form context. Picking writes to the form and
- * closes; deselecting clears and stays open.
- */
-export function PayeePickerScreen() {
+/** The schedule form's payee picker: PayeeSelectView wired to the shared form. */
+export function SchedulePayeePicker() {
   const router = useRouter();
-  const { form, actions } = useTransactionForm();
+  const { form, actions } = useScheduleFormContext();
   const payeeId = useSelector(form.store, (s) => s.values.payeeId);
   const payeeName = useSelector(form.store, (s) => s.values.payeeName);
 

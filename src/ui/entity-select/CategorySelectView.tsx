@@ -5,9 +5,9 @@ import { Button, Checkbox, ListGroup, Separator, Typography, useThemeColor } fro
 import { Check, Split } from "lucide-react-native";
 import { Money } from "@/ui/Money";
 import { PickerScreen } from "@/ui/PickerScreen";
-import { useCategories } from "@/screens/transactions/hooks/useCategories";
-import { useCategoryBalances } from "@/screens/transactions/hooks/useCategoryBalances";
-import { useGroupedCategories } from "@/screens/transactions/hooks/useGroupedCategories";
+import { useCategories } from "@/ui/hooks/useCategories";
+import { useCategoryBalances } from "@/ui/hooks/useCategoryBalances";
+import { useGroupedCategories } from "@/ui/hooks/useGroupedCategories";
 import type { CategoryRef } from "./types";
 
 interface CategorySelectViewProps {

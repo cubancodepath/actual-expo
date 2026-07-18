@@ -9,7 +9,7 @@
 
 import { z } from "zod";
 import type { RecurConfig } from "@/core/domain/schedules/types";
-import type { SplitLineForm } from "@/screens/transactions/components/category-select/types";
+import type { SplitLineForm } from "@/ui/entity-select/types";
 
 export type TransactionType = "expense" | "income";
 

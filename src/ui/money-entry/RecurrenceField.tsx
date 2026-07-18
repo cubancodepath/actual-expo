@@ -3,12 +3,11 @@ import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { BottomSheet, ListGroup, Separator, useThemeColor } from "heroui-native";
 import { Check, Repeat } from "lucide-react-native";
-import { getRecurringDescription } from "@/core/domain/schedules";
 import type { RecurConfig } from "@/core/domain/schedules/types";
 import { intToStr, todayInt } from "@/lib/date";
 import { CloseButton } from "@/ui/CloseButton";
 import { ScreenHeader } from "@/ui/ScreenHeader";
-import { FieldRow } from "../FieldRow";
+import { FieldRow } from "./FieldRow";
 
 const FREQUENCIES = ["daily", "weekly", "monthly", "yearly"] as const;
 
@@ -41,7 +40,7 @@ export function RecurrenceField({ value, onChange }: RecurrenceFieldProps) {
     { label: t("recurNever"), value: null },
     ...FREQUENCIES.map((f) => ({ label: t(`recur_${f}`), value: f })),
   ];
-  const summary = value ? getRecurringDescription(value) : "";
+  const summary = value ? t(`recur_${value.frequency}`) : "";
 
   return (
     <>
@@ -51,7 +50,6 @@ export function RecurrenceField({ value, onChange }: RecurrenceFieldProps) {
         value={summary}
         placeholder={t("recurNever")}
         onPress={() => setOpen(true)}
-        onClear={value ? () => onChange(null) : undefined}
       />
       <BottomSheet isOpen={open} onOpenChange={setOpen}>
         <BottomSheet.Portal>

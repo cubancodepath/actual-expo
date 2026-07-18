@@ -5,8 +5,8 @@ import { BottomSheet } from "heroui-native";
 import { Landmark } from "lucide-react-native";
 import { CloseButton } from "@/ui/CloseButton";
 import { ScreenHeader, useScreenHeaderScroll } from "@/ui/ScreenHeader";
-import { AccountSelectView } from "@/screens/transactions/components/account-select/AccountSelectView";
-import { FieldRow } from "../FieldRow";
+import { AccountSelectView } from "@/ui/entity-select/AccountSelectView";
+import { FieldRow } from "./FieldRow";
 
 type AccountFieldProps = {
   accountId: string | null;

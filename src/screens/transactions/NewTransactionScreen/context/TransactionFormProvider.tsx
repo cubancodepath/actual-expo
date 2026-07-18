@@ -1,7 +1,7 @@
 import { createContext, use, useState, type ReactNode } from "react";
-import { useAccounts } from "@/screens/transactions/hooks/useAccounts";
-import { useCategories } from "@/screens/transactions/hooks/useCategories";
-import { usePayees } from "@/screens/transactions/hooks/usePayees";
+import { useAccounts } from "@/ui/hooks/useAccounts";
+import { useCategories } from "@/ui/hooks/useCategories";
+import { usePayees } from "@/ui/hooks/usePayees";
 import { useTags } from "@/screens/transactions/hooks/useTags";
 import { useRules } from "@/screens/transactions/hooks/useRules";
 import { useNewTransactionForm } from "../hooks/useNewTransactionForm";

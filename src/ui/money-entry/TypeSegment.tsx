@@ -1,17 +1,19 @@
 import { useTranslation } from "react-i18next";
 import { Segment } from "heroui-native-pro";
-import type { TransactionType } from "../validation/transactionForm.schema";
+
+/** Expense / income — shared by the transaction and schedule money forms. */
+export type MoneyType = "expense" | "income";
 
 type TypeSegmentProps = {
-  value: TransactionType;
-  onChange: (type: TransactionType) => void;
+  value: MoneyType;
+  onChange: (type: MoneyType) => void;
 };
 
 /** Expense / income selector built on the HeroUI Pro Segment. */
 export function TypeSegment({ value, onChange }: TypeSegmentProps) {
   const { t } = useTranslation("transactions");
   return (
-    <Segment value={value} onValueChange={(v) => onChange(v as TransactionType)}>
+    <Segment value={value} onValueChange={(v) => onChange(v as MoneyType)}>
       <Segment.Group>
         <Segment.Indicator />
         <Segment.Item value="expense">

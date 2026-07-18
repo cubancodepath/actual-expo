@@ -6,10 +6,7 @@ import { loadTransactionWithSplitLines } from "@/screens/transactions/components
 import { saveTransaction, type SaveTransactionInput } from "@/core/domain/transactions/save";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import type { TransactionDisplay } from "@/core/domain/transactions/types";
-import type {
-  CategoryRef,
-  SplitLineForm,
-} from "@/screens/transactions/components/category-select/types";
+import type { CategoryRef, SplitLineForm } from "@/ui/entity-select/types";
 
 interface CategorizeContextValue {
   /** The transaction being categorized, loaded fresh by id. */

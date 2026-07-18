@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { LoadingScreen } from "@/ui/LoadingScreen";
-import { CategorySelectView } from "@/screens/transactions/components/category-select/CategorySelectView";
+import { CategorySelectView } from "@/ui/entity-select/CategorySelectView";
 import { useCategorize } from "./context/CategorizeProvider";
 
 /**

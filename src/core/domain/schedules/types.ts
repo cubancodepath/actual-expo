@@ -26,6 +26,8 @@ export type Schedule = {
   completed: boolean;
   posts_transaction: boolean;
   tombstone: boolean;
+  /** Per-schedule override of the upcoming window (null → use global pref). */
+  custom_upcoming_length: string | null;
   // Derived from schedules_next_date
   next_date: string | null; // 'YYYY-MM-DD'
   // Derived from rule conditions

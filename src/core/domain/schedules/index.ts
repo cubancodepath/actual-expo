@@ -20,10 +20,23 @@ import {
   parseDate,
   dayFromDate,
 } from "./recurrence";
-import { extractScheduleConds, getStatus, getScheduledAmount } from "./helpers";
+import {
+  extractScheduleConds,
+  getStatus,
+  getScheduledAmount,
+  normalizeScheduleName,
+  areConditionValuesEqual,
+  areScheduleConditionsEqual,
+  updateActions,
+  scheduleIsRecurring,
+} from "./helpers";
+import { getArbitraryPref } from "../preferences";
+import { getHasTransactionsQuery } from "./status";
+import { executeQuery } from "@/core/queries";
+import { emit as emitSyncEvent } from "@/core/sync/syncEvents";
 import { todayStr, todayInt, intToStr, strToInt } from "@/lib/date";
 import { addDays, startOfDay, isFriday, isWeekend, nextMonday } from "date-fns";
-import type { Schedule, RuleCondition, RuleAction, RecurConfig } from "./types";
+import type { Schedule, RuleCondition, RuleAction, RecurConfig, ScheduleStatus } from "./types";
 import type { ScheduleRow, ScheduleNextDateRow } from "@/core/db/types";
 
 export type { Schedule } from "./types";
@@ -32,8 +45,21 @@ export {
   getScheduledAmount,
   getRecurringDescription,
   extractScheduleConds,
+  getUpcomingDays,
+  scheduleIsRecurring,
 } from "./helpers";
 export { getUpcomingDates as getUpcomingRecurDates } from "./recurrence";
+export {
+  getScheduleOccurrenceMatchStartDate,
+  indexPostedScheduleTransactions,
+  isScheduleOccurrencePosted,
+} from "./posted";
+export type { PostedScheduleTransaction, ScheduleOccurrenceMatchInput } from "./posted";
+export { getHasTransactionsQuery, isForPreview } from "./status";
+export type { ScheduleStatuses } from "./status";
+export { computePreviewTransactions } from "./computePreview";
+export type { PreviewTransaction, PreviewSubtransaction } from "./computePreview";
+export { getSchedulePreviews } from "./preview";
 
 // ── Helpers ──────────────────────────────────────────────────────
 
@@ -63,6 +89,7 @@ function rowToSchedule(row: any): Schedule {
     completed: row.completed === 1,
     posts_transaction: row.posts_transaction === 1,
     tombstone: row.tombstone === 1,
+    custom_upcoming_length: row.custom_upcoming_length ?? null,
     next_date: fromDateRepr(row.local_next_date ?? row.base_next_date ?? null),
     _payee: (conds.payee?.value as string) ?? null,
     _account: (conds.account?.value as string) ?? null,
@@ -266,13 +293,10 @@ export const createSchedule = undoable(async function createSchedule(opts: {
     throw new Error("Date is required");
   }
 
-  // Check for duplicate name
-  if (opts.schedule?.name) {
-    const existing = await first<{ id: string }>(
-      "SELECT id FROM schedules WHERE tombstone = 0 AND name = ?",
-      [opts.schedule.name],
-    );
-    if (existing && existing.id !== scheduleId) {
+  // Check for duplicate name (trimmed/normalized, matching Actual)
+  const name = normalizeScheduleName(opts.schedule?.name);
+  if (name) {
+    if (await checkIfScheduleExists(name, scheduleId)) {
       throw new Error("Cannot create schedules with the same name");
     }
   }
@@ -347,7 +371,7 @@ export const createSchedule = undoable(async function createSchedule(opts: {
       dataset: "schedules",
       row: scheduleId,
       column: "name",
-      value: opts.schedule?.name ?? null,
+      value: name,
     },
     {
       timestamp: Timestamp.send()!,
@@ -386,45 +410,79 @@ export const updateSchedule = undoable(async function updateSchedule(opts: {
 }): Promise<string> {
   const { schedule, conditions, actions, resetNextDate } = opts;
 
+  if (schedule.rule) {
+    throw new Error("You cannot change the rule of a schedule");
+  }
+
+  // Normalize + duplicate-name check (matches Actual).
+  const scheduleFields = { ...schedule };
+  if ("name" in scheduleFields) {
+    scheduleFields.name = normalizeScheduleName(scheduleFields.name);
+    if (scheduleFields.name && (await checkIfScheduleExists(scheduleFields.name, schedule.id))) {
+      throw new Error("Cannot update schedules with the same name");
+    }
+  }
+
   if (conditions) {
     const { date: dateCond } = extractScheduleConds(conditions);
     if (dateCond && dateCond.value == null) {
       throw new Error("Date is required");
     }
 
-    // Get existing rule
+    // Get the existing rule; self-heal a corrupt/missing rule rather than crash.
     const row = await first<{ rule: string }>(
       "SELECT rule FROM schedules WHERE id = ? AND tombstone = 0",
       [schedule.id],
     );
-    if (!row?.rule) throw new Error("Schedule has no rule");
-
-    const rule = await getRuleById(row.rule);
-    if (!rule) throw new Error("Rule not found for schedule");
+    let rule = row?.rule ? await getRuleById(row.rule) : null;
+    if (!rule) {
+      rule = await fixRuleForSchedule(schedule.id);
+    }
 
     await batchMessages(async () => {
       // Serialize Rule class instances back to plain objects for merging/saving
-      const existingConds = rule.conditions.map((c) =>
+      const oldConditions = rule!.conditions.map((c) =>
         typeof c.serialize === "function"
           ? (c.serialize() as unknown as RuleCondition)
           : (c as unknown as RuleCondition),
       );
-      const existingActions = rule.actions.map((a) =>
+      const existingActions = rule!.actions.map((a) =>
         typeof a.serialize === "function"
           ? (a.serialize() as unknown as RuleAction)
           : (a as unknown as RuleAction),
       );
-      // Merge old conditions with new
-      const newConditions = mergeConditions(existingConds, conditions);
-      // Merge actions: keep link-schedule, replace set actions
+      const newConditions = mergeConditions(oldConditions, conditions);
+
+      // Actions: explicit param replaces set-actions (keeping link-schedule);
+      // otherwise keep the amount `set` action in sync with the amount condition.
       const newActions =
         actions !== undefined
           ? [...existingActions.filter((a) => a.op === "link-schedule"), ...actions]
-          : undefined;
-      await updateRule(rule.id!, { conditions: newConditions, actions: newActions });
+          : (updateActions(newConditions, existingActions) ?? undefined);
 
-      // Recalculate next date if conditions changed or reset requested
-      if (resetNextDate) {
+      await updateRule(rule!.id!, {
+        conditions: newConditions,
+        ...(newActions ? { actions: newActions } : {}),
+      });
+
+      // Reset next_date when forced, or when the account or date condition
+      // changed (a closed→open account switch or a new date needs recompute).
+      const stripType = (c?: RuleCondition) => {
+        if (!c) return {};
+        const { type: _t, ...rest } = c;
+        return rest;
+      };
+      if (
+        resetNextDate ||
+        !areScheduleConditionsEqual(
+          oldConditions.find((c) => c.field === "account"),
+          newConditions.find((c) => c.field === "account"),
+        ) ||
+        !areConditionValuesEqual(
+          stripType(oldConditions.find((c) => c.field === "date")),
+          stripType(newConditions.find((c) => c.field === "date")),
+        )
+      ) {
         await setNextDate({
           id: schedule.id,
           conditions: newConditions,
@@ -432,8 +490,7 @@ export const updateSchedule = undoable(async function updateSchedule(opts: {
         });
       }
 
-      // Update schedule metadata
-      await updateScheduleMetadata(schedule);
+      await updateScheduleMetadata(scheduleFields);
     });
 
     await updateJsonPaths(schedule.id, conditions);
@@ -442,7 +499,7 @@ export const updateSchedule = undoable(async function updateSchedule(opts: {
       if (resetNextDate) {
         await setNextDate({ id: schedule.id, reset: true });
       }
-      await updateScheduleMetadata(schedule);
+      await updateScheduleMetadata(scheduleFields);
     });
   }
 
@@ -534,54 +591,159 @@ export const postTransactionForScheduleToday = undoable(
  * Check all active schedules and advance/post as needed.
  * Called after each sync (both success and failure).
  */
+/** Whether a schedule's date is a recurrence config. Mirrors isRecurringSchedule. */
+function isRecurringSchedule(schedule: Schedule): boolean {
+  return (
+    schedule._date != null && typeof schedule._date === "object" && "frequency" in schedule._date
+  );
+}
+
+/** True if the schedule already has a posted transaction for its current occurrence. */
+async function hasTransactionForSchedule(schedule: Schedule): Promise<boolean> {
+  const query = getHasTransactionsQuery([schedule]);
+  if (!query) return false;
+  const { data } = await executeQuery<{ schedule: string | null }>(query);
+  return data.filter(Boolean).some((row) => row.schedule === schedule.id);
+}
+
+/**
+ * Advance a recurring schedule to the occurrence after its current next_date.
+ * Returns the reloaded schedule, or null if it didn't move (exhausted/corrupt).
+ */
+async function advanceRecurringScheduleFromNextDate(schedule: Schedule): Promise<Schedule | null> {
+  if (!isRecurringSchedule(schedule)) return null;
+
+  const previousNextDate = schedule.next_date;
+  try {
+    await setNextDate({
+      id: schedule.id,
+      start: (nextDate) => addDays(parseDate(nextDate), 1),
+    });
+  } catch {
+    // Corrupt rule — can't find it; give up on this schedule.
+    return null;
+  }
+
+  const updated = await getScheduleById(schedule.id);
+  if (updated == null || updated.next_date === previousNextDate) return null;
+  return updated;
+}
+
+/**
+ * Move all paid/due/missed schedules forward, auto-posting where configured.
+ * Faithful port of Actual's advanceSchedulesService: uses the upcoming-length
+ * preference (and per-schedule custom length), skips closed accounts, and
+ * catches up multiple missed occurrences in a loop.
+ */
 export async function advanceSchedules(syncSuccess: boolean): Promise<void> {
-  const schedules = await getSchedules();
-  const active = schedules.filter((s) => !s.completed);
+  const all = await getSchedules();
+  const closed = await getClosedAccountIds();
+  const schedules = all.filter((s) => !s.completed && !(s._account && closed.has(s._account)));
 
-  // Find which schedules have transactions linked
-  const hasTrans = await getSchedulesWithTransactions(active);
+  // Date-bounded "has posted transaction" set (drives "paid" status).
+  const hasTrans = new Set<string>();
+  const query = getHasTransactionsQuery(schedules);
+  if (query) {
+    const { data } = await executeQuery<{ schedule: string | null }>(query);
+    for (const row of data) {
+      if (row.schedule) hasTrans.add(row.schedule);
+    }
+  }
 
-  for (const schedule of active) {
-    const status = getStatus(schedule.next_date, schedule.completed, hasTrans.has(schedule.id));
+  const upcomingLength = (await getArbitraryPref("upcomingScheduledTransactionLength")) ?? "7";
 
-    if (status === "paid") {
-      if (schedule._date && typeof schedule._date === "object" && "frequency" in schedule._date) {
-        // Recurring: advance to next occurrence
-        try {
-          await setNextDate({ id: schedule.id });
-        } catch {
-          // Skip corrupt rules
-        }
-      } else if (typeof schedule._date === "string" && schedule._date < todayStr()) {
-        // One-time: complete if past due
-        await updateScheduleField(schedule.id, "completed", 1);
-      }
-    } else if (
-      (status === "due" || status === "missed") &&
+  let failedToPost = false;
+  let didPost = false;
+
+  for (const schedule of schedules) {
+    const status = getStatus(
+      schedule.next_date,
+      schedule.completed,
+      hasTrans.has(schedule.id),
+      schedule.custom_upcoming_length ?? upcomingLength,
+    );
+
+    if (
       schedule.posts_transaction &&
-      schedule._account
+      schedule._account &&
+      (status !== "paid" || isRecurringSchedule(schedule)) &&
+      (status === "paid" || status === "due" || status === "missed")
     ) {
-      if (syncSuccess) {
-        await postTransactionForSchedule(schedule.id);
+      let currentSchedule: Schedule | null = schedule;
+      let currentStatus: ScheduleStatus = status;
+
+      while (
+        currentSchedule &&
+        currentSchedule.posts_transaction &&
+        currentSchedule._account &&
+        (currentStatus === "paid" || currentStatus === "due" || currentStatus === "missed")
+      ) {
+        if (currentStatus === "paid") {
+          const updated = await advanceRecurringScheduleFromNextDate(currentSchedule);
+          if (updated == null) break;
+          currentSchedule = updated;
+          currentStatus = getStatus(
+            currentSchedule.next_date,
+            currentSchedule.completed,
+            await hasTransactionForSchedule(currentSchedule),
+            currentSchedule.custom_upcoming_length ?? upcomingLength,
+          );
+          continue;
+        }
+
+        // due / missed → auto-post (only after a successful sync)
+        if (syncSuccess) {
+          await postTransactionForSchedule(currentSchedule.id);
+          didPost = true;
+        } else {
+          failedToPost = true;
+          break;
+        }
+
+        if (!isRecurringSchedule(currentSchedule)) break;
+
+        const updated = await advanceRecurringScheduleFromNextDate(currentSchedule);
+        if (updated == null) break;
+        currentSchedule = updated;
+        currentStatus = getStatus(
+          currentSchedule.next_date,
+          currentSchedule.completed,
+          await hasTransactionForSchedule(currentSchedule),
+          currentSchedule.custom_upcoming_length ?? upcomingLength,
+        );
+      }
+    } else if (status === "paid") {
+      if (schedule._date) {
+        if (isRecurringSchedule(schedule)) {
+          // Move forward recurring schedules
+          try {
+            await setNextDate({ id: schedule.id });
+          } catch {
+            // Corrupt rule — skip
+          }
+        } else if (typeof schedule._date === "string" && schedule._date < todayStr()) {
+          // Complete any past single schedules
+          await updateSchedule({ schedule: { id: schedule.id, completed: true } });
+        }
       }
     }
   }
+
+  // A post simulates transactions arriving from a full sync; force a refresh.
+  if (didPost && !failedToPost) {
+    emitSyncEvent({ type: "success", tables: ["transactions"] });
+  }
+}
+
+/** Ids of closed (non-tombstoned) accounts — schedules on these are not advanced. */
+async function getClosedAccountIds(): Promise<Set<string>> {
+  const rows = await runQuery<{ id: string }>(
+    "SELECT id FROM accounts WHERE closed = 1 AND tombstone = 0",
+  );
+  return new Set(rows.map((r) => r.id));
 }
 
 // ── Internal Helpers ─────────────────────────────────────────────
-
-async function getSchedulesWithTransactions(schedules: Schedule[]): Promise<Set<string>> {
-  if (schedules.length === 0) return new Set();
-
-  const ids = schedules.map((s) => s.id);
-  const placeholders = ids.map(() => "?").join(",");
-  const rows = await runQuery<{ schedule: string }>(
-    `SELECT DISTINCT schedule FROM transactions
-     WHERE schedule IN (${placeholders}) AND tombstone = 0`,
-    ids,
-  );
-  return new Set(rows.map((r) => r.schedule));
-}
 
 async function updateScheduleMetadata(schedule: Partial<Schedule> & { id: string }): Promise<void> {
   const fields: Record<string, string | number | null> = {};
@@ -602,16 +764,6 @@ async function updateScheduleMetadata(schedule: Partial<Schedule> & { id: string
       value,
     })),
   );
-}
-
-async function updateScheduleField(
-  id: string,
-  column: string,
-  value: string | number | null,
-): Promise<void> {
-  await sendMessages([
-    { timestamp: Timestamp.send()!, dataset: "schedules", row: id, column, value },
-  ]);
 }
 
 /**
@@ -640,6 +792,64 @@ function mergeConditions(
   const added = pairs.filter(([old, newC]) => old == null && newC != null).map(([, newC]) => newC!);
 
   return updated.concat(added);
+}
+
+/** Whether a (non-tombstoned) schedule already uses `name`, excluding `scheduleId`. */
+async function checkIfScheduleExists(
+  name: string,
+  scheduleId: string | undefined,
+): Promise<boolean> {
+  const row = await first<{ id: string }>(
+    "SELECT id FROM schedules WHERE tombstone = 0 AND name = ?",
+    [name],
+  );
+  if (row == null) return false;
+  if (scheduleId) return row.id !== scheduleId;
+  return true;
+}
+
+/**
+ * Recreate a fresh linked rule for a schedule whose rule got corrupted/lost, so
+ * the system never crashes on a schedule without a rule. Mirrors Actual's
+ * fixRuleForSchedule. Returns the new rule.
+ */
+async function fixRuleForSchedule(id: string) {
+  const row = await first<{ rule: string }>("SELECT rule FROM schedules WHERE id = ?", [id]);
+  if (row?.rule) {
+    // Take the bad rule out of the system so it never causes problems again.
+    await deleteRule(row.rule);
+  }
+
+  const newRuleId = await createRule({
+    conditionsOp: "and",
+    conditions: [
+      { op: "isapprox", field: "date", value: todayStr() },
+      { op: "isapprox", field: "amount", value: 0 },
+    ],
+    actions: [{ op: "link-schedule", value: id }],
+  });
+
+  await sendMessages([
+    {
+      timestamp: Timestamp.send()!,
+      dataset: "schedules",
+      row: id,
+      column: "rule",
+      value: newRuleId,
+    },
+  ]);
+
+  const rule = await getRuleById(newRuleId);
+  if (!rule) throw new Error("Failed to create replacement rule for schedule");
+  return rule;
+}
+
+/** Rule ids of completed schedules (used to exclude them from payee rule counts). */
+export async function getCompletedScheduleRuleIds(): Promise<string[]> {
+  const rows = await runQuery<{ rule: string | null }>(
+    "SELECT rule FROM schedules WHERE tombstone = 0 AND completed = 1",
+  );
+  return rows.map((r) => r.rule).filter((r): r is string => !!r);
 }
 
 /**

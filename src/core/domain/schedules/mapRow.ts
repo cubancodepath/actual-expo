@@ -39,6 +39,7 @@ export function mapScheduleRow(row: Record<string, unknown>): Schedule {
     completed: row.completed === true || row.completed === 1,
     posts_transaction: row.posts_transaction === true || row.posts_transaction === 1,
     tombstone: row.tombstone === true || row.tombstone === 1,
+    custom_upcoming_length: (row.custom_upcoming_length as string | null) ?? null,
     next_date: nextDate,
     _payee: (conds.payee?.value as string) ?? null,
     _account: (conds.account?.value as string) ?? null,

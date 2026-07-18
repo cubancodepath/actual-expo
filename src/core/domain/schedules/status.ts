@@ -8,38 +8,33 @@
 import { q } from "@/core/queries";
 import type { Query } from "@/core/queries/query";
 import type { Schedule, ScheduleStatus } from "./types";
-import { extractScheduleConds } from "./helpers";
+import { getScheduleOccurrenceMatchStartDate } from "./posted";
 
 export type ScheduleStatuses = Map<string, ScheduleStatus>;
 
 /**
  * Build an AQL query to find transactions linked to the given schedules.
- * Used to determine "paid" status.
+ * Used to determine "paid" status. The per-schedule date lower bound comes from
+ * getScheduleOccurrenceMatchStartDate (accounts for exact/auto-posted/approx).
  */
 export function getHasTransactionsQuery(schedules: Schedule[]): Query | null {
   if (schedules.length === 0) return null;
 
   const filters = schedules
     .filter((s) => s.next_date != null)
-    .map((s) => {
-      const conds = extractScheduleConds(s._conditions ?? []);
-      const dateCond = conds.date;
-
-      // If the schedule has an exact date condition, match from that date.
-      // Otherwise, look 2 days before next_date (for approximate dates).
-      const dateFrom =
-        dateCond && dateCond.op === "is" ? s.next_date! : subtractDays(s.next_date!, 2);
-
-      return {
-        $and: [{ schedule: s.id }, { date: { $gte: dateFrom } }],
-      };
-    });
+    .map((s) => ({
+      $and: [
+        { schedule: s.id },
+        { date: { $gte: getScheduleOccurrenceMatchStartDate(s, s.next_date!) } },
+      ],
+    }));
 
   if (filters.length === 0) return null;
 
   return q("transactions")
     .options({ splits: "all" })
     .filter({ $or: filters })
+    .orderBy({ date: "desc" })
     .select(["schedule", "date"]);
 }
 

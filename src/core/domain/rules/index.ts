@@ -16,6 +16,8 @@ import { RuleError } from "./errors";
 
 export { Rule };
 export type { RuleCondition, RuleAction };
+export { runRules, runRulesWithSplits } from "./engine";
+export { execActionsWithSplits } from "./splitActions";
 
 // ── Field name mapping (internal ↔ public) ──
 

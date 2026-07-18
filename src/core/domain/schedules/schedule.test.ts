@@ -46,6 +46,10 @@ vi.mock("../transactions", () => ({
   addTransaction: vi.fn().mockResolvedValue("txn-1"),
 }));
 
+vi.mock("../preferences", () => ({
+  getArbitraryPref: vi.fn().mockResolvedValue("7"),
+}));
+
 vi.mock("@/lib/date", () => ({
   todayStr: () => "2026-03-09",
   todayInt: () => 20260309,
@@ -221,38 +225,43 @@ describe("setNextDate", () => {
 // ═══════════════════════════════════════════════════════════════════════════
 
 describe("advanceSchedules", () => {
-  function mockScheduleRows(schedules: any[]) {
-    // getSchedules() calls runQuery
-    mockRunQuery.mockResolvedValueOnce(schedules);
+  const monthlyCond = { frequency: "monthly", start: "2026-03-09" };
+  const postingConds = [
+    { field: "payee", op: "is", value: "payee-1" },
+    { field: "account", op: "is", value: "acct-1" },
+    { field: "amount", op: "isapprox", value: -5000 },
+    { field: "date", op: "isapprox", value: monthlyCond },
+  ];
+
+  function scheduleRow(overrides: Record<string, unknown> = {}) {
+    return {
+      id: "sched-1",
+      rule: "rule-1",
+      completed: 0,
+      posts_transaction: 0,
+      tombstone: 0,
+      local_next_date: 20260309,
+      base_next_date: 20260309,
+      conditions: JSON.stringify([{ field: "date", op: "isapprox", value: monthlyCond }]),
+      ...overrides,
+    };
   }
 
-  function mockTransactionLookup(scheduleIds: string[]) {
-    // getSchedulesWithTransactions calls runQuery
-    mockRunQuery.mockResolvedValueOnce(scheduleIds.map((id) => ({ schedule: id })));
+  // getSchedules → closed accounts → hasTransactions (executeQuery→runQuery)
+  function mockAdvancePrelude(schedules: any[], paidIds: string[] = []) {
+    mockRunQuery.mockResolvedValueOnce(schedules); // getSchedules
+    mockRunQuery.mockResolvedValueOnce([]); // getClosedAccountIds
+    mockRunQuery.mockResolvedValueOnce(paidIds.map((id) => ({ schedule: id, date: 20260309 }))); // getHasTransactionsQuery
   }
 
-  it("status=paid + recurring → calls setNextDate (via sendMessages)", async () => {
-    const recurConfig = { frequency: "monthly", start: "2026-03-09" };
-    mockScheduleRows([
-      {
-        id: "sched-1",
-        rule: "rule-1",
-        completed: 0,
-        posts_transaction: 0,
-        tombstone: 0,
-        local_next_date: 20260309,
-        base_next_date: 20260309,
-        conditions: JSON.stringify([{ field: "date", op: "isapprox", value: recurConfig }]),
-      },
-    ]);
-    // sched-1 has a linked transaction → status=paid
-    mockTransactionLookup(["sched-1"]);
+  it("status=paid + recurring → advances via setNextDate", async () => {
+    mockAdvancePrelude([scheduleRow()], ["sched-1"]); // linked txn → paid
 
     // setNextDate internals: rule lookup + nd lookup
     mockFirst.mockResolvedValueOnce({ rule: "rule-1" } as any);
     mockGetRuleById.mockResolvedValueOnce({
       id: "rule-1",
-      conditions: [{ field: "date", op: "isapprox", value: recurConfig }],
+      conditions: [{ field: "date", op: "isapprox", value: monthlyCond }],
       conditionsOp: "and",
       actions: [],
     } as any);
@@ -264,52 +273,61 @@ describe("advanceSchedules", () => {
       base_next_date_ts: Date.now(),
     } as any);
 
-    await advanceSchedules(true);
-
-    // setNextDate was called (it uses default start=today, so nextOccurrence from today
-    // for monthly starting 2026-03-09 = 2026-03-09 = same as current → no-op due to === check)
-    // This is the expected behavior — non-regression guard prevents undo
+    // paid + recurring but posts_transaction=0 → else-branch setNextDate; no throw.
+    await expect(advanceSchedules(true)).resolves.toBeUndefined();
   });
 
   it("status=due + posts_transaction + syncSuccess → posts transaction", async () => {
-    mockScheduleRows([
-      {
-        id: "sched-2",
-        rule: "rule-2",
-        completed: 0,
-        posts_transaction: 1,
-        tombstone: 0,
-        local_next_date: 20260309, // today = due
-        base_next_date: 20260309,
-        conditions: JSON.stringify([
-          { field: "payee", op: "is", value: "payee-1" },
-          { field: "account", op: "is", value: "acct-1" },
-          { field: "amount", op: "isapprox", value: -5000 },
-          { field: "date", op: "isapprox", value: { frequency: "monthly", start: "2026-03-09" } },
-        ]),
-      },
-    ]);
-    // No linked transactions → status=due (nextDate=today)
-    mockTransactionLookup([]);
+    mockAdvancePrelude(
+      [
+        scheduleRow({
+          id: "sched-2",
+          rule: "rule-2",
+          posts_transaction: 1,
+          conditions: JSON.stringify(postingConds),
+        }),
+      ],
+      [], // no linked txn → due
+    );
 
-    // postTransactionForSchedule internals: getScheduleById
+    // postTransactionForSchedule → getScheduleById
     mockRunQuery.mockResolvedValueOnce([
-      {
+      scheduleRow({
         id: "sched-2",
         rule: "rule-2",
-        completed: 0,
         posts_transaction: 1,
-        tombstone: 0,
-        local_next_date: 20260309,
-        base_next_date: 20260309,
-        conditions: JSON.stringify([
-          { field: "payee", op: "is", value: "payee-1" },
-          { field: "account", op: "is", value: "acct-1" },
-          { field: "amount", op: "isapprox", value: -5000 },
-          { field: "date", op: "isapprox", value: { frequency: "monthly", start: "2026-03-09" } },
-        ]),
-      },
+        conditions: JSON.stringify(postingConds),
+      }),
     ]);
+
+    // catch-up: advanceRecurringScheduleFromNextDate → setNextDate + getScheduleById(advanced)
+    mockFirst.mockResolvedValueOnce({ rule: "rule-2" } as any);
+    mockGetRuleById.mockResolvedValueOnce({
+      id: "rule-2",
+      conditions: postingConds,
+      conditionsOp: "and",
+      actions: [],
+    } as any);
+    mockFirst.mockResolvedValueOnce({
+      id: "nd-2",
+      schedule_id: "sched-2",
+      local_next_date: 20260309,
+      base_next_date: 20260309,
+      base_next_date_ts: Date.now(),
+    } as any);
+    // reloaded (advanced) schedule → next month, far future → loop ends
+    mockRunQuery.mockResolvedValueOnce([
+      scheduleRow({
+        id: "sched-2",
+        rule: "rule-2",
+        posts_transaction: 1,
+        local_next_date: 20260409,
+        base_next_date: 20260409,
+        conditions: JSON.stringify(postingConds),
+      }),
+    ]);
+    // hasTransactionForSchedule(updated) → executeQuery → no rows
+    mockRunQuery.mockResolvedValueOnce([]);
 
     const { addTransaction } = await import("../transactions");
     const mockAddTransaction = vi.mocked(addTransaction);
@@ -317,33 +335,22 @@ describe("advanceSchedules", () => {
     await advanceSchedules(true);
 
     expect(mockAddTransaction).toHaveBeenCalledWith(
-      expect.objectContaining({
-        account: "acct-1",
-        amount: -5000,
-        schedule: "sched-2",
-      }),
+      expect.objectContaining({ account: "acct-1", amount: -5000, schedule: "sched-2" }),
     );
   });
 
   it("status=due + posts_transaction + !syncSuccess → does NOT post", async () => {
-    mockScheduleRows([
-      {
-        id: "sched-3",
-        rule: "rule-3",
-        completed: 0,
-        posts_transaction: 1,
-        tombstone: 0,
-        local_next_date: 20260309,
-        base_next_date: 20260309,
-        conditions: JSON.stringify([
-          { field: "payee", op: "is", value: "payee-1" },
-          { field: "account", op: "is", value: "acct-1" },
-          { field: "amount", op: "isapprox", value: -5000 },
-          { field: "date", op: "isapprox", value: { frequency: "monthly", start: "2026-03-09" } },
-        ]),
-      },
-    ]);
-    mockTransactionLookup([]);
+    mockAdvancePrelude(
+      [
+        scheduleRow({
+          id: "sched-3",
+          rule: "rule-3",
+          posts_transaction: 1,
+          conditions: JSON.stringify(postingConds),
+        }),
+      ],
+      [],
+    );
 
     const { addTransaction } = await import("../transactions");
     const mockAddTransaction = vi.mocked(addTransaction);

@@ -116,6 +116,7 @@ export const schema: Schema = {
       rule: { type: "id" },
       completed: { type: "boolean" },
       posts_transaction: { type: "boolean" },
+      custom_upcoming_length: { type: "string" },
       tombstone: { type: "boolean" },
     },
     defaultOrder: [{ completed: "asc" }],

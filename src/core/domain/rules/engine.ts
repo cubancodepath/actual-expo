@@ -12,6 +12,7 @@ export { RuleIndexer } from "./rule-indexer";
 
 import type { Rule } from "./rule";
 import { rankRules } from "./rule-utils";
+import { execActionsWithSplits } from "./splitActions";
 
 /**
  * Run all rules against a transaction in ranked order.
@@ -25,6 +26,25 @@ export function runRules(
   let result = { ...transaction };
   for (const rule of ranked) {
     result = rule.apply(result);
+  }
+  return result;
+}
+
+/**
+ * Like runRules, but split-aware: a matching rule with `set-split-amount`
+ * actions produces `subtransactions`. Used by schedule previews (the default
+ * runRules stays non-split for the posting/import/form paths).
+ */
+export function runRulesWithSplits(
+  rules: Rule[],
+  transaction: Record<string, unknown>,
+): Record<string, unknown> {
+  const ranked = rankRules(rules);
+  let result = { ...transaction };
+  for (const rule of ranked) {
+    if (rule.evalConditions(result)) {
+      result = execActionsWithSplits(rule.actions, result);
+    }
   }
   return result;
 }

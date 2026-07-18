@@ -287,8 +287,20 @@ function* generateOccurrences(config: RecurConfig, after: Date): Generator<Date>
 // ─── Public API ────────────────────────────────────────────
 
 /**
+ * Apply the schedule's weekend-skip rule to a raw occurrence date, mirroring
+ * Actual's getNextDate/getUpcomingDates (which push weekend dates to the
+ * configured side). No-op when skipWeekend is off.
+ */
+export function applySkipWeekend(config: RecurConfig, date: Date): Date {
+  if (config.skipWeekend) {
+    return getDateWithSkippedWeekend(date, config.weekendSolveMode ?? "after");
+  }
+  return date;
+}
+
+/**
  * Get the next occurrence date from a RecurConfig, at or after `after`.
- * Returns null if no more occurrences exist.
+ * Returns null if no more occurrences exist. Raw — does NOT apply skipWeekend.
  */
 export function getNextOccurrence(config: RecurConfig, after: Date): Date | null {
   const gen = generateOccurrences(config, after);
@@ -297,7 +309,8 @@ export function getNextOccurrence(config: RecurConfig, after: Date): Date | null
 }
 
 /**
- * Get the next N upcoming dates from a RecurConfig.
+ * Get the next N upcoming dates from a RecurConfig, with the weekend-skip rule
+ * applied per occurrence (matches Actual's `schedule/get-upcoming-dates`).
  */
 export function getUpcomingDates(config: RecurConfig, count: number, after?: Date): Date[] {
   const start = after ?? startOfDay(new Date());
@@ -306,7 +319,7 @@ export function getUpcomingDates(config: RecurConfig, count: number, after?: Dat
   for (let i = 0; i < count; i++) {
     const result = gen.next();
     if (result.done) break;
-    dates.push(result.value);
+    dates.push(applySkipWeekend(config, result.value));
   }
   return dates;
 }

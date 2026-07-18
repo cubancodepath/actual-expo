@@ -7,11 +7,23 @@
  */
 
 import { addDays, startOfDay } from "date-fns";
-import { getScheduledAmount, extractScheduleConds } from "./helpers";
-import { getNextOccurrence, dayFromDate, parseDate } from "./recurrence";
+import {
+  getScheduledAmount,
+  extractScheduleConds,
+  getUpcomingDays,
+  scheduleIsRecurring,
+} from "./helpers";
+import { getNextOccurrence, applySkipWeekend, dayFromDate, parseDate } from "./recurrence";
 import { isForPreview, type ScheduleStatuses } from "./status";
 import { todayStr, strToInt } from "@/lib/date";
-import type { Schedule, ScheduleStatus } from "./types";
+import type { Schedule, ScheduleStatus, RecurConfig } from "./types";
+
+export type PreviewSubtransaction = {
+  id: string;
+  amount: number;
+  category: string | null;
+  categoryName: string | null;
+};
 
 export type PreviewTransaction = {
   id: string;
@@ -20,6 +32,7 @@ export type PreviewTransaction = {
   payeeName: string;
   account: string | null;
   accountName: string | null;
+  category?: string | null;
   categoryName: string | null;
   amount: number;
   date: number; // YYYYMMDD int
@@ -27,15 +40,20 @@ export type PreviewTransaction = {
   status: ScheduleStatus;
   isRecurring: boolean;
   forceUpcoming: boolean;
+  /** Present when the schedule's rule splits the amount across categories. */
+  subtransactions?: PreviewSubtransaction[];
 };
 
 /**
  * Compute preview transactions for display in transaction lists.
  *
- * @param schedules - All schedules (from liveQuery)
- * @param statuses - Pre-computed status map (from useSchedules hook)
- * @param upcomingDays - How many days ahead to show (default 7)
- * @param filter - Optional filter function (e.g., filter by account)
+ * Ported from Actual's computeSchedulePreviewTransactions: expands recurring
+ * schedules up to a per-schedule upcoming window (`custom_upcoming_length ??
+ * upcomingLength`), drops the first occurrence when already paid, and marks
+ * future/paid occurrences `forceUpcoming`.
+ *
+ * @param upcomingLength - Global upcoming-length pref string (e.g. "7", "oneMonth").
+ * @param filter - Optional filter (e.g. by account).
  */
 export function computePreviewTransactions(
   schedules: Schedule[],
@@ -43,7 +61,7 @@ export function computePreviewTransactions(
   payeeNames: Map<string, string>,
   categoryNames: Map<string, string>,
   accountNames: Map<string, string>,
-  upcomingDays = 7,
+  upcomingLength = "7",
   filter?: (schedule: Schedule) => boolean,
 ): PreviewTransaction[] {
   const forPreview = schedules
@@ -53,7 +71,6 @@ export function computePreviewTransactions(
   if (forPreview.length === 0) return [];
 
   const today = startOfDay(new Date());
-  const boundary = addDays(today, upcomingDays);
   const todayString = todayStr();
 
   const previews: PreviewTransaction[] = [];
@@ -61,29 +78,27 @@ export function computePreviewTransactions(
   for (const schedule of forPreview) {
     const status = statuses.get(schedule.id)!;
     const conds = extractScheduleConds(schedule._conditions ?? []);
-    const isRecurring =
-      conds.date != null &&
-      typeof conds.date.value === "object" &&
-      conds.date.value != null &&
-      "frequency" in conds.date.value;
+    const isRecurring = scheduleIsRecurring(conds.date);
 
-    // Collect dates: start with next_date, expand recurring
+    // Per-schedule upcoming window (custom overrides the global pref).
+    const effectiveUpcomingLength = schedule.custom_upcoming_length ?? upcomingLength;
+    const boundary = addDays(today, getUpcomingDays(effectiveUpcomingLength, todayString));
+
+    // Collect dates: start with next_date, expand recurring up to the boundary.
     const dates: string[] = [];
     if (schedule.next_date) {
       dates.push(schedule.next_date);
 
-      if (
-        isRecurring &&
-        conds.date?.value &&
-        typeof conds.date.value === "object" &&
-        "frequency" in conds.date.value
-      ) {
-        const recurConfig = conds.date.value as import("./types").RecurConfig;
+      if (isRecurring && conds.date?.value) {
+        const recurConfig = conds.date.value as RecurConfig;
         let day = parseDate(schedule.next_date);
         while (day <= boundary) {
-          const nextDay = getNextOccurrence(recurConfig, day);
-          if (!nextDay) break;
+          const rawNext = getNextOccurrence(recurConfig, day);
+          if (!rawNext) break;
 
+          // Apply the weekend-skip rule (Actual expands via getNextDate, which
+          // adjusts the date), then advance past the adjusted date.
+          const nextDay = applySkipWeekend(recurConfig, rawNext);
           if (startOfDay(nextDay) > boundary) break;
 
           const nextDateStr = dayFromDate(nextDay);
@@ -108,26 +123,25 @@ export function computePreviewTransactions(
       const dateInt = strToInt(dateStr);
       if (dateInt == null) continue;
 
+      const forceUpcoming =
+        (dateStr !== schedule.next_date || status === "paid") && dateStr >= todayString;
+
       previews.push({
-        id: `preview/${schedule.id}/${dateInt}`,
+        // Match Actual's id format: preview/<scheduleId>/<YYYY-MM-DD>.
+        id: `preview/${schedule.id}/${dateStr}`,
         scheduleId: schedule.id,
         payee: schedule._payee,
         payeeName: payeeNames.get(schedule._payee ?? "") ?? "(no payee)",
         account: schedule._account,
         accountName: schedule._account ? (accountNames.get(schedule._account) ?? null) : null,
+        category: schedule._category,
         categoryName: schedule._category ? (categoryNames.get(schedule._category) ?? null) : null,
         amount,
         date: dateInt,
         dateStr,
-        status:
-          dateStr !== schedule.next_date || status === "paid"
-            ? dateStr >= todayString
-              ? "upcoming"
-              : status
-            : status,
+        status: forceUpcoming ? "upcoming" : status,
         isRecurring,
-        forceUpcoming:
-          (dateStr !== schedule.next_date || status === "paid") && dateStr >= todayString,
+        forceUpcoming,
       });
     }
   }

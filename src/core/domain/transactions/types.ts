@@ -42,7 +42,11 @@ export type GetTransactionsOptions = {
 export type TransactionDisplay = Transaction & {
   payeeName: string | null;
   categoryName: string | null;
+  /** Payee resolves to a transfer account — the row reads as a transfer. */
+  isTransfer?: boolean;
+  /** The transaction's own account is off budget. */
+  accountOffbudget?: boolean;
+  /** The transfer's destination account is off budget. */
+  transferAccountOffbudget?: boolean;
   accountName?: string | null;
-  splitCategoryNames?: string | null;
-  splitCategoryAmounts?: string | null;
 };

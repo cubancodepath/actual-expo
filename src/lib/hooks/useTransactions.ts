@@ -1,9 +1,11 @@
 /**
- * useTransactions — React Query infinite query for transactions with sync-event auto-refresh.
+ * useTransactions — React Query infinite query for transactions with sync-event
+ * auto-refresh. Backed by a single AQL query path (compiled SQL with views/mappings).
  *
- * Supports two modes:
- * - AQL query: `useTransactions({ query: q("transactions").select("*") })`
- * - Raw fetchFn: `useTransactions({ fetchFn: getAllTransactions })`
+ * `query` may be undefined while a screen is idle (e.g. an unsubmitted search);
+ * pass `options.enabled: false` alongside it so nothing runs until it's ready.
+ *
+ * @example useTransactions({ query: q("transactions").select("*") })
  */
 
 import { useEffect, useMemo } from "react";
@@ -12,40 +14,30 @@ import { listen } from "@/core/sync/syncEvents";
 import { transactionQueries } from "@/lib/query/transactionQueries";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import type { Query } from "@/core/queries/query";
-import type { TransactionDisplay } from "@/core/domain/transactions/types";
 
 const SYNC_TABLES = new Set(["transactions", "category_mapping", "payee_mapping"]);
 
 export interface UseTransactionsProps {
-  /** AQL query — uses compiled SQL with views/mappings. */
+  /** AQL query — uses compiled SQL with views/mappings. Undefined keeps it idle. */
   query?: Query;
-  /** Raw fetch function — for backwards compatibility. */
-  fetchFn?: (limit: number, offset: number) => Promise<TransactionDisplay[]>;
   options?: {
     pageSize?: number;
-    key?: string;
     refetchOnSync?: boolean;
     /** When false the query stays idle (no fetch, no sync refetch). Default true. */
     enabled?: boolean;
   };
 }
 
-export function useTransactions({ query, fetchFn, options }: UseTransactionsProps) {
+export function useTransactions({ query, options }: UseTransactionsProps) {
   const pageSize = options?.pageSize ?? 25;
-  const key = options?.key ?? "all";
   const refetchOnSync = options?.refetchOnSync ?? true;
-  const enabled = options?.enabled ?? true;
+  const enabled = (options?.enabled ?? true) && query != null;
   const activeBudgetId = useBudgetContextStore((s) => s.activeBudgetId);
 
-  const queryOptions = useMemo(() => {
-    if (query) {
-      return transactionQueries.aql({ query, pageSize, activeBudgetId });
-    }
-    if (fetchFn) {
-      return transactionQueries.list({ fetchFn, pageSize, key, activeBudgetId });
-    }
-    throw new Error("useTransactions requires either query or fetchFn");
-  }, [query, fetchFn, pageSize, key, activeBudgetId]);
+  const queryOptions = useMemo(
+    () => transactionQueries.aql({ query, pageSize, activeBudgetId }),
+    [query, pageSize, activeBudgetId],
+  );
 
   const queryResult = useInfiniteQuery({ ...queryOptions, enabled });
 

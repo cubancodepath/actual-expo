@@ -1,7 +1,6 @@
-import { useCallback, useMemo } from "react";
-import { searchTransactions } from "@/core/domain/transactions";
+import { useMemo } from "react";
 import { useTransactions } from "@/lib/hooks/useTransactions";
-import type { SearchParams } from "../searchParams";
+import { buildSearchQuery, type SearchParams } from "../searchParams";
 
 /**
  * Paged search results for a submitted set of params. `null` keeps the query
@@ -10,16 +9,10 @@ import type { SearchParams } from "../searchParams";
  * refetches itself.
  */
 export function useTransactionSearch(params: SearchParams | null) {
-  // A stable key per submitted search; changing filters is a new query.
-  const key = useMemo(() => `search:${JSON.stringify(params)}`, [params]);
-
-  const fetchFn = useCallback(
-    (limit: number, offset: number) => searchTransactions({ ...params, limit, offset }),
-    [params],
-  );
+  const query = useMemo(() => (params ? buildSearchQuery(params) : undefined), [params]);
 
   return useTransactions({
-    fetchFn,
-    options: { key, enabled: params !== null },
+    query,
+    options: { enabled: params !== null },
   });
 }

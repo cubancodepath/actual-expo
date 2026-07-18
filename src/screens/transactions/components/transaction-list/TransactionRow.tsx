@@ -2,7 +2,15 @@ import { memo, useRef } from "react";
 import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { Chip, cn, PressableFeedback, Separator, Typography, useThemeColor } from "heroui-native";
-import { Copyright, Inbox, Lock, WalletCards } from "lucide-react-native";
+import {
+  ArrowLeft,
+  ArrowRight,
+  ArrowRightLeft,
+  Copyright,
+  Inbox,
+  Lock,
+  WalletCards,
+} from "lucide-react-native";
 import { useCSSVariable } from "uniwind";
 import { Money } from "@/ui/Money";
 import { mediumHaptic } from "@/ui/haptics";
@@ -52,10 +60,22 @@ export const TransactionRow = memo(function TransactionRow({
 }: TransactionRowProps) {
   const { t } = useTranslation("transactions");
   const rowViewRef = useRef<View>(null);
-  const muted = useThemeColor("muted");
+  const [muted, accent, warning] = useThemeColor(["muted", "accent", "warning"]);
   const surface = useThemeColor("surface");
   const positive = useCSSVariable("--positive") as string;
-  const warning = useThemeColor("warning");
+
+  // "Special category" label, mirroring the original app: off-budget accounts,
+  // transfers, and split parents replace the real category in the chip.
+  const isTransfer = txn.isTransfer && !txn.transferAccountOffbudget;
+  const specialCategory = txn.accountOffbudget
+    ? t("offBudget")
+    : isTransfer
+      ? t("transfer")
+      : txn.is_parent
+        ? t("split")
+        : null;
+  const chipLabel = specialCategory ?? txn.categoryName;
+  const isUncategorized = chipLabel == null;
 
   return (
     <View className="bg-surface">
@@ -77,8 +97,16 @@ export const TransactionRow = memo(function TransactionRow({
           className={cn("w-full gap-0.5 px-4 py-2.5", isLifted && "opacity-0")}
         >
           <View className="flex-row items-center gap-2">
-            <View className="flex-1">
-              <Typography className="text-base text-foreground" numberOfLines={1}>
+            <View className="flex-1 flex-row items-center gap-1">
+              {/* Transfer direction, matching the original: money in → left,
+                  money out → right. Shown for any transfer payee. */}
+              {txn.isTransfer &&
+                (txn.amount > 0 ? (
+                  <ArrowLeft size={14} color={muted} />
+                ) : (
+                  <ArrowRight size={14} color={muted} />
+                ))}
+              <Typography className="flex-1 text-base text-foreground" numberOfLines={1}>
                 {txn.payeeName ?? t("noPayee")}
               </Typography>
             </View>
@@ -101,19 +129,30 @@ export const TransactionRow = memo(function TransactionRow({
                   touch fall through to the row's PressableFeedback. */}
               <Chip
                 variant="soft"
-                color={!txn.categoryName ? "warning" : isIncome ? "success" : "default"}
+                color={
+                  specialCategory
+                    ? "accent"
+                    : isUncategorized
+                      ? "warning"
+                      : isIncome
+                        ? "success"
+                        : "default"
+                }
                 size="sm"
                 pointerEvents="none"
                 className="rounded-md"
               >
-                {!txn.category && <Inbox size={14} color={warning} />}
-                {isIncome && <WalletCards size={14} color={positive} />}
+                {isTransfer && <ArrowRightLeft size={14} color={accent} />}
+                {isUncategorized && <Inbox size={14} color={warning} />}
+                {!specialCategory && isIncome && <WalletCards size={14} color={positive} />}
                 <Chip.Label numberOfLines={1} className="text-foreground font-normal">
-                  {txn.categoryName == null
+                  {isUncategorized
                     ? t("uncategorized")
-                    : isIncome
-                      ? t("list.incomeCategory", { name: txn.categoryName })
-                      : txn.categoryName}
+                    : specialCategory
+                      ? specialCategory
+                      : isIncome
+                        ? t("list.incomeCategory", { name: txn.categoryName })
+                        : txn.categoryName}
                 </Chip.Label>
               </Chip>
             </View>

@@ -26,7 +26,7 @@ export function AccountTransactionsScreen({ accountId }: { accountId: string }) 
               onPress={() =>
                 router.push({
                   pathname: "/(auth)/account/search",
-                  params: { accountId, accountName: title },
+                  params: { accountId },
                 })
               }
             />

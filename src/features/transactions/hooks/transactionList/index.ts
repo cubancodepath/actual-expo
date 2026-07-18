@@ -6,4 +6,3 @@ export {
   type UpcomingItem,
   type ListItem,
 } from "./types";
-export { useSelectModeHeader } from "./useSelectModeHeader";

@@ -22,8 +22,7 @@ export default function AuthLayout() {
           ...screen,
           animation: "fade",
           animationDuration: 150,
-          headerBackVisible: false,
-          headerLeft: () => null,
+          headerShown: false,
         }}
       />
       <Stack.Screen

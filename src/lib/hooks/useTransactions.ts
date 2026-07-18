@@ -25,6 +25,8 @@ export interface UseTransactionsProps {
     pageSize?: number;
     key?: string;
     refetchOnSync?: boolean;
+    /** When false the query stays idle (no fetch, no sync refetch). Default true. */
+    enabled?: boolean;
   };
 }
 
@@ -32,6 +34,7 @@ export function useTransactions({ query, fetchFn, options }: UseTransactionsProp
   const pageSize = options?.pageSize ?? 25;
   const key = options?.key ?? "all";
   const refetchOnSync = options?.refetchOnSync ?? true;
+  const enabled = options?.enabled ?? true;
   const activeBudgetId = useBudgetContextStore((s) => s.activeBudgetId);
 
   const queryOptions = useMemo(() => {
@@ -44,17 +47,17 @@ export function useTransactions({ query, fetchFn, options }: UseTransactionsProp
     throw new Error("useTransactions requires either query or fetchFn");
   }, [query, fetchFn, pageSize, key, activeBudgetId]);
 
-  const queryResult = useInfiniteQuery(queryOptions);
+  const queryResult = useInfiniteQuery({ ...queryOptions, enabled });
 
   // Auto-refetch on sync events
   useEffect(() => {
-    if (!refetchOnSync) return;
+    if (!refetchOnSync || !enabled) return;
     return listen((event) => {
       if (event.tables.some((t) => SYNC_TABLES.has(t))) {
         queryResult.refetch();
       }
     });
-  }, [refetchOnSync]);
+  }, [refetchOnSync, enabled]);
 
   const transactions = useMemo(() => queryResult.data?.pages.flat() ?? [], [queryResult.data]);
 

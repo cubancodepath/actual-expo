@@ -31,14 +31,6 @@ export type TransactionWithSubtransactions = Transaction & {
 
 export type StatusFilter = "cleared" | "uncleared" | "reconciled" | "unreconciled";
 
-export type SearchToken =
-  | { type: "status"; value: StatusFilter }
-  | { type: "account"; accountId: string; accountName: string }
-  | { type: "category"; categoryId: string; categoryName: string }
-  | { type: "payee"; payeeId: string; payeeName: string }
-  | { type: "tag"; tagName: string }
-  | { type: "uncategorized" };
-
 export type GetTransactionsOptions = {
   accountId?: string;
   startDate?: number; // YYYYMMDD

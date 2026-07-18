@@ -108,6 +108,17 @@
   "transfer": "Transfer",
   "showUncleared_one": "Show {{count}} uncleared transaction",
   "showUncleared_other": "Show {{count}} uncleared transactions",
+  "search": {
+    "placeholder": "Search transactions",
+    "refine": "Refine search",
+    "anythingContains": "Anything contains: {{text}}",
+    "tokenText": "Contains: {{text}}",
+    "tokenAccount": "Account: {{name}}",
+    "tokenCategory": "Category: {{name}}",
+    "tokenPayee": "Payee: {{name}}",
+    "noResultsTitle": "No matching transactions",
+    "noResultsDescription": "Try different search terms or filters"
+  },
   "list": {
     "title": "Transactions",
     "empty": {

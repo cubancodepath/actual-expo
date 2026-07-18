@@ -96,6 +96,17 @@
   "contextUnclear": "Desliquidar",
   "contextDuplicate": "Duplicar",
   "contextDelete": "Eliminar",
+  "search": {
+    "placeholder": "Buscar transacciones",
+    "refine": "Refinar búsqueda",
+    "anythingContains": "Cualquiera contiene: {{text}}",
+    "tokenText": "Contiene: {{text}}",
+    "tokenAccount": "Cuenta: {{name}}",
+    "tokenCategory": "Categoría: {{name}}",
+    "tokenPayee": "Beneficiario: {{name}}",
+    "noResultsTitle": "No hay transacciones que coincidan",
+    "noResultsDescription": "Prueba con otros términos de búsqueda o filtros"
+  },
   "list": {
     "title": "Transacciones",
     "empty": {

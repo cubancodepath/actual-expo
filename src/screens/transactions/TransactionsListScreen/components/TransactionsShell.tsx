@@ -11,6 +11,8 @@ import { DateHeader } from "@/screens/transactions/components/transaction-list/D
 import { EmptyTransactions } from "@/screens/transactions/components/transaction-list/EmptyTransactions";
 import { TransactionRow } from "@/screens/transactions/components/transaction-list/TransactionRow";
 import { TransactionRowMenuHost } from "@/screens/transactions/components/transaction-list/TransactionRowMenuHost";
+import { UpcomingSection } from "@/screens/transactions/components/transaction-list/UpcomingSection";
+import { useSchedulePreviews } from "@/screens/transactions/hooks/useSchedulePreviews";
 import {
   buildTxListItems,
   type TxListItem,
@@ -109,6 +111,10 @@ function ListBody({
     useTransactionsListQuery(context, month);
   const items = useMemo(() => buildTxListItems(transactions), [transactions]);
 
+  // Upcoming schedule previews, shown in a collapsed accordion at the top of
+  // the list (scrolls with the content — not pinned).
+  const { previews } = useSchedulePreviews(context);
+
   const renderItem = useCallback(
     ({ item }: { item: TxListItem }) => {
       if (item.type === "header") return <DateHeader date={item.date} />;
@@ -137,6 +143,9 @@ function ListBody({
       scrollEventThrottle={16}
       showsVerticalScrollIndicator={false}
       contentContainerStyle={{ paddingTop: contentPaddingTop, paddingBottom: 80 }}
+      ListHeaderComponent={
+        previews.length > 0 ? <UpcomingSection previews={previews} /> : undefined
+      }
       onEndReached={() => {
         if (hasNextPage) fetchNextPage();
       }}

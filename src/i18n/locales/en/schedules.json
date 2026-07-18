@@ -1,6 +1,7 @@
 {
   "title": "Schedules",
   "editSchedule": "Edit Schedule",
+  "viewSchedule": "View Schedule",
   "deleteSchedule": "Delete Schedule",
   "deleteConfirm": "Delete \"{{name}}\"?",
   "deleteCannotUndo": "This cannot be undone.",

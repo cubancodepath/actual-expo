@@ -6,9 +6,11 @@ import {
   ArrowLeft,
   ArrowRight,
   ArrowRightLeft,
+  Calendar,
   Copyright,
   Inbox,
   Lock,
+  Repeat,
   WalletCards,
 } from "lucide-react-native";
 import { useCSSVariable } from "uniwind";
@@ -43,6 +45,11 @@ interface TransactionRowProps {
   isLifted?: boolean;
   /** Whether the category is an income one — chip shows "Income: X" + wallet. */
   isIncome?: boolean;
+  /**
+   * Schedule link indicator shown before the payee: "recurring" (cyclic arrows)
+   * or "once" (calendar). `null`/undefined when the txn isn't linked to one.
+   */
+  scheduleKind?: "recurring" | "once" | null;
 }
 
 /**
@@ -57,6 +64,7 @@ export const TransactionRow = memo(function TransactionRow({
   onLongPress,
   isLifted = false,
   isIncome = false,
+  scheduleKind = null,
 }: TransactionRowProps) {
   const { t } = useTranslation("transactions");
   const rowViewRef = useRef<View>(null);
@@ -98,6 +106,13 @@ export const TransactionRow = memo(function TransactionRow({
         >
           <View className="flex-row items-center gap-2">
             <View className="flex-1 flex-row items-center gap-1">
+              {/* Schedule link: recurring (cyclic arrows) or one-time (calendar),
+                  matching the original app's PayeeIcons. */}
+              {scheduleKind === "recurring" ? (
+                <Repeat size={14} color={muted} />
+              ) : scheduleKind === "once" ? (
+                <Calendar size={14} color={muted} />
+              ) : null}
               {/* Transfer direction, matching the original: money in → left,
                   money out → right. Shown for any transfer payee. */}
               {txn.isTransfer &&

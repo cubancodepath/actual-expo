@@ -13,6 +13,7 @@ import { TransactionRow } from "@/screens/transactions/components/transaction-li
 import { TransactionRowMenuHost } from "@/screens/transactions/components/transaction-list/TransactionRowMenuHost";
 import { UpcomingSection } from "@/screens/transactions/components/transaction-list/UpcomingSection";
 import { useSchedulePreviews } from "@/screens/transactions/hooks/useSchedulePreviews";
+import { useScheduleRecurringMap } from "@/screens/transactions/hooks/useScheduleRecurringMap";
 import {
   buildTxListItems,
   type TxListItem,
@@ -114,22 +115,30 @@ function ListBody({
   // Upcoming schedule previews, shown in a collapsed accordion at the top of
   // the list (scrolls with the content — not pinned).
   const { previews } = useSchedulePreviews(context);
+  // scheduleId → recurring?, to pick the ledger's schedule-link icon.
+  const scheduleRecurring = useScheduleRecurringMap();
 
   const renderItem = useCallback(
     ({ item }: { item: TxListItem }) => {
       if (item.type === "header") return <DateHeader date={item.date} />;
+      const scheduleKind = item.txn.schedule
+        ? scheduleRecurring.get(item.txn.schedule)
+          ? "recurring"
+          : "once"
+        : null;
       return (
         <TransactionRow
           txn={item.txn}
           isFirst={item.isFirst}
           isIncome={isIncomeTxn(item.txn)}
+          scheduleKind={scheduleKind}
           onPress={onPressRow}
           onLongPress={onLongPressRow}
           isLifted={liftedTxnId === item.txn.id}
         />
       );
     },
-    [onPressRow, onLongPressRow, liftedTxnId, isIncomeTxn],
+    [onPressRow, onLongPressRow, liftedTxnId, isIncomeTxn, scheduleRecurring],
   );
 
   return (
@@ -142,6 +151,10 @@ function ListBody({
       onScroll={onScroll}
       scrollEventThrottle={16}
       showsVerticalScrollIndicator={false}
+      // Top-anchored ledger that paginates downward: LegendList's default
+      // maintainVisibleContentPosition (for chat-style prepend lists) fights the
+      // async header paddingTop, opening the list slightly scrolled. Disable it.
+      maintainVisibleContentPosition={false}
       contentContainerStyle={{ paddingTop: contentPaddingTop, paddingBottom: 80 }}
       ListHeaderComponent={
         previews.length > 0 ? <UpcomingSection previews={previews} /> : undefined

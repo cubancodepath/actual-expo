@@ -1,6 +1,7 @@
 {
   "title": "Programaciones",
   "editSchedule": "Editar Programación",
+  "viewSchedule": "Ver Programación",
   "deleteSchedule": "Eliminar Programación",
   "deleteConfirm": "¿Eliminar \"{{name}}\"?",
   "deleteCannotUndo": "Esta acción no se puede deshacer.",

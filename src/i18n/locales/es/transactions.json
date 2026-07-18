@@ -89,6 +89,7 @@
   "createPayee": "Crear \"{{name}}\"",
   "transfer": "Transferencia",
   "offBudget": "Fuera de presupuesto",
+  "schedules": "Programados",
   "today": "Hoy",
   "yesterday": "Ayer",
   "contextCategorize": "Categorizar",

@@ -1,3 +1,4 @@
+import type { AndroidSymbol } from "expo-symbols";
 import type { ParseKeys } from "i18next";
 import {
   ChartColumn,
@@ -6,6 +7,7 @@ import {
   WalletCards,
   type LucideIcon,
 } from "lucide-react-native";
+import type { SFSymbol } from "sf-symbols-typescript";
 
 /**
  * Single source of truth for the main tab bar, shared by both platform
@@ -24,9 +26,9 @@ export interface TabConfig {
   /** lucide icon shown by the Android `FloatingTabBar`. */
   icon: LucideIcon;
   /** SF Symbol shown by the iOS `NativeTabs`. */
-  sf: string;
+  sf: SFSymbol;
   /** Material Symbol fallback for the native tab bar. */
-  md: string;
+  md: AndroidSymbol;
 }
 
 export const TABS: readonly TabConfig[] = [

@@ -5,7 +5,7 @@ import Animated from "react-native-reanimated";
 import { Accordion, AccordionLayoutTransition, Menu } from "heroui-native";
 import { envelopeBudget, sheetForMonth } from "@/core/domain/spreadsheet/bindings";
 import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
-import { setBudgetAmount, setCategoryCarryover } from "@/core/domain/budgets";
+import { resetHold, setBudgetAmount, setCategoryCarryover } from "@/core/domain/budgets";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { useBudgetMonth } from "@/screens/budget/hooks/useBudgetMonth";
 import { HIDDEN_GROUP_ID, useBudgetSections } from "@/screens/budget/hooks/useBudgetSections";
@@ -18,8 +18,10 @@ import { useTabBarStore } from "@/stores/tabBarStore";
 import { useOverspentCount } from "@/screens/budget/hooks/useOverspentCount";
 import { noop } from "@/screens/budget/constants";
 import { BudgetCategoryRow } from "./components/BudgetCategoryRow";
+import { IncomeCategoryRow } from "./components/IncomeCategoryRow";
 import { BudgetGroup } from "./components/BudgetGroup";
 import { CategoryRowMenu, type RowRect } from "./components/CategoryRowMenu";
+import { IncomeRowMenu } from "./components/IncomeRowMenu";
 import { OverspentPill } from "./components/OverspentPill";
 import { ReadyToAssignBar } from "./components/ReadyToAssignBar";
 
@@ -29,6 +31,8 @@ interface MenuTarget {
   catName: string;
   balance: number;
   carryover: boolean;
+  /** Income rows get the auto-hold menu; expense rows the full category menu. */
+  isIncome: boolean;
   /** The row's window frame, measured at long-press. */
   rect: RowRect;
 }
@@ -123,10 +127,17 @@ export function BudgetScreen() {
   const [isPreviewShown, setPreviewShown] = useState(false);
 
   const onLongPressRow = useCallback(
-    (catId: string, catName: string, balance: number, carryover: boolean, rect: RowRect) => {
+    (
+      catId: string,
+      catName: string,
+      balance: number,
+      carryover: boolean,
+      rect: RowRect,
+      isIncome = false,
+    ) => {
       cancelEditing(); // an in-progress amount edit is dropped, not committed
       setPreviewShown(false);
-      setMenuTarget({ catId, catName, balance, carryover, rect });
+      setMenuTarget({ catId, catName, balance, carryover, isIncome, rect });
     },
     [cancelEditing],
   );
@@ -136,6 +147,20 @@ export function BudgetScreen() {
   // the zero_budgets messages apply.
   const toggleCarryover = useCallback(
     (catId: string, next: boolean) => {
+      getSpreadsheet().setByName(sheet, envelopeBudget.catCarryover(catId), next);
+      setCategoryCarryover(month, catId, next).catch((err) => {
+        emitErrorEvent(err instanceof Error ? err : new Error(String(err)));
+      });
+    },
+    [sheet, month],
+  );
+
+  // Auto hold = income carryover. Same optimistic-cell + CRDT pattern as
+  // toggleCarryover, but enabling it releases any manual hold first so the two
+  // mechanisms never stack on the same month (desktop parity).
+  const toggleAutoHold = useCallback(
+    (catId: string, next: boolean) => {
+      if (next) resetHold(month).catch(() => {});
       getSpreadsheet().setByName(sheet, envelopeBudget.catCarryover(catId), next);
       setCategoryCarryover(month, catId, next).catch((err) => {
         emitErrorEvent(err instanceof Error ? err : new Error(String(err)));
@@ -184,6 +209,7 @@ export function BudgetScreen() {
       <View className="px-4 pt-1 pb-2">
         <ReadyToAssignBar
           sheet={sheet}
+          month={month}
           onPress={() => router.push("/(auth)/budget/assign-money")}
         />
       </View>
@@ -269,63 +295,86 @@ export function BudgetScreen() {
           }}
         >
           <Menu.Trigger pointerEvents="none" style={StyleSheet.absoluteFill} />
-          <CategoryRowMenu
-            rect={menuTarget.rect}
-            onPreviewLayout={() => setPreviewShown(true)}
-            // The form seeds from these params; the name goes along because,
-            // unlike accountName, it isn't looked up from the id.
-            onAddTransaction={() =>
-              router.push({
-                pathname: "/(auth)/transaction/new",
-                params: { categoryId: menuTarget.catId, categoryName: menuTarget.catName },
-              })
-            }
-            onViewActivity={() =>
-              router.push({
-                pathname: "/(auth)/budget/category-transactions",
-                params: { categoryId: menuTarget.catId, categoryName: menuTarget.catName, month },
-              })
-            }
-            onMoveMoney={() =>
-              router.push({
-                pathname: "/(auth)/budget/move-money",
-                params: {
-                  catId: menuTarget.catId,
-                  catName: menuTarget.catName,
-                  balance: String(menuTarget.balance),
-                },
-              })
-            }
-            onEditGoals={
-              goalsEnabled
-                ? () =>
-                    router.push({
-                      pathname: "/(auth)/budget/goal",
-                      params: { categoryId: menuTarget.catId },
-                    })
-                : undefined
-            }
-            carryover={menuTarget.carryover}
-            onToggleCarryover={() => toggleCarryover(menuTarget.catId, !menuTarget.carryover)}
-            onViewDetails={() =>
-              router.push({
-                pathname: "/(auth)/budget/category-details",
-                params: { categoryId: menuTarget.catId },
-              })
-            }
-            preview={
-              <BudgetCategoryRow
-                catId={menuTarget.catId}
-                catName={menuTarget.catName}
-                sheet={sheet}
-                isEditing={false}
-                draft={0}
-                onPressRow={noop}
-                onLongPressRow={noop}
-                goalsEnabled={goalsEnabled}
-              />
-            }
-          />
+          {menuTarget.isIncome ? (
+            <IncomeRowMenu
+              rect={menuTarget.rect}
+              onPreviewLayout={() => setPreviewShown(true)}
+              carryover={menuTarget.carryover}
+              onToggleAutoHold={() => toggleAutoHold(menuTarget.catId, !menuTarget.carryover)}
+              onViewActivity={() =>
+                router.push({
+                  pathname: "/(auth)/budget/category-transactions",
+                  params: { categoryId: menuTarget.catId, categoryName: menuTarget.catName, month },
+                })
+              }
+              preview={
+                <IncomeCategoryRow
+                  catId={menuTarget.catId}
+                  catName={menuTarget.catName}
+                  sheet={sheet}
+                  onLongPressRow={noop}
+                />
+              }
+            />
+          ) : (
+            <CategoryRowMenu
+              rect={menuTarget.rect}
+              onPreviewLayout={() => setPreviewShown(true)}
+              // The form seeds from these params; the name goes along because,
+              // unlike accountName, it isn't looked up from the id.
+              onAddTransaction={() =>
+                router.push({
+                  pathname: "/(auth)/transaction/new",
+                  params: { categoryId: menuTarget.catId, categoryName: menuTarget.catName },
+                })
+              }
+              onViewActivity={() =>
+                router.push({
+                  pathname: "/(auth)/budget/category-transactions",
+                  params: { categoryId: menuTarget.catId, categoryName: menuTarget.catName, month },
+                })
+              }
+              onMoveMoney={() =>
+                router.push({
+                  pathname: "/(auth)/budget/move-money",
+                  params: {
+                    catId: menuTarget.catId,
+                    catName: menuTarget.catName,
+                    balance: String(menuTarget.balance),
+                  },
+                })
+              }
+              onEditGoals={
+                goalsEnabled
+                  ? () =>
+                      router.push({
+                        pathname: "/(auth)/budget/goal",
+                        params: { categoryId: menuTarget.catId },
+                      })
+                  : undefined
+              }
+              carryover={menuTarget.carryover}
+              onToggleCarryover={() => toggleCarryover(menuTarget.catId, !menuTarget.carryover)}
+              onViewDetails={() =>
+                router.push({
+                  pathname: "/(auth)/budget/category-details",
+                  params: { categoryId: menuTarget.catId },
+                })
+              }
+              preview={
+                <BudgetCategoryRow
+                  catId={menuTarget.catId}
+                  catName={menuTarget.catName}
+                  sheet={sheet}
+                  isEditing={false}
+                  draft={0}
+                  onPressRow={noop}
+                  onLongPressRow={noop}
+                  goalsEnabled={goalsEnabled}
+                />
+              }
+            />
+          )}
         </Menu>
       )}
 

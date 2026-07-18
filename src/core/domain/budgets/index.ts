@@ -391,6 +391,53 @@ export const setCategoryCarryover = undoable(async function setCategoryCarryover
 });
 
 // ---------------------------------------------------------------------------
+// Reset income carryover (auto hold off for every income category)
+//
+// Mirrors loot-core's resetIncomeCarryover (server/budget/actions.ts): clears
+// the carryover flag on ALL income categories for the given month only (it
+// does not walk future months the way setCategoryCarryover does). Used when
+// disabling the automatic "hold income for next month" behaviour wholesale.
+// ---------------------------------------------------------------------------
+
+export const resetIncomeCarryover = undoable(async function resetIncomeCarryover(
+  month: string,
+): Promise<void> {
+  const monthInt = monthToInt(month);
+  const incomeCats = await runQuery<{ id: string }>(
+    "SELECT id FROM categories WHERE is_income = 1 AND tombstone = 0",
+  );
+
+  const messages = incomeCats.flatMap(({ id: categoryId }) => {
+    const rowId = `${monthInt}-${categoryId}`;
+    return [
+      {
+        timestamp: Timestamp.send()!,
+        dataset: "zero_budgets",
+        row: rowId,
+        column: "month",
+        value: monthInt,
+      },
+      {
+        timestamp: Timestamp.send()!,
+        dataset: "zero_budgets",
+        row: rowId,
+        column: "category",
+        value: categoryId,
+      },
+      {
+        timestamp: Timestamp.send()!,
+        dataset: "zero_budgets",
+        row: rowId,
+        column: "carryover",
+        value: 0,
+      },
+    ];
+  });
+
+  if (messages.length > 0) await sendMessages(messages);
+});
+
+// ---------------------------------------------------------------------------
 // Hold for Next Month
 // ---------------------------------------------------------------------------
 
@@ -403,17 +450,18 @@ export const holdForNextMonth = undoable(async function holdForNextMonth(
   month: string,
   amount: number,
   currentToBudget: number,
-): Promise<number> {
+): Promise<number | null> {
+  // Mirrors loot-core's holdForNextMonth (server/budget/actions.ts): `amount`
+  // is a DELTA added to the existing buffer, and holding only happens when
+  // there is leftover money to hold (to-budget > 0). Reducing or removing a
+  // hold goes through resetHold, exactly like the desktop app.
+  if (currentToBudget <= 0) return null;
+
   const row = await first<{ buffered: number }>(
     "SELECT buffered FROM zero_budget_months WHERE id = ?",
     [month],
   );
-  const existing = row?.buffered ?? 0;
-
-  if (currentToBudget <= 0 && existing === 0) return 0;
-
-  const delta = amount - existing;
-  const newBuffered = calcBufferedAmount(currentToBudget, existing, delta);
+  const newBuffered = calcBufferedAmount(currentToBudget, row?.buffered ?? 0, amount);
 
   await sendMessages([
     {

@@ -41,6 +41,7 @@ interface BudgetCategoryRowProps {
     balance: number,
     carryover: boolean,
     rect: RowRect,
+    isIncome?: boolean,
   ) => void;
   /**
    * Whether the menu is open on this row AND its floating preview is up. The row

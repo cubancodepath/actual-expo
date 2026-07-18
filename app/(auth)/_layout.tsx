@@ -172,10 +172,9 @@ export default function AuthLayout() {
       <Stack.Screen
         name="budget/hold"
         options={{
-          ...screen,
-          title: t("nav.holdForNextMonth"),
+          headerShown: false,
           presentation: "formSheet",
-          sheetAllowedDetents: [0.22],
+          sheetAllowedDetents: [1.0],
           contentStyle: { backgroundColor: theme.colors.pageBackground },
         }}
       />

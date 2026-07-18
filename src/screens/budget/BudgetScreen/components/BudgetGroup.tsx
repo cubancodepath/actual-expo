@@ -18,13 +18,15 @@ interface BudgetGroupProps {
   editingCatId: string | null;
   draft: number;
   onPressRow: (catId: string, budgeted: number, pageY: number) => void;
-  /** Open the category menu for a row; `rect` is its measured window frame. */
+  /** Open the category menu for a row; `rect` is its measured window frame.
+   *  `isIncome` picks the income (auto hold) menu over the full expense one. */
   onLongPressRow: (
     catId: string,
     catName: string,
     balance: number,
     carryover: boolean,
     rect: RowRect,
+    isIncome?: boolean,
   ) => void;
   /** The category whose menu preview is currently floating, if any. */
   liftedCatId: string | null;
@@ -114,7 +116,13 @@ export const BudgetGroup = memo(function BudgetGroup({
             <Fragment key={cat.id}>
               {i > 0 && <Separator className="ml-4" />}
               {group.is_income ? (
-                <IncomeCategoryRow catId={cat.id} catName={cat.name} sheet={sheet} />
+                <IncomeCategoryRow
+                  catId={cat.id}
+                  catName={cat.name}
+                  sheet={sheet}
+                  onLongPressRow={onLongPressRow}
+                  isLifted={liftedCatId === cat.id}
+                />
               ) : (
                 <BudgetCategoryRow
                   catId={cat.id}

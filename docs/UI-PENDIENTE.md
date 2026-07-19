@@ -77,6 +77,25 @@ feature sea usable de verdad por el usuario final.
     guardar archivo).
 - **Esfuerzo UI**: S (recolectar lookups + share sheet).
 
+## 6. Forecast (proyección de saldos)
+
+- **Core (hecho)**: `src/core/domain/forecast/index.ts::generateForecast(params)` —
+  serie de balance diaria por cuenta desde schedules (o mensual desde el tracking
+  budget); `lowestBalance`, dedup de posteadas, transfers en ambas patas. Read-only.
+- **UI pendiente**:
+  - Pantalla de reporte de forecast (gráfico de balance a futuro por cuenta /
+    combinado) detrás del flag `balanceForecastReport` — hoy es un flag sin engine
+    cableado a pantalla. Selección de cuentas + horizonte (params `accountIds` /
+    `startDate` / `endDate`), y un resumen del `lowestBalance`.
+  - Fuente `tracking-budget` como variante del reporte cuando el archivo es tracking.
+- **Esfuerzo UI**: M (gráfico + selección de cuentas/horizonte).
+- **Optimización futura (marcada en `forecast/filters.ts`)**: si se cablea un filtro
+  de reporte (`conditions`) sobre historiales grandes, portar `conditionsToAQL` para
+  filtrar las transacciones posteadas en SQL (hoy se filtran en JS con
+  `Condition.eval`; equivalente sin filtro/en móvil, pero SQL escala mejor con
+  historiales enormes). Híbrido: SQL para posteadas, `Condition.eval` para las
+  occurrences sintéticas.
+
 ---
 
 ## Sin UI pendiente (ya transparentes)
@@ -87,6 +106,6 @@ feature sea usable de verdad por el usuario final.
 ## Fuera de alcance (core tampoco hecho)
 
 Estas ni siquiera tienen core aún — no son "UI pendiente", son features completas por
-portar (ver `feature-roadmap.md`): import CSV/OFX/QFX + reconcile, forecast,
-importadores YNAB4/YNAB5, bank sync, saved filters, custom reports/dashboard,
-custom formulas / currency.
+portar (ver `feature-roadmap.md`): import CSV/OFX/QFX + reconcile, importadores
+YNAB4/YNAB5, bank sync, saved filters, custom reports/dashboard, custom formulas /
+currency.

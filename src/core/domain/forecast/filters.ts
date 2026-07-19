@@ -9,6 +9,16 @@
  * The same matcher is applied to posted transactions and to synthetic schedule
  * occurrences, both shaped as rules-style txn objects.
  *
+ * Efficiency note (equivalent today, revisit later): upstream pushes the report
+ * filter into the SQL query for POSTED transactions (SQLite filters natively;
+ * fewer rows cross into JS), while we fetch all account transactions and filter
+ * in JS. With no `conditions` caller yet and bounded per-account histories on
+ * mobile, these are effectively equal (ours skips the AQL compile). FUTURE
+ * OPTIMIZATION — if report filters get a UI AND accounts have huge histories,
+ * port `conditionsToAQL` to filter posted txns in SQL and keep `Condition.eval`
+ * for the synthetic occurrences (a hybrid: DB-side for posted, in-memory for
+ * occurrences, which can't be filtered in the DB).
+ *
  * Known gap vs upstream (report filters have no caller in the app yet): the
  * `category IS null` special-case (which upstream also requires not-transfer /
  * not-parent) is not expanded.

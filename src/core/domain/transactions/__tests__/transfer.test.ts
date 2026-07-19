@@ -11,9 +11,11 @@ import { setupFixtures, closeTestDb, getTxnRow } from "./helpers";
 import { saveTransaction } from "../save";
 import type { SaveTransactionInput } from "../save";
 import { addTransaction, updateTransaction, deleteTransaction } from "../index";
+import { onInsert } from "../transfer";
 import { createAccount } from "@/core/domain/accounts";
 import { first, runQuery } from "@/core/db";
 import type { TransactionRow } from "@/core/db/types";
+import { listen } from "@/core/sync/syncEvents";
 
 /**
  * Characterization tests for the transfer lifecycle hooks in transfer.ts
@@ -326,5 +328,83 @@ describe("transfer lifecycle — split + transfer payee (fixed, plan 005)", () =
     const childAfter = await getTxnRow(children[0].id);
     expect(childAfter?.amount).toBe(-1500);
     expect(childAfter?.transferred_id).toBeNull();
+  });
+});
+
+describe("transfer lifecycle — atomic mirror creation (plan 006)", () => {
+  afterEach(async () => {
+    await closeTestDb();
+  });
+
+  it("onInsert's mirror + back-link + category-clear apply as ONE sync event, not 2-3 separate ones", async () => {
+    const { accountA } = await setupFixtures();
+    // A second on-budget account, so category-clear ALSO fires (exercises all
+    // three message groups the old code applied as three separate calls:
+    // mirror creation, back-link, and clearCategoryIfNeeded).
+    const accountC = await createAccount({ name: "Checking 2", offbudget: false });
+    const transferPayeeC = await first<{ id: string }>(
+      "SELECT id FROM payees WHERE transfer_acct = ?",
+      [accountC],
+    );
+
+    const appliedEvents: string[][] = [];
+    const unlisten = listen((event) => {
+      if (event.type === "applied") appliedEvents.push(event.tables);
+    });
+
+    try {
+      // Call onInsert directly (not via addTransaction) to isolate exactly
+      // the code this plan changed — addTransaction's own row-creation
+      // sendMessages call is a separate, unrelated apply.
+      await onInsert({
+        id: "origin-txn-1",
+        acct: accountA,
+        amount: -1000,
+        date: 20260101,
+        description: transferPayeeC!.id,
+        notes: "atomicity check",
+      });
+    } finally {
+      unlisten();
+    }
+
+    // Fixed behavior: exactly ONE "applied" event for the whole hook (before
+    // this plan there would have been up to 3: mirror insert, back-link,
+    // category-clear).
+    const transactionsApplies = appliedEvents.filter((tables) => tables.includes("transactions"));
+    expect(transactionsApplies).toHaveLength(1);
+
+    // Sanity: the hook's actual effects still happened correctly.
+    const original = await first<TransactionRow>("SELECT * FROM transactions WHERE id = ?", [
+      "origin-txn-1",
+    ]);
+    expect(original?.transferred_id).toBeTruthy();
+    expect(original?.category).toBeNull(); // cleared — accountA and accountC share on-budget status
+
+    const mirror = await first<TransactionRow>("SELECT * FROM transactions WHERE id = ?", [
+      original!.transferred_id!,
+    ]);
+    expect(mirror?.acct).toBe(accountC);
+    expect(mirror?.amount).toBe(1000);
+    expect(mirror?.transferred_id).toBe("origin-txn-1");
+    expect(mirror?.category).toBeNull();
+  });
+
+  it("a full addTransaction-with-transfer-payee call still ends up correctly linked (regression check alongside the atomicity fix)", async () => {
+    const { accountA, transferPayeeB, categoryId } = await setupFixtures();
+
+    const id = await addTransaction({
+      account: accountA,
+      date: 20260101,
+      amount: -750,
+      payee: transferPayeeB,
+      category: categoryId,
+    });
+
+    const original = await getTxnRow(id);
+    expect(original?.transferred_id).toBeTruthy();
+    const mirror = await getTxnRow(original!.transferred_id!);
+    expect(mirror?.amount).toBe(750);
+    expect(mirror?.transferred_id).toBe(id);
   });
 });

@@ -216,7 +216,10 @@ export const updateTransaction = undoable(async function updateTransaction(
  * `updateTransaction(id, { account })` would desync them. Transfers stay in
  * sync through updateTransaction's transfer hook.
  */
-export async function moveTransaction(id: string, accountId: string): Promise<void> {
+export const moveTransaction = undoable(async function moveTransaction(
+  id: string,
+  accountId: string,
+): Promise<void> {
   const row = await first<TransactionRow>(
     "SELECT isParent FROM transactions WHERE id = ? AND tombstone = 0",
     [id],
@@ -230,7 +233,7 @@ export async function moveTransaction(id: string, accountId: string): Promise<vo
       }
     }
   });
-}
+});
 
 /** Toggle the cleared flag on a transaction (skips reconciled transactions). */
 export const toggleCleared = undoable(async function toggleCleared(id: string): Promise<void> {

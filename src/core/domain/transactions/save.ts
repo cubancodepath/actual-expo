@@ -8,6 +8,7 @@
 
 import { findOrCreatePayee } from "../payees";
 import { batchMessages } from "@/core/sync";
+import { undoable } from "@/core/sync/undo";
 import { getCurrentPosition } from "@/services/locationService";
 import { isFeatureEnabled } from "../preferences";
 import { createPayeeLocation } from "../payee-locations";
@@ -57,7 +58,7 @@ export type SaveTransactionInput = {
  * If `rules` is provided, they are applied to new simple transactions
  * to auto-fill fields the user left empty (e.g. category, notes).
  */
-export async function saveTransaction(
+export const saveTransaction = undoable(async function saveTransaction(
   input: SaveTransactionInput,
   rules?: Rule[],
 ): Promise<string> {
@@ -209,7 +210,7 @@ export async function saveTransaction(
   }
 
   return newId;
-}
+});
 
 /**
  * Creates a schedule linked to a transaction.

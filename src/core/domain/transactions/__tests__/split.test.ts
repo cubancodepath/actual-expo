@@ -15,6 +15,7 @@ import type { SaveTransactionInput } from "../save";
 import { deleteTransaction, getChildTransactions } from "../index";
 import { runQuery } from "@/core/db";
 import type { TransactionRow } from "@/core/db/types";
+import { undo, canUndo, clearUndo } from "@/core/sync/undo";
 
 /**
  * Characterization tests for saveTransaction()'s split-new / split-edit paths
@@ -306,5 +307,104 @@ describe("deleteTransaction — cascades to split children", () => {
       children.map((c) => c.id),
     );
     expect(childRows.every((r) => r.tombstone === 1)).toBe(true);
+  });
+});
+
+describe("saveTransaction — split saves are now undoable (plan 004)", () => {
+  afterEach(async () => {
+    await closeTestDb();
+  });
+
+  it("saving a new split (parent + 2 children) records ONE undo group; undo() tombstones parent and both children together", async () => {
+    const { accountA, payeeId, categoryId, categoryId2 } = await setupFixtures();
+    // setupFixtures() itself performs undoable mutations (createAccount,
+    // createCategory, ...) — clear AFTER setup so we isolate the undo group
+    // created by saveTransaction below.
+    clearUndo();
+    expect(canUndo()).toBe(false);
+
+    const parentId = await saveTransaction(
+      splitInput({
+        account: accountA,
+        payeeId,
+        splitCategories: [
+          { categoryId, categoryName: "Groceries", amount: 1000 },
+          { categoryId: categoryId2, categoryName: "Dining", amount: 2000 },
+        ],
+      }),
+    );
+    const children = await getChildTransactions(parentId);
+    expect(children).toHaveLength(2);
+    expect(canUndo()).toBe(true);
+
+    await undo(); // one undo() call must reverse the WHOLE split (one group)
+
+    const parentRow = await getTxnRow(parentId);
+    expect(parentRow?.tombstone).toBe(1);
+    const childRows = await runQuery<TransactionRow>(
+      `SELECT * FROM transactions WHERE id IN (${children.map(() => "?").join(",")})`,
+      children.map((c) => c.id),
+    );
+    expect(childRows.every((r) => r.tombstone === 1)).toBe(true);
+    expect(canUndo()).toBe(false); // it was the only group
+  });
+
+  it("editing a split (children deleted + recreated) records ONE undo group; a single undo() restores the OLD children", async () => {
+    const { accountA, payeeId, categoryId, categoryId2 } = await setupFixtures();
+
+    const parentId = await saveTransaction(
+      splitInput({
+        account: accountA,
+        payeeId,
+        amount: 3000,
+        splitCategories: [
+          { categoryId, categoryName: "Groceries", amount: 1000 },
+          { categoryId: categoryId2, categoryName: "Dining", amount: 2000 },
+        ],
+      }),
+    );
+    const oldChildren = await getChildTransactions(parentId);
+    expect(oldChildren).toHaveLength(2);
+    const oldChildIds = oldChildren.map((c) => c.id).sort();
+
+    // Reset undo history so the edit below is the only group under test.
+    clearUndo();
+    expect(canUndo()).toBe(false);
+
+    await saveTransaction(
+      splitInput({
+        transactionId: parentId,
+        account: accountA,
+        payeeId,
+        amount: 3000,
+        splitCategories: [
+          { categoryId, categoryName: "Groceries", amount: 1800 },
+          { categoryId: categoryId2, categoryName: "Dining", amount: 1200 },
+        ],
+      }),
+    );
+    expect(canUndo()).toBe(true);
+
+    const newChildren = await getChildTransactions(parentId);
+    expect(newChildren).toHaveLength(2);
+
+    await undo(); // single undo() call restores the old children
+
+    // The old children (tombstoned by the edit) are alive again.
+    const oldRows = await runQuery<TransactionRow>(
+      `SELECT * FROM transactions WHERE id IN (${oldChildIds.map(() => "?").join(",")})`,
+      oldChildIds,
+    );
+    expect(oldRows.every((r) => r.tombstone === 0)).toBe(true);
+
+    // The new children created by the edit are tombstoned again.
+    const newChildIds = newChildren.map((c) => c.id);
+    const newRows = await runQuery<TransactionRow>(
+      `SELECT * FROM transactions WHERE id IN (${newChildIds.map(() => "?").join(",")})`,
+      newChildIds,
+    );
+    expect(newRows.every((r) => r.tombstone === 1)).toBe(true);
+
+    expect(canUndo()).toBe(false);
   });
 });

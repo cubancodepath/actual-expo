@@ -388,7 +388,7 @@ describe("undo — disable-flag and no-recording paths", () => {
   });
 });
 
-describe("undo — KNOWN BUG (plan 004): batchMessages + undoable interaction", () => {
+describe("undo — batchMessages + undoable interaction (fixed by plan 004)", () => {
   beforeEach(() => {
     clearUndo();
   });
@@ -397,30 +397,53 @@ describe("undo — KNOWN BUG (plan 004): batchMessages + undoable interaction", 
     await closeTestDb();
   });
 
-  it("KNOWN BUG (plan 004): batchMessages flush after undoable scope exits records no undo entry", async () => {
+  it("wrapping the OUTER call (the one that owns batchMessages) in undoable() records the whole batch as one undo group — plan 004's fix", async () => {
     await openTestDb();
+    // The inner mutation being undoable is NOT enough on its own: its
+    // undoable() scope exits (sets _undoListening back to false) before
+    // batchMessages' buffered flush runs. Plan 004's fix is to ALSO wrap
+    // the outer function that calls batchMessages in undoable() — that
+    // keeps _undoListening true through the whole batch flush, since the
+    // outer scope's `finally` only runs after the awaited batchMessages()
+    // call (and its flush) has completed. This mirrors how save.ts /
+    // index.ts now wrap saveTransaction / moveTransaction.
     const setName = undoable(async (id: string, name: string) => {
       await sendMessages([
         { timestamp: Timestamp.send()!, dataset: "accounts", row: id, column: "name", value: name },
       ]);
     });
-
-    expect(canUndo()).toBe(false);
-
-    await batchMessages(async () => {
-      await setName("acc1", "Batched");
-      // At this point _undoListening was true DURING setName's synchronous
-      // body, but batchMessages only buffers the messages — the actual
-      // applyMessages()/appendMessages() call happens after this whole
-      // callback returns, by which time setName's undoable() scope has
-      // already exited and _undoListening is back to false. So the
-      // eventual _applyAndRecord() flush records nothing.
+    const saveBatch = undoable(async () => {
+      await batchMessages(async () => {
+        await setName("acc1", "Batched");
+        await setName("acc2", "AlsoBatched");
+      });
     });
 
-    const row = await first<{ name: string }>("SELECT name FROM accounts WHERE id = ?", ["acc1"]);
-    expect(row?.name).toBe("Batched"); // the write itself DID happen
-
-    // Current (broken) behavior: nothing was recorded for undo.
     expect(canUndo()).toBe(false);
+
+    await saveBatch();
+
+    let acc1 = await first<{ name: string }>("SELECT name FROM accounts WHERE id = ?", ["acc1"]);
+    let acc2 = await first<{ name: string }>("SELECT name FROM accounts WHERE id = ?", ["acc2"]);
+    expect(acc1?.name).toBe("Batched");
+    expect(acc2?.name).toBe("AlsoBatched");
+
+    // Fixed behavior: the whole batched, outer-undoable-wrapped call IS
+    // recorded as a single undo group.
+    expect(canUndo()).toBe(true);
+
+    await undo(); // one undo() reverses the ENTIRE batch, both rows
+
+    const acc1Row = await first<{ tombstone: number }>(
+      "SELECT tombstone FROM accounts WHERE id = ?",
+      ["acc1"],
+    );
+    const acc2Row = await first<{ tombstone: number }>(
+      "SELECT tombstone FROM accounts WHERE id = ?",
+      ["acc2"],
+    );
+    expect(acc1Row?.tombstone).toBe(1);
+    expect(acc2Row?.tombstone).toBe(1);
+    expect(canUndo()).toBe(false); // it was the only group
   });
 });

@@ -429,9 +429,11 @@ export async function downloadBudget(
 
   if (zipBytes[0] !== 0x50 || zipBytes[1] !== 0x4b) {
     const contentType = res.headers.get("content-type") ?? "unknown";
-    const preview = new TextDecoder().decode(zipBytes.slice(0, 200));
+    const firstBytesHex = Array.from(zipBytes.slice(0, 4))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
     throw new ActualError("file/corrupt-archive", {
-      context: { contentType, preview },
+      context: { contentType, byteLength: zipBytes.length, firstBytesHex },
     });
   }
 

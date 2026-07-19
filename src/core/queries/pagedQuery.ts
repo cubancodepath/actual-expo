@@ -18,6 +18,7 @@
 
 import type { Query } from "./query";
 import { executeQuery, executeCount } from "./execute";
+import { compile } from "./compiler";
 import { listen } from "@/core/sync/syncEvents";
 
 let _nextId = 0;
@@ -64,13 +65,23 @@ export function pagedQuery<T = Record<string, unknown>>(
   let inflightId = 0;
   let fetchNextPromise: Promise<void> | null = null;
   let isUnsubscribed = false;
+  let runScheduled = false;
+
+  function scheduleRun() {
+    if (runScheduled || isUnsubscribed) return;
+    runScheduled = true;
+    setTimeout(() => {
+      runScheduled = false;
+      run();
+    }, 0);
+  }
 
   // Subscribe to sync events — re-run when dependent tables change
   const unlisten = listen((event) => {
     if (isUnsubscribed) return;
     const tables = new Set(event.tables);
     if (dependencies.some((d) => tables.has(d))) {
-      run();
+      scheduleRun();
     }
   });
 
@@ -152,8 +163,10 @@ export function pagedQuery<T = Record<string, unknown>>(
     unlisten();
   }
 
-  // Auto-start
-  dependencies = [query.serialize().table];
+  // Auto-start: seed dependencies from the full compiled query (base table +
+  // joined tables), so writes to a joined table invalidate correctly even
+  // before the first async run resolves. Then run.
+  dependencies = compile(query.serialize()).dependencies;
   run();
 
   return {

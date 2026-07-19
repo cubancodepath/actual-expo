@@ -41,14 +41,23 @@ export function useTransactions({ query, options }: UseTransactionsProps) {
 
   const queryResult = useInfiniteQuery({ ...queryOptions, enabled });
 
-  // Auto-refetch on sync events
+  // Auto-refetch on sync events (debounced to collapse bursts into one refetch)
   useEffect(() => {
     if (!refetchOnSync || !enabled) return;
-    return listen((event) => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const unlisten = listen((event) => {
       if (event.tables.some((t) => SYNC_TABLES.has(t))) {
-        queryResult.refetch();
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(() => {
+          timer = null;
+          queryResult.refetch();
+        }, 100);
       }
     });
+    return () => {
+      if (timer) clearTimeout(timer);
+      unlisten();
+    };
   }, [refetchOnSync, enabled]);
 
   const transactions = useMemo(() => queryResult.data?.pages.flat() ?? [], [queryResult.data]);

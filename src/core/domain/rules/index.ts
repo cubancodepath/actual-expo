@@ -12,6 +12,7 @@ import { Timestamp } from "@/core/crdt";
 import type { RuleRow } from "@/core/db/types";
 import type { RuleCondition, RuleAction, RuleStage } from "./types";
 import { Rule } from "./rule";
+import { deserializeField, ensureRSchedule } from "./rule-utils";
 import { RuleError } from "./errors";
 
 export { Rule };
@@ -62,9 +63,28 @@ function parseConditionsOrActions(str: string | null): Record<string, unknown>[]
 
 // ── Helpers ──
 
+/**
+ * Expands serialized condition fields (`amount-inflow`/`amount-outflow` →
+ * `amount` + inflow/outflow option) so a stored inflow/outflow condition
+ * constructs a valid `amount` Condition instead of throwing on an unknown
+ * field. Merges the derived option under any explicitly-stored options.
+ */
+function expandConditionField(item: Record<string, unknown>): Record<string, unknown> {
+  if (typeof item.field !== "string") return item;
+  const { field, options } = deserializeField(item.field);
+  if (field === item.field) return item;
+  return {
+    ...item,
+    field,
+    ...(options
+      ? { options: { ...options, ...((item.options as Record<string, unknown>) ?? {}) } }
+      : {}),
+  };
+}
+
 function makeRule(row: RuleRow): Rule | null {
   try {
-    const conditions = parseConditionsOrActions(row.conditions);
+    const conditions = parseConditionsOrActions(row.conditions).map(expandConditionField);
     const actions = parseConditionsOrActions(row.actions);
 
     return new Rule({
@@ -97,6 +117,9 @@ function makeRule(row: RuleRow): Rule | null {
 // ── Queries ──
 
 export async function getRules(): Promise<Rule[]> {
+  // Ensure the recurring-date engine is loaded before building any Condition
+  // that may carry a recur config (avoids the "RSchedule not available" race).
+  await ensureRSchedule();
   const rows = await runQuery<RuleRow>(
     "SELECT * FROM rules WHERE tombstone = 0 AND conditions IS NOT NULL AND actions IS NOT NULL",
   );
@@ -104,6 +127,7 @@ export async function getRules(): Promise<Rule[]> {
 }
 
 export async function getRuleById(id: string): Promise<Rule | null> {
+  await ensureRSchedule();
   const row = await first<RuleRow>("SELECT * FROM rules WHERE id = ? AND tombstone = 0", [id]);
   if (!row) return null;
   return makeRule(row);

@@ -17,6 +17,7 @@ export type ConditionOp =
   | "lt"
   | "lte"
   | "hasTags"
+  | "hasAnyTag"
   | "onBudget"
   | "offBudget";
 
@@ -76,6 +77,7 @@ export const FIELD_TYPES: Record<string, string> = {
   account: "id",
   cleared: "boolean",
   reconciled: "boolean",
+  saved: "saved",
   transfer: "boolean",
   parent: "boolean",
 };

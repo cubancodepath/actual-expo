@@ -12,9 +12,25 @@ import {
   parseRecurDate,
   sortNumbers,
   getApproxNumberThreshold,
+  extractTagsForFilter,
   FIELD_TYPES,
   isValidOp,
 } from "./rule-utils";
+
+// ── Tag matching (hasTags / hasAnyTag) ──
+
+/**
+ * True when `fieldValue` contains `tag` as a distinct tag token: preceded by a
+ * non-`#` boundary and followed by whitespace, `#`, or end-of-string — so
+ * `#food` does NOT match inside `#foodie` or `##food`. Mirrors loot-core's
+ * condition.ts tag regex. (Hermes supports lookbehind here — the tags domain
+ * already relies on the same `(?<!#)` construct.)
+ */
+function fieldHasTag(tag: string, fieldValue: string): boolean {
+  const escapedTag = tag.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const pattern = new RegExp(`(?<!#)${escapedTag}([\\s#]|$)`);
+  return pattern.test(fieldValue);
+}
 
 // ── Date helpers (matching loot-core's months.ts interface) ──
 
@@ -104,7 +120,17 @@ export const CONDITION_TYPES: Record<string, ConditionTypeInfo> = {
     },
   },
   string: {
-    ops: ["is", "contains", "matches", "oneOf", "isNot", "doesNotContain", "notOneOf", "hasTags"],
+    ops: [
+      "is",
+      "contains",
+      "matches",
+      "oneOf",
+      "isNot",
+      "doesNotContain",
+      "notOneOf",
+      "hasTags",
+      "hasAnyTag",
+    ],
     nullable: true,
     parse(op, value, fieldName) {
       if (op === "oneOf" || op === "notOneOf") {
@@ -118,7 +144,13 @@ export const CONDITION_TYPES: Record<string, ConditionTypeInfo> = {
 
       assert(typeof value === "string", "not-string", `Invalid string value (field: ${fieldName})`);
 
-      if (op === "contains" || op === "matches" || op === "doesNotContain" || op === "hasTags") {
+      if (
+        op === "contains" ||
+        op === "matches" ||
+        op === "doesNotContain" ||
+        op === "hasTags" ||
+        op === "hasAnyTag"
+      ) {
         assert(
           (value as string).length > 0,
           "no-empty-string",
@@ -126,7 +158,9 @@ export const CONDITION_TYPES: Record<string, ConditionTypeInfo> = {
         );
       }
 
-      if (op === "hasTags") return value;
+      // hasTags/hasAnyTag keep the raw value; tags are tokenized and
+      // lower-cased at match time (see fieldHasTag).
+      if (op === "hasTags" || op === "hasAnyTag") return value;
 
       return (value as string).toLowerCase();
     },
@@ -315,9 +349,21 @@ export class Condition {
         if (fieldValue === null) return false;
         return (this.value as unknown[]).indexOf(fieldValue) !== -1;
 
-      case "hasTags":
+      case "hasTags": {
         if (fieldValue === null) return false;
-        return String(fieldValue).indexOf(this.value as string) !== -1;
+        const normalized = String(fieldValue);
+        const tags = extractTagsForFilter(this.value as string);
+        // Every tag in the condition value must be present as a distinct tag.
+        return tags.every((tag) => fieldHasTag(tag, normalized));
+      }
+
+      case "hasAnyTag": {
+        if (fieldValue === null) return false;
+        const normalized = String(fieldValue);
+        const tags = extractTagsForFilter(this.value as string);
+        // At least one tag in the condition value must be present.
+        return tags.some((tag) => fieldHasTag(tag, normalized));
+      }
 
       case "notOneOf":
         if (fieldValue === null) return false;

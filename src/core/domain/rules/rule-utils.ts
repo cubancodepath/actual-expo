@@ -59,8 +59,10 @@ let rscheduleAvailable = false;
 let RScheduleClass: unknown = null;
 let recurConfigToRScheduleFn: ((config: unknown) => unknown[]) | null = null;
 
-// Lazy-load rschedule to avoid issues if the package is missing
-async function ensureRSchedule() {
+// Lazy-load rschedule to avoid issues if the package is missing. Exported so
+// callers that build recurring-date conditions (e.g. loading rules from the DB)
+// can await readiness first and avoid the "RSchedule not available" race.
+export async function ensureRSchedule() {
   if (rscheduleAvailable) return;
   try {
     await import("@rschedule/standard-date-adapter/setup");
@@ -164,6 +166,49 @@ export function getApproxNumberThreshold(n: number): number {
   return Math.round(Math.abs(n) * 0.075);
 }
 
+// ── Tag helpers ──
+
+/**
+ * For a given string, returns an array of unique words (whitespace-separated)
+ * with only a single `#` prepended, so "one #one ##one ##two three" becomes
+ * ["#one", "#two", "#three"]. Pure port of loot-core/src/shared/tags.ts
+ * `extractTagsForFilter`, used by the `hasTags`/`hasAnyTag` condition ops.
+ */
+export function extractTagsForFilter(value: string): string[] {
+  if (!value) return [];
+  const tagValues: string[] = [];
+  const seenTags = new Set<string>();
+  for (const match of value.matchAll(/#*([^#\s]+)/g)) {
+    const tagWithHash = "#" + match[1];
+    if (!seenTags.has(tagWithHash)) {
+      seenTags.add(tagWithHash);
+      tagValues.push(tagWithHash);
+    }
+  }
+  return tagValues;
+}
+
+// ── Serialized field expansion ──
+
+/**
+ * Expands a serialized condition field name into a base field + options.
+ * `amount-inflow`/`amount-outflow` map to `amount` with an inflow/outflow
+ * option; every other field is returned unchanged. Port of
+ * loot-core/src/shared/rules.ts `deserializeField`.
+ */
+export function deserializeField(field: string): {
+  field: string;
+  options?: Record<string, unknown>;
+} {
+  if (field === "amount-inflow") {
+    return { field: "amount", options: { inflow: true } };
+  }
+  if (field === "amount-outflow") {
+    return { field: "amount", options: { outflow: true } };
+  }
+  return { field };
+}
+
 // ── Field type info ──
 
 export const FIELD_TYPES = new Map<string, string>([
@@ -185,7 +230,7 @@ export const FIELD_TYPES = new Map<string, string>([
 
 // Field-specific disallowed ops
 const FIELD_DISALLOWED_OPS: Record<string, Set<string>> = {
-  imported_payee: new Set(["hasTags"]),
+  imported_payee: new Set(["hasTags", "hasAnyTag"]),
   payee: new Set(["onBudget", "offBudget"]),
   notes: new Set(["oneOf", "notOneOf"]),
   category: new Set(["onBudget", "offBudget"]),
@@ -212,7 +257,17 @@ const TYPE_OPS: Record<string, readonly string[]> = {
     "onBudget",
     "offBudget",
   ],
-  string: ["is", "contains", "matches", "oneOf", "isNot", "doesNotContain", "notOneOf", "hasTags"],
+  string: [
+    "is",
+    "contains",
+    "matches",
+    "oneOf",
+    "isNot",
+    "doesNotContain",
+    "notOneOf",
+    "hasTags",
+    "hasAnyTag",
+  ],
   number: ["is", "isapprox", "isbetween", "gt", "gte", "lt", "lte"],
   boolean: ["is"],
   saved: [],
@@ -242,6 +297,7 @@ const OP_SCORES: Record<string, number> = {
   doesNotContain: 0,
   matches: 0,
   hasTags: 0,
+  hasAnyTag: 0,
   onBudget: 0,
   offBudget: 0,
 };

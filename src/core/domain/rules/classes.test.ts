@@ -10,6 +10,7 @@ import { Action } from "./action";
 import { Rule } from "./rule";
 import { evaluateFormula, amountToInteger } from "./formula";
 import { RuleIndexer } from "./rule-indexer";
+import { deserializeField } from "./rule-utils";
 import { RuleError } from "./errors";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -538,7 +539,7 @@ describe("Condition.eval — string operators", () => {
   });
 
   describe("hasTags", () => {
-    it("matches when tag substring is present in notes", () => {
+    it("matches when the tag is present in notes", () => {
       expect(
         new Condition("hasTags", "notes", "#groceries").eval({
           notes: "shopping #groceries at store",
@@ -555,6 +556,85 @@ describe("Condition.eval — string operators", () => {
     it("returns false for null field", () => {
       expect(new Condition("hasTags", "notes", "#tag").eval({ notes: null })).toBe(false);
     });
+
+    it("respects tag boundaries — #food does not match #foodie", () => {
+      expect(new Condition("hasTags", "notes", "#food").eval({ notes: "a #foodie place" })).toBe(
+        false,
+      );
+    });
+
+    it("does not match a double-hash escaped tag (##food)", () => {
+      expect(new Condition("hasTags", "notes", "#food").eval({ notes: "a ##food place" })).toBe(
+        false,
+      );
+    });
+
+    it("is case-insensitive on both the tag value and the field", () => {
+      expect(new Condition("hasTags", "notes", "#GROCERIES").eval({ notes: "#groceries" })).toBe(
+        true,
+      );
+    });
+
+    it("requires ALL tags in a multi-tag value to be present", () => {
+      expect(
+        new Condition("hasTags", "notes", "#a #b").eval({ notes: "note #a and #b here" }),
+      ).toBe(true);
+      expect(new Condition("hasTags", "notes", "#a #b").eval({ notes: "note #a only" })).toBe(
+        false,
+      );
+    });
+  });
+
+  describe("hasAnyTag", () => {
+    it("matches when ANY of the tags is present", () => {
+      expect(new Condition("hasAnyTag", "notes", "#a #b").eval({ notes: "only #b here" })).toBe(
+        true,
+      );
+    });
+
+    it("does not match when NONE of the tags is present", () => {
+      expect(new Condition("hasAnyTag", "notes", "#a #b").eval({ notes: "nothing tagged" })).toBe(
+        false,
+      );
+    });
+
+    it("respects tag boundaries — #food does not match #foodie", () => {
+      expect(new Condition("hasAnyTag", "notes", "#food").eval({ notes: "a #foodie place" })).toBe(
+        false,
+      );
+    });
+
+    it("returns false for null field", () => {
+      expect(new Condition("hasAnyTag", "notes", "#tag").eval({ notes: null })).toBe(false);
+    });
+
+    it("is disallowed on imported_payee (like hasTags)", () => {
+      expect(() => new Condition("hasAnyTag", "imported_payee", "#tag")).toThrow(RuleError);
+    });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// deserializeField — amount-inflow / amount-outflow expansion
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("deserializeField", () => {
+  it("expands amount-inflow to amount + inflow option", () => {
+    expect(deserializeField("amount-inflow")).toEqual({
+      field: "amount",
+      options: { inflow: true },
+    });
+  });
+
+  it("expands amount-outflow to amount + outflow option", () => {
+    expect(deserializeField("amount-outflow")).toEqual({
+      field: "amount",
+      options: { outflow: true },
+    });
+  });
+
+  it("passes other fields through unchanged", () => {
+    expect(deserializeField("payee")).toEqual({ field: "payee" });
   });
 });
 

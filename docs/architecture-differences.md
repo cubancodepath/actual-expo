@@ -51,6 +51,25 @@ Referencia para cuando algo no cuadre entre las dos apps. Documenta QUÉ hacemos
 
 ---
 
+## 3a. Presupuesto `#cleanup` DSL + setter type-aware
+
+Port del `#cleanup` DSL de upstream (`server/budget/cleanup-*`) en `src/core/domain/budgets/cleanup/`. Redistribuye sobregasto: devuelve el sobrante de categorías "source" y lo reparte para cubrir sobregasto y rellenar sinks por peso.
+
+|                   | Original                                                      | Expo                                                                                                       |
+| ----------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| **Parser**        | Gramática PEG.js (`cleanup-template.pegjs`)                   | Parser a mano en `parse.ts` (PEG no corre en Hermes) — mismas 5 variantes, mismo full-consume              |
+| **Lecturas**      | `getSheetValue('to-budget'/'leftover-'/'budget-')`            | `getBudgetMonth(month)` (mismas celdas del spreadsheet) — paridad                                          |
+| **Escrituras**    | `setBudget`/`setGoal` con `getBudgetTable()` por `budgetType` | Setter type-aware nuevo (`budgets/index.ts::setBudget`/`setBudgetGoal`), `zero_budgets`/`reflect_budgets`  |
+| **Persist notas** | `db.updateWithSchema` (write inmediato)                       | `sendMessages` inmediato (NO `batchMessages`: el barrido de huérfanos lee el `cleanup_def` recién escrito) |
+
+**Única divergencia real**: el parser a mano (forzado por runtime). Reads = paridad; el cleanup es **envelope-céntrico** en ambos (lee `to-budget`, que el tracking no tiene → degrada a 0 igual que upstream).
+
+**Setter type-aware** (`setBudget`/`setBudgetGoal`, espejo de `getBudgetTable()`): groundwork del tracking write-path. **Solo cleanup lo usa** — `setBudgetAmount`/`setCategoryCarryover`/`holdForNextMonth`/`goals/apply` siguen siendo envelope-only (migrarlos = proyecto tracking write-path completo, aparte).
+
+**Entrada core**: `cleanupTemplate(month)` (recompila notas → `computeCleanup` dry-run → `persistCleanup`). Falta cablear la UI (menú de mes, análogo a `useAutoAssign`).
+
+---
+
 ## 3b. Rules ↔ mappings (`migrateIds`)
 
 Las **transacciones** resuelven merges de payee/categoría en LECTURA (vista/COALESCE, §2b y §3) — igual que el original, que **tampoco** reescribe `transactions.description`/`category` en un merge. Pero las **rules** guardan ids crudos en sus conditions/actions, así que un id fusionado hay que proyectarlo al target al usarlas.

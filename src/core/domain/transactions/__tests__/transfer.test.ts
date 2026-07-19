@@ -205,12 +205,24 @@ describe("transfer lifecycle — onDelete (via deleteTransaction)", () => {
   });
 });
 
-describe("transfer lifecycle — split + transfer payee (known bug, plan 005)", () => {
+describe("transfer lifecycle — split + transfer payee (fixed, plan 005)", () => {
   afterEach(async () => {
     await closeTestDb();
   });
 
-  it("KNOWN BUG (plan 005): a split whose payee is a transfer payee creates one mirror per parent AND per child — no is_parent/is_child suppression in addTransaction's transfer hook", async () => {
+  async function countRowsInAccountB(transferPayeeB: string): Promise<number> {
+    const accountB = (await first<{ id: string }>(
+      "SELECT transfer_acct AS id FROM payees WHERE id = ?",
+      [transferPayeeB],
+    ))!.id;
+    const rows = await runQuery<TransactionRow>(
+      "SELECT * FROM transactions WHERE acct = ? AND tombstone = 0",
+      [accountB],
+    );
+    return rows.length;
+  }
+
+  it("a split-new whose payee is a transfer payee creates ZERO mirror transactions — splits and transfers are mutually exclusive", async () => {
     const { accountA, transferPayeeB, categoryId, categoryId2 } = await setupFixtures();
 
     const input: SaveTransactionInput = {
@@ -230,21 +242,89 @@ describe("transfer lifecycle — split + transfer payee (known bug, plan 005)", 
     };
     const parentId = await saveTransaction(input);
 
-    // Current (buggy) behavior: the parent AND each of the 2 children each
-    // independently trigger onInsert (addTransaction has no is_parent/is_child
-    // guard before calling the transfer hook), so 3 mirror rows are created
-    // in accountB instead of a single mirror for the whole split transaction.
-    const mirrorsInAccountB = await runQuery<TransactionRow>(
-      "SELECT * FROM transactions WHERE acct = ? AND tombstone = 0",
-      [
-        (await first<{ id: string }>("SELECT transfer_acct AS id FROM payees WHERE id = ?", [
-          transferPayeeB,
-        ]))!.id,
-      ],
-    );
-    expect(mirrorsInAccountB).toHaveLength(3);
+    // Fixed behavior: addTransaction skips the transfer hook for is_parent/
+    // is_child rows, so no mirror rows are created in accountB at all.
+    expect(await countRowsInAccountB(transferPayeeB)).toBe(0);
 
     const parent = await getTxnRow(parentId);
-    expect(parent?.transferred_id).toBeTruthy();
+    expect(parent?.transferred_id).toBeNull();
+  });
+
+  it("a split-EDIT (children deleted + recreated) with a transfer payee creates ZERO new mirrors", async () => {
+    const { accountA, transferPayeeB, categoryId, categoryId2 } = await setupFixtures();
+
+    const parentId = await saveTransaction({
+      account: accountA,
+      date: 20260101,
+      amount: 3000,
+      type: "expense",
+      payeeId: transferPayeeB,
+      payeeName: "",
+      categoryId: null,
+      notes: null,
+      cleared: false,
+      splitCategories: [
+        { categoryId, categoryName: "Groceries", amount: 1000 },
+        { categoryId: categoryId2, categoryName: "Dining", amount: 2000 },
+      ],
+    });
+    expect(await countRowsInAccountB(transferPayeeB)).toBe(0);
+
+    await saveTransaction({
+      transactionId: parentId,
+      account: accountA,
+      date: 20260101,
+      amount: 3000,
+      type: "expense",
+      payeeId: transferPayeeB,
+      payeeName: "",
+      categoryId: null,
+      notes: null,
+      cleared: false,
+      splitCategories: [
+        { categoryId, categoryName: "Groceries", amount: 1800 },
+        { categoryId: categoryId2, categoryName: "Dining", amount: 1200 },
+      ],
+    });
+
+    // The delete+recreate of children during split-edit must not spawn any
+    // mirrors either — still zero rows in accountB.
+    expect(await countRowsInAccountB(transferPayeeB)).toBe(0);
+  });
+
+  it("editing a split child row's amount does not trigger any onUpdate mirror side effects", async () => {
+    const { accountA, transferPayeeB, categoryId, categoryId2 } = await setupFixtures();
+
+    const parentId = await saveTransaction({
+      account: accountA,
+      date: 20260101,
+      amount: 3000,
+      type: "expense",
+      payeeId: transferPayeeB,
+      payeeName: "",
+      categoryId: null,
+      notes: null,
+      cleared: false,
+      splitCategories: [
+        { categoryId, categoryName: "Groceries", amount: 1000 },
+        { categoryId: categoryId2, categoryName: "Dining", amount: 2000 },
+      ],
+    });
+    const children = await runQuery<TransactionRow>(
+      "SELECT * FROM transactions WHERE parent_id = ? AND tombstone = 0",
+      [parentId],
+    );
+    expect(children).toHaveLength(2);
+    expect(await countRowsInAccountB(transferPayeeB)).toBe(0);
+
+    // Directly update a child row's amount (isChild=1 in the DB) — the
+    // onUpdate guard must key off the DB's isChild flag, not just the
+    // incoming fields, so this must not spawn a mirror either.
+    await updateTransaction(children[0].id, { amount: -1500 });
+
+    expect(await countRowsInAccountB(transferPayeeB)).toBe(0);
+    const childAfter = await getTxnRow(children[0].id);
+    expect(childAfter?.amount).toBe(-1500);
+    expect(childAfter?.transferred_id).toBeNull();
   });
 });

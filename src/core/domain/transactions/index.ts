@@ -99,15 +99,19 @@ export const addTransaction = undoable(async function addTransaction(
     })),
   );
 
-  // Transfer hook: if payee is a transfer payee, create the paired transaction
-  await onInsert({
-    id,
-    acct: fields.account,
-    amount: fields.amount,
-    date: fields.date,
-    description: fields.payee ?? null,
-    notes: fields.notes ?? null,
-  });
+  // Transfer hook: if payee is a transfer payee, create the paired transaction.
+  // Splits and transfers are mutually exclusive — a split parent/child sharing
+  // the transfer payee with its siblings must NOT each spawn their own mirror.
+  if (!fields.is_parent && !fields.is_child) {
+    await onInsert({
+      id,
+      acct: fields.account,
+      amount: fields.amount,
+      date: fields.date,
+      description: fields.payee ?? null,
+      notes: fields.notes ?? null,
+    });
+  }
 
   return id;
 });
@@ -186,9 +190,14 @@ export const updateTransaction = undoable(async function updateTransaction(
     })),
   );
 
-  // Transfer hook: sync changes to the paired transaction if needed
-  // Transfer module works with DB column names internally
-  if (prev) {
+  // Transfer hook: sync changes to the paired transaction if needed.
+  // Transfer module works with DB column names internally.
+  // Splits and transfers are mutually exclusive — guard with BOTH the DB's
+  // current isParent/isChild flags AND the incoming fields (e.g. editing a
+  // child's payee to a transfer payee must not re-open the mirror-per-row bug).
+  const isSplitRow =
+    prev?.isParent === 1 || prev?.isChild === 1 || fields.is_parent || fields.is_child;
+  if (prev && !isSplitRow) {
     await onUpdate(
       {
         id,
@@ -216,7 +225,10 @@ export const updateTransaction = undoable(async function updateTransaction(
  * `updateTransaction(id, { account })` would desync them. Transfers stay in
  * sync through updateTransaction's transfer hook.
  */
-export async function moveTransaction(id: string, accountId: string): Promise<void> {
+export const moveTransaction = undoable(async function moveTransaction(
+  id: string,
+  accountId: string,
+): Promise<void> {
   const row = await first<TransactionRow>(
     "SELECT isParent FROM transactions WHERE id = ? AND tombstone = 0",
     [id],
@@ -230,7 +242,7 @@ export async function moveTransaction(id: string, accountId: string): Promise<vo
       }
     }
   });
-}
+});
 
 /** Toggle the cleared flag on a transaction (skips reconciled transactions). */
 export const toggleCleared = undoable(async function toggleCleared(id: string): Promise<void> {

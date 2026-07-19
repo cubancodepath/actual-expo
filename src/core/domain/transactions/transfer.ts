@@ -8,7 +8,7 @@
 
 import { randomUUID } from "expo-crypto";
 import { first } from "@/core/db";
-import { sendMessages } from "@/core/sync";
+import { sendMessages, batchMessages } from "@/core/sync";
 import { Timestamp } from "@/core/crdt";
 
 /** Returns the destination account ID if payeeId is a transfer payee, else null. */
@@ -90,71 +90,77 @@ export async function onInsert(txn: {
 
   const pairedId = randomUUID();
 
-  // Create the mirror transaction in the destination account
-  await sendMessages([
-    {
-      timestamp: Timestamp.send()!,
-      dataset: "transactions",
-      row: pairedId,
-      column: "acct",
-      value: toAccountId,
-    },
-    {
-      timestamp: Timestamp.send()!,
-      dataset: "transactions",
-      row: pairedId,
-      column: "amount",
-      value: -txn.amount,
-    },
-    {
-      timestamp: Timestamp.send()!,
-      dataset: "transactions",
-      row: pairedId,
-      column: "date",
-      value: txn.date,
-    },
-    {
-      timestamp: Timestamp.send()!,
-      dataset: "transactions",
-      row: pairedId,
-      column: "description",
-      value: fromPayeeId,
-    },
-    {
-      timestamp: Timestamp.send()!,
-      dataset: "transactions",
-      row: pairedId,
-      column: "notes",
-      value: txn.notes ?? null,
-    },
-    {
-      timestamp: Timestamp.send()!,
-      dataset: "transactions",
-      row: pairedId,
-      column: "transferred_id",
-      value: txn.id,
-    },
-    {
-      timestamp: Timestamp.send()!,
-      dataset: "transactions",
-      row: pairedId,
-      column: "cleared",
-      value: 0,
-    },
-  ]);
+  // Create the mirror transaction, back-link the original, and clear category
+  // (if applicable) atomically — a crash/kill/budget-switch mid-flight must
+  // never leave a half-linked transfer (mirror pointing back but original
+  // missing transferred_id).
+  await batchMessages(async () => {
+    // Create the mirror transaction in the destination account
+    await sendMessages([
+      {
+        timestamp: Timestamp.send()!,
+        dataset: "transactions",
+        row: pairedId,
+        column: "acct",
+        value: toAccountId,
+      },
+      {
+        timestamp: Timestamp.send()!,
+        dataset: "transactions",
+        row: pairedId,
+        column: "amount",
+        value: -txn.amount,
+      },
+      {
+        timestamp: Timestamp.send()!,
+        dataset: "transactions",
+        row: pairedId,
+        column: "date",
+        value: txn.date,
+      },
+      {
+        timestamp: Timestamp.send()!,
+        dataset: "transactions",
+        row: pairedId,
+        column: "description",
+        value: fromPayeeId,
+      },
+      {
+        timestamp: Timestamp.send()!,
+        dataset: "transactions",
+        row: pairedId,
+        column: "notes",
+        value: txn.notes ?? null,
+      },
+      {
+        timestamp: Timestamp.send()!,
+        dataset: "transactions",
+        row: pairedId,
+        column: "transferred_id",
+        value: txn.id,
+      },
+      {
+        timestamp: Timestamp.send()!,
+        dataset: "transactions",
+        row: pairedId,
+        column: "cleared",
+        value: 0,
+      },
+    ]);
 
-  // Link the original transaction to the paired one
-  await sendMessages([
-    {
-      timestamp: Timestamp.send()!,
-      dataset: "transactions",
-      row: txn.id,
-      column: "transferred_id",
-      value: pairedId,
-    },
-  ]);
+    // Link the original transaction to the paired one
+    await sendMessages([
+      {
+        timestamp: Timestamp.send()!,
+        dataset: "transactions",
+        row: txn.id,
+        column: "transferred_id",
+        value: pairedId,
+      },
+    ]);
 
-  await clearCategoryIfNeeded(txn.acct, toAccountId, txn.id, pairedId);
+    await clearCategoryIfNeeded(txn.acct, toAccountId, txn.id, pairedId);
+  });
 }
 
 /**
@@ -225,18 +231,21 @@ export async function onUpdate(
   }
 
   if (prevTransferAcct && !nextTransferAcct) {
-    // No longer a transfer
+    // No longer a transfer — tombstone the mirror and clear the back-link
+    // atomically, same rationale as onInsert.
     if (prev.transferred_id) {
-      await onDelete(prev.transferred_id);
-      await sendMessages([
-        {
-          timestamp: Timestamp.send()!,
-          dataset: "transactions",
-          row: prev.id,
-          column: "transferred_id",
-          value: null,
-        },
-      ]);
+      await batchMessages(async () => {
+        await onDelete(prev.transferred_id!);
+        await sendMessages([
+          {
+            timestamp: Timestamp.send()!,
+            dataset: "transactions",
+            row: prev.id,
+            column: "transferred_id",
+            value: null,
+          },
+        ]);
+      });
     }
     return;
   }
@@ -246,44 +255,46 @@ export async function onUpdate(
     const fromPayeeId = await getTransferPayee(merged.acct);
     if (!fromPayeeId) return;
 
-    await sendMessages([
-      {
-        timestamp: Timestamp.send()!,
-        dataset: "transactions",
-        row: prev.transferred_id,
-        column: "acct",
-        value: nextTransferAcct,
-      },
-      {
-        timestamp: Timestamp.send()!,
-        dataset: "transactions",
-        row: prev.transferred_id,
-        column: "amount",
-        value: -merged.amount,
-      },
-      {
-        timestamp: Timestamp.send()!,
-        dataset: "transactions",
-        row: prev.transferred_id,
-        column: "date",
-        value: merged.date,
-      },
-      {
-        timestamp: Timestamp.send()!,
-        dataset: "transactions",
-        row: prev.transferred_id,
-        column: "description",
-        value: fromPayeeId,
-      },
-      {
-        timestamp: Timestamp.send()!,
-        dataset: "transactions",
-        row: prev.transferred_id,
-        column: "notes",
-        value: merged.notes ?? null,
-      },
-    ]);
+    await batchMessages(async () => {
+      await sendMessages([
+        {
+          timestamp: Timestamp.send()!,
+          dataset: "transactions",
+          row: prev.transferred_id!,
+          column: "acct",
+          value: nextTransferAcct,
+        },
+        {
+          timestamp: Timestamp.send()!,
+          dataset: "transactions",
+          row: prev.transferred_id!,
+          column: "amount",
+          value: -merged.amount,
+        },
+        {
+          timestamp: Timestamp.send()!,
+          dataset: "transactions",
+          row: prev.transferred_id!,
+          column: "date",
+          value: merged.date,
+        },
+        {
+          timestamp: Timestamp.send()!,
+          dataset: "transactions",
+          row: prev.transferred_id!,
+          column: "description",
+          value: fromPayeeId,
+        },
+        {
+          timestamp: Timestamp.send()!,
+          dataset: "transactions",
+          row: prev.transferred_id!,
+          column: "notes",
+          value: merged.notes ?? null,
+        },
+      ]);
 
-    await clearCategoryIfNeeded(merged.acct, nextTransferAcct, prev.id, prev.transferred_id);
+      await clearCategoryIfNeeded(merged.acct, nextTransferAcct, prev.id, prev.transferred_id!);
+    });
   }
 }

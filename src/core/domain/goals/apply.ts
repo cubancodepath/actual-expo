@@ -11,7 +11,7 @@
 
 import { runQuery, first } from "@/core/db";
 import { monthToInt } from "@/lib/date";
-import { setBudgetAmount, computeToBudget, computeCarryoverChain } from "../budgets";
+import { setBudgetAmount, computeToBudget, computeCarryoverChain, budgetTable } from "../budgets";
 import type { CategoryRow, ZeroBudgetRow } from "@/core/db/types";
 import { calculateGoal, type GoalContext } from "./engine";
 import { parseGoalDef, parseTemplateNotes } from "./parse";
@@ -101,9 +101,10 @@ export async function computeGoalAllocations(
   const categoryNameToId = await getCategoryNameToIdMap();
 
   // Get current month's budget rows for previouslyBudgeted
-  const budgetRows = await runQuery<ZeroBudgetRow>("SELECT * FROM zero_budgets WHERE month = ?", [
-    monthInt,
-  ]);
+  const budgetRows = await runQuery<ZeroBudgetRow>(
+    `SELECT * FROM ${await budgetTable()} WHERE month = ?`,
+    [monthInt],
+  );
   const budgetMap = new Map(budgetRows.map((r) => [r.category, r.amount]));
 
   // Compute carryover chain once for all categories (accurate fromLastMonth)
@@ -274,7 +275,7 @@ export async function updateGoalIndicator(month: string, categoryId: string): Pr
   }
 
   const budgetRow = await first<ZeroBudgetRow>(
-    "SELECT * FROM zero_budgets WHERE month = ? AND category = ?",
+    `SELECT * FROM ${await budgetTable()} WHERE month = ? AND category = ?`,
     [monthInt, categoryId],
   );
   const previouslyBudgeted = budgetRow?.amount ?? 0;

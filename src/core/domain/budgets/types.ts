@@ -45,7 +45,11 @@ export type BudgetMonth = {
   income: number;
   budgeted: number;
   spent: number;
-  toBudget: number;
-  buffered: number; // cents held for next month
+  toBudget: number; // envelope only (0 for tracking budgets)
+  buffered: number; // cents held for next month (0 for tracking budgets)
   groups: BudgetGroup[];
+  // Tracking (report) budgets only — undefined for envelope:
+  totalSaved?: number; // budget-income − budgeted
+  realSaved?: number; // income − spent
+  totalBudgetIncome?: number;
 };

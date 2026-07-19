@@ -8,9 +8,6 @@
  */
 
 import { first } from "@/core/db";
-import { sendMessages } from "@/core/sync";
-import { Timestamp } from "@/core/crdt";
-import { monthToInt } from "@/lib/date";
 import { updateCategory } from "../categories";
 import type { Template } from "./types";
 import { parseGoalDef } from "./parse";
@@ -70,8 +67,10 @@ export async function setGoalTemplates(categoryId: string, templates: Template[]
 // ---------------------------------------------------------------------------
 
 /**
- * Save computed goal values for a category+month in zero_budgets.
- * Creates the row if it doesn't exist.
+ * Save computed goal values for a category+month. Delegates to the type-aware
+ * setBudgetGoal (writes zero_budgets or reflect_budgets per budgetType),
+ * deduplicating what used to be a hardcoded zero_budgets writer. Dynamic import
+ * avoids a static goals↔budgets import cycle.
  */
 export async function setGoalResult(
   month: string,
@@ -79,39 +78,6 @@ export async function setGoalResult(
   goal: number | null,
   longGoal: boolean | null,
 ): Promise<void> {
-  const monthInt = monthToInt(month);
-  const id = `${monthInt}-${categoryId}`;
-
-  const messages = [
-    {
-      timestamp: Timestamp.send()!,
-      dataset: "zero_budgets",
-      row: id,
-      column: "month",
-      value: monthInt,
-    },
-    {
-      timestamp: Timestamp.send()!,
-      dataset: "zero_budgets",
-      row: id,
-      column: "category",
-      value: categoryId,
-    },
-    {
-      timestamp: Timestamp.send()!,
-      dataset: "zero_budgets",
-      row: id,
-      column: "goal",
-      value: goal,
-    },
-    {
-      timestamp: Timestamp.send()!,
-      dataset: "zero_budgets",
-      row: id,
-      column: "long_goal",
-      value: longGoal === true ? 1 : longGoal === false ? 0 : null,
-    },
-  ];
-
-  await sendMessages(messages);
+  const { setBudgetGoal } = await import("../budgets");
+  await setBudgetGoal(month, categoryId, goal, longGoal);
 }

@@ -64,9 +64,23 @@ Port del `#cleanup` DSL de upstream (`server/budget/cleanup-*`) en `src/core/dom
 
 **Única divergencia real**: el parser a mano (forzado por runtime). Reads = paridad; el cleanup es **envelope-céntrico** en ambos (lee `to-budget`, que el tracking no tiene → degrada a 0 igual que upstream).
 
-**Setter type-aware** (`setBudget`/`setBudgetGoal`, espejo de `getBudgetTable()`): groundwork del tracking write-path. **Solo cleanup lo usa** — `setBudgetAmount`/`setCategoryCarryover`/`holdForNextMonth`/`goals/apply` siguen siendo envelope-only (migrarlos = proyecto tracking write-path completo, aparte).
+**Setter type-aware** (`setBudget`/`setBudgetGoal`, espejo de `getBudgetTable()`): base del tracking write-path (ver §3a-bis).
 
 **Entrada core**: `cleanupTemplate(month)` (recompila notas → `computeCleanup` dry-run → `persistCleanup`). Falta cablear la UI (menú de mes, análogo a `useAutoAssign`).
+
+---
+
+## 3a-bis. Tracking/report budget: writers + read path (core, sin UI)
+
+El core ya lee y escribe presupuestos tracking (`reflect_budgets`) además de envelope (`zero_budgets`), eligiendo tabla por `budgetType` (default `envelope`). La UI (Capa 3) aún no ramifica — es follow-up.
+
+|                                              | Envelope                                                                                                                    | Tracking                                                                                              |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| **Tabla**                                    | `zero_budgets`                                                                                                              | `reflect_budgets` (columnas idénticas)                                                                |
+| **Writers type-aware** (vía `budgetTable()`) | `setBudgetAmount`, `setCategoryCarryover`, `transferBetween/MultipleCategories`, `setGoalResult` (delega a `setBudgetGoal`) | igual, escriben `reflect_budgets`                                                                     |
+| **Summary read** (`getBudgetMonth`)          | `to-budget` + `buffered`                                                                                                    | `total-saved` (=budget-income − budgeted) + `real-saved` (=income − spent); `toBudget`/`buffered` = 0 |
+
+**Envelope-only (NO convertidos — concepto To-Budget/buffer que tracking no tiene, fiel a upstream)**: `holdForNextMonth`, `resetHold`, `resetIncomeCarryover`, `transferAvailable`, y `computeCarryoverChain` (solo lo usa el auto-assign de goals, envelope-shaped). Las celdas de categoría/grupo (`budget-`/`sum-amount-`/`leftover-`/`carryover-`) son **aliased** (mismos nombres) en ambos motores, así que solo el summary ramifica.
 
 ---
 

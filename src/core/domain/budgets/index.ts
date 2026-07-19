@@ -10,7 +10,7 @@ import { inferGoalFromDef } from "../goals";
 import { getBudgetType } from "../preferences";
 import { ALIVE_TX_FILTER } from "@/core/db/filters";
 import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
-import { sheetForMonth, envelopeBudget } from "@/core/domain/spreadsheet/bindings";
+import { sheetForMonth, envelopeBudget, trackingBudget } from "@/core/domain/spreadsheet/bindings";
 import { ensureMonthRange } from "@/core/domain/spreadsheet/sync";
 import type { CellValue } from "@/core/domain/spreadsheet/spreadsheet";
 
@@ -192,6 +192,8 @@ export async function computeCarryoverChain(
 // ---------------------------------------------------------------------------
 
 export async function computeToBudget(month: string): Promise<number> {
+  // Tracking budgets have no "To Budget" pool — there is no such cell.
+  if ((await budgetTable()) === "reflect_budgets") return 0;
   await ensureMonthRange(month);
   return num(getSpreadsheet().getValue(sheetForMonth(month), envelopeBudget.toBudget));
 }
@@ -209,10 +211,12 @@ export async function getBudgetMonth(month: string): Promise<BudgetMonth> {
   const categories = await runQuery<CategoryRow>(
     "SELECT * FROM categories WHERE tombstone = 0 ORDER BY sort_order ASC",
   );
+  const table = await budgetTable();
+  const isTracking = table === "reflect_budgets";
   // Still needed for goal/long_goal: the spreadsheet's catGoal/catLongGoal
   // cells only understand a subset of template types (see goals/parse.ts's
   // richer inferGoalFromDef, used below) — not yet a reliable read source.
-  const budgetRows = await runQuery<ZeroBudgetRow>("SELECT * FROM zero_budgets WHERE month = ?", [
+  const budgetRows = await runQuery<ZeroBudgetRow>(`SELECT * FROM ${table} WHERE month = ?`, [
     monthInt,
   ]);
   const goalMap = new Map(budgetRows.map((r) => [r.category, r.goal]));
@@ -222,8 +226,18 @@ export async function getBudgetMonth(month: string): Promise<BudgetMonth> {
   const ss = getSpreadsheet();
   const sheet = sheetForMonth(month);
 
-  const toBudget = num(ss.getValue(sheet, envelopeBudget.toBudget));
-  const bufferedSelected = num(ss.getValue(sheet, envelopeBudget.bufferedSelected));
+  // Tracking budgets have no To-Budget / buffer; they expose saved-vs-budgeted
+  // and saved-vs-spent summaries instead. Per-category/per-group cell names are
+  // aliased (same as envelope), so only the summary reads branch by type.
+  const toBudget = isTracking ? 0 : num(ss.getValue(sheet, envelopeBudget.toBudget));
+  const bufferedSelected = isTracking
+    ? 0
+    : num(ss.getValue(sheet, envelopeBudget.bufferedSelected));
+  const totalSaved = isTracking ? num(ss.getValue(sheet, trackingBudget.totalSaved)) : undefined;
+  const realSaved = isTracking ? num(ss.getValue(sheet, trackingBudget.realSaved)) : undefined;
+  const totalBudgetIncome = isTracking
+    ? num(ss.getValue(sheet, trackingBudget.totalBudgetIncome))
+    : undefined;
 
   // ── Build per-group / per-category data ──
   let displayIncome = 0;
@@ -318,6 +332,7 @@ export async function getBudgetMonth(month: string): Promise<BudgetMonth> {
     toBudget,
     buffered: bufferedSelected,
     groups: budgetGroups,
+    ...(isTracking ? { totalSaved, realSaved, totalBudgetIncome } : {}),
   };
 }
 
@@ -335,10 +350,11 @@ export const setCategoryCarryover = undoable(async function setCategoryCarryover
   flag: boolean,
 ): Promise<void> {
   const monthInt = monthToInt(month);
+  const table = await budgetTable();
 
-  // Get all existing zero_budgets rows for this category from current month onward
+  // Get all existing budget rows for this category from current month onward
   const futureRows = await runQuery<ZeroBudgetRow>(
-    "SELECT * FROM zero_budgets WHERE category = ? AND month >= ?",
+    `SELECT * FROM ${table} WHERE category = ? AND month >= ?`,
     [categoryId, monthInt],
   );
 
@@ -366,21 +382,21 @@ export const setCategoryCarryover = undoable(async function setCategoryCarryover
       // Ensure month + category columns are populated (no-op if row already exists)
       {
         timestamp: Timestamp.send()!,
-        dataset: "zero_budgets",
+        dataset: table,
         row: id,
         column: "month",
         value: r.month,
       },
       {
         timestamp: Timestamp.send()!,
-        dataset: "zero_budgets",
+        dataset: table,
         row: id,
         column: "category",
         value: categoryId,
       },
       {
         timestamp: Timestamp.send()!,
-        dataset: "zero_budgets",
+        dataset: table,
         row: id,
         column: "carryover",
         value: flag ? 1 : 0,
@@ -543,13 +559,14 @@ export const transferBetweenCategories = undoable(async function transferBetween
   if (amountCents <= 0) return;
 
   const monthInt = monthToInt(month);
+  const table = await budgetTable();
 
   const [fromRow, toRow] = await Promise.all([
-    first<{ amount: number }>("SELECT amount FROM zero_budgets WHERE month = ? AND category = ?", [
+    first<{ amount: number }>(`SELECT amount FROM ${table} WHERE month = ? AND category = ?`, [
       monthInt,
       fromCategoryId,
     ]),
-    first<{ amount: number }>("SELECT amount FROM zero_budgets WHERE month = ? AND category = ?", [
+    first<{ amount: number }>(`SELECT amount FROM ${table} WHERE month = ? AND category = ?`, [
       monthInt,
       toCategoryId,
     ]),
@@ -563,42 +580,42 @@ export const transferBetweenCategories = undoable(async function transferBetween
   await sendMessages([
     {
       timestamp: Timestamp.send()!,
-      dataset: "zero_budgets",
+      dataset: table,
       row: fromId,
       column: "month",
       value: monthInt,
     },
     {
       timestamp: Timestamp.send()!,
-      dataset: "zero_budgets",
+      dataset: table,
       row: fromId,
       column: "category",
       value: fromCategoryId,
     },
     {
       timestamp: Timestamp.send()!,
-      dataset: "zero_budgets",
+      dataset: table,
       row: fromId,
       column: "amount",
       value: fromBudgeted - amountCents,
     },
     {
       timestamp: Timestamp.send()!,
-      dataset: "zero_budgets",
+      dataset: table,
       row: toId,
       column: "month",
       value: monthInt,
     },
     {
       timestamp: Timestamp.send()!,
-      dataset: "zero_budgets",
+      dataset: table,
       row: toId,
       column: "category",
       value: toCategoryId,
     },
     {
       timestamp: Timestamp.send()!,
-      dataset: "zero_budgets",
+      dataset: table,
       row: toId,
       column: "amount",
       value: toBudgeted + amountCents,
@@ -629,12 +646,13 @@ export const transferMultipleCategories = undoable(async function transferMultip
   if (validSources.length === 0) return;
 
   const monthInt = monthToInt(month);
+  const table = await budgetTable();
 
   // Batch-fetch all budget rows (target + sources) in a single query
   const allCategoryIds = [targetCategoryId, ...validSources.map((s) => s.categoryId)];
   const placeholders = allCategoryIds.map(() => "?").join(",");
   const budgetRows = await runQuery<{ category: string; amount: number }>(
-    `SELECT category, amount FROM zero_budgets WHERE month = ? AND category IN (${placeholders})`,
+    `SELECT category, amount FROM ${table} WHERE month = ? AND category IN (${placeholders})`,
     [monthInt, ...allCategoryIds],
   );
   const budgetMap = new Map(budgetRows.map((r) => [r.category, r.amount]));
@@ -658,21 +676,21 @@ export const transferMultipleCategories = undoable(async function transferMultip
       messages.push(
         {
           timestamp: Timestamp.send()!,
-          dataset: "zero_budgets",
+          dataset: table,
           row: sourceId,
           column: "month",
           value: monthInt,
         },
         {
           timestamp: Timestamp.send()!,
-          dataset: "zero_budgets",
+          dataset: table,
           row: sourceId,
           column: "category",
           value: source.categoryId,
         },
         {
           timestamp: Timestamp.send()!,
-          dataset: "zero_budgets",
+          dataset: table,
           row: sourceId,
           column: "amount",
           value: sourceBudgeted - source.amountCents,
@@ -683,21 +701,21 @@ export const transferMultipleCategories = undoable(async function transferMultip
       messages.push(
         {
           timestamp: Timestamp.send()!,
-          dataset: "zero_budgets",
+          dataset: table,
           row: sourceId,
           column: "month",
           value: monthInt,
         },
         {
           timestamp: Timestamp.send()!,
-          dataset: "zero_budgets",
+          dataset: table,
           row: sourceId,
           column: "category",
           value: source.categoryId,
         },
         {
           timestamp: Timestamp.send()!,
-          dataset: "zero_budgets",
+          dataset: table,
           row: sourceId,
           column: "amount",
           value: sourceBudgeted + source.amountCents,
@@ -710,21 +728,21 @@ export const transferMultipleCategories = undoable(async function transferMultip
   messages.push(
     {
       timestamp: Timestamp.send()!,
-      dataset: "zero_budgets",
+      dataset: table,
       row: targetId,
       column: "month",
       value: monthInt,
     },
     {
       timestamp: Timestamp.send()!,
-      dataset: "zero_budgets",
+      dataset: table,
       row: targetId,
       column: "category",
       value: targetCategoryId,
     },
     {
       timestamp: Timestamp.send()!,
-      dataset: "zero_budgets",
+      dataset: table,
       row: targetId,
       column: "amount",
       value: targetBudgeted,
@@ -775,25 +793,26 @@ export const setBudgetAmount = undoable(async function setBudgetAmount(
 ): Promise<void> {
   const monthInt = monthToInt(month);
   const id = `${monthInt}-${categoryId}`;
+  const table = await budgetTable();
 
   await sendMessages([
     {
       timestamp: Timestamp.send()!,
-      dataset: "zero_budgets",
+      dataset: table,
       row: id,
       column: "month",
       value: monthInt,
     },
     {
       timestamp: Timestamp.send()!,
-      dataset: "zero_budgets",
+      dataset: table,
       row: id,
       column: "category",
       value: categoryId,
     },
     {
       timestamp: Timestamp.send()!,
-      dataset: "zero_budgets",
+      dataset: table,
       row: id,
       column: "amount",
       value: amount,

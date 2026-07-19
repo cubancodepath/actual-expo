@@ -40,18 +40,43 @@ function monthEndInt(month: string): number {
   return y * 10000 + m * 100 + lastDay;
 }
 
-/** Single month cumulative balance query. */
-function useCumulativeBalance(accountIds: string[], idsKey: string, endDate: number): number {
-  const { data } = useLiveQuery<{ result: number }>(
-    () =>
-      accountIds.length > 0
-        ? q("transactions")
-            .filter({ acct: { $oneof: accountIds }, date: { $lte: endDate } })
-            .calculate({ $sum: "$amount" })
-        : null,
-    [idsKey, endDate],
-  );
-  return data?.[0]?.result ?? 0;
+/** Month start as YYYYMMDD integer. */
+function monthStartInt(month: string): number {
+  const [y, m] = month.split("-").map(Number);
+  return y * 10000 + m * 100 + 1;
+}
+
+/**
+ * Reduces per-month bucketed sums into cumulative running totals.
+ *
+ * rows: per-month sums keyed by YYYYMM bucket (matches SQL
+ * `SUBSTR(date, 1, 6)` grouping). monthEnds: YYYYMMDD ints, ascending,
+ * one per requested month end. priorTotal: SUM(amount) over everything
+ * strictly before the first bucket in `rows`.
+ *
+ * Each output[N] = SUM(amount) over all transactions with
+ * `date <= monthEnds[N]` for the account set. Months with no transactions
+ * carry the previous cumulative value; months before any transaction in
+ * `rows` resolve to `priorTotal`.
+ */
+export function cumulativeByMonth(
+  rows: Array<{ bucket: number; sum: number }>,
+  monthEnds: number[],
+  priorTotal: number,
+): number[] {
+  const sumsByBucket = new Map<number, number>();
+  for (const row of rows) {
+    sumsByBucket.set(row.bucket, (sumsByBucket.get(row.bucket) ?? 0) + row.sum);
+  }
+
+  let running = priorTotal;
+  const result: number[] = [];
+  for (const monthEnd of monthEnds) {
+    const bucket = Math.floor(monthEnd / 100);
+    running += sumsByBucket.get(bucket) ?? 0;
+    result.push(running);
+  }
+  return result;
 }
 
 /**
@@ -100,7 +125,7 @@ export function useNetWorth() {
     return { assets: a, debt: d };
   }, [assetDebtData]);
 
-  // Compute all 12 month strings (stable count for Rules of Hooks)
+  // Compute all 12 month strings (stable count, ascending m11 → m0)
   const m11 = useMemo(() => addMonths(month, -11), [month]);
   const m10 = useMemo(() => addMonths(month, -10), [month]);
   const m9 = useMemo(() => addMonths(month, -9), [month]);
@@ -114,23 +139,50 @@ export function useNetWorth() {
   const m1 = useMemo(() => addMonths(month, -1), [month]);
   const m0 = month;
 
-  // 12 stable hook calls — always called regardless of range
-  const v11 = useCumulativeBalance(allIds, allIdsKey, monthEndInt(m11));
-  const v10 = useCumulativeBalance(allIds, allIdsKey, monthEndInt(m10));
-  const v9 = useCumulativeBalance(allIds, allIdsKey, monthEndInt(m9));
-  const v8 = useCumulativeBalance(allIds, allIdsKey, monthEndInt(m8));
-  const v7 = useCumulativeBalance(allIds, allIdsKey, monthEndInt(m7));
-  const v6 = useCumulativeBalance(allIds, allIdsKey, monthEndInt(m6));
-  const v5 = useCumulativeBalance(allIds, allIdsKey, monthEndInt(m5));
-  const v4 = useCumulativeBalance(allIds, allIdsKey, monthEndInt(m4));
-  const v3 = useCumulativeBalance(allIds, allIdsKey, monthEndInt(m3));
-  const v2 = useCumulativeBalance(allIds, allIdsKey, monthEndInt(m2));
-  const v1 = useCumulativeBalance(allIds, allIdsKey, monthEndInt(m1));
-  const v0 = useCumulativeBalance(allIds, allIdsKey, monthEndInt(m0));
+  const allMonths = useMemo(
+    () => [m11, m10, m9, m8, m7, m6, m5, m4, m3, m2, m1, m0],
+    [m11, m10, m9, m8, m7, m6, m5, m4, m3, m2, m1, m0],
+  );
+  const monthEnds = useMemo(() => allMonths.map(monthEndInt), [allMonths]);
+  const firstMonthStart = useMemo(() => monthStartInt(m11), [m11]);
+  const lastMonthEnd = monthEnds[monthEnds.length - 1];
 
-  // All 12 months + values as parallel arrays
-  const allMonths = [m11, m10, m9, m8, m7, m6, m5, m4, m3, m2, m1, m0];
-  const allValues = [v11, v10, v9, v8, v7, v6, v5, v4, v3, v2, v1, v0];
+  // One grouped query bucketing sums by month across the 12-month window,
+  // plus one scalar query for everything before the window's first month.
+  // Together these replace the 12 separate full-table SUM scans above.
+  const { data: bucketData } = useLiveQuery<{ bucket: string | number; sum: number }>(
+    () =>
+      allIds.length > 0
+        ? q("transactions")
+            .filter({
+              acct: { $oneof: allIds },
+              date: { $gte: firstMonthStart, $lte: lastMonthEnd },
+            })
+            .groupBy({ $month: "$date" })
+            .select([{ bucket: { $month: "$date" } }, { sum: { $sum: "$amount" } }])
+        : null,
+    [allIdsKey, firstMonthStart, lastMonthEnd],
+  );
+
+  const { data: priorTotalData } = useLiveQuery<{ result: number }>(
+    () =>
+      allIds.length > 0
+        ? q("transactions")
+            .filter({ acct: { $oneof: allIds }, date: { $lt: firstMonthStart } })
+            .calculate({ $sum: "$amount" })
+        : null,
+    [allIdsKey, firstMonthStart],
+  );
+  const priorTotal = priorTotalData?.[0]?.result ?? 0;
+
+  // All 12 months + cumulative values as parallel arrays
+  const allValues = useMemo(() => {
+    const rows = (bucketData ?? []).map((row) => ({
+      bucket: Number(row.bucket),
+      sum: row.sum,
+    }));
+    return cumulativeByMonth(rows, monthEnds, priorTotal);
+  }, [bucketData, monthEnds, priorTotal]);
 
   const trend: TrendPoint[] = useMemo(() => {
     const start = 12 - range;
@@ -142,38 +194,11 @@ export function useNetWorth() {
       });
     }
     return points;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    range,
-    v11,
-    v10,
-    v9,
-    v8,
-    v7,
-    v6,
-    v5,
-    v4,
-    v3,
-    v2,
-    v1,
-    v0,
-    m11,
-    m10,
-    m9,
-    m8,
-    m7,
-    m6,
-    m5,
-    m4,
-    m3,
-    m2,
-    m1,
-    m0,
-  ]);
+  }, [range, allMonths, allValues]);
 
   return {
     total,
-    previousTotal: v1,
+    previousTotal: allValues[10] ?? 0,
     assets,
     debt,
     trend,

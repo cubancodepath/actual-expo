@@ -96,6 +96,26 @@ Port de tres utilidades de `loot-core` en `src/core/domain/transactions/` (core-
 
 ---
 
+## 3a-quater. Forecast engine (proyección de saldos)
+
+Port de `loot-core/server/forecast/*` en `src/core/domain/forecast/` (core-puro, **read-only**). `generateForecast(params)` proyecta saldos futuros. Dos fuentes: **schedules** (serie diaria por cuenta) y **tracking-budget** (mensual, desde las celdas del presupuesto tracking).
+
+|                     | Original                                                          | Expo                                                                                        |
+| ------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| **Recurrencia**     | `@rschedule/core`                                                 | `recurrence.ts` (date-fns) — **única adaptación forzada** (rschedule no corre en Hermes)    |
+| **Fechas**          | `'yyyy-MM-dd'` strings; DB guarda int (`fromDateRepr`)            | Idéntico — DB int, string en lectura (compilador AQL / `intToStr`). Sin divergencia         |
+| **Seed**            | Σ transacciones antes del start (no `account.balance`)            | Igual                                                                                       |
+| **Occurrences**     | expandir schedules, dedup vs posted, rules, transfers (2 patas)   | Igual (reusa `posted.ts`, `runRules`, `getTransferAccount`)                                 |
+| **Filtros reporte** | `conditionsToAQL` + `matchesAQLFilter` (evaluador AQL en memoria) | Reusa el motor de rules (`Condition.eval`) — mismo matching, sin duplicar la maquinaria AQL |
+
+**Read-only**: nada de escrituras. Seed = Σ posteadas antes del start; occurrences deduped contra posteadas (`isScheduleOccurrencePosted`); `firstForecastDate=max(start,hoy)` gatea occurrences (no reescribe historia). Transfers emiten ambas patas. `lowestBalance` = mínimo del balance combinado (sumado entre cuentas).
+
+**Filtros de reporte**: el matching en memoria reusa `Condition.eval` (nuestro motor de rules ya evalúa condiciones contra una transacción — el mismo trabajo que `matchesAQLFilter`). El param `conditions` no tiene caller en la app todavía (no hay saved-filters/UI); gap conocido: el special-case `category IS null` (que upstream expande a not-transfer/not-parent) no está.
+
+**Entrada core**: `generateForecast(params)`. Falta cablear la UI (el flag `balanceForecastReport` sigue sin engine detrás cableado a pantalla).
+
+---
+
 ## 3b. Rules ↔ mappings (`migrateIds`)
 
 Las **transacciones** resuelven merges de payee/categoría en LECTURA (vista/COALESCE, §2b y §3) — igual que el original, que **tampoco** reescribe `transactions.description`/`category` en un merge. Pero las **rules** guardan ids crudos en sus conditions/actions, así que un id fusionado hay que proyectarlo al target al usarlas.

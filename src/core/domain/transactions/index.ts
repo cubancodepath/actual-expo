@@ -51,8 +51,16 @@ export async function getTransactions(opts: GetTransactionsOptions = {}): Promis
   }
 
   const where = conditions.join(" AND ");
-  const limit = opts.limit ? `LIMIT ${opts.limit}` : "";
-  const offset = opts.offset ? `OFFSET ${opts.offset}` : "";
+  const limit = opts.limit ? "LIMIT ?" : "";
+  const offset = opts.offset ? "OFFSET ?" : "";
+  if (opts.limit) {
+    if (!Number.isFinite(opts.limit)) throw new Error(`Invalid LIMIT value: ${opts.limit}`);
+    params.push(Math.trunc(opts.limit));
+  }
+  if (opts.offset) {
+    if (!Number.isFinite(opts.offset)) throw new Error(`Invalid OFFSET value: ${opts.offset}`);
+    params.push(Math.trunc(opts.offset));
+  }
 
   const rows = await runQuery<TransactionRow>(
     `SELECT * FROM transactions WHERE ${where} ORDER BY date DESC, sort_order DESC ${limit} ${offset}`,

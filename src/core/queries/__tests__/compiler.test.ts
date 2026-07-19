@@ -130,21 +130,35 @@ describe("compile — ORDER BY", () => {
 // ---------------------------------------------------------------------------
 
 describe("compile — LIMIT and OFFSET", () => {
-  it("includes LIMIT", () => {
+  it("includes LIMIT bound as a param", () => {
     const result = c(q("transactions").limit(25));
-    expect(result.sql).toContain("LIMIT 25");
+    expect(result.sql).toContain("LIMIT ?");
+    expect(result.sql).not.toContain("LIMIT 25");
+    expect(result.params.at(-1)).toBe(25);
   });
 
-  it("includes OFFSET", () => {
+  it("includes OFFSET bound as a param, params end with [limit, offset]", () => {
     const result = c(q("transactions").limit(25).offset(50));
-    expect(result.sql).toContain("LIMIT 25");
-    expect(result.sql).toContain("OFFSET 50");
+    expect(result.sql).toContain("LIMIT ?");
+    expect(result.sql).toContain("OFFSET ?");
+    expect(result.sql).not.toContain("LIMIT 25");
+    expect(result.sql).not.toContain("OFFSET 50");
+    expect(result.params.slice(-2)).toEqual([25, 50]);
   });
 
   it("omits LIMIT/OFFSET when not set", () => {
     const result = c(q("transactions"));
     expect(result.sql).not.toContain("LIMIT");
     expect(result.sql).not.toContain("OFFSET");
+  });
+
+  it("truncates a non-integer limit", () => {
+    const result = c(q("transactions").limit(5.9));
+    expect(result.params.at(-1)).toBe(5);
+  });
+
+  it("throws on a non-numeric limit", () => {
+    expect(() => c(q("transactions").limit("5" as unknown as number))).toThrow();
   });
 });
 

@@ -514,9 +514,23 @@ export function compile(queryState: QueryState): CompiledQuery {
   const groupBySql = compileGroupBy(state, queryState);
   const orderBySql = compileOrderBy(state, queryState);
 
-  // LIMIT / OFFSET
-  const limitSql = queryState.limit != null ? `LIMIT ${queryState.limit}` : "";
-  const offsetSql = queryState.offset != null ? `OFFSET ${queryState.offset}` : "";
+  // LIMIT / OFFSET — bound as params, not interpolated
+  let limitSql = "";
+  let offsetSql = "";
+  if (queryState.limit != null) {
+    if (!Number.isFinite(queryState.limit)) {
+      throw new Error(`Invalid LIMIT value: ${queryState.limit}`);
+    }
+    limitSql = "LIMIT ?";
+    state.params.push(Math.trunc(queryState.limit));
+  }
+  if (queryState.offset != null) {
+    if (!Number.isFinite(queryState.offset)) {
+      throw new Error(`Invalid OFFSET value: ${queryState.offset}`);
+    }
+    offsetSql = "OFFSET ?";
+    state.params.push(Math.trunc(queryState.offset));
+  }
 
   // Assemble SQL
   const parts = [

@@ -7,6 +7,7 @@ import { monthToInt } from "@/lib/date";
 import type { ZeroBudgetRow, CategoryGroupRow, CategoryRow } from "@/core/db/types";
 import type { BudgetMonth, BudgetGroup, BudgetCategory } from "./types";
 import { inferGoalFromDef } from "../goals";
+import { getBudgetType } from "../preferences";
 import { ALIVE_TX_FILTER } from "@/core/db/filters";
 import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
 import { sheetForMonth, envelopeBudget } from "@/core/domain/spreadsheet/bindings";
@@ -799,6 +800,57 @@ export const setBudgetAmount = undoable(async function setBudgetAmount(
     },
   ]);
 });
+
+// ---------------------------------------------------------------------------
+// Budget-type-aware writers (mirror loot-core getBudgetTable()/setBudget/setGoal)
+//
+// Envelope files write `zero_budgets`; tracking (report) files write
+// `reflect_budgets`. Both tables have identical columns, so the writer only
+// swaps the dataset. Used by the #cleanup evaluator. The rest of the write-path
+// (setBudgetAmount/carryover/hold/goals-apply) is still envelope-only and is a
+// separate tracking-write-path project — do NOT retrofit those here.
+// ---------------------------------------------------------------------------
+
+/** The budget table for the active file, per the `budgetType` preference. */
+export async function budgetTable(): Promise<"zero_budgets" | "reflect_budgets"> {
+  return (await getBudgetType()) === "tracking" ? "reflect_budgets" : "zero_budgets";
+}
+
+/** Set a category's absolute budgeted amount for a month (type-aware). */
+export async function setBudget(month: string, categoryId: string, amount: number): Promise<void> {
+  const monthInt = monthToInt(month);
+  const id = `${monthInt}-${categoryId}`;
+  const dataset = await budgetTable();
+  await sendMessages([
+    { timestamp: Timestamp.send()!, dataset, row: id, column: "month", value: monthInt },
+    { timestamp: Timestamp.send()!, dataset, row: id, column: "category", value: categoryId },
+    { timestamp: Timestamp.send()!, dataset, row: id, column: "amount", value: amount },
+  ]);
+}
+
+/** Set a category's goal indicator for a month (type-aware). */
+export async function setBudgetGoal(
+  month: string,
+  categoryId: string,
+  goal: number | null,
+  longGoal: boolean | null,
+): Promise<void> {
+  const monthInt = monthToInt(month);
+  const id = `${monthInt}-${categoryId}`;
+  const dataset = await budgetTable();
+  await sendMessages([
+    { timestamp: Timestamp.send()!, dataset, row: id, column: "month", value: monthInt },
+    { timestamp: Timestamp.send()!, dataset, row: id, column: "category", value: categoryId },
+    { timestamp: Timestamp.send()!, dataset, row: id, column: "goal", value: goal },
+    {
+      timestamp: Timestamp.send()!,
+      dataset,
+      row: id,
+      column: "long_goal",
+      value: longGoal === true ? 1 : longGoal === false ? 0 : null,
+    },
+  ]);
+}
 
 // ---------------------------------------------------------------------------
 // Transfer from "To Budget" to a category

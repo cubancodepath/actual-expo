@@ -47,6 +47,14 @@ export type CategoryRow = {
   sort_order: number | null;
   hidden: 0 | 1;
   goal_def: string | null;
+  /** JSON-encoded CleanupTemplate[] compiled from #cleanup notes, or null. */
+  cleanup_def: string | null;
+  tombstone: 0 | 1;
+};
+
+export type CleanupGroupRow = {
+  id: string;
+  name: string;
   tombstone: 0 | 1;
 };
 

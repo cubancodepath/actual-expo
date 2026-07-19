@@ -1,5 +1,6 @@
 /**
- * useTags — reactive tags via liveQuery (screens-first local hook).
+ * useTags — reactive tags via liveQuery.
+ * Replaces useTagsStore for data reads.
  */
 
 import { q } from "@/core/queries";

@@ -11,7 +11,7 @@ import {
 import type { Template } from "@/core/domain/goals/types";
 import { getSchedules } from "@/core/domain/schedules";
 import type { Schedule } from "@/core/domain/schedules/types";
-import { useCategories } from "@/hooks/useCategories";
+import { useCategories } from "@/lib/hooks/useCategories";
 
 export type GoalAutomationsData = {
   /** What's written to the category — the only entries outside the form. */

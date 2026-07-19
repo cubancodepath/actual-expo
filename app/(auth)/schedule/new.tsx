@@ -9,7 +9,7 @@ import Animated, {
   interpolate,
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
-import { useAccounts } from "@/features/accounts/hooks/useAccounts";
+import { useAccounts } from "@/lib/hooks/useAccounts";
 import { usePickerStore } from "@/stores/pickerStore";
 // categories no longer needed from store — picker handles selection
 import { getRecurringDescription, createSchedule } from "@/core/domain/schedules";

@@ -6,7 +6,7 @@ import { Button, Spinner, Typography } from "heroui-native";
 import { Plus } from "lucide-react-native";
 import { ScreenHeader } from "@/ui/ScreenHeader";
 import { CloseButton } from "@/ui/CloseButton";
-import { useCategories } from "@/hooks/useCategories";
+import { useCategories } from "@/lib/hooks/useCategories";
 import { GoalListPane } from "./components/GoalListPane";
 import { useGoalAutomationsContext } from "./context/GoalAutomationsProvider";
 

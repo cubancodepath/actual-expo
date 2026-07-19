@@ -10,7 +10,7 @@ import {
   type GlobalConflictKind,
 } from "@/core/domain/goals";
 import type { Schedule } from "@/core/domain/schedules/types";
-import { useCategories } from "@/hooks/useCategories";
+import { useCategories } from "@/lib/hooks/useCategories";
 import { useGoalAutomationsQuery } from "../hooks/useGoalAutomationsQuery";
 import { useGoalEditSession } from "../hooks/useGoalEditSession";
 

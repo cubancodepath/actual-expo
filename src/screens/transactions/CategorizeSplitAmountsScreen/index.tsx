@@ -3,7 +3,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { LoadingScreen } from "@/ui/LoadingScreen";
 import { SplitAmountsView } from "@/screens/transactions/components/category-select/SplitAmountsView";
 import type { SplitLineForm } from "@/ui/entity-select/types";
-import { useCategories } from "@/ui/hooks/useCategories";
+import { useCategories } from "@/lib/hooks/useCategories";
 import { useCategorize } from "@/screens/transactions/CategorizeScreen/context/CategorizeProvider";
 
 /**

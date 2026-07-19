@@ -14,7 +14,7 @@ import { Text } from "@/design-system/atoms/Text";
 import { Icon } from "@/design-system/atoms/Icon";
 import { SearchBar } from "@/design-system/molecules/SearchBar";
 import { EmptyState } from "@/design-system/molecules/EmptyState";
-import { usePayees } from "@/features/transactions/hooks/usePayees";
+import { usePayees } from "@/lib/hooks/usePayees";
 import { deletePayee, updatePayee } from "@/core/domain/payees";
 import type { Payee } from "@/core/domain/payees/types";
 

@@ -13,7 +13,7 @@ import Animated, {
 import { SymbolView } from "expo-symbols";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
-import { useCategories } from "@/hooks/useCategories";
+import { useCategories } from "@/lib/hooks/useCategories";
 import { deleteCategory as deleteCategoryFn, deleteCategoryGroup } from "@/core/domain/categories";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { sheetForMonth, envelopeBudget } from "@/core/domain/spreadsheet/bindings";

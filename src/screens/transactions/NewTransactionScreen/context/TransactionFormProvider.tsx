@@ -1,9 +1,9 @@
 import { createContext, use, useState, type ReactNode } from "react";
-import { useAccounts } from "@/ui/hooks/useAccounts";
-import { useCategories } from "@/ui/hooks/useCategories";
-import { usePayees } from "@/ui/hooks/usePayees";
+import { useAccounts } from "@/lib/hooks/useAccounts";
+import { useCategories } from "@/lib/hooks/useCategories";
+import { usePayees } from "@/lib/hooks/usePayees";
 import { useTags } from "@/screens/transactions/hooks/useTags";
-import { useRules } from "@/screens/transactions/hooks/useRules";
+import { useRules } from "@/lib/hooks/useRules";
 import { useNewTransactionForm } from "../hooks/useNewTransactionForm";
 
 /** A category picked on the split "Add category" screen, handed back to the

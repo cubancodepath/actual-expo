@@ -3,7 +3,7 @@ import { ActivityIndicator, Alert, Pressable, ScrollView, Switch, View } from "r
 
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useMutation } from "@tanstack/react-query";
-import { useAccounts } from "@/features/accounts/hooks/useAccounts";
+import { useAccounts } from "@/lib/hooks/useAccounts";
 import { updateAccount } from "@/core/domain/accounts";
 import { Icon } from "@/design-system/atoms/Icon";
 import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvider";

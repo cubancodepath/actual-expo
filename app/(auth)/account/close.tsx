@@ -3,9 +3,9 @@ import { ActivityIndicator, Alert, Pressable, ScrollView, View } from "react-nat
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Icon } from "@/design-system/atoms/Icon";
 
-import { useAccounts } from "@/features/accounts/hooks/useAccounts";
+import { useAccounts } from "@/lib/hooks/useAccounts";
 import { closeAccount } from "@/core/domain/accounts";
-import { useCategories } from "@/hooks/useCategories";
+import { useCategories } from "@/lib/hooks/useCategories";
 import { useUndoStore } from "@/stores/undoStore";
 import { getAccountProperties, groupAccounts } from "@/core/domain/accounts";
 import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvider";

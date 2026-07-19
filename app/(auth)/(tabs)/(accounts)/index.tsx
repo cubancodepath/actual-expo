@@ -19,11 +19,7 @@ import {
 } from "@expo/ui/swift-ui/modifiers";
 import { shapes } from "@expo/ui/swift-ui/modifiers";
 import { useRouter } from "expo-router";
-import {
-  useAccounts,
-  useAccountBalance,
-  useAccountGroupBalance,
-} from "@/features/accounts/hooks/useAccounts";
+import { useAccounts, useAccountBalance, useAccountGroupBalance } from "@/lib/hooks/useAccounts";
 import {
   updateAccount,
   groupAccounts,

@@ -21,11 +21,8 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Type check (5 pre-existing module-resolution errors are baseline)
-        run: |
-          count=$(npx tsc --noEmit 2>&1 | grep -c "error TS" || true)
-          echo "tsc errors: $count (baseline 5)"
-          test "$count" -le 5
+      - name: Type check
+        run: npx tsc --noEmit
 
   test:
     runs-on: ubuntu-latest

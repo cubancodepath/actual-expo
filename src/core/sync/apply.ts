@@ -114,9 +114,11 @@ function compareMessages(messages: SyncMessage[]): SyncMessage[] {
  * messages_crdt log, the merkle trie, and undo tracking entirely (upstream:
  * sync/index.ts:231-250 applyMessagesForImport). Only safe for data that
  * doesn't need to converge with synced peers: a fresh local-only bulk load,
- * not anything that must replay to other devices. Tries INSERT first,
- * falling back to UPDATE on conflict — avoids the existence pre-fetch the
- * normal path needs for undo snapshots, which import mode doesn't track.
+ * not anything that must replay to other devices. Uses INSERT ... ON
+ * CONFLICT(id) DO UPDATE (upsert) — avoids the existence pre-fetch the
+ * normal path needs for undo snapshots, which import mode doesn't track,
+ * while still surfacing genuine constraint violations instead of silently
+ * dropping the write.
  */
 async function applyMessagesForImport(messages: SyncMessage[]): Promise<void> {
   const writableTables = getWritableTables();
@@ -139,11 +141,11 @@ async function applyMessagesForImport(messages: SyncMessage[]): Promise<void> {
       }
 
       const value = deserializeValue(serializeValue(msg.value as string | number | null));
-      try {
-        await run(`INSERT INTO ${dataset} (id, ${column}) VALUES (?, ?)`, [row, value]);
-      } catch {
-        await run(`UPDATE ${dataset} SET ${column} = ? WHERE id = ?`, [value, row]);
-      }
+      await run(
+        `INSERT INTO ${dataset} (id, ${column}) VALUES (?, ?)
+         ON CONFLICT(id) DO UPDATE SET ${column} = excluded.${column}`,
+        [row, value],
+      );
     }
   });
 }

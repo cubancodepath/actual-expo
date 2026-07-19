@@ -3,7 +3,7 @@ import type { TextInput } from "react-native";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useAccounts } from "@/lib/hooks/useAccounts";
-import { useCategories } from "@/ui/hooks/useCategories";
+import { useCategories } from "@/lib/hooks/useCategories";
 import { usePayees } from "@/lib/hooks/usePayees";
 import { useTags } from "@/screens/transactions/hooks/useTags";
 import { buildTxListItems } from "@/screens/transactions/components/transaction-list/listItems";

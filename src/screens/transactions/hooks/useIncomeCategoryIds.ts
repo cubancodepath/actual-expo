@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useCategories } from "@/ui/hooks/useCategories";
+import { useCategories } from "@/lib/hooks/useCategories";
 
 /**
  * Ids of income categories — the category's own `is_income` flag OR membership

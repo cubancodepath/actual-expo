@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Separator, Switch } from "heroui-native";
 import { HandCoins, Percent } from "lucide-react-native";
 import type { PercentageTemplate } from "@/core/domain/goals/types";
-import { useCategories } from "@/hooks/useCategories";
+import { useCategories } from "@/lib/hooks/useCategories";
 import { FieldRow } from "../fields/FieldRow";
 import { SelectFieldRow } from "../fields/SelectFieldRow";
 import { StepperFieldRow } from "../fields/StepperFieldRow";

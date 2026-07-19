@@ -19,7 +19,7 @@ import { categoryChipStatus } from "@/screens/budget/BudgetScreen/chipStatus";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { useSheetValue, useSheetValueNumber } from "@/hooks/useSheetValue";
 import { envelopeBudget, sheetForMonth } from "@/core/domain/spreadsheet/bindings";
-import { useCategories } from "@/hooks/useCategories";
+import { useCategories } from "@/lib/hooks/useCategories";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { deleteCategory, updateCategory } from "@/core/domain/categories";
 import { setNote } from "@/core/domain/notes";

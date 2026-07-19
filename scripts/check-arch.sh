@@ -88,6 +88,63 @@ if [ -d src/screens ]; then
   done
 fi
 
+# 6. Legacy-import freeze: non-legacy code must not import @/features or @/design-system.
+#    Grandfathered files (pre-freeze debt — REMOVE lines as they migrate, never add).
+#    Includes app/ routes that thinly re-export not-yet-migrated legacy screens
+#    (reports/spending/schedules/settings/onboarding — see CLAUDE.md screens/ layout):
+legacy_allowlist="src/ui/feedback/ErrorBoundary.tsx
+src/screens/auth/components/BudgetSetupWizard.tsx
+src/screens/budget/components/BudgetListSkeleton.tsx
+src/lib/screenOptions.ts
+src/hooks/useSharedAmountInput.ts
+src/hooks/useCursorBlink.tsx
+src/hooks/useRefreshControl.ts
+app/_layout.tsx
+app/(auth)/_layout.tsx
+app/(auth)/(tabs)/(accounts)/_layout.tsx
+app/(auth)/(tabs)/(accounts)/index.tsx
+app/(auth)/(tabs)/(budget)/_layout.tsx
+app/(auth)/(tabs)/(reports)/_layout.tsx
+app/(auth)/(tabs)/(reports)/index.tsx
+app/(auth)/account/close.tsx
+app/(auth)/account/new.tsx
+app/(auth)/account/reconcile.tsx
+app/(auth)/account/settings.tsx
+app/(auth)/budget/edit-group.tsx
+app/(auth)/budget/edit.tsx
+app/(auth)/budget/hold.tsx
+app/(auth)/budget/new-category.tsx
+app/(auth)/budget/new-group.tsx
+app/(auth)/budget/notes.tsx
+app/(auth)/budget/quick-edit-category.tsx
+app/(auth)/budget/reorder.tsx
+app/(auth)/schedule/_layout.tsx
+app/(auth)/schedule/new.tsx
+app/(auth)/schedule/recurrence-custom.tsx
+app/(auth)/schedule/recurrence.tsx
+app/(auth)/schedules.tsx
+app/(auth)/settings/_layout.tsx
+app/(auth)/settings/budget.tsx
+app/(auth)/settings/display.tsx
+app/(auth)/settings/index.tsx
+app/(auth)/settings/language.tsx
+app/(auth)/settings/payees.tsx
+app/(auth)/settings/rules.tsx
+app/(auth)/transaction/_layout.tsx
+app/(auth)/transaction/account-picker.tsx
+app/(auth)/transaction/split-category-picker.tsx
+app/(auth)/transaction/split.tsx
+app/(auth)/transaction/tags.tsx
+app/(public)/onboarding.tsx"
+legacy_new=$(grep -rln "from ['\"]@/\(features\|design-system\)" \
+  src/ui src/screens src/lib src/hooks src/stores src/services app \
+  --include='*.ts*' 2>/dev/null | grep -vxF "$legacy_allowlist" || true)
+if [ -n "$legacy_new" ]; then
+  echo "ARCH FAIL: new legacy imports (@/features|@/design-system) outside the grandfather list:"
+  echo "$legacy_new" | sed 's/^/  - /'
+  fail=1
+fi
+
 # WARN: core importing stores/services (known debt) — static AND dynamic imports
 core_impure=$(grep -rln \
   -e "from ['\"]@/\(stores\|services\)" \
@@ -98,8 +155,9 @@ if [ -n "$core_impure" ]; then
   echo "$core_impure" | sed 's/^/  · /'
 fi
 
-# WARN: fat routes (target: extract into src/screens/). Summarized to avoid noise —
-# full list: find app -name '*.tsx' | xargs wc -l | sort -rn
+# Fat-route ratchet: WARN below the cap, FAIL if the count exceeds it.
+# lower this number as routes migrate; never raise it.
+max_fat=25
 fat=$(find app -name '*.tsx' 2>/dev/null | while IFS= read -r f; do
   n=$(wc -l < "$f"); [ "$n" -gt 120 ] && echo "$n $f"
 done | sort -rn)
@@ -107,6 +165,10 @@ if [ -n "$fat" ]; then
   count=$(echo "$fat" | wc -l | tr -d ' ')
   echo "ARCH WARN: $count fat route(s) > 120 lines (target: src/screens/). Top 5:"
   echo "$fat" | head -5 | awk '{printf "  · %s lines  %s\n", $1, $2}'
+  if [ "$count" -gt "$max_fat" ]; then
+    echo "ARCH FAIL: fat route count ($count) exceeds ratchet cap ($max_fat)."
+    fail=1
+  fi
 fi
 
 exit $fail

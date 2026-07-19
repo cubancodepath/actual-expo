@@ -611,3 +611,32 @@ describe("runRules", () => {
     expect(txn.category).toBeNull();
   });
 });
+
+// ── indexer-based narrowing (Phase 3c) ──
+
+describe("runRules — indexer narrowing preserves semantics", () => {
+  it("applies a payee-specific rule only to its payee, and a wildcard rule to all", () => {
+    const payeeRule = new Rule({
+      conditionsOp: "and",
+      conditions: [{ op: "is", field: "payee", value: "p1" }],
+      actions: [{ op: "set", field: "notes", value: "for-p1" }],
+    });
+    const wildcardRule = new Rule({
+      conditionsOp: "and",
+      conditions: [{ op: "is", field: "account", value: "a1" }],
+      actions: [{ op: "set", field: "cleared", value: true }],
+    });
+    const rules = [payeeRule, wildcardRule];
+
+    // Matching payee: both the payee rule and the wildcard rule apply.
+    const m = runRules(rules, { payee: "p1", account: "a1", notes: null, cleared: false });
+    expect(m.notes).toBe("for-p1");
+    expect(m.cleared).toBe(true);
+
+    // Different payee: the payee rule is narrowed out / doesn't match, the
+    // wildcard (account) rule still applies.
+    const other = runRules(rules, { payee: "p2", account: "a1", notes: null, cleared: false });
+    expect(other.notes).toBeNull();
+    expect(other.cleared).toBe(true);
+  });
+});

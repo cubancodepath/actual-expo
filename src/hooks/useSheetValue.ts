@@ -23,12 +23,9 @@ export function useSheetValue(sheet: string, cellName: string): CellValue {
     // Read current value (may have changed since initial render)
     setValue(ss.getResolved(resolved));
 
-    // Subscribe to changes
-    return ss.onCellsChanged((changedNames) => {
-      if (changedNames.includes(resolved)) {
-        setValue(ss.getResolved(resolved));
-      }
-    });
+    // Subscribe to changes for this cell only — O(1) dispatch per
+    // notification instead of scanning every changed cell name (plan 014).
+    return ss.onCellChanged(resolved, setValue);
   }, [resolved, ss]);
 
   return value;

@@ -75,6 +75,13 @@ export class Spreadsheet {
   private dirtyCells: string[] = [];
   private transactionDepth = 0;
   private listeners = new Set<CellChangeListener>();
+  /**
+   * Keyed subscriptions — Map<resolved cell name, Set<listener>>. Lets
+   * runComputations() dispatch a single O(changedNames) scan instead of
+   * every subscriber independently scanning changedNames (which was
+   * O(subscribers × changedNames) — see plans/014).
+   */
+  private cellListeners = new Map<string, Set<(value: CellValue) => void>>();
   private computing = false;
   /** Cells that were directly set (optimistic) — skip their run() in next computation. */
   private directlySet = new Set<string>();
@@ -302,6 +309,16 @@ export class Spreadsheet {
       for (const listener of this.listeners) {
         listener(changed);
       }
+      // Keyed dispatch — O(changed) instead of each subscriber scanning
+      // `changed` independently (O(subscribers × changed)).
+      for (const name of changed) {
+        const keyed = this.cellListeners.get(name);
+        if (!keyed) continue;
+        const value = this.getResolved(name);
+        for (const listener of keyed) {
+          listener(value);
+        }
+      }
     }
   }
 
@@ -352,6 +369,29 @@ export class Spreadsheet {
   onCellsChanged(fn: CellChangeListener): () => void {
     this.listeners.add(fn);
     return () => this.listeners.delete(fn);
+  }
+
+  /**
+   * Subscribe to a single resolved cell name. O(1) dispatch cost per
+   * notification (vs. onCellsChanged's O(changedNames) scan per listener).
+   * Prefer this for components that watch one specific cell (e.g.
+   * useSheetValue); use onCellsChanged only for whole-sheet observers.
+   */
+  onCellChanged(resolvedName: string, fn: (value: CellValue) => void): () => void {
+    let set = this.cellListeners.get(resolvedName);
+    if (!set) {
+      set = new Set();
+      this.cellListeners.set(resolvedName, set);
+    }
+    set.add(fn);
+    return () => {
+      const current = this.cellListeners.get(resolvedName);
+      if (!current) return;
+      current.delete(fn);
+      if (current.size === 0) {
+        this.cellListeners.delete(resolvedName);
+      }
+    };
   }
 
   // ---- Cleanup ----

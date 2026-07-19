@@ -44,6 +44,7 @@ import { DialogHost } from "@/ui/feedback/dialog";
 import { useShakeUndo } from "@/hooks/useShakeUndo";
 import { loadAllPersistedKeys } from "@/services/encryptionService";
 import { installGlobalHandlers } from "@/lib/errors/install";
+import { scrubEvent } from "@/lib/errors/sentryScrub";
 
 import { queryClient } from "@/lib/query/queryClient";
 
@@ -62,6 +63,7 @@ Sentry.init({
   enabled: !__DEV__,
   integrations: [navigationIntegration],
   enableNativeFramesTracking: !isRunningInExpoGo(),
+  beforeSend: (event) => scrubEvent(event),
 });
 
 // Must run after Sentry.init (chains onto the ErrorUtils handler Sentry installs).

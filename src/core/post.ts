@@ -35,7 +35,7 @@ function toDomainError(reason: string | undefined, fallbackText: string): Actual
     return new ActualError(fileSyncCode, { context: { serverReason: reason ?? fallbackText } });
   }
   return new ActualError("http/rejected", {
-    context: { serverReason: reason ?? fallbackText.slice(0, 500) },
+    context: { serverReason: reason ?? fallbackText.slice(0, 120) },
   });
 }
 

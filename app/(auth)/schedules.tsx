@@ -16,7 +16,7 @@ import { SwipeableRow } from "@/ui/SwipeableRow";
 import { useSchedules } from "@/features/schedules/hooks/useSchedules";
 import { deleteSchedule } from "@/core/domain/schedules";
 import { usePayees } from "@/lib/hooks/usePayees";
-import { useAccounts } from "@/features/accounts/hooks/useAccounts";
+import { useAccounts } from "@/lib/hooks/useAccounts";
 import { useUndoStore } from "@/stores/undoStore";
 import { getStatus, getScheduledAmount, getRecurringDescription } from "@/core/domain/schedules";
 import type { Schedule, ScheduleStatus, RecurConfig } from "@/core/domain/schedules/types";

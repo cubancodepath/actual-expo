@@ -1,6 +1,6 @@
 import { Pressable, ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useAccounts, useAccountBalance } from "@/features/accounts/hooks/useAccounts";
+import { useAccounts, useAccountBalance } from "@/lib/hooks/useAccounts";
 import { Icon } from "@/design-system/atoms/Icon";
 
 import { usePickerStore } from "@/stores/pickerStore";

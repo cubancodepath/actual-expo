@@ -1,5 +1,5 @@
 import { createContext, use, type ReactNode } from "react";
-import { useAccounts } from "@/ui/hooks/useAccounts";
+import { useAccounts } from "@/lib/hooks/useAccounts";
 import { useCategories } from "@/ui/hooks/useCategories";
 import { usePayees } from "@/lib/hooks/usePayees";
 import { useScheduleForm } from "../hooks/useScheduleForm";

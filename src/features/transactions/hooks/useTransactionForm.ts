@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Alert } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { useAccounts } from "@/features/accounts/hooks/useAccounts";
+import { useAccounts } from "@/lib/hooks/useAccounts";
 import { deleteTransaction } from "@/core/domain/transactions";
 import { useCategories } from "@/hooks/useCategories";
 import { usePickerStore } from "@/stores/pickerStore";

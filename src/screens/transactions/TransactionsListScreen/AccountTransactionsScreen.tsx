@@ -2,7 +2,7 @@ import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { ScreenHeader } from "@/ui/ScreenHeader";
 import { AddTransactionFab } from "@/ui/AddTransactionFab";
-import { useAccounts } from "@/ui/hooks/useAccounts";
+import { useAccounts } from "@/lib/hooks/useAccounts";
 import { TransactionsShell } from "./components/TransactionsShell";
 import { SearchButton } from "./components/SearchButton";
 

@@ -10,7 +10,7 @@ import Animated, {
   interpolate,
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
-import { useAccounts } from "@/features/accounts/hooks/useAccounts";
+import { useAccounts } from "@/lib/hooks/useAccounts";
 import { usePayees } from "@/lib/hooks/usePayees";
 import { useCategories } from "@/hooks/useCategories";
 import { usePickerStore } from "@/stores/pickerStore";

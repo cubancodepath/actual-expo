@@ -51,6 +51,14 @@ cd actual-expo
 npm install
 ```
 
+### Environment variables
+
+Copy [`.env.example`](.env.example) to `.env.local` to see the available build-time
+variables. Day-to-day development (`npm start`, `npm run ios`) needs none of them.
+Release builds (`npm run build:prod` / `npm run build:preview`) need
+`SENTRY_AUTH_TOKEN` for Sentry source-map upload, unless you set
+`SENTRY_DISABLE_AUTO_UPLOAD=true` to opt out.
+
 ### Development
 
 ```bash

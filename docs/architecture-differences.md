@@ -51,6 +51,26 @@ Referencia para cuando algo no cuadre entre las dos apps. Documenta QUÉ hacemos
 
 ---
 
+## 3b. Rules ↔ mappings (`migrateIds`)
+
+Las **transacciones** resuelven merges de payee/categoría en LECTURA (vista/COALESCE, §2b y §3) — igual que el original, que **tampoco** reescribe `transactions.description`/`category` en un merge. Pero las **rules** guardan ids crudos en sus conditions/actions, así que un id fusionado hay que proyectarlo al target al usarlas.
+
+|                       | Original                                                                                             | Expo                                                                                                        |
+| --------------------- | ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| **Cache de mappings** | `server/db/mappings.ts`: `allMappings` en memoria + `onApplySync` que la parcha in-place             | `src/core/db/mappings.ts`: mismo `Map<string,string>` global, refrescado re-SELECTando ambas tablas         |
+| **Rule-set**          | Persistente en memoria; `makeRule`→`migrateIds`, y un listener re-proyecta todas al cambiar mappings | Load-fresh: `getRules()` reconstruye cada vez y `makeRule` llama `migrateIds(rule, getMappings())` al vuelo |
+| **Trigger del cache** | `addSyncListener` con `(oldValues,newValues)`                                                        | `syncEvents` (`"applied"` local + `"success"` remoto) filtrando `tables.some(t => t.includes("mapping"))`   |
+
+**Equivalencia**: como reconstruimos las rules en cada `getRules()`/`getRuleById()` (y `useRules`, que ahora reusa `makeRule`), cada rule se proyecta siempre con los mappings vigentes en el momento de uso — observablemente igual a mantener el rule-set en memoria y re-proyectarlo por evento. `migrateIds` (`rules/rule-utils.ts`) es idempotente porque re-proyecta desde `cond.rawValue` (id original inmutable), preservado para undo/re-proyección determinista. La fila persistida de la rule **nunca** se reescribe: guarda el id original, la proyección es solo en lectura.
+
+**Bootstrap/teardown**: `openBudget()` llama `loadMappings()` tras `loadClock()` (antes de rules/pre-fetch/fullSync); `closeDatabase()` llama `clearMappings()`. `getRules()` awaita `ensureMappingsLoaded()`, así que si el bootstrap se salta (tests) degrada a lazy-load, nunca a mappings stale.
+
+**Limitación conocida**: el memo de `useRules` re-corre en cambios de la tabla `rules`, no de las tablas `*mapping`. En la práctica los flujos de merge/delete remontan los forms que consumen el hook, así que la proyección está fresca en el próximo mount.
+
+**Sitios que también resuelven en lectura** (no vía la vista, SQL a mano): `learn.ts` y `getUncategorizedStats` fueron corregidos para pasar por `payee_mapping`/`category_mapping` (antes joins crudos `p.id = t.description` → un payee fusionado quedaba tombstoned y descuadraba el conteo/aprendizaje).
+
+---
+
 ## 4. Sync (CRDT)
 
 |                   | Original                                             | Expo                                                        |

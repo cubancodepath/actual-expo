@@ -14,8 +14,9 @@ import type { RuleCondition, RuleAction, RuleStage } from "./types";
 import { Rule } from "./rule";
 import { Condition } from "./condition";
 import { Action } from "./action";
-import { deserializeField, ensureRSchedule } from "./rule-utils";
+import { deserializeField, ensureRSchedule, migrateIds } from "./rule-utils";
 import { RuleError } from "./errors";
+import { getMappings, ensureMappingsLoaded } from "@/core/db/mappings";
 
 export { Rule };
 export type { RuleCondition, RuleAction };
@@ -115,12 +116,12 @@ function validateActions(actions: RuleAction[]): void {
   }
 }
 
-function makeRule(row: RuleRow): Rule | null {
+export function makeRule(row: RuleRow): Rule | null {
   try {
     const conditions = parseConditionsOrActions(row.conditions).map(expandConditionField);
     const actions = parseConditionsOrActions(row.actions);
 
-    return new Rule({
+    const rule = new Rule({
       id: row.id,
       stage: normalizeStage(row.stage),
       conditionsOp: (row.conditions_op as "and" | "or") ?? "and",
@@ -137,6 +138,12 @@ function makeRule(row: RuleRow): Rule | null {
         options?: Record<string, unknown>;
       }>,
     });
+
+    // Project payee/category ids to their merge target (mirrors loot-core's
+    // makeRule → migrateIds). Reads the synchronous in-memory cache; callers
+    // that need current mappings await ensureMappingsLoaded() first.
+    migrateIds(rule, getMappings());
+    return rule;
   } catch (e) {
     if (e instanceof RuleError) {
       console.warn(`[rules] Skipping invalid rule ${row.id}: ${e.message}`);
@@ -153,6 +160,10 @@ export async function getRules(): Promise<Rule[]> {
   // Ensure the recurring-date engine is loaded before building any Condition
   // that may carry a recur config (avoids the "RSchedule not available" race).
   await ensureRSchedule();
+  // Ensure the mappings cache is warm so makeRule → migrateIds projects ids
+  // against current merges (also covers the lazy-load path if bootstrap was
+  // skipped, e.g. in tests).
+  await ensureMappingsLoaded();
   const rows = await runQuery<RuleRow>(
     "SELECT * FROM rules WHERE tombstone = 0 AND conditions IS NOT NULL AND actions IS NOT NULL",
   );
@@ -161,6 +172,7 @@ export async function getRules(): Promise<Rule[]> {
 
 export async function getRuleById(id: string): Promise<Rule | null> {
   await ensureRSchedule();
+  await ensureMappingsLoaded();
   const row = await first<RuleRow>("SELECT * FROM rules WHERE id = ? AND tombstone = 0", [id]);
   if (!row) return null;
   return makeRule(row);

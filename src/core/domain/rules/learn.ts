@@ -103,11 +103,19 @@ export async function updateCategoryRules(transactions: LearnTransaction[]): Pro
   const lower = dateToInt(subDays(intToDate(oldest), 180));
   const upper = dateToInt(addDays(new Date(), 180));
 
+  // Resolve payee/category through their mapping tables (mirrors upstream's
+  // v_transactions read): a payee merged into a target must have its history
+  // counted under, and gated by the learn_categories flag of, the TARGET.
   const register = await runQuery<LearnTransaction>(
-    `SELECT t.id AS id, t.description AS payee, t.category AS category, t.date AS date
+    `SELECT t.id AS id,
+            COALESCE(pm.targetId, t.description) AS payee,
+            COALESCE(cm.transferId, t.category) AS category,
+            t.date AS date
      FROM transactions t
      LEFT JOIN accounts a ON a.id = t.acct
-     LEFT JOIN payees p ON p.id = t.description
+     LEFT JOIN payee_mapping pm ON pm.id = t.description
+     LEFT JOIN category_mapping cm ON cm.id = t.category
+     LEFT JOIN payees p ON p.id = COALESCE(pm.targetId, t.description)
      WHERE t.date >= ? AND t.date <= ? AND t.isParent = 0 AND t.tombstone = 0
        AND a.closed = 0 AND p.learn_categories = 1
      ORDER BY t.date DESC`,

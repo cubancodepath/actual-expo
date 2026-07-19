@@ -515,6 +515,11 @@ export async function openBudget(budgetId: string, opts?: { force?: boolean }): 
     let meta = await readMetadata(budgetId);
     const isFirstOpen = !!meta?.resetClock;
     await loadClock();
+    // Warm the payee/category mapping cache before rules, pre-fetch, or the
+    // background fullSync can read rules — so migrateIds projects merged ids.
+    // Mirrors loot-core loading mappings before the rules sync listeners.
+    const { loadMappings } = await import("@/core/db/mappings");
+    await loadMappings();
     lap("openDB + loadClock");
 
     // 3. Handle resetClock (fresh downloads need a new node ID)

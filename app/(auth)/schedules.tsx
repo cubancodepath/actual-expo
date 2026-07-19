@@ -15,7 +15,7 @@ import { Icon } from "@/design-system/atoms/Icon";
 import { SwipeableRow } from "@/ui/SwipeableRow";
 import { useSchedules } from "@/features/schedules/hooks/useSchedules";
 import { deleteSchedule } from "@/core/domain/schedules";
-import { usePayees } from "@/features/transactions/hooks/usePayees";
+import { usePayees } from "@/lib/hooks/usePayees";
 import { useAccounts } from "@/features/accounts/hooks/useAccounts";
 import { useUndoStore } from "@/stores/undoStore";
 import { getStatus, getScheduledAmount, getRecurringDescription } from "@/core/domain/schedules";

@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useAccounts } from "@/ui/hooks/useAccounts";
 import { useCategories } from "@/ui/hooks/useCategories";
-import { usePayees } from "@/ui/hooks/usePayees";
+import { usePayees } from "@/lib/hooks/usePayees";
 import { useTags } from "@/screens/transactions/hooks/useTags";
 import { buildTxListItems } from "@/screens/transactions/components/transaction-list/listItems";
 import type { TransactionDisplay } from "@/core/domain/transactions/types";

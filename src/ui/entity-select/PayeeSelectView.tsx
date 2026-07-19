@@ -5,7 +5,7 @@ import { ListGroup, Separator, Typography, useThemeColor } from "heroui-native";
 import { Check, CirclePlus } from "lucide-react-native";
 import { groupByInitial } from "@/lib/groupByInitial";
 import { PickerScreen } from "@/ui/PickerScreen";
-import { usePayees } from "@/ui/hooks/usePayees";
+import { usePayees } from "@/lib/hooks/usePayees";
 import type { Payee } from "@/core/domain/payees/types";
 
 /** A payee choice: a real payee (`id`) or a free-text created one (`id: null`). */

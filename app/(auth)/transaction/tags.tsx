@@ -4,7 +4,7 @@ import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Icon } from "@/design-system/atoms/Icon";
 import { AnimatedCheckmark } from "@/design-system/atoms/AnimatedCheckmark";
 import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvider";
-import { useTags } from "@/features/transactions/hooks/useTags";
+import { useTags } from "@/screens/transactions/hooks/useTags";
 import { createTag } from "@/core/domain/tags";
 import { usePickerStore } from "@/stores/pickerStore";
 import { Text } from "@/design-system/atoms/Text";

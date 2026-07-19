@@ -111,3 +111,51 @@ Referencia para cuando algo no cuadre entre las dos apps. Documenta QUÉ hacemos
 ## 8. ~~Formato de IDs en zero_budget_months~~ (FIXED)
 
 Ahora ambos usan `'YYYY-MM'` (e.g., `'2026-03'`). Se corrigió pasando `month` directamente en vez de `String(monthToInt(month))`.
+
+---
+
+## 9. OpenID sign-in callback — limitación aceptada, server-constrained
+
+El sign-in con OpenID entrega el token de sesión al cliente vía deep link de
+esquema custom (`actualbudget://<hostname>/openid-cb?token=…`), abierto con
+`WebBrowser.openAuthSessionAsync` (`ASWebAuthenticationSession` en iOS). Se
+investigó si el sync-server de Actual soporta un nonce `state` o PKCE
+expuesto al cliente para autenticar ese callback (upstream checkout:
+`actual/packages/sync-server/`, commit local al momento de la investigación):
+
+1. **¿El servidor hace echo de query params arbitrarios de `returnUrl` de
+   vuelta al callback?** No, en el sentido literal de query params. El
+   servidor concatena strings: `` `${return_url}/openid-cb?token=${token}` ``
+   (`actual/packages/sync-server/src/accounts/openid.ts:336`). Si el cliente
+   envía `returnUrl` con un `?state=…` propio, la concatenación produce una
+   URL rota (el `/openid-cb?token=` queda dentro del valor del primer query
+   param en vez de crear un query param nuevo), y `token` deja de poder
+   extraerse. `returnUrl` se valida solo por **hostname** en
+   `isValidRedirectUrl` (`accounts/openid.ts:359-381`), llamada tanto en el
+   setup (`app-account.js:98`) como en el finalize
+   (`app-openid.ts:107`) — no valida ni preserva query params.
+2. **¿Soporta PKCE o firma de respuesta?** Sí, pero es interno
+   servidor↔proveedor OIDC, no expuesto a la app. `loginWithOpenIdSetup`
+   genera `state` + `code_verifier`/`code_challenge` (S256) por intento y los
+   guarda en `pending_openid_requests` (`accounts/openid.ts:151-176`); ese
+   `state` viaja entre el navegador del sistema y el IdP/servidor
+   (`app-openid.ts:99-113`, `accounts/openid.ts:178-234`), nunca llega al
+   deep link `actualbudget://…/openid-cb`.
+3. **¿El token en el query string es el único mecanismo de entrega?** Sí —
+   `accounts/openid.ts:336` construye la única redirección hacia la app, con
+   `token` como el único dato relevante en el query string.
+
+**Conclusión**: el servidor no ofrece ningún mecanismo cliente-verificable de
+autenticidad de respuesta para este deep link (ni state-echo ni PKCE
+expuesto). El cliente Expo implementa la defensa más fuerte disponible dado
+esto: `isExpectedOpenIdCallback` (en
+`src/screens/auth/OpenIdSignInScreen/hooks/isExpectedOpenIdCallback.ts`)
+valida esquema (`actualbudget:`), hostname y path (`/openid-cb`) del
+callback ANTES de leer `token` — mitiga otras apps registrando el mismo
+esquema custom y entregando URLs con hostname/path distintos, pero no
+sustituye a un nonce firmado por el servidor.
+
+**Revisitar cuando** upstream agregue soporte de `state`/PKCE expuesto al
+`returnUrl`, o cuando Universal Links/App Links (que sí requieren control de
+dominio, fuera del alcance del modelo self-hosted) reemplacen el esquema
+custom.

@@ -15,6 +15,7 @@
 
 import type { Query } from "./query";
 import { executeQuery } from "./execute";
+import { compile } from "./compiler";
 import { listen } from "@/core/sync/syncEvents";
 
 let _nextId = 0;
@@ -90,8 +91,10 @@ export function liveQuery<T = Record<string, unknown>>(
     unlisten();
   }
 
-  // Auto-start: set initial dependencies from query table, then run
-  dependencies = [query.serialize().table];
+  // Auto-start: seed dependencies from the full compiled query (base table +
+  // joined tables), so writes to a joined table invalidate correctly even
+  // before the first async run resolves. Then run.
+  dependencies = compile(query.serialize()).dependencies;
   run();
 
   return {

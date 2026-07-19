@@ -18,6 +18,7 @@
 
 import type { Query } from "./query";
 import { executeQuery, executeCount } from "./execute";
+import { compile } from "./compiler";
 import { listen } from "@/core/sync/syncEvents";
 
 let _nextId = 0;
@@ -152,8 +153,10 @@ export function pagedQuery<T = Record<string, unknown>>(
     unlisten();
   }
 
-  // Auto-start
-  dependencies = [query.serialize().table];
+  // Auto-start: seed dependencies from the full compiled query (base table +
+  // joined tables), so writes to a joined table invalidate correctly even
+  // before the first async run resolves. Then run.
+  dependencies = compile(query.serialize()).dependencies;
   run();
 
   return {

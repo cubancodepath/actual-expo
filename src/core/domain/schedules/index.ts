@@ -511,7 +511,8 @@ export const deleteSchedule = undoable(async function deleteSchedule(id: string)
 
   await batchMessages(async () => {
     if (row?.rule) {
-      await deleteRule(row.rule);
+      // Force: we own this rule and are tearing down the schedule with it.
+      await deleteRule(row.rule, { force: true });
     }
     await sendMessages([
       {
@@ -856,7 +857,7 @@ async function fixRuleForSchedule(id: string) {
   const row = await first<{ rule: string }>("SELECT rule FROM schedules WHERE id = ?", [id]);
   if (row?.rule) {
     // Take the bad rule out of the system so it never causes problems again.
-    await deleteRule(row.rule);
+    await deleteRule(row.rule, { force: true });
   }
 
   const newRuleId = await createRule({

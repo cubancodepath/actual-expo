@@ -12,6 +12,8 @@ import { Timestamp } from "@/core/crdt";
 import type { RuleRow } from "@/core/db/types";
 import type { RuleCondition, RuleAction, RuleStage } from "./types";
 import { Rule } from "./rule";
+import { Condition } from "./condition";
+import { Action } from "./action";
 import { deserializeField, ensureRSchedule } from "./rule-utils";
 import { RuleError } from "./errors";
 
@@ -82,6 +84,37 @@ function expandConditionField(item: Record<string, unknown>): Record<string, unk
   };
 }
 
+/** Normalize a stored stage, folding legacy `cleanup`/`modify` into `pre`. */
+function normalizeStage(stage: unknown): RuleStage {
+  if (stage === "pre" || stage === "post") return stage;
+  if (stage === "cleanup" || stage === "modify") return "pre";
+  return null;
+}
+
+/**
+ * Validate rule parts by constructing them — a Condition/Action constructor
+ * throws RuleError on an invalid field/op/value, so this surfaces a bad rule at
+ * write time instead of silently storing one that `makeRule` later skips.
+ */
+function validateConditions(conditions: RuleCondition[]): void {
+  for (const raw of conditions.map((c) =>
+    expandConditionField(c as unknown as Record<string, unknown>),
+  )) {
+    new Condition(
+      raw.op as string,
+      raw.field as string,
+      raw.value,
+      raw.options as Record<string, unknown> | undefined,
+    );
+  }
+}
+
+function validateActions(actions: RuleAction[]): void {
+  for (const a of actions) {
+    new Action(a.op, (a.field ?? null) as string | null, a.value, a.options);
+  }
+}
+
 function makeRule(row: RuleRow): Rule | null {
   try {
     const conditions = parseConditionsOrActions(row.conditions).map(expandConditionField);
@@ -89,7 +122,7 @@ function makeRule(row: RuleRow): Rule | null {
 
     return new Rule({
       id: row.id,
-      stage: (row.stage as RuleStage) ?? null,
+      stage: normalizeStage(row.stage),
       conditionsOp: (row.conditions_op as "and" | "or") ?? "and",
       conditions: conditions as Array<{
         op: string;
@@ -147,6 +180,12 @@ export async function createRule(opts: {
   conditions: RuleCondition[];
   actions: RuleAction[];
 }): Promise<string> {
+  // Preload the recurring-date engine so validating a recur-date condition
+  // doesn't hit the "RSchedule not available" race, then reject invalid rules.
+  await ensureRSchedule();
+  validateConditions(opts.conditions);
+  validateActions(opts.actions);
+
   const id = randomUUID();
 
   await sendMessages(
@@ -176,6 +215,12 @@ export async function updateRule(
   id: string,
   fields: { conditions?: RuleCondition[]; conditionsOp?: string; actions?: RuleAction[] },
 ): Promise<void> {
+  if (fields.conditions !== undefined || fields.actions !== undefined) {
+    await ensureRSchedule();
+    if (fields.conditions !== undefined) validateConditions(fields.conditions);
+    if (fields.actions !== undefined) validateActions(fields.actions);
+  }
+
   const dbFields: Record<string, string | number | null> = {};
   if (fields.conditions !== undefined) {
     dbFields.conditions = JSON.stringify(
@@ -203,7 +248,26 @@ export async function updateRule(
   );
 }
 
-export async function deleteRule(id: string): Promise<void> {
+/**
+ * Tombstone a rule. By default refuses to delete a rule still referenced by a
+ * live schedule (mirrors upstream's guard, protecting user-initiated deletion
+ * from the rule-management UI). Schedule teardown passes `force` because it
+ * deletes the schedule's own rule as part of removing the schedule.
+ */
+export async function deleteRule(id: string, opts?: { force?: boolean }): Promise<void> {
+  if (!opts?.force) {
+    const schedule = await first<{ id: string }>(
+      "SELECT id FROM schedules WHERE rule = ? AND tombstone = 0",
+      [id],
+    );
+    if (schedule) {
+      throw new RuleError(
+        "rule-referenced-by-schedule",
+        "Cannot delete a rule that is linked to a schedule",
+      );
+    }
+  }
+
   await sendMessages([
     {
       timestamp: Timestamp.send()!,

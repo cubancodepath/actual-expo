@@ -903,6 +903,31 @@ describe("Action.exec — set", () => {
       expect(Array.isArray(txn._ruleErrors)).toBe(true);
       expect((txn._ruleErrors as string[]).length).toBeGreaterThan(0);
     });
+
+    it("sets a date field from a formula result (Phase 2: date support)", () => {
+      const txn: Record<string, unknown> = { date: "2024-01-01" };
+      new Action("set", "date", null, { formula: '="2024-03-15"' }).exec(txn);
+      expect(txn.date).toBe("2024-03-15");
+    });
+
+    it("records an error for an invalid date formula result and leaves the field unchanged", () => {
+      const txn: Record<string, unknown> = { date: "2024-01-01" };
+      new Action("set", "date", null, { formula: '="not-a-date"' }).exec(txn);
+      expect(txn.date).toBe("2024-01-01");
+      expect((txn._ruleErrors as string[]).length).toBeGreaterThan(0);
+    });
+
+    it("sets a boolean field to true from a formula comparison (Phase 2: boolean support)", () => {
+      const txn: Record<string, unknown> = { cleared: false };
+      new Action("set", "cleared", null, { formula: "=1>0" }).exec(txn);
+      expect(txn.cleared).toBe(true);
+    });
+
+    it("sets a boolean field to false from a formula comparison", () => {
+      const txn: Record<string, unknown> = { cleared: true };
+      new Action("set", "cleared", null, { formula: "=0>1" }).exec(txn);
+      expect(txn.cleared).toBe(false);
+    });
   });
 });
 

@@ -122,6 +122,22 @@ export class Action {
               case "string":
                 object[this.field!] = String(result);
                 break;
+              case "date": {
+                const parsed = parseISO(String(result));
+                if (parsed && isValid(parsed)) {
+                  object[this.field!] = format(parsed, "yyyy-MM-dd");
+                } else {
+                  errors.push(
+                    `Formula for "${this.field}" must produce a valid date. Got: ${JSON.stringify(result)}`,
+                  );
+                }
+                break;
+              }
+              case "boolean":
+                // The formula evaluator represents truthiness numerically
+                // (comparisons yield 1/0); accept the common truthy encodings.
+                object[this.field!] = result === 1 || result === "1" || result === "true";
+                break;
               default:
                 break;
             }

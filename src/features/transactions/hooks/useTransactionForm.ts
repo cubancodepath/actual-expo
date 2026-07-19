@@ -6,7 +6,7 @@ import { useAccounts } from "@/features/accounts/hooks/useAccounts";
 import { deleteTransaction } from "@/core/domain/transactions";
 import { useCategories } from "@/hooks/useCategories";
 import { usePickerStore } from "@/stores/pickerStore";
-import { useRules } from "@/features/transactions/hooks/useRules";
+import { useRules } from "@/lib/hooks/useRules";
 import { getTransactionById, getChildTransactions } from "@/core/domain/transactions";
 import { saveTransaction } from "@/core/domain/transactions/save";
 import { getRecurringDescription } from "@/core/domain/schedules";

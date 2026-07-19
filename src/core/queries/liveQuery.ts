@@ -46,13 +46,23 @@ export function liveQuery<T = Record<string, unknown>>(
   let dependencies: string[] = [];
   let inflightId = 0;
   let isUnsubscribed = false;
+  let runScheduled = false;
+
+  function scheduleRun() {
+    if (runScheduled || isUnsubscribed) return;
+    runScheduled = true;
+    setTimeout(() => {
+      runScheduled = false;
+      run();
+    }, 0);
+  }
 
   // Subscribe to sync events — re-run when dependent tables change
   const unlisten = listen((event) => {
     if (isUnsubscribed) return;
     const tables = new Set(event.tables);
     if (dependencies.some((d) => tables.has(d))) {
-      run();
+      scheduleRun();
     }
   });
 

@@ -3,8 +3,6 @@ import { useRouter } from "expo-router";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  createAutomationEntry,
-  createDefaultTemplate,
   entriesToTemplates,
   retypeTemplate,
   setGoalTemplates,
@@ -15,6 +13,7 @@ import { updateGoalIndicator } from "@/core/domain/goals/apply";
 import { batchMessages } from "@/core/sync/batch";
 import { useBudgetMonth } from "@/screens/budget/hooks/useBudgetMonth";
 import { goalAutomationsQueryKey, type GoalAutomationsData } from "./useGoalAutomationsQuery";
+import { computeGoalEditSeed, computeNextEntries } from "./goalEditSession.logic";
 import {
   makeGoalFormSchema,
   validateDraft,
@@ -70,20 +69,10 @@ export function useGoalEditSession({
   // doubles as the formId: a different entry (or a new draft) is a different
   // form. `savedEntries` is a dep only for the lookup — its identity is stable
   // while the stack is open (staleTime: Infinity; saves replace it wholesale).
-  const seed = useMemo((): { key: string; values: GoalFormValues } => {
-    const entry = entryId ? savedEntries.find((e) => e.id === entryId) : undefined;
-    if (entry) {
-      return {
-        key: entry.id,
-        values: { entryId: entry.id, displayType: entry.displayType, template: entry.template },
-      };
-    }
-    const type = (newType ?? "fixed") as DisplayTemplateType;
-    return {
-      key: `new-${type}`,
-      values: { entryId: null, displayType: type, template: createDefaultTemplate(type) },
-    };
-  }, [entryId, newType, savedEntries]);
+  const seed = useMemo(
+    () => computeGoalEditSeed({ entryId, newType, savedEntries }),
+    [entryId, newType, savedEntries],
+  );
 
   /** Write the given entries as the category's goals; returns them. */
   const persist = async (next: AutomationEntry[]) => {
@@ -103,15 +92,7 @@ export function useGoalEditSession({
   // Failures surface through the global MutationCache.onError → error bus.
   const saveMutation = useMutation({
     mutationFn: async (values: GoalFormValues) => {
-      const saved = ctxRef.current.savedEntries;
-      const replaces = values.entryId != null && saved.some((e) => e.id === values.entryId);
-      const next = replaces
-        ? saved.map((e) =>
-            e.id === values.entryId
-              ? { ...e, displayType: values.displayType, template: values.template }
-              : e,
-          )
-        : [...saved, createAutomationEntry(values.template, values.displayType)];
+      const next = computeNextEntries(values, ctxRef.current.savedEntries);
       return persist(next);
     },
     onSuccess: (next) => {

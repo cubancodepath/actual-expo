@@ -21,12 +21,16 @@ import {
   postTransactionForSchedule,
   skipNextDate,
 } from "@/core/domain/schedules";
-import type { RecurConfig, RuleAction, RuleCondition } from "@/core/domain/schedules/types";
+import type { RecurConfig } from "@/core/domain/schedules/types";
 import type { Account } from "@/core/domain/accounts/types";
 import type { Category } from "@/core/domain/categories/types";
 import type { Payee } from "@/core/domain/payees/types";
 import { useUndoStore } from "@/stores/undoStore";
-import { todayStr } from "@/lib/date";
+import {
+  buildScheduleSaveRule,
+  makeScheduleFormBaseline,
+  scheduleToFormValues,
+} from "./scheduleForm.logic";
 
 export type ScheduleType = "expense" | "income";
 export type AmountOp = "is" | "isapprox" | "isbetween";
@@ -48,23 +52,6 @@ export type ScheduleFormValues = {
   postsTransaction: boolean;
 };
 
-const makeBaseline = (): ScheduleFormValues => ({
-  type: "expense",
-  amountOp: "is",
-  amount: 0,
-  amountUpper: 0,
-  name: "",
-  accountId: null,
-  accountName: "",
-  payeeId: null,
-  payeeName: "",
-  categoryId: null,
-  categoryName: "",
-  recurConfig: null,
-  oneTimeDate: null,
-  postsTransaction: false,
-});
-
 type ScheduleFormData = { accounts: Account[]; categories: Category[]; payees: Payee[] };
 
 export function useScheduleForm({ accounts, categories, payees }: ScheduleFormData) {
@@ -73,7 +60,7 @@ export function useScheduleForm({ accounts, categories, payees }: ScheduleFormDa
 
   const scheduleIdRef = useRef<string | null>(null);
   const [isHydrating, setIsHydrating] = useState(true);
-  const [defaultValues, setDefaultValues] = useState<ScheduleFormValues>(makeBaseline);
+  const [defaultValues, setDefaultValues] = useState<ScheduleFormValues>(makeScheduleFormBaseline);
 
   const form = useForm({
     defaultValues,
@@ -103,38 +90,7 @@ export function useScheduleForm({ accounts, categories, payees }: ScheduleFormDa
           const s = await getScheduleById(id);
           if (!s) return;
 
-          const op: AmountOp =
-            s._amountOp === "isbetween" || s._amountOp === "isapprox" ? s._amountOp : "is";
-          let num1 = 0;
-          let num2 = 0;
-          if (s._amount && typeof s._amount === "object") {
-            num1 = s._amount.num1;
-            num2 = s._amount.num2;
-          } else if (typeof s._amount === "number") {
-            num1 = s._amount;
-          }
-          const type: ScheduleType = num1 < 0 || num2 < 0 ? "expense" : "income";
-
-          const isRecur = !!s._date && typeof s._date === "object" && "frequency" in s._date;
-
-          applyValues({
-            type,
-            amountOp: op,
-            amount: Math.abs(num1),
-            amountUpper: Math.abs(num2),
-            name: s.name ?? "",
-            accountId: s._account ?? null,
-            accountName: s._account ? (accounts.find((a) => a.id === s._account)?.name ?? "") : "",
-            payeeId: s._payee ?? null,
-            payeeName: s._payee ? (payees.find((p) => p.id === s._payee)?.name ?? "") : "",
-            categoryId: s._category ?? null,
-            categoryName: s._category
-              ? (categories.find((c) => c.id === s._category)?.name ?? "")
-              : "",
-            recurConfig: isRecur ? (s._date as RecurConfig) : null,
-            oneTimeDate: !isRecur && typeof s._date === "string" ? s._date : null,
-            postsTransaction: s.posts_transaction,
-          });
+          applyValues(scheduleToFormValues(s, { accounts, categories, payees }));
         } catch (e) {
           emitErrorEvent(e, { operation: "schedule.hydrate" });
         } finally {
@@ -177,27 +133,8 @@ export function useScheduleForm({ accounts, categories, payees }: ScheduleFormDa
   async function performSave(v: ScheduleFormValues) {
     const id = scheduleIdRef.current;
     if (!id || !v.accountId) return;
-    const sign = (cents: number) => (v.type === "expense" ? -Math.abs(cents) : Math.abs(cents));
 
-    const conditions: RuleCondition[] = [];
-    if (v.payeeId) conditions.push({ field: "payee", op: "is", value: v.payeeId });
-    conditions.push({ field: "account", op: "is", value: v.accountId });
-    conditions.push({
-      field: "amount",
-      op: v.amountOp,
-      value:
-        v.amountOp === "isbetween"
-          ? { num1: sign(v.amount), num2: sign(v.amountUpper) }
-          : sign(v.amount),
-    });
-    // Recurring → approximate recurrence; otherwise a one-time exact date
-    // (default to today so a non-recurring schedule always has a date).
-    if (v.recurConfig) conditions.push({ field: "date", op: "isapprox", value: v.recurConfig });
-    else conditions.push({ field: "date", op: "is", value: v.oneTimeDate ?? todayStr() });
-
-    const actions: RuleAction[] = v.categoryId
-      ? [{ op: "set", field: "category", value: v.categoryId }]
-      : [];
+    const { conditions, actions } = buildScheduleSaveRule(v);
 
     await updateSchedule({
       schedule: { id, name: v.name.trim() || null, posts_transaction: v.postsTransaction },

@@ -46,6 +46,11 @@ export async function openDatabase(budgetDir: string): Promise<void> {
 }
 
 export async function closeDatabase(): Promise<void> {
+  // Drop the in-memory mappings cache tied to this budget. Dynamic import keeps
+  // db/index.ts free of a static dependency on mappings.ts (which imports this
+  // module) — no import cycle.
+  const { clearMappings } = await import("./mappings");
+  clearMappings();
   if (_dbState.__actualDb) {
     if (__DEV__) console.log("[db] closeDatabase");
     const dbToClose = _dbState.__actualDb;

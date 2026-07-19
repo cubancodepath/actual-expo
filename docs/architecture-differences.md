@@ -84,6 +84,18 @@ El core ya lee y escribe presupuestos tracking (`reflect_budgets`) además de en
 
 ---
 
+## 3a-ter. Utilidades de transacciones (merge / fix-split / export CSV)
+
+Port de tres utilidades de `loot-core` en `src/core/domain/transactions/` (core-puras, sin UI):
+
+- **`merge.ts::mergeTransactions(ids)`** — fusiona 2 duplicados (misma cuenta/importe). keep/drop por prioridad `financial_id` > `imported_description` > fecha menor. Coalesce keep-wins de `description/category/notes/cleared/reconciled/schedule`; re-parent de hijos si solo drop tiene splits; tombstone del drop (+ cascada). **Ambos casos** (no-transfer y transfer: nullear links → `mergeTransfers` recursivo → re-linkear → category cleanup on/off-budget). Mensajes CRDT directos en un `undoable`.
+- **`fixSplits.ts::fixSplitTransactions()`** — 7 reparaciones (payees en blanco, sync de cleared, huérfanos→tombstone, transfers sin categoría, errores stale, padres con categoría) + **detección** (no fix) de splits descuadrados. SQL crudo sobre `transactions` (`isParent`/`isChild`) — no vista.
+- **`export/csv.ts`** — serializador CSV propio (no hay `csv-stringify` en Hermes) con **guard anti-inyección** (`'` ante `^[=+\-@\t\r]`). `exportTransactionsToCSV` (plano) y `exportSplitAwareToCSV` (markers de split + `Split_Amount`). Amount = `int/100` **con signo** (NO `centsToDollars`, que hace `Math.abs`).
+
+Única adaptación: el serializador CSV a mano (por Hermes). Lógica de columnas/merge/reparaciones = paridad con upstream. Falta cablear UI (acciones en listas/detalle).
+
+---
+
 ## 3b. Rules ↔ mappings (`migrateIds`)
 
 Las **transacciones** resuelven merges de payee/categoría en LECTURA (vista/COALESCE, §2b y §3) — igual que el original, que **tampoco** reescribe `transactions.description`/`category` en un merge. Pero las **rules** guardan ids crudos en sus conditions/actions, así que un id fusionado hay que proyectarlo al target al usarlas.

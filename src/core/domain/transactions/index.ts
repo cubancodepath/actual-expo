@@ -507,7 +507,8 @@ export async function getUncategorizedStats(): Promise<{ count: number; total: n
     `SELECT COUNT(*) AS count, COALESCE(SUM(t.amount), 0) AS total
      FROM transactions t
      JOIN accounts a ON a.id = t.acct AND a.offbudget = 0 AND a.tombstone = 0
-     LEFT JOIN payees p ON p.id = t.description AND p.tombstone = 0
+     LEFT JOIN payee_mapping pm ON pm.id = t.description
+     LEFT JOIN payees p ON p.id = COALESCE(pm.targetId, t.description) AND p.tombstone = 0
      LEFT JOIN accounts ta ON ta.id = p.transfer_acct AND ta.tombstone = 0
      WHERE t.tombstone = 0
        AND t.isParent = 0

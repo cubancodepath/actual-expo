@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach } from "vitest";
 import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
 import { createAccount } from "@/core/domain/accounts";
 import { createCategoryGroup, createCategory } from "@/core/domain/categories";
-import { findOrCreatePayee } from "@/core/domain/payees";
+import { findOrCreatePayee, createPayee, mergePayees } from "@/core/domain/payees";
 import { addTransaction } from "@/core/domain/transactions";
 import { getRules, createRule } from "./index";
 import { updateCategoryRules, getProbableCategory, type LearnTransaction } from "./learn";
@@ -92,6 +92,45 @@ describe("updateCategoryRules (category learning)", () => {
     // The existing rule was updated in place (no duplicate created).
     expect(setters).toHaveLength(1);
     expect(setters[0].actions[0].value).toBe(cat);
+  });
+
+  it("counts a merged payee's history under the target and learns a target-id rule", async () => {
+    await openTestDb();
+    const acct = await createAccount({ name: "A" });
+    const group = await createCategoryGroup({ name: "G" });
+    const cat = await createCategory({ name: "Groceries", cat_group: group });
+    const target = await createPayee({ name: "Target" });
+    const merged = await createPayee({ name: "Merged" });
+
+    // Three transactions recorded against the payee BEFORE it is merged away —
+    // their description stays `merged` (raw), resolved to `target` at read time.
+    const ids: string[] = [];
+    for (let i = 0; i < 3; i++) {
+      ids.push(
+        await addTransaction({
+          account: acct,
+          date: 20240101 + i,
+          amount: -100,
+          payee: merged,
+          category: cat,
+          notes: null,
+          cleared: false,
+        }),
+      );
+    }
+
+    await mergePayees(target, [merged]);
+
+    // Learning is driven by the live (target) payee id, as it would be from a
+    // form edit after the merge; the edited txn is one of the payee's latest.
+    await updateCategoryRules([{ id: ids[0], payee: target, category: cat, date: 20240101 }]);
+
+    const rules = await getRules();
+    const learned = rules.find(
+      (r) => r.conditions[0]?.field === "payee" && r.conditions[0]?.value === target,
+    );
+    expect(learned).toBeDefined();
+    expect(learned!.actions[0].value).toBe(cat);
   });
 
   it("does not create a rule below the 3-occurrence threshold", async () => {

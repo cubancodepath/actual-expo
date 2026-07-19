@@ -149,3 +149,73 @@ export async function applyRulesToNewTransaction(
     cleared: typeof result.cleared === "boolean" ? result.cleared : (fields.cleared ?? false),
   };
 }
+
+/** A rule-produced split child (amount is already signed). */
+export type RuleSubtransaction = {
+  amount: number;
+  category: string | null;
+  notes: string | null;
+};
+
+export type NewTransactionWithSplits = {
+  fields: NewTransactionFields;
+  /** Present only when a matching rule produced `set-split-amount` children. */
+  subtransactions?: RuleSubtransaction[];
+};
+
+/**
+ * Like {@link applyRulesToNewTransaction} but split-aware: when a matching rule
+ * carries `set-split-amount` actions the result carries `subtransactions` for
+ * the caller to materialize as a parent + child rows. Used by the
+ * system-generated posting path (schedules); manual form entry stays
+ * fill-empty and non-split, matching upstream.
+ */
+export async function applyRulesToNewTransactionWithSplits(
+  rules: Rule[],
+  fields: NewTransactionFields,
+): Promise<NewTransactionWithSplits> {
+  if (rules.length === 0) return { fields };
+
+  const txn: Record<string, unknown> = {
+    account: fields.account,
+    payee: fields.payee ?? null,
+    category: fields.category ?? null,
+    amount: fields.amount,
+    date: intDateToString(fields.date),
+    notes: fields.notes ?? "",
+    cleared: fields.cleared ?? false,
+  };
+
+  const { prepareTransactionForRules, finalizeTransactionForRules } = await import("./prepare");
+  const { runRulesWithSplits } = await import("./engine");
+  const enriched = await prepareTransactionForRules(txn);
+  const applied = runRulesWithSplits(rules, enriched);
+  const result = await finalizeTransactionForRules(applied);
+
+  const newFields: NewTransactionFields = {
+    ...fields,
+    account: (result.account as string | null) ?? fields.account,
+    payee: (result.payee as string | null) ?? fields.payee ?? null,
+    category: (result.category as string | null) ?? fields.category ?? null,
+    notes: (result.notes as string | null) ?? fields.notes ?? null,
+    cleared: typeof result.cleared === "boolean" ? result.cleared : (fields.cleared ?? false),
+    amount: typeof result.amount === "number" ? result.amount : fields.amount,
+  };
+
+  const rawSubs = result.subtransactions as
+    | Array<{ amount?: number; category?: string | null; notes?: string | null }>
+    | undefined;
+
+  if (!rawSubs || rawSubs.length === 0) {
+    return { fields: newFields };
+  }
+
+  return {
+    fields: newFields,
+    subtransactions: rawSubs.map((st) => ({
+      amount: st.amount ?? 0,
+      category: st.category ?? null,
+      notes: (st.notes as string | null) ?? null,
+    })),
+  };
+}

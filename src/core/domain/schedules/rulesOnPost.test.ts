@@ -70,4 +70,95 @@ describe("schedule-posted transactions run the general rule set (fix #16 / Phase
     );
     expect(rows[0].category).toBe(scheduleCat);
   });
+
+  it("materializes a split (parent + children) when a matching rule has set-split-amount actions", async () => {
+    await openTestDb();
+    const group = await createCategoryGroup({ name: "Bills" });
+    const catA = await createCategory({ name: "A", cat_group: group });
+    const catB = await createCategory({ name: "B", cat_group: group });
+    const acct = await createAccount({ name: "Checking" });
+
+    // A general rule that splits any transaction on this account: 3000 to A,
+    // the remainder to B.
+    await createRule({
+      conditions: [{ field: "account", op: "is", value: acct }],
+      actions: [
+        {
+          op: "set-split-amount",
+          value: -3000,
+          options: { splitIndex: 1, method: "fixed-amount" },
+        },
+        { op: "set", field: "category", value: catA, options: { splitIndex: 1 } },
+        { op: "set-split-amount", value: 0, options: { splitIndex: 2, method: "remainder" } },
+        { op: "set", field: "category", value: catB, options: { splitIndex: 2 } },
+      ],
+    });
+
+    const scheduleId = await createSchedule({
+      schedule: { name: "Split Schedule" },
+      conditions: [
+        { field: "date", op: "is", value: "2020-01-15" },
+        { field: "account", op: "is", value: acct },
+        { field: "amount", op: "is", value: -10000 },
+      ],
+    });
+
+    await postTransactionForScheduleToday(scheduleId);
+
+    const parent = await runQuery<{
+      id: string;
+      category: string | null;
+      amount: number;
+      isParent: number;
+    }>("SELECT id, category, amount, isParent FROM transactions WHERE schedule = ?", [scheduleId]);
+    expect(parent).toHaveLength(1);
+    expect(parent[0].isParent).toBe(1);
+    expect(parent[0].category).toBeNull();
+    expect(parent[0].amount).toBe(-10000);
+
+    const children = await runQuery<{ category: string; amount: number; isChild: number }>(
+      "SELECT category, amount, isChild FROM transactions WHERE parent_id = ? ORDER BY amount DESC",
+      [parent[0].id],
+    );
+    expect(children).toHaveLength(2);
+    expect(children.every((c) => c.isChild === 1)).toBe(true);
+    // A gets the fixed -3000; B absorbs the remainder -7000.
+    expect(children).toEqual([
+      expect.objectContaining({ category: catA, amount: -3000 }),
+      expect.objectContaining({ category: catB, amount: -7000 }),
+    ]);
+    // Children sum to the parent total.
+    expect(children[0].amount + children[1].amount).toBe(-10000);
+  });
+
+  it("posts a single row (no split) when the matching rule has no split actions", async () => {
+    await openTestDb();
+    const group = await createCategoryGroup({ name: "Bills" });
+    const cat = await createCategory({ name: "Rent", cat_group: group });
+    const acct = await createAccount({ name: "Checking" });
+
+    await createRule({
+      conditions: [{ field: "account", op: "is", value: acct }],
+      actions: [{ op: "set", field: "category", value: cat }],
+    });
+
+    const scheduleId = await createSchedule({
+      schedule: { name: "Simple Schedule" },
+      conditions: [
+        { field: "date", op: "is", value: "2020-01-15" },
+        { field: "account", op: "is", value: acct },
+        { field: "amount", op: "is", value: -5000 },
+      ],
+    });
+
+    await postTransactionForScheduleToday(scheduleId);
+
+    const rows = await runQuery<{ isParent: number; isChild: number }>(
+      "SELECT isParent, isChild FROM transactions WHERE acct = ?",
+      [acct],
+    );
+    expect(rows).toHaveLength(1);
+    expect(rows[0].isParent).toBe(0);
+    expect(rows[0].isChild).toBe(0);
+  });
 });

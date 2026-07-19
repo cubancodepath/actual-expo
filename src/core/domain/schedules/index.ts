@@ -544,13 +544,13 @@ export const skipNextDate = undoable(async function skipNextDate(id: string): Pr
 async function buildScheduledTransactionFields(
   schedule: Schedule,
   date: number,
-): Promise<import("../rules/apply").NewTransactionFields> {
+): Promise<import("../rules/apply").NewTransactionWithSplits> {
   const { getRules } = await import("../rules");
-  const { applyRulesToNewTransaction } = await import("../rules/apply");
+  const { applyRulesToNewTransactionWithSplits } = await import("../rules/apply");
 
   const amount = getScheduledAmount(schedule._amount);
   const rules = await getRules();
-  return applyRulesToNewTransaction(rules, {
+  return applyRulesToNewTransactionWithSplits(rules, {
     account: schedule._account!,
     date,
     amount,
@@ -560,17 +560,57 @@ async function buildScheduledTransactionFields(
   });
 }
 
+/**
+ * Insert a schedule-posted transaction, materializing a split (parent + child
+ * rows) when a matching rule produced `set-split-amount` children, otherwise a
+ * single row. Child amounts from the rule engine are already signed.
+ */
+async function insertScheduledTransaction(
+  result: import("../rules/apply").NewTransactionWithSplits,
+  scheduleId: string,
+): Promise<void> {
+  const { addTransaction } = await import("../transactions");
+  const { fields, subtransactions } = result;
+
+  if (!subtransactions || subtransactions.length === 0) {
+    await addTransaction({ ...fields, schedule: scheduleId });
+    return;
+  }
+
+  const { batchMessages } = await import("@/core/sync");
+  await batchMessages(async () => {
+    const parentId = await addTransaction({
+      ...fields,
+      category: null,
+      schedule: scheduleId,
+      is_parent: true,
+    });
+    for (const sub of subtransactions) {
+      await addTransaction({
+        account: fields.account,
+        date: fields.date,
+        amount: sub.amount,
+        payee: fields.payee ?? null,
+        category: sub.category,
+        notes: sub.notes,
+        cleared: fields.cleared ?? false,
+        is_child: true,
+        parent_id: parentId,
+      });
+    }
+  });
+}
+
 export const postTransactionForSchedule = undoable(async function postTransactionForSchedule(
   id: string,
 ): Promise<void> {
   const schedule = await getScheduleById(id);
   if (!schedule || !schedule._account) return;
 
-  const { addTransaction } = await import("../transactions");
   const date = schedule.next_date ? toDateRepr(schedule.next_date) : todayInt();
-  const fields = await buildScheduledTransactionFields(schedule, date);
+  const result = await buildScheduledTransactionFields(schedule, date);
 
-  await addTransaction({ ...fields, schedule: id });
+  await insertScheduledTransaction(result, id);
 });
 
 export const postTransactionForScheduleToday = undoable(
@@ -578,10 +618,9 @@ export const postTransactionForScheduleToday = undoable(
     const schedule = await getScheduleById(id);
     if (!schedule || !schedule._account) return;
 
-    const { addTransaction } = await import("../transactions");
-    const fields = await buildScheduledTransactionFields(schedule, todayInt());
+    const result = await buildScheduledTransactionFields(schedule, todayInt());
 
-    await addTransaction({ ...fields, schedule: id });
+    await insertScheduledTransaction(result, id);
   },
 );
 

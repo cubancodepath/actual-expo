@@ -72,9 +72,19 @@ export const schema: Schema = {
       hidden: { type: "boolean" },
       sort_order: { type: "float" },
       goal_def: { type: "json" },
+      cleanup_def: { type: "json" },
       tombstone: { type: "boolean" },
     },
     defaultOrder: [{ sort_order: "asc" }, "id"],
+  },
+
+  cleanup_groups: {
+    fields: {
+      id: { type: "id" },
+      name: { type: "string" },
+      tombstone: { type: "boolean" },
+    },
+    defaultOrder: ["id"],
   },
 
   category_groups: {

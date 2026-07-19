@@ -24,6 +24,7 @@ import { parseDate } from "@/core/domain/schedules/recurrence";
 import type { RecurConfig, RuleCondition } from "@/core/domain/schedules/types";
 import type { Rule } from "../rules/rule";
 import { applyRulesToForm } from "../rules/apply";
+import { updateCategoryRules } from "../rules/learn";
 
 export type SplitLine = {
   id?: string;
@@ -185,6 +186,7 @@ export const saveTransaction = undoable(async function saveTransaction(
       notes,
       cleared,
     });
+    learnCategoryIfEnabled(transactionId, resolvedPayeeId, categoryId, date);
     return transactionId;
   }
 
@@ -198,6 +200,7 @@ export const saveTransaction = undoable(async function saveTransaction(
     notes: effectiveNotes,
     cleared,
   });
+  learnCategoryIfEnabled(newId, resolvedPayeeId, categoryId, date);
 
   // Create a linked schedule if recurrence was configured
   if (recurConfig) {
@@ -242,6 +245,23 @@ async function linkSchedule(
     id: scheduleId,
     conditions,
     start: (nextDate) => addDays(parseDate(nextDate), 1),
+  });
+}
+
+/**
+ * Learn a payee→category rule from a user's manual categorization (best-effort,
+ * fire-and-forget so it never blocks or fails the save). Mirrors upstream's
+ * `learnCategories` hook on manually-entered transactions.
+ */
+function learnCategoryIfEnabled(
+  id: string,
+  payeeId: string | null,
+  categoryId: string | null,
+  date: number,
+): void {
+  if (!payeeId || !categoryId) return;
+  void updateCategoryRules([{ id, payee: payeeId, category: categoryId, date }]).catch(() => {
+    // best-effort; learning must never surface an error to the save flow
   });
 }
 

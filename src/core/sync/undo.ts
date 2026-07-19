@@ -87,6 +87,19 @@ export function appendMessages(messages: SyncMessage[], oldData: OldData): void 
 /**
  * Wraps a mutation function so its CRDT messages are recorded for undo.
  * Places a marker at the start of the operation (one "undo step").
+ *
+ * Plan 009: the non-nested branch below is a TOP-LEVEL mutation entry point,
+ * so it must run through batch.ts's `runMutator` FIFO queue — the whole
+ * marker-placement + `_undoListening` flag + `fn` sequence executes as one
+ * queued unit, serialized relative to every other top-level mutation
+ * (sendMessages, batchMessages, another undoable call, undo()). Without
+ * this, a second concurrent flow could observe `_undoListening` mid-flip
+ * and either wrongly treat itself as nested (mid-flight cross-flow bleed)
+ * or clobber this flow's marker. The nested-call check itself
+ * (`_undoDisabled || _undoListening`) is unchanged and self-contained —
+ * it already correctly detects genuine nesting within an outer undoable's
+ * OWN call tree, since that flag only flips for the duration of the SAME
+ * logical operation's continuation.
  */
 export function undoable<T extends (...args: any[]) => Promise<any>>(fn: T): T {
   return (async (...args: any[]) => {
@@ -95,33 +108,55 @@ export function undoable<T extends (...args: any[]) => Promise<any>>(fn: T): T {
       return fn(...args);
     }
 
-    // Trim any future history (invalidates any potential redo)
-    HISTORY = HISTORY.slice(0, CURSOR + 1);
-
-    // Place a marker at the current position
-    const lastEntry = HISTORY[HISTORY.length - 1];
-    if (lastEntry.type === "marker") {
-      // Reuse empty marker (no messages were recorded since last undoable call)
-      // This is fine — it just means the previous undoable was a no-op
-    } else {
-      HISTORY.push({ type: "marker" });
-      CURSOR++;
-    }
-
-    _undoListening = true;
-    try {
-      return await fn(...args);
-    } finally {
-      _undoListening = false;
-    }
+    // Lazy import to avoid a circular dependency (batch.ts imports
+    // appendMessages from this module).
+    const { runMutator } = await import("./batch");
+    return runMutator(() => undoableBody(fn, args));
   }) as unknown as T;
+}
+
+async function undoableBody<T extends (...args: any[]) => Promise<any>>(
+  fn: T,
+  args: unknown[],
+): Promise<unknown> {
+  // Trim any future history (invalidates any potential redo)
+  HISTORY = HISTORY.slice(0, CURSOR + 1);
+
+  // Place a marker at the current position
+  const lastEntry = HISTORY[HISTORY.length - 1];
+  if (lastEntry.type === "marker") {
+    // Reuse empty marker (no messages were recorded since last undoable call)
+    // This is fine — it just means the previous undoable was a no-op
+  } else {
+    HISTORY.push({ type: "marker" });
+    CURSOR++;
+  }
+
+  _undoListening = true;
+  try {
+    return await fn(...args);
+  } finally {
+    _undoListening = false;
+  }
 }
 
 /**
  * Undo the last undoable operation. Generates reversed CRDT messages
  * with fresh timestamps and sends them through the normal sync pipeline.
+ *
+ * Plan 009: `undo()` is itself a top-level mutation entry point (not called
+ * from within another mutator anywhere in this codebase — verified before
+ * adding this), so its whole body is queued the same way `undoable`'s body
+ * is, keeping it serialized relative to concurrent flows.
  */
 export async function undo(): Promise<string[]> {
+  // Lazy import to avoid a circular dependency (batch.ts imports
+  // appendMessages from this module).
+  const { runMutator } = await import("./batch");
+  return runMutator(() => undoBody());
+}
+
+async function undoBody(): Promise<string[]> {
   if (!canUndo()) return [];
 
   // Lazy import to avoid circular dependency

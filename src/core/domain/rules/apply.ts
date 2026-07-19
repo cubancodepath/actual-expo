@@ -98,8 +98,10 @@ export async function applyRulesEnriched(
   opts?: { skipBalance?: boolean },
 ): Promise<Record<string, unknown>> {
   // Lazy import to avoid pulling in DB/payee dependencies in unit test contexts
-  const { prepareTransactionForRules, finalizeTransactionForRules } = await import("./prepare");
+  const { prepareTransactionForRules, finalizeTransactionForRules, prefetchBalanceOf } =
+    await import("./prepare");
   const enriched = await prepareTransactionForRules(txn, opts);
+  enriched._balanceOfPrefetched = await prefetchBalanceOf(rules, enriched);
   const result = runRules(rules, enriched);
   return finalizeTransactionForRules(result);
 }
@@ -186,9 +188,11 @@ export async function applyRulesToNewTransactionWithSplits(
     cleared: fields.cleared ?? false,
   };
 
-  const { prepareTransactionForRules, finalizeTransactionForRules } = await import("./prepare");
+  const { prepareTransactionForRules, finalizeTransactionForRules, prefetchBalanceOf } =
+    await import("./prepare");
   const { runRulesWithSplits } = await import("./engine");
   const enriched = await prepareTransactionForRules(txn);
+  enriched._balanceOfPrefetched = await prefetchBalanceOf(rules, enriched);
   const applied = runRulesWithSplits(rules, enriched);
   const result = await finalizeTransactionForRules(applied);
 

@@ -11,6 +11,11 @@
 
 import { first, runQuery } from "@/core/db";
 import { findOrCreatePayee } from "../payees";
+import {
+  collectFormulasFromActions,
+  extractBalanceOfLiterals,
+  resolveAccountIdForBalanceOf,
+} from "./balanceOfFormula";
 
 // ── Types ──
 
@@ -29,23 +34,23 @@ export type EnrichedTransaction = Record<string, unknown> & {
   balance?: number;
 };
 
-// ── Account cache ──
+// ── Accounts lookup ──
 
-let accountCache: Map<string, AccountRow> | null = null;
-
+/**
+ * Fresh account map for rule enrichment. Deliberately not cached: the previous
+ * module-level cache was never invalidated on account mutations, so rules saw
+ * stale account data (onBudget/offBudget conditions, BALANCE_OF). The accounts
+ * table is tiny and rules run on save/post (not in tight loops).
+ */
 async function getAccountMap(): Promise<Map<string, AccountRow>> {
-  if (accountCache) return accountCache;
   const rows = await runQuery<AccountRow>(
     "SELECT id, name, offbudget, closed FROM accounts WHERE tombstone = 0",
   );
-  accountCache = new Map(rows.map((r) => [r.id, r]));
-  return accountCache;
+  return new Map(rows.map((r) => [r.id, r]));
 }
 
-/** Invalidate account cache (call after account mutations). */
-export function invalidateAccountCache(): void {
-  accountCache = null;
-}
+/** Retained as a no-op for API compatibility; the map is no longer cached. */
+export function invalidateAccountCache(): void {}
 
 // ── Prepare ──
 
@@ -101,8 +106,8 @@ export async function prepareTransactionForRules(
        AND (date < ? OR (date = ? AND sort_order <= COALESCE(?, 0)))`,
       [
         enriched.account as string,
-        enriched.date as string,
-        enriched.date as string,
+        toDateInt(enriched.date),
+        toDateInt(enriched.date),
         (enriched.sort_order as number) ?? 0,
       ],
     );
@@ -110,6 +115,67 @@ export async function prepareTransactionForRules(
   }
 
   return enriched;
+}
+
+// ── BALANCE_OF prefetch ──
+
+/** Normalize a date (ISO "YYYY-MM-DD" or already-int YYYYMMDD) to integer form. */
+function toDateInt(date: unknown): number {
+  if (typeof date === "number") return date;
+  if (typeof date === "string") return Number(date.replace(/-/g, "")) || 0;
+  return 0;
+}
+
+/**
+ * Running balance of `accountId` strictly before (`date`, `sortOrder`),
+ * excluding `excludeId`, over non-child rows. Used to resolve BALANCE_OF("…")
+ * literals synchronously during formula evaluation.
+ */
+async function getRunningBalanceBefore(
+  accountId: string,
+  date: unknown,
+  sortOrder: unknown,
+  excludeId: unknown,
+): Promise<number> {
+  const dateInt = toDateInt(date);
+  const row = await first<{ total: number }>(
+    `SELECT COALESCE(SUM(amount), 0) as total FROM transactions
+     WHERE acct = ? AND tombstone = 0 AND isChild = 0
+     AND id != ?
+     AND (date < ? OR (date = ? AND COALESCE(sort_order, 0) < COALESCE(?, 0)))`,
+    [accountId, (excludeId as string) ?? "", dateInt, dateInt, (sortOrder as number) ?? 0],
+  );
+  return row?.total ?? 0;
+}
+
+/**
+ * Prefetch the running balances referenced by BALANCE_OF("…") literals across
+ * the given rules' action formulas, so the synchronous evaluator can read them.
+ * Returns an empty map (no queries) when no formula references BALANCE_OF.
+ */
+export async function prefetchBalanceOf(
+  rules: Array<{ actions: Array<{ options?: Record<string, unknown> }> }>,
+  txn: Record<string, unknown>,
+): Promise<Map<string, number>> {
+  const literals = new Set<string>();
+  for (const rule of rules) {
+    for (const formula of collectFormulasFromActions(rule.actions)) {
+      for (const lit of extractBalanceOfLiterals(formula)) literals.add(lit);
+    }
+  }
+
+  const map = new Map<string, number>();
+  if (literals.size === 0) return map;
+
+  const accounts = await getAccountMap();
+  for (const literal of literals) {
+    const accountId = resolveAccountIdForBalanceOf(literal, accounts);
+    map.set(
+      literal,
+      accountId ? await getRunningBalanceBefore(accountId, txn.date, txn.sort_order, txn.id) : 0,
+    );
+  }
+  return map;
 }
 
 // ── Finalize ──
@@ -139,6 +205,7 @@ export async function finalizeTransactionForRules(
   delete txn._category_name;
   delete txn.balance;
   delete (txn as Record<string, unknown>).parent_amount;
+  delete (txn as Record<string, unknown>)._balanceOfPrefetched;
 
   return txn;
 }

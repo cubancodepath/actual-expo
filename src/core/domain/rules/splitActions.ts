@@ -56,6 +56,10 @@ function execSplitActions(actions: Action[], transaction: LooseTxn): LooseTxn {
       newTransactions = res.data as unknown as LooseTxn[];
     }
     newTransactions[idx].parent_amount = transaction.amount;
+    // Propagate enrichment so child formulas can reference the parent's balance
+    // and BALANCE_OF prefetch (Phase 2.2 / 3d).
+    newTransactions[idx].balance = transaction.balance;
+    newTransactions[idx]._balanceOfPrefetched = transaction._balanceOfPrefetched;
     action.exec(newTransactions[idx]);
   }
 

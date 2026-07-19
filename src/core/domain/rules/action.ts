@@ -105,7 +105,11 @@ export class Action {
             }
             variables.today = new Date().toISOString().slice(0, 10);
 
-            const result = evaluateFormula(this.options.formula as string, variables);
+            const result = evaluateFormula(
+              this.options.formula as string,
+              variables,
+              object._balanceOfPrefetched as Map<string, number> | undefined,
+            );
 
             switch (this.type) {
               case "number": {
@@ -206,7 +210,11 @@ export class Action {
                 const v = object[key];
                 if (typeof v === "number" || typeof v === "string") variables[key] = v;
               }
-              const result = evaluateFormula(this.options.formula as string, variables);
+              const result = evaluateFormula(
+                this.options.formula as string,
+                variables,
+                object._balanceOfPrefetched as Map<string, number> | undefined,
+              );
               const numValue = typeof result === "number" ? result : parseFloat(String(result));
               if (isNaN(numValue)) {
                 (object._ruleErrors as string[]).push(

@@ -2,6 +2,7 @@ import { describe, it, expect, afterEach } from "vitest";
 import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
 import { createCategoryGroup, createCategory } from "@/core/domain/categories";
 import { createAccount } from "@/core/domain/accounts";
+import { addTransaction } from "@/core/domain/transactions";
 import { createRule } from "@/core/domain/rules";
 import { createSchedule, postTransactionForScheduleToday } from "@/core/domain/schedules";
 import { runQuery } from "@/core/db";
@@ -160,5 +161,59 @@ describe("schedule-posted transactions run the general rule set (fix #16 / Phase
     expect(rows).toHaveLength(1);
     expect(rows[0].isParent).toBe(0);
     expect(rows[0].isChild).toBe(0);
+  });
+});
+
+describe("schedule-posted transactions resolve BALANCE_OF in rule formulas (Phase 3d)", () => {
+  afterEach(async () => {
+    await closeTestDb();
+  });
+
+  it("sets the posted amount to the account's running balance via BALANCE_OF", async () => {
+    await openTestDb();
+    const acct = await createAccount({ name: "Checking" });
+
+    // A prior transaction establishing the running balance.
+    await addTransaction({
+      account: acct,
+      date: 20200101,
+      amount: -5000,
+      payee: null,
+      category: null,
+      notes: null,
+      cleared: false,
+    });
+
+    // Rule: on this account, set the amount to the current balance of Checking.
+    await createRule({
+      conditions: [{ field: "account", op: "is", value: acct }],
+      actions: [
+        {
+          op: "set",
+          field: "amount",
+          value: null,
+          options: { formula: '=BALANCE_OF("Checking")' },
+        },
+      ],
+    });
+
+    const scheduleId = await createSchedule({
+      schedule: { name: "Balance Schedule" },
+      conditions: [
+        { field: "date", op: "is", value: "2020-06-15" },
+        { field: "account", op: "is", value: acct },
+        { field: "amount", op: "is", value: -1 },
+      ],
+    });
+
+    await postTransactionForScheduleToday(scheduleId);
+
+    const rows = await runQuery<{ amount: number }>(
+      "SELECT amount FROM transactions WHERE schedule = ?",
+      [scheduleId],
+    );
+    expect(rows).toHaveLength(1);
+    // Running balance before the posted row = the single prior -5000 transaction.
+    expect(rows[0].amount).toBe(-5000);
   });
 });

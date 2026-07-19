@@ -97,3 +97,23 @@ describe("evaluateFormula — string variables", () => {
     expect(evaluateFormula('=IF(amount>0, notes, "unknown")', withStrings)).toBe("Groceries");
   });
 });
+
+describe("evaluateFormula — BALANCE_OF (Phase 3d)", () => {
+  it("reads a running balance from the prefetched map", () => {
+    const balances = new Map([["Checking", 12345]]);
+    expect(evaluateFormula('=BALANCE_OF("Checking")', {}, balances)).toBe(12345);
+  });
+
+  it("returns 0 for an account not in the map", () => {
+    expect(evaluateFormula('=BALANCE_OF("Nope")', {}, new Map())).toBe(0);
+  });
+
+  it("returns 0 when no balance map is passed", () => {
+    expect(evaluateFormula('=BALANCE_OF("Checking")', {})).toBe(0);
+  });
+
+  it("combines BALANCE_OF arithmetically", () => {
+    const balances = new Map([["A", 1000]]);
+    expect(evaluateFormula('=BALANCE_OF("A") + 500', {}, balances)).toBe(1500);
+  });
+});

@@ -147,10 +147,16 @@ class Parser {
   private tokens: Token[];
   private pos = 0;
   private variables: Record<string, FormulaValue>;
+  private balanceOf?: Map<string, number>;
 
-  constructor(tokens: Token[], variables: Record<string, FormulaValue>) {
+  constructor(
+    tokens: Token[],
+    variables: Record<string, FormulaValue>,
+    balanceOf?: Map<string, number>,
+  ) {
     this.tokens = tokens;
     this.variables = variables;
+    this.balanceOf = balanceOf;
   }
 
   private peek(): Token | undefined {
@@ -353,10 +359,13 @@ class Parser {
         return String(args[0] ?? "").toUpperCase();
       case "TRIM":
         return String(args[0] ?? "").trim();
+      case "BALANCE_OF":
+        // Running balance of the named account, prefetched before eval.
+        return this.balanceOf?.get(String(args[0] ?? "")) ?? 0;
       default:
         throw new Error(
           `Unknown formula function: ${name}. ` +
-            `Supported: IF, INTEGER_TO_AMOUNT, FIXED, ABS, ROUND, FLOOR, CEIL, MIN, MAX, MOD, CONCAT, LEN, LOWER, UPPER, TRIM`,
+            `Supported: IF, INTEGER_TO_AMOUNT, FIXED, ABS, ROUND, FLOOR, CEIL, MIN, MAX, MOD, CONCAT, LEN, LOWER, UPPER, TRIM, BALANCE_OF`,
         );
     }
   }
@@ -377,6 +386,7 @@ class Parser {
 export function evaluateFormula(
   formula: string,
   variables: Record<string, FormulaValue>,
+  balanceOf?: Map<string, number>,
 ): FormulaValue {
   if (!formula || !formula.startsWith("=")) {
     throw new Error("Formula must start with =");
@@ -386,7 +396,7 @@ export function evaluateFormula(
   if (!expr) throw new Error("Empty formula");
 
   const tokens = tokenize(expr);
-  const parser = new Parser(tokens, variables);
+  const parser = new Parser(tokens, variables, balanceOf);
   return parser.parseExpr();
 }
 

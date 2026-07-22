@@ -38,11 +38,9 @@ export default function AuthLayout() {
       <Stack.Screen
         name="account/close"
         options={{
-          ...screen,
-          title: t("nav.closeAccount"),
+          headerShown: false,
           presentation: "formSheet",
-          sheetAllowedDetents: [0.75, 1.0],
-          sheetGrabberVisible: true,
+          sheetAllowedDetents: [1.0],
           contentStyle: { backgroundColor: theme.colors.pageBackground },
         }}
       />

@@ -18,6 +18,8 @@ interface AccountSelectViewProps {
    * opening). Defaults to true: fetch on mount.
    */
   enabled?: boolean;
+  /** Hide this account from the list (e.g. the account being closed). */
+  excludeAccountId?: string;
 }
 
 /**
@@ -31,6 +33,7 @@ export function AccountSelectView({
   selectedAccountId = null,
   onPick,
   enabled = true,
+  excludeAccountId,
 }: AccountSelectViewProps) {
   const { t } = useTranslation("transactions");
   const accent = useThemeColor("accent");
@@ -38,7 +41,7 @@ export function AccountSelectView({
   const accounts = useAccountsWithBalances(enabled);
 
   const sections = useMemo<Section[]>(() => {
-    const visible = accounts.filter((a) => !a.closed);
+    const visible = accounts.filter((a) => !a.closed && a.id !== excludeAccountId);
     const result: Section[] = [];
     const budget = visible.filter((a) => !a.offbudget);
     const offbudget = visible.filter((a) => a.offbudget);
@@ -49,7 +52,7 @@ export function AccountSelectView({
       result.push({ key: "offbudget", title: t("offBudgetAccounts"), accounts: offbudget });
     }
     return result;
-  }, [accounts, t]);
+  }, [accounts, t, excludeAccountId]);
 
   return (
     <>

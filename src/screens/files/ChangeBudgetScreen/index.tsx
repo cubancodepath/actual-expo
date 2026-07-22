@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next";
 import { LinkButton, ListGroup, Spinner, Typography, useThemeColor } from "heroui-native";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import { ScreenHeader } from "@/ui/ScreenHeader";
-import { CloseButton } from "@/ui/CloseButton";
 import { InlineError } from "@/ui/feedback/InlineError";
 import { BudgetFileRow } from "@/ui/BudgetFileRow";
 import { LoadingOverlay } from "@/ui/LoadingOverlay";
@@ -117,9 +116,7 @@ export function ChangeBudgetScreen() {
         <ScreenHeader.Floating>
           <View style={{ height: insets.top }} />
           <ScreenHeader>
-            <ScreenHeader.Back>
-              <CloseButton onPress={() => router.back()} />
-            </ScreenHeader.Back>
+            <ScreenHeader.Back />
             <ScreenHeader.Title>{t("nav.switchBudget")}</ScreenHeader.Title>
             <ScreenHeader.Actions>
               <LinkButton size="sm" onPress={() => router.push("/(auth)/new-budget")}>

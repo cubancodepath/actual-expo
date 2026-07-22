@@ -1,5 +1,4 @@
 import { Fragment } from "react";
-import { View } from "react-native";
 import { ListGroup, Separator, Switch, Typography, useThemeColor } from "heroui-native";
 import { ChevronRight } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
@@ -16,7 +15,6 @@ import { useBudgetContextStore } from "@/stores/budgetContextStore";
  */
 export function EncryptionGroup() {
   const { t } = useTranslation("settings");
-  const muted = useThemeColor("muted");
 
   const [encryptKeyId] = useMetadataPref("encryptKeyId");
   const serverUrl = useSessionStore((s) => s.serverUrl);
@@ -60,13 +58,10 @@ export function EncryptionGroup() {
             <Separator className="mx-4" />
             <ListGroup.Item onPress={() => void promptToEnableEncryption()}>
               <ListGroup.ItemContent>
-                <ListGroup.ItemTitle>{t("generateNewKey")}</ListGroup.ItemTitle>
+                <ListGroup.ItemTitle className="text-accent">
+                  {t("generateNewKey")}
+                </ListGroup.ItemTitle>
               </ListGroup.ItemContent>
-              <ListGroup.ItemSuffix>
-                <View className="flex-row items-center">
-                  <ChevronRight size={18} color={muted} />
-                </View>
-              </ListGroup.ItemSuffix>
             </ListGroup.Item>
           </Fragment>
         )}

@@ -1,13 +1,14 @@
 import { View } from "react-native";
+import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
-import { Typography } from "heroui-native";
+import { ListGroup, Typography, useThemeColor } from "heroui-native";
+import { ChevronRight } from "lucide-react-native";
 import { ScreenHeader } from "@/ui/ScreenHeader";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { FormattingGroup } from "./components/FormattingGroup";
 import { CurrencyGroup } from "./components/CurrencyGroup";
 import { EncryptionGroup } from "./components/EncryptionGroup";
-import { ExperimentalGroup } from "./components/ExperimentalGroup";
 
 /** A muted section label above a group card. */
 function SectionLabel({ children }: { children: React.ReactNode }) {
@@ -17,12 +18,14 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 /**
  * Budget Settings — the per-file (synced) settings screen, migrated to HeroUI
  * with our floating header. Holds Formatting, Currency (behind the experimental
- * `currency` flag) and Experimental Features; the remaining sections (Sync /
- * Encryption / Delete) are migrated in follow-up passes.
+ * `currency` flag) and Encryption; the rare/dangerous Experimental + Advanced
+ * actions live one tap deeper in the Advanced sub-screen.
  */
 export function BudgetSettingsScreen() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const { t } = useTranslation("settings");
+  const muted = useThemeColor("muted");
   const currencyEnabled = useFeatureFlag("currency");
 
   return (
@@ -48,8 +51,16 @@ export function BudgetSettingsScreen() {
         </View>
 
         <View className="mb-6">
-          <SectionLabel>{t("experimentalFeatures")}</SectionLabel>
-          <ExperimentalGroup />
+          <ListGroup>
+            <ListGroup.Item onPress={() => router.push("/(auth)/settings/advanced")}>
+              <ListGroup.ItemContent>
+                <ListGroup.ItemTitle>{t("advanced")}</ListGroup.ItemTitle>
+              </ListGroup.ItemContent>
+              <ListGroup.ItemSuffix>
+                <ChevronRight size={18} color={muted} />
+              </ListGroup.ItemSuffix>
+            </ListGroup.Item>
+          </ListGroup>
         </View>
       </ScreenHeader.Body>
 

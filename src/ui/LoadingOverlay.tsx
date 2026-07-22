@@ -1,5 +1,4 @@
-import { StyleSheet } from "react-native";
-import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
+import { Modal, StyleSheet, View } from "react-native";
 import { BlurView } from "expo-blur";
 import { useTranslation } from "react-i18next";
 import { Spinner, Typography, useThemeColor } from "heroui-native";
@@ -12,34 +11,36 @@ type LoadingOverlayProps = {
 
 /**
  * Full-screen blocking HUD for slow, non-cancellable operations (opening a
- * budget, enabling encryption, unlocking, …). A frosted-blur backdrop (same
- * material as the ScreenHeader) fades in over the content and swallows touches
- * so nothing underneath is interactive. The label is intentionally generic —
- * it's the same overlay everywhere.
+ * budget, enabling encryption, resetting sync, …). Rendered through a native
+ * `Modal` so it covers the **entire** screen regardless of where it sits in the
+ * tree (a plain `absolute inset-0` would only cover its nearest container). A
+ * frosted-blur backdrop (same material as the ScreenHeader) fades in and
+ * swallows touches. The label is intentionally generic — same overlay everywhere.
  */
 export function LoadingOverlay({ visible, message }: LoadingOverlayProps) {
   const { t } = useTranslation("common");
   const accent = useThemeColor("accent");
 
-  if (!visible) return null;
-
   return (
-    <Animated.View
-      entering={FadeIn.duration(150)}
-      exiting={FadeOut.duration(150)}
-      className="absolute inset-0 z-50 items-center justify-center"
-      pointerEvents="box-only"
+    <Modal
+      transparent
+      visible={visible}
+      animationType="fade"
+      statusBarTranslucent
+      onRequestClose={() => {}}
     >
-      <BlurView
-        tint="systemChromeMaterial"
-        intensity={60}
-        experimentalBlurMethod="dimezisBlurView"
-        style={StyleSheet.absoluteFill}
-      />
-      <Spinner size="lg" color={accent} />
-      <Typography type="body" weight="semibold" className="mt-4 text-center">
-        {message ?? t("justAMoment")}
-      </Typography>
-    </Animated.View>
+      <View className="flex-1 items-center justify-center" pointerEvents="box-only">
+        <BlurView
+          tint="systemChromeMaterial"
+          intensity={60}
+          experimentalBlurMethod="dimezisBlurView"
+          style={StyleSheet.absoluteFill}
+        />
+        <Spinner size="lg" color={accent} />
+        <Typography type="body" weight="semibold" className="mt-4 text-center">
+          {message ?? t("justAMoment")}
+        </Typography>
+      </View>
+    </Modal>
   );
 }

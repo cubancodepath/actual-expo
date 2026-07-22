@@ -5,7 +5,7 @@ import { sendMessages } from "@/core/sync";
 import { Timestamp } from "@/core/crdt";
 import { createAccount } from "@/core/domain/accounts";
 import { createCategoryGroup, createCategory } from "@/core/domain/categories";
-import { fixSplitTransactions } from "../fixSplits";
+import { fixSplitTransactions } from "../fixSplitTransactions";
 
 let counter = 0;
 async function mkTxn(fields: Record<string, string | number | null>): Promise<string> {

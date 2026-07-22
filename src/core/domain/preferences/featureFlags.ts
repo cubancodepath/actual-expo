@@ -41,10 +41,29 @@ export const ALL_FEATURE_FLAGS = Object.keys(DEFAULT_FEATURE_FLAG_STATE) as Feat
  * surfaces the flags it actually supports; the rest stay declared-but-hidden.
  */
 export const SUPPORTED_FEATURE_FLAGS: FeatureFlag[] = [
-  "currency",
   "goalTemplatesEnabled",
+  "goalTemplatesUIEnabled",
+  "actionTemplating",
+  "formulaMode",
+  "currency",
+  "mobileCalculator",
+  "sankeyReport",
+  "balanceForecastReport",
+  "ageOfMoneyReport",
+  "budgetAnalysisReport",
   "payeeLocations",
 ];
+
+/**
+ * Sub-feature dependencies: a flag that only makes sense while its parent is on.
+ * Mirrors upstream's `Experimental.tsx`, where `goalTemplatesUIEnabled` is gated
+ * behind `goalTemplatesEnabled`. In the UI the child row stays visible but is
+ * disabled while the parent is off, and turning the parent off turns the child
+ * off too (cascade).
+ */
+export const FEATURE_FLAG_REQUIRES: Partial<Record<FeatureFlag, FeatureFlag>> = {
+  goalTemplatesUIEnabled: "goalTemplatesEnabled",
+};
 
 export type FeatureFlagKey = `flags.${FeatureFlag}`;
 

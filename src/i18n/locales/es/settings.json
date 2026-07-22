@@ -74,8 +74,20 @@
   "schedules": "Programaciones",
   "payees": "Beneficiarios",
   "categories": "Categorías",
+  "advanced": "Avanzado",
+  "troubleshooting": "Solución de problemas",
+  "resetBudgetCache": "Restablecer caché del presupuesto",
+  "resetSync": "Restablecer sincronización",
+  "resetSyncDisabled": "Restablecer sincronización solo está disponible con la sincronización activada.",
+  "resetSyncConfirmTitle": "¿Restablecer sincronización?",
+  "resetSyncConfirmMessage": "Esto elimina el seguimiento de sincronización local y crea un nuevo ID de sincronización en el servidor. Los demás dispositivos tendrán que volver a descargar este presupuesto.",
+  "resetSyncFailed": "No se pudo restablecer la sincronización. Revisa tu conexión e inténtalo de nuevo.",
+  "repairTransactions": "Reparar transacciones",
+  "repairNoneFound": "Ninguna transacción necesitaba reparación.",
+  "repairSummary": "Se repararon {{count}} problema(s).",
+  "repairMismatched": "{{count}} división(es) con totales que no cuadran — revísalas manualmente.",
   "experimentalFeatures": "Funciones Experimentales",
-  "experimentalFeaturesWarning": "Estas funciones están en desarrollo. Pueden ser inestables o causar problemas con los datos. Se sincronizan en todos tus dispositivos. Úsalas con precaución.",
+  "experimentalFeaturesWarning": "Estas funciones están en desarrollo. Pueden ser inestables o causar problemas con los datos, y se sincronizan en todos tus dispositivos. Algunas aún no están disponibles en este dispositivo — activarlas no tiene efecto hasta que se implementen. Úsalas con precaución.",
   "currency": "Moneda",
   "defaultCurrency": "Moneda Predeterminada",
   "currencyNone": "Ninguna",
@@ -92,6 +104,38 @@
     "goalTemplatesEnabled": {
       "title": "Plantillas de Metas",
       "subtitle": "Habilita el procesamiento de plantillas de metas"
+    },
+    "goalTemplatesUIEnabled": {
+      "title": "UI de automatizaciones",
+      "subtitle": "Gestiona las plantillas de metas desde el presupuesto"
+    },
+    "actionTemplating": {
+      "title": "Plantillas de acciones de reglas",
+      "subtitle": "Obsoleto — usa el modo fórmula en su lugar"
+    },
+    "formulaMode": {
+      "title": "Modo fórmula",
+      "subtitle": "Fórmulas estilo Excel en tarjetas y reglas"
+    },
+    "mobileCalculator": {
+      "title": "Calculadora móvil",
+      "subtitle": "Calculadora en el teclado de importe"
+    },
+    "sankeyReport": {
+      "title": "Reporte Sankey",
+      "subtitle": ""
+    },
+    "balanceForecastReport": {
+      "title": "Reporte de previsión de saldo",
+      "subtitle": ""
+    },
+    "ageOfMoneyReport": {
+      "title": "Reporte de antigüedad del dinero",
+      "subtitle": ""
+    },
+    "budgetAnalysisReport": {
+      "title": "Reporte de análisis del presupuesto",
+      "subtitle": ""
     },
     "payeeLocations": {
       "title": "Beneficiarios Cercanos",

@@ -74,8 +74,20 @@
   "schedules": "Schedules",
   "payees": "Payees",
   "categories": "Categories",
+  "advanced": "Advanced",
+  "troubleshooting": "Troubleshooting",
+  "resetBudgetCache": "Reset budget cache",
+  "resetSync": "Reset sync",
+  "resetSyncDisabled": "Reset sync is only available when syncing is enabled.",
+  "resetSyncConfirmTitle": "Reset sync?",
+  "resetSyncConfirmMessage": "This removes local sync tracking and creates a fresh sync ID on the server. Other devices will have to re-download this budget.",
+  "resetSyncFailed": "Couldn't reset sync. Check your connection and try again.",
+  "repairTransactions": "Repair transactions",
+  "repairNoneFound": "No transactions needed repair.",
+  "repairSummary": "Repaired {{count}} issue(s).",
+  "repairMismatched": "{{count}} split(s) have mismatched totals — review them manually.",
   "experimentalFeatures": "Experimental Features",
-  "experimentalFeaturesWarning": "These features are still in development. They may be unstable or cause data issues. They are synced across all your devices. Use with caution.",
+  "experimentalFeaturesWarning": "These features are still in development. They may be unstable or cause data issues, and they sync across all your devices. Some aren't available on this device yet — enabling them has no effect until they're supported. Use with caution.",
   "currency": "Currency",
   "defaultCurrency": "Default Currency",
   "currencyNone": "None",
@@ -92,6 +104,38 @@
     "goalTemplatesEnabled": {
       "title": "Goal Templates",
       "subtitle": "Enable goal template processing"
+    },
+    "goalTemplatesUIEnabled": {
+      "title": "Budget automations UI",
+      "subtitle": "Manage goal templates from the budget"
+    },
+    "actionTemplating": {
+      "title": "Rule action templating",
+      "subtitle": "Deprecated — use formula mode instead"
+    },
+    "formulaMode": {
+      "title": "Formula mode",
+      "subtitle": "Excel-style formulas in cards and rules"
+    },
+    "mobileCalculator": {
+      "title": "Mobile calculator",
+      "subtitle": "Calculator on the amount keypad"
+    },
+    "sankeyReport": {
+      "title": "Sankey report",
+      "subtitle": ""
+    },
+    "balanceForecastReport": {
+      "title": "Balance forecast report",
+      "subtitle": ""
+    },
+    "ageOfMoneyReport": {
+      "title": "Age of Money report",
+      "subtitle": ""
+    },
+    "budgetAnalysisReport": {
+      "title": "Budget analysis report",
+      "subtitle": ""
     },
     "payeeLocations": {
       "title": "Nearby Payees",

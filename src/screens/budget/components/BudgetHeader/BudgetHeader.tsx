@@ -35,13 +35,19 @@ export function BudgetHeader() {
       <MonthYearPicker value={month} onChange={setMonth} />
 
       <View className="flex-row items-center gap-1">
-        <Button isIconOnly variant="ghost" onPress={noop} accessibilityLabel={t("editBudget")}>
+        <Button
+          isIconOnly
+          variant="tertiary"
+          size="sm"
+          onPress={noop}
+          accessibilityLabel={t("editBudget")}
+        >
           <SlidersHorizontal size={20} color={foreground} />
         </Button>
 
         <Menu>
           <Menu.Trigger asChild>
-            <Button isIconOnly variant="ghost">
+            <Button isIconOnly variant="tertiary" size="sm">
               <MoreHorizontal size={20} color={foreground} />
             </Button>
           </Menu.Trigger>

@@ -38,7 +38,7 @@ export function AccountsHeader({ showClosed, onToggleClosed, closedCount }: Acco
   const muted = useThemeColor("muted");
 
   return (
-    <View style={{ paddingTop: insets.top }}>
+    <View style={{ paddingTop: insets.top }} className="pb-4">
       <ScreenHeader>
         <ScreenHeader.Title>{t("title")}</ScreenHeader.Title>
         <ScreenHeader.Actions>

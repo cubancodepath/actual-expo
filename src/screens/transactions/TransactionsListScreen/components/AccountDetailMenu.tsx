@@ -1,9 +1,20 @@
+import { View } from "react-native";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
+import { formatDistanceToNowStrict } from "date-fns";
 import { Button, Menu, useThemeColor } from "heroui-native";
-import { ArchiveRestore, Eye, MoreHorizontal, Pencil, Scale, Trash2 } from "lucide-react-native";
+import { ArchiveRestore, Eye, Lock, MoreHorizontal, Pencil, Trash2 } from "lucide-react-native";
 import { updateAccount } from "@/core/domain/accounts";
 import type { Account } from "@/core/domain/accounts/types";
+
+/** Relative "2 days ago" for a last-reconciled epoch-ms (or date) string. */
+function relativeReconciled(raw: string | null): string | null {
+  if (!raw) return null;
+  const ts = Number(raw);
+  const date = isNaN(ts) ? new Date(raw) : new Date(ts);
+  if (isNaN(date.getTime())) return null;
+  return formatDistanceToNowStrict(date, { addSuffix: true });
+}
 
 const noop = () => {};
 
@@ -27,6 +38,11 @@ export function AccountDetailMenu({ account, clearedBalance }: AccountDetailMenu
 
   if (!account) return null;
 
+  const relative = relativeReconciled(account.last_reconciled);
+  const reconciledText = relative
+    ? t("detail.reconciledAgo", { date: relative })
+    : t("detail.reconciledNever");
+
   return (
     <Menu>
       <Menu.Trigger asChild>
@@ -38,20 +54,23 @@ export function AccountDetailMenu({ account, clearedBalance }: AccountDetailMenu
         <Menu.Overlay />
         <Menu.Content presentation="popover" width={240} placement="bottom" align="end">
           <Menu.Item
-            className="gap-3"
+            className="items-center gap-3"
             onPress={() =>
               router.push({
                 pathname: "/(auth)/account/reconcile",
                 params: {
                   accountId: account.id,
                   clearedBalance: String(clearedBalance),
-                  lastReconciled: account.lastReconciled ?? "",
+                  lastReconciled: account.last_reconciled ?? "",
                 },
               })
             }
           >
-            <Scale size={18} color={foreground} />
-            <Menu.ItemTitle>{t("detail.reconcile")}</Menu.ItemTitle>
+            <Lock size={18} color={foreground} />
+            <View className="flex-1">
+              <Menu.ItemTitle>{t("detail.reconcile")}</Menu.ItemTitle>
+              <Menu.ItemDescription>{reconciledText}</Menu.ItemDescription>
+            </View>
           </Menu.Item>
 
           <Menu.Item

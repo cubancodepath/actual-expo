@@ -48,6 +48,8 @@
     "defaultTitle": "Cuenta",
     "select": "Seleccionar",
     "reconcile": "Conciliar",
+    "reconciledAgo": "Conciliado {{date}}",
+    "reconciledNever": "Conciliado nunca",
     "showReconciled": "Mostrar conciliadas",
     "hideReconciled": "Ocultar conciliadas",
     "editAccount": "Editar cuenta",
@@ -86,6 +88,8 @@
     "offBudget": "Fuera de presupuesto",
     "offBudgetDescription": "Las transacciones no afectarán tu presupuesto",
     "accountNameRequired": "El nombre de la cuenta es obligatorio",
+    "notesLabel": "Notas",
+    "notesPlaceholder": "Añade una nota…",
     "reopenAccountTitle": "Reabrir cuenta",
     "reopenAccountMessage": "¿Reabrir esta cuenta? Aparecerá en tu presupuesto de nuevo.",
     "reopen": "Reabrir"

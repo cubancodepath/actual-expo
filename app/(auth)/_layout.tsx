@@ -28,19 +28,13 @@ export default function AuthLayout() {
       <Stack.Screen
         name="account/reconcile"
         options={{
-          title: "",
-          headerShadowVisible: false,
-          headerStyle: { backgroundColor: theme.colors.pageBackground },
+          headerShown: false,
           presentation: "formSheet",
-          sheetAllowedDetents: [0.3],
-          sheetGrabberVisible: true,
+          sheetAllowedDetents: [1.0],
           contentStyle: { backgroundColor: theme.colors.pageBackground },
         }}
       />
-      <Stack.Screen
-        name="account/settings"
-        options={{ title: t("nav.accountSettings"), ...modal }}
-      />
+      <Stack.Screen name="account/settings" options={{ headerShown: false, ...modal }} />
       <Stack.Screen
         name="account/close"
         options={{

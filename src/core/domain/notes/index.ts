@@ -7,9 +7,16 @@
  * a plain `SELECT note FROM notes WHERE id = ?` (see `goals/persist.getCategoryNote`).
  */
 
+import { first } from "@/core/db";
 import { sendMessages } from "@/core/sync";
 import { undoable } from "@/core/sync/undo";
 import { Timestamp } from "@/core/crdt";
+
+/** Read the note for any entity keyed by `id` (null if none). */
+export async function getNote(id: string): Promise<string | null> {
+  const row = await first<{ note: string | null }>("SELECT note FROM notes WHERE id = ?", [id]);
+  return row?.note ?? null;
+}
 
 /**
  * Set (or clear, with `null`) the note for any entity keyed by `id`. Writes a

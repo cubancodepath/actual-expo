@@ -48,6 +48,8 @@
     "defaultTitle": "Account",
     "select": "Select",
     "reconcile": "Reconcile",
+    "reconciledAgo": "Reconciled {{date}}",
+    "reconciledNever": "Reconciled never",
     "showReconciled": "Show Reconciled",
     "hideReconciled": "Hide Reconciled",
     "editAccount": "Edit Account",
@@ -86,6 +88,8 @@
     "offBudget": "Off budget",
     "offBudgetDescription": "Transactions won't affect your budget",
     "accountNameRequired": "Account name is required",
+    "notesLabel": "Notes",
+    "notesPlaceholder": "Add a note…",
     "reopenAccountTitle": "Reopen Account",
     "reopenAccountMessage": "Reopen this account? It will appear in your budget again.",
     "reopen": "Reopen"

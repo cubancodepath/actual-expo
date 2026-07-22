@@ -17,7 +17,7 @@ const account: Account = {
   offbudget: false,
   closed: false,
   sort_order: null,
-  lastReconciled: null,
+  last_reconciled: null,
   tombstone: false,
 };
 const category: Category = {

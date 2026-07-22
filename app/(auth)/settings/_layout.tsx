@@ -16,6 +16,8 @@ export default function SettingsLayout() {
       <Stack.Screen name="number-format" options={{ headerShown: false }} />
       <Stack.Screen name="date-format" options={{ headerShown: false }} />
       <Stack.Screen name="first-day-of-week" options={{ headerShown: false }} />
+      <Stack.Screen name="currency" options={{ headerShown: false }} />
+      <Stack.Screen name="symbol-position" options={{ headerShown: false }} />
     </Stack>
   );
 }

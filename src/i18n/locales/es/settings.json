@@ -75,7 +75,19 @@
   "categories": "Categorías",
   "experimentalFeatures": "Funciones Experimentales",
   "experimentalFeaturesWarning": "Estas funciones están en desarrollo. Pueden ser inestables o causar problemas con los datos. Se sincronizan en todos tus dispositivos. Úsalas con precaución.",
+  "currency": "Moneda",
+  "defaultCurrency": "Moneda Predeterminada",
+  "currencyNone": "Ninguna",
+  "symbolPosition": "Posición del Símbolo",
+  "positionBefore": "Antes del importe",
+  "positionAfter": "Después del importe",
+  "addSpace": "Añadir espacio entre importe y símbolo",
+  "currencyNote": "La configuración de moneda afecta cómo se muestran los importes en toda la app. Al cambiar la moneda también se ajustan el formato de número, la posición del símbolo y si se muestran decimales — todo modificable después.",
   "featureFlags": {
+    "currency": {
+      "title": "Moneda",
+      "subtitle": "Muestra el símbolo de moneda en los importes"
+    },
     "goalTemplatesEnabled": {
       "title": "Plantillas de Metas",
       "subtitle": "Habilita el procesamiento de plantillas de metas"

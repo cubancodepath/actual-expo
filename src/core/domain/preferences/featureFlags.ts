@@ -40,7 +40,11 @@ export const ALL_FEATURE_FLAGS = Object.keys(DEFAULT_FEATURE_FLAG_STATE) as Feat
  * (14 flags), but, exactly like upstream's `Experimental.tsx`, each client only
  * surfaces the flags it actually supports; the rest stay declared-but-hidden.
  */
-export const SUPPORTED_FEATURE_FLAGS: FeatureFlag[] = ["goalTemplatesEnabled", "payeeLocations"];
+export const SUPPORTED_FEATURE_FLAGS: FeatureFlag[] = [
+  "currency",
+  "goalTemplatesEnabled",
+  "payeeLocations",
+];
 
 export type FeatureFlagKey = `flags.${FeatureFlag}`;
 

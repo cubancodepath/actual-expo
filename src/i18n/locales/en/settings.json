@@ -75,7 +75,19 @@
   "categories": "Categories",
   "experimentalFeatures": "Experimental Features",
   "experimentalFeaturesWarning": "These features are still in development. They may be unstable or cause data issues. They are synced across all your devices. Use with caution.",
+  "currency": "Currency",
+  "defaultCurrency": "Default Currency",
+  "currencyNone": "None",
+  "symbolPosition": "Symbol Position",
+  "positionBefore": "Before amount",
+  "positionAfter": "After amount",
+  "addSpace": "Add space between amount and symbol",
+  "currencyNote": "Currency settings affect how amounts are displayed throughout the app. Changing the currency also sets the number format, symbol position, and whether decimals are shown — all adjustable afterward.",
   "featureFlags": {
+    "currency": {
+      "title": "Currency",
+      "subtitle": "Show a currency symbol on amounts"
+    },
     "goalTemplatesEnabled": {
       "title": "Goal Templates",
       "subtitle": "Enable goal template processing"

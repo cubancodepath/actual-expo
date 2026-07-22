@@ -1,5 +1,6 @@
 import { Fragment } from "react";
 import { View } from "react-native";
+import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ListGroup, Separator, useThemeColor } from "heroui-native";
 import { Check } from "lucide-react-native";
@@ -28,7 +29,14 @@ type SettingsOptionListProps = {
  */
 export function SettingsOptionList({ title, options, value, onSelect }: SettingsOptionListProps) {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const accent = useThemeColor("accent");
+
+  // Select-and-return, like the category picker: no extra "back" tap.
+  const handleSelect = (v: string) => {
+    onSelect(v);
+    router.back();
+  };
 
   return (
     <ScreenHeader.ScrollArea>
@@ -40,7 +48,7 @@ export function SettingsOptionList({ title, options, value, onSelect }: Settings
             {options.map((opt, index) => (
               <Fragment key={opt.value}>
                 {index > 0 && <Separator className="mx-4" />}
-                <ListGroup.Item onPress={() => onSelect(opt.value)}>
+                <ListGroup.Item onPress={() => handleSelect(opt.value)}>
                   <ListGroup.ItemContent>
                     <ListGroup.ItemTitle>{opt.label}</ListGroup.ItemTitle>
                     {opt.description ? (

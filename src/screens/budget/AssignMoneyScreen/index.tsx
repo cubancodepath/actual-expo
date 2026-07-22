@@ -13,6 +13,7 @@ import { setGoalResult } from "@/core/domain/goals";
 import type { GoalAllocation } from "@/core/domain/goals/apply";
 import { batchMessages } from "@/core/sync/batch";
 import { useSheetValueNumber } from "@/hooks/useSheetValue";
+import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { useBudgetMonth } from "@/screens/budget/hooks/useBudgetMonth";
 import { HIDDEN_GROUP_ID, useBudgetSections } from "@/screens/budget/hooks/useBudgetSections";
 import { BudgetListSkeleton } from "@/screens/budget/components/BudgetListSkeleton";
@@ -46,6 +47,9 @@ export function AssignMoneyScreen() {
   const { month } = useBudgetMonth();
   const sheet = sheetForMonth(month);
   const { sections, isLoading } = useBudgetSections();
+  // Auto-assign fills categories from their goal templates — a goals feature,
+  // so it rides the parent `goalTemplatesEnabled`. Manual assigning stays core.
+  const goalsEnabled = useFeatureFlag("goalTemplatesEnabled");
 
   // Only expense groups can receive assignments (income has no assigned column).
   const groups = useMemo(() => sections.filter((s) => !s.is_income), [sections]);
@@ -257,14 +261,16 @@ export function AssignMoneyScreen() {
         >
           {/* Scrolls with the list — an action above the categories, not a
               fixed control. */}
-          <View className="px-4 pb-3">
-            <AutoAssignButton
-              month={month}
-              pending={pending}
-              committedFor={committedFor}
-              onApply={applyAllocations}
-            />
-          </View>
+          {goalsEnabled ? (
+            <View className="px-4 pb-3">
+              <AutoAssignButton
+                month={month}
+                pending={pending}
+                committedFor={committedFor}
+                onApply={applyAllocations}
+              />
+            </View>
+          ) : null}
 
           <Animated.View layout={AccordionLayoutTransition}>
             <Accordion

@@ -67,6 +67,10 @@ export function CategoryDetailsScreen({ categoryId }: CategoryDetailsScreenProps
   const accent = useThemeColor("accent");
   const danger = useThemeColor("danger");
   const goalsEnabled = useFeatureFlag("goalTemplatesEnabled");
+  // The structured goal editor is the `goalTemplatesUIEnabled` sub-feature. With
+  // it off (the default after enabling goals) the goal card is read-only: goals
+  // still show and apply under the parent flag, authored via note directives.
+  const goalEditorEnabled = useFeatureFlag("goalTemplatesUIEnabled");
 
   const month = useBudgetUIStore((s) => s.month);
   const pickedCategory = useBudgetUIStore((s) => s.pickedCategory);
@@ -246,7 +250,9 @@ export function CategoryDetailsScreen({ categoryId }: CategoryDetailsScreenProps
         </ListGroup>
 
         {/* ── Goal card ── */}
-        {goalsEnabled && !isIncome ? (
+        {/* With the editor off and no goal there's nothing to show or author
+            here (notes remain the authoring surface), so the card is hidden. */}
+        {goalsEnabled && !isIncome && (hasGoal || goalEditorEnabled) ? (
           <View className="mb-6">
             <Typography className="mb-2 ml-2 text-sm font-medium text-muted">
               {t("goalSection")}
@@ -269,13 +275,15 @@ export function CategoryDetailsScreen({ categoryId }: CategoryDetailsScreenProps
                   </Typography>
                 </>
               )}
-              <Button
-                variant={hasGoal ? "secondary" : "primary"}
-                className="self-stretch"
-                onPress={openGoal}
-              >
-                <Button.Label>{hasGoal ? t("editGoal") : t("addGoal")}</Button.Label>
-              </Button>
+              {goalEditorEnabled ? (
+                <Button
+                  variant={hasGoal ? "secondary" : "primary"}
+                  className="self-stretch"
+                  onPress={openGoal}
+                >
+                  <Button.Label>{hasGoal ? t("editGoal") : t("addGoal")}</Button.Label>
+                </Button>
+              ) : null}
             </Surface>
           </View>
         ) : null}

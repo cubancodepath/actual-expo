@@ -43,6 +43,9 @@ export function BudgetScreen() {
   const sheet = sheetForMonth(month);
   const { sections, isLoading } = useBudgetSections();
   const goalsEnabled = useFeatureFlag("goalTemplatesEnabled");
+  // The structured goal editor is the `goalTemplatesUIEnabled` sub-feature; the
+  // chips/progress display stays under the parent `goalsEnabled`.
+  const goalEditorEnabled = useFeatureFlag("goalTemplatesUIEnabled");
   const overspentCount = useOverspentCount(sheet);
 
   // Persist an edited assigned amount: update the spreadsheet for instant UI,
@@ -345,7 +348,7 @@ export function BudgetScreen() {
                 })
               }
               onEditGoals={
-                goalsEnabled
+                goalEditorEnabled
                   ? () =>
                       router.push({
                         pathname: "/(auth)/budget/goal",

@@ -33,7 +33,7 @@ export type FeatureFlag =
  *
  * Omitted vs upstream: the CSV/OFX/QIF/CAMT import mappings and the web
  * sidebar/net-worth-chart dynamic keys — mobile has no bank-file import UI nor
- * a sidebar. `defaultCurrencyCustomSymbol` is an expo-only extension.
+ * a sidebar.
  */
 export type SyncedPrefs = Partial<
   Record<
@@ -47,7 +47,6 @@ export type SyncedPrefs = Partial<
     | "currencySymbolPosition"
     | "currencySpaceBetweenAmountAndSymbol"
     | "defaultCurrencyCode"
-    | "defaultCurrencyCustomSymbol"
     | "learn-categories"
     | "show-hidden-tags"
     | `hide-cleared-${string}`

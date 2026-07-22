@@ -19,7 +19,6 @@ export function useAmountInput(initialCents = 0) {
   useSyncedPrefs("numberFormat");
   useSyncedPrefs("hideFraction");
   useSyncedPrefs("defaultCurrencyCode");
-  useSyncedPrefs("defaultCurrencyCustomSymbol");
   useSyncedPrefs("currencySymbolPosition");
   useSyncedPrefs("currencySpaceBetweenAmountAndSymbol");
 

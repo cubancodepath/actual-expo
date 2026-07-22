@@ -35,7 +35,6 @@ export function CurrencyAmountDisplay({
   useSyncedPrefs("numberFormat");
   useSyncedPrefs("hideFraction");
   useSyncedPrefs("defaultCurrencyCode");
-  useSyncedPrefs("defaultCurrencyCustomSymbol");
   useSyncedPrefs("currencySymbolPosition");
   useSyncedPrefs("currencySpaceBetweenAmountAndSymbol");
 

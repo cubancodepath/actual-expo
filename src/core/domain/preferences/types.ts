@@ -30,8 +30,7 @@ export type PreferenceKey =
   | "isPrivacyEnabled"
   | "defaultCurrencyCode"
   | "currencySymbolPosition"
-  | "currencySpaceBetweenAmountAndSymbol"
-  | "defaultCurrencyCustomSymbol";
+  | "currencySpaceBetweenAmountAndSymbol";
 
 // Compile-time guard: every eagerly-loaded key is a real SyncedPref key.
 type _AssertKnownKeys = PreferenceKey extends keyof SyncedPrefs ? true : never;
@@ -49,7 +48,6 @@ export const PREFERENCE_DEFAULTS: Record<PreferenceKey, string> = {
   defaultCurrencyCode: "",
   currencySymbolPosition: "before",
   currencySpaceBetweenAmountAndSymbol: "false",
-  defaultCurrencyCustomSymbol: "",
 };
 
 export const DATE_FORMAT_OPTIONS: { value: DateFormatOption; label: string; example: string }[] = [

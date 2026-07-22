@@ -18,7 +18,6 @@ export function applyFormatConfig(prefs: {
   dateFormat: string;
   isPrivacyEnabled: string;
   defaultCurrencyCode: string;
-  defaultCurrencyCustomSymbol: string;
   currencySymbolPosition: string;
   currencySpaceBetweenAmountAndSymbol: string;
 }) {
@@ -30,10 +29,8 @@ export function applyFormatConfig(prefs: {
   setDateFormat(prefs.dateFormat);
 
   const currency = getCurrency(prefs.defaultCurrencyCode || "");
-  const effectiveSymbol = prefs.defaultCurrencyCustomSymbol || currency.symbol;
   setCurrencyConfig({
-    symbol: effectiveSymbol,
-    svgSymbol: prefs.defaultCurrencyCustomSymbol ? undefined : currency.svgSymbol,
+    symbol: currency.symbol,
     position: (prefs.currencySymbolPosition || "before") as "before" | "after",
     spaceBetween: prefs.currencySpaceBetweenAmountAndSymbol === "true",
   });

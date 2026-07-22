@@ -101,11 +101,8 @@ export function normalizeNumberFor(format: NumberFormatType, formatted: string):
 
 // ── Currency symbol config ────────────────────────────────────────────────────
 
-import type { SvgSymbolData } from "./currencies";
-
 let currencyConfig: {
   symbol: string;
-  svgSymbol?: SvgSymbolData;
   position: "before" | "after";
   spaceBetween: boolean;
 } = { symbol: "", position: "before", spaceBetween: false };
@@ -113,7 +110,6 @@ let currencyConfig: {
 /** Update the global currency symbol config. Called from preferencesStore. */
 export function setCurrencyConfig(config: {
   symbol: string;
-  svgSymbol?: SvgSymbolData;
   position: "before" | "after";
   spaceBetween: boolean;
 }) {
@@ -205,7 +201,6 @@ export type FormattedAmountParts = {
   sign: "" | "+" | "-";
   number: string;
   symbol: string;
-  svgSymbol?: SvgSymbolData;
   position: "before" | "after";
   spaceBetween: boolean;
 };
@@ -224,7 +219,6 @@ export function formatAmountParts(cents: number, showSign = false): FormattedAmo
     sign,
     number: formatted,
     symbol: currencyConfig.symbol,
-    svgSymbol: currencyConfig.svgSymbol,
     position: currencyConfig.position,
     spaceBetween: currencyConfig.spaceBetween,
   };

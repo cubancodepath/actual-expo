@@ -8,7 +8,9 @@ import { ScreenHeader } from "@/ui/ScreenHeader";
 import { useGlobalPref } from "@/lib/hooks/useGlobalPref";
 
 const THEME_OPTIONS = [
-  { value: "system", labelKey: "themeSystem" },
+  // "auto" = follow the OS ("System default"), matching upstream's theme
+  // vocabulary (light | dark | auto). Stored verbatim in the `theme` GlobalPref.
+  { value: "auto", labelKey: "themeSystem" },
   { value: "light", labelKey: "themeLight" },
   { value: "dark", labelKey: "themeDark" },
 ] as const;
@@ -20,7 +22,7 @@ export function DisplaySettingsScreen() {
   const accent = useThemeColor("accent");
 
   const [themePref, setThemeMode] = useGlobalPref("theme");
-  const themeMode = themePref ?? "system";
+  const themeMode = themePref ?? "auto";
 
   return (
     <ScreenHeader.ScrollArea>

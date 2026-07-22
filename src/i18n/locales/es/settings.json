@@ -33,7 +33,7 @@
   "repairSyncMessage": "Reconstruye el estado de sincronización local a partir del historial de este dispositivo y vuelve a sincronizar con el servidor. Usa esto si la sincronización sigue fallando o se queda atascada.",
   "repairSyncConfirm": "Reparar",
   "theme": "Tema",
-  "themeSystem": "Sistema",
+  "themeSystem": "Predeterminado del sistema",
   "themeLight": "Claro",
   "themeDark": "Oscuro",
   "languageSystem": "Sistema",

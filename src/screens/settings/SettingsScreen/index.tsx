@@ -1,27 +1,22 @@
 import { useState, type ReactNode } from "react";
 import { View } from "react-native";
-import * as Sentry from "@sentry/react-native";
+import Constants from "expo-constants";
 import { useRouter } from "expo-router";
+import { useQuery } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { Button, ListGroup, Separator, Typography, useThemeColor } from "heroui-native";
 import {
-  Bug,
-  FileText,
   FolderOpen,
   Languages,
   Link as LinkIcon,
-  ListFilter,
-  LogOut,
   Palette,
   PlusCircle,
-  RefreshCw,
   Server,
-  ShieldCheck,
   SlidersHorizontal,
   Smartphone,
   Trash2,
-  Users,
+  Unplug,
   X,
 } from "lucide-react-native";
 import { ScreenHeader } from "@/ui/ScreenHeader";
@@ -29,11 +24,12 @@ import { useSessionStore } from "@/stores/sessionStore";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import { useSyncStore } from "@/stores/syncStore";
 import { resetAllStores } from "@/stores/resetStores";
-import { resetSyncState, clearSwitchingFlag, loadClock, repairSync } from "@/core/sync";
+import { resetSyncState, clearSwitchingFlag, loadClock } from "@/core/sync";
+import { Timestamp } from "@/core/crdt";
 import { clearLocalData } from "@/core/db";
 import { closeBudget } from "@/services/budgetfiles";
 import { logout } from "@/services/authService";
-import { emitErrorEvent, toErrorCode } from "@/lib/errors/ErrorChannel";
+import { getServerInfo } from "@/services/api/server-info/serverInfo.api";
 import { dialog } from "@/ui/feedback/dialog/dialogStore";
 
 const ICON_SIZE = 20;
@@ -133,32 +129,37 @@ export function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation("settings");
   const { t: tc } = useTranslation("common");
-  // Cross-namespace error lookup — the typed `tc` can't express the
-  // `errors:<code>` key, so cast to a plain string lookup (matches upstream).
-  const tErr = (code: string) => (tc as unknown as (key: string) => string)(`errors:${code}`);
   const [muted, danger, foreground] = useThemeColor(["muted", "danger", "foreground"]);
 
   const serverUrl = useSessionStore((s) => s.serverUrl);
-  const { fileId, groupId, encryptKeyId, budgetName, lastSyncedTimestamp, isLocalOnly } =
-    useBudgetContextStore();
+  const { budgetName, lastSyncedTimestamp, isLocalOnly } = useBudgetContextStore();
   const lastSync = useSyncStore((s) => s.lastSync);
-  const syncStatus = useSyncStore((s) => s.status);
-  const syncNow = useSyncStore((s) => s.sync);
   const [, setLoggingOut] = useState(false);
-  const [repairing, setRepairing] = useState(false);
+
+  const appVersion = Constants.expoConfig?.version ?? "0.0.0";
+  const serverInfoQuery = useQuery({
+    queryKey: ["server-info", serverUrl],
+    queryFn: () => getServerInfo(serverUrl),
+    enabled: !!serverUrl && !isLocalOnly,
+    staleTime: 1000 * 60 * 60,
+  });
+  const serverVersion = serverInfoQuery.data?.version;
+  // Mirror upstream's ServerContext: `v${version}` or "N/A" (v prefix + fallback live
+  // in the value, not the label). Client version always has the v prefix.
+  const clientVersionDisplay = `v${appVersion}`;
+  const serverVersionDisplay =
+    serverVersion && serverVersion !== "0.0.0" ? `v${serverVersion}` : "N/A";
 
   const mutedIcon = (Icon: typeof Server) => <Icon size={ICON_SIZE} color={muted} />;
 
-  const lastSyncText =
-    syncStatus === "syncing"
-      ? t("syncing")
-      : syncStatus === "error"
-        ? t("syncFailedTapToRetry")
-        : lastSync
-          ? lastSync.toLocaleTimeString()
-          : lastSyncedTimestamp
-            ? lastSyncedTimestamp.slice(0, 16)
-            : tc("never");
+  // `lastSyncedTimestamp` is an HLC timestamp (`<ISO>-<counter>-<node>`), not a plain
+  // ISO string — parse it via Timestamp to get the millis before formatting.
+  const persistedSync = lastSyncedTimestamp ? Timestamp.parse(lastSyncedTimestamp) : null;
+  const lastSyncedText = lastSync
+    ? lastSync.toLocaleString()
+    : persistedSync
+      ? new Date(persistedSync.millis()).toLocaleString()
+      : tc("never");
 
   async function handleDeleteLocal() {
     const ok = await dialog.confirm({
@@ -182,8 +183,10 @@ export function SettingsScreen() {
   }
 
   async function handleConnectToServer() {
-    await closeBudget();
+    // logout() first so hasToken flips false in the same commit that clears the budget
+    // context — otherwise the (files) guard briefly routes to the file list.
     await logout();
+    await closeBudget();
   }
 
   async function handleLogout() {
@@ -196,34 +199,12 @@ export function SettingsScreen() {
     if (!ok) return;
     setLoggingOut(true);
     try {
-      await closeBudget();
+      // logout() first: it batches hasToken=false + budget-context reset into one commit
+      // → routes straight to login. closeBudget() then closes the DB after (auth) unmounts.
       await logout();
+      await closeBudget();
     } finally {
       setLoggingOut(false);
-    }
-  }
-
-  async function handleRepairSync() {
-    const ok = await dialog.confirm({
-      title: t("repairSyncTitle"),
-      message: t("repairSyncMessage"),
-      confirmLabel: t("repairSyncConfirm"),
-    });
-    if (!ok) return;
-    setRepairing(true);
-    try {
-      await repairSync();
-      await useSyncStore.getState().sync({ force: true });
-      // sync() never rejects — read the badge state it recorded.
-      const { status, lastErrorCode } = useSyncStore.getState();
-      if (status === "error" && lastErrorCode) {
-        await dialog.alert({ title: tc("error"), message: tErr(lastErrorCode) });
-      }
-    } catch (e) {
-      emitErrorEvent(e);
-      await dialog.alert({ title: tc("error"), message: tErr(toErrorCode(e)) });
-    } finally {
-      setRepairing(false);
     }
   }
 
@@ -234,8 +215,10 @@ export function SettingsScreen() {
       >
         {/* Current Budget */}
         <View className="mb-6">
-          <SectionLabel>{t("currentBudget")}</SectionLabel>
-          <Typography className="mb-3 ml-2 text-2xl font-bold text-foreground">
+          <Typography className="ml-2 text-sm font-medium text-muted">
+            {t("currentBudget")}
+          </Typography>
+          <Typography className="mb-2 ml-2 text-lg font-bold text-foreground">
             {budgetName || t("defaultBudgetName")}
           </Typography>
           <ListGroup>
@@ -255,24 +238,6 @@ export function SettingsScreen() {
               icon={mutedIcon(FolderOpen)}
               title={t("openBudget")}
               onPress={() => router.push("/(auth)/change-budget")}
-            />
-          </ListGroup>
-        </View>
-
-        {/* Budget Data */}
-        <View className="mb-6">
-          <SectionLabel>{t("budgetData")}</SectionLabel>
-          <ListGroup>
-            <NavRow
-              icon={mutedIcon(Users)}
-              title={t("payees")}
-              onPress={() => router.push("/(auth)/settings/payees")}
-            />
-            <Separator className="mx-4" />
-            <NavRow
-              icon={mutedIcon(ListFilter)}
-              title={t("rules")}
-              onPress={() => router.push("/(auth)/settings/rules")}
             />
           </ListGroup>
         </View>
@@ -324,49 +289,11 @@ export function SettingsScreen() {
         ) : (
           <View className="mb-6">
             <SectionLabel>{t("server")}</SectionLabel>
-            <ListGroup className="mb-3">
+            <ListGroup>
               <ValueRow icon={mutedIcon(LinkIcon)} label={t("url")} value={serverUrl} />
               <Separator className="mx-4" />
-              <ValueRow
-                icon={mutedIcon(RefreshCw)}
-                label={t("lastSync")}
-                value={lastSyncText}
-                valueColor={syncStatus === "error" ? danger : undefined}
-                onPress={syncStatus === "error" ? () => syncNow() : undefined}
-              />
-              <Separator className="mx-4" />
-              <ValueRow
-                icon={mutedIcon(FileText)}
-                label={t("fileId")}
-                value={fileId ? `${fileId.slice(0, 8)}…` : ""}
-              />
-              <Separator className="mx-4" />
-              <ValueRow
-                icon={mutedIcon(Users)}
-                label={t("groupId")}
-                value={groupId ? `${groupId.slice(0, 8)}…` : ""}
-              />
-              {encryptKeyId ? (
-                <>
-                  <Separator className="mx-4" />
-                  <ValueRow
-                    icon={mutedIcon(ShieldCheck)}
-                    label={t("encryption")}
-                    value={`${encryptKeyId.slice(0, 8)}…`}
-                  />
-                </>
-              ) : null}
-            </ListGroup>
-            <ListGroup>
               <ActionRow
-                icon={mutedIcon(RefreshCw)}
-                title={t("repairSync")}
-                onPress={handleRepairSync}
-                disabled={repairing}
-              />
-              <Separator className="mx-4" />
-              <ActionRow
-                icon={<LogOut size={ICON_SIZE} color={danger} />}
+                icon={<Unplug size={ICON_SIZE} color={danger} />}
                 title={t("disconnectFromServer")}
                 titleClassName="text-danger"
                 onPress={handleLogout}
@@ -375,25 +302,22 @@ export function SettingsScreen() {
           </View>
         )}
 
-        {/* Debug: Sentry test */}
-        {__DEV__ ? (
-          <View className="mb-6">
-            <SectionLabel>Debug</SectionLabel>
-            <ListGroup>
-              <ActionRow
-                icon={<Bug size={ICON_SIZE} color={danger} />}
-                title="Test Sentry Error"
-                onPress={async () => {
-                  Sentry.captureException(new Error("Test error from Settings"));
-                  await dialog.alert({
-                    title: "Sentry",
-                    message: "Test error sent! Check your Sentry dashboard.",
-                  });
-                }}
-              />
-            </ListGroup>
-          </View>
-        ) : null}
+        {/* Subtle build/sync footer */}
+        <View className="mt-2 items-center">
+          <Typography className="text-xs text-muted">
+            {t("clientVersion", { version: clientVersionDisplay })}
+          </Typography>
+          {!isLocalOnly ? (
+            <Typography className="text-xs text-muted">
+              {t("serverVersion", { version: serverVersionDisplay })}
+            </Typography>
+          ) : null}
+          {!isLocalOnly ? (
+            <Typography className="text-xs text-muted">
+              {t("appLastSynced", { date: lastSyncedText })}
+            </Typography>
+          ) : null}
+        </View>
       </ScreenHeader.Body>
 
       <ScreenHeader.Floating>

@@ -9,7 +9,7 @@
 import { findOrCreatePayee } from "../payees";
 import { batchMessages } from "@/core/sync";
 import { undoable } from "@/core/sync/undo";
-import { getCurrentPosition } from "@/services/locationService";
+import { getCurrentPosition } from "@/core/platform/location";
 import { isFeatureEnabled } from "../preferences";
 import { createPayeeLocation } from "../payee-locations";
 import {

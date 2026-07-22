@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
 
-// save.ts (pulled in via ../save) imports @/services/locationService →
+// save.ts (pulled in via ../save) imports @/core/platform/location →
 // expo-location, which has no vitest alias. Stub it — same rationale as
 // save.test.ts.
 vi.mock("expo-location", () => ({

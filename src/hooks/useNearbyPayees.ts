@@ -8,7 +8,7 @@
 import { useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
-import { getCurrentPosition } from "@/services/locationService";
+import { getCurrentPosition } from "@/core/platform/location";
 import { getNearbyPayees } from "@/core/domain/payee-locations";
 import type { NearbyPayee } from "@/core/domain/payee-locations/types";
 

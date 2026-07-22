@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { AppState } from "react-native";
-import { requestLocationPermission, getLocationPermissionStatus } from "@/services/locationService";
+import { requestLocationPermission, getLocationPermissionStatus } from "@/core/platform/location";
 
 export function useLocationPermission() {
   const [status, setStatus] = useState<"granted" | "denied" | "undetermined">("undetermined");

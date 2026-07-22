@@ -14,7 +14,7 @@
 #      — cross-domain code must live in ui/, lib/ or stores/.
 #   4. src/core imports React-ecosystem packages (react, react-native, @tanstack/*,
 #      zustand, heroui-native, uniwind, expo-router) — react-query wiring lives in
-#      src/lib/query/. expo-sqlite, expo-crypto and expo-file-system stay allowed
+#      src/lib/query/. expo-sqlite, expo-crypto, expo-file-system and expo-location stay allowed
 #      (core's native deps, wrapped by src/core/platform/*).
 #   5. src/core imports app-side lib modules (@/lib/errors, @/lib/query) — core only
 #      THROWS typed ActualErrors; the error bus and react-query wiring are app-level.

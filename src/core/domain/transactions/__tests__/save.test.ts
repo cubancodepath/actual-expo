@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
 
-// save.ts imports @/services/locationService → expo-location, which has no
+// save.ts imports @/core/platform/location → expo-location, which has no
 // vitest alias/mock (unlike expo-sqlite/expo-crypto/etc in vitest.config.ts)
 // and fails to parse under Node ("Unknown file extension .ts" inside
 // expo-modules-core). savePayeeLocationIfEnabled() is fire-and-forget and

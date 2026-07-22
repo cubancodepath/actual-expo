@@ -36,7 +36,7 @@ function FeatureFlagRow({
   async function handleToggle(value: boolean) {
     if (flag === "payeeLocations" && value) {
       // Nearby payees needs location permission — don't enable if denied.
-      const { requestLocationPermission } = await import("@/services/locationService");
+      const { requestLocationPermission } = await import("@/core/platform/location");
       const granted = await requestLocationPermission();
       if (!granted) return;
     }

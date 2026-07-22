@@ -45,6 +45,16 @@
   "hideDecimalPlaces": "Ocultar Decimales",
   "calendar": "Calendario",
   "firstDayOfWeek": "Primer Día de la Semana",
+  "formattingNote": "El formato no afecta cómo se guardan los datos del presupuesto, y puede cambiarse en cualquier momento.",
+  "weekdays": {
+    "0": "Domingo",
+    "1": "Lunes",
+    "2": "Martes",
+    "3": "Miércoles",
+    "4": "Jueves",
+    "5": "Viernes",
+    "6": "Sábado"
+  },
   "budgetData": "Datos del Presupuesto",
   "rules": "Reglas",
   "searchPayees": "Buscar beneficiarios…",

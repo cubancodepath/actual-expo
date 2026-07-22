@@ -1,12 +1,10 @@
 import { Stack } from "expo-router";
-import { useTranslation } from "react-i18next";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { themedScreenOptions } from "@/lib/screenOptions";
 
 export default function SettingsLayout() {
   const theme = useTheme();
   const screen = themedScreenOptions(theme);
-  const { t } = useTranslation("settings");
 
   return (
     <Stack screenOptions={{ ...screen, headerBackButtonDisplayMode: "minimal" }}>
@@ -14,8 +12,10 @@ export default function SettingsLayout() {
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="display" options={{ headerShown: false }} />
       <Stack.Screen name="language" options={{ headerShown: false }} />
-      {/* Still legacy — keeps the native themed header. */}
-      <Stack.Screen name="budget" options={{ title: t("budgetSettings") }} />
+      <Stack.Screen name="budget" options={{ headerShown: false }} />
+      <Stack.Screen name="number-format" options={{ headerShown: false }} />
+      <Stack.Screen name="date-format" options={{ headerShown: false }} />
+      <Stack.Screen name="first-day-of-week" options={{ headerShown: false }} />
     </Stack>
   );
 }

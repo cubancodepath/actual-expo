@@ -6,7 +6,12 @@ export type DateFormatOption =
   | "dd.MM.yyyy"
   | "dd-MM-yyyy";
 
-export type NumberFormatOption = "comma-dot" | "dot-comma" | "space-comma" | "apostrophe-dot";
+export type NumberFormatOption =
+  | "comma-dot"
+  | "dot-comma"
+  | "space-comma"
+  | "apostrophe-dot"
+  | "comma-dot-in";
 
 import type { SyncedPrefs } from "./prefs.types";
 
@@ -56,17 +61,23 @@ export const DATE_FORMAT_OPTIONS: { value: DateFormatOption; label: string; exam
   { value: "dd-MM-yyyy", label: "DD-MM-YYYY", example: "04-03-2026" },
 ];
 
+// Mirror of upstream `numberFormats` (packages/loot-core/src/shared/util.ts):
+// the shown value IS the number example, and it swaps to `labelNoFraction`
+// when "Hide decimal places" is on. ` ` = narrow no-break space.
 export const NUMBER_FORMAT_OPTIONS: {
   value: NumberFormatOption;
   label: string;
-  example: string;
+  labelNoFraction: string;
 }[] = [
-  { value: "comma-dot", label: "Comma & Dot", example: "1,000.33" },
-  { value: "dot-comma", label: "Dot & Comma", example: "1.000,33" },
-  { value: "space-comma", label: "Space & Comma", example: "1 000,33" },
-  { value: "apostrophe-dot", label: "Apostrophe & Dot", example: "1'000.33" },
+  { value: "comma-dot", label: "1,000.33", labelNoFraction: "1,000" },
+  { value: "dot-comma", label: "1.000,33", labelNoFraction: "1.000" },
+  { value: "space-comma", label: "1 000,33", labelNoFraction: "1 000" },
+  { value: "apostrophe-dot", label: "1'000.33", labelNoFraction: "1'000" },
+  { value: "comma-dot-in", label: "1,00,000.33", labelNoFraction: "1,00,000" },
 ];
 
+// Follows Pikaday `firstDay` numbering (0 = Sunday). Labels for the UI are
+// localized at render via the `weekdays` i18n keys — these are fallbacks.
 export const DAY_OF_WEEK_OPTIONS: { value: string; label: string }[] = [
   { value: "0", label: "Sunday" },
   { value: "1", label: "Monday" },

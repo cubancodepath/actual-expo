@@ -45,6 +45,16 @@
   "hideDecimalPlaces": "Hide Decimal Places",
   "calendar": "Calendar",
   "firstDayOfWeek": "First Day of Week",
+  "formattingNote": "Formatting does not affect how budget data is stored, and can be changed at any time.",
+  "weekdays": {
+    "0": "Sunday",
+    "1": "Monday",
+    "2": "Tuesday",
+    "3": "Wednesday",
+    "4": "Thursday",
+    "5": "Friday",
+    "6": "Saturday"
+  },
   "budgetData": "Budget Data",
   "rules": "Rules",
   "searchPayees": "Search payees…",

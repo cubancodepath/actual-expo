@@ -25,6 +25,24 @@ const FORMAT_TO_LOCALE: Record<NumberFormatType, string> = {
   "comma-dot-in": "en-IN",
 };
 
+/**
+ * BCP-47 locale that reproduces a given number format's grouping/decimal
+ * separators. Exposed so React components (e.g. `Money`) can feed heroui's
+ * `NumberValue` the SAME Intl locale the engine uses — keeping one source of
+ * truth instead of a second, divergent formatter.
+ */
+export function localeForNumberFormat(format: NumberFormatType): string {
+  return FORMAT_TO_LOCALE[format] ?? "en-US";
+}
+
+/** Fraction digits for money display: 0 when decimals are hidden, else 2. */
+export function getFractionDigits(hideFraction: boolean): number {
+  // TODO(currency): upstream derives this from `activeCurrency.decimalPlaces`
+  // (e.g. JPY = 0). Pair with desktop-client/src/hooks/useFormat.ts when the
+  // currency UI lands.
+  return hideFraction ? 0 : 2;
+}
+
 // Module-level config — updated via setNumberFormat()
 let numberConfig: { format: NumberFormatType; hideFraction: boolean } = {
   format: "comma-dot",
@@ -62,6 +80,23 @@ function getFormatterShort(): Intl.NumberFormat {
     });
   }
   return cachedFormatterShort;
+}
+
+/**
+ * Normalize the apostrophe grouping separator to U+2019, matching upstream's
+ * `getNumberFormat` (Intl may emit a keyboard U+0027 depending on the ICU
+ * version). No-op for every other format.
+ */
+function normalizeNumber(formatted: string): string {
+  return normalizeNumberFor(numberConfig.format, formatted);
+}
+
+/**
+ * Pure variant of {@link normalizeNumber} for consumers that format outside the
+ * engine (e.g. `Money` feeding heroui's `NumberValue`) and know their format.
+ */
+export function normalizeNumberFor(format: NumberFormatType, formatted: string): string {
+  return format === "apostrophe-dot" ? formatted.replace(/'/g, "’") : formatted;
 }
 
 // ── Currency symbol config ────────────────────────────────────────────────────
@@ -136,7 +171,7 @@ export function setPrivacyMode(enabled: boolean): void {
  * Positive values get a "+" prefix, negative get "-", zero shows "0.00".
  */
 export function formatAmount(cents: number): string {
-  const formatted = getFormatter().format(Math.abs(cents) / 100);
+  const formatted = normalizeNumber(getFormatter().format(Math.abs(cents) / 100));
   let result: string;
   if (cents > 0) result = `+${formatted}`;
   else if (cents < 0) result = `-${formatted}`;
@@ -149,7 +184,7 @@ export function formatAmount(cents: number): string {
  * Used for balances where positive values don't need a sign.
  */
 export function formatBalance(cents: number): string {
-  const formatted = getFormatter().format(Math.abs(cents) / 100);
+  const formatted = normalizeNumber(getFormatter().format(Math.abs(cents) / 100));
   const result = cents < 0 ? `-${formatted}` : formatted;
   return applyCurrencyStyling(result);
 }
@@ -159,7 +194,7 @@ export function formatBalance(cents: number): string {
  * Used for compact display where precision isn't needed.
  */
 export function formatAmountShort(cents: number): string {
-  const formatted = getFormatterShort().format(Math.abs(cents) / 100);
+  const formatted = normalizeNumber(getFormatterShort().format(Math.abs(cents) / 100));
   const result = cents < 0 ? `-${formatted}` : formatted;
   return applyCurrencyStyling(result);
 }
@@ -180,7 +215,7 @@ export type FormattedAmountParts = {
  * Used by Amount and CurrencyInput when an SVG symbol is active.
  */
 export function formatAmountParts(cents: number, showSign = false): FormattedAmountParts {
-  const formatted = getFormatter().format(Math.abs(cents) / 100);
+  const formatted = normalizeNumber(getFormatter().format(Math.abs(cents) / 100));
   let sign: "" | "+" | "-" = "";
   if (showSign && cents > 0) sign = "+";
   else if (cents < 0) sign = "-";

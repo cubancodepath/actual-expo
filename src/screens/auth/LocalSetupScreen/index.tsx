@@ -3,7 +3,7 @@ import { ScrollView, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Button, ListGroup, Spinner, Typography, useThemeColor } from "heroui-native";
-import { getBudgets, type BudgetMetadata } from "@/services/budgetMetadata";
+import { getBudgets, type BudgetMetadata } from "@/core/server/prefs";
 import { loadBudget, type ReconciledBudgetFile } from "@/services/budgetfiles";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import { BudgetFileRow } from "@/ui/BudgetFileRow";

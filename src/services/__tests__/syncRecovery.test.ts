@@ -39,12 +39,12 @@ vi.mock("@/stores/budgetContextStore", () => ({
     getState: () => ({ activeBudgetId: "budget-1", setBudgetContext: setBudgetContextMock }),
   },
 }));
-vi.mock("@/services/budgetMetadata", () => ({
+vi.mock("@/core/server/prefs", () => ({
   readMetadata: readMetadataMock,
   updateMetadata: updateMetadataMock,
   deleteBudgetDir: deleteBudgetDirMock,
 }));
-vi.mock("@/services/api/budgetFiles.api", () => ({
+vi.mock("@/core/server/cloud-storage", () => ({
   getRemoteFiles: listRemoteBudgetFilesMock,
 }));
 vi.mock("@/services/budgetfiles", () => ({

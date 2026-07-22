@@ -32,7 +32,7 @@ import { useIsConfigured, getIsConfigured } from "@/stores/session.selectors";
 import { listen } from "@/core/sync/syncEvents";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { isSwitchingBudget, setSyncingMode } from "@/core/sync";
-import { ensureBudgetsDir, budgetExists } from "@/services/budgetMetadata";
+import { ensureBudgetsDir, budgetExists } from "@/core/server/prefs";
 import { loadBudget } from "@/services/budgetfiles";
 import { updateAppBadge } from "@/lib/badge";
 import { syncShortcutCache } from "@/lib/syncShortcutCache";

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getRemoteFiles } from "../budgetFiles.api";
+import { getRemoteFiles } from "@/core/server/cloud-storage";
 import {
   expectActualError,
   fetchMock,

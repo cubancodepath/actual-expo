@@ -10,7 +10,7 @@ import {
 import { resetAllStores } from "../stores/resetStores";
 import { useSessionStore } from "@/stores/sessionStore";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
-import { getBudgetDir, readMetadata, updateMetadata, deleteBudgetDir } from "./budgetMetadata";
+import { getBudgetDir, readMetadata, updateMetadata, deleteBudgetDir } from "@/core/server/prefs";
 import * as encryption from "@/core/encryption";
 import { loadKeyForBudget } from "@/core/encryption/keys";
 import { ActualError } from "@/core/errors";

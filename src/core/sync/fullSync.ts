@@ -161,7 +161,7 @@ async function _fullSync(
 
     const activeBudgetId = prefs.activeBudgetId;
     if (activeBudgetId) {
-      import("@/services/budgetMetadata").then(({ updateMetadata }) =>
+      import("@/core/server/prefs").then(({ updateMetadata }) =>
         updateMetadata(activeBudgetId, { lastSyncedTimestamp: syncTimestamp }).catch(() => {}),
       );
     }

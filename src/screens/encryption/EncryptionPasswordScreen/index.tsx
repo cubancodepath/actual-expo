@@ -108,7 +108,7 @@ export function EncryptionPasswordScreen() {
         encryptKeyId: undefined,
         groupId: result.groupId,
       });
-      const { readMetadata } = await import("@/services/budgetMetadata");
+      const { readMetadata } = await import("@/core/server/prefs");
       const meta = await readMetadata(activeBudgetId);
       if (meta?.encryptKeyId) {
         useBudgetContextStore.getState().setBudgetContext({ encryptKeyId: meta.encryptKeyId });

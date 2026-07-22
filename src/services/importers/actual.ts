@@ -10,7 +10,7 @@
 import { EncodingType, makeDirectoryAsync, writeAsStringAsync } from "expo-file-system/legacy";
 import { unzipSync } from "fflate";
 
-import { getBudgetDir, idFromBudgetName, writeMetadata } from "@/services/budgetMetadata";
+import { getBudgetDir, idFromBudgetName, writeMetadata } from "@/core/server/prefs";
 
 function uint8ToBase64(bytes: Uint8Array): string {
   let binary = "";

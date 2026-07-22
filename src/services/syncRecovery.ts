@@ -5,8 +5,8 @@ import { clearLocalSyncState, fullSync, setSyncingMode } from "@/core/sync";
 import { useSessionStore } from "@/stores/sessionStore";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import { useSyncStore } from "@/stores/syncStore";
-import { readMetadata, updateMetadata, deleteBudgetDir } from "./budgetMetadata";
-import { getRemoteFiles } from "./api/budgetFiles.api";
+import { readMetadata, updateMetadata, deleteBudgetDir } from "@/core/server/prefs";
+import { getRemoteFiles } from "@/core/server/cloud-storage";
 
 /**
  * Recovery from server file-state sync rejections (sync/file-* codes) —

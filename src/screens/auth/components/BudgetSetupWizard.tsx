@@ -36,7 +36,7 @@ import {
   DEFAULT_CATEGORY_GROUPS,
   getDefaultCategorySelection,
   type CategorySelection,
-} from "@/services/seedBudget";
+} from "@/core/server/budgetfiles/seed";
 import { useSyncStore } from "@/stores/syncStore";
 import { createBudget, uploadBudget } from "@/services/budgetfiles";
 import type { Theme } from "@/design-system/tokens";

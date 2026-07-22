@@ -46,7 +46,7 @@ export async function resetSync(
   ctx: EncryptionContext,
   keyState?: KeyState,
 ): Promise<{ groupId?: string } | ServiceError> {
-  const { updateMetadata, readMetadata } = await import("@/services/budgetMetadata");
+  const { updateMetadata, readMetadata } = await import("@/core/server/prefs");
   const { saveKey } = await import("@/core/platform/keyStore");
 
   if (!keyState) {

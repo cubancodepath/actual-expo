@@ -102,9 +102,6 @@ export const useBudgetContextStore = create<BudgetContextState>()(
           return;
         }
 
-        // Drive the global open-budget loader for the whole blocking setup, so it
-        // outlives the file-picker screen unmounting on the activeBudgetId swap.
-        set({ isOpening: true });
         try {
           // 1. Close previous budget — settle sync + close DB, but do NOT resetAllStores()
           // here. Resetting stores triggers immediate re-renders with empty/0 values on
@@ -261,8 +258,6 @@ export const useBudgetContextStore = create<BudgetContextState>()(
             .closeBudget()
             .catch(() => {});
           throw error;
-        } finally {
-          set({ isOpening: false });
         }
       },
 
@@ -284,8 +279,15 @@ export const useBudgetContextStore = create<BudgetContextState>()(
       },
 
       async closeAndLoadBudget(localId) {
-        // loadBudget already closes the previous budget first.
-        await get().loadBudget(localId);
+        set({ isOpening: true });
+        try {
+          // loadBudget already closes the previous budget first.
+          await get().loadBudget(localId);
+          set({ isOpening: false });
+        } catch (e) {
+          set({ isOpening: false });
+          throw e;
+        }
       },
 
       async closeAndDownloadBudget(file, serverUrl, token) {
@@ -300,8 +302,15 @@ export const useBudgetContextStore = create<BudgetContextState>()(
           name: file.name,
           encryptKeyId: file.encryptKeyId,
         };
-        const localId = await downloadBudget(serverUrl, token, budgetFile);
-        await get().loadBudget(localId);
+        set({ isOpening: true });
+        try {
+          const localId = await downloadBudget(serverUrl, token, budgetFile);
+          await get().loadBudget(localId);
+          set({ isOpening: false });
+        } catch (e) {
+          set({ isOpening: false });
+          throw e;
+        }
       },
 
       async deleteBudget(budgetId) {

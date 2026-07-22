@@ -317,10 +317,8 @@ function RootLayout() {
                   <UndoToast />
                   <SyncConflictDialog />
                   <DialogHost />
-                  <ErrorChannelConsumer />
-                  {/* Global open-budget loader — outlives the file-picker screen so it
-                      stays up through the (files)→(auth) swap until the budget is ready. */}
-                  <LoadingOverlay visible={isOpening} />
+
+                  <LoadingOverlay visible={isOpening} asModal={false} />
                 </HeroUINativeProvider>
               </ThemeProvider>
             </NavigationThemeProvider>

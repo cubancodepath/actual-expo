@@ -2,7 +2,7 @@ import { RefreshControl, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
-import { LinkButton, ListGroup, Spinner, Typography, useThemeColor } from "heroui-native";
+import { Button, LinkButton, ListGroup, Spinner, Typography, useThemeColor } from "heroui-native";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import { ScreenHeader } from "@/ui/ScreenHeader";
 import { InlineError } from "@/ui/feedback/InlineError";
@@ -10,6 +10,7 @@ import { BudgetFileRow } from "@/ui/BudgetFileRow";
 import { LoadingOverlay } from "@/ui/LoadingOverlay";
 import { useBudgetFiles, fileKey } from "@/screens/files/hooks/useBudgetFiles";
 import type { ReconciledBudgetFile } from "@/core/server/budgetfiles/app";
+import { Plus } from "lucide-react-native";
 
 /** In-app budget switcher, presented as a full-screen modal. */
 export function ChangeBudgetScreen() {
@@ -74,7 +75,10 @@ export function ChangeBudgetScreen() {
     <View className="flex-1">
       <ScreenHeader.ScrollArea>
         <ScreenHeader.Body
-          contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: insets.bottom + 64 }}
+          contentContainerStyle={{
+            paddingHorizontal: 24,
+            paddingBottom: insets.bottom + 64,
+          }}
           scrollEnabled={!isSwitching}
           refreshControl={
             <RefreshControl
@@ -119,9 +123,13 @@ export function ChangeBudgetScreen() {
             <ScreenHeader.Back />
             <ScreenHeader.Title>{t("nav.switchBudget")}</ScreenHeader.Title>
             <ScreenHeader.Actions>
-              <LinkButton size="sm" onPress={() => router.push("/(auth)/new-budget")}>
-                <LinkButton.Label className="text-accent">{ta("new")}</LinkButton.Label>
-              </LinkButton>
+              <Button
+                variant="tertiary"
+                isIconOnly
+                onPress={() => router.push("/(auth)/new-budget")}
+              >
+                <Plus color={accent} />
+              </Button>
             </ScreenHeader.Actions>
           </ScreenHeader>
         </ScreenHeader.Floating>

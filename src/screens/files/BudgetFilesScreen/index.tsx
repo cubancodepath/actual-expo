@@ -26,6 +26,7 @@ import { FileActionsSheet, type FileAction } from "@/screens/files/components/Fi
 import { useBudgetFiles, fileKey } from "@/screens/files/hooks/useBudgetFiles";
 import { buildActionRequest } from "./confirmRequests";
 import type { ReconciledBudgetFile } from "@/core/server/budgetfiles/app";
+import { Plus } from "lucide-react-native";
 
 const StyledIonicons = withUniwind(Ionicons);
 
@@ -124,7 +125,10 @@ export function BudgetFilesScreen() {
     <View className="flex-1">
       <ScreenHeader.ScrollArea>
         <ScreenHeader.Body
-          contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: insets.bottom + 64 }}
+          contentContainerStyle={{
+            paddingHorizontal: 24,
+            paddingBottom: insets.bottom + 64,
+          }}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={accent} />
           }
@@ -183,15 +187,19 @@ export function BudgetFilesScreen() {
           <View style={{ height: insets.top }} />
           <ScreenHeader>
             <ScreenHeader.Back>
-              <LinkButton size="sm" onPress={handleLogout}>
-                <LinkButton.Label className="text-muted">{t("logOut")}</LinkButton.Label>
-              </LinkButton>
+              <Button onPress={handleLogout} variant="tertiary">
+                {t("logOut")}
+              </Button>
             </ScreenHeader.Back>
             <ScreenHeader.Title>{t("openBudget")}</ScreenHeader.Title>
             <ScreenHeader.Actions>
-              <LinkButton size="sm" onPress={() => router.push("/(files)/new-budget")}>
-                <LinkButton.Label className="text-accent">{t("new")}</LinkButton.Label>
-              </LinkButton>
+              <Button
+                variant="secondary"
+                isIconOnly
+                onPress={() => router.push("/(files)/new-budget")}
+              >
+                <Plus color={accent} />
+              </Button>
             </ScreenHeader.Actions>
           </ScreenHeader>
         </ScreenHeader.Floating>

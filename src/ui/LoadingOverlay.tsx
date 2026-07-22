@@ -7,19 +7,48 @@ type LoadingOverlayProps = {
   visible: boolean;
   /** Optional override; defaults to the generic `common:justAMoment`. */
   message?: string;
+  /**
+   * When `true` (default) the overlay renders through a native `Modal` so it
+   * covers the entire screen regardless of where it sits in the tree. Set it
+   * `false` for an overlay rendered at the app ROOT (a full-screen sibling above
+   * the navigator): a plain absolute view then covers everything AND composes
+   * with native modals — crucial when another native `Modal` may mount/unmount
+   * underneath, since two overlapping native modals can leave one stuck.
+   */
+  asModal?: boolean;
 };
 
 /**
  * Full-screen blocking HUD for slow, non-cancellable operations (opening a
- * budget, enabling encryption, resetting sync, …). Rendered through a native
- * `Modal` so it covers the **entire** screen regardless of where it sits in the
- * tree (a plain `absolute inset-0` would only cover its nearest container). A
- * frosted-blur backdrop (same material as the ScreenHeader) fades in and
- * swallows touches. The label is intentionally generic — same overlay everywhere.
+ * budget, enabling encryption, resetting sync, …). A frosted-blur backdrop (same
+ * material as the ScreenHeader) fades in and swallows touches. The label is
+ * intentionally generic — same overlay everywhere.
  */
-export function LoadingOverlay({ visible, message }: LoadingOverlayProps) {
+export function LoadingOverlay({ visible, message, asModal = true }: LoadingOverlayProps) {
   const { t } = useTranslation("common");
   const accent = useThemeColor("accent");
+
+  const content = (
+    <View className="flex-1 items-center justify-center" pointerEvents="box-only">
+      <BlurView
+        tint="systemChromeMaterial"
+        intensity={60}
+        experimentalBlurMethod="dimezisBlurView"
+        style={StyleSheet.absoluteFill}
+      />
+      <Spinner size="lg" color={accent} />
+      <Typography type="body" weight="semibold" className="mt-4 text-center">
+        {message ?? t("justAMoment")}
+      </Typography>
+    </View>
+  );
+
+  if (!asModal) {
+    // Plain root overlay — no native Modal, so it never conflicts with the
+    // picker screens' own Modal as they mount/unmount across a budget switch.
+    if (!visible) return null;
+    return <View style={StyleSheet.absoluteFill}>{content}</View>;
+  }
 
   return (
     <Modal
@@ -29,18 +58,7 @@ export function LoadingOverlay({ visible, message }: LoadingOverlayProps) {
       statusBarTranslucent
       onRequestClose={() => {}}
     >
-      <View className="flex-1 items-center justify-center" pointerEvents="box-only">
-        <BlurView
-          tint="systemChromeMaterial"
-          intensity={60}
-          experimentalBlurMethod="dimezisBlurView"
-          style={StyleSheet.absoluteFill}
-        />
-        <Spinner size="lg" color={accent} />
-        <Typography type="body" weight="semibold" className="mt-4 text-center">
-          {message ?? t("justAMoment")}
-        </Typography>
-      </View>
+      {content}
     </Modal>
   );
 }

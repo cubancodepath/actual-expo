@@ -73,18 +73,20 @@ export function BudgetFileRow({
     .filter(Boolean)
     .join(" · ");
 
-  const busy = isSelecting || isActionInProgress;
+  // Locks interaction while selecting/acting; selecting itself no longer paints a
+  // spinner (the full-screen open-budget loader covers the row).
+  const locked = isSelecting || isActionInProgress;
 
   return (
     <PressableFeedback
       animation={false}
-      onLongPress={busy ? undefined : onLongPress}
-      onPress={isActive || busy ? undefined : onPress}
+      onLongPress={locked ? undefined : onLongPress}
+      onPress={isActive || locked ? undefined : onPress}
     >
       <PressableFeedback.Scale>
         <ListGroup.Item
           className="flex-row items-center px-4 py-2 gap-4"
-          disabled={isActive || busy}
+          disabled={isActive || locked}
         >
           <ListGroup.ItemPrefix>
             <StateIcon size={22} color={stateColor} />
@@ -95,9 +97,13 @@ export function BudgetFileRow({
             </ListGroup.ItemTitle>
             <ListGroup.ItemDescription numberOfLines={1}>{subtitle}</ListGroup.ItemDescription>
           </ListGroup.ItemContent>
-          {(busy || isActive) && (
+          {(isActionInProgress || isActive) && (
             <ListGroup.ItemSuffix>
-              {busy ? <Spinner size="sm" color={accent} /> : <Check size={20} color={accent} />}
+              {isActionInProgress ? (
+                <Spinner size="sm" color={accent} />
+              ) : (
+                <Check size={20} color={accent} />
+              )}
             </ListGroup.ItemSuffix>
           )}
         </ListGroup.Item>

@@ -55,7 +55,6 @@ vi.mock("@/core/server/cloud-storage", () => ({
   downloadBudget: vi.fn().mockResolvedValue("budget-2"),
 }));
 
-import { resetSyncBudget, handleSyncFileError } from "@/services/syncRecovery";
 import { useSyncStore } from "@/stores/syncStore";
 
 beforeEach(() => {
@@ -81,7 +80,7 @@ describe("resetSyncBudget", () => {
       return { cloudFileId: "cloud-1", groupId: "group-new" };
     });
 
-    await resetSyncBudget();
+    await useSyncStore.getState().resetSync();
 
     expect(order).toEqual([
       "https://s/sync/reset-user-file",
@@ -95,7 +94,7 @@ describe("resetSyncBudget", () => {
   });
 
   it("clears groupId/lastSyncedTimestamp/lastUploaded but keeps cloudFileId", async () => {
-    await resetSyncBudget();
+    await useSyncStore.getState().resetSync();
 
     expect(updateMetadataMock).toHaveBeenCalledWith("budget-1", {
       groupId: undefined,
@@ -112,7 +111,7 @@ describe("resetSyncBudget", () => {
   it("re-enables sync and clears the conflict on success", async () => {
     useSyncStore.setState({ conflictCode: "sync/file-has-reset" });
 
-    await resetSyncBudget();
+    await useSyncStore.getState().resetSync();
 
     expect(useSyncStore.getState().conflictCode).toBeNull();
     expect(setSyncingModeMock).toHaveBeenCalledWith("enabled");
@@ -122,7 +121,7 @@ describe("resetSyncBudget", () => {
 
 describe("handleSyncFileError", () => {
   it("pauses sync and raises the conflict for dialog-driven codes", async () => {
-    await handleSyncFileError("sync/file-has-reset");
+    await useSyncStore.getState().handleSyncFileError("sync/file-has-reset");
 
     expect(setSyncingModeMock).toHaveBeenCalledWith("offline");
     expect(useSyncStore.getState().conflictCode).toBe("sync/file-has-reset");
@@ -132,22 +131,22 @@ describe("handleSyncFileError", () => {
   });
 
   it("auto-recovers file-not-found by re-uploading once, then falls back to the dialog", async () => {
-    await handleSyncFileError("sync/file-not-found");
+    await useSyncStore.getState().handleSyncFileError("sync/file-not-found");
     expect(uploadBudgetMock).toHaveBeenCalledTimes(1);
     expect(useSyncStore.getState().conflictCode).toBeNull();
 
     // Guard was cleared by the successful recovery — a NEW rejection retries…
     uploadBudgetMock.mockRejectedValueOnce(new Error("still rejected"));
-    await handleSyncFileError("sync/file-not-found");
+    await useSyncStore.getState().handleSyncFileError("sync/file-not-found");
     expect(useSyncStore.getState().conflictCode).toBe("sync/file-not-found");
 
     // …but a second consecutive failure goes straight to the dialog.
-    await handleSyncFileError("sync/file-not-found");
+    await useSyncStore.getState().handleSyncFileError("sync/file-not-found");
     expect(uploadBudgetMock).toHaveBeenCalledTimes(2);
   });
 
   it("routes file-key-mismatch into the existing key-missing reopen flow", async () => {
-    await handleSyncFileError("sync/file-key-mismatch");
+    await useSyncStore.getState().handleSyncFileError("sync/file-key-mismatch");
 
     expect(useSyncStore.getState().lastErrorCode).toBe("sync/key-missing");
     expect(useSyncStore.getState().conflictCode).toBeNull();

@@ -40,6 +40,7 @@ import { ErrorBoundary } from "@/ui/feedback/ErrorBoundary";
 import { ErrorChannelConsumer } from "@/ui/feedback/ErrorChannelConsumer";
 import { SyncConflictDialog } from "@/ui/feedback/SyncConflictDialog";
 import { DialogHost } from "@/ui/feedback/dialog";
+import { LoadingOverlay } from "@/ui/LoadingOverlay";
 import { useShakeUndo } from "@/hooks/useShakeUndo";
 import { loadAllPersistedKeys } from "@/core/encryption/keys";
 import { installGlobalHandlers } from "@/lib/errors/install";
@@ -87,6 +88,7 @@ function RootLayout() {
   const isConfigured = useIsConfigured();
   const isLocalOnly = useBudgetContextStore((s) => s.isLocalOnly);
   const loadBudget = useBudgetContextStore((s) => s.loadBudget);
+  const isOpening = useBudgetContextStore((s) => s.isOpening);
   const [ready, setReady] = useState(false);
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
@@ -316,6 +318,9 @@ function RootLayout() {
                   <SyncConflictDialog />
                   <DialogHost />
                   <ErrorChannelConsumer />
+                  {/* Global open-budget loader — outlives the file-picker screen so it
+                      stays up through the (files)→(auth) swap until the budget is ready. */}
+                  <LoadingOverlay visible={isOpening} />
                 </HeroUINativeProvider>
               </ThemeProvider>
             </NavigationThemeProvider>

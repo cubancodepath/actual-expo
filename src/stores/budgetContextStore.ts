@@ -38,6 +38,10 @@ type BudgetData = {
   encryptKeyId?: string;
   lastSyncedTimestamp?: string;
   isLocalOnly: boolean;
+  /** True while loadBudget is doing its blocking setup — drives the global
+   *  open-budget loader so it survives the file-picker screen unmounting. Transient
+   *  (not persisted). */
+  isOpening: boolean;
 };
 
 type BudgetContextState = BudgetData & {
@@ -67,6 +71,7 @@ const INITIAL: BudgetData = {
   encryptKeyId: undefined,
   lastSyncedTimestamp: undefined,
   isLocalOnly: false,
+  isOpening: false,
 };
 
 export const useBudgetContextStore = create<BudgetContextState>()(
@@ -97,6 +102,9 @@ export const useBudgetContextStore = create<BudgetContextState>()(
           return;
         }
 
+        // Drive the global open-budget loader for the whole blocking setup, so it
+        // outlives the file-picker screen unmounting on the activeBudgetId swap.
+        set({ isOpening: true });
         try {
           // 1. Close previous budget — settle sync + close DB, but do NOT resetAllStores()
           // here. Resetting stores triggers immediate re-renders with empty/0 values on
@@ -253,6 +261,8 @@ export const useBudgetContextStore = create<BudgetContextState>()(
             .closeBudget()
             .catch(() => {});
           throw error;
+        } finally {
+          set({ isOpening: false });
         }
       },
 

@@ -3,7 +3,15 @@ import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { formatDistanceToNowStrict } from "date-fns";
 import { Button, Menu, useThemeColor } from "heroui-native";
-import { ArchiveRestore, Eye, Lock, MoreHorizontal, Pencil, Trash2 } from "lucide-react-native";
+import {
+  ArchiveRestore,
+  Eye,
+  EyeOff,
+  Lock,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+} from "lucide-react-native";
 import { updateAccount } from "@/core/domain/accounts";
 import type { Account } from "@/core/domain/accounts/types";
 
@@ -16,24 +24,28 @@ function relativeReconciled(raw: string | null): string | null {
   return formatDistanceToNowStrict(date, { addSuffix: true });
 }
 
-const noop = () => {};
-
 interface AccountDetailMenuProps {
   account: Account | undefined;
   /** Cleared balance (cents), passed to the reconcile screen. */
   clearedBalance: number;
+  /** Whether reconciled transactions are shown (drives the toggle label). */
+  showReconciled: boolean;
+  setShowReconciled: (val: boolean) => void;
 }
 
 /**
- * Overflow menu for the account-detail header (next to the search button).
- * Reconcile / Edit / Close·Reopen are wired to their routes; Show/Hide
- * reconciled is a placeholder until the list supports the reconciled filter.
+ * Overflow menu for the account-detail header (next to the search button):
+ * Reconcile / Edit / Show·Hide reconciled / Close·Reopen.
  */
-export function AccountDetailMenu({ account, clearedBalance }: AccountDetailMenuProps) {
+export function AccountDetailMenu({
+  account,
+  clearedBalance,
+  showReconciled,
+  setShowReconciled,
+}: AccountDetailMenuProps) {
   const { t } = useTranslation("accounts");
   const router = useRouter();
   const foreground = useThemeColor("foreground");
-  const muted = useThemeColor("muted");
   const danger = useThemeColor("danger");
 
   if (!account) return null;
@@ -83,9 +95,15 @@ export function AccountDetailMenu({ account, clearedBalance }: AccountDetailMenu
             <Menu.ItemTitle>{t("contextMenu.editAccount")}</Menu.ItemTitle>
           </Menu.Item>
 
-          <Menu.Item className="gap-3" onPress={noop}>
-            <Eye size={18} color={muted} />
-            <Menu.ItemTitle>{t("detail.showReconciled")}</Menu.ItemTitle>
+          <Menu.Item className="gap-3" onPress={() => setShowReconciled(!showReconciled)}>
+            {showReconciled ? (
+              <EyeOff size={18} color={foreground} />
+            ) : (
+              <Eye size={18} color={foreground} />
+            )}
+            <Menu.ItemTitle>
+              {showReconciled ? t("detail.hideReconciled") : t("detail.showReconciled")}
+            </Menu.ItemTitle>
           </Menu.Item>
 
           {account.closed ? (

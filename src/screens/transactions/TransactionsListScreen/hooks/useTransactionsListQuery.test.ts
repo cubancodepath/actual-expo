@@ -15,6 +15,20 @@ describe("buildTransactionsListQuery", () => {
     const { sql, params } = compile(query.serialize());
     expect(sql).toContain('"accountName"');
     expect(params).toContain("acc-1");
+    // No reconciled WHERE condition unless showReconciled is explicitly false
+    // (the `*` select still lists the reconciled column, so match the comparison).
+    expect(sql).not.toMatch(/reconciled = /);
+  });
+
+  it("account context hides reconciled when showReconciled is false", () => {
+    const query = buildTransactionsListQuery(
+      { kind: "account", accountId: "acc-1", showReconciled: false },
+      "2026-07",
+    );
+    const { sql, params } = compile(query.serialize());
+    expect(params).toContain("acc-1");
+    expect(sql).toMatch(/reconciled = \?/);
+    expect(params).toContain(0);
   });
 
   it("category context filters by category and a month date range (no $transform)", () => {

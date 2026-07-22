@@ -5,7 +5,12 @@
  */
 export type TransactionsListContext =
   | { kind: "all" }
-  | { kind: "account"; accountId: string }
+  | {
+      kind: "account";
+      accountId: string;
+      /** Whether reconciled (locked) transactions are shown. Absent = show. */
+      showReconciled?: boolean;
+    }
   | {
       kind: "category";
       categoryId: string;

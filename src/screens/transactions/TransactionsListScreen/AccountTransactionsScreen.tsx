@@ -2,6 +2,7 @@ import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { AddTransactionFab } from "@/ui/AddTransactionFab";
 import { useAccounts, useAccountBalances } from "@/lib/hooks/useAccounts";
+import { useSyncedPrefs } from "@/hooks/useSyncedPrefs";
 import { TransactionsShell } from "./components/TransactionsShell";
 import { AccountDetailHeader } from "./components/AccountDetailHeader";
 
@@ -14,15 +15,23 @@ export function AccountTransactionsScreen({ accountId }: { accountId: string }) 
   const title = account?.name ?? t("list.title");
   const { cleared } = useAccountBalances(accountId);
 
+  // Per-account synced pref (upstream naming): stores the *hide* flag, driven in
+  // the positive as showReconciled.
+  const [hideReconciled, setHideReconciled] = useSyncedPrefs(`hide-reconciled-${accountId}`);
+  const showReconciled = String(hideReconciled) !== "true";
+  const setShowReconciled = (val: boolean) => setHideReconciled(String(!val));
+
   return (
     <TransactionsShell
-      context={{ kind: "account", accountId }}
+      context={{ kind: "account", accountId, showReconciled }}
       stickyHeader={
         <AccountDetailHeader
           accountId={accountId}
           account={account}
           title={title}
           clearedBalance={cleared}
+          showReconciled={showReconciled}
+          setShowReconciled={setShowReconciled}
           onSearch={() =>
             router.push({ pathname: "/(auth)/account/search", params: { accountId } })
           }

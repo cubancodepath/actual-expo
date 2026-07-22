@@ -16,7 +16,14 @@ export function buildTransactionsListQuery(context: TransactionsListContext, mon
     return q("transactions").select(["*", "accountName"]);
   }
   if (context.kind === "account") {
-    return q("transactions").filter({ acct: context.accountId }).select(["*", "accountName"]);
+    // Hide reconciled (locked) transactions when the account's showReconciled
+    // pref is off — same filter form as upstream's account query.
+    return q("transactions")
+      .filter({
+        acct: context.accountId,
+        ...(context.showReconciled === false ? { reconciled: { $eq: false } } : {}),
+      })
+      .select(["*", "accountName"]);
   }
   return q("transactions")
     .filter({

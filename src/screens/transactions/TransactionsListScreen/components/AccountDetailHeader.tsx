@@ -14,6 +14,9 @@ interface AccountDetailHeaderProps {
   title: string;
   /** Cleared balance (cents) forwarded to the reconcile action. */
   clearedBalance: number;
+  /** Whether reconciled transactions are shown (drives the menu toggle). */
+  showReconciled: boolean;
+  setShowReconciled: (val: boolean) => void;
   onSearch: () => void;
 }
 
@@ -28,6 +31,8 @@ export function AccountDetailHeader({
   account,
   title,
   clearedBalance,
+  showReconciled,
+  setShowReconciled,
   onSearch,
 }: AccountDetailHeaderProps) {
   const router = useRouter();
@@ -51,7 +56,12 @@ export function AccountDetailHeader({
           </Typography>
           <View className="flex-row items-center gap-1">
             <SearchButton onPress={onSearch} />
-            <AccountDetailMenu account={account} clearedBalance={clearedBalance} />
+            <AccountDetailMenu
+              account={account}
+              clearedBalance={clearedBalance}
+              showReconciled={showReconciled}
+              setShowReconciled={setShowReconciled}
+            />
           </View>
         </View>
 

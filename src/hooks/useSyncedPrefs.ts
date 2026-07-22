@@ -81,7 +81,7 @@ listen((event) => {
 // Hooks
 // ---------------------------------------------------------------------------
 
-export function useSyncedPrefs(key: string): [string, (value: string) => Promise<void>] {
+export function useSyncedPref(key: string): [string, (value: string) => Promise<void>] {
   const value = useSyncedPrefsStore((s) => s.prefs[key] ?? INITIAL_PREFS[key] ?? "");
 
   const set = useCallback(
@@ -104,3 +104,9 @@ export function useSyncedPrefs(key: string): [string, (value: string) => Promise
 
   return [value, set];
 }
+
+/**
+ * @deprecated Use {@link useSyncedPref} (singular) — the upstream-aligned name.
+ * Kept as an alias while call sites migrate.
+ */
+export const useSyncedPrefs = useSyncedPref;

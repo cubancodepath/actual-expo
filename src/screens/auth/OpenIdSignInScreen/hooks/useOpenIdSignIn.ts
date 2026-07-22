@@ -3,7 +3,7 @@ import { useRouter } from "expo-router";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import { createOpenIdLoginUrl } from "@/core/server/auth/auth.api";
-import { finalizeAuthenticatedSession } from "@/services/authService";
+import { useSessionStore } from "@/stores/sessionStore";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { isExpectedOpenIdCallback, OPENID_CALLBACK_SCHEME } from "./isExpectedOpenIdCallback";
 
@@ -52,7 +52,7 @@ export function useOpenIdSignIn(serverUrl: string) {
         return;
       }
 
-      await finalizeAuthenticatedSession({ serverUrl, token });
+      await useSessionStore.getState().loggedIn({ serverUrl, token });
       router.replace("/(files)/files");
     } catch (e) {
       // Core transport only throws; surface to the error bus here.

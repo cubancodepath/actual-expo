@@ -28,7 +28,6 @@ import { resetSyncState, clearSwitchingFlag, loadClock } from "@/core/sync";
 import { Timestamp } from "@/core/crdt";
 import { clearLocalData } from "@/core/db";
 import { closeBudget } from "@/services/budgetfiles";
-import { logout } from "@/services/authService";
 import { getServerInfo } from "@/core/server/server-info/serverInfo.api";
 import { dialog } from "@/ui/feedback/dialog/dialogStore";
 
@@ -173,7 +172,7 @@ export function SettingsScreen() {
     try {
       resetSyncState();
       resetAllStores();
-      await logout();
+      await useSessionStore.getState().signOut();
       await clearLocalData();
       await loadClock();
     } finally {
@@ -183,9 +182,9 @@ export function SettingsScreen() {
   }
 
   async function handleConnectToServer() {
-    // logout() first so hasToken flips false in the same commit that clears the budget
+    // signOut() first so hasToken flips false in the same commit that clears the budget
     // context — otherwise the (files) guard briefly routes to the file list.
-    await logout();
+    await useSessionStore.getState().signOut();
     await closeBudget();
   }
 
@@ -199,9 +198,9 @@ export function SettingsScreen() {
     if (!ok) return;
     setLoggingOut(true);
     try {
-      // logout() first: it batches hasToken=false + budget-context reset into one commit
+      // signOut() first: it batches hasToken=false + budget-context reset into one commit
       // → routes straight to login. closeBudget() then closes the DB after (auth) unmounts.
-      await logout();
+      await useSessionStore.getState().signOut();
       await closeBudget();
     } finally {
       setLoggingOut(false);

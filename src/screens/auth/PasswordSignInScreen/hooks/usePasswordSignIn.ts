@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useRouter } from "expo-router";
 import { loginWithPassword } from "@/core/server/auth/auth.api";
-import { finalizeAuthenticatedSession } from "@/services/authService";
+import { useSessionStore } from "@/stores/sessionStore";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 
 /**
@@ -17,7 +17,7 @@ export function usePasswordSignIn(serverUrl: string) {
     setLoading(true);
     try {
       const token = await loginWithPassword(serverUrl, password.trim());
-      await finalizeAuthenticatedSession({ serverUrl, token });
+      await useSessionStore.getState().loggedIn({ serverUrl, token });
       router.replace("/(files)/files");
     } catch (e) {
       // Core transport only throws; surface to the error bus here.

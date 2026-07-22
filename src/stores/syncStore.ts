@@ -53,8 +53,8 @@ export const useSyncStore = create<SyncState>((set) => ({
         set({ status: "idle" });
         const { closeBudget } = await import("@/services/budgetfiles");
         await closeBudget().catch(() => {});
-        const { logout } = await import("@/services/authService");
-        await logout();
+        const { useSessionStore } = await import("@/stores/sessionStore");
+        await useSessionStore.getState().signOut();
         return;
       }
 

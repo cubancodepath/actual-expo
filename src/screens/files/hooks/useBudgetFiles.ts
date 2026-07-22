@@ -4,7 +4,6 @@ import { ActualError } from "@/core/errors";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { useSessionStore } from "@/stores/sessionStore";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
-import { logout } from "@/services/authService";
 import { getRemoteFiles } from "@/core/server/cloud-storage";
 import { getBudgets } from "@/core/server/prefs";
 import {
@@ -78,9 +77,9 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
       const [local, remote] = await Promise.all([
         getBudgets(),
         getRemoteFiles(serverUrl, token).catch((e: unknown) => {
-          // Expired session → full logout; the root guard redirects to login
+          // Expired session → full signOut; the root guard redirects to login
           if (e instanceof ActualError && e.code === "auth/token-expired") {
-            void logout();
+            void useSessionStore.getState().signOut();
           }
           return [];
         }),

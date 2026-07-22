@@ -16,7 +16,7 @@ import {
   useThemeColor,
   PressableFeedback,
 } from "heroui-native";
-import { logout } from "@/services/authService";
+import { useSessionStore } from "@/stores/sessionStore";
 import { resetAllStores } from "@/stores/resetStores";
 import { resetSyncState, clearSwitchingFlag } from "@/core/sync";
 import { InlineError } from "@/ui/feedback/InlineError";
@@ -82,7 +82,7 @@ export function BudgetFilesScreen() {
             void (async () => {
               resetSyncState();
               resetAllStores();
-              await logout();
+              await useSessionStore.getState().signOut();
               clearSwitchingFlag();
               router.replace("/");
             })();

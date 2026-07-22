@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { deleteFromServer } from "../budgetfiles";
+import { removeFile } from "../budgetfiles";
 import { ActualError, type ErrorCode } from "@/core/errors";
 import { useSessionStore } from "@/stores/sessionStore";
 
@@ -28,19 +28,19 @@ async function expectActualError(promise: Promise<unknown>, code: ErrorCode) {
 describe("deleteFromServer", () => {
   it("resolves on a 2xx response", async () => {
     fetchMock.mockResolvedValue(new Response(null, { status: 200 }));
-    await expect(deleteFromServer("https://s", "tok", "file-1")).resolves.toBeUndefined();
+    await expect(removeFile("https://s", "tok", "file-1")).resolves.toBeUndefined();
   });
 
   it("maps a non-auth failure to file/delete-failed", async () => {
     fetchMock.mockResolvedValue(new Response("nope", { status: 500 }));
-    await expectActualError(deleteFromServer("https://s", "tok", "file-1"), "file/delete-failed");
+    await expectActualError(removeFile("https://s", "tok", "file-1"), "file/delete-failed");
   });
 
   it("maps 401 to auth/token-expired without touching the session", async () => {
     useSessionStore.setState({ serverUrl: "https://s", token: "tok", hasToken: true });
     fetchMock.mockResolvedValue(new Response(null, { status: 401 }));
 
-    await expectActualError(deleteFromServer("https://s", "tok", "file-1"), "auth/token-expired");
+    await expectActualError(removeFile("https://s", "tok", "file-1"), "auth/token-expired");
     // The core transport only THROWS (upstream parity); the logout is the app
     // layer's job (react-query's global onError), so the session is untouched here.
     await new Promise((r) => setTimeout(r, 0));

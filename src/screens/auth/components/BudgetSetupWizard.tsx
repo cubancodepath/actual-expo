@@ -369,12 +369,12 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
     const name = budgetName.trim() || "My Budget";
     if (__DEV__) console.log("[wizard] handleStart, mode:", mode, "budgetId:", budgetIdRef.current);
 
-    // Close the raw DB opened during seed and do a proper openBudget
+    // Close the raw DB opened during seed and do a proper loadBudget
     // which initializes spreadsheet, pre-fetches queries, etc.
     const { closeDatabase } = await import("@/core/db");
     await closeDatabase();
-    const { openBudget } = await import("@/services/budgetfiles");
-    await openBudget(budgetIdRef.current);
+    const { loadBudget } = await import("@/services/budgetfiles");
+    await loadBudget(budgetIdRef.current);
 
     if (mode === "local") {
       useBudgetContextStore.getState().setBudgetContext({

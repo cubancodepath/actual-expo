@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { listRemoteBudgetFiles } from "../budgetFiles.api";
+import { getRemoteFiles } from "../budgetFiles.api";
 import { expectActualError, fetchMock, jsonResponse, SERVER } from "./testUtils";
 
-describe("listRemoteBudgetFiles", () => {
+describe("getRemoteFiles", () => {
   const rawFile = {
     fileId: "f1",
     groupId: "g1",
@@ -15,7 +15,7 @@ describe("listRemoteBudgetFiles", () => {
   it("parses files and sends the token header", async () => {
     fetchMock.mockResolvedValue(jsonResponse({ data: [rawFile] }));
 
-    const files = await listRemoteBudgetFiles(SERVER, "tok");
+    const files = await getRemoteFiles(SERVER, "tok");
 
     expect(files).toEqual([
       {
@@ -34,6 +34,6 @@ describe("listRemoteBudgetFiles", () => {
   it("throws auth/token-expired on 401 without touching any store", async () => {
     fetchMock.mockResolvedValue(jsonResponse({ status: "error" }, 401));
 
-    await expectActualError(listRemoteBudgetFiles(SERVER, "stale"), "auth/token-expired");
+    await expectActualError(getRemoteFiles(SERVER, "stale"), "auth/token-expired");
   });
 });

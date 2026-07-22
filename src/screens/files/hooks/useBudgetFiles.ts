@@ -5,16 +5,16 @@ import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { useSessionStore } from "@/stores/sessionStore";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import { logout } from "@/services/authService";
-import { listRemoteBudgetFiles } from "@/services/api/budgetFiles.api";
-import { listLocalBudgets } from "@/services/budgetMetadata";
+import { getRemoteFiles } from "@/services/api/budgetFiles.api";
+import { getBudgets } from "@/services/budgetMetadata";
 import {
   type ReconciledBudgetFile,
   reconcileFiles,
   switchBudget,
   deleteBudget,
-  deleteFromServer,
+  removeFile,
   uploadBudget,
-  openBudget,
+  loadBudget,
   convertToLocalOnly,
   reRegisterBudget,
 } from "@/services/budgetfiles";
@@ -76,8 +76,8 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
     queryKey: [...QUERY_KEY, serverUrl, token],
     queryFn: async () => {
       const [local, remote] = await Promise.all([
-        listLocalBudgets(),
-        listRemoteBudgetFiles(serverUrl, token).catch((e: unknown) => {
+        getBudgets(),
+        getRemoteFiles(serverUrl, token).catch((e: unknown) => {
           // Expired session → full logout; the root guard redirects to login
           if (e instanceof ActualError && e.code === "auth/token-expired") {
             void logout();
@@ -103,7 +103,7 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
   /** Opens the budget DB when the file isn't the active one (upload/reRegister read it). */
   async function ensureBudgetOpen(localId: string) {
     if (useBudgetContextStore.getState().activeBudgetId !== localId) {
-      await openBudget(localId);
+      await loadBudget(localId);
     }
   }
 
@@ -154,7 +154,7 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
     deleteFile: (file, fromServer) =>
       runAction(file, async () => {
         if (fromServer && file.cloudFileId) {
-          await deleteFromServer(serverUrl, token, file.cloudFileId);
+          await removeFile(serverUrl, token, file.cloudFileId);
         }
         if (file.localId) {
           await deleteBudget(file.localId);

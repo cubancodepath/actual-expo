@@ -116,7 +116,7 @@ function filesPayload(json: unknown): unknown {
 }
 
 /** List the budget files available on the server (upstream `listRemoteFiles`). */
-export async function listRemoteBudgetFiles(
+export async function getRemoteFiles(
   serverUrl: string,
   token: string,
 ): Promise<RemoteBudgetFile[]> {
@@ -421,7 +421,7 @@ export async function downloadBudget(
 // ---------------------------------------------------------------------------
 
 /** Soft-delete a budget from the server (marks deleted=true). */
-export async function deleteFromServer(
+export async function removeFile(
   serverUrl: string,
   token: string,
   cloudFileId: string,

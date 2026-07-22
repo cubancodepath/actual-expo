@@ -2,4 +2,4 @@
 // (`@/core/server/cloud-storage`, upstream's `listRemoteFiles`). This re-export
 // keeps existing `@/services/api/budgetFiles.api` import sites working; prefer
 // importing from `@/core/server/cloud-storage` in new code.
-export { listRemoteBudgetFiles, type RemoteBudgetFile } from "@/core/server/cloud-storage";
+export { getRemoteFiles, type RemoteBudgetFile } from "@/core/server/cloud-storage";

@@ -135,14 +135,14 @@ export async function updateMetadata(
 // Listing
 // ---------------------------------------------------------------------------
 
-export async function listLocalBudgets(): Promise<BudgetMetadata[]> {
+export async function getBudgets(): Promise<BudgetMetadata[]> {
   let entries: string[];
   try {
     const info = await getInfoAsync(BUDGETS_DIR);
     if (!info.exists) return [];
     entries = await readDirectoryAsync(BUDGETS_DIR);
   } catch (error) {
-    throw storageError(error, "storage/read-failed", "listLocalBudgets", { path: BUDGETS_DIR });
+    throw storageError(error, "storage/read-failed", "getBudgets", { path: BUDGETS_DIR });
   }
   const budgets: BudgetMetadata[] = [];
 

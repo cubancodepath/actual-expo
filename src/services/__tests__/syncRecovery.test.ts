@@ -45,12 +45,12 @@ vi.mock("@/services/budgetMetadata", () => ({
   deleteBudgetDir: deleteBudgetDirMock,
 }));
 vi.mock("@/services/api/budgetFiles.api", () => ({
-  listRemoteBudgetFiles: listRemoteBudgetFilesMock,
+  getRemoteFiles: listRemoteBudgetFilesMock,
 }));
 vi.mock("@/services/budgetfiles", () => ({
   uploadBudget: uploadBudgetMock,
   downloadBudget: vi.fn().mockResolvedValue("budget-2"),
-  openBudget: vi.fn().mockResolvedValue(undefined),
+  loadBudget: vi.fn().mockResolvedValue(undefined),
   closeBudget: vi.fn().mockResolvedValue(undefined),
 }));
 

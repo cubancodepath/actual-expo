@@ -6,7 +6,7 @@ import { useSessionStore } from "@/stores/sessionStore";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import { useSyncStore } from "@/stores/syncStore";
 import { readMetadata, updateMetadata, deleteBudgetDir } from "./budgetMetadata";
-import { listRemoteBudgetFiles } from "./api/budgetFiles.api";
+import { getRemoteFiles } from "./api/budgetFiles.api";
 
 /**
  * Recovery from server file-state sync rejections (sync/file-* codes) —
@@ -90,7 +90,7 @@ export async function redownloadBudget(): Promise<void> {
 
   // The stale local groupId is the whole problem — fetch the server's current
   // file record instead of reusing metadata.
-  const files = await listRemoteBudgetFiles(serverUrl, token);
+  const files = await getRemoteFiles(serverUrl, token);
   const remote = files.find((f) => f.fileId === cloudFileId && !f.deleted);
   if (!remote) {
     throw new ActualError("file/download-failed", {
@@ -98,13 +98,13 @@ export async function redownloadBudget(): Promise<void> {
     });
   }
 
-  const { closeBudget, downloadBudget, openBudget } = await import("./budgetfiles");
+  const { closeBudget, downloadBudget, loadBudget } = await import("./budgetfiles");
   await closeBudget();
   const newBudgetId = await downloadBudget(serverUrl, token, remote);
   await deleteBudgetDir(activeBudgetId);
 
   resolveConflict();
-  await openBudget(newBudgetId);
+  await loadBudget(newBudgetId);
 }
 
 /**

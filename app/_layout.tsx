@@ -33,7 +33,7 @@ import { listen } from "@/core/sync/syncEvents";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { isSwitchingBudget, setSyncingMode } from "@/core/sync";
 import { ensureBudgetsDir, budgetExists } from "@/services/budgetMetadata";
-import { openBudget } from "@/services/budgetfiles";
+import { loadBudget } from "@/services/budgetfiles";
 import { updateAppBadge } from "@/lib/badge";
 import { syncShortcutCache } from "@/lib/syncShortcutCache";
 import { UndoToast } from "@/design-system";
@@ -113,7 +113,7 @@ function RootLayout() {
       // If a budget was previously open, reopen it
       const { activeBudgetId } = useBudgetContextStore.getState();
       if (activeBudgetId && (await budgetExists(activeBudgetId))) {
-        await openBudget(activeBudgetId);
+        await loadBudget(activeBudgetId);
       }
 
       syncShortcutCache();

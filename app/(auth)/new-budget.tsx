@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router";
 import { BudgetSetupWizard } from "@/screens/auth/components/BudgetSetupWizard";
-import { openBudget } from "@/services/budgetfiles";
+import { loadBudget } from "@/services/budgetfiles";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
 
 export default function NewBudgetScreen() {
@@ -15,7 +15,7 @@ export default function NewBudgetScreen() {
         // Open the budget and dismiss back to tabs.
         const { activeBudgetId } = useBudgetContextStore.getState();
         if (activeBudgetId) {
-          openBudget(activeBudgetId).catch(console.warn);
+          loadBudget(activeBudgetId).catch(console.warn);
         }
         router.dismissAll();
       }}

@@ -3,8 +3,8 @@ import { ScrollView, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Button, ListGroup, Spinner, Typography, useThemeColor } from "heroui-native";
-import { listLocalBudgets, type BudgetMetadata } from "@/services/budgetMetadata";
-import { openBudget, type ReconciledBudgetFile } from "@/services/budgetfiles";
+import { getBudgets, type BudgetMetadata } from "@/services/budgetMetadata";
+import { loadBudget, type ReconciledBudgetFile } from "@/services/budgetfiles";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import { BudgetFileRow } from "@/ui/BudgetFileRow";
 import { BudgetSetupWizard } from "@/screens/auth/components/BudgetSetupWizard";
@@ -33,7 +33,7 @@ export function LocalSetupScreen() {
   const [selecting, setSelecting] = useState<string | null>(null);
 
   useEffect(() => {
-    listLocalBudgets().then((list) => {
+    getBudgets().then((list) => {
       setBudgets(list);
       setScreen(list.length > 0 ? "picker" : "wizard");
     });
@@ -42,7 +42,7 @@ export function LocalSetupScreen() {
   async function handleSelectBudget(meta: BudgetMetadata) {
     setSelecting(meta.id);
     try {
-      await openBudget(meta.id);
+      await loadBudget(meta.id);
       useBudgetContextStore.getState().setBudgetContext({
         isLocalOnly: true,
         activeBudgetId: meta.id,

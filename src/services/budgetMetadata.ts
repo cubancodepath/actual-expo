@@ -12,7 +12,7 @@ export {
   readMetadata,
   writeMetadata,
   updateMetadata,
-  listLocalBudgets,
+  getBudgets,
   idFromBudgetName,
   type BudgetMetadata,
 } from "@/core/server/prefs";

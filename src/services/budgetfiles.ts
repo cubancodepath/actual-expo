@@ -37,7 +37,7 @@ import {
 export {
   uploadBudget,
   downloadBudget,
-  deleteFromServer,
+  removeFile,
   shouldReupload,
   UPLOAD_FREQUENCY_IN_DAYS,
   type RemoteBudgetFile,
@@ -126,7 +126,7 @@ export function reconcileFiles(
 
 /**
  * Create a new local budget: metadata + database + CRDT clock + seed data.
- * Leaves the raw DB connection open (callers do a proper openBudget() once
+ * Leaves the raw DB connection open (callers do a proper loadBudget() once
  * setup finishes). Returns the new budgetId.
  */
 export async function createBudget(opts: {
@@ -161,15 +161,15 @@ export async function createBudget(opts: {
  *
  * Idempotent by default: if `budgetId` is already the active, open budget it
  * returns immediately. This is critical for Fast Refresh — the bootstrap effect
- * remounts and re-calls openBudget(activeBudgetId); without this guard it would
+ * remounts and re-calls loadBudget(activeBudgetId); without this guard it would
  * closeDatabase() while the previous open's spreadsheet/liveQueries/sync are
  * still in flight, crashing natively on expo.module.sqlite.AsyncQueue. Pass
  * `{ force: true }` to reopen an already-open budget (e.g. after a data reset).
  */
-export async function openBudget(budgetId: string, opts?: { force?: boolean }): Promise<void> {
+export async function loadBudget(budgetId: string, opts?: { force?: boolean }): Promise<void> {
   const t0 = Date.now();
   const lap = (label: string) => {
-    if (__DEV__) console.log(`[openBudget] ${label}: ${Date.now() - t0}ms`);
+    if (__DEV__) console.log(`[loadBudget] ${label}: ${Date.now() - t0}ms`);
   };
 
   if (
@@ -177,7 +177,7 @@ export async function openBudget(budgetId: string, opts?: { force?: boolean }): 
     isDatabaseOpen(getBudgetDir(budgetId)) &&
     useBudgetContextStore.getState().activeBudgetId === budgetId
   ) {
-    if (__DEV__) console.log("[openBudget] already open, skipping", budgetId);
+    if (__DEV__) console.log("[loadBudget] already open, skipping", budgetId);
     return;
   }
 
@@ -312,7 +312,7 @@ export async function openBudget(budgetId: string, opts?: { force?: boolean }): 
     // so they automatically recreate and re-fetch when the budget changes.
     if (meta?.cloudFileId && meta?.groupId) {
       fullSync({ force: true }).catch((e) => {
-        if (__DEV__) console.warn("[openBudget] background sync failed:", e);
+        if (__DEV__) console.warn("[loadBudget] background sync failed:", e);
       });
 
       // Periodic full-snapshot re-upload (non-blocking) — matches upstream
@@ -385,7 +385,7 @@ export async function switchBudget(
     });
   }
 
-  await openBudget(localId);
+  await loadBudget(localId);
 }
 
 // ---------------------------------------------------------------------------

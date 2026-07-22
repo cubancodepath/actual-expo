@@ -50,7 +50,7 @@ let lastEngine: BudgetEngine | null = null;
 
 /**
  * Initialize the spreadsheet with budget cells for all months.
- * Called during bootstrap in openBudget().
+ * Called during bootstrap in loadBudget().
  */
 export async function initSpreadsheet(): Promise<void> {
   const ss = getSpreadsheet();
@@ -271,7 +271,7 @@ async function runStructuralRefresh(): Promise<void> {
 
 listen((event) => {
   if (event.tables.includes("categories") || event.tables.includes("category_groups")) {
-    // Not initialized yet (e.g. wizard seed before openBudget) — the later
+    // Not initialized yet (e.g. wizard seed before loadBudget) — the later
     // initSpreadsheet() builds all cells anyway, and firing async reads here
     // just races with other work on the shared connection.
     if (builtStart === null || builtEnd === null) return;

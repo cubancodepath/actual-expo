@@ -10,147 +10,36 @@ import {
 import { resetAllStores } from "../stores/resetStores";
 import { useSessionStore } from "@/stores/sessionStore";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
-import {
-  type BudgetMetadata,
-  ensureBudgetsDir,
-  getBudgetDir,
-  readMetadata,
-  writeMetadata,
-  updateMetadata,
-  idFromBudgetName,
-  deleteBudgetDir,
-} from "./budgetMetadata";
-import { seedLocalBudget, type CategorySelection } from "./seedBudget";
+import { getBudgetDir, readMetadata, updateMetadata, deleteBudgetDir } from "./budgetMetadata";
 import * as encryption from "@/core/encryption";
 import { loadKeyForBudget } from "@/core/encryption/keys";
 import { ActualError } from "@/core/errors";
 import { emitErrorEvent, toErrorCode } from "@/lib/errors/ErrorChannel";
-import {
-  downloadBudget,
-  uploadBudget,
-  possiblyUpload,
-  type RemoteBudgetFile,
-} from "@/core/server/cloud-storage";
+import { downloadBudget, possiblyUpload } from "@/core/server/cloud-storage";
+import type { ReconciledBudgetFile } from "@/core/server/budgetfiles/app";
+import type { RemoteBudgetFile } from "@/core/server/cloud-storage";
 
-// The cloud transport now lives in core/server/cloud-storage. Re-export its
-// surface so existing `@/services/budgetfiles` importers keep working.
+// The transport and store-free handlers now live in core/server. Re-export their
+// surface so existing `@/services/budgetfiles` importers keep working. The
+// store-orchestrating flows below (loadBudget/closeBudget/switchBudget/
+// deleteBudget) stay here — they're the mobile budgetfilesSlice equivalent.
 export {
   uploadBudget,
   downloadBudget,
   removeFile,
+  possiblyUpload,
   shouldReupload,
   UPLOAD_FREQUENCY_IN_DAYS,
   type RemoteBudgetFile,
 } from "@/core/server/cloud-storage";
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-export type BudgetFileState = "local" | "remote" | "synced" | "detached";
-
-export type ReconciledBudgetFile = {
-  state: BudgetFileState;
-  localId?: string;
-  cloudFileId?: string;
-  name: string;
-  groupId?: string;
-  encryptKeyId?: string;
-  ownerName?: string;
-  lastOpened?: string;
-};
-
-// ---------------------------------------------------------------------------
-// Reconciliation
-// ---------------------------------------------------------------------------
-
-export function reconcileFiles(
-  local: BudgetMetadata[],
-  remote: RemoteBudgetFile[],
-): ReconciledBudgetFile[] {
-  const result: ReconciledBudgetFile[] = [];
-  const matchedRemoteIds = new Set<string>();
-
-  for (const loc of local) {
-    const remoteMatch = remote.find((r) => !r.deleted && r.fileId === loc.cloudFileId);
-    if (remoteMatch) {
-      matchedRemoteIds.add(remoteMatch.fileId);
-      result.push({
-        state: "synced",
-        localId: loc.id,
-        cloudFileId: remoteMatch.fileId,
-        name: loc.budgetName,
-        groupId: loc.groupId ?? remoteMatch.groupId,
-        encryptKeyId: remoteMatch.encryptKeyId,
-        ownerName: remoteMatch.ownerName,
-        lastOpened: loc.lastOpened,
-      });
-    } else if (loc.cloudFileId) {
-      result.push({
-        state: "detached",
-        localId: loc.id,
-        cloudFileId: loc.cloudFileId,
-        name: loc.budgetName,
-        groupId: loc.groupId,
-        lastOpened: loc.lastOpened,
-      });
-    } else {
-      result.push({
-        state: "local",
-        localId: loc.id,
-        name: loc.budgetName,
-        lastOpened: loc.lastOpened,
-      });
-    }
-  }
-
-  for (const rem of remote) {
-    if (!rem.deleted && !matchedRemoteIds.has(rem.fileId)) {
-      result.push({
-        state: "remote",
-        cloudFileId: rem.fileId,
-        name: rem.name,
-        groupId: rem.groupId,
-        encryptKeyId: rem.encryptKeyId,
-        ownerName: rem.ownerName,
-      });
-    }
-  }
-
-  return result;
-}
-
-// ---------------------------------------------------------------------------
-// Create
-// ---------------------------------------------------------------------------
-
-/**
- * Create a new local budget: metadata + database + CRDT clock + seed data.
- * Leaves the raw DB connection open (callers do a proper loadBudget() once
- * setup finishes). Returns the new budgetId.
- */
-export async function createBudget(opts: {
-  budgetName: string;
-  accountName: string;
-  startingBalance: number;
-  selectedCategories: CategorySelection;
-}): Promise<string> {
-  const budgetId = idFromBudgetName(opts.budgetName);
-  if (__DEV__) console.log("[budgetfiles] Creating budget:", budgetId);
-
-  await ensureBudgetsDir();
-  await writeMetadata(budgetId, { id: budgetId, budgetName: opts.budgetName });
-  await openDatabase(getBudgetDir(budgetId));
-  await loadClock();
-
-  await seedLocalBudget({
-    accountName: opts.accountName,
-    startingBalance: opts.startingBalance,
-    selectedCategories: opts.selectedCategories,
-  });
-
-  return budgetId;
-}
+export {
+  reconcileFiles,
+  createBudget,
+  convertToLocalOnly,
+  reRegisterBudget,
+  type BudgetFileState,
+  type ReconciledBudgetFile,
+} from "@/core/server/budgetfiles/app";
 
 // ---------------------------------------------------------------------------
 // Open / Close
@@ -399,32 +288,4 @@ export async function deleteBudget(budgetId: string): Promise<void> {
     await closeBudget();
   }
   await deleteBudgetDir(budgetId);
-}
-
-// ---------------------------------------------------------------------------
-// Convert / Re-register
-// ---------------------------------------------------------------------------
-
-/** Strip cloud identifiers, making the budget local-only. */
-export async function convertToLocalOnly(budgetId: string): Promise<void> {
-  await updateMetadata(budgetId, {
-    cloudFileId: undefined,
-    groupId: undefined,
-  });
-}
-
-/**
- * Re-upload a detached budget as a new server file.
- * Clears old cloud identifiers first so uploadBudget generates fresh ones.
- */
-export async function reRegisterBudget(
-  serverUrl: string,
-  token: string,
-  budgetId: string,
-): Promise<{ cloudFileId: string; groupId: string }> {
-  await updateMetadata(budgetId, {
-    cloudFileId: undefined,
-    groupId: undefined,
-  });
-  return uploadBudget(serverUrl, token, budgetId);
 }

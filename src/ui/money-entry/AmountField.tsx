@@ -51,7 +51,12 @@ export function AmountField({ tone = "plain", className, children }: AmountField
         {/* Money + caret kept in their own tight row so the cursor hugs the
             number (the container gap only separates the sign from the amount). */}
         <View className="flex-row items-center">
-          <Money cents={value} tone={tone} className="text-base font-normal text-foreground" />
+          <Money
+            cents={value}
+            tone={tone}
+            mask={false}
+            className="text-base font-normal text-foreground"
+          />
           {isOpen ? <BlinkingCursor color={accent} /> : null}
         </View>
       </View>

@@ -58,6 +58,7 @@ export function Amount({ value, isEditing, baseFontSize = AMOUNT_BASE_FONT_SIZE 
       <Money
         cents={value}
         tone="plain"
+        mask={false}
         className="shrink"
         valueStyle={{
           fontSize,

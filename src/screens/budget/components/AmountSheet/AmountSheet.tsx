@@ -145,7 +145,9 @@ export function AmountSheetTitle({ children }: { children: ReactNode }) {
 
 /** The hero's headline figure. */
 export function AmountSheetAmount({ cents }: { cents: number }) {
-  return <Money cents={cents} tone="plain" className="text-3xl font-bold text-foreground" />;
+  return (
+    <Money cents={cents} tone="plain" mask={false} className="text-3xl font-bold text-foreground" />
+  );
 }
 
 /**

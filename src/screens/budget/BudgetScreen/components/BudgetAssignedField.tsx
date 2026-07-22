@@ -34,6 +34,7 @@ export function BudgetAssignedField({
       <Money
         cents={isEditing ? draft : value}
         tone="plain"
+        mask={!isEditing}
         className={accented ? "text-sm text-accent" : "text-sm"}
       />
       {isEditing && <BlinkingCursor color={accent} />}

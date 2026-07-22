@@ -3,8 +3,17 @@ import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button, Menu, useThemeColor } from "heroui-native";
-import { ArrowLeftRight, EyeOff, MoreHorizontal, Plus, Settings, Undo2 } from "lucide-react-native";
+import {
+  ArrowLeftRight,
+  Eye,
+  EyeOff,
+  MoreHorizontal,
+  Plus,
+  Settings,
+  Undo2,
+} from "lucide-react-native";
 import { ScreenHeader } from "@/ui/ScreenHeader";
+import { usePrivacyMode } from "@/lib/hooks/usePrivacyMode";
 
 const noop = () => {};
 
@@ -20,6 +29,7 @@ export function AccountsHeader() {
   const insets = useSafeAreaInsets();
   const foreground = useThemeColor("foreground");
   const muted = useThemeColor("muted");
+  const [privacyMode, togglePrivacy] = usePrivacyMode();
 
   return (
     <View style={{ paddingTop: insets.top }} className="pb-4">
@@ -49,9 +59,15 @@ export function AccountsHeader() {
                   <Undo2 size={18} color={muted} />
                   <Menu.ItemTitle>{t("menu.undo")}</Menu.ItemTitle>
                 </Menu.Item>
-                <Menu.Item className="gap-3" onPress={noop}>
-                  <EyeOff size={18} color={muted} />
-                  <Menu.ItemTitle>{t("menu.hideAmounts")}</Menu.ItemTitle>
+                <Menu.Item className="gap-3" onPress={togglePrivacy}>
+                  {privacyMode ? (
+                    <Eye size={18} color={muted} />
+                  ) : (
+                    <EyeOff size={18} color={muted} />
+                  )}
+                  <Menu.ItemTitle>
+                    {privacyMode ? t("menu.showAmounts") : t("menu.hideAmounts")}
+                  </Menu.ItemTitle>
                 </Menu.Item>
                 <Menu.Item className="gap-3" onPress={noop}>
                   <ArrowLeftRight size={18} color={muted} />

@@ -79,9 +79,31 @@ export function formatDateLong(d: number): string {
   return format(intToDate(d), dateFormatStr);
 }
 
-/** YYYYMMDD → human-readable with month name, e.g. "March 23, 2025" */
-export function formatDateHuman(d: number): string {
-  return format(intToDate(d), "MMMM d, yyyy");
+/**
+ * YYYYMMDD → formatted with an EXPLICIT format string (not the module global).
+ * Used by the reactive `useDateFormat` hook so date displays update live when
+ * the `dateFormat` pref changes.
+ */
+export function formatDateWith(d: number, fmt: string): string {
+  return format(intToDate(d), fmt);
+}
+
+/** As {@link formatDateWith} but with the year stripped (short form). */
+export function formatDateShortWith(d: number, fmt: string): string {
+  return format(intToDate(d), getShortFormat(fmt));
+}
+
+/**
+ * YYYYMMDD → human-readable with (localized) month name, e.g. "March 23, 2025"
+ * or "23 de marzo de 2025". Independent of the numeric `dateFormat` pref — this
+ * is a deliberate long/human style; pass the app language for localization.
+ */
+export function formatDateHuman(d: number, locale?: string): string {
+  return intToDate(d).toLocaleDateString(locale ?? "en", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 }
 
 // ── Conversion between int and string ─────────────────────────────────────────

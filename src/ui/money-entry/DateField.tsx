@@ -3,7 +3,9 @@ import { useTranslation } from "react-i18next";
 import { Typography, useThemeColor } from "heroui-native";
 import { Calendar, DatePicker } from "heroui-native-pro";
 import { Calendar as CalendarIcon, ChevronRight } from "lucide-react-native";
-import { formatDateLong, intToStr, strToInt } from "@/lib/date";
+import { intToStr, strToInt } from "@/lib/date";
+import { useDateFormat } from "@/lib/hooks/useDateFormat";
+import { useFirstDayOfWeek, weekdayCode } from "@/lib/hooks/useFirstDayOfWeek";
 
 type DateFieldProps = {
   value: number; // YYYYMMDD
@@ -17,12 +19,14 @@ type DateFieldProps = {
  * a YYYYMMDD int — convert at the boundary.
  */
 export function DateField({ value, onChange }: DateFieldProps) {
-  const { t } = useTranslation("transactions");
+  const { t, i18n } = useTranslation("transactions");
   const muted = useThemeColor("muted");
+  const { formatLong } = useDateFormat();
+  const firstDay = useFirstDayOfWeek();
 
   return (
     <DatePicker
-      value={{ value: intToStr(value), label: formatDateLong(value) }}
+      value={{ value: intToStr(value), label: formatLong(value) }}
       onValueChange={(opt) => {
         if (!opt) return;
         const next = strToInt(opt.value);
@@ -42,7 +46,7 @@ export function DateField({ value, onChange }: DateFieldProps) {
               className="text-base text-foreground"
               style={{ maxWidth: 190 }}
             >
-              {formatDateLong(value)}
+              {formatLong(value)}
             </Typography>
             <ChevronRight size={16} color={muted} />
           </View>
@@ -50,7 +54,7 @@ export function DateField({ value, onChange }: DateFieldProps) {
         <DatePicker.Portal>
           <DatePicker.Overlay />
           <DatePicker.Content presentation="bottom-sheet">
-            <DatePicker.Calendar>
+            <DatePicker.Calendar firstDayOfWeek={weekdayCode(firstDay)} locale={i18n.language}>
               <Calendar.Header>
                 <Calendar.Heading />
                 <Calendar.NavButton slot="previous" />

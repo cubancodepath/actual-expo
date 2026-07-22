@@ -36,7 +36,7 @@ export function SchedulePickerSheet({
   selectedId?: string;
   onSelect: (schedule: Schedule) => void;
 }) {
-  const { t } = useTranslation("budget");
+  const { t, i18n } = useTranslation("budget");
   const router = useRouter();
   const accent = useThemeColor("accent");
 
@@ -87,7 +87,9 @@ export function SchedulePickerSheet({
                           <ListGroup.ItemTitle>{schedule.name}</ListGroup.ItemTitle>
                           {nextDate ? (
                             <Typography className="text-sm text-muted">
-                              {t("goals.nextOn", { date: formatDateHuman(nextDate) })}
+                              {t("goals.nextOn", {
+                                date: formatDateHuman(nextDate, i18n.language),
+                              })}
                             </Typography>
                           ) : null}
                         </ListGroup.ItemContent>

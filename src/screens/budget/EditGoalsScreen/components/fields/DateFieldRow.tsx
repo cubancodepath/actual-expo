@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Calendar, DatePicker } from "heroui-native-pro";
 import type { LucideIcon } from "lucide-react-native";
+import { useFirstDayOfWeek, weekdayCode } from "@/lib/hooks/useFirstDayOfWeek";
 import { FieldRow } from "./FieldRow";
 
 /**
@@ -30,6 +31,7 @@ export function DateFieldRow({
   onChange: (day: string) => void;
 }) {
   const { t, i18n } = useTranslation("budget");
+  const firstDay = useFirstDayOfWeek();
 
   const display = value
     ? new Date(`${value}T00:00:00`).toLocaleDateString(i18n.language, {
@@ -65,7 +67,7 @@ export function DateFieldRow({
         <DatePicker.Portal>
           <DatePicker.Overlay />
           <DatePicker.Content presentation="popover" width={320}>
-            <DatePicker.Calendar>
+            <DatePicker.Calendar firstDayOfWeek={weekdayCode(firstDay)}>
               <Calendar.Header>
                 <Calendar.YearPickerTrigger>
                   <Calendar.YearPickerTriggerHeading />

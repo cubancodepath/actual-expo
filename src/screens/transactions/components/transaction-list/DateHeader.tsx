@@ -5,13 +5,13 @@ import { formatDateHuman, todayInt, yesterdayInt } from "@/lib/date";
 
 /** Muted section label above each date block ("Today" / "Yesterday" / full date). */
 export function DateHeader({ date }: { date: number }) {
-  const { t } = useTranslation("transactions");
+  const { t, i18n } = useTranslation("transactions");
   const label =
     date === todayInt()
       ? t("today")
       : date === yesterdayInt()
         ? t("yesterday")
-        : formatDateHuman(date);
+        : formatDateHuman(date, i18n.language);
   return (
     <View className="px-4 pb-1.5 pt-4">
       <Typography className="text-[13px] font-semibold text-muted">{label}</Typography>

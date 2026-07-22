@@ -119,6 +119,16 @@ function applyCurrencyStyling(formatted: string): string {
 /** Replacement text shown when privacy mode is active. */
 export const PRIVACY_MASK = "•••••";
 
+// Module-level privacy flag, updated by applyFormatConfig() when the synced
+// `isPrivacyEnabled` pref changes. Kept local (not a store read) so imperative
+// formatters stay pure and avoid a circular import through the prefs layer.
+let privacyMode = false;
+
+/** Update privacy mode. Called from applyFormatConfig on pref load/change. */
+export function setPrivacyMode(enabled: boolean): void {
+  privacyMode = enabled;
+}
+
 // ── Formatting ────────────────────────────────────────────────────────────────
 
 /**
@@ -193,9 +203,7 @@ export function formatAmountParts(cents: number, showSign = false): FormattedAmo
  * the Amount component can't be used.
  */
 export function formatPrivacyAware(cents: number, showSign = false): string {
-  // Lazy require to avoid circular dependency at module load
-  const { usePrivacyStore } = require("../stores/privacyStore");
-  if (usePrivacyStore.getState().privacyMode) return PRIVACY_MASK;
+  if (privacyMode) return PRIVACY_MASK;
   return showSign ? formatAmount(cents) : formatBalance(cents);
 }
 

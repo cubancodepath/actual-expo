@@ -7,7 +7,7 @@
 import { background, cornerRadius, padding, frame } from "@expo/ui/swift-ui/modifiers";
 import { ScalableText } from "@modules/actual-ui";
 import { formatPrivacyAware } from "@/lib/format";
-import { usePrivacyStore } from "@/stores/privacyStore";
+import { usePrivacyMode } from "@/lib/hooks/usePrivacyMode";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
 import type { CommonViewModifierProps } from "@expo/ui/swift-ui";
 
@@ -34,7 +34,7 @@ export function SPill({
   modifiers: extraModifiers,
 }: SPillProps) {
   const { colors } = useTheme();
-  usePrivacyStore();
+  usePrivacyMode();
 
   const defaultBg =
     value < 0 ? colors.vibrantNegative : value > 0 ? colors.vibrantPositive : colors.cardBackground;

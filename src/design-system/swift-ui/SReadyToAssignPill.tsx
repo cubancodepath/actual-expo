@@ -23,7 +23,7 @@ import {
 import { shapes } from "@expo/ui/swift-ui/modifiers";
 import { ScalableText } from "@modules/actual-ui";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
-import { usePrivacyStore } from "@/stores/privacyStore";
+import { usePrivacyMode } from "@/lib/hooks/usePrivacyMode";
 import { formatPrivacyAware } from "@/lib/format";
 import { useTranslation } from "react-i18next";
 
@@ -48,7 +48,7 @@ export function SReadyToAssignPill({
 }: SReadyToAssignPillProps) {
   const { t } = useTranslation("budget");
   const { colors } = useTheme();
-  usePrivacyStore();
+  usePrivacyMode();
   const [open, setOpen] = useState(false);
 
   const isPositive = amount > 0;

@@ -1,9 +1,4 @@
-import { describe, it, expect, vi, beforeAll } from "vitest";
-
-// Mock modules that transitively import native dependencies (via format → privacyStore)
-vi.mock("../stores/privacyStore", () => ({
-  usePrivacyStore: { getState: () => ({ privacyMode: false }) },
-}));
+import { describe, it, expect, beforeAll } from "vitest";
 
 import { setCurrencyConfig } from "@/lib/format";
 import { describeTemplate, translateDescription, type TemplateDescription } from "./describe";

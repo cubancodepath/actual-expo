@@ -3,7 +3,12 @@
  * Called during bootstrap and reactively via useSyncedPref.
  */
 
-import { setNumberFormat, setCurrencyConfig, type NumberFormatType } from "@/lib/format";
+import {
+  setNumberFormat,
+  setCurrencyConfig,
+  setPrivacyMode,
+  type NumberFormatType,
+} from "@/lib/format";
 import { setDateFormat } from "@/lib/date";
 import { getCurrency } from "@/lib/currencies";
 
@@ -11,11 +16,13 @@ export function applyFormatConfig(prefs: {
   numberFormat: string;
   hideFraction: string;
   dateFormat: string;
+  isPrivacyEnabled: string;
   defaultCurrencyCode: string;
   defaultCurrencyCustomSymbol: string;
   currencySymbolPosition: string;
   currencySpaceBetweenAmountAndSymbol: string;
 }) {
+  setPrivacyMode(prefs.isPrivacyEnabled === "true");
   setNumberFormat({
     format: prefs.numberFormat as NumberFormatType,
     hideFraction: prefs.hideFraction === "true",

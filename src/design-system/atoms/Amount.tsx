@@ -2,7 +2,7 @@ import type { TextStyle } from "react-native";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { Text, type TextProps } from "./Text";
 import { formatAmount, formatBalance, PRIVACY_MASK } from "@/lib/format";
-import { usePrivacyStore } from "@/stores/privacyStore";
+import { usePrivacyMode } from "@/lib/hooks/usePrivacyMode";
 import { useSyncedPrefs } from "@/hooks/useSyncedPrefs";
 import type { TypographyVariant } from "@/design-system/tokens";
 
@@ -34,7 +34,7 @@ export function Amount({
   ...props
 }: AmountProps) {
   const { colors } = useTheme();
-  const privacyMode = usePrivacyStore((s) => s.privacyMode);
+  const [privacyMode] = usePrivacyMode();
   // Subscribe to format prefs so component re-renders when they change.
   useSyncedPrefs("numberFormat");
   useSyncedPrefs("hideFraction");

@@ -7,7 +7,7 @@
  */
 
 import { formatPrivacyAware } from "@/lib/format";
-import { usePrivacyStore } from "@/stores/privacyStore";
+import { usePrivacyMode } from "@/lib/hooks/usePrivacyMode";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { ScalableText } from "@modules/actual-ui";
 import { sFont, type SFontVariant } from "./tokens";
@@ -60,7 +60,7 @@ export function SAmount({
   modifiers: extraModifiers,
 }: SAmountProps) {
   const { colors } = useTheme();
-  usePrivacyStore();
+  usePrivacyMode();
 
   let color = colorProp;
   if (!colorProp && colored) {

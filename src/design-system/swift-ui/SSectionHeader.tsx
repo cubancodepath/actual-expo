@@ -16,7 +16,7 @@ import {
 import { SText } from "./SText";
 import { SAmount } from "./SAmount";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
-import { usePrivacyStore } from "@/stores/privacyStore";
+import { usePrivacyMode } from "@/lib/hooks/usePrivacyMode";
 import { useSheetValueNumber } from "@/hooks/useSheetValue";
 import { envelopeBudget } from "@/core/domain/spreadsheet/bindings";
 import { useTranslation } from "react-i18next";
@@ -40,7 +40,7 @@ export function SSectionHeader({
 }: SSectionHeaderProps) {
   const { colors } = useTheme();
   const { t } = useTranslation("budget");
-  usePrivacyStore();
+  usePrivacyMode();
 
   const budgeted = useSheetValueNumber(sheet, envelopeBudget.groupBudgeted(group.id));
   const spent = useSheetValueNumber(sheet, envelopeBudget.groupSpent(group.id));

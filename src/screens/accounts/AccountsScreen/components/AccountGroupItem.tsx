@@ -49,7 +49,10 @@ export const AccountGroupItem = memo(function AccountGroupItem({
               {label}
             </Typography>
           </View>
-          <Money cents={total} tone="plain" className="text-sm font-semibold" />
+          {/* Closed accounts are always zeroed out on close — no total to show. */}
+          {group.type !== "closed" ? (
+            <Money cents={total} tone="plain" className="text-sm font-semibold" />
+          ) : null}
         </View>
       </Accordion.Trigger>
 

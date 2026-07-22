@@ -3,34 +3,18 @@ import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button, Menu, useThemeColor } from "heroui-native";
-import {
-  Archive,
-  ArrowLeftRight,
-  EyeOff,
-  MoreHorizontal,
-  Plus,
-  Settings,
-  Undo2,
-} from "lucide-react-native";
+import { ArrowLeftRight, EyeOff, MoreHorizontal, Plus, Settings, Undo2 } from "lucide-react-native";
 import { ScreenHeader } from "@/ui/ScreenHeader";
-
-interface AccountsHeaderProps {
-  showClosed: boolean;
-  onToggleClosed: () => void;
-  /** Number of closed accounts — the toggle only shows when there are any. */
-  closedCount: number;
-}
 
 const noop = () => {};
 
 /**
  * Accounts screen nav bar row, rendered inside `ScreenHeader.Floating` (frosted
  * blur ramps up on scroll). Centered title, an add-account button, and an
- * overflow menu. Menu items are visual placeholders for now (wired later),
- * except "Show/Hide Closed Accounts", which drives the list. The top inset
+ * overflow menu (visual placeholders for now, wired later). The top inset
  * clears the notch/status bar since this is a tab root, not a modal card.
  */
-export function AccountsHeader({ showClosed, onToggleClosed, closedCount }: AccountsHeaderProps) {
+export function AccountsHeader() {
   const { t } = useTranslation("accounts");
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -73,20 +57,6 @@ export function AccountsHeader({ showClosed, onToggleClosed, closedCount }: Acco
                   <ArrowLeftRight size={18} color={muted} />
                   <Menu.ItemTitle>{t("menu.switchBudget")}</Menu.ItemTitle>
                 </Menu.Item>
-                {closedCount > 0 ? (
-                  <Menu.Item className="gap-3" onPress={onToggleClosed}>
-                    {showClosed ? (
-                      <EyeOff size={18} color={foreground} />
-                    ) : (
-                      <Archive size={18} color={foreground} />
-                    )}
-                    <Menu.ItemTitle>
-                      {showClosed
-                        ? t("menu.hideClosedAccounts")
-                        : t("menu.showClosedAccounts", { count: closedCount })}
-                    </Menu.ItemTitle>
-                  </Menu.Item>
-                ) : null}
                 <Menu.Item className="gap-3" onPress={noop}>
                   <Settings size={18} color={muted} />
                   <Menu.ItemTitle>{t("menu.settings")}</Menu.ItemTitle>

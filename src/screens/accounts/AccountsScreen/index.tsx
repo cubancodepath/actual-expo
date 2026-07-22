@@ -12,7 +12,7 @@ import {
   useThemeColor,
 } from "heroui-native";
 import { CirclePlus, Plus } from "lucide-react-native";
-import { getClosedAccountCount, groupAccounts, updateAccount } from "@/core/domain/accounts";
+import { groupAccounts, updateAccount } from "@/core/domain/accounts";
 import type { Account } from "@/core/domain/accounts/types";
 import { useAccounts } from "@/lib/hooks/useAccounts";
 import { useRefreshControl } from "@/hooks/useRefreshControl";
@@ -36,16 +36,15 @@ export function AccountsScreen() {
   const { accounts, hasLoaded } = useAccounts();
   const { refreshControlProps } = useRefreshControl();
 
-  const [showClosed, setShowClosed] = useState(false);
-  const closedCount = getClosedAccountCount(accounts);
-  const groups = groupAccounts(accounts, showClosed);
+  // Closed accounts always show as their own group; it just starts collapsed.
+  const groups = groupAccounts(accounts, true);
 
-  // Controlled expansion: seed once (all groups expanded) the first time
-  // accounts arrive; after that the user drives it.
+  // Controlled expansion: seed once (budget/off-budget expanded, closed
+  // collapsed) the first time accounts arrive; after that the user drives it.
   const [expandedIds, setExpandedIds] = useState<string[] | null>(null);
   useEffect(() => {
     if (expandedIds === null && groups.length > 0) {
-      setExpandedIds(groups.map((g) => g.type));
+      setExpandedIds(groups.filter((g) => g.type !== "closed").map((g) => g.type));
     }
   }, [groups, expandedIds]);
 
@@ -146,11 +145,7 @@ export function AccountsScreen() {
       )}
 
       <ScreenHeader.Floating>
-        <AccountsHeader
-          showClosed={showClosed}
-          onToggleClosed={() => setShowClosed((v) => !v)}
-          closedCount={closedCount}
-        />
+        <AccountsHeader />
       </ScreenHeader.Floating>
 
       {/* One menu for the whole list, mounted only while a row is long-pressed.

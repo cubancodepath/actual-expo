@@ -27,7 +27,7 @@ import { ThemeProvider } from "@/design-system/providers/ThemeProvider";
 import { useSessionStore } from "@/stores/sessionStore";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import { useSyncStore } from "@/stores/syncStore";
-import { useUiPrefsStore } from "@/stores/uiPrefsStore";
+import { useGlobalPref } from "@/lib/hooks/useGlobalPref";
 import { useIsConfigured, getIsConfigured } from "@/stores/session.selectors";
 import { listen } from "@/core/sync/syncEvents";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
@@ -73,7 +73,8 @@ installGlobalHandlers();
 function RootLayout() {
   const ref = useNavigationContainerRef();
   const systemScheme = useColorScheme();
-  const themeMode = useUiPrefsStore((s) => s.themeMode);
+  const [themePref] = useGlobalPref("theme");
+  const themeMode = themePref === "light" || themePref === "dark" ? themePref : "system";
   const colorScheme = themeMode === "system" ? systemScheme : themeMode;
 
   // Bridge the user's theme override into Uniwind so HeroUI-rendered screens

@@ -7,25 +7,29 @@ import es from "./locales/es";
 
 const SUPPORTED_LANGUAGES = ["en", "es"] as const;
 
-// Read the stored language preference synchronously from MMKV at import time,
-// from the uiPrefsStore's persisted "ui-prefs" slice.
-const mmkv = createMMKV({ id: "actual-prefs" });
-function readStoredLanguage(): string {
-  const raw = mmkv.getString("ui-prefs");
-  if (raw) {
-    try {
-      const lang = JSON.parse(raw)?.state?.language;
-      if (lang) return lang;
-    } catch {
-      // ignore malformed blob
-    }
-  }
-  return "system";
+/**
+ * Locales the app can display, derived from the translated resource bundles it
+ * ships. Faithful to upstream's `availableLanguages`; grows automatically as
+ * more `src/i18n/locales/<lang>` bundles are added. (Upstream ships many more
+ * because Weblate translates its whole key set; expo only has en+es so far.)
+ */
+export const availableLanguages: readonly string[] = SUPPORTED_LANGUAGES;
+
+function deviceLanguage(): string {
+  return getLocales()[0]?.languageCode ?? "en";
 }
-const deviceLocale = getLocales()[0]?.languageCode ?? "en";
-const langPref: string = readStoredLanguage();
-const resolved = langPref === "system" ? deviceLocale : langPref;
-const lng = (SUPPORTED_LANGUAGES as readonly string[]).includes(resolved) ? resolved : "en";
+
+/** Resolve a stored language preference ("" / null / "system" = device) to a supported locale. */
+function resolveLanguage(language: string | null | undefined): string {
+  const target = !language || language === "system" ? deviceLanguage() : language;
+  return (SUPPORTED_LANGUAGES as readonly string[]).includes(target) ? target : "en";
+}
+
+// Read the stored language preference synchronously at import time from the
+// device-global prefs store (GlobalPrefs, key "language"; "" = system default).
+const mmkv = createMMKV({ id: "actual-global" });
+const langPref: string = mmkv.getString("language") ?? "";
+const lng = resolveLanguage(langPref);
 
 i18n.use(initReactI18next).init({
   lng,
@@ -35,5 +39,15 @@ i18n.use(initReactI18next).init({
   interpolation: { escapeValue: false },
   initImmediate: false,
 });
+
+/**
+ * Apply a language preference to i18next. `null`/`""`/`"system"` follow the
+ * device locale. Mirrors upstream's `setI18NextLanguage`. Call alongside
+ * persisting the pref (`useGlobalPref("language")`).
+ */
+export function setI18NextLanguage(language: string | null): void {
+  const resolved = resolveLanguage(language);
+  if (resolved !== i18n.language) void i18n.changeLanguage(resolved);
+}
 
 export default i18n;

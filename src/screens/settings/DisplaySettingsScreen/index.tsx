@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { ListGroup, Separator, Typography, useThemeColor } from "heroui-native";
 import { Check } from "lucide-react-native";
 import { ScreenHeader } from "@/ui/ScreenHeader";
-import { useUiPrefsStore } from "@/stores/uiPrefsStore";
+import { useGlobalPref } from "@/lib/hooks/useGlobalPref";
 
 const THEME_OPTIONS = [
   { value: "system", labelKey: "themeSystem" },
@@ -19,8 +19,8 @@ export function DisplaySettingsScreen() {
   const { t } = useTranslation("settings");
   const accent = useThemeColor("accent");
 
-  const themeMode = useUiPrefsStore((s) => s.themeMode);
-  const setThemeMode = useUiPrefsStore((s) => s.setThemeMode);
+  const [themePref, setThemeMode] = useGlobalPref("theme");
+  const themeMode = themePref ?? "system";
 
   return (
     <ScreenHeader.ScrollArea>

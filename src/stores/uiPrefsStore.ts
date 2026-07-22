@@ -3,21 +3,17 @@ import { persist } from "zustand/middleware";
 import { mmkvStorage } from "./prefsStorage";
 
 // ---------------------------------------------------------------------------
-// UI preferences store — genuinely reactive user display settings.
+// UI preferences store — app-only device state with no upstream pref home.
 // ---------------------------------------------------------------------------
-// These are preserved across logout (they are not tied to a server/session).
-
-type ThemeMode = "system" | "light" | "dark";
-type Language = "system" | "en" | "es";
+// Preserved across logout (not tied to a server/session). NOTE: theme and
+// language used to live here — they moved to GlobalPrefs (`useGlobalPref`) to
+// align with upstream. What remains is first-run / progress UI state that has
+// no upstream equivalent.
 
 type UiPrefsState = {
-  themeMode: ThemeMode;
-  language: Language;
   showProgressBars: boolean;
   hasSeenOnboarding: boolean;
 
-  setThemeMode(mode: ThemeMode): void;
-  setLanguage(lang: Language): void;
   toggleProgressBars(): void;
   markOnboardingSeen(): void;
   /** Reset onboarding — used by the DEV-only replay button. */
@@ -27,20 +23,8 @@ type UiPrefsState = {
 export const useUiPrefsStore = create<UiPrefsState>()(
   persist(
     (set) => ({
-      themeMode: "system",
-      language: "system",
       showProgressBars: true,
       hasSeenOnboarding: false,
-
-      setThemeMode(mode) {
-        set({ themeMode: mode });
-      },
-
-      setLanguage(lang) {
-        // i18n language change is handled by the caller (settings screen) to
-        // avoid circular imports between this store and i18n/config.
-        set({ language: lang });
-      },
 
       toggleProgressBars() {
         set((state) => ({ showProgressBars: !state.showProgressBars }));
@@ -58,8 +42,6 @@ export const useUiPrefsStore = create<UiPrefsState>()(
       name: "ui-prefs",
       storage: mmkvStorage,
       partialize: (state) => ({
-        themeMode: state.themeMode,
-        language: state.language,
         showProgressBars: state.showProgressBars,
         hasSeenOnboarding: state.hasSeenOnboarding,
       }),

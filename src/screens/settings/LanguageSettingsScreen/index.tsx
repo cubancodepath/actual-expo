@@ -2,40 +2,50 @@ import { Fragment } from "react";
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
-import { getLocales } from "expo-localization";
 import { ListGroup, Separator, Typography, useThemeColor } from "heroui-native";
 import { Check } from "lucide-react-native";
 import { ScreenHeader } from "@/ui/ScreenHeader";
-import { useUiPrefsStore } from "@/stores/uiPrefsStore";
-import i18n from "@/i18n/config";
+import { useGlobalPref } from "@/lib/hooks/useGlobalPref";
+import { availableLanguages, setI18NextLanguage } from "@/i18n/config";
 
-const LANGUAGE_OPTIONS = [
-  { value: "system", labelKey: "languageSystem" },
-  { value: "en", labelKey: "languageEn" },
-  { value: "es", labelKey: "languageEs" },
-] as const;
+// Native display names when the JS engine lacks Intl.DisplayNames (Hermes).
+const NATIVE_NAME_FALLBACK: Record<string, string> = { en: "English", es: "Español" };
 
-/** Resolve the effective i18n language for the stored preference. */
-function resolveLanguage(lang: string): string {
-  if (lang === "system") {
-    const deviceLocale = getLocales()[0]?.languageCode ?? "en";
-    return ["en", "es"].includes(deviceLocale) ? deviceLocale : "en";
+/** A locale's own native name (upstream uses Intl.DisplayNames; fall back to a
+ *  small map, then the raw code, when DisplayNames isn't available). */
+function nativeLanguageName(lang: string): string {
+  try {
+    return (
+      new Intl.DisplayNames([lang], { type: "language" }).of(lang) ??
+      NATIVE_NAME_FALLBACK[lang] ??
+      lang
+    );
+  } catch {
+    return NATIVE_NAME_FALLBACK[lang] ?? lang;
   }
-  return lang;
 }
 
-/** App language picker. HeroUI replacement for the legacy language screen. */
+/**
+ * App language picker, aligned with upstream: language is a GlobalPref ("" =
+ * System default), the list is derived from `availableLanguages`, and each
+ * locale is shown by its native name.
+ */
 export function LanguageSettingsScreen() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation("settings");
   const accent = useThemeColor("accent");
 
-  const language = useUiPrefsStore((s) => s.language);
-  const setLanguage = useUiPrefsStore((s) => s.setLanguage);
+  const [language, setLanguage] = useGlobalPref("language");
+  const current = language ?? "";
 
-  function handleSelect(value: "system" | "en" | "es") {
+  const options = [
+    { value: "", label: t("languageSystem") },
+    ...availableLanguages.map((lang) => ({ value: lang, label: nativeLanguageName(lang) })),
+  ];
+
+  function handleSelect(value: string) {
     setLanguage(value);
-    i18n.changeLanguage(resolveLanguage(value));
+    setI18NextLanguage(value);
   }
 
   return (
@@ -48,14 +58,14 @@ export function LanguageSettingsScreen() {
             {t("language")}
           </Typography>
           <ListGroup>
-            {LANGUAGE_OPTIONS.map((opt, index) => (
-              <Fragment key={opt.value}>
+            {options.map((opt, index) => (
+              <Fragment key={opt.value || "system"}>
                 {index > 0 && <Separator className="mx-4" />}
                 <ListGroup.Item onPress={() => handleSelect(opt.value)}>
                   <ListGroup.ItemContent>
-                    <ListGroup.ItemTitle>{t(opt.labelKey)}</ListGroup.ItemTitle>
+                    <ListGroup.ItemTitle>{opt.label}</ListGroup.ItemTitle>
                   </ListGroup.ItemContent>
-                  {language === opt.value && (
+                  {current === opt.value && (
                     <ListGroup.ItemSuffix>
                       <Check size={20} color={accent} />
                     </ListGroup.ItemSuffix>

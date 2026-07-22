@@ -5,7 +5,7 @@
  * These operate on in-memory arrays and return diffs { added, updated, deleted }.
  * The caller is responsible for persisting changes via addTransaction/updateTransaction/deleteTransaction.
  */
-import { randomUUID } from "expo-crypto";
+import { randomUUID } from "@/core/platform/crypto";
 import type { Transaction, SplitTransactionError, TransactionWithSubtransactions } from "./types";
 
 // ---------------------------------------------------------------------------

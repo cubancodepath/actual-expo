@@ -1,4 +1,8 @@
-import { openDatabaseAsync, type SQLiteDatabase, type SQLiteBindParams } from "expo-sqlite";
+import {
+  openDatabaseAsync,
+  type SQLiteDatabase,
+  type SQLiteBindParams,
+} from "@/core/platform/sqlite";
 import { runSchema } from "./schema";
 
 // The connection lives on globalThis, not a module-level `let`, so it survives

@@ -7,7 +7,7 @@
  *   - undoable() wrapper for undo support
  */
 
-import { randomUUID } from "expo-crypto";
+import { randomUUID } from "@/core/platform/crypto";
 import { runQuery, first, run } from "@/core/db";
 import { sendMessages, batchMessages } from "@/core/sync";
 import { undoable } from "@/core/sync/undo";

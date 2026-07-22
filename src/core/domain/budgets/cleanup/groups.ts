@@ -7,7 +7,7 @@
  * The join category→group is purely by the `groupId` embedded in each
  * category's `cleanup_def` JSON — there is no FK column.
  */
-import { randomUUID } from "expo-crypto";
+import { randomUUID } from "@/core/platform/crypto";
 import { first, runQuery } from "@/core/db";
 import { sendMessages } from "@/core/sync";
 import { Timestamp } from "@/core/crdt";

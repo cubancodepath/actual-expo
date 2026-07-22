@@ -17,7 +17,7 @@ import {
   getDate,
   format,
 } from "date-fns";
-import { randomUUID } from "expo-crypto";
+import { randomUUID } from "@/core/platform/crypto";
 
 import { q } from "@/core/queries";
 import { executeQuery } from "@/core/queries";

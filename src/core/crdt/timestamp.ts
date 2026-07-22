@@ -1,5 +1,5 @@
 import murmurhash from "murmurhash";
-import { randomUUID } from "expo-crypto";
+import { randomUUID } from "@/core/platform/crypto";
 
 import type { TrieNode } from "./merkle";
 

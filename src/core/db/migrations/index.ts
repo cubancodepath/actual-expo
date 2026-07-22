@@ -1,4 +1,4 @@
-import type { SQLiteDatabase } from "expo-sqlite";
+import type { SQLiteDatabase } from "@/core/platform/sqlite";
 
 import m1768872504000 from "./1768872504000_add_payee_locations";
 import m1769000000000 from "./1769000000000_add_custom_upcoming_length";

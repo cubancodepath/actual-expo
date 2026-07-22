@@ -1,4 +1,4 @@
-import { randomUUID } from "expo-crypto";
+import { randomUUID } from "@/core/platform/crypto";
 
 import * as internals from "./internals";
 import type { KeyValue } from "./internals";

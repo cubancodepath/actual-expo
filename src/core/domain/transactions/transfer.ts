@@ -6,7 +6,7 @@
  * linked via transferred_id on both sides.
  */
 
-import { randomUUID } from "expo-crypto";
+import { randomUUID } from "@/core/platform/crypto";
 import { first } from "@/core/db";
 import { sendMessages, batchMessages } from "@/core/sync";
 import { Timestamp } from "@/core/crdt";

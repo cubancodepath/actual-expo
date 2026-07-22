@@ -2,7 +2,7 @@
  * Query executor — runs compiled AQL queries against expo-sqlite.
  */
 
-import type { SQLiteBindParams } from "expo-sqlite";
+import type { SQLiteBindParams } from "@/core/platform/sqlite";
 import { runQuery } from "@/core/db";
 import { compile, convertOutputRow, type CompiledQuery } from "./compiler";
 import type { Query, QueryState } from "./query";

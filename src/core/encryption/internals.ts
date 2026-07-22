@@ -1,7 +1,7 @@
 import { gcm } from "@noble/ciphers/aes.js";
 import { pbkdf2Async } from "@noble/hashes/pbkdf2.js";
 import { sha512 } from "@noble/hashes/sha2.js";
-import { getRandomBytes } from "expo-crypto";
+import { getRandomBytes } from "@/core/platform/crypto";
 
 const ENCRYPTION_ALGORITHM = "aes-256-gcm";
 

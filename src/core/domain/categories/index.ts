@@ -1,4 +1,4 @@
-import { randomUUID } from "expo-crypto";
+import { randomUUID } from "@/core/platform/crypto";
 import { runQuery } from "@/core/db";
 import { sendMessages } from "@/core/sync";
 import { undoable } from "@/core/sync/undo";

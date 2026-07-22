@@ -5,7 +5,7 @@
  * link-schedule actions. Full rules engine is in the Rule class.
  */
 
-import { randomUUID } from "expo-crypto";
+import { randomUUID } from "@/core/platform/crypto";
 import { sendMessages } from "@/core/sync";
 import { first, runQuery } from "@/core/db";
 import { Timestamp } from "@/core/crdt";

@@ -1,4 +1,4 @@
-import type { SQLiteDatabase } from "expo-sqlite";
+import type { SQLiteDatabase } from "@/core/platform/sqlite";
 
 import { MIGRATIONS, type Migration } from "./index";
 

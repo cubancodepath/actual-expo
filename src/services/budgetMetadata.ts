@@ -6,7 +6,7 @@ import {
   makeDirectoryAsync,
   deleteAsync,
   getInfoAsync,
-} from "expo-file-system/legacy";
+} from "@/core/platform/fs";
 import { randomUUID } from "expo-crypto";
 import { ActualError, type ErrorCode } from "@/core/errors";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";

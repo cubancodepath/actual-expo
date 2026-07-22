@@ -4,7 +4,7 @@ import {
   readAsStringAsync,
   deleteAsync,
   EncodingType,
-} from "expo-file-system/legacy";
+} from "@/core/platform/fs";
 import { openDatabaseAsync } from "expo-sqlite";
 import { unzipSync, zipSync } from "fflate";
 import { addDays } from "date-fns";

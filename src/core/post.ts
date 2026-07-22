@@ -1,5 +1,5 @@
 import { TimeoutError } from "ky";
-import { http } from "@/services/api/httpClient";
+import { http } from "@/core/platform/fetch";
 import { ActualError, type ErrorCode } from "@/core/errors";
 
 type ServerReasonBody = { status?: string; reason?: string; description?: string };

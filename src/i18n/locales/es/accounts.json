@@ -65,7 +65,8 @@
     "unclearedBanner_one": "{{count}} transacción sin conciliar",
     "unclearedBanner_other": "{{count}} transacciones sin conciliar",
     "clearedLabel": "Conciliado",
-    "unclearedLabel": "Sin conciliar"
+    "unclearedLabel": "Sin conciliar",
+    "workingBalance": "Saldo de trabajo"
   },
 
   "search": {

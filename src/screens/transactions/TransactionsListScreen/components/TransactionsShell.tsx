@@ -1,5 +1,10 @@
 import { useCallback, useMemo, type ReactNode } from "react";
-import { RefreshControl, View } from "react-native";
+import {
+  RefreshControl,
+  View,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+} from "react-native";
 import { LegendList } from "@legendapp/list";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -26,23 +31,35 @@ import { useTransactionsListQuery } from "../hooks/useTransactionsListQuery";
 interface TransactionsShellProps {
   /** Drives the query (all accounts / one account / one category+month). */
   context: TransactionsListContext;
-  /** The `<ScreenHeader>` row — each variant composes its own. */
-  header: ReactNode;
+  /**
+   * The `<ScreenHeader>` row rendered in the frosted floating overlay (blur
+   * ramps on scroll). Mutually exclusive with `stickyHeader`.
+   */
+  header?: ReactNode;
+  /**
+   * A dedicated solid header rendered as a normal flex child above the list
+   * (no ScreenHeader scaffold, no blur, never scrolls). Used by the account
+   * detail screen for its pinned balance summary. Mutually exclusive with
+   * `header`.
+   */
+  stickyHeader?: ReactNode;
   /** Floating action button, when the variant has one. */
   fab?: ReactNode;
-  /** Reserve the status bar height above the header (full-screen variants). */
+  /** Reserve the status bar height above the header (frosted variants). */
   topInset?: boolean;
 }
 
 /**
  * Shared machinery of every transactions-list variant: the virtualized
- * date-grouped list, the long-press lift menu with its actions, and the
- * floating-header scaffold. Variants (all / account / category screens) compose
- * their header and FAB explicitly — no mode flags in here.
+ * date-grouped list, the long-press lift menu with its actions, and the header
+ * scaffold. Variants compose their header and FAB explicitly: `header` renders
+ * a frosted floating overlay (all / category), while `stickyHeader` renders a
+ * solid pinned header above the list (account detail).
  */
 export function TransactionsShell({
   context,
   header,
+  stickyHeader,
   fab,
   topInset = false,
 }: TransactionsShellProps) {
@@ -58,34 +75,71 @@ export function TransactionsShell({
 
   return (
     <TransactionRowMenuHost className="flex-1 bg-background">
-      {({ liftedTxnId, onLongPressRow, isIncomeTxn }) => (
-        <>
-          <ScreenHeader.ScrollArea>
-            <ListBody
-              context={context}
-              liftedTxnId={liftedTxnId}
-              isIncomeTxn={isIncomeTxn}
-              onPressRow={onPressRow}
-              onLongPressRow={onLongPressRow}
-            />
+      {({ liftedTxnId, onLongPressRow, isIncomeTxn }) => {
+        const listProps = {
+          context,
+          liftedTxnId,
+          isIncomeTxn,
+          onPressRow,
+          onLongPressRow,
+        };
+        return (
+          <>
+            {stickyHeader ? (
+              <>
+                {stickyHeader}
+                <ListBody {...listProps} contentPaddingTop={0} />
+              </>
+            ) : (
+              <ScreenHeader.ScrollArea>
+                <FrostedList {...listProps}>
+                  <ScreenHeader.Floating>
+                    {topInset && <View style={{ height: insets.top }} />}
+                    {header}
+                  </ScreenHeader.Floating>
+                </FrostedList>
+              </ScreenHeader.ScrollArea>
+            )}
 
-            <ScreenHeader.Floating>
-              {topInset && <View style={{ height: insets.top }} />}
-              {header}
-            </ScreenHeader.Floating>
-          </ScreenHeader.ScrollArea>
-
-          {fab}
-        </>
-      )}
+            {fab}
+          </>
+        );
+      }}
     </TransactionRowMenuHost>
   );
 }
 
 /**
- * The virtualized list. Split out so it can call `useScreenHeaderScroll`
- * (which needs the `ScreenHeader.ScrollArea` context) to drive the floating
- * header's blur and reserve top padding.
+ * Frosted-header wrapper: lives inside `ScreenHeader.ScrollArea` so it can call
+ * `useScreenHeaderScroll` (drives the floating header's blur and the list's top
+ * padding), then feeds those into the shared `ListBody`.
+ */
+function FrostedList({ children, ...listProps }: ListBodyProps & { children: ReactNode }) {
+  const { onScroll, contentPaddingTop } = useScreenHeaderScroll();
+  return (
+    <>
+      <ListBody {...listProps} onScroll={onScroll} contentPaddingTop={contentPaddingTop} />
+      {children}
+    </>
+  );
+}
+
+interface ListBodyProps {
+  context: TransactionsListContext;
+  liftedTxnId: string | null;
+  isIncomeTxn: (txn: TransactionDisplay) => boolean;
+  onPressRow: (txn: TransactionDisplay) => void;
+  onLongPressRow: (txn: TransactionDisplay, rect: RowRect) => void;
+  /** Header-blur scroll handler (frosted mode only). */
+  onScroll?: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
+  /** Top padding reserved for the floating header (0 in sticky mode). */
+  contentPaddingTop?: number;
+}
+
+/**
+ * The virtualized list. Header-scroll wiring is injected via props so the same
+ * list serves both the frosted (floating header) and sticky (solid header)
+ * modes without touching the shared ScreenHeader.
  */
 function ListBody({
   context,
@@ -93,15 +147,10 @@ function ListBody({
   isIncomeTxn,
   onPressRow,
   onLongPressRow,
-}: {
-  context: TransactionsListContext;
-  liftedTxnId: string | null;
-  isIncomeTxn: (txn: TransactionDisplay) => boolean;
-  onPressRow: (txn: TransactionDisplay) => void;
-  onLongPressRow: (txn: TransactionDisplay, rect: RowRect) => void;
-}) {
+  onScroll,
+  contentPaddingTop = 0,
+}: ListBodyProps) {
   const accent = useThemeColor("accent");
-  const { onScroll, contentPaddingTop } = useScreenHeaderScroll();
   const { refreshControlProps } = useRefreshControl();
 
   // The category context defaults to the budget UI store's month.
@@ -148,6 +197,9 @@ function ListBody({
       getItemType={(item: TxListItem) => item.type}
       extraData={liftedTxnId}
       renderItem={renderItem}
+      // Fill the space below a sticky (solid) header; harmless in frosted mode
+      // where the list is the sole in-flow child.
+      style={{ flex: 1 }}
       onScroll={onScroll}
       scrollEventThrottle={16}
       showsVerticalScrollIndicator={false}

@@ -65,7 +65,8 @@
     "unclearedBanner_one": "{{count}} uncleared transaction",
     "unclearedBanner_other": "{{count}} uncleared transactions",
     "clearedLabel": "Cleared",
-    "unclearedLabel": "Uncleared"
+    "unclearedLabel": "Uncleared",
+    "workingBalance": "Working balance"
   },
 
   "search": {

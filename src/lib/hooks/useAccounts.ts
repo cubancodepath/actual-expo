@@ -35,6 +35,37 @@ export function useAccountBalance(accountId: string | undefined): number {
 }
 
 /**
+ * Reactive working / cleared / uncleared balances for a single account.
+ * Two liveQueries (total + cleared); uncleared is derived so the parts always
+ * sum to the working balance. Mirrors upstream's cleared/uncleared split.
+ */
+export function useAccountBalances(accountId: string | undefined): {
+  balance: number;
+  cleared: number;
+  uncleared: number;
+} {
+  const { data: totalData } = useLiveQuery<{ result: number }>(
+    () =>
+      accountId
+        ? q("transactions").filter({ acct: accountId }).calculate({ $sum: "$amount" })
+        : null,
+    [accountId],
+  );
+  const { data: clearedData } = useLiveQuery<{ result: number }>(
+    () =>
+      accountId
+        ? q("transactions")
+            .filter({ acct: accountId, cleared: true })
+            .calculate({ $sum: "$amount" })
+        : null,
+    [accountId],
+  );
+  const balance = totalData?.[0]?.result ?? 0;
+  const cleared = clearedData?.[0]?.result ?? 0;
+  return { balance, cleared, uncleared: balance - cleared };
+}
+
+/**
  * Reactive total balance for a group of accounts.
  * Single liveQuery that sums transactions across all accounts in the group.
  */

@@ -33,7 +33,6 @@ import { listen } from "@/core/sync/syncEvents";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { isSwitchingBudget, setSyncingMode } from "@/core/sync";
 import { ensureBudgetsDir, budgetExists } from "@/core/server/prefs";
-import { loadBudget } from "@/services/budgetfiles";
 import { updateAppBadge } from "@/lib/badge";
 import { syncShortcutCache } from "@/lib/syncShortcutCache";
 import { UndoToast } from "@/design-system";
@@ -87,6 +86,7 @@ function RootLayout() {
   const hasToken = useSessionStore((s) => s.hasToken);
   const isConfigured = useIsConfigured();
   const isLocalOnly = useBudgetContextStore((s) => s.isLocalOnly);
+  const loadBudget = useBudgetContextStore((s) => s.loadBudget);
   const [ready, setReady] = useState(false);
   const [fontsLoaded] = useFonts({
     Inter_400Regular,

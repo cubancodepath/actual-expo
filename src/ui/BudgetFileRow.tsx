@@ -15,7 +15,7 @@ import {
   useThemeColor,
   type ThemeColor,
 } from "heroui-native";
-import type { ReconciledBudgetFile, BudgetFileState } from "@/services/budgetfiles";
+import type { ReconciledBudgetFile, BudgetFileState } from "@/core/server/budgetfiles/app";
 
 export interface BudgetFileRowProps {
   file: ReconciledBudgetFile;

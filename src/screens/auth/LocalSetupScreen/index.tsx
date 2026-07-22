@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Button, ListGroup, Spinner, Typography, useThemeColor } from "heroui-native";
 import { getBudgets, type BudgetMetadata } from "@/core/server/prefs";
-import { loadBudget, type ReconciledBudgetFile } from "@/services/budgetfiles";
+import type { ReconciledBudgetFile } from "@/core/server/budgetfiles/app";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import { BudgetFileRow } from "@/ui/BudgetFileRow";
 import { BudgetSetupWizard } from "@/screens/auth/components/BudgetSetupWizard";
@@ -27,6 +27,7 @@ export function LocalSetupScreen() {
   const router = useRouter();
   const { t } = useTranslation("auth");
   const accent = useThemeColor("accent");
+  const loadBudget = useBudgetContextStore((s) => s.loadBudget);
 
   const [screen, setScreen] = useState<ScreenState>("loading");
   const [budgets, setBudgets] = useState<BudgetMetadata[]>([]);

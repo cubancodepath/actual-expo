@@ -27,7 +27,6 @@ import { resetAllStores } from "@/stores/resetStores";
 import { resetSyncState, clearSwitchingFlag, loadClock } from "@/core/sync";
 import { Timestamp } from "@/core/crdt";
 import { clearLocalData } from "@/core/db";
-import { closeBudget } from "@/services/budgetfiles";
 import { getServerInfo } from "@/core/server/server-info/serverInfo.api";
 import { dialog } from "@/ui/feedback/dialog/dialogStore";
 
@@ -132,6 +131,7 @@ export function SettingsScreen() {
 
   const serverUrl = useSessionStore((s) => s.serverUrl);
   const { budgetName, lastSyncedTimestamp, isLocalOnly } = useBudgetContextStore();
+  const closeBudget = useBudgetContextStore((s) => s.closeBudget);
   const lastSync = useSyncStore((s) => s.lastSync);
   const [, setLoggingOut] = useState(false);
 

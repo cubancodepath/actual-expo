@@ -51,8 +51,11 @@ export const useSyncStore = create<SyncState>((set) => ({
         // Session teardown, not a user-visible error.
         emitErrorEvent(e);
         set({ status: "idle" });
-        const { closeBudget } = await import("@/services/budgetfiles");
-        await closeBudget().catch(() => {});
+        const { useBudgetContextStore } = await import("@/stores/budgetContextStore");
+        await useBudgetContextStore
+          .getState()
+          .closeBudget()
+          .catch(() => {});
         const { useSessionStore } = await import("@/stores/sessionStore");
         await useSessionStore.getState().signOut();
         return;

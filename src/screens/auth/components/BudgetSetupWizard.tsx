@@ -38,7 +38,8 @@ import {
   type CategorySelection,
 } from "@/core/server/budgetfiles/seed";
 import { useSyncStore } from "@/stores/syncStore";
-import { createBudget, uploadBudget } from "@/services/budgetfiles";
+import { createBudget } from "@/core/server/budgetfiles/app";
+import { uploadBudget } from "@/core/server/cloud-storage";
 import type { Theme } from "@/design-system/tokens";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -265,6 +266,7 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion() ?? false;
   const { t } = useTranslation("setup");
+  const loadBudget = useBudgetContextStore((s) => s.loadBudget);
 
   const [step, setStep] = useState<Step>("budget-name");
   const [prevStep, setPrevStep] = useState<Step | null>(null);
@@ -373,7 +375,6 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
     // which initializes spreadsheet, pre-fetches queries, etc.
     const { closeDatabase } = await import("@/core/db");
     await closeDatabase();
-    const { loadBudget } = await import("@/services/budgetfiles");
     await loadBudget(budgetIdRef.current);
 
     if (mode === "local") {

@@ -4,19 +4,14 @@ import { ActualError } from "@/core/errors";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { useSessionStore } from "@/stores/sessionStore";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
-import { getRemoteFiles } from "@/core/server/cloud-storage";
+import { getRemoteFiles, removeFile, uploadBudget } from "@/core/server/cloud-storage";
 import { getBudgets } from "@/core/server/prefs";
 import {
   type ReconciledBudgetFile,
   reconcileFiles,
-  switchBudget,
-  deleteBudget,
-  removeFile,
-  uploadBudget,
-  loadBudget,
   convertToLocalOnly,
   reRegisterBudget,
-} from "@/services/budgetfiles";
+} from "@/core/server/budgetfiles/app";
 import { clearSwitchingFlag } from "@/core/sync";
 import * as encryption from "@/core/encryption";
 import { loadKeyForBudget } from "@/core/encryption/keys";
@@ -67,6 +62,11 @@ type UseBudgetFilesReturn = {
 
 export function useBudgetFiles(): UseBudgetFilesReturn {
   const { serverUrl, token } = useSessionStore();
+  // budgetfilesSlice actions (stable identity — safe to select).
+  const loadBudget = useBudgetContextStore((s) => s.loadBudget);
+  const closeAndLoadBudget = useBudgetContextStore((s) => s.closeAndLoadBudget);
+  const closeAndDownloadBudget = useBudgetContextStore((s) => s.closeAndDownloadBudget);
+  const deleteBudget = useBudgetContextStore((s) => s.deleteBudget);
   const queryClient = useQueryClient();
   const [switching, setSwitching] = useState<SwitchingState>(null);
   const [errorDismissed, setErrorDismissed] = useState(false);
@@ -129,7 +129,17 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
 
     setSwitching({ key: fileKey(file) });
     try {
-      await switchBudget(file, serverUrl, token);
+      // Mirror upstream BudgetFileSelection.onSelect: remote → download+load,
+      // otherwise load the local file (loadBudget self-closes the previous one).
+      if (file.state === "remote") {
+        await closeAndDownloadBudget(file, serverUrl, token);
+      } else if (file.localId) {
+        await closeAndLoadBudget(file.localId);
+      } else {
+        throw new ActualError("file/switch-failed", {
+          context: { reason: "no local ID available" },
+        });
+      }
       return true;
     } catch (e: unknown) {
       clearSwitchingFlag();

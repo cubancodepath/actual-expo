@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { shouldReupload, UPLOAD_FREQUENCY_IN_DAYS } from "@/services/budgetfiles";
+import { shouldReupload, UPLOAD_FREQUENCY_IN_DAYS } from "@/core/server/cloud-storage";
 
 describe("shouldReupload — periodic re-upload threshold (fix #6 / Phase 4.1)", () => {
   it("uploads immediately when never uploaded before", () => {

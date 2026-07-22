@@ -65,7 +65,7 @@ export async function resetSyncBudget(): Promise<void> {
     .getState()
     .setBudgetContext({ groupId: "", lastSyncedTimestamp: undefined });
 
-  const { uploadBudget } = await import("./budgetfiles");
+  const { uploadBudget } = await import("@/core/server/cloud-storage");
   const { groupId } = await uploadBudget(serverUrl, token, activeBudgetId);
   useBudgetContextStore.getState().setBudgetContext({ groupId });
 
@@ -98,13 +98,13 @@ export async function redownloadBudget(): Promise<void> {
     });
   }
 
-  const { closeBudget, downloadBudget, loadBudget } = await import("./budgetfiles");
-  await closeBudget();
+  const { downloadBudget } = await import("@/core/server/cloud-storage");
+  await useBudgetContextStore.getState().closeBudget();
   const newBudgetId = await downloadBudget(serverUrl, token, remote);
   await deleteBudgetDir(activeBudgetId);
 
   resolveConflict();
-  await loadBudget(newBudgetId);
+  await useBudgetContextStore.getState().loadBudget(newBudgetId);
 }
 
 /**
@@ -140,7 +140,7 @@ export async function handleSyncFileError(code: ErrorCode): Promise<void> {
           await resetSyncBudget();
         } else {
           const { serverUrl, token, activeBudgetId } = activeContext();
-          const { uploadBudget } = await import("./budgetfiles");
+          const { uploadBudget } = await import("@/core/server/cloud-storage");
           const { groupId } = await uploadBudget(serverUrl, token, activeBudgetId);
           useBudgetContextStore.getState().setBudgetContext({ groupId });
           resolveConflict();

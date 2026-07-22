@@ -26,7 +26,7 @@ import { LoadingOverlay } from "@/ui/LoadingOverlay";
 import { FileActionsSheet, type FileAction } from "@/screens/files/components/FileActionsSheet";
 import { useBudgetFiles, fileKey } from "@/screens/files/hooks/useBudgetFiles";
 import { buildActionRequest } from "./confirmRequests";
-import type { ReconciledBudgetFile } from "@/services/budgetfiles";
+import type { ReconciledBudgetFile } from "@/core/server/budgetfiles/app";
 
 const StyledIonicons = withUniwind(Ionicons);
 

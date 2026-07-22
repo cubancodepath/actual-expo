@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { removeFile } from "../budgetfiles";
+import { removeFile } from "@/core/server/cloud-storage";
 import { ActualError, type ErrorCode } from "@/core/errors";
 import { useSessionStore } from "@/stores/sessionStore";
 

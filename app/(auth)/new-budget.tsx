@@ -1,10 +1,10 @@
 import { useRouter } from "expo-router";
 import { BudgetSetupWizard } from "@/screens/auth/components/BudgetSetupWizard";
-import { loadBudget } from "@/services/budgetfiles";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
 
 export default function NewBudgetScreen() {
   const router = useRouter();
+  const loadBudget = useBudgetContextStore((s) => s.loadBudget);
 
   return (
     <BudgetSetupWizard

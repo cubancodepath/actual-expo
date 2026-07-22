@@ -5,7 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { withUniwind } from "uniwind";
 import { useTranslation } from "react-i18next";
 import { BottomSheet, ListGroup, Separator } from "heroui-native";
-import type { ReconciledBudgetFile } from "@/services/budgetfiles";
+import type { ReconciledBudgetFile } from "@/core/server/budgetfiles/app";
 
 const StyledIonicons = withUniwind(Ionicons);
 

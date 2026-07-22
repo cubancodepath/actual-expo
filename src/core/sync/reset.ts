@@ -89,7 +89,7 @@ export async function resetSync(
 
   // Upload the file to make it the "true" version other clients pull down.
   try {
-    const { uploadBudget } = await import("@/services/budgetfiles");
+    const { uploadBudget } = await import("@/core/server/cloud-storage");
     const { groupId } = await uploadBudget(ctx.serverUrl, ctx.token, ctx.budgetId);
     await updateMetadata(ctx.budgetId, { groupId });
     return { groupId };

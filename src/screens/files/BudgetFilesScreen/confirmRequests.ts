@@ -1,7 +1,7 @@
 import type { TFunction } from "i18next";
 import type { ConfirmRequest } from "@/ui/feedback/ConfirmDialog";
 import type { FileAction } from "@/screens/files/components/FileActionsSheet";
-import type { ReconciledBudgetFile } from "@/services/budgetfiles";
+import type { ReconciledBudgetFile } from "@/core/server/budgetfiles/app";
 
 type FileActions = {
   deleteFile: (file: ReconciledBudgetFile, fromServer?: boolean) => void;

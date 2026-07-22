@@ -36,7 +36,12 @@ vi.mock("@/stores/sessionStore", () => ({
 }));
 vi.mock("@/stores/budgetContextStore", () => ({
   useBudgetContextStore: {
-    getState: () => ({ activeBudgetId: "budget-1", setBudgetContext: setBudgetContextMock }),
+    getState: () => ({
+      activeBudgetId: "budget-1",
+      setBudgetContext: setBudgetContextMock,
+      closeBudget: vi.fn().mockResolvedValue(undefined),
+      loadBudget: vi.fn().mockResolvedValue(undefined),
+    }),
   },
 }));
 vi.mock("@/core/server/prefs", () => ({
@@ -46,12 +51,8 @@ vi.mock("@/core/server/prefs", () => ({
 }));
 vi.mock("@/core/server/cloud-storage", () => ({
   getRemoteFiles: listRemoteBudgetFilesMock,
-}));
-vi.mock("@/services/budgetfiles", () => ({
   uploadBudget: uploadBudgetMock,
   downloadBudget: vi.fn().mockResolvedValue("budget-2"),
-  loadBudget: vi.fn().mockResolvedValue(undefined),
-  closeBudget: vi.fn().mockResolvedValue(undefined),
 }));
 
 import { resetSyncBudget, handleSyncFileError } from "@/services/syncRecovery";

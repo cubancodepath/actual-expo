@@ -1,24 +1,23 @@
 import { useState } from "react";
-import { RefreshControl, ScrollView, View } from "react-native";
-import { Stack, useRouter } from "expo-router";
+import { RefreshControl, View } from "react-native";
+import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { withUniwind } from "uniwind";
-import { LinearGradient } from "expo-linear-gradient";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import {
   Alert as HeroAlert,
   Button,
   LinkButton,
   ListGroup,
-  ScrollShadow,
   Spinner,
   Typography,
   useThemeColor,
-  PressableFeedback,
 } from "heroui-native";
 import { useSessionStore } from "@/stores/sessionStore";
 import { resetAllStores } from "@/stores/resetStores";
 import { resetSyncState, clearSwitchingFlag } from "@/core/sync";
+import { ScreenHeader } from "@/ui/ScreenHeader";
 import { InlineError } from "@/ui/feedback/InlineError";
 import { ConfirmDialog, type ConfirmRequest } from "@/ui/feedback/ConfirmDialog";
 import { BudgetFileRow } from "@/ui/BudgetFileRow";
@@ -33,9 +32,10 @@ const StyledIonicons = withUniwind(Ionicons);
 /** Post-login landing screen: pick, manage or create a budget file. */
 export function BudgetFilesScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { t } = useTranslation("auth");
   const { t: tc } = useTranslation("common");
-  const [background, foreground, accent] = useThemeColor(["background", "foreground", "accent"]);
+  const accent = useThemeColor("accent");
   const {
     localFiles,
     remoteFiles,
@@ -121,31 +121,10 @@ export function BudgetFilesScreen() {
   }
 
   return (
-    <View className="flex-1 bg-background">
-      <Stack.Screen
-        options={{
-          headerShown: true,
-          headerTitle: t("openBudget"),
-          headerStyle: { backgroundColor: background },
-          headerShadowVisible: false,
-          headerTintColor: foreground,
-          headerLeft: () => (
-            <LinkButton size="sm" onPress={handleLogout}>
-              <LinkButton.Label className="text-muted">{t("logOut")}</LinkButton.Label>
-            </LinkButton>
-          ),
-          headerRight: () => (
-            <LinkButton size="sm" onPress={() => router.push("/(files)/new-budget")}>
-              <LinkButton.Label className="text-accent">{t("new")}</LinkButton.Label>
-            </LinkButton>
-          ),
-        }}
-      />
-
-      <ScrollShadow LinearGradientComponent={LinearGradient} size={40} className="flex-1">
-        <ScrollView
-          className="flex-1 px-6"
-          contentContainerClassName="pb-16"
+    <View className="flex-1">
+      <ScreenHeader.ScrollArea>
+        <ScreenHeader.Body
+          contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: insets.bottom + 64 }}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={accent} />
           }
@@ -198,8 +177,25 @@ export function BudgetFilesScreen() {
               </Button>
             </View>
           )}
-        </ScrollView>
-      </ScrollShadow>
+        </ScreenHeader.Body>
+
+        <ScreenHeader.Floating>
+          <View style={{ height: insets.top }} />
+          <ScreenHeader>
+            <ScreenHeader.Back>
+              <LinkButton size="sm" onPress={handleLogout}>
+                <LinkButton.Label className="text-muted">{t("logOut")}</LinkButton.Label>
+              </LinkButton>
+            </ScreenHeader.Back>
+            <ScreenHeader.Title>{t("openBudget")}</ScreenHeader.Title>
+            <ScreenHeader.Actions>
+              <LinkButton size="sm" onPress={() => router.push("/(files)/new-budget")}>
+                <LinkButton.Label className="text-accent">{t("new")}</LinkButton.Label>
+              </LinkButton>
+            </ScreenHeader.Actions>
+          </ScreenHeader>
+        </ScreenHeader.Floating>
+      </ScreenHeader.ScrollArea>
 
       <FileActionsSheet
         file={actionsFile}

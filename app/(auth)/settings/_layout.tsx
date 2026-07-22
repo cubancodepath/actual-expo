@@ -1,36 +1,21 @@
-import { Stack, useRouter } from "expo-router";
+import { Stack } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { themedScreenOptions } from "@/lib/screenOptions";
-import { Button } from "@/design-system";
 
 export default function SettingsLayout() {
   const theme = useTheme();
-  const router = useRouter();
   const screen = themedScreenOptions(theme);
   const { t } = useTranslation("settings");
 
   return (
-    <>
-      <Stack screenOptions={{ ...screen, headerBackButtonDisplayMode: "minimal" }}>
-        <Stack.Screen
-          name="index"
-          options={{
-            title: t("title"),
-            headerLeft: () => (
-              <Button
-                icon="close"
-                buttonStyle="borderless"
-                color={theme.colors.headerText}
-                onPress={() => router.dismissAll()}
-              />
-            ),
-          }}
-        />
-        <Stack.Screen name="budget" options={{ title: t("budgetSettings") }} />
-        <Stack.Screen name="display" options={{ title: t("display") }} />
-        <Stack.Screen name="language" options={{ title: t("language") }} />
-      </Stack>
-    </>
+    <Stack screenOptions={{ ...screen, headerBackButtonDisplayMode: "minimal" }}>
+      {/* Migrated to HeroUI — each screen renders its own ScreenHeader. */}
+      <Stack.Screen name="index" options={{ headerShown: false }} />
+      <Stack.Screen name="display" options={{ headerShown: false }} />
+      <Stack.Screen name="language" options={{ headerShown: false }} />
+      {/* Still legacy — keeps the native themed header. */}
+      <Stack.Screen name="budget" options={{ title: t("budgetSettings") }} />
+    </Stack>
   );
 }

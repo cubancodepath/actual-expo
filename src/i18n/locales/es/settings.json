@@ -43,13 +43,6 @@
   "dateFormat": "Formato de Fecha",
   "numberFormat": "Formato de Número",
   "hideDecimalPlaces": "Ocultar Decimales",
-  "currency": "Moneda",
-  "symbolPosition": "Posición del Símbolo",
-  "symbolBefore": "Antes",
-  "symbolAfter": "Después",
-  "spaceBetween": "Espacio Entre",
-  "customSymbol": "Símbolo Personalizado",
-  "customSymbolHint": "El símbolo personalizado reemplaza el símbolo predeterminado para la visualización. Deja vacío para usar el símbolo estándar.",
   "calendar": "Calendario",
   "firstDayOfWeek": "Primer Día de la Semana",
   "budgetData": "Datos del Presupuesto",
@@ -76,9 +69,6 @@
     "goalTemplatesEnabled": {
       "title": "Plantillas de Metas",
       "subtitle": "Habilita el procesamiento de plantillas de metas"
-    },
-    "currency": {
-      "title": "Soporte de Moneda"
     },
     "payeeLocations": {
       "title": "Beneficiarios Cercanos",

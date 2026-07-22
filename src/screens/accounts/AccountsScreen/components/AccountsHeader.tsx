@@ -57,7 +57,7 @@ export function AccountsHeader() {
                   <ArrowLeftRight size={18} color={muted} />
                   <Menu.ItemTitle>{t("menu.switchBudget")}</Menu.ItemTitle>
                 </Menu.Item>
-                <Menu.Item className="gap-3" onPress={noop}>
+                <Menu.Item className="gap-3" onPress={() => router.push("/(auth)/settings")}>
                   <Settings size={18} color={muted} />
                   <Menu.ItemTitle>{t("menu.settings")}</Menu.ItemTitle>
                 </Menu.Item>

@@ -1,4 +1,4 @@
-import { ActionSheetIOS, Alert, Platform, ScrollView, Switch, TextInput, View } from "react-native";
+import { ActionSheetIOS, Alert, Platform, ScrollView, Switch, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -15,14 +15,15 @@ import type { FeatureFlag } from "@/core/domain/preferences/featureFlags";
 
 // Flags with a real feature behind them in the mobile app today. Mirrors
 // upstream's Experimental.tsx: the FeatureFlag union can list more flags
-// than any single client currently has a toggle for.
-const VISIBLE_FEATURE_FLAGS: FeatureFlag[] = ["goalTemplatesEnabled", "currency", "payeeLocations"];
+// than any single client currently has a toggle for. `currency` stays in the
+// union (verbatim upstream mirror) but is intentionally NOT exposed — currency
+// isn't a supported feature on mobile.
+const VISIBLE_FEATURE_FLAGS: FeatureFlag[] = ["goalTemplatesEnabled", "payeeLocations"];
 import {
   DATE_FORMAT_OPTIONS,
   NUMBER_FORMAT_OPTIONS,
   DAY_OF_WEEK_OPTIONS,
 } from "@/core/domain/preferences/types";
-import { currencies, getCurrency } from "@/lib/currencies";
 import {
   deleteBudget,
   deleteFromServer,
@@ -186,16 +187,6 @@ export default function BudgetSettingsScreen() {
   const [numberFormat, setNumberFormat] = useSyncedPrefs("numberFormat");
   const [firstDayOfWeekIdx, setFirstDayOfWeekIdx] = useSyncedPrefs("firstDayOfWeekIdx");
   const [hideFraction, setHideFraction] = useSyncedPrefs("hideFraction");
-  const [defaultCurrencyCode, setDefaultCurrencyCode] = useSyncedPrefs("defaultCurrencyCode");
-  const [currencySymbolPosition, setCurrencySymbolPosition] =
-    useSyncedPrefs("currencySymbolPosition");
-  const [currencySpaceBetweenAmountAndSymbol, setCurrencySpaceBetweenAmountAndSymbol] =
-    useSyncedPrefs("currencySpaceBetweenAmountAndSymbol");
-  const [defaultCurrencyCustomSymbol, setDefaultCurrencyCustomSymbol] = useSyncedPrefs(
-    "defaultCurrencyCustomSymbol",
-  );
-
-  const currencyFlagEnabled = useFeatureFlag("currency");
 
   const isSynced = !isLocalOnly && !!groupId;
   const hasServer = !!serverUrl && !!token;
@@ -294,8 +285,6 @@ export default function BudgetSettingsScreen() {
     }
   }
 
-  const hasCurrency = defaultCurrencyCode !== "";
-
   const dateOptions = DATE_FORMAT_OPTIONS.map((o) => ({
     value: o.value,
     label: o.example,
@@ -344,97 +333,6 @@ export default function BudgetSettingsScreen() {
           }
         />
       </Card>
-
-      {/* Currency — gated by feature flag */}
-      {currencyFlagEnabled && (
-        <>
-          <SectionHeader title={t("currency")} style={{ marginTop: spacing.xl }} />
-          <Card>
-            <PickerRow
-              label={t("currency")}
-              selection={defaultCurrencyCode}
-              options={currencies.map((c) => ({
-                value: c.code,
-                label: c.code ? `${c.code} (${c.symbol})` : t("none", { ns: "common" }),
-              }))}
-              onSelectionChange={(code) => {
-                const cur = getCurrency(code);
-                setDefaultCurrencyCode(code);
-                if (code) {
-                  setNumberFormat(cur.numberFormat);
-                  setHideFraction(cur.decimalPlaces === 0 ? "true" : "false");
-                  setCurrencySymbolPosition(cur.symbolFirst ? "before" : "after");
-                  setCurrencySpaceBetweenAmountAndSymbol(cur.symbolFirst ? "false" : "true");
-                  setDefaultCurrencyCustomSymbol("");
-                }
-              }}
-              showSeparator={hasCurrency}
-            />
-            {hasCurrency && (
-              <>
-                <PickerRow
-                  label={t("symbolPosition")}
-                  selection={currencySymbolPosition || "before"}
-                  options={[
-                    { value: "before", label: t("symbolBefore") },
-                    { value: "after", label: t("symbolAfter") },
-                  ]}
-                  onSelectionChange={(v) => setCurrencySymbolPosition(v)}
-                  showSeparator
-                />
-                <ListItem
-                  title={t("spaceBetween")}
-                  onPress={() =>
-                    setCurrencySpaceBetweenAmountAndSymbol(
-                      currencySpaceBetweenAmountAndSymbol === "true" ? "false" : "true",
-                    )
-                  }
-                  right={
-                    <Switch
-                      value={currencySpaceBetweenAmountAndSymbol === "true"}
-                      onValueChange={(v) =>
-                        setCurrencySpaceBetweenAmountAndSymbol(v ? "true" : "false")
-                      }
-                      trackColor={{ true: colors.primary }}
-                    />
-                  }
-                  showSeparator
-                />
-                <ListItem
-                  title={t("customSymbol")}
-                  right={
-                    <View style={{ flexDirection: "row", alignItems: "center" }}>
-                      <TextInput
-                        value={defaultCurrencyCustomSymbol}
-                        onChangeText={(v) => setDefaultCurrencyCustomSymbol(v)}
-                        placeholder={getCurrency(defaultCurrencyCode).symbol}
-                        placeholderTextColor={colors.textMuted}
-                        style={{
-                          color: colors.textPrimary,
-                          fontSize: 15,
-                          textAlign: "right",
-                          minWidth: 60,
-                          padding: 0,
-                        }}
-                        maxLength={10}
-                      />
-                    </View>
-                  }
-                />
-              </>
-            )}
-          </Card>
-          {hasCurrency && (
-            <Text
-              variant="caption"
-              color={colors.textMuted}
-              style={{ paddingHorizontal: spacing.lg, marginTop: spacing.sm }}
-            >
-              {t("customSymbolHint")}
-            </Text>
-          )}
-        </>
-      )}
 
       {/* Calendar */}
       <SectionHeader title={t("calendar")} style={{ marginTop: spacing.xl }} />

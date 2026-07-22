@@ -1,4 +1,5 @@
 import { View } from "react-native";
+import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { Button, Menu, useThemeColor } from "heroui-native";
@@ -22,6 +23,7 @@ import { noop } from "@/screens/budget/constants";
  */
 export function BudgetHeader() {
   const { t } = useTranslation("budget");
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const foreground = useThemeColor("foreground");
   const muted = useThemeColor("muted");
@@ -70,7 +72,7 @@ export function BudgetHeader() {
                 <ArrowLeftRight size={18} color={muted} />
                 <Menu.ItemTitle>{t("switchBudget")}</Menu.ItemTitle>
               </Menu.Item>
-              <Menu.Item className="gap-3" onPress={noop}>
+              <Menu.Item className="gap-3" onPress={() => router.push("/(auth)/settings")}>
                 <Settings size={18} color={muted} />
                 <Menu.ItemTitle>{t("settings")}</Menu.ItemTitle>
               </Menu.Item>

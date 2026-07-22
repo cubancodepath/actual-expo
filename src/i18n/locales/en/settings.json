@@ -43,13 +43,6 @@
   "dateFormat": "Date Format",
   "numberFormat": "Number Format",
   "hideDecimalPlaces": "Hide Decimal Places",
-  "currency": "Currency",
-  "symbolPosition": "Symbol Position",
-  "symbolBefore": "Before",
-  "symbolAfter": "After",
-  "spaceBetween": "Space Between",
-  "customSymbol": "Custom Symbol",
-  "customSymbolHint": "Custom Symbol overrides the default symbol for display. Leave empty to use the standard symbol.",
   "calendar": "Calendar",
   "firstDayOfWeek": "First Day of Week",
   "budgetData": "Budget Data",
@@ -76,9 +69,6 @@
     "goalTemplatesEnabled": {
       "title": "Goal Templates",
       "subtitle": "Enable goal template processing"
-    },
-    "currency": {
-      "title": "Currency Support"
     },
     "payeeLocations": {
       "title": "Nearby Payees",

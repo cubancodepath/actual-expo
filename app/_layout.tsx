@@ -22,6 +22,7 @@ import {
 } from "@expo-google-fonts/inter";
 import i18n from "@/i18n/config";
 import { HeroUINativeProvider } from "heroui-native";
+import { Uniwind } from "uniwind";
 import { ThemeProvider } from "@/design-system/providers/ThemeProvider";
 import { useSessionStore } from "@/stores/sessionStore";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
@@ -74,6 +75,14 @@ function RootLayout() {
   const systemScheme = useColorScheme();
   const themeMode = useUiPrefsStore((s) => s.themeMode);
   const colorScheme = themeMode === "system" ? systemScheme : themeMode;
+
+  // Bridge the user's theme override into Uniwind so HeroUI-rendered screens
+  // follow it too. `themeMode` is exactly Uniwind's theme vocabulary
+  // ("system" re-enables adaptive/OS following; "light"/"dark" force a theme).
+  // Without this, HeroUI screens only ever track the OS color scheme.
+  useEffect(() => {
+    Uniwind.setTheme(themeMode);
+  }, [themeMode]);
   const router = useRouter();
   const hasToken = useSessionStore((s) => s.hasToken);
   const isConfigured = useIsConfigured();

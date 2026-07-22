@@ -15,8 +15,7 @@ import {
 } from "heroui-native";
 import { X } from "lucide-react-native";
 import { AmountKeyboard } from "@/ui/amount-keyboard";
-import { BlinkingCursor } from "@/ui/BlinkingCursor";
-import { Money } from "@/ui/Money";
+import { AmountField } from "@/ui/money-entry/AmountField";
 import { ScreenHeader } from "@/ui/ScreenHeader";
 import { useNewAccountForm } from "./hooks/useNewAccountForm";
 
@@ -30,7 +29,6 @@ export function NewAccountScreen() {
   const { t } = useTranslation("accounts");
   const router = useRouter();
   const foreground = useThemeColor("foreground");
-  const accent = useThemeColor("accent");
   const { form, submit, isSaving } = useNewAccountForm();
 
   const values = useSelector(form.store, (s) => s.values);
@@ -80,18 +78,7 @@ export function NewAccountScreen() {
           {/* Starting balance */}
           <View className="gap-1">
             <Label>{t("newAccount.startingBalanceLabel")}</Label>
-            {/* Built by hand (heroui's Input can't host the cursor) but wearing
-                Input's own classes so it reads as a standard field. */}
-            <AmountKeyboard.Trigger>
-              <View className="min-h-12 flex-row items-center rounded-field border-field-width border-field-border bg-field px-3 ios:shadow-field android:shadow-sm">
-                <Money
-                  cents={values.startingBalance}
-                  tone="plain"
-                  className="text-base font-normal text-foreground"
-                />
-                {amountOpen ? <BlinkingCursor color={accent} /> : null}
-              </View>
-            </AmountKeyboard.Trigger>
+            <AmountField />
             <Typography className="ml-1 mt-1 text-xs text-muted">
               {t("newAccount.startingBalanceHint")}
             </Typography>

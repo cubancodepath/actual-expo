@@ -20,7 +20,7 @@ import {
 } from "@/services/budgetfiles";
 import { clearSwitchingFlag } from "@/core/sync";
 import * as encryption from "@/core/encryption";
-import { loadKeyForBudget } from "@/services/encryptionService";
+import { loadKeyForBudget } from "@/core/encryption/keys";
 import { promptForPassword } from "@/ui/feedback/EncryptionPasswordPrompt";
 
 const QUERY_KEY = ["budgetFiles"] as const;
@@ -31,8 +31,6 @@ export function fileKey(file: ReconciledBudgetFile): string {
 
 export type SwitchingState = {
   key: string;
-  name: string | null;
-  phase: "downloading" | "opening";
 } | null;
 
 type UseBudgetFilesReturn = {
@@ -130,11 +128,7 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
       }
     }
 
-    setSwitching({
-      key: fileKey(file),
-      name: file.name,
-      phase: file.state === "remote" ? "downloading" : "opening",
-    });
+    setSwitching({ key: fileKey(file) });
     try {
       await switchBudget(file, serverUrl, token);
       return true;

@@ -15,7 +15,7 @@ import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import { CloseButton } from "@/ui/CloseButton";
 import { InlineError } from "@/ui/feedback/InlineError";
 import { BudgetFileRow } from "@/ui/BudgetFileRow";
-import { BudgetOpeningOverlay } from "@/screens/files/components/BudgetOpeningOverlay";
+import { LoadingOverlay } from "@/ui/LoadingOverlay";
 import { useBudgetFiles, fileKey } from "@/screens/files/hooks/useBudgetFiles";
 import type { ReconciledBudgetFile } from "@/services/budgetfiles";
 
@@ -137,11 +137,7 @@ export function ChangeBudgetScreen() {
         </ScrollView>
       </ScrollShadow>
 
-      <BudgetOpeningOverlay
-        visible={isSwitching}
-        phase={switching?.phase ?? "opening"}
-        budgetName={switching?.name ?? null}
-      />
+      <LoadingOverlay visible={isSwitching} />
     </View>
   );
 }

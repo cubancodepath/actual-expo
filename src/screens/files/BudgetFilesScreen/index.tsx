@@ -22,7 +22,7 @@ import { resetSyncState, clearSwitchingFlag } from "@/core/sync";
 import { InlineError } from "@/ui/feedback/InlineError";
 import { ConfirmDialog, type ConfirmRequest } from "@/ui/feedback/ConfirmDialog";
 import { BudgetFileRow } from "@/ui/BudgetFileRow";
-import { BudgetOpeningOverlay } from "@/screens/files/components/BudgetOpeningOverlay";
+import { LoadingOverlay } from "@/ui/LoadingOverlay";
 import { FileActionsSheet, type FileAction } from "@/screens/files/components/FileActionsSheet";
 import { useBudgetFiles, fileKey } from "@/screens/files/hooks/useBudgetFiles";
 import { buildActionRequest } from "./confirmRequests";
@@ -208,11 +208,7 @@ export function BudgetFilesScreen() {
       />
       <ConfirmDialog request={confirm} onClose={() => setConfirm(null)} />
 
-      <BudgetOpeningOverlay
-        visible={switching !== null}
-        phase={switching?.phase ?? "opening"}
-        budgetName={switching?.name ?? null}
-      />
+      <LoadingOverlay visible={switching !== null} />
     </View>
   );
 }

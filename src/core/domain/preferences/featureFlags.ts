@@ -9,21 +9,11 @@
  * and the "true"/"false" string encoding are allowed to appear.
  */
 
-export type FeatureFlag =
-  | "goalTemplatesEnabled"
-  | "goalTemplatesUIEnabled"
-  | "actionTemplating"
-  | "formulaMode"
-  | "currency"
-  | "ageOfMoneyReport"
-  | "balanceForecastReport"
-  | "customThemes"
-  | "budgetAnalysisReport"
-  | "payeeLocations"
-  | "enableBanking"
-  | "sankeyReport"
-  | "akahuBankSync"
-  | "mobileCalculator";
+// The FeatureFlag union lives in prefs.types.ts (the faithful mirror of
+// upstream's types/prefs.ts). Re-exported here so existing importers keep
+// working and the flag encoding helpers below stay colocated.
+export type { FeatureFlag } from "./prefs.types";
+import type { FeatureFlag } from "./prefs.types";
 
 export const DEFAULT_FEATURE_FLAG_STATE: Record<FeatureFlag, boolean> = {
   goalTemplatesEnabled: false,

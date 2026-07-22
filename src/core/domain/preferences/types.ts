@@ -8,21 +8,39 @@ export type DateFormatOption =
 
 export type NumberFormatOption = "comma-dot" | "dot-comma" | "space-comma" | "apostrophe-dot";
 
+import type { SyncedPrefs } from "./prefs.types";
+
+/**
+ * The fixed SyncedPrefs keys the engine loads eagerly (with defaults) into the
+ * synced-prefs cache. A subset of `SyncedPrefs` — the dynamic per-entity keys
+ * (`hide-cleared-*`, `flags.*`, …) are read/written on demand, not seeded here.
+ */
 export type PreferenceKey =
+  | "budgetType"
+  | "upcomingScheduledTransactionLength"
+  | "firstDayOfWeekIdx"
   | "dateFormat"
   | "numberFormat"
-  | "firstDayOfWeekIdx"
   | "hideFraction"
+  | "isPrivacyEnabled"
   | "defaultCurrencyCode"
   | "currencySymbolPosition"
   | "currencySpaceBetweenAmountAndSymbol"
   | "defaultCurrencyCustomSymbol";
 
+// Compile-time guard: every eagerly-loaded key is a real SyncedPref key.
+type _AssertKnownKeys = PreferenceKey extends keyof SyncedPrefs ? true : never;
+const _knownKeysAreSynced: _AssertKnownKeys = true;
+void _knownKeysAreSynced;
+
 export const PREFERENCE_DEFAULTS: Record<PreferenceKey, string> = {
+  budgetType: "envelope",
+  upcomingScheduledTransactionLength: "7",
+  firstDayOfWeekIdx: "0",
   dateFormat: "MM/dd/yyyy",
   numberFormat: "comma-dot",
-  firstDayOfWeekIdx: "0",
   hideFraction: "false",
+  isPrivacyEnabled: "false",
   defaultCurrencyCode: "",
   currencySymbolPosition: "before",
   currencySpaceBetweenAmountAndSymbol: "false",

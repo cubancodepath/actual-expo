@@ -8,6 +8,8 @@ import type { Transaction, GetTransactionsOptions, TransactionDisplay } from "./
 import { onInsert, onUpdate, onDelete as onDeleteTransfer } from "./transfer";
 import { todayInt, startOfMonthInt, endOfMonthInt } from "@/lib/date";
 import { q, executeQuery } from "@/core/queries";
+import { getRules } from "../rules";
+import { applyRulesToNewTransaction } from "../rules/apply";
 
 export type { TransactionDisplay } from "./types";
 
@@ -364,12 +366,25 @@ export const reconcileAccount = undoable(async function reconcileAccount(
 
   await batchMessages(async () => {
     if (diff !== 0) {
-      await addTransaction({
+      // Run the rule engine over the system-generated adjustment before insert
+      // (upstream parity: the reconciliation transaction goes through rules,
+      // e.g. to auto-categorize it). Same bulk/override path as schedule-post.
+      const rules = await getRules();
+      const f = await applyRulesToNewTransaction(rules, {
         account: accountId,
         date: todayInt(),
         amount: diff,
         cleared: true,
         notes: "Reconciliation balance adjustment",
+      });
+      await addTransaction({
+        account: f.account,
+        date: f.date,
+        amount: f.amount,
+        category: f.category ?? undefined,
+        payee: f.payee ?? undefined,
+        notes: f.notes,
+        cleared: true,
       });
     }
 

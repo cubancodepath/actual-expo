@@ -1,7 +1,9 @@
 #!/bin/bash
 #
 # Architecture guardrail — enforces the dependency direction (see ARCHITECTURE.md):
-#   app → screens → (ui | stores | lib | services) → core
+#   app → screens → (ui | stores | lib) → core
+# The stores are the mobile "slices" (state + operations); side effects live in
+# core/server (transport/handlers) + core/platform (native seams). No services/.
 # Legacy layers (features/, components/, design-system/) still exist during the
 # strangler migration and are held to the same rules. Wired into husky pre-commit.
 #
@@ -21,8 +23,8 @@
 #      Pure utils (@/lib/format, date, currencies) stay allowed.
 #
 # WARNINGS (do not block):
-#   - src/core imports @/stores or @/services — known port compromises (prefs read from
-#     the store; sync posts over HTTP; see docs/architecture-differences).
+#   - src/core imports @/stores — known port compromise (sync code reads prefs/context
+#     from the store; see docs/architecture-differences).
 #   - "fat" route files in app/ (> 120 lines) — routes must stay thin re-exports of
 #     src/screens/ (ARCHITECTURE.md § rutas finas).
 #
@@ -138,7 +140,7 @@ app/(auth)/transaction/split.tsx
 app/(auth)/transaction/tags.tsx
 app/(public)/onboarding.tsx"
 legacy_new=$(grep -rln "from ['\"]@/\(features\|design-system\)" \
-  src/ui src/screens src/lib src/hooks src/stores src/services app \
+  src/ui src/screens src/lib src/hooks src/stores app \
   --include='*.ts*' 2>/dev/null | grep -vxF "$legacy_allowlist" || true)
 if [ -n "$legacy_new" ]; then
   echo "ARCH FAIL: new legacy imports (@/features|@/design-system) outside the grandfather list:"
@@ -146,13 +148,13 @@ if [ -n "$legacy_new" ]; then
   fail=1
 fi
 
-# WARN: core importing stores/services (known debt) — static AND dynamic imports
+# WARN: core importing stores (known debt) — static AND dynamic imports
 core_impure=$(grep -rln \
-  -e "from ['\"]@/\(stores\|services\)" \
-  -e "import(['\"]@/\(stores\|services\)" \
+  -e "from ['\"]@/stores" \
+  -e "import(['\"]@/stores" \
   src/core --include='*.ts*' 2>/dev/null | grep -v '\.test\.' || true)
 if [ -n "$core_impure" ]; then
-  echo "ARCH WARN: src/core imports @/stores or @/services (known port compromise):"
+  echo "ARCH WARN: src/core imports @/stores (known port compromise):"
   echo "$core_impure" | sed 's/^/  · /'
 fi
 

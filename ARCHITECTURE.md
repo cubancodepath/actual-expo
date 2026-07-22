@@ -44,11 +44,15 @@ src/
 │   ├── swift-ui/           # bridges SwiftUI (SAmount, SPill, SText, …)
 │   └── theme/              # ThemeProvider + puente de tokens hacia global.css/Uniwind
 │
-├── stores/                 # Zustand — SOLO estado de UI/sesión. Se queda como está (nombre incluido).
-│
-├── services/               # Side effects hacia el exterior: authService, budgetfiles, encryptionService,
-│   └── api/                # locationService, seedBudget, importers/ + HTTP (ex shared/infra/api,
-│                           # manteniendo la separación .api/.dto/.mappers/.types)
+├── stores/                 # Zustand — los "slices" del cliente: estado + operaciones (con lógica).
+│                           # Espejo de desktop-client/src/<feature>/<feature>Slice.ts del upstream:
+│                           #   sessionStore   = usersSlice     (loggedIn, signOut)
+│                           #   budgetContext… = budgetfilesSlice (loadBudget, closeBudget,
+│                           #                    closeAndLoadBudget, closeAndDownloadBudget, deleteBudget)
+│                           #   syncStore      = appSlice (sync, resetSync, redownloadBudget, handleSyncFileError)
+│                           # Las operaciones son ACCIONES del store (idiomático Zustand); en React se
+│                           # consumen con selectores useXStore(s => s.accion), fuera de React con getState().
+│                           # (Ya NO hay src/services/: los side effects viven en core/server + core/platform.)
 │
 ├── lib/                    # Utilidades puras sin React (currency, date, format, colors, screenOptions)
 │   ├── errors/             # bus de errores de la app (ErrorChannel, emitErrorEvent, toErrorCode)
@@ -68,8 +72,9 @@ src/
 Ante cualquier archivo, pregunta en orden:
 
 1. **¿Es lógica de negocio/datos sin React?** → `core/` (o `lib/` si es un util genérico sin dominio).
-2. **¿Es un side effect hacia fuera (HTTP, keychain, GPS, import/export)?** → `services/`.
-3. **¿Es estado global de UI (Zustand)?** → `stores/`.
+2. **¿Es un side effect hacia fuera (HTTP, fs, keychain, GPS)?** → transporte/handlers en
+   `core/server/`; el módulo nativo se envuelve en un seam `core/platform/<capability>`.
+3. **¿Es estado + operaciones de una feature (el "slice")?** → `stores/` (acción del store Zustand).
 4. **¿Lo usa UNA sola pantalla?** → dentro de su carpeta `screens/<dominio>/<ScreenName>/`.
 5. **¿Lo usan varias pantallas del MISMO dominio?** → `screens/<dominio>/components|hooks/`.
 6. **¿Lo usan varios dominios?** → `ui/` si es visual, `lib/hooks/` si es un hook, `lib/` si es un util.
@@ -80,10 +85,12 @@ por bloque (`currency-input/`, `category-list/`…). Nunca carpetas planas gigan
 ## Dirección de dependencias
 
 ```
-app → screens → (ui | stores | lib | services) → core
+app → screens → (ui | stores | lib) → core   (core/server + core/platform incluidos)
 ```
 
-- `core/` no importa nada de las demás capas (ya vigente).
+- `core/` no importa nada de las demás capas (ya vigente). Los side effects viven dentro
+  de `core/server/` (transporte/handlers, espejo de `loot-core/src/server/`) y
+  `core/platform/` (seams nativos: fetch, fs, sqlite, crypto, keyStore, location).
 - Una screen **nunca** importa de una screen de otro dominio. Si lo necesita, ese código sube a `ui/` o `lib/`.
 - `ui/` no importa de `screens/` ni de `stores/`.
 - `app/` solo importa de `screens/` y `lib/screenOptions`.

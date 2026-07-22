@@ -7,7 +7,7 @@
  * Mirrors the server-side importActual() in loot-core, adapted for expo-file-system.
  */
 
-import { EncodingType, makeDirectoryAsync, writeAsStringAsync } from "expo-file-system/legacy";
+import { EncodingType, makeDirectoryAsync, writeAsStringAsync } from "@/core/platform/fs";
 import { unzipSync } from "fflate";
 
 import { getBudgetDir, idFromBudgetName, writeMetadata } from "@/core/server/prefs";

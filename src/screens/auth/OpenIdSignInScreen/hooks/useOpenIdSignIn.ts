@@ -2,8 +2,9 @@ import { useState } from "react";
 import { useRouter } from "expo-router";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
-import { createOpenIdLoginUrl } from "@/services/api/auth/auth.api";
+import { createOpenIdLoginUrl } from "@/core/server/api/auth/auth.api";
 import { finalizeAuthenticatedSession } from "@/services/authService";
+import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { isExpectedOpenIdCallback, OPENID_CALLBACK_SCHEME } from "./isExpectedOpenIdCallback";
 
 /**
@@ -53,8 +54,9 @@ export function useOpenIdSignIn(serverUrl: string) {
 
       await finalizeAuthenticatedSession({ serverUrl, token });
       router.replace("/(files)/files");
-    } catch {
-      // Already reported to the ErrorChannel bus (→ console) by the API layer.
+    } catch (e) {
+      // Core transport only throws; surface to the error bus here.
+      emitErrorEvent(e, { operation: "createOpenIdLoginUrl" });
       setLoading(false);
     }
   }

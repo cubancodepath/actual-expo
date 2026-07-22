@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { getRemoteFiles } from "../budgetFiles.api";
-import { expectActualError, fetchMock, jsonResponse, SERVER } from "./testUtils";
+import {
+  expectActualError,
+  fetchMock,
+  jsonResponse,
+  SERVER,
+} from "@/core/server/api/__tests__/testUtils";
 
 describe("getRemoteFiles", () => {
   const rawFile = {

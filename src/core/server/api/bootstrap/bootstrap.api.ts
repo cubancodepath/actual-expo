@@ -1,7 +1,6 @@
 import { ActualError } from "@/core/errors";
-import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
+import { http, parseResponse, toTransportError } from "@/core/platform/fetch";
 import { dataOrSelf } from "../response";
-import { http, parseResponse, toTransportError } from "../httpClient";
 import { BootstrapResponseDtoSchema } from "./bootstrap.dto";
 import { toBootstrapInfo } from "./bootstrap.mappers";
 import type { BootstrapInfo } from "./bootstrap.types";
@@ -10,10 +9,7 @@ export type { BootstrapInfo, LoginMethod } from "./bootstrap.types";
 
 const PROBE_RETRY_DELAYS = [1500, 2500, 3000];
 
-function emitBootstrapApiError(error: unknown, operation: string): void {
-  emitErrorEvent(error, { operation });
-}
-
+// Core transport: only THROWS — the app layer surfaces to the error bus.
 export async function getBootstrapInfo(serverUrl: string): Promise<BootstrapInfo> {
   let json: unknown;
   try {
@@ -28,16 +24,9 @@ export async function getBootstrapInfo(serverUrl: string): Promise<BootstrapInfo
       .json();
   } catch (e) {
     const mapped = toTransportError(e);
-    const error = mapped.code === "http/parse-error" ? mapped : new ActualError("network/offline");
-    emitBootstrapApiError(error, "getBootstrapInfo");
-    throw error;
+    throw mapped.code === "http/parse-error" ? mapped : new ActualError("network/offline");
   }
 
-  try {
-    const dto = parseResponse(BootstrapResponseDtoSchema, dataOrSelf(json));
-    return toBootstrapInfo(dto);
-  } catch (e) {
-    emitBootstrapApiError(e, "getBootstrapInfo.parseResponse");
-    throw e;
-  }
+  const dto = parseResponse(BootstrapResponseDtoSchema, dataOrSelf(json));
+  return toBootstrapInfo(dto);
 }

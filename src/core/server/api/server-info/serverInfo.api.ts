@@ -1,4 +1,4 @@
-import { http } from "../httpClient";
+import { http } from "@/core/platform/fetch";
 import { ServerInfoResponseDtoSchema } from "./serverInfo.dto";
 import { toServerInfo } from "./serverInfo.mappers";
 import type { ServerInfo } from "./serverInfo.types";

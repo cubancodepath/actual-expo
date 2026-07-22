@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useRouter } from "expo-router";
-import { getBootstrapInfo } from "@/services/api/bootstrap/bootstrap.api";
+import { getBootstrapInfo } from "@/core/server/api/bootstrap/bootstrap.api";
+import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 
 /**
  * Step 1 of auth: connect to a server and decide where to go next.
@@ -29,8 +30,9 @@ export function useServerProbe() {
       }
       const pathname = info.loginMethod === "openid" ? "/(public)/openid" : "/(public)/password";
       router.push({ pathname, params: { serverUrl: url } });
-    } catch {
-      // Already reported to the ErrorChannel bus (→ console) by the API layer.
+    } catch (e) {
+      // Core transport only throws; surface to the error bus here.
+      emitErrorEvent(e, { operation: "getBootstrapInfo" });
     } finally {
       setProbing(false);
     }

@@ -35,7 +35,7 @@ import {
 } from "./budgetMetadata";
 import { seedLocalBudget, type CategorySelection } from "./seedBudget";
 import * as encryption from "@/core/encryption";
-import { loadKeyForBudget } from "./encryptionService";
+import { loadKeyForBudget } from "@/core/encryption/keys";
 import { http } from "@/services/api/httpClient";
 import { mapServerReason } from "@/core/post";
 import { ActualError, type ErrorCode } from "@/core/errors";

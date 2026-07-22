@@ -1,3 +1,9 @@
+/**
+ * Encryption-key persistence — the platform boundary for storing E2E keys,
+ * mirroring upstream's `#platform/server/asyncStorage` `encrypt-keys` map. On
+ * mobile we use the Keychain/Keystore (expo-secure-store) so key material is
+ * hardware-backed and never leaves the device.
+ */
 import * as SecureStore from "expo-secure-store";
 
 const INDEX_KEY = "encrypt-key-index";

@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import * as SecureStore from "expo-secure-store";
-import { saveKey } from "@/services/encryptionKeyStorage";
+import { saveKey } from "@/core/platform/keyStore";
 
-describe("encryptionKeyStorage — SecureStore accessibility hardening (plan 006)", () => {
+describe("keyStore — SecureStore accessibility hardening (plan 006)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

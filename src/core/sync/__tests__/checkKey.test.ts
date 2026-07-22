@@ -8,7 +8,7 @@ vi.mock("@/core/encryption", () => ({
   hasKey: vi.fn(),
 }));
 
-import { checkKey } from "@/services/encryptionService";
+import { checkKey } from "@/core/sync/cloudStorage";
 import { post } from "@/core/post";
 import * as encryption from "@/core/encryption";
 

@@ -34,6 +34,15 @@ export default function AuthLayout() {
           contentStyle: { backgroundColor: theme.colors.pageBackground },
         }}
       />
+      <Stack.Screen
+        name="encryption-password"
+        options={{
+          headerShown: false,
+          presentation: "formSheet",
+          sheetAllowedDetents: [1.0],
+          contentStyle: { backgroundColor: theme.colors.pageBackground },
+        }}
+      />
       <Stack.Screen name="account/settings" options={{ headerShown: false, ...modal }} />
       <Stack.Screen
         name="account/close"

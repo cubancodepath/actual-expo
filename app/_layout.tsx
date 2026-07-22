@@ -39,11 +39,10 @@ import { syncShortcutCache } from "@/lib/syncShortcutCache";
 import { UndoToast } from "@/design-system";
 import { ErrorBoundary } from "@/ui/feedback/ErrorBoundary";
 import { ErrorChannelConsumer } from "@/ui/feedback/ErrorChannelConsumer";
-import { EncryptionPasswordPrompt } from "@/ui/feedback/EncryptionPasswordPrompt";
 import { SyncConflictDialog } from "@/ui/feedback/SyncConflictDialog";
 import { DialogHost } from "@/ui/feedback/dialog";
 import { useShakeUndo } from "@/hooks/useShakeUndo";
-import { loadAllPersistedKeys } from "@/services/encryptionService";
+import { loadAllPersistedKeys } from "@/core/encryption/keys";
 import { installGlobalHandlers } from "@/lib/errors/install";
 import { scrubEvent } from "@/lib/errors/sentryScrub";
 
@@ -314,7 +313,6 @@ function RootLayout() {
                     </Stack.Protected>
                   </Stack>
                   <UndoToast />
-                  <EncryptionPasswordPrompt />
                   <SyncConflictDialog />
                   <DialogHost />
                   <ErrorChannelConsumer />

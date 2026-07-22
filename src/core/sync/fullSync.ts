@@ -224,7 +224,7 @@ export function fullSync(opts?: { force?: boolean }): Promise<number> {
     // Proactively verify the key after a prior decrypt-failure — see
     // _lastSyncHadDecryptFailure's comment.
     if (_lastSyncHadDecryptFailure && prefs.encryptKeyId && prefs.fileId) {
-      const { checkKey } = await import("@/services/encryptionService");
+      const { checkKey } = await import("@/core/sync/cloudStorage");
       const result = await checkKey({
         serverUrl: prefs.serverUrl,
         token: prefs.token,

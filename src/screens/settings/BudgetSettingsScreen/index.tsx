@@ -6,6 +6,7 @@ import { ScreenHeader } from "@/ui/ScreenHeader";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { FormattingGroup } from "./components/FormattingGroup";
 import { CurrencyGroup } from "./components/CurrencyGroup";
+import { EncryptionGroup } from "./components/EncryptionGroup";
 import { ExperimentalGroup } from "./components/ExperimentalGroup";
 
 /** A muted section label above a group card. */
@@ -40,6 +41,11 @@ export function BudgetSettingsScreen() {
             <CurrencyGroup />
           </View>
         )}
+
+        <View className="mb-6">
+          <SectionLabel>{t("encryption")}</SectionLabel>
+          <EncryptionGroup />
+        </View>
 
         <View className="mb-6">
           <SectionLabel>{t("experimentalFeatures")}</SectionLabel>

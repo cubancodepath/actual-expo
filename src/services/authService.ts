@@ -2,7 +2,7 @@ import * as SecureStore from "expo-secure-store";
 import { useSessionStore } from "@/stores/sessionStore";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import { SECURE_TOKEN_KEY } from "@/stores/prefsStorage";
-import { clearAllKeys as clearEncryptionKeys } from "./encryptionKeyStorage";
+import { clearAllKeys as clearEncryptionKeys } from "@/core/platform/keyStore";
 import { unloadAllKeys } from "@/core/encryption";
 
 // ---------------------------------------------------------------------------

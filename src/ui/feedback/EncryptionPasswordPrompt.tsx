@@ -1,244 +1,62 @@
-import { useEffect, useState } from "react";
-import { View } from "react-native";
 import { create } from "zustand";
-import { useTranslation } from "react-i18next";
-import {
-  Button,
-  Dialog,
-  FieldError,
-  Input,
-  Spinner,
-  TextField,
-  useThemeColor,
-} from "heroui-native";
-import * as encryptionService from "@/services/encryptionService";
-import { useSessionStore } from "@/stores/sessionStore";
+import { router } from "expo-router";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
 
-type PromptMode = "unlock" | "enable";
+/**
+ * Controller for the encryption-password flows (unlock / enable).
+ *
+ * The UI is a route form-sheet (`app/(auth)/encryption-password.tsx` →
+ * `EncryptionPasswordScreen`), consistent with Hold/Reconcile. To keep the
+ * promise-based callers working (e.g. `useBudgetFiles.selectFile` awaits
+ * `promptForPassword`), these helpers bridge navigation ↔ promise: they stash a
+ * `resolve` in the store, navigate to the sheet, and the screen settles it.
+ */
 
-type PromptState = {
-  visible: boolean;
-  mode: PromptMode;
+export type EncryptionPromptMode = "unlock" | "enable";
+
+type PromptResult = "success" | "cancelled";
+
+type EncryptionPromptState = {
+  mode: EncryptionPromptMode;
   cloudFileId: string;
-  _resolve: ((result: "success" | "cancelled") => void) | null;
-  _show: (mode: PromptMode, cloudFileId: string) => Promise<"success" | "cancelled">;
-  _hide: () => void;
+  resolve: ((result: PromptResult) => void) | null;
 };
 
-const usePromptStore = create<PromptState>((set, get) => ({
-  visible: false,
+export const useEncryptionPromptStore = create<EncryptionPromptState>(() => ({
   mode: "unlock",
   cloudFileId: "",
-  _resolve: null,
-
-  _show(mode: PromptMode, cloudFileId: string) {
-    const prev = get()._resolve;
-    if (prev) prev("cancelled");
-
-    return new Promise<"success" | "cancelled">((resolve) => {
-      set({ visible: true, mode, cloudFileId, _resolve: resolve });
-    });
-  },
-
-  _hide() {
-    set({ visible: false, cloudFileId: "", _resolve: null });
-  },
+  resolve: null,
 }));
 
-/**
- * Prompt for password to unlock an encrypted budget.
- */
-export function promptForPassword(cloudFileId: string): Promise<"success" | "cancelled"> {
-  return usePromptStore.getState()._show("unlock", cloudFileId);
+function open(mode: EncryptionPromptMode, cloudFileId: string): Promise<PromptResult> {
+  // Cancel any in-flight prompt before starting a new one.
+  const prev = useEncryptionPromptStore.getState().resolve;
+  if (prev) prev("cancelled");
+
+  return new Promise<PromptResult>((resolve) => {
+    useEncryptionPromptStore.setState({ mode, cloudFileId, resolve });
+    router.push("/(auth)/encryption-password");
+  });
 }
 
-/**
- * Prompt to set a new encryption password for the current budget.
- */
-export function promptToEnableEncryption(): Promise<"success" | "cancelled"> {
+/** Prompt for a password to unlock an encrypted budget. */
+export function promptForPassword(cloudFileId: string): Promise<PromptResult> {
+  return open("unlock", cloudFileId);
+}
+
+/** Prompt to set (or regenerate) the encryption password for the current budget. */
+export function promptToEnableEncryption(): Promise<PromptResult> {
   const { fileId } = useBudgetContextStore.getState();
-  return usePromptStore.getState()._show("enable", fileId);
+  return open("enable", fileId);
 }
 
 /**
- * heroui Dialog for the encryption password flows (unlock / enable).
- * Mounted ONCE in app/_layout.tsx; opened imperatively via
- * promptForPassword / promptToEnableEncryption.
+ * Settle the active prompt — called by the screen on submit/cancel/dismiss.
+ * Idempotent: once settled the resolver is cleared, so later calls (e.g. the
+ * screen's unmount cleanup after a successful submit) are no-ops.
  */
-export function EncryptionPasswordPrompt() {
-  const { t } = useTranslation("common");
-  const accentForeground = useThemeColor("accent-foreground");
-
-  const { visible, mode, cloudFileId, _resolve, _hide } = usePromptStore();
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (visible) {
-      setPassword("");
-      setConfirmPassword("");
-      setError("");
-      setLoading(false);
-    }
-  }, [visible]);
-
-  function handleCancel() {
-    _resolve?.("cancelled");
-    _hide();
-  }
-
-  async function handleUnlock() {
-    if (!password.trim() || loading) return;
-
-    setError("");
-    setLoading(true);
-
-    const { serverUrl, token } = useSessionStore.getState();
-    const result = await encryptionService.testKey({
-      serverUrl,
-      token,
-      cloudFileId,
-      password: password.trim(),
-    });
-
-    setLoading(false);
-
-    if ("success" in result) {
-      _resolve?.("success");
-      _hide();
-    } else if (result.error === "decrypt-failure") {
-      setError(t("encryption.wrongPassword"));
-    } else if (result.error === "network") {
-      setError(t("encryption.networkError"));
-    } else {
-      setError(t("encryption.unsupportedKeyFormat"));
-    }
-  }
-
-  async function handleEnable() {
-    if (!password.trim() || loading) return;
-
-    if (password !== confirmPassword) {
-      setError(t("encryption.passwordsMismatch"));
-      return;
-    }
-
-    setError("");
-    setLoading(true);
-
-    // Yield to let React render the loading state before heavy crypto work
-    await new Promise((resolve) => setTimeout(resolve, 50));
-
-    const { serverUrl, token } = useSessionStore.getState();
-    const { activeBudgetId } = useBudgetContextStore.getState();
-    const result = await encryptionService.enableEncryption({
-      serverUrl,
-      token,
-      cloudFileId,
-      budgetId: activeBudgetId,
-      password: password.trim(),
-    });
-
-    if ("success" in result) {
-      useBudgetContextStore.getState().setBudgetContext({
-        encryptKeyId: undefined,
-        groupId: result.groupId,
-      });
-      const { readMetadata } = await import("@/services/budgetMetadata");
-      const meta = await readMetadata(activeBudgetId);
-      if (meta?.encryptKeyId) {
-        useBudgetContextStore.getState().setBudgetContext({ encryptKeyId: meta.encryptKeyId });
-      }
-      _resolve?.("success");
-      _hide();
-    } else {
-      setLoading(false);
-      setError(
-        result.error === "network" ? t("encryption.networkError") : t("encryption.enableFailed"),
-      );
-    }
-  }
-
-  const isEnable = mode === "enable";
-  const handleSubmit = isEnable ? handleEnable : handleUnlock;
-  const canSubmit = isEnable
-    ? password.trim().length > 0 && confirmPassword.length > 0
-    : password.trim().length > 0;
-
-  return (
-    <Dialog isOpen={visible} onOpenChange={(open) => !open && handleCancel()}>
-      <Dialog.Portal>
-        <Dialog.Overlay />
-        <Dialog.Content>
-          <View className="mb-5 gap-1.5">
-            <Dialog.Title>
-              {isEnable ? t("encryption.enableTitle") : t("encryption.enterPasswordTitle")}
-            </Dialog.Title>
-            <Dialog.Description>
-              {isEnable
-                ? t("encryption.enableDescription")
-                : t("encryption.enterPasswordDescription")}
-            </Dialog.Description>
-          </View>
-
-          <TextField isInvalid={!!error} isDisabled={loading}>
-            <Input
-              secureTextEntry
-              autoFocus
-              placeholder={t("encryption.passwordPlaceholder")}
-              value={password}
-              onChangeText={(text) => {
-                setPassword(text);
-                setError("");
-              }}
-              onSubmitEditing={isEnable ? undefined : handleSubmit}
-              returnKeyType={isEnable ? "next" : "done"}
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            {!isEnable && !!error && <FieldError>{error}</FieldError>}
-          </TextField>
-
-          {isEnable && (
-            <TextField isInvalid={!!error} isDisabled={loading} className="mt-3">
-              <Input
-                secureTextEntry
-                placeholder={t("encryption.confirmPasswordPlaceholder")}
-                value={confirmPassword}
-                onChangeText={(text) => {
-                  setConfirmPassword(text);
-                  setError("");
-                }}
-                onSubmitEditing={handleSubmit}
-                returnKeyType="done"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-              {!!error && <FieldError>{error}</FieldError>}
-            </TextField>
-          )}
-
-          <View className="mt-5 flex-row gap-3">
-            <Button variant="ghost" className="flex-1" onPress={handleCancel} isDisabled={loading}>
-              <Button.Label>{t("cancel")}</Button.Label>
-            </Button>
-            <Button
-              variant="primary"
-              className="flex-1"
-              onPress={handleSubmit}
-              isDisabled={!canSubmit || loading}
-            >
-              {loading && <Spinner size="sm" color={accentForeground} />}
-              <Button.Label>
-                {isEnable ? t("encryption.enable") : t("encryption.unlock")}
-              </Button.Label>
-            </Button>
-          </View>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog>
-  );
+export function settleEncryptionPrompt(result: PromptResult): void {
+  const { resolve } = useEncryptionPromptStore.getState();
+  useEncryptionPromptStore.setState({ resolve: null });
+  resolve?.(result);
 }

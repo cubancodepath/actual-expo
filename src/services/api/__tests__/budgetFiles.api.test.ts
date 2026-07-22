@@ -5,7 +5,7 @@ import {
   fetchMock,
   jsonResponse,
   SERVER,
-} from "@/core/server/api/__tests__/testUtils";
+} from "@/core/server/util/__tests__/testUtils";
 
 describe("getRemoteFiles", () => {
   const rawFile = {

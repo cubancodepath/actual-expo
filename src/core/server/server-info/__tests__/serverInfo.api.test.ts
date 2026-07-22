@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { getServerInfo } from "../serverInfo.api";
-import { fetchMock, jsonResponse, SERVER } from "../../__tests__/testUtils";
+import { fetchMock, jsonResponse, SERVER } from "../../util/__tests__/testUtils";
 
 describe("getServerInfo", () => {
   it("reads the build version", async () => {

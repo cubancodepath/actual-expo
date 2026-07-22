@@ -1,7 +1,7 @@
 import { isHTTPError } from "ky";
 import { ActualError } from "@/core/errors";
 import { http, parseResponse, toTransportError } from "@/core/platform/fetch";
-import { dataOrSelf } from "../response";
+import { dataOrSelf } from "../util/response";
 import { LoginResponseDtoSchema, OpenIdResponseDtoSchema } from "./auth.dto";
 
 // Core transport: only THROWS typed ActualErrors — the app layer (sign-in hooks

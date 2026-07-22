@@ -1,6 +1,6 @@
 import { ActualError } from "@/core/errors";
 import { http, parseResponse, toTransportError } from "@/core/platform/fetch";
-import { dataOrSelf } from "../response";
+import { dataOrSelf } from "../util/response";
 import { BootstrapResponseDtoSchema } from "./bootstrap.dto";
 import { toBootstrapInfo } from "./bootstrap.mappers";
 import type { BootstrapInfo } from "./bootstrap.types";

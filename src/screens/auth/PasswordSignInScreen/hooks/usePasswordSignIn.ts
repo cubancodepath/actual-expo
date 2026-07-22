@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useRouter } from "expo-router";
-import { loginWithPassword } from "@/core/server/api/auth/auth.api";
+import { loginWithPassword } from "@/core/server/auth/auth.api";
 import { finalizeAuthenticatedSession } from "@/services/authService";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 

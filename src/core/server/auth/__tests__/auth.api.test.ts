@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { loginWithPassword } from "../auth.api";
-import { expectActualError, fetchMock, jsonResponse, SERVER } from "../../__tests__/testUtils";
+import { expectActualError, fetchMock, jsonResponse, SERVER } from "../../util/__tests__/testUtils";
 
 describe("loginWithPassword", () => {
   it("returns the token from an enveloped response", async () => {

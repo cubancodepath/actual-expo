@@ -29,7 +29,7 @@ import { Timestamp } from "@/core/crdt";
 import { clearLocalData } from "@/core/db";
 import { closeBudget } from "@/services/budgetfiles";
 import { logout } from "@/services/authService";
-import { getServerInfo } from "@/core/server/api/server-info/serverInfo.api";
+import { getServerInfo } from "@/core/server/server-info/serverInfo.api";
 import { dialog } from "@/ui/feedback/dialog/dialogStore";
 
 const ICON_SIZE = 20;

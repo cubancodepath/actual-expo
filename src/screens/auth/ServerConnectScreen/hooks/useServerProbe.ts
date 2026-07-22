@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useRouter } from "expo-router";
-import { getBootstrapInfo } from "@/core/server/api/bootstrap/bootstrap.api";
+import { getBootstrapInfo } from "@/core/server/auth/bootstrap.api";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 
 /**

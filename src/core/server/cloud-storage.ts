@@ -21,6 +21,7 @@ import { http, toTransportError, parseResponse } from "@/core/platform/fetch";
 import { mapServerReason } from "@/core/post";
 import { ActualError, type ErrorCode } from "@/core/errors";
 import * as encryption from "@/core/encryption";
+import { loadKeyForBudget } from "@/core/encryption/keys";
 import {
   getBudgetDir,
   readMetadata,
@@ -363,6 +364,11 @@ export async function downloadBudget(
     : null;
   const encryptMeta = fileInfo?.data?.encryptMeta;
   if (encryptMeta) {
+    // Pull a persisted key into the in-memory registry so decrypt succeeds
+    // without prompting; the reactive prompt only fires when it's truly absent.
+    if (file.encryptKeyId && !encryption.hasKey(file.encryptKeyId)) {
+      await loadKeyForBudget(file.fileId);
+    }
     try {
       const decrypted = await encryption.decrypt(zipBytes, encryptMeta);
       zipBytes = new Uint8Array(decrypted);

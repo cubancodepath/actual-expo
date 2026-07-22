@@ -168,6 +168,8 @@
   "encryption": {
     "enterPasswordTitle": "Presupuesto Encriptado",
     "enterPasswordDescription": "Este presupuesto tiene encriptación de extremo a extremo. Ingresa tu contraseña de encriptación para desbloquearlo.",
+    "decryptFailedTitle": "No se pudo descifrar",
+    "decryptFailedDescription": "Esa contraseña no funcionó. Ingresa la contraseña correcta para descifrar este archivo.",
     "passwordPlaceholder": "Contraseña de encriptación",
     "confirmPasswordPlaceholder": "Confirmar contraseña",
     "unlock": "Desbloquear",

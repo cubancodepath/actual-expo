@@ -1,17 +1,10 @@
-import { RefreshControl, ScrollView, View } from "react-native";
+import { RefreshControl, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
 import { useTranslation } from "react-i18next";
-import {
-  LinkButton,
-  ListGroup,
-  ScrollShadow,
-  Spinner,
-  Typography,
-  useThemeColor,
-} from "heroui-native";
+import { LinkButton, ListGroup, Spinner, Typography, useThemeColor } from "heroui-native";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
+import { ScreenHeader } from "@/ui/ScreenHeader";
 import { CloseButton } from "@/ui/CloseButton";
 import { InlineError } from "@/ui/feedback/InlineError";
 import { BudgetFileRow } from "@/ui/BudgetFileRow";
@@ -79,25 +72,10 @@ export function ChangeBudgetScreen() {
   }
 
   return (
-    <View className="flex-1 bg-background">
-      {/* Manual modal header (template pattern: CloseButton + centered title) */}
-      <View
-        className="flex-row items-center justify-between px-5 pb-3"
-        style={{ paddingTop: insets.top + 8 }}
-      >
-        <CloseButton onPress={() => router.back()} />
-        <Typography type="body" weight="semibold">
-          {t("nav.switchBudget")}
-        </Typography>
-        <LinkButton size="sm" onPress={() => router.push("/(auth)/new-budget")}>
-          <LinkButton.Label className="text-accent">{ta("new")}</LinkButton.Label>
-        </LinkButton>
-      </View>
-
-      <ScrollShadow LinearGradientComponent={LinearGradient} size={40} className="flex-1">
-        <ScrollView
-          className="flex-1 px-6"
-          contentContainerClassName="pb-16"
+    <View className="flex-1">
+      <ScreenHeader.ScrollArea>
+        <ScreenHeader.Body
+          contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: insets.bottom + 64 }}
           scrollEnabled={!isSwitching}
           refreshControl={
             <RefreshControl
@@ -134,8 +112,23 @@ export function ChangeBudgetScreen() {
               </Typography>
             </View>
           )}
-        </ScrollView>
-      </ScrollShadow>
+        </ScreenHeader.Body>
+
+        <ScreenHeader.Floating>
+          <View style={{ height: insets.top }} />
+          <ScreenHeader>
+            <ScreenHeader.Back>
+              <CloseButton onPress={() => router.back()} />
+            </ScreenHeader.Back>
+            <ScreenHeader.Title>{t("nav.switchBudget")}</ScreenHeader.Title>
+            <ScreenHeader.Actions>
+              <LinkButton size="sm" onPress={() => router.push("/(auth)/new-budget")}>
+                <LinkButton.Label className="text-accent">{ta("new")}</LinkButton.Label>
+              </LinkButton>
+            </ScreenHeader.Actions>
+          </ScreenHeader>
+        </ScreenHeader.Floating>
+      </ScreenHeader.ScrollArea>
 
       <LoadingOverlay visible={isSwitching} />
     </View>

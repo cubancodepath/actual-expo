@@ -19,35 +19,46 @@ type PromptResult = "success" | "cancelled";
 type EncryptionPromptState = {
   mode: EncryptionPromptMode;
   cloudFileId: string;
+  /** True when a key already existed but failed to decrypt (wrong/rotated) — the
+   *  unlock copy differs from a first-time "this file is encrypted" prompt. */
+  hasExistingKey: boolean;
   resolve: ((result: PromptResult) => void) | null;
 };
 
 export const useEncryptionPromptStore = create<EncryptionPromptState>(() => ({
   mode: "unlock",
   cloudFileId: "",
+  hasExistingKey: false,
   resolve: null,
 }));
 
-function open(mode: EncryptionPromptMode, cloudFileId: string): Promise<PromptResult> {
+function open(
+  mode: EncryptionPromptMode,
+  cloudFileId: string,
+  hasExistingKey: boolean,
+): Promise<PromptResult> {
   // Cancel any in-flight prompt before starting a new one.
   const prev = useEncryptionPromptStore.getState().resolve;
   if (prev) prev("cancelled");
 
   return new Promise<PromptResult>((resolve) => {
-    useEncryptionPromptStore.setState({ mode, cloudFileId, resolve });
+    useEncryptionPromptStore.setState({ mode, cloudFileId, hasExistingKey, resolve });
     router.push("/(auth)/encryption-password");
   });
 }
 
 /** Prompt for a password to unlock an encrypted budget. */
-export function promptForPassword(cloudFileId: string): Promise<PromptResult> {
-  return open("unlock", cloudFileId);
+export function promptForPassword(
+  cloudFileId: string,
+  hasExistingKey = false,
+): Promise<PromptResult> {
+  return open("unlock", cloudFileId, hasExistingKey);
 }
 
 /** Prompt to set (or regenerate) the encryption password for the current budget. */
 export function promptToEnableEncryption(): Promise<PromptResult> {
   const { fileId } = useBudgetContextStore.getState();
-  return open("enable", fileId);
+  return open("enable", fileId, false);
 }
 
 /**

@@ -13,8 +13,6 @@ import {
   reRegisterBudget,
 } from "@/core/server/budgetfiles/app";
 import { clearSwitchingFlag } from "@/core/sync";
-import * as encryption from "@/core/encryption";
-import { loadKeyForBudget } from "@/core/encryption/keys";
 import { promptForPassword } from "@/ui/feedback/EncryptionPasswordPrompt";
 
 const QUERY_KEY = ["budgetFiles"] as const;
@@ -118,30 +116,47 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
   }
 
   async function selectFile(file: ReconciledBudgetFile): Promise<boolean> {
-    // If encrypted, ensure the key is available before switching
-    if (file.encryptKeyId && file.cloudFileId && !encryption.hasKey(file.encryptKeyId)) {
-      const loaded = await loadKeyForBudget(file.cloudFileId);
-      if (!loaded) {
-        const result = await promptForPassword(file.cloudFileId);
-        if (result === "cancelled") return false;
-      }
-    }
-
     setSwitching({ key: fileKey(file) });
+
+    // Mirror upstream BudgetFileSelection.onSelect: remote → download+load,
+    // otherwise load the local file (loadBudget self-closes the previous one).
+    const doSwitch = () =>
+      file.state === "remote"
+        ? closeAndDownloadBudget(file, serverUrl, token)
+        : file.localId
+          ? closeAndLoadBudget(file.localId)
+          : Promise.reject(
+              new ActualError("file/switch-failed", {
+                context: { reason: "no local ID available" },
+              }),
+            );
+
     try {
-      // Mirror upstream BudgetFileSelection.onSelect: remote → download+load,
-      // otherwise load the local file (loadBudget self-closes the previous one).
-      if (file.state === "remote") {
-        await closeAndDownloadBudget(file, serverUrl, token);
-      } else if (file.localId) {
-        await closeAndLoadBudget(file.localId);
-      } else {
-        throw new ActualError("file/switch-failed", {
-          context: { reason: "no local ID available" },
-        });
-      }
+      await doSwitch();
       return true;
     } catch (e: unknown) {
+      // Reactive unlock (upstream parity): a missing/incorrect key surfaces as
+      // sync/key-missing | sync/decrypt-failure from downloadBudget. Prompt for
+      // the password (copy varies by whether a key already existed) and retry once.
+      if (
+        file.cloudFileId &&
+        e instanceof ActualError &&
+        (e.code === "sync/key-missing" || e.code === "sync/decrypt-failure")
+      ) {
+        clearSwitchingFlag();
+        const result = await promptForPassword(file.cloudFileId, e.code === "sync/decrypt-failure");
+        if (result !== "cancelled") {
+          try {
+            await doSwitch();
+            return true;
+          } catch (retryErr: unknown) {
+            emitErrorEvent(retryErr);
+          }
+        }
+        clearSwitchingFlag();
+        setSwitching(null);
+        return false;
+      }
       clearSwitchingFlag();
       emitErrorEvent(e);
       setSwitching(null);

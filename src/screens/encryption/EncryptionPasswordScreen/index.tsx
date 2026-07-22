@@ -28,6 +28,7 @@ export function EncryptionPasswordScreen() {
 
   const mode = useEncryptionPromptStore((s) => s.mode);
   const cloudFileId = useEncryptionPromptStore((s) => s.cloudFileId);
+  const hasExistingKey = useEncryptionPromptStore((s) => s.hasExistingKey);
   const isEnable = mode === "enable";
 
   const [password, setPassword] = useState("");
@@ -144,13 +145,21 @@ export function EncryptionPasswordScreen() {
           </Button>
         </ScreenHeader.Back>
         <ScreenHeader.Title>
-          {isEnable ? t("encryption.enableTitle") : t("encryption.enterPasswordTitle")}
+          {isEnable
+            ? t("encryption.enableTitle")
+            : hasExistingKey
+              ? t("encryption.decryptFailedTitle")
+              : t("encryption.enterPasswordTitle")}
         </ScreenHeader.Title>
       </ScreenHeader>
 
       <View className="gap-3 px-4 pt-2">
         <Typography className="text-sm text-muted">
-          {isEnable ? t("encryption.enableDescription") : t("encryption.enterPasswordDescription")}
+          {isEnable
+            ? t("encryption.enableDescription")
+            : hasExistingKey
+              ? t("encryption.decryptFailedDescription")
+              : t("encryption.enterPasswordDescription")}
         </Typography>
 
         <TextField isInvalid={!!error} isDisabled={loading}>

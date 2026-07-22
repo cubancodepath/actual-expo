@@ -169,6 +169,8 @@
   "encryption": {
     "enterPasswordTitle": "Encrypted Budget",
     "enterPasswordDescription": "This budget is end-to-end encrypted. Enter your encryption password to unlock it.",
+    "decryptFailedTitle": "Unable to decrypt",
+    "decryptFailedDescription": "That password didn't work. Enter the correct password to decrypt this file.",
     "passwordPlaceholder": "Encryption password",
     "confirmPasswordPlaceholder": "Confirm password",
     "unlock": "Unlock",

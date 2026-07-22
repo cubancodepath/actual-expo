@@ -36,14 +36,14 @@ describe("deleteFromServer", () => {
     await expectActualError(deleteFromServer("https://s", "tok", "file-1"), "file/delete-failed");
   });
 
-  it("maps 401 to auth/token-expired and clears the session", async () => {
+  it("maps 401 to auth/token-expired without touching the session", async () => {
     useSessionStore.setState({ serverUrl: "https://s", token: "tok", hasToken: true });
     fetchMock.mockResolvedValue(new Response(null, { status: 401 }));
 
     await expectActualError(deleteFromServer("https://s", "tok", "file-1"), "auth/token-expired");
-    // logout() is fire-and-forget (matches the original throwIfUnauthorized
-    // behavior) — flush microtasks so its async work has a chance to settle.
+    // The core transport only THROWS (upstream parity); the logout is the app
+    // layer's job (react-query's global onError), so the session is untouched here.
     await new Promise((r) => setTimeout(r, 0));
-    expect(useSessionStore.getState().token).toBe("");
+    expect(useSessionStore.getState().token).toBe("tok");
   });
 });

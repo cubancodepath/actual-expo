@@ -14,6 +14,16 @@
     "reopenAccount": "Reopen Account"
   },
 
+  "menu": {
+    "undo": "Undo",
+    "hideAmounts": "Hide Amounts",
+    "showAmounts": "Show Amounts",
+    "switchBudget": "Switch Budget",
+    "showClosedAccounts": "Show Closed Accounts ({{count}})",
+    "hideClosedAccounts": "Hide Closed Accounts",
+    "settings": "Settings"
+  },
+
   "groups": {
     "budgetAccounts": "Budget Accounts",
     "offBudget": "Off Budget",

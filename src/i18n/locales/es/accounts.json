@@ -14,6 +14,16 @@
     "reopenAccount": "Reabrir cuenta"
   },
 
+  "menu": {
+    "undo": "Deshacer",
+    "hideAmounts": "Ocultar montos",
+    "showAmounts": "Mostrar montos",
+    "switchBudget": "Cambiar presupuesto",
+    "showClosedAccounts": "Mostrar cuentas cerradas ({{count}})",
+    "hideClosedAccounts": "Ocultar cuentas cerradas",
+    "settings": "Ajustes"
+  },
+
   "groups": {
     "budgetAccounts": "Cuentas de presupuesto",
     "offBudget": "Fuera de presupuesto",

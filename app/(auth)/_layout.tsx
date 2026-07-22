@@ -14,7 +14,7 @@ export default function AuthLayout() {
   return (
     <Stack>
       <Stack.Screen name="(tabs)" options={{ headerShown: false, title: "" }} />
-      <Stack.Screen name="account/new" options={{ title: t("nav.newAccount"), ...modal }} />
+      <Stack.Screen name="account/new" options={{ headerShown: false, ...modal }} />
       <Stack.Screen name="account/[id]" options={{ ...screen, headerShown: false }} />
       <Stack.Screen
         name="account/search"

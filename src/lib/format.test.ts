@@ -1,6 +1,7 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import {
   setNumberFormat,
+  setCurrencyConfig,
   formatBalance,
   formatAmount,
   formatAmountShort,
@@ -91,5 +92,34 @@ describe("format — config helpers", () => {
   it("normalizeNumberFor only rewrites the apostrophe format", () => {
     expect(normalizeNumberFor("apostrophe-dot", "12'345.67")).toBe("12’345.67");
     expect(normalizeNumberFor("comma-dot", "12,345.67")).toBe("12,345.67");
+  });
+});
+
+describe("format — currency styling (upstream parity)", () => {
+  // Strip the bidi control marks (LTR embedding, isolates) so assertions don't
+  // hinge on invisible chars, then normalize spaces.
+  const clean = (s: string) =>
+    s
+      .replace(/[\u200E\u200F\u202A-\u202E\u2066-\u2069]/g, "")
+      .replace(/[\u202F\u00A0\u2009]/g, " ");
+
+  beforeEach(() => setNumberFormat({ format: "comma-dot", hideFraction: false }));
+  afterAll(() => setCurrencyConfig({ symbol: "", position: "before", spaceBetween: false }));
+
+  it("no symbol when currency is unset", () => {
+    setCurrencyConfig({ symbol: "", position: "before", spaceBetween: false });
+    expect(clean(formatBalance(1234567))).toBe("12,345.67");
+  });
+
+  it("symbol before, no space", () => {
+    setCurrencyConfig({ symbol: "$", position: "before", spaceBetween: false });
+    expect(clean(formatBalance(1234567))).toBe("$12,345.67");
+    expect(clean(formatBalance(-1234567))).toBe("-$12,345.67"); // sign outside symbol
+  });
+
+  it("symbol after, with space", () => {
+    setCurrencyConfig({ symbol: "€", position: "after", spaceBetween: true });
+    expect(clean(formatBalance(1234567))).toBe("12,345.67 €");
+    expect(clean(formatBalance(-1234567))).toBe("-12,345.67 €");
   });
 });

@@ -9,8 +9,6 @@ import { PrivacyScribble } from "@/ui/PrivacyScribble";
 type MoneyProps = {
   /** Amount in cents (our storage convention). */
   cents: number;
-  /** ISO currency code. */
-  currency?: string;
   /**
    * Colouring:
    * - `"auto"` (default): positive amounts are green, otherwise normal text.
@@ -33,28 +31,23 @@ type MoneyProps = {
   noDecimals?: boolean;
 };
 
+// Wrap an RTL symbol in LTR embedding marks so it renders on the correct side,
+// matching upstream's `applyCurrencyStyling`.
+const ltr = (s: string) => (s ? `‪${s}‬` : "");
+
 /**
  * Currency display built on HeroUI's `NumberValue`, driven by the reactive
- * `useFormat` hook so it honours the synced `numberFormat` / `hideFraction`
- * prefs (grouping/decimal separators, hidden decimals) — like upstream's
- * `FinancialAmount`/`useFormat`. Changing those settings updates every amount
- * live.
+ * `useFormat` hook so it honours the synced number + currency prefs: grouping/
+ * decimal separators, hidden decimals, per-currency decimals, and the currency
+ * symbol at the configured position/space (like upstream's `useFormat` +
+ * `applyCurrencyStyling`). With no currency set the symbol is empty → just the
+ * number. Changing any of those settings updates every amount live.
  *
  * When privacy mode is active (and `mask` isn't disabled) the amount is redacted
- * with a hand-drawn scribble in the exact colour the number would have had — it
- * IS the number, just struck out. The number is rendered invisibly underneath
- * only to reserve its footprint, so the scribble (and any wrapping pill) stays
- * the same size/position as the text.
- *
- * TODO(currency): the currency symbol still comes from `NumberValue`'s Intl
- * currency mode (device/locale-driven), which is NOT upstream-faithful. Our
- * `useFormat` intentionally omits the currency machinery for now — pair Money +
- * useFormat with desktop-client/src/hooks/useFormat.ts (symbol position/space,
- * per-currency decimals) when the currency UI is introduced.
+ * with a hand-drawn scribble in the exact colour the number would have had.
  */
 export function Money({
   cents,
-  currency = "USD",
   tone = "auto",
   className,
   valueStyle,
@@ -64,7 +57,7 @@ export function Money({
 }: MoneyProps) {
   const foreground = useThemeColor("foreground");
   const [privacyMode] = usePrivacyMode();
-  const { locale, minimumFractionDigits, maximumFractionDigits } = useFormat();
+  const { locale, minimumFractionDigits, symbol, symbolPosition, spaceBetween } = useFormat();
   const blurred = mask && privacyMode;
 
   const fractionDigits = noDecimals ? 0 : minimumFractionDigits;
@@ -73,33 +66,49 @@ export function Money({
     tone === "plain" ? "text-foreground" : cents > 0 ? "text-positive" : "text-foreground";
   const valueClassName = cn(toneClass, className) ?? "";
 
-  // The amount's actual resolved text colour, so the scribble inherits it
-  // exactly (chip foregrounds, accent, positive, …).
+  // The amount's resolved text colour, so the scribble inherits it exactly.
   const resolvedColor = (useResolveClassNames(valueClassName).color as string) || foreground;
+
+  // Sign lives outside the symbol (upstream order: "-€100" / "-100 €"). The
+  // number itself is rendered unsigned.
+  const sign = cents < 0 ? "-" : showSign && cents > 0 ? "+" : "";
+  const gap = spaceBetween ? " " : "";
+  const before = symbolPosition !== "after";
+  const prefixText = `${sign}${before && symbol ? `${ltr(symbol)}${gap}` : ""}`;
+  const suffixText = !before && symbol ? `${gap}${ltr(symbol)}` : "";
 
   const numberValue = (
     <NumberValue
-      value={cents / 100}
-      numberStyle="currency"
-      currency={currency}
+      value={Math.abs(cents) / 100}
+      numberStyle="decimal"
       locale={locale}
-      signDisplay={showSign ? "exceptZero" : "auto"}
+      signDisplay="never"
       minimumFractionDigits={fractionDigits}
-      maximumFractionDigits={noDecimals ? 0 : maximumFractionDigits}
+      maximumFractionDigits={fractionDigits}
       classNames={{ value: valueClassName }}
-      styles={{ value: blurred ? { ...valueStyle, opacity: 0 } : valueStyle }}
-    />
+      styles={{ value: valueStyle }}
+    >
+      {prefixText ? (
+        <NumberValue.Prefix className={valueClassName} style={valueStyle}>
+          {prefixText}
+        </NumberValue.Prefix>
+      ) : null}
+      <NumberValue.Value />
+      {suffixText ? (
+        <NumberValue.Suffix className={valueClassName} style={valueStyle}>
+          {suffixText}
+        </NumberValue.Suffix>
+      ) : null}
+    </NumberValue>
   );
 
   if (!blurred) return numberValue;
 
-  // Redaction: the invisible number reserves the exact text footprint so the
-  // wrapping pill/chip stays text-sized, and the scribble fills that footprint
-  // (uniform scale via `slice`, so it never looks stretched or cramped) —
-  // behaving like the text it replaces.
+  // Redaction: the invisible amount reserves its exact footprint (so wrapping
+  // pills/chips stay text-sized) and the scribble fills it.
   return (
     <View className="relative justify-center">
-      {numberValue}
+      <View style={{ opacity: 0 }}>{numberValue}</View>
       <View style={StyleSheet.absoluteFill} pointerEvents="none">
         <PrivacyScribble color={resolvedColor} />
       </View>

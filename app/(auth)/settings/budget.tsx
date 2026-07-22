@@ -11,14 +11,7 @@ import { useSyncedPrefs } from "@/hooks/useSyncedPrefs";
 import { useFeatureFlag, useSetFeatureFlag } from "@/hooks/useFeatureFlag";
 import { useSessionStore } from "@/stores/sessionStore";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
-import type { FeatureFlag } from "@/core/domain/preferences/featureFlags";
-
-// Flags with a real feature behind them in the mobile app today. Mirrors
-// upstream's Experimental.tsx: the FeatureFlag union can list more flags
-// than any single client currently has a toggle for. `currency` stays in the
-// union (verbatim upstream mirror) but is intentionally NOT exposed — currency
-// isn't a supported feature on mobile.
-const VISIBLE_FEATURE_FLAGS: FeatureFlag[] = ["goalTemplatesEnabled", "payeeLocations"];
+import { SUPPORTED_FEATURE_FLAGS, type FeatureFlag } from "@/core/domain/preferences/featureFlags";
 import {
   DATE_FORMAT_OPTIONS,
   NUMBER_FORMAT_OPTIONS,
@@ -386,11 +379,11 @@ export default function BudgetSettingsScreen() {
       {/* Experimental Features */}
       <SectionHeader title={t("experimentalFeatures")} style={{ marginTop: spacing.xl }} />
       <Card>
-        {VISIBLE_FEATURE_FLAGS.map((flag, index) => (
+        {SUPPORTED_FEATURE_FLAGS.map((flag, index) => (
           <FeatureFlagRow
             key={flag}
             flag={flag}
-            showSeparator={index < VISIBLE_FEATURE_FLAGS.length - 1}
+            showSeparator={index < SUPPORTED_FEATURE_FLAGS.length - 1}
           />
         ))}
       </Card>

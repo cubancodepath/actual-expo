@@ -34,6 +34,14 @@ export const DEFAULT_FEATURE_FLAG_STATE: Record<FeatureFlag, boolean> = {
 
 export const ALL_FEATURE_FLAGS = Object.keys(DEFAULT_FEATURE_FLAG_STATE) as FeatureFlag[];
 
+/**
+ * Flags with a real feature behind them on mobile today — the subset exposed as
+ * toggles in the settings UI. The `FeatureFlag` union mirrors upstream verbatim
+ * (14 flags), but, exactly like upstream's `Experimental.tsx`, each client only
+ * surfaces the flags it actually supports; the rest stay declared-but-hidden.
+ */
+export const SUPPORTED_FEATURE_FLAGS: FeatureFlag[] = ["goalTemplatesEnabled", "payeeLocations"];
+
 export type FeatureFlagKey = `flags.${FeatureFlag}`;
 
 export function flagKey(name: FeatureFlag): FeatureFlagKey {

@@ -1,13 +1,4 @@
-import { describe, it, expect, afterEach, vi } from "vitest";
-
-// save.ts (pulled in via ../save) imports @/core/platform/location →
-// expo-location, which has no vitest alias. Stub it — same rationale as
-// save.test.ts.
-vi.mock("expo-location", () => ({
-  requestForegroundPermissionsAsync: vi.fn(),
-  getForegroundPermissionsAsync: vi.fn(),
-  getCurrentPositionAsync: vi.fn(),
-}));
+import { describe, it, expect, afterEach } from "vitest";
 
 import { setupFixtures, closeTestDb } from "./helpers";
 import { saveTransaction } from "../save";

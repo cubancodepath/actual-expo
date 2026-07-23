@@ -1,6 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+
+// This test targets the NATIVE adapter (expo-secure-store hardening), so it
+// imports ../keyStore/index directly — the relative path bypasses the vitest
+// alias that swaps @/core/platform/keyStore for the Node implementation.
+// expo-secure-store itself can't load in Node, so it's mocked locally.
+vi.mock("expo-secure-store", () => ({
+  WHEN_UNLOCKED_THIS_DEVICE_ONLY: "WHEN_UNLOCKED_THIS_DEVICE_ONLY",
+  getItemAsync: vi.fn(async () => null),
+  setItemAsync: vi.fn(async () => {}),
+  deleteItemAsync: vi.fn(async () => {}),
+}));
+
 import * as SecureStore from "expo-secure-store";
-import { saveKey } from "@/core/platform/keyStore";
+import { saveKey } from "../keyStore/index";
 
 describe("keyStore — SecureStore accessibility hardening (plan 006)", () => {
   beforeEach(() => {

@@ -1,12 +1,6 @@
-import { describe, it, expect, afterEach, vi } from "vitest";
+import { describe, it, expect, afterEach } from "vitest";
 
 // See save.test.ts for why this stub is needed.
-vi.mock("expo-location", () => ({
-  requestForegroundPermissionsAsync: vi.fn(),
-  getForegroundPermissionsAsync: vi.fn(),
-  getCurrentPositionAsync: vi.fn(),
-}));
-
 import { setupFixtures, closeTestDb, getTxnRow } from "./helpers";
 import { saveTransaction } from "../save";
 import type { SaveTransactionInput } from "../save";

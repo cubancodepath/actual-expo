@@ -26,10 +26,21 @@ export default defineConfig({
       // suite depends on OUR contract, never on a native package's API shape.
       // ORDER MATTERS: these must come before the "@" prefix alias below.
       "@/core/platform/crypto": path.resolve(__dirname, "src/core/platform/crypto/index.node.ts"),
+      "@/core/platform/keyStore": path.resolve(
+        __dirname,
+        "src/core/platform/keyStore/index.node.ts",
+      ),
+      "@/core/platform/location": path.resolve(
+        __dirname,
+        "src/core/platform/location/index.node.ts",
+      ),
       // Path aliases matching tsconfig.json
       "@": path.resolve(__dirname, "src"),
       // Stub native modules that can't run in Node
       "expo-sqlite": path.resolve(__dirname, "src/__mocks__/expo-sqlite.ts"),
+      // expo-secure-store stays stubbed for APP-layer consumers outside the
+      // platform seam (stores/sessionStore, stores/prefsStorage) — core goes
+      // through @/core/platform/keyStore, which swaps to index.node.ts above.
       "expo-secure-store": path.resolve(__dirname, "src/__mocks__/expo-secure-store.ts"),
       "expo-localization": path.resolve(__dirname, "src/__mocks__/expo-localization.ts"),
       "expo-file-system/legacy": path.resolve(

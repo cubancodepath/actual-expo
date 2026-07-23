@@ -1,17 +1,8 @@
-import { describe, it, expect, afterEach, vi } from "vitest";
+import { describe, it, expect, afterEach } from "vitest";
 
-// save.ts imports @/core/platform/location → expo-location, which has no
-// vitest alias/mock (unlike expo-sqlite/expo-crypto/etc in vitest.config.ts)
-// and fails to parse under Node ("Unknown file extension .ts" inside
-// expo-modules-core). savePayeeLocationIfEnabled() is fire-and-forget and
-// gated behind a feature flag we never enable here, so a bare stub is enough
-// to let the module graph load; not a production code change.
-vi.mock("expo-location", () => ({
-  requestForegroundPermissionsAsync: vi.fn(),
-  getForegroundPermissionsAsync: vi.fn(),
-  getCurrentPositionAsync: vi.fn(),
-}));
-
+// Under vitest @/core/platform/location resolves to its index.node.ts
+// implementation (permission denied, no position), so
+// savePayeeLocationIfEnabled() is a no-op here without any local stubbing.
 import { setupFixtures, closeTestDb, getTxnRow } from "./helpers";
 import { saveTransaction } from "../save";
 import type { SaveTransactionInput } from "../save";

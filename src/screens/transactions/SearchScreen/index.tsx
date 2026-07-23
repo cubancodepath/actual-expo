@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button, SearchField, Spinner, useThemeColor } from "heroui-native";
 import { X } from "lucide-react-native";
 import { DateHeader } from "@/screens/transactions/components/transaction-list/DateHeader";
-import { TransactionRow } from "@/screens/transactions/components/transaction-list/TransactionRow";
+import { LedgerRow } from "@/screens/transactions/components/transaction-list/LedgerRow";
 import { TransactionRowMenuHost } from "@/screens/transactions/components/transaction-list/TransactionRowMenuHost";
 import type { TxListItem } from "@/screens/transactions/components/transaction-list/listItems";
 import { SearchSuggestions } from "./components/SearchSuggestions";
@@ -92,7 +92,7 @@ export function SearchScreen({ accountId, initialFilter }: SearchScreenProps) {
               renderItem={({ item }: { item: TxListItem }) => {
                 if (item.type === "header") return <DateHeader date={item.date} />;
                 return (
-                  <TransactionRow
+                  <LedgerRow
                     txn={item.txn}
                     isFirst={item.isFirst}
                     isIncome={isIncomeTxn(item.txn)}

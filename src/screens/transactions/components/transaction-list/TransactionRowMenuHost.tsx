@@ -1,19 +1,11 @@
-import { useCallback, useRef, useState, type ReactNode } from "react";
-import { StyleSheet, View } from "react-native";
+import { useCallback, type ReactNode } from "react";
 import { useRouter } from "expo-router";
-import { Menu } from "heroui-native";
 import { useIncomeCategoryIds } from "@/screens/transactions/hooks/useIncomeCategoryIds";
 import { useTransactionActions } from "@/screens/transactions/hooks/useTransactionActions";
 import type { TransactionDisplay } from "@/core/types/models";
-import { TransactionRow } from "./TransactionRow";
-import { TransactionRowMenu, type RowRect, type TransactionMenuAction } from "./TransactionRowMenu";
-
-/** The long-pressed row the transaction menu is currently open on. */
-interface MenuTarget {
-  txn: TransactionDisplay;
-  /** The row's window frame, measured at long-press. */
-  rect: RowRect;
-}
+import { LiftMenu, type RowRect } from "@/ui/lift-menu";
+import { LedgerRow, type LedgerRowComponent } from "./LedgerRow";
+import { TransactionRowMenu, type TransactionMenuAction } from "./TransactionRowMenu";
 
 const noop = () => {};
 
@@ -28,48 +20,27 @@ interface TransactionRowMenuHostRenderProps {
 
 interface TransactionRowMenuHostProps {
   className?: string;
+  /**
+   * The row variant the list renders with — the floating preview clones it so
+   * the lift matches the live row pixel-for-pixel.
+   */
+  rowComponent?: LedgerRowComponent;
   children: (props: TransactionRowMenuHostRenderProps) => ReactNode;
 }
 
 /**
- * Root view + single long-press "lift" menu shared by every surface that lists
- * transaction rows (the list screens' shell, search). One menu for the whole
- * list, mounted only while a row is long-pressed (see BudgetScreen for the
- * pattern's rationale). `menuTarget` stores the whole transaction so the
- * floating preview renders even after the live row is recycled off-screen by
- * the virtualizer. Routes the menu's actions (categorize / move / clear /
- * duplicate / delete) through `useTransactionActions` and the router.
+ * `LiftMenu.Host` specialization shared by every surface that lists transaction
+ * rows (the list screens' shell, search). Routes the menu's actions
+ * (categorize / move / clear / duplicate / delete) through
+ * `useTransactionActions` and the router.
  */
-export function TransactionRowMenuHost({ className, children }: TransactionRowMenuHostProps) {
+export function TransactionRowMenuHost({
+  className,
+  rowComponent: RowComponent = LedgerRow,
+  children,
+}: TransactionRowMenuHostProps) {
   const router = useRouter();
   const actions = useTransactionActions();
-
-  const [menuTarget, setMenuTarget] = useState<MenuTarget | null>(null);
-  const [isPreviewShown, setPreviewShown] = useState(false);
-
-  // The host can live inside a modal card, whose root is offset from the
-  // window origin. Row frames are measured in window coordinates, so anchoring
-  // the phantom Menu inside the root needs that offset subtracted; the portal
-  // (overlay + preview) stays in window space.
-  const rootRef = useRef<View>(null);
-  const rootOffset = useRef({ x: 0, y: 0 });
-  const measureRootOffset = useCallback(() => {
-    rootRef.current?.measureInWindow((x, y) => {
-      rootOffset.current = { x, y };
-    });
-  }, []);
-
-  const onLongPressRow = useCallback((txn: TransactionDisplay, rect: RowRect) => {
-    setPreviewShown(false);
-    setMenuTarget({ txn, rect });
-  }, []);
-
-  const closeMenu = useCallback(() => {
-    setMenuTarget(null);
-    setPreviewShown(false);
-  }, []);
-
-  const liftedTxnId = isPreviewShown ? (menuTarget?.txn.id ?? null) : null;
 
   const incomeCategoryIds = useIncomeCategoryIds();
   const isIncomeTxn = useCallback(
@@ -77,10 +48,7 @@ export function TransactionRowMenuHost({ className, children }: TransactionRowMe
     [incomeCategoryIds],
   );
 
-  const handleMenuAction = (action: TransactionMenuAction) => {
-    if (!menuTarget) return;
-    const txn = menuTarget.txn;
-    closeMenu();
+  const handleMenuAction = (txn: TransactionDisplay, action: TransactionMenuAction) => {
     switch (action) {
       case "categorize":
         router.push({
@@ -104,44 +72,28 @@ export function TransactionRowMenuHost({ className, children }: TransactionRowMe
   };
 
   return (
-    <View ref={rootRef} onLayout={measureRootOffset} className={className}>
-      {children({ liftedTxnId, onLongPressRow, isIncomeTxn })}
-
-      {/* See BudgetScreen for the single-menu pattern; here the anchor position
-          additionally subtracts the root's own window offset (modal cards). */}
-      {menuTarget && (
-        <Menu
-          isDefaultOpen
-          onOpenChange={(open) => {
-            if (!open) closeMenu();
-          }}
-          pointerEvents="none" // purely a measuring anchor; never takes touches
-          style={{
-            position: "absolute",
-            left: menuTarget.rect.x - rootOffset.current.x,
-            top: menuTarget.rect.y - rootOffset.current.y,
-            width: menuTarget.rect.width,
-            height: menuTarget.rect.height,
-          }}
-        >
-          <Menu.Trigger pointerEvents="none" style={StyleSheet.absoluteFill} />
-          <TransactionRowMenu
-            rect={menuTarget.rect}
-            cleared={menuTarget.txn.cleared}
-            onAction={handleMenuAction}
-            onPreviewLayout={() => setPreviewShown(true)}
-            preview={
-              <TransactionRow
-                txn={menuTarget.txn}
-                isFirst
-                isIncome={isIncomeTxn(menuTarget.txn)}
-                onPress={noop}
-                onLongPress={noop}
-              />
-            }
-          />
-        </Menu>
+    <LiftMenu.Host<TransactionDisplay>
+      getId={(txn) => txn.id}
+      className={className}
+      renderMenu={(txn) => (
+        <TransactionRowMenu
+          cleared={txn.cleared}
+          onAction={(action) => handleMenuAction(txn, action)}
+          preview={
+            <RowComponent
+              txn={txn}
+              isFirst
+              isIncome={isIncomeTxn(txn)}
+              onPress={noop}
+              onLongPress={noop}
+            />
+          }
+        />
       )}
-    </View>
+    >
+      {({ liftedId, onLongPressRow }) =>
+        children({ liftedTxnId: liftedId, onLongPressRow, isIncomeTxn })
+      }
+    </LiftMenu.Host>
   );
 }

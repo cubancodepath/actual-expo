@@ -14,7 +14,10 @@ import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { useRefreshControl } from "@/hooks/useRefreshControl";
 import { DateHeader } from "@/screens/transactions/components/transaction-list/DateHeader";
 import { EmptyTransactions } from "@/screens/transactions/components/transaction-list/EmptyTransactions";
-import { TransactionRow } from "@/screens/transactions/components/transaction-list/TransactionRow";
+import {
+  LedgerRow,
+  type LedgerRowComponent,
+} from "@/screens/transactions/components/transaction-list/LedgerRow";
 import { TransactionRowMenuHost } from "@/screens/transactions/components/transaction-list/TransactionRowMenuHost";
 import { UpcomingSection } from "@/screens/transactions/components/transaction-list/UpcomingSection";
 import { useSchedulePreviews } from "@/screens/transactions/hooks/useSchedulePreviews";
@@ -23,7 +26,7 @@ import {
   buildTxListItems,
   type TxListItem,
 } from "@/screens/transactions/components/transaction-list/listItems";
-import type { RowRect } from "@/screens/transactions/components/transaction-list/TransactionRowMenu";
+import type { RowRect } from "@/ui/lift-menu";
 import type { TransactionDisplay } from "@/core/types/models";
 import type { TransactionsListContext } from "../types";
 import { useTransactionsListQuery } from "../hooks/useTransactionsListQuery";
@@ -47,6 +50,11 @@ interface TransactionsShellProps {
   fab?: ReactNode;
   /** Reserve the status bar height above the header (frosted variants). */
   topInset?: boolean;
+  /**
+   * The ledger-row variant to render (see `LedgerRow.tsx`). The account detail
+   * screen passes `AccountLedgerRow` to drop the redundant account name.
+   */
+  rowComponent?: LedgerRowComponent;
 }
 
 /**
@@ -62,6 +70,7 @@ export function TransactionsShell({
   stickyHeader,
   fab,
   topInset = false,
+  rowComponent = LedgerRow,
 }: TransactionsShellProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -74,7 +83,7 @@ export function TransactionsShell({
   );
 
   return (
-    <TransactionRowMenuHost className="flex-1 bg-background">
+    <TransactionRowMenuHost className="flex-1 bg-background" rowComponent={rowComponent}>
       {({ liftedTxnId, onLongPressRow, isIncomeTxn }) => {
         const listProps = {
           context,
@@ -82,6 +91,7 @@ export function TransactionsShell({
           isIncomeTxn,
           onPressRow,
           onLongPressRow,
+          rowComponent,
         };
         return (
           <>
@@ -130,6 +140,7 @@ interface ListBodyProps {
   isIncomeTxn: (txn: TransactionDisplay) => boolean;
   onPressRow: (txn: TransactionDisplay) => void;
   onLongPressRow: (txn: TransactionDisplay, rect: RowRect) => void;
+  rowComponent: LedgerRowComponent;
   /** Header-blur scroll handler (frosted mode only). */
   onScroll?: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
   /** Top padding reserved for the floating header (0 in sticky mode). */
@@ -147,6 +158,7 @@ function ListBody({
   isIncomeTxn,
   onPressRow,
   onLongPressRow,
+  rowComponent: RowComponent,
   onScroll,
   contentPaddingTop = 0,
 }: ListBodyProps) {
@@ -176,7 +188,7 @@ function ListBody({
           : "once"
         : null;
       return (
-        <TransactionRow
+        <RowComponent
           txn={item.txn}
           isFirst={item.isFirst}
           isIncome={isIncomeTxn(item.txn)}
@@ -187,7 +199,7 @@ function ListBody({
         />
       );
     },
-    [onPressRow, onLongPressRow, liftedTxnId, isIncomeTxn, scheduleRecurring],
+    [onPressRow, onLongPressRow, liftedTxnId, isIncomeTxn, scheduleRecurring, RowComponent],
   );
 
   return (

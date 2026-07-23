@@ -1,17 +1,11 @@
-import { memo, useRef } from "react";
+import { memo } from "react";
 import { View } from "react-native";
 import { useTranslation } from "react-i18next";
-import { Chip, cn, PressableFeedback, Separator, Typography } from "heroui-native";
+import { Chip, Separator, Typography } from "heroui-native";
 import { Money } from "@/ui/Money";
-import { mediumHaptic } from "@/ui/haptics";
+import { LiftMenu, type RowRect } from "@/ui/lift-menu";
 import type { PreviewTransaction } from "@/core/server/schedules";
 import type { ScheduleStatus } from "@/core/types/models";
-import type { RowRect } from "./TransactionRowMenu";
-
-/** Slow scale under a long press, matching TransactionRow's lift feel. */
-const ROW_PRESS_ANIMATION = {
-  scale: { value: 0.97, timingConfig: { duration: 450 } },
-};
 
 interface PreviewRowProps {
   preview: PreviewTransaction;
@@ -51,51 +45,40 @@ export const PreviewRow = memo(function PreviewRow({
   const { t } = useTranslation(["transactions", "schedules"]);
   // Previews always read as due / missed / upcoming; default to upcoming.
   const statusPill = STATUS_PILL[preview.status] ?? STATUS_PILL.upcoming!;
-  const rowViewRef = useRef<View>(null);
 
   return (
     <View className="bg-surface">
       {!isFirst && <Separator className="ml-4" />}
-      <PressableFeedback
-        animation={ROW_PRESS_ANIMATION}
+      <LiftMenu.Row
         isDisabled={!onLongPress}
-        onLongPress={() => {
-          if (!onLongPress) return;
-          mediumHaptic();
-          rowViewRef.current?.measureInWindow((x, y, width, height) => {
-            onLongPress(preview, { x, y, width, height });
-          });
-        }}
+        onLongPress={onLongPress && ((rect) => onLongPress(preview, rect))}
+        isLifted={isLifted}
+        contentClassName="gap-0.5 px-4 py-2.5 opacity-70"
       >
-        <View
-          ref={rowViewRef}
-          className={cn("w-full gap-0.5 px-4 py-2.5 opacity-70", isLifted && "opacity-0")}
-        >
-          <View className="flex-row items-center gap-2">
-            <Typography className="flex-1 text-base italic text-muted" numberOfLines={1}>
-              {preview.payeeName || t("noPayee")}
-            </Typography>
-            <Money cents={preview.amount} />
-          </View>
-          {/* Like the original app, previews show their status in the category
-              slot (Upcoming / Due / Missed) rather than the category itself. */}
-          <View className="flex-row items-center gap-2">
-            <View className="flex-1 flex-row">
-              <Chip
-                variant="soft"
-                color={statusPill.color}
-                size="sm"
-                pointerEvents="none"
-                className="rounded-md"
-              >
-                <Chip.Label numberOfLines={1} className="font-normal">
-                  {t(statusPill.key, { ns: "schedules" })}
-                </Chip.Label>
-              </Chip>
-            </View>
+        <View className="flex-row items-center gap-2">
+          <Typography className="flex-1 text-base italic text-muted" numberOfLines={1}>
+            {preview.payeeName || t("noPayee")}
+          </Typography>
+          <Money cents={preview.amount} />
+        </View>
+        {/* Like the original app, previews show their status in the category
+            slot (Upcoming / Due / Missed) rather than the category itself. */}
+        <View className="flex-row items-center gap-2">
+          <View className="flex-1 flex-row">
+            <Chip
+              variant="soft"
+              color={statusPill.color}
+              size="sm"
+              pointerEvents="none"
+              className="rounded-md"
+            >
+              <Chip.Label numberOfLines={1} className="font-normal">
+                {t(statusPill.key, { ns: "schedules" })}
+              </Chip.Label>
+            </Chip>
           </View>
         </View>
-      </PressableFeedback>
+      </LiftMenu.Row>
     </View>
   );
 });

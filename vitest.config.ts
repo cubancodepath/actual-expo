@@ -34,6 +34,10 @@ export default defineConfig({
         __dirname,
         "src/core/platform/location/index.node.ts",
       ),
+      "@/core/platform/asyncStorage": path.resolve(
+        __dirname,
+        "src/core/platform/asyncStorage/index.node.ts",
+      ),
       // Path aliases matching tsconfig.json
       "@": path.resolve(__dirname, "src"),
       // Stub native modules that can't run in Node

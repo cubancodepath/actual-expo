@@ -4,7 +4,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { Button, Menu, useThemeColor } from "heroui-native";
 import {
-  ArrowLeftRight,
   ChartNoAxesColumn,
   Eye,
   EyeOff,
@@ -74,10 +73,6 @@ export function BudgetHeader() {
                   <EyeOff size={18} color={foreground} />
                 )}
                 <Menu.ItemTitle>{privacyMode ? t("showAmounts") : t("hideAmounts")}</Menu.ItemTitle>
-              </Menu.Item>
-              <Menu.Item className="gap-3" onPress={noop}>
-                <ArrowLeftRight size={18} color={muted} />
-                <Menu.ItemTitle>{t("switchBudget")}</Menu.ItemTitle>
               </Menu.Item>
               <Menu.Item className="gap-3" onPress={() => router.push("/(auth)/settings")}>
                 <Settings size={18} color={muted} />

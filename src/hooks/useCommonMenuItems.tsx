@@ -1,8 +1,6 @@
 import { Stack, useRouter } from "expo-router";
-import { useTranslation } from "react-i18next";
 import { useUndoStore } from "@/stores/undoStore";
 import { usePrivacyMode } from "@/lib/hooks/usePrivacyMode";
-import { useBudgetContextStore } from "@/stores/budgetContextStore";
 
 import type { ReactNode } from "react";
 
@@ -23,10 +21,8 @@ import type { ReactNode } from "react";
  */
 export function useCommonMenuActions(): ReactNode[] {
   const router = useRouter();
-  const { t } = useTranslation();
   const canUndo = useUndoStore((s) => s.canUndo);
   const [privacyMode, togglePrivacy] = usePrivacyMode();
-  const isLocalOnly = useBudgetContextStore((s) => s.isLocalOnly);
 
   const actions: ReactNode[] = [
     <Stack.Toolbar.MenuAction
@@ -47,19 +43,6 @@ export function useCommonMenuActions(): ReactNode[] {
       {privacyMode ? "Show Amounts" : "Hide Amounts"}
     </Stack.Toolbar.MenuAction>,
   ];
-
-  // Switch Budget — only when connected to a server (local-only has no budgets to switch)
-  if (!isLocalOnly) {
-    actions.push(
-      <Stack.Toolbar.MenuAction
-        key="switch-budget"
-        icon="arrow.2.squarepath"
-        onPress={() => router.push("/(auth)/change-budget")}
-      >
-        {t("nav.switchBudget")}
-      </Stack.Toolbar.MenuAction>,
-    );
-  }
 
   actions.push(
     <Stack.Toolbar.MenuAction

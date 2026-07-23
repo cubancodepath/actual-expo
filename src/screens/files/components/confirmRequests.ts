@@ -1,6 +1,6 @@
 import type { TFunction } from "i18next";
 import type { ConfirmRequest } from "@/ui/feedback/ConfirmDialog";
-import type { FileAction } from "@/screens/files/components/FileActionsSheet";
+import type { FileAction } from "@/screens/files/components/fileActions";
 import type { ReconciledBudgetFile } from "@/core/server/budgetfiles/app";
 
 type FileActions = {
@@ -70,7 +70,7 @@ export function buildUploadRequest(
 }
 
 /**
- * Maps a FileActionsSheet action to its confirmation request. Returns null
+ * Maps a file context-menu action to its confirmation request. Returns null
  * for actions that need no confirmation (download → handled by the caller).
  */
 export function buildActionRequest(

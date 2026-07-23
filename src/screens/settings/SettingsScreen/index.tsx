@@ -236,7 +236,7 @@ export function SettingsScreen() {
             <NavRow
               icon={mutedIcon(FolderOpen)}
               title={t("openBudget")}
-              onPress={() => router.push("/(auth)/change-budget")}
+              onPress={() => router.push("/(auth)/settings/change-budget")}
             />
           </ListGroup>
         </View>

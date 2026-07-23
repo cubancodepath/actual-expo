@@ -3,15 +3,7 @@ import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button, Menu, useThemeColor } from "heroui-native";
-import {
-  ArrowLeftRight,
-  Eye,
-  EyeOff,
-  MoreHorizontal,
-  Plus,
-  Settings,
-  Undo2,
-} from "lucide-react-native";
+import { Eye, EyeOff, MoreHorizontal, Plus, Settings, Undo2 } from "lucide-react-native";
 import { ScreenHeader } from "@/ui/ScreenHeader";
 import { usePrivacyMode } from "@/lib/hooks/usePrivacyMode";
 
@@ -68,10 +60,6 @@ export function AccountsHeader() {
                   <Menu.ItemTitle>
                     {privacyMode ? t("menu.showAmounts") : t("menu.hideAmounts")}
                   </Menu.ItemTitle>
-                </Menu.Item>
-                <Menu.Item className="gap-3" onPress={noop}>
-                  <ArrowLeftRight size={18} color={muted} />
-                  <Menu.ItemTitle>{t("menu.switchBudget")}</Menu.ItemTitle>
                 </Menu.Item>
                 <Menu.Item className="gap-3" onPress={() => router.push("/(auth)/settings")}>
                   <Settings size={18} color={muted} />

@@ -263,7 +263,7 @@ export function fullSync(opts?: { force?: boolean }): Promise<number> {
 
       // Advance schedules after successful sync
       try {
-        const { advanceSchedules } = await import("@/core/domain/schedules");
+        const { advanceSchedules } = await import("@/core/server/schedules");
         await advanceSchedules(true);
       } catch (e) {
         if (__DEV__) console.warn("[fullSync] advanceSchedules failed:", e);

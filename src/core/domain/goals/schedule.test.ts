@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
 import { createCategoryGroup, createCategory } from "@/core/domain/categories";
-import { createSchedule } from "@/core/domain/schedules";
+import { createSchedule } from "@/core/server/schedules";
 import { calculateGoal } from "@/core/domain/goals/engine";
 import type { ScheduleTemplate } from "@/core/types/models";
 import { currentMonth, addMonths } from "@/core/shared/months";

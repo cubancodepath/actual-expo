@@ -20,7 +20,7 @@ import {
   deleteSchedule,
   postTransactionForSchedule,
   skipNextDate,
-} from "@/core/domain/schedules";
+} from "@/core/server/schedules";
 import type { RecurConfig } from "@/core/types/models";
 import type { Account } from "@/core/types/models";
 import type { Category } from "@/core/types/models";

@@ -18,9 +18,9 @@ import {
   getChildTransactions,
   deleteTransaction,
 } from "./index";
-import { createSchedule, setNextDate } from "@/core/domain/schedules";
+import { createSchedule, setNextDate } from "@/core/server/schedules";
 import { addDays } from "date-fns";
-import { parseDate } from "@/core/domain/schedules/recurrence";
+import { parseDate } from "@/core/shared/schedules";
 import type { RecurConfig, RuleCondition } from "@/core/types/models";
 import type { Rule } from "@/core/server/rules/rule";
 import { applyRulesToForm } from "@/core/server/transactions/transaction-rules";

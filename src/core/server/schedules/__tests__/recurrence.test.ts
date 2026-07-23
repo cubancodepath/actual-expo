@@ -7,7 +7,7 @@ import {
   getUpcomingDates,
   occursBetween,
   getLastOccurrence,
-} from "./recurrence";
+} from "@/core/shared/schedules";
 import type { RecurConfig } from "@/core/types/models";
 
 // ═══════════════════════════════════════════════════════════════════════════

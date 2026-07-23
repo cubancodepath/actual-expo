@@ -7,18 +7,18 @@
  */
 import { addDays } from "date-fns";
 import { runQuery } from "@/core/db";
-import { getSchedules } from "@/core/domain/schedules";
-import { getScheduledAmount } from "@/core/domain/schedules/helpers";
+import { getSchedules } from "@/core/server/schedules";
+import { getScheduledAmount } from "@/core/shared/schedules";
 import {
   getNextOccurrence,
   applySkipWeekend,
   parseDate,
   dayFromDate,
-} from "@/core/domain/schedules/recurrence";
+} from "@/core/shared/schedules";
 import {
   indexPostedScheduleTransactions,
   isScheduleOccurrencePosted,
-} from "@/core/domain/schedules/posted";
+} from "@/core/shared/schedules";
 import type { RecurConfig } from "@/core/types/models";
 import type { RuleCondition } from "@/core/types/models";
 import { getRules } from "@/core/server/rules";

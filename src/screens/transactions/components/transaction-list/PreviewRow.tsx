@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Chip, cn, PressableFeedback, Separator, Typography } from "heroui-native";
 import { Money } from "@/ui/Money";
 import { mediumHaptic } from "@/ui/haptics";
-import type { PreviewTransaction } from "@/core/domain/schedules";
+import type { PreviewTransaction } from "@/core/server/schedules";
 import type { ScheduleStatus } from "@/core/types/models";
 import type { RowRect } from "./TransactionRowMenu";
 

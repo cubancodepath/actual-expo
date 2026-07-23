@@ -8,7 +8,7 @@ import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { Text, Card, Divider } from "@/design-system";
 import { GlassButton } from "@/design-system/atoms/GlassButton";
 import { usePickerStore } from "@/stores/pickerStore";
-import { getRecurringDescription } from "@/core/domain/schedules";
+import { getRecurringDescription } from "@/core/server/schedules";
 import { currentDay } from "@/core/shared/months";
 import type { RecurConfig } from "@/core/types/models";
 

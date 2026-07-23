@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseDate } from "@/core/domain/schedules/recurrence";
+import { parseDate } from "@/core/shared/schedules";
 import {
   projectForecastData,
   buildForecastDateContext,

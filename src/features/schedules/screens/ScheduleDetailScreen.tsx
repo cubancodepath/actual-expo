@@ -24,7 +24,7 @@ import {
   deleteSchedule,
   skipNextDate,
   postTransactionForSchedule,
-} from "@/core/domain/schedules";
+} from "@/core/server/schedules";
 import { withOpacity } from "@/lib/colors";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { Button } from "@/design-system/atoms/Button";

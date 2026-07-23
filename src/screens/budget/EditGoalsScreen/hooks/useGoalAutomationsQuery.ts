@@ -9,7 +9,7 @@ import {
   type AutomationEntry,
 } from "@/core/domain/goals";
 import type { Template } from "@/core/types/models";
-import { getSchedules } from "@/core/domain/schedules";
+import { getSchedules } from "@/core/server/schedules";
 import type { Schedule } from "@/core/types/models";
 import { useCategories } from "@/lib/hooks/useCategories";
 

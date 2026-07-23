@@ -8,7 +8,7 @@
  * - Boolean fields already converted (completed, posts_transaction, tombstone)
  */
 
-import { extractScheduleConds } from "./helpers";
+import { extractScheduleConds } from "@/core/shared/schedules";
 import { intToStr } from "@/core/shared/months";
 import type { Schedule, RecurConfig } from "@/core/types/models";
 import type { RuleCondition, RuleAction } from "@/core/types/models";

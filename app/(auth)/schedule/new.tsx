@@ -12,7 +12,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useAccounts } from "@/lib/hooks/useAccounts";
 import { usePickerStore } from "@/stores/pickerStore";
 // categories no longer needed from store — picker handles selection
-import { getRecurringDescription, createSchedule } from "@/core/domain/schedules";
+import { getRecurringDescription, createSchedule } from "@/core/server/schedules";
 import { currentDay } from "@/core/shared/months";
 import { withOpacity } from "@/lib/colors";
 import { useTheme } from "@/design-system/providers/ThemeProvider";

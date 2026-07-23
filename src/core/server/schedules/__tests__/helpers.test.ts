@@ -4,7 +4,7 @@ import {
   getStatus,
   getScheduledAmount,
   getRecurringDescription,
-} from "./helpers";
+} from "@/core/shared/schedules";
 import type { RuleCondition, RecurConfig } from "@/core/types/models";
 
 // Mock currentDay so tests are deterministic

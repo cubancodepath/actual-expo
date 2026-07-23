@@ -19,7 +19,7 @@ import {
   getDateWithSkippedWeekend,
   parseDate,
   dayFromDate,
-} from "./recurrence";
+} from "@/core/shared/schedules";
 import {
   extractScheduleConds,
   getStatus,
@@ -29,9 +29,9 @@ import {
   areScheduleConditionsEqual,
   updateActions,
   scheduleIsRecurring,
-} from "./helpers";
+} from "@/core/shared/schedules";
 import { getArbitraryPref } from "@/core/server/preferences";
-import { getHasTransactionsQuery } from "./status";
+import { getHasTransactionsQuery } from "@/core/shared/schedules";
 import { executeQuery } from "@/core/queries";
 import { emit as emitSyncEvent } from "@/core/sync/syncEvents";
 import { currentDay, todayInt, intToStr, strToInt } from "@/core/shared/months";
@@ -53,18 +53,21 @@ export {
   extractScheduleConds,
   getUpcomingDays,
   scheduleIsRecurring,
-} from "./helpers";
-export { getUpcomingDates as getUpcomingRecurDates } from "./recurrence";
+} from "@/core/shared/schedules";
+export { getUpcomingDates as getUpcomingRecurDates } from "@/core/shared/schedules";
 export {
   getScheduleOccurrenceMatchStartDate,
   indexPostedScheduleTransactions,
   isScheduleOccurrencePosted,
-} from "./posted";
-export type { PostedScheduleTransaction, ScheduleOccurrenceMatchInput } from "./posted";
-export { getHasTransactionsQuery, isForPreview } from "./status";
-export type { ScheduleStatuses } from "./status";
-export { computePreviewTransactions } from "./computePreview";
-export type { PreviewTransaction, PreviewSubtransaction } from "./computePreview";
+} from "@/core/shared/schedules";
+export type {
+  PostedScheduleTransaction,
+  ScheduleOccurrenceMatchInput,
+} from "@/core/shared/schedules";
+export { getHasTransactionsQuery, isForPreview } from "@/core/shared/schedules";
+export type { ScheduleStatuses } from "@/core/shared/schedules";
+export { computePreviewTransactions } from "@/core/shared/schedules";
+export type { PreviewTransaction, PreviewSubtransaction } from "@/core/shared/schedules";
 export { getSchedulePreviews } from "./preview";
 
 // ── Helpers ──────────────────────────────────────────────────────
@@ -165,7 +168,7 @@ function computeNextDate(
   const next = getNextOccurrence(config, start);
   if (!next) {
     // Finite schedule exhausted — try last occurrence
-    const { getLastOccurrence } = require("./recurrence");
+    const { getLastOccurrence } = require("@/core/shared/schedules");
     const last = getLastOccurrence(config);
     if (last) {
       let date = last;

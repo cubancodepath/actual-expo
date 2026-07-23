@@ -66,9 +66,9 @@ vi.mock("@/core/shared/months", () => ({
 import { first, runQuery } from "@/core/db";
 import { sendMessages } from "@/core/sync";
 import { getRuleById } from "@/core/server/rules";
-import { setNextDate, advanceSchedules } from "./index";
+import { setNextDate, advanceSchedules } from "../index";
 import { buildListData } from "@/features/transactions/hooks/transactionList/types";
-import type { PreviewTransaction } from "./preview";
+import type { PreviewTransaction } from "../preview";
 import type { TransactionDisplay } from "@/core/server/transactions";
 
 const mockFirst = vi.mocked(first);

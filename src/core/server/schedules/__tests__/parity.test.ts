@@ -16,16 +16,21 @@ import {
   areConditionValuesEqual,
   areScheduleConditionsEqual,
   updateActions,
-} from "./helpers";
+} from "@/core/shared/schedules";
 import {
   getScheduleOccurrenceMatchStartDate,
   indexPostedScheduleTransactions,
   isScheduleOccurrencePosted,
-} from "./posted";
-import { getUpcomingDates, applySkipWeekend, parseDate, dayFromDate } from "./recurrence";
-import { computePreviewTransactions } from "./computePreview";
+} from "@/core/shared/schedules";
+import {
+  getUpcomingDates,
+  applySkipWeekend,
+  parseDate,
+  dayFromDate,
+} from "@/core/shared/schedules";
+import { computePreviewTransactions } from "@/core/shared/schedules";
 import type { Schedule, RuleCondition } from "@/core/types/models";
-import type { ScheduleStatuses } from "./status";
+import type { ScheduleStatuses } from "@/core/shared/schedules";
 
 describe("getUpcomingDays", () => {
   // March 2026 has 31 days; anchor mid-month.

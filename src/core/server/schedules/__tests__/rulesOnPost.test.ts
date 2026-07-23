@@ -4,7 +4,7 @@ import { createCategoryGroup, createCategory } from "@/core/domain/categories";
 import { createAccount } from "@/core/server/accounts";
 import { addTransaction } from "@/core/server/transactions";
 import { createRule } from "@/core/server/rules";
-import { createSchedule, postTransactionForScheduleToday } from "@/core/domain/schedules";
+import { createSchedule, postTransactionForScheduleToday } from "@/core/server/schedules";
 import { runQuery } from "@/core/db";
 
 describe("schedule-posted transactions run the general rule set (fix #16 / Phase 3.3)", () => {

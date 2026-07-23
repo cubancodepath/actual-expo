@@ -10,9 +10,9 @@
 import { useMemo } from "react";
 import { q } from "@/core/queries";
 import { useLiveQuery } from "@/hooks/useQuery";
-import { getStatus } from "@/core/domain/schedules/helpers";
-import { getHasTransactionsQuery, type ScheduleStatuses } from "@/core/domain/schedules/status";
-import { mapScheduleRow } from "@/core/domain/schedules/mapRow";
+import { getStatus } from "@/core/shared/schedules";
+import { getHasTransactionsQuery, type ScheduleStatuses } from "@/core/shared/schedules";
+import { mapScheduleRow } from "@/core/server/schedules/mapRow";
 import type { Schedule } from "@/core/types/models";
 
 export interface UseSchedulesResult {

@@ -9,12 +9,8 @@ import { Text, Card, SectionHeader } from "@/design-system";
 import { ListItem } from "@/design-system/molecules/ListItem";
 import { GlassButton } from "@/design-system/atoms/GlassButton";
 import { usePickerStore } from "@/stores/pickerStore";
-import { getRecurringDescription } from "@/core/domain/schedules";
-import {
-  getUpcomingDates,
-  dayFromDate,
-  getDateWithSkippedWeekend,
-} from "@/core/domain/schedules/recurrence";
+import { getRecurringDescription } from "@/core/server/schedules";
+import { getUpcomingDates, dayFromDate, getDateWithSkippedWeekend } from "@/core/shared/schedules";
 import { currentDay } from "@/core/shared/months";
 import { formatDateLong, strToInt } from "@/core/shared/months";
 import type { RecurConfig } from "@/core/types/models";

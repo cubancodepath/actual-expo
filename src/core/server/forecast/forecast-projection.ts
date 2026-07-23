@@ -5,7 +5,7 @@
  * strings compared lexicographically.
  */
 import { addMonths, addDays, format } from "date-fns";
-import { parseDate, dayFromDate } from "@/core/domain/schedules/recurrence";
+import { parseDate, dayFromDate } from "@/core/shared/schedules";
 import type {
   AccountWithComputedBalance,
   ForecastDataPoint,

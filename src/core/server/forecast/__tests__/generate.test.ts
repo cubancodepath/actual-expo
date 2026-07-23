@@ -3,7 +3,7 @@ import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
 import { sendMessages } from "@/core/sync";
 import { Timestamp } from "@/core/crdt";
 import { createAccount } from "@/core/server/accounts";
-import { createSchedule } from "@/core/domain/schedules";
+import { createSchedule } from "@/core/server/schedules";
 import { generateForecast } from "../index";
 
 /**

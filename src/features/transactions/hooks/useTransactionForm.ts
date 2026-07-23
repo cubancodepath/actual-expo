@@ -9,7 +9,7 @@ import { usePickerStore } from "@/stores/pickerStore";
 import { useRules } from "@/lib/hooks/useRules";
 import { getTransactionById, getChildTransactions } from "@/core/server/transactions";
 import { saveTransaction } from "@/core/server/transactions/save";
-import { getRecurringDescription } from "@/core/domain/schedules";
+import { getRecurringDescription } from "@/core/server/schedules";
 import type { RecurConfig } from "@/core/types/models";
 import { extractTagsFromNotes } from "@/core/shared/tags";
 import {

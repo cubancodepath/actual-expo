@@ -9,7 +9,7 @@
 import { useMemo } from "react";
 import { q } from "@/core/queries";
 import { useLiveQuery } from "@/hooks/useQuery";
-import type { Category, CategoryGroup } from "@/core/domain/categories/types";
+import type { Category, CategoryGroup } from "@/core/types/models";
 
 export function useCategories() {
   const { data: categories, isLoading: categoriesLoading } = useLiveQuery<Category>(

@@ -7,7 +7,7 @@ import { useCategories } from "@/lib/hooks/useCategories";
 import { usePayees } from "@/lib/hooks/usePayees";
 import { useTags } from "@/screens/transactions/hooks/useTags";
 import { buildTxListItems } from "@/screens/transactions/components/transaction-list/listItems";
-import type { TransactionDisplay } from "@/core/domain/transactions/types";
+import type { TransactionDisplay } from "@/core/types/models";
 import { addToken, initialTokensFromFilter, tokenKey, STATUS_LABEL_KEYS } from "../searchTokens";
 import type { SearchToken } from "../searchTokens";
 import { buildSearchParams } from "../searchParams";

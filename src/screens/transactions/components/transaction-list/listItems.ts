@@ -1,4 +1,4 @@
-import type { TransactionDisplay } from "@/core/domain/transactions/types";
+import type { TransactionDisplay } from "@/core/types/models";
 
 /**
  * Flattened LegendList model: date headers interleaved with transaction rows.

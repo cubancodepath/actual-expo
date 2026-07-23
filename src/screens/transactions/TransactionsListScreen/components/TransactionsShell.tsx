@@ -24,7 +24,7 @@ import {
   type TxListItem,
 } from "@/screens/transactions/components/transaction-list/listItems";
 import type { RowRect } from "@/screens/transactions/components/transaction-list/TransactionRowMenu";
-import type { TransactionDisplay } from "@/core/domain/transactions/types";
+import type { TransactionDisplay } from "@/core/types/models";
 import type { TransactionsListContext } from "../types";
 import { useTransactionsListQuery } from "../hooks/useTransactionsListQuery";
 

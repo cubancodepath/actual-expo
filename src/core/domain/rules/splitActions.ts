@@ -18,7 +18,7 @@ import {
   recalculateSplit,
   ungroupTransaction,
 } from "@/core/domain/transactions/split";
-import type { Transaction, TransactionWithSubtransactions } from "@/core/domain/transactions/types";
+import type { Transaction, TransactionWithSubtransactions } from "@/core/types/models";
 
 type LooseTxn = Record<string, unknown>;
 

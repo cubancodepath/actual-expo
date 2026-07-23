@@ -8,7 +8,7 @@ import { BottomSheet, Button, Typography } from "heroui-native";
 import { WheelPicker, WheelPickerGroup } from "heroui-native-pro";
 import { CalendarDays } from "lucide-react-native";
 import { format, getDate, getDay, getDaysInMonth, getMonth, setDay, setMonth } from "date-fns";
-import type { RecurConfig } from "@/core/domain/schedules/types";
+import type { RecurConfig } from "@/core/types/models";
 import { parseDate, dayFromDate } from "@/core/domain/schedules/recurrence";
 import { FieldRow } from "./FieldRow";
 

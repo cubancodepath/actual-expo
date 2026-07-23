@@ -9,7 +9,7 @@
 import { useMemo } from "react";
 import { q } from "@/core/queries";
 import { useLiveQuery } from "@/hooks/useQuery";
-import type { Account } from "@/core/domain/accounts/types";
+import type { Account } from "@/core/types/models";
 
 /**
  * Reactive list of all accounts (without balances).

@@ -5,7 +5,7 @@
  * ServerPrefs (only `flags.plugins`) are a desktop/web concern with no consumer
  * on mobile, so this is a stub: reads return `undefined`, writes are no-ops.
  */
-import type { ServerPrefs } from "@/core/domain/preferences/prefs.types";
+import type { ServerPrefs } from "@/core/types/prefs";
 
 export function useServerPref<K extends keyof ServerPrefs>(
   _key: K,

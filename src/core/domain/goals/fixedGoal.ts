@@ -27,7 +27,7 @@ import type {
   SimpleTemplate,
   SpendTemplate,
   Template,
-} from "./types";
+} from "@/core/types/models";
 
 export type FixedMode = "setAside" | "refill" | "spend";
 

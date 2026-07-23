@@ -7,7 +7,7 @@
  */
 
 import { addDays, format } from "date-fns";
-import type { RuleCondition } from "./types";
+import type { RuleCondition } from "@/core/types/models";
 
 export type ScheduleOccurrenceMatchInput = {
   posts_transaction?: boolean;

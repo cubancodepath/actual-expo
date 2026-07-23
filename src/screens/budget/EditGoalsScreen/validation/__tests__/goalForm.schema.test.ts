@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { createDefaultTemplate } from "@/core/domain/goals";
-import type { Schedule } from "@/core/domain/schedules/types";
+import type { Schedule } from "@/core/types/models";
 import {
   entriesWithDraft,
   makeGoalFormSchema,

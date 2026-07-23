@@ -5,7 +5,7 @@
 
 import { q } from "@/core/queries";
 import { useLiveQuery } from "@/hooks/useQuery";
-import type { Tag } from "@/core/domain/tags/types";
+import type { Tag } from "@/core/types/models";
 
 export function useTags() {
   const { data, isLoading } = useLiveQuery<Tag>(() => q("tags"), []);

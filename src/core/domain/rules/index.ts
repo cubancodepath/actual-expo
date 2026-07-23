@@ -10,7 +10,7 @@ import { sendMessages } from "@/core/sync";
 import { first, runQuery } from "@/core/db";
 import { Timestamp } from "@/core/crdt";
 import type { RuleRow } from "@/core/db/types";
-import type { RuleCondition, RuleAction, RuleStage } from "./types";
+import type { RuleCondition, RuleAction, RuleStage } from "@/core/types/models";
 import { Rule } from "./rule";
 import { Condition } from "./condition";
 import { Action } from "./action";

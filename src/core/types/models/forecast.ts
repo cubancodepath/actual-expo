@@ -4,7 +4,7 @@
  * budget (month step). All amounts are integer cents; all dates are
  * 'yyyy-MM-dd' strings compared lexicographically.
  */
-import type { RuleCondition } from "../rules/types";
+import type { RuleCondition } from "./rule";
 
 export type ForecastSource = "schedules" | "tracking-budget";
 

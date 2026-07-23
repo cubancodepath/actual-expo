@@ -13,7 +13,7 @@ import type {
   RemainderTemplate,
   RefillTemplate,
   LimitTemplate,
-} from "./types";
+} from "@/core/types/models";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // parseGoalDef

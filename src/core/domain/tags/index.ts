@@ -4,7 +4,7 @@ import { sendMessages } from "@/core/sync";
 import { undoable } from "@/core/sync/undo";
 import { Timestamp } from "@/core/crdt";
 import type { TagRow } from "@/core/db/types";
-import type { Tag } from "./types";
+import type { Tag } from "@/core/types/models";
 
 /** Regex to extract #tags from notes — matches #word but not ##escaped */
 const TAG_REGEX = /(?<!#)#([^#\s]+)/g;

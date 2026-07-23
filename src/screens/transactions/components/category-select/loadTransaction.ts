@@ -1,5 +1,5 @@
 import { getChildTransactions, getTransactionById } from "@/core/domain/transactions";
-import type { TransactionDisplay } from "@/core/domain/transactions/types";
+import type { TransactionDisplay } from "@/core/types/models";
 import type { SplitLineForm } from "@/ui/entity-select/types";
 
 /**

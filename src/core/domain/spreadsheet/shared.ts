@@ -9,7 +9,7 @@ import { sheetForMonth, envelopeBudget } from "./bindings";
 import { firstSync, first } from "@/core/db";
 import { monthToInt, currentMonth, intToStr, addMonths } from "@/lib/date";
 import { ALIVE_TX_FILTER } from "@/core/db/filters";
-import type { Category } from "../categories/types";
+import type { Category } from "@/core/types/models";
 
 export function num(v: CellValue): number {
   return typeof v === "number" ? v : 0;

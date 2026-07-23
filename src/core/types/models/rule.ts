@@ -63,32 +63,5 @@ export type ParsedRule = {
   conditionsOp: "and" | "or";
 };
 
-// ── Field type mapping ──
-
-export const FIELD_TYPES: Record<string, string> = {
-  imported_payee: "string",
-  payee: "id",
-  payee_name: "string",
-  date: "date",
-  notes: "string",
-  amount: "number",
-  category: "id",
-  category_group: "id",
-  account: "id",
-  cleared: "boolean",
-  reconciled: "boolean",
-  saved: "saved",
-  transfer: "boolean",
-  parent: "boolean",
-};
-
-// ── Field name mapping (public rule field → internal DB column) ──
-
-export const INTERNAL_FIELD_MAP: Record<string, string> = {
-  account: "acct",
-  payee: "description",
-  imported_payee: "imported_description",
-  transfer_id: "transferred_id",
-  is_parent: "isParent",
-  is_child: "isChild",
-};
+// NOTE: the runtime FIELD_TYPES map lives in the rules module (rule-utils.ts),
+// matching upstream loot-core where models/rule.ts is types-only.

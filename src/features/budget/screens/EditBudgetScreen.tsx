@@ -29,7 +29,7 @@ import { RowSeparator } from "@/design-system/atoms/RowSeparator";
 import { describeTemplate, translateDescription } from "@/core/domain/goals/describe";
 import i18n from "@/i18n/config";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
-import type { Category, CategoryGroup } from "@/core/domain/categories/types";
+import type { Category, CategoryGroup } from "@/core/types/models";
 
 // ---------- Section types ----------
 

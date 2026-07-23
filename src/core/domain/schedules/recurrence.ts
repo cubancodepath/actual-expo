@@ -24,7 +24,7 @@ import {
   format,
   getDaysInMonth,
 } from "date-fns";
-import type { RecurConfig, RecurPattern } from "./types";
+import type { RecurConfig, RecurPattern } from "@/core/types/models";
 
 // ─── Date Helpers ──────────────────────────────────────────
 

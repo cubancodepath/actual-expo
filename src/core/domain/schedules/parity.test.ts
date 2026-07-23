@@ -24,7 +24,7 @@ import {
 } from "./posted";
 import { getUpcomingDates, applySkipWeekend, parseDate, dayFromDate } from "./recurrence";
 import { computePreviewTransactions } from "./computePreview";
-import type { Schedule, RuleCondition } from "./types";
+import type { Schedule, RuleCondition } from "@/core/types/models";
 import type { ScheduleStatuses } from "./status";
 
 describe("getUpcomingDays", () => {

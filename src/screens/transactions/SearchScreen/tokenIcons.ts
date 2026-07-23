@@ -9,7 +9,7 @@ import {
   Tags,
   type LucideIcon,
 } from "lucide-react-native";
-import type { StatusFilter } from "@/core/domain/transactions/types";
+import type { StatusFilter } from "@/core/types/models";
 import type { SearchToken } from "./searchTokens";
 
 const STATUS_ICONS: Record<StatusFilter, LucideIcon> = {

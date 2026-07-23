@@ -13,7 +13,7 @@ import {
   Trash2,
 } from "lucide-react-native";
 import { updateAccount } from "@/core/domain/accounts";
-import type { Account } from "@/core/domain/accounts/types";
+import type { Account } from "@/core/types/models";
 
 /** Relative "2 days ago" for a last-reconciled epoch-ms (or date) string. */
 function relativeReconciled(raw: string | null): string | null {

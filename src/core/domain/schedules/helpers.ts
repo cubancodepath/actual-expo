@@ -11,7 +11,7 @@ import {
   getDate,
   differenceInCalendarDays,
 } from "date-fns";
-import type { RuleCondition, RuleAction, RecurConfig, ScheduleStatus } from "./types";
+import type { RuleCondition, RuleAction, RecurConfig, ScheduleStatus } from "@/core/types/models";
 import { todayStr } from "@/lib/date";
 
 /**

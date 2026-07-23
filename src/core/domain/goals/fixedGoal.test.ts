@@ -12,7 +12,7 @@ import {
   templateFromFixedConfig,
   weekdayOf,
 } from "./fixedGoal";
-import type { ByTemplate, PeriodicTemplate, SimpleTemplate, Template } from "./types";
+import type { ByTemplate, PeriodicTemplate, SimpleTemplate, Template } from "@/core/types/models";
 
 describe("date helpers", () => {
   const FROM = new Date(2026, 6, 17); // Friday 2026-07-17

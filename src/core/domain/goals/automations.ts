@@ -27,7 +27,7 @@ import type {
   ScheduleTemplate,
   SpendTemplate,
   Template,
-} from "./types";
+} from "@/core/types/models";
 
 // ---------------------------------------------------------------------------
 // Display types

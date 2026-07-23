@@ -3,7 +3,7 @@ import { runQuery, first } from "@/core/db";
 import { sendMessages } from "@/core/sync";
 import { Timestamp } from "@/core/crdt";
 import type { PayeeLocationRow } from "@/core/db/types";
-import type { PayeeLocation, NearbyPayee, Coordinates } from "./types";
+import type { PayeeLocation, NearbyPayee, Coordinates } from "@/core/types/models";
 
 const DEFAULT_MAX_DISTANCE_METERS = 500;
 

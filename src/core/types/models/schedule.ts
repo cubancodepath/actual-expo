@@ -40,5 +40,5 @@ export type Schedule = {
   _conditions: RuleCondition[];
 };
 
-import type { RuleCondition, RuleAction } from "../rules/types";
+import type { RuleCondition, RuleAction } from "./rule";
 export type { RuleCondition, RuleAction };

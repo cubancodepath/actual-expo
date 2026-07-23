@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Pill } from "./Pill";
-import type { ScheduleStatus } from "@/core/domain/schedules/types";
+import type { ScheduleStatus } from "@/core/types/models";
 
 const STATUS_CONFIG: Record<
   ScheduleStatus,

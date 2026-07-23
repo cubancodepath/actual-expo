@@ -4,14 +4,14 @@ import { sendMessages, batchMessages } from "@/core/sync";
 import { undoable } from "@/core/sync/undo";
 import { Timestamp } from "@/core/crdt";
 import type { TransactionRow } from "@/core/db/types";
-import type { Transaction, GetTransactionsOptions, TransactionDisplay } from "./types";
+import type { Transaction, GetTransactionsOptions, TransactionDisplay } from "@/core/types/models";
 import { onInsert, onUpdate, onDelete as onDeleteTransfer } from "./transfer";
 import { todayInt, startOfMonthInt, endOfMonthInt } from "@/lib/date";
 import { q, executeQuery } from "@/core/queries";
 import { getRules } from "../rules";
 import { applyRulesToNewTransaction } from "../rules/apply";
 
-export type { TransactionDisplay } from "./types";
+export type { TransactionDisplay } from "@/core/types/models";
 
 function rowToTransaction(r: TransactionRow): Transaction {
   return {

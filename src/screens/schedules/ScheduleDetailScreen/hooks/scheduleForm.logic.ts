@@ -8,15 +8,10 @@
  * mutation and picker-driven `form.setFieldValue` calls.
  */
 
-import type { Account } from "@/core/domain/accounts/types";
-import type { Category } from "@/core/domain/categories/types";
-import type { Payee } from "@/core/domain/payees/types";
-import type {
-  RecurConfig,
-  RuleAction,
-  RuleCondition,
-  Schedule,
-} from "@/core/domain/schedules/types";
+import type { Account } from "@/core/types/models";
+import type { Category } from "@/core/types/models";
+import type { Payee } from "@/core/types/models";
+import type { RecurConfig, RuleAction, RuleCondition, Schedule } from "@/core/types/models";
 import { todayStr } from "@/lib/date";
 import type { AmountOp, ScheduleFormValues, ScheduleType } from "./useScheduleForm";
 

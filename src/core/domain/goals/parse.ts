@@ -7,7 +7,7 @@
  */
 
 import { addMonths } from "@/lib/date";
-import type { Template, LimitDef } from "./types";
+import type { Template, LimitDef } from "@/core/types/models";
 
 // ---------------------------------------------------------------------------
 // Parse templates from a category's goal_def
@@ -126,7 +126,7 @@ export function inferGoalFromDef(
       const limitT = templates.find((t) => t.type === "limit");
       if (limitT) return { goal: Math.round(limitT.amount * 100), longGoal: false };
       const simpleLimit = templates.find(
-        (t): t is import("./types").SimpleTemplate => t.type === "simple" && !!t.limit,
+        (t): t is import("@/core/types/models").SimpleTemplate => t.type === "simple" && !!t.limit,
       );
       if (simpleLimit?.limit)
         return { goal: Math.round(simpleLimit.limit.amount * 100), longGoal: false };

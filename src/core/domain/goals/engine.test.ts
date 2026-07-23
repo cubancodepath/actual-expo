@@ -26,7 +26,7 @@ import type {
   RemainderTemplate,
   LimitTemplate,
   Template,
-} from "./types";
+} from "@/core/types/models";
 
 const mockFirst = vi.mocked(first);
 const mockRunQuery = vi.mocked(runQuery);

@@ -17,7 +17,7 @@ import {
 } from "@/core/domain/schedules/recurrence";
 import { todayStr } from "@/lib/date";
 import { formatDateLong, strToInt } from "@/lib/date";
-import type { RecurConfig } from "@/core/domain/schedules/types";
+import type { RecurConfig } from "@/core/types/models";
 
 // ---------------------------------------------------------------------------
 // Constants

@@ -4,7 +4,12 @@ import {
   validatePercentageAllocation,
   validateSchedulePriorities,
 } from "./validate";
-import type { ByTemplate, PercentageTemplate, ScheduleTemplate, Template } from "./types";
+import type {
+  ByTemplate,
+  PercentageTemplate,
+  ScheduleTemplate,
+  Template,
+} from "@/core/types/models";
 
 const TODAY = new Date(2026, 6, 17); // 2026-07-17
 const SCHEDULES = [

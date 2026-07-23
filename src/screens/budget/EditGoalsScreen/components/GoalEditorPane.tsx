@@ -7,8 +7,8 @@ import type {
   DisplayTemplateType,
   GlobalConflictKind,
 } from "@/core/domain/goals";
-import type { GoalTemplate, LimitTemplate, Template } from "@/core/domain/goals/types";
-import type { Schedule } from "@/core/domain/schedules/types";
+import type { GoalTemplate, LimitTemplate, Template } from "@/core/types/models";
+import type { Schedule } from "@/core/types/models";
 import { AmountKeyboard } from "@/ui/amount-keyboard";
 import { BalanceTargetEditor } from "./editors/BalanceTargetEditor";
 import { GoalEditor } from "./editors/GoalEditor";

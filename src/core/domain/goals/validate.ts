@@ -10,7 +10,7 @@
  */
 
 import { amountCentsOf, type DisplayTemplateType, type ScheduleRef } from "./automations";
-import type { Template } from "./types";
+import type { Template } from "@/core/types/models";
 
 export type AutomationErrorKind =
   | { kind: "amount-zero" }

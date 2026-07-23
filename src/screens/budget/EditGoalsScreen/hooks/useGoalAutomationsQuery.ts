@@ -8,9 +8,9 @@ import {
   templatesToEntries,
   type AutomationEntry,
 } from "@/core/domain/goals";
-import type { Template } from "@/core/domain/goals/types";
+import type { Template } from "@/core/types/models";
 import { getSchedules } from "@/core/domain/schedules";
-import type { Schedule } from "@/core/domain/schedules/types";
+import type { Schedule } from "@/core/types/models";
 import { useCategories } from "@/lib/hooks/useCategories";
 
 export type GoalAutomationsData = {

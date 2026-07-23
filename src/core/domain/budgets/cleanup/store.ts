@@ -13,7 +13,7 @@ import { sendMessages } from "@/core/sync";
 import { Timestamp } from "@/core/crdt";
 import { parseCleanupNote } from "./parse";
 import { resolveCleanupGroups, tombstoneOrphanCleanupGroups } from "./groups";
-import type { CleanupTemplate, ParsedCleanupRow } from "./types";
+import type { CleanupTemplate, ParsedCleanupRow } from "@/core/types/models";
 
 function toCleanupTemplate(row: ParsedCleanupRow, nameToId: Map<string, string>): CleanupTemplate {
   switch (row.type) {

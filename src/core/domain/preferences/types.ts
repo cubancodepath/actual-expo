@@ -13,7 +13,7 @@ export type NumberFormatOption =
   | "apostrophe-dot"
   | "comma-dot-in";
 
-import type { SyncedPrefs } from "./prefs.types";
+import type { SyncedPrefs } from "@/core/types/prefs";
 
 /**
  * The fixed SyncedPrefs keys the engine loads eagerly (with defaults) into the

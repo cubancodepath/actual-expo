@@ -16,7 +16,7 @@ import {
 import { ArchiveRestore, Trash2, X } from "lucide-react-native";
 import { updateAccount } from "@/core/domain/accounts";
 import { getNote } from "@/core/domain/notes";
-import type { Account } from "@/core/domain/accounts/types";
+import type { Account } from "@/core/types/models";
 import { useAccounts } from "@/lib/hooks/useAccounts";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { ScreenHeader } from "@/ui/ScreenHeader";

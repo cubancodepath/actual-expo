@@ -3,7 +3,7 @@ import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { Text } from "./Text";
 import { TagPill } from "./TagPill";
 import { parseNotes } from "@/core/domain/tags";
-import type { Tag } from "@/core/domain/tags/types";
+import type { Tag } from "@/core/types/models";
 
 export interface NotesWithTagsProps {
   notes: string;

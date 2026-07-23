@@ -6,7 +6,7 @@
 // Pure core logic (no React). The `useGlobalPref` hook wraps these.
 import * as asyncStorage from "@/core/platform/asyncStorage";
 
-import type { GlobalPrefs } from "./prefs.types";
+import type { GlobalPrefs } from "@/core/types/prefs";
 
 /** camelCase pref name → kebab-case storage key (mirrors upstream GlobalPrefsJson). */
 const STORAGE_KEY: Record<keyof GlobalPrefs, string> = {

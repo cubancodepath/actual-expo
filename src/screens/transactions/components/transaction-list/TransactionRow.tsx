@@ -16,7 +16,7 @@ import {
 import { useCSSVariable } from "uniwind";
 import { Money } from "@/ui/Money";
 import { mediumHaptic } from "@/ui/haptics";
-import type { TransactionDisplay } from "@/core/domain/transactions/types";
+import type { TransactionDisplay } from "@/core/types/models";
 import type { RowRect } from "./TransactionRowMenu";
 
 /**

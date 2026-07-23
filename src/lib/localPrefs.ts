@@ -5,7 +5,7 @@
 // this is device UI state, never synced.
 import { createMMKV } from "react-native-mmkv";
 
-import type { LocalPrefs } from "@/core/domain/preferences/prefs.types";
+import type { LocalPrefs } from "@/core/types/prefs";
 
 const storage = createMMKV({ id: "actual-local" });
 

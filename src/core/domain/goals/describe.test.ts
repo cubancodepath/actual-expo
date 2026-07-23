@@ -22,7 +22,7 @@ import type {
   RemainderTemplate,
   RefillTemplate,
   LimitTemplate,
-} from "./types";
+} from "@/core/types/models";
 
 // Helper: translates a TemplateDescription using English budget.json values
 function translateEn(desc: TemplateDescription): string {

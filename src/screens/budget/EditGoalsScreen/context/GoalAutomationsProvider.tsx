@@ -9,7 +9,7 @@ import {
   type AutomationErrorKind,
   type GlobalConflictKind,
 } from "@/core/domain/goals";
-import type { Schedule } from "@/core/domain/schedules/types";
+import type { Schedule } from "@/core/types/models";
 import { useCategories } from "@/lib/hooks/useCategories";
 import { useGoalAutomationsQuery } from "../hooks/useGoalAutomationsQuery";
 import { useGoalEditSession } from "../hooks/useGoalEditSession";

@@ -4,7 +4,7 @@ import { first, runQuery } from "@/core/db";
 import { createCategoryGroup, createCategory } from "@/core/domain/categories";
 import { setNote } from "@/core/domain/notes";
 import { storeNoteCleanups } from "./store";
-import type { CleanupTemplate } from "./types";
+import type { CleanupTemplate } from "@/core/types/models";
 
 /**
  * Mirrors upstream cleanup-template-notes.test.ts (storeNoteCleanups): parsing

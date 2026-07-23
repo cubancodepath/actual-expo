@@ -18,8 +18,8 @@ import { loadTransactionWithSplitLines } from "@/screens/transactions/components
 import { saveTransaction, type SaveTransactionInput } from "@/core/domain/transactions/save";
 import { suggestCategoryForPayee } from "@/core/domain/rules/apply";
 import { todayInt } from "@/lib/date";
-import type { Account } from "@/core/domain/accounts/types";
-import type { Category } from "@/core/domain/categories/types";
+import type { Account } from "@/core/types/models";
+import type { Category } from "@/core/types/models";
 import type { Rule } from "@/core/domain/rules/rule";
 import {
   transactionFormSchema,

@@ -1,4 +1,4 @@
-import type { StatusFilter } from "@/core/domain/transactions/types";
+import type { StatusFilter } from "@/core/types/models";
 
 /**
  * A search filter. Every filter — including the free text — is a token; the

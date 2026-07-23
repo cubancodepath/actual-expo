@@ -28,8 +28,8 @@ import type {
   RemainderTemplate,
   ScheduleTemplate,
   Template,
-} from "@/core/domain/goals/types";
-import type { Schedule } from "@/core/domain/schedules/types";
+} from "@/core/types/models";
+import type { Schedule } from "@/core/types/models";
 import { formatCents } from "@/lib/currency";
 import { currentMonth } from "@/lib/date";
 import { AmountRow } from "../fields/AmountRow";

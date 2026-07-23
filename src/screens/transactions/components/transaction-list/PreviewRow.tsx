@@ -5,7 +5,7 @@ import { Chip, cn, PressableFeedback, Separator, Typography } from "heroui-nativ
 import { Money } from "@/ui/Money";
 import { mediumHaptic } from "@/ui/haptics";
 import type { PreviewTransaction } from "@/core/domain/schedules";
-import type { ScheduleStatus } from "@/core/domain/schedules/types";
+import type { ScheduleStatus } from "@/core/types/models";
 import type { RowRect } from "./TransactionRowMenu";
 
 /** Slow scale under a long press, matching TransactionRow's lift feel. */

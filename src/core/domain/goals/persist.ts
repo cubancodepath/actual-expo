@@ -9,7 +9,7 @@
 
 import { first } from "@/core/db";
 import { updateCategory } from "../categories";
-import type { Template } from "./types";
+import type { Template } from "@/core/types/models";
 import { parseGoalDef } from "./parse";
 
 // ---------------------------------------------------------------------------

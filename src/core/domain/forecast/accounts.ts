@@ -4,8 +4,8 @@
  * non-tombstone transaction amounts (reused from our getAccounts()).
  */
 import { getAccounts as getAllAccounts } from "../accounts";
-import type { RuleCondition } from "../rules/types";
-import type { AccountWithComputedBalance } from "./types";
+import type { RuleCondition } from "@/core/types/models";
+import type { AccountWithComputedBalance } from "@/core/types/models";
 
 // getAccounts() returns offbudget/closed as booleans and balance as a number.
 type AccountRow = {

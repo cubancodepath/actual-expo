@@ -7,7 +7,11 @@ import { addMonths, lastDayOfMonth as lastDayFns, format } from "date-fns";
 import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
 import { sheetForMonth, trackingBudget } from "@/core/domain/spreadsheet/bindings";
 import { ensureMonthRange } from "@/core/domain/spreadsheet/sync";
-import type { AccountWithComputedBalance, ForecastDataPoint, ForecastDateContext } from "./types";
+import type {
+  AccountWithComputedBalance,
+  ForecastDataPoint,
+  ForecastDateContext,
+} from "@/core/types/models";
 
 const TRACKING_BUDGET_FORECAST_ACCOUNT_ID = "tracking-budget";
 const TRACKING_BUDGET_FORECAST_ACCOUNT_NAME = "Tracking Budget";
@@ -38,7 +42,7 @@ export async function projectTrackingBudgetForecast({
 }: {
   accounts: AccountWithComputedBalance[];
   dateContext: ForecastDateContext;
-}): Promise<Pick<import("./types").ForecastResult, "dataPoints" | "lowestBalance">> {
+}): Promise<Pick<import("@/core/types/models").ForecastResult, "dataPoints" | "lowestBalance">> {
   let running = accounts.reduce((sum, a) => (a.offbudget === 0 ? sum + a.balance_current : sum), 0);
 
   const startMonth = dateContext.forecastStartDate.slice(0, 7);

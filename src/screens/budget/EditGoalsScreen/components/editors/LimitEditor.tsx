@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { ListGroup, Separator, Switch } from "heroui-native";
 import { Archive, CalendarDays, RotateCcw } from "lucide-react-native";
 import { todayStr } from "@/lib/date";
-import type { LimitTemplate } from "@/core/domain/goals/types";
+import type { LimitTemplate } from "@/core/types/models";
 import { AmountRow } from "../fields/AmountRow";
 import { DateFieldRow } from "../fields/DateFieldRow";
 import { FieldRow } from "../fields/FieldRow";

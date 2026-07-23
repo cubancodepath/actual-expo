@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Split } from "lucide-react-native";
-import type { RemainderTemplate } from "@/core/domain/goals/types";
+import type { RemainderTemplate } from "@/core/types/models";
 import { StepperFieldRow } from "../fields/StepperFieldRow";
 
 /**

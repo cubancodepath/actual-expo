@@ -20,7 +20,11 @@ import {
 } from "./projection";
 import { projectTrackingBudgetForecast } from "./trackingBudget";
 import { getForecastAccounts } from "./accounts";
-import type { AccountWithComputedBalance, ForecastRequestParams, ForecastResult } from "./types";
+import type {
+  AccountWithComputedBalance,
+  ForecastRequestParams,
+  ForecastResult,
+} from "@/core/types/models";
 
 /** A posted transaction shaped like a rules txn (public field names, string date). */
 type PostedForecastTxn = {
@@ -162,4 +166,4 @@ export type {
   ForecastDataPoint,
   ForecastTransaction,
   ForecastRequestParams,
-} from "./types";
+} from "@/core/types/models";

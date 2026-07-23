@@ -4,7 +4,7 @@ import { sendMessages } from "@/core/sync";
 import { undoable } from "@/core/sync/undo";
 import { Timestamp } from "@/core/crdt";
 import type { PayeeRow } from "@/core/db/types";
-import type { Payee } from "./types";
+import type { Payee } from "@/core/types/models";
 
 function rowToPayee(r: PayeeRow): Payee {
   return {

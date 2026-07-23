@@ -16,7 +16,7 @@ import {
 import { getNextOccurrence, applySkipWeekend, dayFromDate, parseDate } from "./recurrence";
 import { isForPreview, type ScheduleStatuses } from "./status";
 import { todayStr, strToInt } from "@/lib/date";
-import type { Schedule, ScheduleStatus, RecurConfig } from "./types";
+import type { Schedule, ScheduleStatus, RecurConfig } from "@/core/types/models";
 
 export type PreviewSubtransaction = {
   id: string;

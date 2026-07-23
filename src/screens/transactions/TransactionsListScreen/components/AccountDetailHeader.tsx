@@ -3,7 +3,7 @@ import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button, Separator, Typography, useThemeColor } from "heroui-native";
 import { ChevronLeft } from "lucide-react-native";
-import type { Account } from "@/core/domain/accounts/types";
+import type { Account } from "@/core/types/models";
 import { SearchButton } from "./SearchButton";
 import { AccountDetailMenu } from "./AccountDetailMenu";
 import { AccountSummary } from "./AccountSummary";

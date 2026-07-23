@@ -8,7 +8,7 @@ import {
   occursBetween,
   getLastOccurrence,
 } from "./recurrence";
-import type { RecurConfig } from "./types";
+import type { RecurConfig } from "@/core/types/models";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // parseDate / dayFromDate

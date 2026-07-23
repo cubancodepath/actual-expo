@@ -16,11 +16,11 @@ import {
   dayFromDate,
 } from "../schedules/recurrence";
 import { indexPostedScheduleTransactions, isScheduleOccurrencePosted } from "../schedules/posted";
-import type { RecurConfig } from "../schedules/types";
-import type { RuleCondition } from "../rules/types";
+import type { RecurConfig } from "@/core/types/models";
+import type { RuleCondition } from "@/core/types/models";
 import { getRules, runRules } from "../rules";
 import { getTransferAccount } from "../transactions/transfer";
-import type { AccountWithComputedBalance, ForecastScheduleOccurrence } from "./types";
+import type { AccountWithComputedBalance, ForecastScheduleOccurrence } from "@/core/types/models";
 
 /** Synthetic account for schedules with no account. */
 export const FORECAST_UNASSIGNED_ACCOUNT_ID = "__unassigned_schedule__";

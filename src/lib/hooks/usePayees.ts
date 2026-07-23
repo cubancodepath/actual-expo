@@ -5,7 +5,7 @@
 
 import { q } from "@/core/queries";
 import { useLiveQuery } from "@/hooks/useQuery";
-import type { Payee } from "@/core/domain/payees/types";
+import type { Payee } from "@/core/types/models";
 
 export function usePayees() {
   const { data, isLoading } = useLiveQuery<Payee>(() => q("payees"), []);

@@ -16,7 +16,7 @@ import type { CategoryRow, ZeroBudgetRow } from "@/core/db/types";
 import { calculateGoal, type GoalContext } from "./engine";
 import { parseGoalDef, parseTemplateNotes } from "./parse";
 import { setGoalResult } from "./persist";
-import type { Template } from "./types";
+import type { Template } from "@/core/types/models";
 
 type CategoryWithNote = CategoryRow & { note: string | null };
 

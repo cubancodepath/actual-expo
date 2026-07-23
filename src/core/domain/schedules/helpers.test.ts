@@ -5,7 +5,7 @@ import {
   getScheduledAmount,
   getRecurringDescription,
 } from "./helpers";
-import type { RuleCondition, RecurConfig } from "./types";
+import type { RuleCondition, RecurConfig } from "@/core/types/models";
 
 // Mock todayStr so tests are deterministic
 vi.mock("@/lib/date", () => ({

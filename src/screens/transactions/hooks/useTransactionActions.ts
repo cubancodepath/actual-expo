@@ -5,7 +5,7 @@ import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { useUndoStore } from "@/stores/undoStore";
 import { dialog } from "@/ui/feedback/dialog";
 import { successHaptic } from "@/ui/haptics";
-import type { TransactionDisplay } from "@/core/domain/transactions/types";
+import type { TransactionDisplay } from "@/core/types/models";
 
 /**
  * Single-transaction actions with their dialogs, guards, undo toast and haptics

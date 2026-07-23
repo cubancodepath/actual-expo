@@ -19,7 +19,7 @@ import { usePayees } from "@/lib/hooks/usePayees";
 import { useAccounts } from "@/lib/hooks/useAccounts";
 import { useUndoStore } from "@/stores/undoStore";
 import { getStatus, getScheduledAmount, getRecurringDescription } from "@/core/domain/schedules";
-import type { Schedule, ScheduleStatus, RecurConfig } from "@/core/domain/schedules/types";
+import type { Schedule, ScheduleStatus, RecurConfig } from "@/core/types/models";
 import type { Theme } from "@/design-system/tokens";
 
 type ScheduleSection = {

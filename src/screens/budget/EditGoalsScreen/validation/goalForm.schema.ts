@@ -20,8 +20,8 @@ import {
   type DisplayTemplateType,
   type GlobalConflictKind,
 } from "@/core/domain/goals";
-import type { Template } from "@/core/domain/goals/types";
-import type { Schedule } from "@/core/domain/schedules/types";
+import type { Template } from "@/core/types/models";
+import type { Schedule } from "@/core/types/models";
 
 /** One editing session: a single automation, saved or brand new. */
 export type GoalFormValues = {

@@ -9,7 +9,7 @@ import {
   type FixedMode,
   type FixedTemplate,
 } from "@/core/domain/goals";
-import type { Template } from "@/core/domain/goals/types";
+import type { Template } from "@/core/types/models";
 import { formatCents } from "@/lib/currency";
 
 /**

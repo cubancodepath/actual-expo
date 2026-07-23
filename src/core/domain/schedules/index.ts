@@ -36,10 +36,16 @@ import { executeQuery } from "@/core/queries";
 import { emit as emitSyncEvent } from "@/core/sync/syncEvents";
 import { todayStr, todayInt, intToStr, strToInt } from "@/lib/date";
 import { addDays, startOfDay, isFriday, isWeekend, nextMonday } from "date-fns";
-import type { Schedule, RuleCondition, RuleAction, RecurConfig, ScheduleStatus } from "./types";
+import type {
+  Schedule,
+  RuleCondition,
+  RuleAction,
+  RecurConfig,
+  ScheduleStatus,
+} from "@/core/types/models";
 import type { ScheduleRow, ScheduleNextDateRow } from "@/core/db/types";
 
-export type { Schedule } from "./types";
+export type { Schedule } from "@/core/types/models";
 export {
   getStatus,
   getScheduledAmount,

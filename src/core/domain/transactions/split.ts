@@ -6,7 +6,11 @@
  * The caller is responsible for persisting changes via addTransaction/updateTransaction/deleteTransaction.
  */
 import { randomUUID } from "@/core/platform/crypto";
-import type { Transaction, SplitTransactionError, TransactionWithSubtransactions } from "./types";
+import type {
+  Transaction,
+  SplitTransactionError,
+  TransactionWithSubtransactions,
+} from "@/core/types/models";
 
 // ---------------------------------------------------------------------------
 // Utility helpers (ported from loot-core/src/shared/util.ts)

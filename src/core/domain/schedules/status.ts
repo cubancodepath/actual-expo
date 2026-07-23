@@ -7,7 +7,7 @@
 
 import { q } from "@/core/queries";
 import type { Query } from "@/core/queries/query";
-import type { Schedule, ScheduleStatus } from "./types";
+import type { Schedule, ScheduleStatus } from "@/core/types/models";
 import { getScheduleOccurrenceMatchStartDate } from "./posted";
 
 export type ScheduleStatuses = Map<string, ScheduleStatus>;

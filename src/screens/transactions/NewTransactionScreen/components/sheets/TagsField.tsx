@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { BottomSheet, Button, Chip, Input, useThemeColor } from "heroui-native";
 import { Plus, Tags as TagsIcon } from "lucide-react-native";
 import { extractTagsFromNotes } from "@/core/domain/tags";
-import type { Tag } from "@/core/domain/tags/types";
+import type { Tag } from "@/core/types/models";
 import { FieldRow } from "@/ui/money-entry/FieldRow";
 
 type TagsFieldProps = {

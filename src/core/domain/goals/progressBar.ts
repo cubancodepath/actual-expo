@@ -15,7 +15,7 @@
 
 import { parseGoalDef } from "./parse";
 import type { BudgetCategory } from "../budgets/types";
-import type { Template } from "./types";
+import type { Template } from "@/core/types/models";
 
 // ---------------------------------------------------------------------------
 // Types

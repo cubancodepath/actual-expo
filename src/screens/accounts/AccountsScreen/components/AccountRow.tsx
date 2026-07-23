@@ -2,7 +2,7 @@ import { memo, useRef } from "react";
 import { View } from "react-native";
 import { cn, ListGroup, PressableFeedback, useThemeColor } from "heroui-native";
 import { Banknote, ChartSpline, ChevronRight } from "lucide-react-native";
-import type { Account } from "@/core/domain/accounts/types";
+import type { Account } from "@/core/types/models";
 import { Money } from "@/ui/Money";
 import { useAccountBalance } from "@/lib/hooks/useAccounts";
 import { mediumHaptic } from "@/ui/haptics";

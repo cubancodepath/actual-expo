@@ -21,7 +21,7 @@ import {
 import { createSchedule, setNextDate } from "@/core/domain/schedules";
 import { addDays } from "date-fns";
 import { parseDate } from "@/core/domain/schedules/recurrence";
-import type { RecurConfig, RuleCondition } from "@/core/domain/schedules/types";
+import type { RecurConfig, RuleCondition } from "@/core/types/models";
 import type { Rule } from "../rules/rule";
 import { applyRulesToForm } from "../rules/apply";
 import { updateCategoryRules } from "../rules/learn";

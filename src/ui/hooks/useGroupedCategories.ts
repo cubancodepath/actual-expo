@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { Category, CategoryGroup } from "@/core/domain/categories/types";
+import type { Category, CategoryGroup } from "@/core/types/models";
 
 export type CategorySection = { group: CategoryGroup; items: Category[] };
 

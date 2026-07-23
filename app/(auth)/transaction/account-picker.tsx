@@ -9,7 +9,7 @@ import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvid
 import { Text } from "@/design-system/atoms/Text";
 import { GlassButton } from "@/design-system/atoms/GlassButton";
 import { Amount } from "@/design-system/atoms/Amount";
-import type { Account } from "@/core/domain/accounts/types";
+import type { Account } from "@/core/types/models";
 import type { Theme } from "@/design-system/tokens";
 
 function AccountPickerRow({

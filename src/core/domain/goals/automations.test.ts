@@ -12,7 +12,7 @@ import {
   toPeriodic,
   withAmountCents,
 } from "./automations";
-import type { PeriodicTemplate, Template } from "./types";
+import type { PeriodicTemplate, Template } from "@/core/types/models";
 
 describe("toDisplayType", () => {
   it("groups the raw types onto the nine editor types", () => {

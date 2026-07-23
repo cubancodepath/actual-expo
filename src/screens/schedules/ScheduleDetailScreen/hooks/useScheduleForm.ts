@@ -21,10 +21,10 @@ import {
   postTransactionForSchedule,
   skipNextDate,
 } from "@/core/domain/schedules";
-import type { RecurConfig } from "@/core/domain/schedules/types";
-import type { Account } from "@/core/domain/accounts/types";
-import type { Category } from "@/core/domain/categories/types";
-import type { Payee } from "@/core/domain/payees/types";
+import type { RecurConfig } from "@/core/types/models";
+import type { Account } from "@/core/types/models";
+import type { Category } from "@/core/types/models";
+import type { Payee } from "@/core/types/models";
 import { useUndoStore } from "@/stores/undoStore";
 import {
   buildScheduleSaveRule,

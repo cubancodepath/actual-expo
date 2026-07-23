@@ -10,7 +10,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { getCurrentPosition } from "@/core/platform/location";
 import { getNearbyPayees } from "@/core/domain/payee-locations";
-import type { NearbyPayee } from "@/core/domain/payee-locations/types";
+import type { NearbyPayee } from "@/core/types/models";
 
 const QUERY_KEY = ["payees", "nearby"] as const;
 

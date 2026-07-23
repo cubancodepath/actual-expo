@@ -10,7 +10,7 @@ import { GlassButton } from "@/design-system/atoms/GlassButton";
 import { usePickerStore } from "@/stores/pickerStore";
 import { getRecurringDescription } from "@/core/domain/schedules";
 import { todayStr } from "@/lib/date";
-import type { RecurConfig } from "@/core/domain/schedules/types";
+import type { RecurConfig } from "@/core/types/models";
 
 // ---------------------------------------------------------------------------
 // Presets

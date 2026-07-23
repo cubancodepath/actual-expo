@@ -2,7 +2,7 @@ import { Fragment } from "react";
 import { useTranslation } from "react-i18next";
 import { Separator } from "heroui-native";
 import { CalendarSearch, History } from "lucide-react-native";
-import type { AverageTemplate, CopyTemplate } from "@/core/domain/goals/types";
+import type { AverageTemplate, CopyTemplate } from "@/core/types/models";
 import { AdjustmentField } from "../fields/AdjustmentField";
 import { SelectFieldRow } from "../fields/SelectFieldRow";
 import { StepperFieldRow } from "../fields/StepperFieldRow";

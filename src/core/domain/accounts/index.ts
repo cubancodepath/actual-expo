@@ -6,7 +6,7 @@ import { Timestamp } from "@/core/crdt";
 import { todayInt } from "@/lib/date";
 import { addTransaction } from "../transactions";
 import type { AccountRow } from "@/core/db/types";
-import type { Account } from "./types";
+import type { Account } from "@/core/types/models";
 
 type AccountWithBalance = AccountRow & {
   balance: number | null;

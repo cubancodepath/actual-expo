@@ -3,7 +3,7 @@ import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { useTranslation } from "react-i18next";
 import { Menu, useThemeColor } from "heroui-native";
 import { ArchiveRestore, List, Pencil, Trash2 } from "lucide-react-native";
-import type { Account } from "@/core/domain/accounts/types";
+import type { Account } from "@/core/types/models";
 import { AccountRowContent } from "./AccountRow";
 import type { RowRect } from "./AccountRow";
 

@@ -1,4 +1,4 @@
-import type { StatusFilter } from "@/core/domain/transactions/types";
+import type { StatusFilter } from "@/core/types/models";
 import { STATUS_EXCLUSIONS, type SearchToken } from "./searchTokens";
 
 const ALL_STATUSES: StatusFilter[] = ["cleared", "uncleared", "reconciled", "unreconciled"];

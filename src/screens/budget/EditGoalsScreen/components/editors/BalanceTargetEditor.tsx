@@ -1,7 +1,7 @@
 import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { ListGroup, Typography } from "heroui-native";
-import type { GoalTemplate } from "@/core/domain/goals/types";
+import type { GoalTemplate } from "@/core/types/models";
 import { AmountRow } from "../fields/AmountRow";
 
 /**

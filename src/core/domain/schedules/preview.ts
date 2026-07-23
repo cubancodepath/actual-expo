@@ -12,7 +12,7 @@ import { getSchedules } from "./index";
 import { getStatus } from "./helpers";
 import { getHasTransactionsQuery, type ScheduleStatuses } from "./status";
 import { computePreviewTransactions, type PreviewTransaction } from "./computePreview";
-import type { Schedule } from "./types";
+import type { Schedule } from "@/core/types/models";
 import { executeQuery } from "@/core/queries";
 import { getArbitraryPref } from "../preferences";
 import { getRules, runRulesWithSplits } from "../rules";

@@ -9,11 +9,11 @@
  * and the "true"/"false" string encoding are allowed to appear.
  */
 
-// The FeatureFlag union lives in prefs.types.ts (the faithful mirror of
+// The FeatureFlag union lives in @/core/types/prefs (the faithful mirror of
 // upstream's types/prefs.ts). Re-exported here so existing importers keep
 // working and the flag encoding helpers below stay colocated.
-export type { FeatureFlag } from "./prefs.types";
-import type { FeatureFlag } from "./prefs.types";
+export type { FeatureFlag } from "@/core/types/prefs";
+import type { FeatureFlag } from "@/core/types/prefs";
 
 export const DEFAULT_FEATURE_FLAG_STATE: Record<FeatureFlag, boolean> = {
   goalTemplatesEnabled: false,

@@ -13,7 +13,7 @@ import {
 import { Check } from "lucide-react-native";
 import { Money } from "@/ui/Money";
 import { formatDateHuman, strToInt } from "@/lib/date";
-import type { Schedule } from "@/core/domain/schedules/types";
+import type { Schedule } from "@/core/types/models";
 
 /** A schedule's amount may be a fixed number or a range ("between X and Y"). */
 function scheduleAmount(amount: Schedule["_amount"]): number {

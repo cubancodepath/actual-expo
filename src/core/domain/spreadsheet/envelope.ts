@@ -15,7 +15,7 @@ import { sheetForMonth, envelopeBudget } from "./bindings";
 import { firstSync } from "@/core/db";
 import { monthToInt, addMonths } from "@/lib/date";
 import { getCategories, getCategoryGroups } from "../categories";
-import type { Category, CategoryGroup } from "../categories/types";
+import type { Category, CategoryGroup } from "@/core/types/models";
 import { safeNumber } from "@/lib/number";
 import { num, createSpentCells, getBudgetRange } from "./shared";
 import { inferGoalFromDef } from "../goals";

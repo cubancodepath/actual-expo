@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { parseTemplateNoteLine, parseTemplateNotes, templateToNoteLine } from "./parse";
-import type { Template } from "./types";
+import type { Template } from "@/core/types/models";
 
 describe("parseTemplateNoteLine (fix #12 — legacy notes parsing)", () => {
   it("parses a simple monthly template", () => {

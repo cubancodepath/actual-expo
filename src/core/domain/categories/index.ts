@@ -4,7 +4,7 @@ import { sendMessages } from "@/core/sync";
 import { undoable } from "@/core/sync/undo";
 import { Timestamp } from "@/core/crdt";
 import type { CategoryGroupRow, CategoryRow } from "@/core/db/types";
-import type { Category, CategoryGroup } from "./types";
+import type { Category, CategoryGroup } from "@/core/types/models";
 import { shoveSortOrders } from "./sort";
 
 function rowToGroup(r: CategoryGroupRow): CategoryGroup {

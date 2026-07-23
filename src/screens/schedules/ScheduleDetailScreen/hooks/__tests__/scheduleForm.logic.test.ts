@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
-import type { Account } from "@/core/domain/accounts/types";
-import type { Category } from "@/core/domain/categories/types";
-import type { Payee } from "@/core/domain/payees/types";
-import type { RecurConfig, Schedule } from "@/core/domain/schedules/types";
+import type { Account } from "@/core/types/models";
+import type { Category } from "@/core/types/models";
+import type { Payee } from "@/core/types/models";
+import type { RecurConfig, Schedule } from "@/core/types/models";
 import { todayStr } from "@/lib/date";
 import {
   buildScheduleSaveRule,

@@ -12,7 +12,7 @@ import type {
   ForecastDateContext,
   ForecastResult,
   ForecastScheduleOccurrence,
-} from "./types";
+} from "@/core/types/models";
 
 type PostedTxn = { account: string; date: string; amount: number };
 type OccSummary = { amount: number; payee: string; scheduleId: string; scheduleName: string };

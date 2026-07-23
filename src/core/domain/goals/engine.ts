@@ -10,7 +10,7 @@ import { first, runQuery } from "@/core/db";
 import { addMonths, monthToInt } from "@/lib/date";
 import { ALIVE_TX_FILTER } from "@/core/db/filters";
 import { getScheduleById, getSchedules } from "../schedules";
-import type { RecurConfig } from "../schedules/types";
+import type { RecurConfig } from "@/core/types/models";
 import type {
   AverageTemplate,
   ByTemplate,
@@ -26,7 +26,7 @@ import type {
   SimpleTemplate,
   SpendTemplate,
   Template,
-} from "./types";
+} from "@/core/types/models";
 
 // ---------------------------------------------------------------------------
 // Amount conversion helpers (display units ↔ integer cents)
@@ -520,7 +520,7 @@ export async function calculateGoal(
 ): Promise<GoalResult> {
   // Separate templates by type
   const goalTemplates = templates.filter(
-    (t): t is import("./types").GoalTemplate => t.directive === "goal",
+    (t): t is import("@/core/types/models").GoalTemplate => t.directive === "goal",
   );
   const remainderTemplates = templates.filter(
     (t): t is RemainderTemplate => t.type === "remainder",

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildTxListItems } from "./listItems";
-import type { TransactionDisplay } from "@/core/domain/transactions/types";
+import type { TransactionDisplay } from "@/core/types/models";
 
 function txn(id: string, date: number): TransactionDisplay {
   return {

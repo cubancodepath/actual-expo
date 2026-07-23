@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { Menu } from "heroui-native";
 import { useIncomeCategoryIds } from "@/screens/transactions/hooks/useIncomeCategoryIds";
 import { useTransactionActions } from "@/screens/transactions/hooks/useTransactionActions";
-import type { TransactionDisplay } from "@/core/domain/transactions/types";
+import type { TransactionDisplay } from "@/core/types/models";
 import { TransactionRow } from "./TransactionRow";
 import { TransactionRowMenu, type RowRect, type TransactionMenuAction } from "./TransactionRowMenu";
 

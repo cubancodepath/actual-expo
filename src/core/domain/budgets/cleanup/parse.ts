@@ -14,7 +14,7 @@
  *   #cleanup <Name> sink [N]       → group sink
  *   #cleanup <Name>                → group "overspend" member
  */
-import type { ParsedCleanupRow } from "./types";
+import type { ParsedCleanupRow } from "@/core/types/models";
 
 /** weight = `+w || 1`: only unsigned ints; 0 or missing collapse to 1. */
 function coerceWeight(token: string | undefined): number {

@@ -3,7 +3,7 @@ import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
 import { createCategoryGroup, createCategory } from "@/core/domain/categories";
 import { runQuery } from "@/core/db";
 import { setGoalTemplates } from "./persist";
-import type { Template } from "./types";
+import type { Template } from "@/core/types/models";
 
 const SIMPLE: Template = { type: "simple", monthly: 200, priority: 0, directive: "template" };
 

@@ -3,7 +3,7 @@ import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
 import { createCategoryGroup, createCategory } from "@/core/domain/categories";
 import { createSchedule } from "@/core/domain/schedules";
 import { calculateGoal } from "@/core/domain/goals/engine";
-import type { ScheduleTemplate } from "@/core/domain/goals/types";
+import type { ScheduleTemplate } from "@/core/types/models";
 import { currentMonth, addMonths } from "@/lib/date";
 
 function scheduleTemplate(

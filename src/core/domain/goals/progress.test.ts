@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { getGoalProgress, getGoalProgressLabel, type ProgressSegment } from "./progress";
 import type { BudgetCategory } from "../budgets/types";
-import type { Template } from "./types";
+import type { Template } from "@/core/types/models";
 
 // ---------------------------------------------------------------------------
 // Helpers

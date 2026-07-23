@@ -10,8 +10,8 @@
 
 import { extractScheduleConds } from "./helpers";
 import { intToStr } from "@/lib/date";
-import type { Schedule, RecurConfig } from "./types";
-import type { RuleCondition, RuleAction } from "../rules/types";
+import type { Schedule, RecurConfig } from "@/core/types/models";
+import type { RuleCondition, RuleAction } from "@/core/types/models";
 
 export function mapScheduleRow(row: Record<string, unknown>): Schedule {
   const conditions: RuleCondition[] = Array.isArray(row.conditions)

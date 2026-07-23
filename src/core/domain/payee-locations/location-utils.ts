@@ -3,7 +3,7 @@
  * Ported from actual/packages/loot-core/src/shared/location-utils.ts
  */
 
-import type { Coordinates } from "./types";
+import type { Coordinates } from "@/core/types/models";
 
 const METERS_PER_FOOT = 0.3048;
 const FEET_PER_MILE = 5280;

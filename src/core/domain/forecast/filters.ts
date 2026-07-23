@@ -25,7 +25,7 @@
  */
 import { Condition } from "../rules/condition";
 import { getAccountRestrictionMode } from "./accounts";
-import type { RuleCondition } from "../rules/types";
+import type { RuleCondition } from "@/core/types/models";
 
 export type ForecastFilter = {
   match: (txn: Record<string, unknown>) => boolean;

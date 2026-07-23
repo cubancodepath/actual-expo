@@ -4,7 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
 import { updateAccount } from "@/core/domain/accounts";
 import { setNote } from "@/core/domain/notes";
-import type { Account } from "@/core/domain/accounts/types";
+import type { Account } from "@/core/types/models";
 
 const schema = z.object({
   name: z.string().trim().min(1, "accounts:settings.accountNameRequired"),

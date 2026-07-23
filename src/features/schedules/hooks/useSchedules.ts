@@ -13,7 +13,7 @@ import { useLiveQuery } from "@/hooks/useQuery";
 import { getStatus } from "@/core/domain/schedules/helpers";
 import { getHasTransactionsQuery, type ScheduleStatuses } from "@/core/domain/schedules/status";
 import { mapScheduleRow } from "@/core/domain/schedules/mapRow";
-import type { Schedule } from "@/core/domain/schedules/types";
+import type { Schedule } from "@/core/types/models";
 
 export interface UseSchedulesResult {
   schedules: Schedule[];

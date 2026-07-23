@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { parseDate } from "@/core/domain/schedules/recurrence";
 import { projectForecastData, buildForecastDateContext, dayRangeInclusive } from "../projection";
-import type { AccountWithComputedBalance, ForecastScheduleOccurrence } from "../types";
+import type { AccountWithComputedBalance, ForecastScheduleOccurrence } from "@/core/types/models";
 
 /**
  * Pure projection unit test — mirror of upstream forecast-projection.test.ts.

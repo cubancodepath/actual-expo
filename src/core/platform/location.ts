@@ -1,5 +1,5 @@
 import * as Location from "expo-location";
-import type { Coordinates } from "@/core/domain/payee-locations/types";
+import type { Coordinates } from "@/core/types/models";
 
 const CACHE_TTL = 60_000; // 1 minute
 

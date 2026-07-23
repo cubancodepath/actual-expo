@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { getAccounts } from "@/core/domain/accounts";
-import type { Account } from "@/core/domain/accounts/types";
+import type { Account } from "@/core/types/models";
 
 /**
  * Accounts with their current balance (cents), loaded on demand for the account

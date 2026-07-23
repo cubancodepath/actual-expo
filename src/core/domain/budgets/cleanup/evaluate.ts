@@ -18,7 +18,7 @@ import { batchMessages } from "@/core/sync";
 import { undoable } from "@/core/sync/undo";
 import { getBudgetMonth, setBudget, setBudgetGoal } from "../index";
 import { storeNoteCleanups } from "./store";
-import type { CleanupTemplate } from "./types";
+import type { CleanupTemplate } from "@/core/types/models";
 
 export type CleanupPlan = {
   ops: Array<{ categoryId: string; amount: number }>;

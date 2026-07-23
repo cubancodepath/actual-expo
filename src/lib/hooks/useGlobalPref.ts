@@ -12,7 +12,7 @@
 import { useCallback } from "react";
 import { create } from "zustand";
 import { getGlobalPref, setGlobalPref } from "@/core/domain/preferences/globalPrefs";
-import type { GlobalPrefs } from "@/core/domain/preferences/prefs.types";
+import type { GlobalPrefs } from "@/core/types/prefs";
 
 // Shared cache of already-read/written values (keyed by pref name). Values not
 // present here are read straight from storage in the selector (MMKV is sync).

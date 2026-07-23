@@ -37,12 +37,7 @@ import { ScheduleStatusBadge } from "@/design-system/atoms/ScheduleStatusBadge";
 import { InlineError } from "@/ui/feedback/InlineError";
 import type { TransactionType } from "@/features/transactions/components/TypeToggle";
 import { DetailRow } from "@/features/transactions/components/DetailRow";
-import type {
-  Schedule,
-  RecurConfig,
-  RuleCondition,
-  RuleAction,
-} from "@/core/domain/schedules/types";
+import type { Schedule, RecurConfig, RuleCondition, RuleAction } from "@/core/types/models";
 
 export interface ScheduleDetailScreenProps {
   id: string;

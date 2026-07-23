@@ -10,7 +10,7 @@ import { useRules } from "@/lib/hooks/useRules";
 import { getTransactionById, getChildTransactions } from "@/core/domain/transactions";
 import { saveTransaction } from "@/core/domain/transactions/save";
 import { getRecurringDescription } from "@/core/domain/schedules";
-import type { RecurConfig } from "@/core/domain/schedules/types";
+import type { RecurConfig } from "@/core/types/models";
 import { extractTagsFromNotes } from "@/core/domain/tags";
 import { suggestCategoryForPayee, applyRulesToForm } from "@/core/domain/rules/apply";
 import { findPayeeByName } from "@/core/domain/payees";

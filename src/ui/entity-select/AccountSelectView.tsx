@@ -3,7 +3,7 @@ import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { ListGroup, Separator, Typography, useThemeColor } from "heroui-native";
 import { Banknote, ChartSpline, Check } from "lucide-react-native";
-import type { Account } from "@/core/domain/accounts/types";
+import type { Account } from "@/core/types/models";
 import { Money } from "@/ui/Money";
 import { useAccountsWithBalances } from "@/ui/hooks/useAccountsWithBalances";
 

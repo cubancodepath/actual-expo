@@ -8,7 +8,7 @@ import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { CloseButton } from "@/ui/CloseButton";
 import { ScreenHeader } from "@/ui/ScreenHeader";
 import { AccountSelectView } from "@/ui/entity-select/AccountSelectView";
-import type { TransactionDisplay } from "@/core/domain/transactions/types";
+import type { TransactionDisplay } from "@/core/types/models";
 
 /**
  * "Move to Account" from the transactions list: the shared account selector,

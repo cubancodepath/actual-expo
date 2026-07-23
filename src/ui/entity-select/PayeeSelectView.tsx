@@ -6,7 +6,7 @@ import { Check, CirclePlus } from "lucide-react-native";
 import { groupByInitial } from "@/lib/groupByInitial";
 import { PickerScreen } from "@/ui/PickerScreen";
 import { usePayees } from "@/lib/hooks/usePayees";
-import type { Payee } from "@/core/domain/payees/types";
+import type { Payee } from "@/core/types/models";
 
 /** A payee choice: a real payee (`id`) or a free-text created one (`id: null`). */
 export type PayeePick = { id: string | null; name: string; transferAcct?: string | null };

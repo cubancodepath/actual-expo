@@ -13,7 +13,7 @@ import { useCallback } from "react";
 import { create } from "zustand";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import { getLocalPref, setLocalPref } from "@/lib/localPrefs";
-import type { LocalPrefs } from "@/core/domain/preferences/prefs.types";
+import type { LocalPrefs } from "@/core/types/prefs";
 
 // Cache keyed by `${budgetId}-${prefKey}` so switching budgets reads fresh.
 const useLocalPrefsCache = create<{ prefs: Record<string, unknown> }>(() => ({ prefs: {} }));

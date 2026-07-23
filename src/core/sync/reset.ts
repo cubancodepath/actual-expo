@@ -18,7 +18,7 @@ import {
  */
 export async function clearLocalSyncState(): Promise<void> {
   const db = getDb();
-  await db.execAsync(`
+  await db.exec(`
     DELETE FROM messages_crdt;
     DELETE FROM messages_clock;
     DELETE FROM transactions WHERE tombstone = 1;

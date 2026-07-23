@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { openDatabaseAsync, type SQLiteDatabase } from "expo-sqlite";
+import { openDatabase, type PlatformDatabase } from "@/core/platform/sqlite";
 import { runSchema } from "@/core/db/schema";
 import {
   MIGRATIONS,
@@ -16,15 +16,15 @@ import {
 } from "@/core/db/migrations/migrate";
 
 let counter = 0;
-async function freshDb(): Promise<SQLiteDatabase> {
-  const db = await openDatabaseAsync("db.sqlite", {}, `migrate-test-${++counter}`);
-  await db.execAsync("CREATE TABLE IF NOT EXISTS __migrations__ (id INT PRIMARY KEY NOT NULL)");
+async function freshDb(): Promise<PlatformDatabase> {
+  const db = await openDatabase("db.sqlite", {}, `migrate-test-${++counter}`);
+  await db.exec("CREATE TABLE IF NOT EXISTS __migrations__ (id INT PRIMARY KEY NOT NULL)");
   return db;
 }
 
-async function seedApplied(db: SQLiteDatabase, ids: number[]): Promise<void> {
+async function seedApplied(db: PlatformDatabase, ids: number[]): Promise<void> {
   for (const id of ids) {
-    await db.runAsync("INSERT INTO __migrations__ (id) VALUES (?)", [id]);
+    await db.run("INSERT INTO __migrations__ (id) VALUES (?)", [id]);
   }
 }
 
@@ -69,7 +69,7 @@ describe("applyMigration", () => {
     const db = await freshDb();
     await applyMigration(db, { id: 42, name: "42_x", up: "CREATE TABLE t_x (id TEXT)" });
 
-    const tables = await db.getAllAsync<{ name: string }>(
+    const tables = await db.all<{ name: string }>(
       "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 't_x'",
     );
     expect(tables).toHaveLength(1);
@@ -82,11 +82,11 @@ describe("applyMigration", () => {
       id: 43,
       name: "43_fn",
       up: async (d) => {
-        await d.execAsync("CREATE TABLE t_fn (id TEXT)");
+        await d.exec("CREATE TABLE t_fn (id TEXT)");
       },
     });
 
-    const tables = await db.getAllAsync<{ name: string }>(
+    const tables = await db.all<{ name: string }>(
       "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 't_fn'",
     );
     expect(tables).toHaveLength(1);
@@ -103,7 +103,7 @@ describe("applyMigration", () => {
 
 describe("migrate (full runner via runSchema)", () => {
   it("applies every migration once and records them in order", async () => {
-    const db = await openDatabaseAsync("db.sqlite", {}, `migrate-full-${++counter}`);
+    const db = await openDatabase("db.sqlite", {}, `migrate-full-${++counter}`);
     await runSchema(db);
 
     const applied = await getAppliedMigrations(db);
@@ -113,7 +113,7 @@ describe("migrate (full runner via runSchema)", () => {
   });
 
   it("is a no-op on an already-migrated database", async () => {
-    const db = await openDatabaseAsync("db.sqlite", {}, `migrate-noop-${++counter}`);
+    const db = await openDatabase("db.sqlite", {}, `migrate-noop-${++counter}`);
     await runSchema(db);
 
     const applied = migrate(db);

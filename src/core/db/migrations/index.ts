@@ -1,4 +1,4 @@
-import type { SQLiteDatabase } from "@/core/platform/sqlite";
+import type { PlatformDatabase } from "@/core/platform/sqlite";
 
 import m1768872504000 from "./1768872504000_add_payee_locations";
 import m1769000000000 from "./1769000000000_add_custom_upcoming_length";
@@ -23,7 +23,7 @@ export type Migration = {
   id: number;
   /** "<id>_<slug>", identical to the upstream migration filename (sans extension). */
   name: string;
-  up: string | ((db: SQLiteDatabase) => Promise<void>) | null;
+  up: string | ((db: PlatformDatabase) => Promise<void>) | null;
 };
 
 /**

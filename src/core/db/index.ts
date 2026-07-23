@@ -1,8 +1,4 @@
-import {
-  openDatabaseAsync,
-  type SQLiteDatabase,
-  type SQLiteBindParams,
-} from "@/core/platform/sqlite";
+import { sqlite, type PlatformDatabase, type SqliteBindParams } from "@/core/platform/sqlite";
 import { runSchema } from "./schema";
 
 // The connection lives on globalThis, not a module-level `let`, so it survives
@@ -12,7 +8,7 @@ import { runSchema } from "./schema";
 // finalizes its lingering prepared statements while in-flight liveQueries are
 // still running on it → use-after-free crash on expo.module.sqlite.AsyncQueue.
 const _dbState = globalThis as typeof globalThis & {
-  __actualDb?: SQLiteDatabase;
+  __actualDb?: PlatformDatabase;
   __actualDbDir?: string;
 };
 
@@ -31,19 +27,19 @@ export async function openDatabase(budgetDir: string): Promise<void> {
     _dbState.__actualDb = undefined;
     _dbState.__actualDbDir = undefined;
     try {
-      await stale.closeAsync();
+      await stale.close();
     } catch {
       // Already closed/invalid — nothing to do.
     }
   }
 
   if (__DEV__) console.log("[db] openDatabase", budgetDir);
-  const db = await openDatabaseAsync("db.sqlite", { useNewConnection: true }, budgetDir);
-  await db.execAsync("PRAGMA journal_mode = WAL");
-  await db.execAsync("PRAGMA foreign_keys = ON");
+  const db = await sqlite.openDatabase("db.sqlite", { useNewConnection: true }, budgetDir);
+  await db.exec("PRAGMA journal_mode = WAL");
+  await db.exec("PRAGMA foreign_keys = ON");
   // Secondary connections (upload snapshot, temp dbs) can briefly hold the
   // WAL writer lock — wait instead of failing with SQLITE_BUSY.
-  await db.execAsync("PRAGMA busy_timeout = 5000");
+  await db.exec("PRAGMA busy_timeout = 5000");
   await runSchema(db);
   _dbState.__actualDb = db;
   _dbState.__actualDbDir = budgetDir;
@@ -61,11 +57,11 @@ export async function closeDatabase(): Promise<void> {
     // Null first so getDb() throws a JS error, not a native "closed resource".
     _dbState.__actualDb = undefined;
     _dbState.__actualDbDir = undefined;
-    await dbToClose.closeAsync();
+    await dbToClose.close();
   }
 }
 
-export function getDb(): SQLiteDatabase {
+export function getDb(): PlatformDatabase {
   if (!_dbState.__actualDb) {
     if (__DEV__) console.trace("[db] getDb() called but _db is undefined");
     throw new Error("Database not initialized — call openDatabase() first");
@@ -81,46 +77,46 @@ export function isDatabaseOpen(budgetDir?: string): boolean {
 
 export async function runQuery<T = unknown>(
   sql: string,
-  params: SQLiteBindParams = [],
+  params: SqliteBindParams = [],
 ): Promise<T[]> {
   const db = _dbState.__actualDb;
   if (!db) return [];
-  return db.getAllAsync<T>(sql, params);
+  return db.all<T>(sql, params);
 }
 
 export async function first<T = unknown>(
   sql: string,
-  params: SQLiteBindParams = [],
+  params: SqliteBindParams = [],
 ): Promise<T | null> {
   const db = _dbState.__actualDb;
   if (!db) return null;
-  return db.getFirstAsync<T>(sql, params);
+  return db.first<T>(sql, params);
 }
 
-export async function run(sql: string, params: SQLiteBindParams = []): Promise<void> {
+export async function run(sql: string, params: SqliteBindParams = []): Promise<void> {
   const db = _dbState.__actualDb;
   if (!db) return;
-  await db.runAsync(sql, params);
+  await db.run(sql, params);
 }
 
 // ── Synchronous queries (for spreadsheet dynamic cells) ──
 
-export function runQuerySync<T = unknown>(sql: string, params: SQLiteBindParams = []): T[] {
+export function runQuerySync<T = unknown>(sql: string, params: SqliteBindParams = []): T[] {
   const db = _dbState.__actualDb;
   if (!db) return [];
-  return db.getAllSync<T>(sql, params);
+  return db.allSync<T>(sql, params);
 }
 
-export function firstSync<T = unknown>(sql: string, params: SQLiteBindParams = []): T | null {
+export function firstSync<T = unknown>(sql: string, params: SqliteBindParams = []): T | null {
   const db = _dbState.__actualDb;
   if (!db) return null;
-  return db.getFirstSync<T>(sql, params);
+  return db.firstSync<T>(sql, params);
 }
 
 export async function transaction(fn: () => Promise<void>): Promise<void> {
   // DEFERRED (not EXCLUSIVE) — the sequential guard in apply.ts prevents
   // concurrent writers, so we don't need to block all readers during sync.
-  await getDb().withTransactionAsync(fn);
+  await getDb().transaction(fn);
 }
 
 /** Wipe all local data by deleting rows from every table. Keeps the DB connection alive. */
@@ -147,5 +143,5 @@ export async function clearLocalData(): Promise<void> {
     "schedules_json_paths",
     "rules",
   ];
-  await db.execAsync(tables.map((t) => `DELETE FROM ${t};`).join("\n"));
+  await db.exec(tables.map((t) => `DELETE FROM ${t};`).join("\n"));
 }

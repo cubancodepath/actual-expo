@@ -39,10 +39,10 @@ export default defineConfig({
         "src/core/platform/asyncStorage/index.node.ts",
       ),
       "@/core/platform/fs": path.resolve(__dirname, "src/core/platform/fs/index.node.ts"),
+      "@/core/platform/sqlite": path.resolve(__dirname, "src/core/platform/sqlite/index.node.ts"),
       // Path aliases matching tsconfig.json
       "@": path.resolve(__dirname, "src"),
       // Stub native modules that can't run in Node
-      "expo-sqlite": path.resolve(__dirname, "src/__mocks__/expo-sqlite.ts"),
       // expo-secure-store stays stubbed for APP-layer consumers outside the
       // platform seam (stores/sessionStore, stores/prefsStorage) — core goes
       // through @/core/platform/keyStore, which swaps to index.node.ts above.

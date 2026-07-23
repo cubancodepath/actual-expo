@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, it, expect, beforeAll } from "vitest";
-import { openDatabaseAsync } from "expo-sqlite";
+import { openDatabase } from "@/core/platform/sqlite";
 import { runSchema } from "@/core/db/schema";
 import { MIGRATIONS } from "@/core/db/migrations";
 
@@ -58,15 +58,15 @@ describe.skipIf(!hasUpstream)("registry parity with upstream migrations director
 });
 
 describe("runSchema produces the full current schema", () => {
-  let db: Awaited<ReturnType<typeof openDatabaseAsync>>;
+  let db: Awaited<ReturnType<typeof openDatabase>>;
 
   beforeAll(async () => {
-    db = await openDatabaseAsync("db.sqlite", {}, "schema-parity-test");
+    db = await openDatabase("db.sqlite", {}, "schema-parity-test");
     await runSchema(db);
   });
 
   it("registers every migration id in __migrations__", async () => {
-    const rows = await db.getAllAsync<{ id: number }>("SELECT id FROM __migrations__");
+    const rows = await db.all<{ id: number }>("SELECT id FROM __migrations__");
     const applied = new Set(rows.map((r) => r.id));
     for (const migration of MIGRATIONS) {
       expect(applied.has(migration.id), `migration ${migration.name} not registered`).toBe(true);
@@ -74,7 +74,7 @@ describe("runSchema produces the full current schema", () => {
   });
 
   it("creates the tables added by post-freeze migrations", async () => {
-    const rows = await db.getAllAsync<{ name: string }>(
+    const rows = await db.all<{ name: string }>(
       "SELECT name FROM sqlite_master WHERE type = 'table'",
     );
     const tables = new Set(rows.map((r) => r.name));
@@ -84,7 +84,7 @@ describe("runSchema produces the full current schema", () => {
 
   it("creates the columns added by post-freeze migrations", async () => {
     const hasColumn = async (table: string, column: string) => {
-      const cols = await db.getAllAsync<{ name: string }>(`PRAGMA table_info(${table})`);
+      const cols = await db.all<{ name: string }>(`PRAGMA table_info(${table})`);
       return cols.some((c) => c.name === column);
     };
     expect(await hasColumn("schedules", "custom_upcoming_length")).toBe(true); // 1769000000000
@@ -95,7 +95,7 @@ describe("runSchema produces the full current schema", () => {
   });
 
   it("creates the indexes added by post-freeze migrations", async () => {
-    const rows = await db.getAllAsync<{ name: string }>(
+    const rows = await db.all<{ name: string }>(
       "SELECT name FROM sqlite_master WHERE type = 'index'",
     );
     const indexes = new Set(rows.map((r) => r.name));

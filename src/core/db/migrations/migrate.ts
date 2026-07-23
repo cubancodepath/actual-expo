@@ -1,4 +1,4 @@
-import type { SQLiteDatabase } from "@/core/platform/sqlite";
+import type { PlatformDatabase } from "@/core/platform/sqlite";
 
 import { MIGRATIONS, type Migration } from "./index";
 
@@ -13,10 +13,8 @@ import { MIGRATIONS, type Migration } from "./index";
  * postdate the shipped default DB.
  */
 
-export async function getAppliedMigrations(db: SQLiteDatabase): Promise<number[]> {
-  const rows = await db.getAllAsync<{ id: number }>(
-    "SELECT id FROM __migrations__ ORDER BY id ASC",
-  );
+export async function getAppliedMigrations(db: PlatformDatabase): Promise<number[]> {
+  const rows = await db.all<{ id: number }>("SELECT id FROM __migrations__ ORDER BY id ASC");
   return rows.map((r) => r.id);
 }
 
@@ -42,7 +40,7 @@ export function checkDatabaseValidity(appliedIds: number[], available: Migration
   }
 }
 
-export async function applyMigration(db: SQLiteDatabase, migration: Migration): Promise<void> {
+export async function applyMigration(db: PlatformDatabase, migration: Migration): Promise<void> {
   if (migration.up == null) {
     // A snapshot migration should already be registered by the base snapshot;
     // reaching here means the DB is missing pre-freeze schema we can't recreate.
@@ -50,16 +48,16 @@ export async function applyMigration(db: SQLiteDatabase, migration: Migration): 
   }
 
   if (typeof migration.up === "string") {
-    await db.execAsync(migration.up);
+    await db.exec(migration.up);
   } else {
     await migration.up(db);
   }
 
-  await db.runAsync("INSERT INTO __migrations__ (id) VALUES (?)", [migration.id]);
+  await db.run("INSERT INTO __migrations__ (id) VALUES (?)", [migration.id]);
 }
 
 /** Apply all pending migrations in order. Returns the names that were applied. */
-export async function migrate(db: SQLiteDatabase): Promise<string[]> {
+export async function migrate(db: PlatformDatabase): Promise<string[]> {
   const appliedIds = await getAppliedMigrations(db);
 
   checkDatabaseValidity(appliedIds, MIGRATIONS);

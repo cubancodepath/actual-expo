@@ -1,4 +1,4 @@
-import type { SQLiteDatabase } from "@/core/platform/sqlite";
+import type { PlatformDatabase } from "@/core/platform/sqlite";
 import { SNAPSHOT_MIGRATION_IDS } from "./migrations";
 import { migrate } from "./migrations/migrate";
 
@@ -332,12 +332,12 @@ CREATE INDEX IF NOT EXISTS idx_schedules_next_date_schedule_id ON schedules_next
  * `INSERT OR IGNORE` make re-runs a no-op, and tolerate databases downloaded
  * from a server that already carry these tables/IDs.
  */
-async function ensureBaseSnapshot(db: SQLiteDatabase): Promise<void> {
-  await db.execAsync(TABLES);
-  await db.execAsync(INDEXES);
+async function ensureBaseSnapshot(db: PlatformDatabase): Promise<void> {
+  await db.exec(TABLES);
+  await db.exec(INDEXES);
 
   const values = SNAPSHOT_MIGRATION_IDS.map((id) => `(${id})`).join(",");
-  await db.execAsync(`INSERT OR IGNORE INTO __migrations__ (id) VALUES ${values}`);
+  await db.exec(`INSERT OR IGNORE INTO __migrations__ (id) VALUES ${values}`);
 }
 
 /**
@@ -345,7 +345,7 @@ async function ensureBaseSnapshot(db: SQLiteDatabase): Promise<void> {
  * migration after the freeze point incrementally (mirroring upstream's
  * default-db.sqlite + migrate() flow).
  */
-export async function runSchema(db: SQLiteDatabase): Promise<void> {
+export async function runSchema(db: PlatformDatabase): Promise<void> {
   await ensureBaseSnapshot(db);
   await migrate(db);
 }

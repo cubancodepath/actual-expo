@@ -2,7 +2,7 @@
  * Query executor — runs compiled AQL queries against expo-sqlite.
  */
 
-import type { SQLiteBindParams } from "@/core/platform/sqlite";
+import type { SqliteBindParams } from "@/core/platform/sqlite";
 import { runQuery } from "@/core/db";
 import { compile, convertOutputRow, type CompiledQuery } from "./compiler";
 import type { Query, QueryState } from "./query";
@@ -31,7 +31,7 @@ export async function executeCompiled<T = Record<string, unknown>>(
 ): Promise<QueryResult<T>> {
   const rows = await runQuery<Record<string, unknown>>(
     compiled.sql,
-    compiled.params as SQLiteBindParams,
+    compiled.params as SqliteBindParams,
   );
   // Convert boolean 0/1 to true/false (SQLite stores booleans as integers)
   const boolFields: string[] = [];
@@ -69,6 +69,6 @@ export async function executeCount(query: Query | QueryState): Promise<number> {
   };
 
   const compiled = compile(countState);
-  const rows = await runQuery<{ count: number }>(compiled.sql, compiled.params as SQLiteBindParams);
+  const rows = await runQuery<{ count: number }>(compiled.sql, compiled.params as SqliteBindParams);
   return rows[0]?.count ?? 0;
 }

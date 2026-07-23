@@ -9,7 +9,7 @@ import { z } from "zod";
 import { addDays } from "date-fns";
 import { unzipSync, zipSync } from "fflate";
 import { fs } from "@/core/platform/fs";
-import { openDatabaseAsync } from "@/core/platform/sqlite";
+import { openDatabase } from "@/core/platform/sqlite";
 import { randomUUID } from "@/core/platform/crypto";
 import { http, toTransportError, parseResponse } from "@/core/platform/fetch";
 import { mapServerReason } from "@/core/post";
@@ -158,12 +158,12 @@ export async function uploadBudget(
   // "no other SQL statements in progress" on its connection and kept
   // failing under expo-sqlite even from a dedicated connection. Serialize
   // has no such restriction and tolerates concurrent statements.
-  const srcDb = await openDatabaseAsync("db.sqlite", { useNewConnection: true }, budgetDir);
+  const srcDb = await openDatabase("db.sqlite", { useNewConnection: true }, budgetDir);
   let snapshot: Uint8Array;
   try {
-    snapshot = await srcDb.serializeAsync();
+    snapshot = await srcDb.serialize();
   } finally {
-    await srcDb.closeAsync();
+    await srcDb.close();
   }
   if (__DEV__) console.log("[upload] Serialized snapshot:", snapshot.length, "bytes");
 
@@ -177,12 +177,12 @@ export async function uploadBudget(
   let dbBytes: Uint8Array;
   try {
     await fs.writeFile(tempPath, uint8ToBase64(snapshot), { encoding: "base64" });
-    const tempDb = await openDatabaseAsync(tempName, { useNewConnection: true }, budgetDir);
+    const tempDb = await openDatabase(tempName, { useNewConnection: true }, budgetDir);
     try {
-      await tempDb.execAsync("PRAGMA journal_mode = DELETE");
-      await tempDb.execAsync("DELETE FROM kvcache; DELETE FROM kvcache_key;");
+      await tempDb.exec("PRAGMA journal_mode = DELETE");
+      await tempDb.exec("DELETE FROM kvcache; DELETE FROM kvcache_key;");
     } finally {
-      await tempDb.closeAsync();
+      await tempDb.close();
     }
     if (__DEV__) console.log("[upload] kvcache stripped, reading snapshot file");
 

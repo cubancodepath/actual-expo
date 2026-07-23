@@ -5,7 +5,7 @@ import { useCategories } from "@/lib/hooks/useCategories";
 import { Icon } from "@/design-system/atoms/Icon";
 
 import { usePickerStore } from "@/stores/pickerStore";
-import { getCategoryBalancesForMonth } from "@/core/domain/budgets";
+import { getCategoryBalancesForMonth } from "@/core/server/budget/actions";
 import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvider";
 import { Text } from "@/design-system/atoms/Text";
 import { Amount } from "@/design-system/atoms/Amount";

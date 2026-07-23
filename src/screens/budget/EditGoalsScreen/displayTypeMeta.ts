@@ -9,7 +9,7 @@ import {
   Split,
   type LucideIcon,
 } from "lucide-react-native";
-import type { DisplayTemplateType } from "@/core/domain/goals";
+import type { DisplayTemplateType } from "@/core/server/budget/goals";
 
 /**
  * Presentation for each of the nine goal types the editor offers, mirroring

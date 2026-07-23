@@ -9,7 +9,7 @@ import { Icon } from "@/design-system/atoms/Icon";
 import * as Haptics from "expo-haptics";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { useCategories } from "@/lib/hooks/useCategories";
-import { moveCategory, moveCategoryGroup } from "@/core/domain/categories";
+import { moveCategory, moveCategoryGroup } from "@/core/server/budget";
 import { Text } from "@/design-system/atoms/Text";
 import { Button } from "@/design-system/atoms/Button";
 import type { Category, CategoryGroup } from "@/core/types/models";

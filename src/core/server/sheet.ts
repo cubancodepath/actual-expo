@@ -13,7 +13,7 @@ import type { SyncMessage } from "@/core/sync/encoder";
 import { getSpreadsheet } from "@/core/server/spreadsheet/globals";
 import * as envelopeEngine from "@/core/server/budget/envelope";
 import * as trackingEngine from "@/core/server/budget/tracking";
-import { getCategories, getCategoryGroups } from "@/core/domain/categories";
+import { getCategories, getCategoryGroups } from "@/core/server/budget";
 import { getBudgetType } from "@/core/server/preferences";
 import { addMonths } from "@/core/shared/months";
 

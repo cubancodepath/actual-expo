@@ -1,4 +1,4 @@
-import type { AutomationErrorKind, GlobalConflictKind } from "@/core/domain/goals";
+import type { AutomationErrorKind, GlobalConflictKind } from "@/core/server/budget/goals";
 
 /**
  * i18n key for a per-automation error. The error object doubles as the

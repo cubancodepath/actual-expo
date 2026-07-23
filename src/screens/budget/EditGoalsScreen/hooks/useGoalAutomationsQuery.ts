@@ -7,7 +7,7 @@ import {
   parseTemplateNotes,
   templatesToEntries,
   type AutomationEntry,
-} from "@/core/domain/goals";
+} from "@/core/server/budget/goals";
 import type { Template } from "@/core/types/models";
 import { getSchedules } from "@/core/server/schedules";
 import type { Schedule } from "@/core/types/models";

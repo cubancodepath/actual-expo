@@ -5,7 +5,7 @@ import { applyMessages } from "@/core/sync/apply";
 import { emit } from "@/core/sync/syncEvents";
 import { Timestamp } from "@/core/crdt";
 import { createPayee, mergePayees } from "@/core/server/payees";
-import { createCategoryGroup, createCategory, deleteCategory } from "@/core/domain/categories";
+import { createCategoryGroup, createCategory, deleteCategory } from "@/core/server/budget";
 import { createRule, getRules } from "./index";
 import { suggestCategoryForPayee } from "@/core/server/transactions/transaction-rules";
 

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { getCategoryBalancesForMonth } from "@/core/domain/budgets";
+import { getCategoryBalancesForMonth } from "@/core/server/budget/actions";
 import { currentMonth } from "@/core/shared/months";
 
 /**

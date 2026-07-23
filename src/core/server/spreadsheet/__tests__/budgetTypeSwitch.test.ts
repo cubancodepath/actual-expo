@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
-import { createCategoryGroup, createCategory } from "@/core/domain/categories";
+import { createCategoryGroup, createCategory } from "@/core/server/budget";
 import { setArbitraryPref } from "@/core/server/preferences";
 import { initSpreadsheet } from "@/core/server/sheet";
 import { getSpreadsheet } from "@/core/server/spreadsheet/globals";

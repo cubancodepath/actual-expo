@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ListGroup, Separator, Spinner, Typography, useThemeColor } from "heroui-native";
 import { useTranslation } from "react-i18next";
-import { resetBudgetCache } from "@/core/domain/budgets/resetBudgetCache";
+import { resetBudgetCache } from "@/core/server/budget/base";
 import { resetSync } from "@/core/sync/reset";
 import { fixSplitTransactions } from "@/core/tools/fixSplitTransactions";
 import { LoadingOverlay } from "@/ui/LoadingOverlay";

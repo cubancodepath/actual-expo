@@ -7,17 +7,17 @@ import { Text } from "@/design-system/atoms/Text";
 import { Amount } from "@/design-system/atoms/Amount";
 import { formatPrivacyAware } from "@/core/shared/util";
 import { formatCents } from "@/core/shared/util";
-import { getGoalProgress, getGoalProgressLabel } from "@/core/domain/goals/progress";
-import { computeProgressBar, type BarStatus } from "@/core/domain/goals/progressBar";
+import { getGoalProgress, getGoalProgressLabel } from "@/core/server/budget/goals/progress";
+import { computeProgressBar, type BarStatus } from "@/core/server/budget/goals/progressBar";
 import { ProgressBar } from "@/design-system/atoms/ProgressBar";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { useCursorBlink } from "@/hooks/useCursorBlink";
 import { CurrencyAmountDisplay } from "@/features/transactions/components/currency-input/CurrencyAmountDisplay";
 import { useSheetValue, useSheetValueNumber } from "@/hooks/useSheetValue";
 import { envelopeBudget } from "@/core/server/spreadsheet/bindings";
-import { inferGoalFromDef } from "@/core/domain/goals";
-import type { BudgetCategoryData } from "@/core/domain/budgets/types";
-import type { BudgetCategory } from "@/core/domain/budgets/types";
+import { inferGoalFromDef } from "@/core/server/budget/goals";
+import type { BudgetCategoryData } from "@/core/server/budget/types";
+import type { BudgetCategory } from "@/core/server/budget/types";
 
 /** Shared column widths for table-style alignment across header, rows, and group headers. */
 export const BUDGET_COLUMNS = {

@@ -4,7 +4,7 @@ import { first } from "@/core/db";
 import { sendMessages } from "@/core/sync";
 import { Timestamp } from "@/core/crdt";
 import { createAccount } from "@/core/server/accounts";
-import { createCategoryGroup, createCategory } from "@/core/domain/categories";
+import { createCategoryGroup, createCategory } from "@/core/server/budget";
 import { fixSplitTransactions } from "../fixSplitTransactions";
 
 let counter = 0;

@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { computeGoalAllocations, type GoalAllocation } from "@/core/domain/goals/apply";
+import { computeGoalAllocations, type GoalAllocation } from "@/core/server/budget/goal-template";
 import { dialog } from "@/ui/feedback/dialog";
 import type { PendingEdits } from "../types";
 

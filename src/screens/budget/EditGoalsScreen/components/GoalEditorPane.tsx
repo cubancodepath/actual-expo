@@ -6,7 +6,7 @@ import type {
   AutomationErrorKind,
   DisplayTemplateType,
   GlobalConflictKind,
-} from "@/core/domain/goals";
+} from "@/core/server/budget/goals";
 import type { GoalTemplate, LimitTemplate, Template } from "@/core/types/models";
 import type { Schedule } from "@/core/types/models";
 import { AmountKeyboard } from "@/ui/amount-keyboard";

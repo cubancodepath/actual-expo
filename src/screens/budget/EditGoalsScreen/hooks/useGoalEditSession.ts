@@ -8,8 +8,8 @@ import {
   setGoalTemplates,
   type AutomationEntry,
   type DisplayTemplateType,
-} from "@/core/domain/goals";
-import { updateGoalIndicator } from "@/core/domain/goals/apply";
+} from "@/core/server/budget/goals";
+import { updateGoalIndicator } from "@/core/server/budget/goal-template";
 import { batchMessages } from "@/core/sync/batch";
 import { useBudgetMonth } from "@/screens/budget/hooks/useBudgetMonth";
 import { goalAutomationsQueryKey, type GoalAutomationsData } from "./useGoalAutomationsQuery";

@@ -3,7 +3,7 @@ import { Platform } from "react-native";
 import { getSpreadsheet } from "@/core/server/spreadsheet/globals";
 import { sheetForMonth, envelopeBudget } from "@/core/server/spreadsheet/bindings";
 import { currentMonth } from "@/core/shared/months";
-import { getCategories, getCategoryGroups } from "@/core/domain/categories";
+import { getCategories, getCategoryGroups } from "@/core/server/budget";
 import { getUncategorizedStats } from "@/core/server/transactions";
 
 let permissionGranted = false;

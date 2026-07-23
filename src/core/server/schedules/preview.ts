@@ -18,7 +18,7 @@ import { getArbitraryPref } from "@/core/server/preferences";
 import { getRules } from "@/core/server/rules";
 import { runRulesWithSplits } from "@/core/server/transactions/transaction-rules";
 import { getPayees } from "@/core/server/payees";
-import { getCategories } from "@/core/domain/categories";
+import { getCategories } from "@/core/server/budget";
 import { getAccounts } from "@/core/server/accounts";
 
 export type { PreviewTransaction, PreviewSubtransaction } from "@/core/shared/schedules";

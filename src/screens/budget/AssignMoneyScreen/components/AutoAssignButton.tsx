@@ -13,7 +13,7 @@ import {
   useThemeColor,
 } from "heroui-native";
 import { Zap } from "lucide-react-native";
-import type { GoalAllocation } from "@/core/domain/goals/apply";
+import type { GoalAllocation } from "@/core/server/budget/goal-template";
 import { Money } from "@/ui/Money";
 import { useAutoAssign, type ModeSummary } from "../hooks/useAutoAssign";
 import type { PendingEdits } from "../types";

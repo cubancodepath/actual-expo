@@ -9,7 +9,7 @@ import { useTranslation } from "react-i18next";
 import { BottomSheet, Button, Typography } from "heroui-native";
 import { WheelPicker, WheelPickerGroup } from "heroui-native-pro";
 import { Repeat2 } from "lucide-react-native";
-import { REPEAT_MAX, type CustomRepeat, type RepeatUnit } from "@/core/domain/goals";
+import { REPEAT_MAX, type CustomRepeat, type RepeatUnit } from "@/core/server/budget/goals";
 import { FieldRow } from "./FieldRow";
 
 const UNITS: RepeatUnit[] = ["day", "week", "month", "year"];

@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
-import { createCategoryGroup, createCategory } from "@/core/domain/categories";
+import { createCategoryGroup, createCategory } from "@/core/server/budget";
 import { createAccount } from "@/core/server/accounts";
 import { addTransaction } from "@/core/server/transactions";
 import { sendMessages } from "@/core/sync";
@@ -8,7 +8,7 @@ import { Timestamp } from "@/core/crdt";
 import { Spreadsheet } from "@/core/server/spreadsheet/spreadsheet";
 import { createBudgetCells, createAllBudgetCells } from "@/core/server/budget/tracking";
 import { sheetForMonth, trackingBudget } from "@/core/server/spreadsheet/bindings";
-import { getCategories, getCategoryGroups } from "@/core/domain/categories";
+import { getCategories, getCategoryGroups } from "@/core/server/budget";
 import { currentMonth, addMonths, monthToInt } from "@/core/shared/months";
 
 function dateIntFor(month: string, day = "15"): number {
@@ -193,7 +193,7 @@ describe("tracking.ts — report budget formulas (fix #9)", () => {
     const group = await createCategoryGroup({ name: "Expenses" });
     const visibleCat = await createCategory({ name: "Groceries", cat_group: group });
     const hiddenCat = await createCategory({ name: "Misc", cat_group: group });
-    const { updateCategory } = await import("@/core/domain/categories");
+    const { updateCategory } = await import("@/core/server/budget");
     await updateCategory(hiddenCat, { hidden: true });
     const acct = await createAccount({ name: "Checking" });
     const month = currentMonth();

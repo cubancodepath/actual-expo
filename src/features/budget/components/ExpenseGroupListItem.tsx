@@ -4,7 +4,7 @@ import { Text } from "@/design-system/atoms/Text";
 import { Amount } from "@/design-system/atoms/Amount";
 import { useSheetValueNumber } from "@/hooks/useSheetValue";
 import { envelopeBudget } from "@/core/server/spreadsheet/bindings";
-import type { BudgetGroupData } from "@/core/domain/budgets/types";
+import type { BudgetGroupData } from "@/core/server/budget/types";
 
 interface ExpenseGroupListItemProps {
   group: BudgetGroupData;

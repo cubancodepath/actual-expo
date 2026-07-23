@@ -2,8 +2,12 @@ import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { ListGroup, Typography, useThemeColor } from "heroui-native";
 import { ChevronRight, TriangleAlert } from "lucide-react-native";
-import { describeTemplate, translateDescription, type AutomationEntry } from "@/core/domain/goals";
-import type { AutomationErrorKind } from "@/core/domain/goals";
+import {
+  describeTemplate,
+  translateDescription,
+  type AutomationEntry,
+} from "@/core/server/budget/goals";
+import type { AutomationErrorKind } from "@/core/server/budget/goals";
 import { isSilentError } from "../messages";
 import { displayTypeMeta } from "../displayTypeMeta";
 

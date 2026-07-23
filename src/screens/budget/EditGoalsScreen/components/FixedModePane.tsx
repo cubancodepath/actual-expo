@@ -8,7 +8,7 @@ import {
   templateFromFixedConfig,
   type FixedMode,
   type FixedTemplate,
-} from "@/core/domain/goals";
+} from "@/core/server/budget/goals";
 import type { Template } from "@/core/types/models";
 import { formatCents } from "@/core/shared/util";
 

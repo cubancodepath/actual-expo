@@ -5,7 +5,7 @@ import Animated from "react-native-reanimated";
 import { Accordion, AccordionLayoutTransition, Menu } from "heroui-native";
 import { envelopeBudget, sheetForMonth } from "@/core/server/spreadsheet/bindings";
 import { getSpreadsheet } from "@/core/server/spreadsheet/globals";
-import { resetHold, setBudgetAmount, setCategoryCarryover } from "@/core/domain/budgets";
+import { resetHold, setBudgetAmount, setCategoryCarryover } from "@/core/server/budget/actions";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { useBudgetMonth } from "@/screens/budget/hooks/useBudgetMonth";
 import { HIDDEN_GROUP_ID, useBudgetSections } from "@/screens/budget/hooks/useBudgetSections";

@@ -4,7 +4,7 @@ import type { StatusFilter } from "@/core/types/models";
  * A search filter. Every filter — including the free text — is a token; the
  * screen tokenizes the search bar and derives the query params from these.
  * UI vocabulary of the search screen (the query engine takes a flat opts
- * object), so it lives here, not in `core/domain`.
+ * object), so it lives here, not in `core/server`.
  */
 export type SearchToken =
   | { type: "text"; value: string }

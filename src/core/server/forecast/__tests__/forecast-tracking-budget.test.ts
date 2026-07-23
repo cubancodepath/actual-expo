@@ -3,9 +3,9 @@ import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
 import { sendMessages } from "@/core/sync";
 import { Timestamp } from "@/core/crdt";
 import { createAccount } from "@/core/server/accounts";
-import { createCategoryGroup, createCategory } from "@/core/domain/categories";
+import { createCategoryGroup, createCategory } from "@/core/server/budget";
 import { setArbitraryPref } from "@/core/server/preferences";
-import { setBudgetAmount } from "@/core/domain/budgets";
+import { setBudgetAmount } from "@/core/server/budget/actions";
 import { generateForecast } from "../index";
 
 let counter = 0;

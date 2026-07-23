@@ -14,11 +14,11 @@ import { Spreadsheet } from "@/core/server/spreadsheet/spreadsheet";
 import { sheetForMonth, envelopeBudget } from "@/core/server/spreadsheet/bindings";
 import { firstSync } from "@/core/db";
 import { monthToInt, addMonths } from "@/core/shared/months";
-import { getCategories, getCategoryGroups } from "@/core/domain/categories";
+import { getCategories, getCategoryGroups } from "@/core/server/budget";
 import type { Category, CategoryGroup } from "@/core/types/models";
 import { safeNumber } from "@/lib/number";
 import { num, createSpentCells, getBudgetRange } from "@/core/server/spreadsheet/util";
-import { inferGoalFromDef } from "@/core/domain/goals";
+import { inferGoalFromDef } from "@/core/server/budget/goals";
 
 // ---------------------------------------------------------------------------
 // Create all budget cells for a single month

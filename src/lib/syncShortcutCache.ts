@@ -2,7 +2,7 @@ import { Platform } from "react-native";
 import { ExtensionStorage } from "@bacons/apple-targets";
 import Constants from "expo-constants";
 import { getAccounts } from "@/core/server/accounts";
-import { getCategories, getCategoryGroups } from "@/core/domain/categories";
+import { getCategories, getCategoryGroups } from "@/core/server/budget";
 
 const APP_GROUP =
   Constants.expoConfig?.ios?.entitlements?.["com.apple.security.application-groups"]?.[0] ??

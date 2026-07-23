@@ -7,7 +7,7 @@ import { Check } from "lucide-react-native";
 import { Money } from "@/ui/Money";
 import { PickerScreen } from "@/ui/PickerScreen";
 import { useCategories } from "@/lib/hooks/useCategories";
-import { getCategoryBalancesForMonth } from "@/core/domain/budgets";
+import { getCategoryBalancesForMonth } from "@/core/server/budget/actions";
 import { usePickerStore } from "@/stores/pickerStore";
 import { currentMonth } from "@/core/shared/months";
 

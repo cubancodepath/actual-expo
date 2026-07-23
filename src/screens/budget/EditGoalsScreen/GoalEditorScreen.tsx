@@ -6,7 +6,7 @@ import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-na
 import { useStore } from "@tanstack/react-form";
 import { Button } from "heroui-native";
 import { CircleCheck, Trash2 } from "lucide-react-native";
-import { amountCentsOf, withAmountCents } from "@/core/domain/goals";
+import { amountCentsOf, withAmountCents } from "@/core/server/budget/goals";
 import { AmountKeyboard } from "@/ui/amount-keyboard";
 import { ScreenHeader } from "@/ui/ScreenHeader";
 import { GoalEditorPane } from "./components/GoalEditorPane";

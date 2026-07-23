@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
-import { addMovementNote } from "@/core/domain/budgets";
+import { addMovementNote } from "@/core/server/budget/actions";
 import { runQuery } from "@/core/db";
 
 describe("addMovementNote — routed through CRDT (fix #3)", () => {

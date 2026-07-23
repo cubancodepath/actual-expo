@@ -15,7 +15,7 @@ import type { Spreadsheet } from "@/core/server/spreadsheet/spreadsheet";
 import { sheetForMonth, trackingBudget } from "@/core/server/spreadsheet/bindings";
 import { firstSync } from "@/core/db";
 import { monthToInt, addMonths } from "@/core/shared/months";
-import { getCategories, getCategoryGroups } from "@/core/domain/categories";
+import { getCategories, getCategoryGroups } from "@/core/server/budget";
 import type { Category, CategoryGroup } from "@/core/types/models";
 import { safeNumber } from "@/lib/number";
 import { num, createSpentCells, getBudgetRange } from "@/core/server/spreadsheet/util";

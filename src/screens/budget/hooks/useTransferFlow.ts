@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "expo-router";
-import { transferAvailable, transferMultipleCategories } from "@/core/domain/budgets";
+import { transferAvailable, transferMultipleCategories } from "@/core/server/budget/actions";
 import { batchMessages } from "@/core/sync/batch";
 import { TO_BUDGET_ID } from "@/screens/budget/constants";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";

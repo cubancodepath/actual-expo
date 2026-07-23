@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Button, Input, Label, TextField, useThemeColor } from "heroui-native";
 import { Check, X } from "lucide-react-native";
 import { ScreenHeader } from "@/ui/ScreenHeader";
-import { updateCategory } from "@/core/domain/categories";
+import { updateCategory } from "@/core/server/budget";
 
 export interface RenameCategoryScreenProps {
   categoryId: string;

@@ -5,14 +5,14 @@ import { useTranslation } from "react-i18next";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { useUndoStore } from "@/stores/undoStore";
-import { updateCategory, deleteCategory } from "@/core/domain/categories";
+import { updateCategory, deleteCategory } from "@/core/server/budget";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { useCategories } from "@/lib/hooks/useCategories";
 import { Text } from "@/design-system/atoms/Text";
 import { Button } from "@/design-system/atoms/Button";
 import { Input } from "@/design-system/atoms/Input";
-import { parseGoalDef } from "@/core/domain/goals";
-import { describeTemplate, translateDescription } from "@/core/domain/goals/describe";
+import { parseGoalDef } from "@/core/server/budget/goals";
+import { describeTemplate, translateDescription } from "@/core/server/budget/goals/describe";
 import i18n from "@/i18n/config";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 

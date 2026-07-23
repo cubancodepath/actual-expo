@@ -4,7 +4,7 @@ import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { useUndoStore } from "@/stores/undoStore";
-import { updateCategoryGroup, deleteCategoryGroup } from "@/core/domain/categories";
+import { updateCategoryGroup, deleteCategoryGroup } from "@/core/server/budget";
 import { useCategories } from "@/lib/hooks/useCategories";
 import { Text } from "@/design-system/atoms/Text";
 import { Button } from "@/design-system/atoms/Button";

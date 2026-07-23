@@ -13,7 +13,7 @@ import { Amount } from "@/design-system/atoms/Amount";
 import { Icon } from "@/design-system/atoms/Icon";
 import { useSheetValueNumber } from "@/hooks/useSheetValue";
 import { envelopeBudget } from "@/core/server/spreadsheet/bindings";
-import type { BudgetGroupData, BudgetCategoryData } from "@/core/domain/budgets/types";
+import type { BudgetGroupData, BudgetCategoryData } from "@/core/server/budget/types";
 import { BUDGET_COLUMNS } from "./ExpenseCategoryListItem";
 import { IncomeCategoryListItem } from "./IncomeCategoryListItem";
 

@@ -2,7 +2,7 @@ import { randomUUID } from "@/core/platform/crypto";
 import { batchMessages, sendMessages } from "@/core/sync";
 import { Timestamp } from "@/core/crdt";
 import { createAccount } from "@/core/server/accounts";
-import { createCategoryGroup, createCategory } from "@/core/domain/categories";
+import { createCategoryGroup, createCategory } from "@/core/server/budget";
 import { emit } from "@/core/sync/syncEvents";
 
 // ---------------------------------------------------------------------------

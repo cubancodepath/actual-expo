@@ -9,7 +9,7 @@
 import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
 import { first } from "@/core/db";
 import { createAccount } from "@/core/server/accounts";
-import { createCategoryGroup, createCategory } from "@/core/domain/categories";
+import { createCategoryGroup, createCategory } from "@/core/server/budget";
 import { createPayee } from "@/core/server/payees";
 import type { TransactionRow } from "@/core/db/types";
 

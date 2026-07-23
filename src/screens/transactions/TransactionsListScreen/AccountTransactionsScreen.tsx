@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { AddTransactionFab } from "@/ui/AddTransactionFab";
 import { useAccounts, useAccountBalances } from "@/lib/hooks/useAccounts";
 import { useSyncedPrefs } from "@/hooks/useSyncedPrefs";
+import { AccountLedgerRow } from "@/screens/transactions/components/transaction-list/LedgerRow";
 import { TransactionsShell } from "./components/TransactionsShell";
 import { AccountDetailHeader } from "./components/AccountDetailHeader";
 
@@ -24,6 +25,8 @@ export function AccountTransactionsScreen({ accountId }: { accountId: string }) 
   return (
     <TransactionsShell
       context={{ kind: "account", accountId, showReconciled }}
+      // You're inside the account — its name on every row would be noise.
+      rowComponent={AccountLedgerRow}
       stickyHeader={
         <AccountDetailHeader
           accountId={accountId}

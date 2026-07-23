@@ -786,16 +786,6 @@ export function isForPreview(schedule: Schedule, statuses: ScheduleStatuses): bo
   );
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function subtractDays(dateStr: string, days: number): string {
-  const d = new Date(dateStr);
-  d.setDate(d.getDate() - days);
-  return d.toISOString().slice(0, 10);
-}
-
 // ═══ former schedules/computePreview.ts ═══
 
 export type PreviewSubtransaction = {

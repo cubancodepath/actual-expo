@@ -38,7 +38,8 @@ Mobile client for [Actual Budget](https://actualbudget.com/) — local-first bud
 
 ```
 src/
-├── core/                   # Domain logic — NO React, UI, or react-query imports allowed here
+├── core/                   # Domain logic — NO React, UI, or react-query imports allowed here.
+│   │                       # Mirrors upstream loot-core's src/ layout (server/ + shared/ + types/).
 │   ├── db/                 # SQLite connection, query helpers, schema, migrations
 │   ├── crdt/               # HLC timestamps (timestamp.ts), Merkle tree diff (merkle.ts)
 │   ├── sync/               # fullSync, syncEvents, encoder (protobuf + AES), undo, clock
@@ -46,19 +47,32 @@ src/
 │   ├── errors/             # ActualError, ErrorCode — core only THROWS, never emits to the UI bus
 │   ├── queries/            # AQL query compiler, liveQuery, pagedQuery, queryCache, execute
 │   ├── proto/              # Protobuf definitions
-│   └── domain/             # Business domain modules (each with index.ts + types.ts):
+│   ├── platform/           # Native seams: fs, sqlite, crypto, fetch, asyncStorage, location
+│   ├── shared/             # Pure logic shared with UI (upstream loot-core/src/shared):
+│   │                       #   months, util (number/currency format), currencies, arithmetic,
+│   │                       #   schedules (status/recurrence/preview), tags (note parsing),
+│   │                       #   transactions (split math), location-utils
+│   ├── types/              # prefs.ts + models/ — one file per entity (account, category,
+│   │                       #   transaction, payee, rule, schedule, templates…), upstream names
+│   └── server/             # Engine by domain (upstream loot-core/src/server; index.ts per
+│       │                   #   domain instead of app.ts — no IPC layer, UI calls directly):
 │       ├── accounts/       # Account CRUD (raw SQL)
-│       ├── budgets/        # Budget calculations, toBudget
-│       ├── categories/     # Category queries + sort
-│       ├── goals/          # Goal engine (schedule, savings, spending, progress)
-│       ├── payees/         # Payee queries
-│       ├── payee-locations/# Location-based payee suggestions
-│       ├── preferences/    # Format config, feature flags
-│       ├── rules/          # Auto-categorization rule engine
-│       ├── schedules/      # Recurring transactions, recurrence logic
-│       ├── spreadsheet/    # Live spreadsheet engine (bindings, envelope, sync)
-│       ├── tags/           # Transaction tags
-│       └── transactions/   # Transaction CRUD, split, transfer, save
+│       ├── auth/, budgetfiles/, server-info/  # sync-server transport + handlers
+│       ├── budget/         # Category CRUD (index.ts) + sort-categories, budget actions
+│       │                   #   (actions.ts), envelope/tracking cells, goal-template +
+│       │                   #   category-template-context + goal-template-parser,
+│       │                   #   cleanup-template*, goals/ (editor-facing: automations,
+│       │                   #   describe, progress, validate, fixedGoal — upstream keeps
+│       │                   #   these in desktop-client)
+│       ├── forecast/       # forecast-* files, upstream names
+│       ├── notes/, tags/, payees/  # payees includes payee-locations (like upstream)
+│       ├── preferences/    # Synced prefs, feature flags, format config, global prefs
+│       ├── rules/          # Rule/Condition/Action classes, indexer, formulas
+│       ├── schedules/      # CRUD/post/advance, find-schedules, preview
+│       ├── spreadsheet/    # spreadsheet, graph-data-structure, globals, util, bindings
+│       ├── transactions/   # CRUD, transaction-rules (rule running/learning), transfer,
+│       │                   #   merge, save pipeline, export/
+│       └── sheet.ts        # Spreadsheet lifecycle (initSpreadsheet/ensureMonthRange)
 │
 ├── screens/                # ALL UI, organized by screen (mirrors the navigation tree), e.g.:
 │   ├── auth/               # OpenIdSignInScreen/, PasswordSignInScreen/, ServerConnectScreen/ — migrated
@@ -89,7 +103,8 @@ src/
 │   ├── encryptionService.ts# Key derivation, key storage, per-budget keys
 │   └── api/                # HTTP client (.api/.dto/.mappers/.types split)
 │
-├── lib/                    # Pure utilities, no React: currency, date, format, colors, screenOptions
+├── lib/                    # Pure app-level utilities, no React: colors, screenOptions, badge
+│                           #   (date/currency/format live in @/core/shared: months, util, currencies)
 │   ├── errors/             # ErrorChannel bus (emitErrorEvent, toErrorCode) + install.ts
 │   ├── query/               # TanStack Query wiring: queryClient singleton, ambient types
 │   └── hooks/              # Truly global React hooks (useQuery, useLocale...); single-domain
@@ -123,7 +138,7 @@ Auth guard uses `<Stack.Protected guard={condition}>` in root `_layout.tsx`.
 ### Architecture Rules
 
 1. **`src/core/` has zero UI, React, or react-query imports** — pure logic, safe to test in Node
-2. **`src/screens/<domain>/` owns domain-specific UI** — import from `@/core/domain/`, `@/ui/`, `@/stores/`, `@/lib/`, `@/services/`
+2. **`src/screens/<domain>/` owns domain-specific UI** — import from `@/core/server/` + `@/core/shared/`, `@/ui/`, `@/stores/`, `@/lib/`, `@/services/`
 3. **`src/stores/` holds only UI state** — never queries the DB directly
 4. **`app/` routes are thin re-exports** — `export { BudgetScreen as default } from '@/screens/budget/BudgetScreen'`; no business logic in `app/`, all UI lives under `src/screens/<domain>/`
 5. **`src/ui/` never imports `@/screens/` or `@/stores/`** — stays screen-agnostic

@@ -14,9 +14,11 @@ De ~12 carpetas top-level en `src/` bajamos a **7**, cada una con una responsabi
 app/                        # SOLO rutas de Expo Router. Cada archivo = re-export fino de una screen
                             #   export { BudgetScreen as default } from '@/screens/budget/BudgetScreen'
 src/
-├── core/                   # Dominio puro (SIN React ni UI, tampoco react-query): domain/, db/, sync/,
-│                           # crdt/, queries/ (= compilador AQL puro), encryption/, errors/, proto/.
-│                           # NO SE TOCA — el wiring de react-query vive en lib/query/.
+├── core/                   # Dominio puro (SIN React ni UI, tampoco react-query). Espejo del layout
+│                           # de loot-core upstream: server/ (motor por dominio), shared/ (lógica pura:
+│                           # months, util, schedules, tags, transactions…), types/models/ (entidades),
+│                           # db/, sync/, crdt/, queries/ (compilador AQL), encryption/, errors/,
+│                           # proto/, platform/. El wiring de react-query vive en lib/query/.
 │
 ├── screens/                # Toda la UI, organizada por pantalla (espejo del árbol de navegación)
 │   ├── budget/

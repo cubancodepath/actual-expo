@@ -7,7 +7,7 @@
  * Mirrors the server-side importActual() in loot-core, adapted for expo-file-system.
  */
 
-import { EncodingType, makeDirectoryAsync, writeAsStringAsync } from "@/core/platform/fs";
+import { fs } from "@/core/platform/fs";
 import { unzipSync } from "fflate";
 
 import { getBudgetDir, idFromBudgetName, writeMetadata } from "@/core/server/prefs";
@@ -59,10 +59,8 @@ export async function importActualBudget(
   const budgetDir = getBudgetDir(budgetId);
 
   try {
-    await makeDirectoryAsync(budgetDir, { intermediates: true });
-    await writeAsStringAsync(`${budgetDir}db.sqlite`, uint8ToBase64(dbBytes), {
-      encoding: EncodingType.Base64,
-    });
+    await fs.mkdir(budgetDir, { intermediates: true });
+    await fs.writeFile(`${budgetDir}db.sqlite`, uint8ToBase64(dbBytes), { encoding: "base64" });
 
     // Write local metadata; no cloudFileId since this is a local import
     await writeMetadata(budgetId, {

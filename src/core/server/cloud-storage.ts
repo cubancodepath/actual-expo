@@ -8,13 +8,7 @@
 import { z } from "zod";
 import { addDays } from "date-fns";
 import { unzipSync, zipSync } from "fflate";
-import {
-  makeDirectoryAsync,
-  writeAsStringAsync,
-  readAsStringAsync,
-  deleteAsync,
-  EncodingType,
-} from "@/core/platform/fs";
+import { fs } from "@/core/platform/fs";
 import { openDatabaseAsync } from "@/core/platform/sqlite";
 import { randomUUID } from "@/core/platform/crypto";
 import { http, toTransportError, parseResponse } from "@/core/platform/fetch";
@@ -182,9 +176,7 @@ export async function uploadBudget(
   const tempPath = `${budgetDir}${tempName}`;
   let dbBytes: Uint8Array;
   try {
-    await writeAsStringAsync(tempPath, uint8ToBase64(snapshot), {
-      encoding: EncodingType.Base64,
-    });
+    await fs.writeFile(tempPath, uint8ToBase64(snapshot), { encoding: "base64" });
     const tempDb = await openDatabaseAsync(tempName, { useNewConnection: true }, budgetDir);
     try {
       await tempDb.execAsync("PRAGMA journal_mode = DELETE");
@@ -194,15 +186,13 @@ export async function uploadBudget(
     }
     if (__DEV__) console.log("[upload] kvcache stripped, reading snapshot file");
 
-    const dbBase64 = await readAsStringAsync(tempPath, {
-      encoding: EncodingType.Base64,
-    });
+    const dbBase64 = await fs.readFile(tempPath, { encoding: "base64" });
     dbBytes = base64ToUint8(dbBase64);
   } finally {
-    await deleteAsync(tempPath, { idempotent: true });
+    await fs.removeFile(tempPath, { idempotent: true });
     // The temp db may leave -wal/-shm siblings from before the journal flip
-    await deleteAsync(`${tempPath}-wal`, { idempotent: true });
-    await deleteAsync(`${tempPath}-shm`, { idempotent: true });
+    await fs.removeFile(`${tempPath}-wal`, { idempotent: true });
+    await fs.removeFile(`${tempPath}-shm`, { idempotent: true });
   }
 
   // 3. Read metadata and set resetClock flag
@@ -402,12 +392,10 @@ export async function downloadBudget(
   // 3. Create budget directory and write files
   const budgetId = idFromBudgetName(file.name || "budget");
   const budgetDir = getBudgetDir(budgetId);
-  await makeDirectoryAsync(budgetDir, { intermediates: true });
+  await fs.mkdir(budgetDir, { intermediates: true });
 
   const dbPath = `${budgetDir}db.sqlite`;
-  await writeAsStringAsync(dbPath, uint8ToBase64(dbBytes), {
-    encoding: EncodingType.Base64,
-  });
+  await fs.writeFile(dbPath, uint8ToBase64(dbBytes), { encoding: "base64" });
 
   // 4. Write metadata
   await writeMetadata(budgetId, {

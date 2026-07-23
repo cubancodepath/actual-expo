@@ -3,15 +3,7 @@
 // `@/core/platform/fs` and randomness through `@/core/platform/crypto`, and it
 // only THROWS typed ActualErrors (the error bus is app-level — the react-query
 // caches and UI callers surface these).
-import {
-  documentDirectory,
-  readDirectoryAsync,
-  readAsStringAsync,
-  writeAsStringAsync,
-  makeDirectoryAsync,
-  deleteAsync,
-  getInfoAsync,
-} from "@/core/platform/fs";
+import { fs } from "@/core/platform/fs";
 import { randomUUID } from "@/core/platform/crypto";
 import { ActualError, type ErrorCode } from "@/core/errors";
 
@@ -19,7 +11,7 @@ import { ActualError, type ErrorCode } from "@/core/errors";
 // Constants & path helpers
 // ---------------------------------------------------------------------------
 
-export const BUDGETS_DIR = `${documentDirectory}budgets/`;
+export const BUDGETS_DIR = `${fs.documentDirectory}budgets/`;
 
 export function getBudgetDir(budgetId: string): string {
   return `${BUDGETS_DIR}${budgetId}/`;
@@ -61,9 +53,8 @@ function storageError(
 
 export async function ensureBudgetsDir(): Promise<void> {
   try {
-    const info = await getInfoAsync(BUDGETS_DIR);
-    if (!info.exists) {
-      await makeDirectoryAsync(BUDGETS_DIR, { intermediates: true });
+    if (!(await fs.exists(BUDGETS_DIR))) {
+      await fs.mkdir(BUDGETS_DIR, { intermediates: true });
     }
   } catch (error) {
     throw storageError(error, "storage/write-failed", "ensureBudgetsDir", { path: BUDGETS_DIR });
@@ -73,8 +64,7 @@ export async function ensureBudgetsDir(): Promise<void> {
 export async function budgetExists(budgetId: string): Promise<boolean> {
   const path = getMetadataPath(budgetId);
   try {
-    const info = await getInfoAsync(path);
-    return info.exists;
+    return await fs.exists(path);
   } catch (error) {
     throw storageError(error, "storage/read-failed", "budgetExists", { budgetId, path });
   }
@@ -83,7 +73,7 @@ export async function budgetExists(budgetId: string): Promise<boolean> {
 export async function deleteBudgetDir(budgetId: string): Promise<void> {
   const path = getBudgetDir(budgetId);
   try {
-    await deleteAsync(path, { idempotent: true });
+    await fs.removeFile(path, { idempotent: true });
   } catch (error) {
     throw storageError(error, "storage/delete-failed", "deleteBudgetDir", { budgetId, path });
   }
@@ -97,9 +87,8 @@ export async function readMetadata(budgetId: string): Promise<BudgetMetadata | n
   const path = getMetadataPath(budgetId);
   let raw: string;
   try {
-    const info = await getInfoAsync(path);
-    if (!info.exists) return null;
-    raw = await readAsStringAsync(path);
+    if (!(await fs.exists(path))) return null;
+    raw = await fs.readFile(path);
   } catch (error) {
     throw storageError(error, "storage/read-failed", "readMetadata", { budgetId, path });
   }
@@ -115,8 +104,8 @@ export async function writeMetadata(budgetId: string, meta: BudgetMetadata): Pro
   const dir = getBudgetDir(budgetId);
   const path = getMetadataPath(budgetId);
   try {
-    await makeDirectoryAsync(dir, { intermediates: true });
-    await writeAsStringAsync(path, JSON.stringify(meta, null, 2));
+    await fs.mkdir(dir, { intermediates: true });
+    await fs.writeFile(path, JSON.stringify(meta, null, 2));
   } catch (error) {
     throw storageError(error, "storage/write-failed", "writeMetadata", { budgetId, path });
   }
@@ -138,9 +127,8 @@ export async function updateMetadata(
 export async function getBudgets(): Promise<BudgetMetadata[]> {
   let entries: string[];
   try {
-    const info = await getInfoAsync(BUDGETS_DIR);
-    if (!info.exists) return [];
-    entries = await readDirectoryAsync(BUDGETS_DIR);
+    if (!(await fs.exists(BUDGETS_DIR))) return [];
+    entries = await fs.listDir(BUDGETS_DIR);
   } catch (error) {
     throw storageError(error, "storage/read-failed", "getBudgets", { path: BUDGETS_DIR });
   }

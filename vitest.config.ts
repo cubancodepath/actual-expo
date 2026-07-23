@@ -38,6 +38,7 @@ export default defineConfig({
         __dirname,
         "src/core/platform/asyncStorage/index.node.ts",
       ),
+      "@/core/platform/fs": path.resolve(__dirname, "src/core/platform/fs/index.node.ts"),
       // Path aliases matching tsconfig.json
       "@": path.resolve(__dirname, "src"),
       // Stub native modules that can't run in Node
@@ -47,10 +48,6 @@ export default defineConfig({
       // through @/core/platform/keyStore, which swaps to index.node.ts above.
       "expo-secure-store": path.resolve(__dirname, "src/__mocks__/expo-secure-store.ts"),
       "expo-localization": path.resolve(__dirname, "src/__mocks__/expo-localization.ts"),
-      "expo-file-system/legacy": path.resolve(
-        __dirname,
-        "src/__mocks__/expo-file-system/legacy.ts",
-      ),
       "react-native-mmkv": path.resolve(__dirname, "src/__mocks__/react-native-mmkv.ts"),
     },
   },

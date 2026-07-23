@@ -14,7 +14,7 @@ import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { useCursorBlink } from "@/hooks/useCursorBlink";
 import { CurrencyAmountDisplay } from "@/features/transactions/components/currency-input/CurrencyAmountDisplay";
 import { useSheetValue, useSheetValueNumber } from "@/hooks/useSheetValue";
-import { envelopeBudget } from "@/core/domain/spreadsheet/bindings";
+import { envelopeBudget } from "@/core/server/spreadsheet/bindings";
 import { inferGoalFromDef } from "@/core/domain/goals";
 import type { BudgetCategoryData } from "@/core/domain/budgets/types";
 import type { BudgetCategory } from "@/core/domain/budgets/types";

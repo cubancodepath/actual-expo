@@ -4,8 +4,8 @@
  * budget types (upstream keeps this one in server/budget/base.ts).
  */
 
-import type { Spreadsheet, CellValue } from "./spreadsheet";
-import { sheetForMonth, envelopeBudget } from "./bindings";
+import type { Spreadsheet, CellValue } from "@/core/server/spreadsheet/spreadsheet";
+import { sheetForMonth, envelopeBudget } from "@/core/server/spreadsheet/bindings";
 import { firstSync, first } from "@/core/db";
 import { monthToInt, currentMonth, intToStr, addMonths } from "@/core/shared/months";
 import { ALIVE_TX_FILTER } from "@/core/db/filters";

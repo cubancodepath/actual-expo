@@ -2,9 +2,9 @@ import { describe, it, expect, afterEach } from "vitest";
 import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
 import { createCategoryGroup, createCategory } from "@/core/domain/categories";
 import { setBudgetAmount } from "@/core/domain/budgets";
-import { initSpreadsheet, ensureMonthRange } from "@/core/domain/spreadsheet/sync";
-import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
-import { sheetForMonth, envelopeBudget } from "@/core/domain/spreadsheet/bindings";
+import { initSpreadsheet, ensureMonthRange } from "@/core/server/sheet";
+import { getSpreadsheet } from "@/core/server/spreadsheet/globals";
+import { sheetForMonth, envelopeBudget } from "@/core/server/spreadsheet/bindings";
 import { currentMonth, addMonths } from "@/core/shared/months";
 
 describe("ensureMonthRange — lazy month extension (fix #10)", () => {

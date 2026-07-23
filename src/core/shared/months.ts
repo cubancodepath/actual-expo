@@ -188,6 +188,11 @@ export function monthShortNames(locale?: string): string[] {
   return names;
 }
 
+/** Sheet name for a given month: "budget2026-03" (upstream: shared/months.ts). */
+export function sheetForMonth(month: string): string {
+  return `budget${month}`;
+}
+
 /** "YYYY-MM" → YYYYMM integer. */
 export function monthToInt(month: string): number {
   return parseInt(month.replace("-", ""), 10);

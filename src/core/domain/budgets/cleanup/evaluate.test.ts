@@ -32,7 +32,7 @@ async function seed() {
 
   const cat = (name: string) => createCategory({ name, cat_group: expenses });
   async function start() {
-    const { initSpreadsheet, ensureMonthRange } = await import("@/core/domain/spreadsheet/sync");
+    const { initSpreadsheet, ensureMonthRange } = await import("@/core/server/sheet");
     await initSpreadsheet();
     await ensureMonthRange(month);
     await addTransaction({ account: acct, date: day(month), amount: 10000, category: income });

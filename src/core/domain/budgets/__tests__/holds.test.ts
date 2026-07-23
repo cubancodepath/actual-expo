@@ -58,7 +58,7 @@ async function setupWithIncome() {
   const expenseGroup = await createCategoryGroup({ name: "Expenses" });
   const catA = await createCategory({ name: "A", cat_group: expenseGroup });
   const acctId = await createAccount({ name: "Checking" });
-  const { initSpreadsheet } = await import("@/core/domain/spreadsheet/sync");
+  const { initSpreadsheet } = await import("@/core/server/sheet");
   await initSpreadsheet();
   const month = currentMonth();
   await addTransaction({

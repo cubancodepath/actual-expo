@@ -199,7 +199,7 @@ export const useBudgetContextStore = create<BudgetContextState>()(
           lap("pre-fetch queries");
 
           // 6. Initialize spreadsheet engine with local data
-          const { initSpreadsheet } = await import("@/core/domain/spreadsheet/sync");
+          const { initSpreadsheet } = await import("@/core/server/sheet");
           await initSpreadsheet();
           lap("initSpreadsheet");
 

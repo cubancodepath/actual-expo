@@ -2,7 +2,7 @@ import { memo, useRef } from "react";
 import { View } from "react-native";
 import { cn, PressableFeedback, Typography } from "heroui-native";
 import { useSheetValue, useSheetValueNumber } from "@/hooks/useSheetValue";
-import { envelopeBudget } from "@/core/domain/spreadsheet/bindings";
+import { envelopeBudget } from "@/core/server/spreadsheet/bindings";
 import { mediumHaptic } from "@/ui/haptics";
 import { categoryChipStatus } from "../chipStatus";
 import { AvailableChip } from "./AvailableChip";

@@ -4,7 +4,7 @@
  * Single instance shared across the app. Created once, cleared on budget switch.
  */
 
-import { Spreadsheet } from "./spreadsheet";
+import { Spreadsheet } from "@/core/server/spreadsheet/spreadsheet";
 
 let _instance: Spreadsheet | null = null;
 

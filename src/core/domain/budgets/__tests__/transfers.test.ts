@@ -38,7 +38,7 @@ async function setupAB() {
   const group = await createCategoryGroup({ name: "Expenses" });
   const catA = await createCategory({ name: "A", cat_group: group });
   const catB = await createCategory({ name: "B", cat_group: group });
-  const { initSpreadsheet } = await import("@/core/domain/spreadsheet/sync");
+  const { initSpreadsheet } = await import("@/core/server/sheet");
   await initSpreadsheet();
   const month = currentMonth();
   return { catA, catB, month };
@@ -121,7 +121,7 @@ describe("budgets/index — setBudgetAmount / transferAvailable / transfer* char
       const catA = await createCategory({ name: "A", cat_group: group });
       const catB = await createCategory({ name: "B", cat_group: group });
       const catC = await createCategory({ name: "C", cat_group: group });
-      const { initSpreadsheet } = await import("@/core/domain/spreadsheet/sync");
+      const { initSpreadsheet } = await import("@/core/server/sheet");
       await initSpreadsheet();
       const month = currentMonth();
 
@@ -179,7 +179,7 @@ describe("budgets/index — setBudgetAmount / transferAvailable / transfer* char
       const catA = await createCategory({ name: "A", cat_group: group });
       const catB = await createCategory({ name: "B", cat_group: group });
       const catC = await createCategory({ name: "C", cat_group: group });
-      const { initSpreadsheet } = await import("@/core/domain/spreadsheet/sync");
+      const { initSpreadsheet } = await import("@/core/server/sheet");
       await initSpreadsheet();
       const month = currentMonth();
 

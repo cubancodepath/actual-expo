@@ -11,14 +11,14 @@
  * exists), wrapped by the caller in startTransaction/endTransaction.
  */
 
-import type { Spreadsheet } from "./spreadsheet";
-import { sheetForMonth, trackingBudget } from "./bindings";
+import type { Spreadsheet } from "@/core/server/spreadsheet/spreadsheet";
+import { sheetForMonth, trackingBudget } from "@/core/server/spreadsheet/bindings";
 import { firstSync } from "@/core/db";
 import { monthToInt, addMonths } from "@/core/shared/months";
-import { getCategories, getCategoryGroups } from "../categories";
+import { getCategories, getCategoryGroups } from "@/core/domain/categories";
 import type { Category, CategoryGroup } from "@/core/types/models";
 import { safeNumber } from "@/lib/number";
-import { num, createSpentCells, getBudgetRange } from "./shared";
+import { num, createSpentCells, getBudgetRange } from "@/core/server/spreadsheet/util";
 
 export async function createBudgetCells(
   ss: Spreadsheet,

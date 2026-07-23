@@ -16,7 +16,7 @@ import { Text } from "@/design-system/atoms/Text";
 import { Amount } from "@/design-system/atoms/Amount";
 import { Icon } from "@/design-system/atoms/Icon";
 import { useSheetValueNumber } from "@/hooks/useSheetValue";
-import { envelopeBudget } from "@/core/domain/spreadsheet/bindings";
+import { envelopeBudget } from "@/core/server/spreadsheet/bindings";
 import type { BudgetCategoryData } from "@/core/domain/budgets/types";
 import { BUDGET_COLUMNS } from "./ExpenseCategoryListItem";
 

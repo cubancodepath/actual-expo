@@ -3,7 +3,7 @@ import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { Accordion, Separator, Surface, Typography } from "heroui-native";
 import { useSheetValueNumber } from "@/hooks/useSheetValue";
-import { envelopeBudget } from "@/core/domain/spreadsheet/bindings";
+import { envelopeBudget } from "@/core/server/spreadsheet/bindings";
 import { Money } from "@/ui/Money";
 import { CollapsibleIndicator } from "@/ui/CollapsibleIndicator";
 import type { BudgetSection } from "@/screens/budget/hooks/useBudgetSections";

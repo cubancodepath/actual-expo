@@ -1,5 +1,5 @@
-import { initSpreadsheet } from "@/core/domain/spreadsheet/sync";
-import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
+import { initSpreadsheet } from "@/core/server/sheet";
+import { getSpreadsheet } from "@/core/server/spreadsheet/globals";
 
 /**
  * Clear all cached budget values and recompute the whole budget — the mobile

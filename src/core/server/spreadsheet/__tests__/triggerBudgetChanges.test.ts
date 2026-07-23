@@ -5,9 +5,9 @@ import { createAccount, updateAccount } from "@/core/server/accounts";
 import { addTransaction } from "@/core/server/transactions";
 import { sendMessages } from "@/core/sync";
 import { Timestamp } from "@/core/crdt";
-import { initSpreadsheet } from "@/core/domain/spreadsheet/sync";
-import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
-import { sheetForMonth, envelopeBudget } from "@/core/domain/spreadsheet/bindings";
+import { initSpreadsheet } from "@/core/server/sheet";
+import { getSpreadsheet } from "@/core/server/spreadsheet/globals";
+import { sheetForMonth, envelopeBudget } from "@/core/server/spreadsheet/bindings";
 import { currentMonth } from "@/core/shared/months";
 
 function dateIntFor(month: string, day = "15"): number {

@@ -5,9 +5,9 @@ import { createAccount } from "@/core/server/accounts";
 import { addTransaction } from "@/core/server/transactions";
 import { sendMessages } from "@/core/sync";
 import { Timestamp } from "@/core/crdt";
-import { Spreadsheet } from "@/core/domain/spreadsheet/spreadsheet";
-import { createBudgetCells, createAllBudgetCells } from "@/core/domain/spreadsheet/tracking";
-import { sheetForMonth, trackingBudget } from "@/core/domain/spreadsheet/bindings";
+import { Spreadsheet } from "@/core/server/spreadsheet/spreadsheet";
+import { createBudgetCells, createAllBudgetCells } from "@/core/server/budget/tracking";
+import { sheetForMonth, trackingBudget } from "@/core/server/spreadsheet/bindings";
 import { getCategories, getCategoryGroups } from "@/core/domain/categories";
 import { currentMonth, addMonths, monthToInt } from "@/core/shared/months";
 

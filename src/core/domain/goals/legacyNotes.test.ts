@@ -23,7 +23,7 @@ async function setCategoryNote(categoryId: string, note: string): Promise<void> 
 
 /** Seeds income + an initialized spreadsheet so computeToBudget() has funds to allocate. */
 async function seedAvailableFunds(amountCents: number): Promise<void> {
-  const { initSpreadsheet } = await import("@/core/domain/spreadsheet/sync");
+  const { initSpreadsheet } = await import("@/core/server/sheet");
   const incomeGroup = await createCategoryGroup({ name: "Income", is_income: true });
   const incomeCat = await createCategory({
     name: "Paycheck",

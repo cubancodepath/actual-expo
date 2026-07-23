@@ -254,7 +254,7 @@ export function fullSync(opts?: { force?: boolean }): Promise<number> {
       emit({ type: "success", tables });
 
       if (allMessages.length > 0 && allMessages.some((m) => BUDGET_TABLES.has(m.dataset))) {
-        const { triggerBudgetChanges } = await import("@/core/domain/spreadsheet/sync");
+        const { triggerBudgetChanges } = await import("@/core/server/sheet");
         triggerBudgetChanges(allMessages);
       }
 

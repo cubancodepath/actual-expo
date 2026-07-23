@@ -9,7 +9,7 @@
  * topological order, then notifies subscribers.
  */
 
-import { DependencyGraph } from "./graph";
+import { DependencyGraph } from "@/core/server/spreadsheet/graph-data-structure";
 
 /**
  * The exact prefix strings triggerBudgetChanges() (spreadsheet/sync.ts)

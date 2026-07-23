@@ -18,7 +18,7 @@ import { AvailableChip } from "@/screens/budget/BudgetScreen/components/Availabl
 import { categoryChipStatus } from "@/screens/budget/BudgetScreen/chipStatus";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { useSheetValue, useSheetValueNumber } from "@/hooks/useSheetValue";
-import { envelopeBudget, sheetForMonth } from "@/core/domain/spreadsheet/bindings";
+import { envelopeBudget, sheetForMonth } from "@/core/server/spreadsheet/bindings";
 import { useCategories } from "@/lib/hooks/useCategories";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { deleteCategory, updateCategory } from "@/core/domain/categories";

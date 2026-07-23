@@ -2,7 +2,7 @@ import { memo } from "react";
 import { View } from "react-native";
 import { cn, PressableFeedback, Typography } from "heroui-native";
 import { useSheetValueNumber } from "@/hooks/useSheetValue";
-import { envelopeBudget } from "@/core/domain/spreadsheet/bindings";
+import { envelopeBudget } from "@/core/server/spreadsheet/bindings";
 import { BudgetAssignedField } from "@/screens/budget/BudgetScreen/components/BudgetAssignedField";
 import { COL_ASSIGNED, NumericCell } from "@/screens/budget/BudgetScreen/components/columns";
 

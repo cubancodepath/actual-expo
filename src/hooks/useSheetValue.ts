@@ -10,8 +10,8 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import { resolveName, type CellValue } from "@/core/domain/spreadsheet/spreadsheet";
-import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
+import { resolveName, type CellValue } from "@/core/server/spreadsheet/spreadsheet";
+import { getSpreadsheet } from "@/core/server/spreadsheet/globals";
 
 export function useSheetValue(sheet: string, cellName: string): CellValue {
   const ss = getSpreadsheet();

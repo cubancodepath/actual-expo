@@ -2,9 +2,9 @@ import { describe, it, expect, afterEach } from "vitest";
 import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
 import { createCategoryGroup, createCategory, updateCategory } from "@/core/domain/categories";
 import { setGoalResult } from "@/core/domain/goals/persist";
-import { initSpreadsheet } from "@/core/domain/spreadsheet/sync";
-import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
-import { sheetForMonth, envelopeBudget } from "@/core/domain/spreadsheet/bindings";
+import { initSpreadsheet } from "@/core/server/sheet";
+import { getSpreadsheet } from "@/core/server/spreadsheet/globals";
+import { sheetForMonth, envelopeBudget } from "@/core/server/spreadsheet/bindings";
 import { currentMonth } from "@/core/shared/months";
 
 describe("goal cells — catGoal / catLongGoal (chip funding colour)", () => {

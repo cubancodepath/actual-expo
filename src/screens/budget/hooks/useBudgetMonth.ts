@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
-import { ensureMonthRange } from "@/core/domain/spreadsheet/sync";
+import { ensureMonthRange } from "@/core/server/sheet";
 
 /**
  * Budget month + its domain side effect. Reads the selected month from the UI

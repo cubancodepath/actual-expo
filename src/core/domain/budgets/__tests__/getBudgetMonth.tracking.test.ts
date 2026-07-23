@@ -30,7 +30,7 @@ describe("getBudgetMonth — tracking budget", () => {
 
     // Select tracking BEFORE initSpreadsheet so getEngine() builds tracking cells.
     await setArbitraryPref("budgetType", "tracking");
-    const { initSpreadsheet, ensureMonthRange } = await import("@/core/domain/spreadsheet/sync");
+    const { initSpreadsheet, ensureMonthRange } = await import("@/core/server/sheet");
     await initSpreadsheet();
     const month = currentMonth();
     await ensureMonthRange(month);

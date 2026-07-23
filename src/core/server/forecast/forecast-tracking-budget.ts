@@ -4,9 +4,9 @@
  * account balances; each month adds budgeted income − budgeted expenses.
  */
 import { addMonths, lastDayOfMonth as lastDayFns, format } from "date-fns";
-import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
-import { sheetForMonth, trackingBudget } from "@/core/domain/spreadsheet/bindings";
-import { ensureMonthRange } from "@/core/domain/spreadsheet/sync";
+import { getSpreadsheet } from "@/core/server/spreadsheet/globals";
+import { sheetForMonth, trackingBudget } from "@/core/server/spreadsheet/bindings";
+import { ensureMonthRange } from "@/core/server/sheet";
 import type {
   AccountWithComputedBalance,
   ForecastDataPoint,

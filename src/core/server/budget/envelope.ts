@@ -10,15 +10,15 @@
  * - Static cells: set once, only change via ss.setByName()
  */
 
-import { Spreadsheet } from "./spreadsheet";
-import { sheetForMonth, envelopeBudget } from "./bindings";
+import { Spreadsheet } from "@/core/server/spreadsheet/spreadsheet";
+import { sheetForMonth, envelopeBudget } from "@/core/server/spreadsheet/bindings";
 import { firstSync } from "@/core/db";
 import { monthToInt, addMonths } from "@/core/shared/months";
-import { getCategories, getCategoryGroups } from "../categories";
+import { getCategories, getCategoryGroups } from "@/core/domain/categories";
 import type { Category, CategoryGroup } from "@/core/types/models";
 import { safeNumber } from "@/lib/number";
-import { num, createSpentCells, getBudgetRange } from "./shared";
-import { inferGoalFromDef } from "../goals";
+import { num, createSpentCells, getBudgetRange } from "@/core/server/spreadsheet/util";
+import { inferGoalFromDef } from "@/core/domain/goals";
 
 // ---------------------------------------------------------------------------
 // Create all budget cells for a single month
@@ -267,7 +267,7 @@ export async function createBudgetCells(
 // Multi-month loading
 // ---------------------------------------------------------------------------
 
-export { getBudgetRange } from "./shared";
+export { getBudgetRange } from "@/core/server/spreadsheet/util";
 
 /**
  * Create budget cells for ALL months in the budget range.

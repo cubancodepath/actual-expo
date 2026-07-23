@@ -10,10 +10,10 @@
 
 import { listen } from "@/core/sync/syncEvents";
 import type { SyncMessage } from "@/core/sync/encoder";
-import { getSpreadsheet } from "./instance";
-import * as envelopeEngine from "./envelope";
-import * as trackingEngine from "./tracking";
-import { getCategories, getCategoryGroups } from "../categories";
+import { getSpreadsheet } from "@/core/server/spreadsheet/globals";
+import * as envelopeEngine from "@/core/server/budget/envelope";
+import * as trackingEngine from "@/core/server/budget/tracking";
+import { getCategories, getCategoryGroups } from "@/core/domain/categories";
 import { getBudgetType } from "@/core/server/preferences";
 import { addMonths } from "@/core/shared/months";
 

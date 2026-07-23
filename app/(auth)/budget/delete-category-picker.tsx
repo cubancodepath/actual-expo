@@ -5,8 +5,8 @@ import { useTranslation } from "react-i18next";
 import { ListGroup, Separator, Typography } from "heroui-native";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { useCategories } from "@/lib/hooks/useCategories";
-import { sheetForMonth, envelopeBudget } from "@/core/domain/spreadsheet/bindings";
-import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
+import { sheetForMonth, envelopeBudget } from "@/core/server/spreadsheet/bindings";
+import { getSpreadsheet } from "@/core/server/spreadsheet/globals";
 import { Money } from "@/ui/Money";
 import { PickerScreen } from "@/ui/PickerScreen";
 

@@ -9,10 +9,10 @@ import type { BudgetMonth, BudgetGroup, BudgetCategory } from "./types";
 import { inferGoalFromDef } from "../goals";
 import { getBudgetType } from "@/core/server/preferences";
 import { ALIVE_TX_FILTER } from "@/core/db/filters";
-import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
-import { sheetForMonth, envelopeBudget, trackingBudget } from "@/core/domain/spreadsheet/bindings";
-import { ensureMonthRange } from "@/core/domain/spreadsheet/sync";
-import type { CellValue } from "@/core/domain/spreadsheet/spreadsheet";
+import { getSpreadsheet } from "@/core/server/spreadsheet/globals";
+import { sheetForMonth, envelopeBudget, trackingBudget } from "@/core/server/spreadsheet/bindings";
+import { ensureMonthRange } from "@/core/server/sheet";
+import type { CellValue } from "@/core/server/spreadsheet/spreadsheet";
 
 function num(v: CellValue): number {
   return typeof v === "number" ? v : 0;

@@ -14,7 +14,7 @@ import { defaultFlagPrefs } from "@/core/server/preferences/featureFlags";
 export function resetAllStores(): void {
   clearQueryCache();
   // Reset spreadsheet engine
-  import("@/core/domain/spreadsheet/instance").then(({ resetSpreadsheet }) => resetSpreadsheet());
+  import("@/core/server/spreadsheet/globals").then(({ resetSpreadsheet }) => resetSpreadsheet());
   useBudgetUIStore.setState({ month: currentMonth(), pickedCategory: null });
   usePickerStore.getState().clear();
   useSyncStore.setState({

@@ -2,7 +2,7 @@ import { ScrollView, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Chip, PressableFeedback, Typography } from "heroui-native";
-import { sheetForMonth } from "@/core/domain/spreadsheet/bindings";
+import { sheetForMonth } from "@/core/server/spreadsheet/bindings";
 import { useBudgetMonth } from "@/screens/budget/hooks/useBudgetMonth";
 import {
   useOverspentCategories,

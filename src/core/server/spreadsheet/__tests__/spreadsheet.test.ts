@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { Spreadsheet, resolveName } from "@/core/domain/spreadsheet/spreadsheet";
+import { Spreadsheet, resolveName } from "@/core/server/spreadsheet/spreadsheet";
 
 describe("Spreadsheet — prefix index (regression: compound-prefix / UUID-id bucketing)", () => {
   it("finds cells by a compound prefix ('sum-amount-') even when the cell id itself contains dashes", () => {

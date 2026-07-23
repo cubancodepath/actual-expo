@@ -201,7 +201,7 @@ async function _applyAndRecord(messages: SyncMessage[]): Promise<void> {
   // Granular budget cell invalidation (like loot-core's triggerBudgetChanges)
   const tables = [...new Set(messages.map((m) => m.dataset))];
   if (tables.some((t) => BUDGET_TABLES.has(t))) {
-    const { triggerBudgetChanges } = await import("@/core/domain/spreadsheet/sync");
+    const { triggerBudgetChanges } = await import("@/core/server/sheet");
     triggerBudgetChanges(messages);
   }
   // Notify all listeners (stores, live queries) about changed tables

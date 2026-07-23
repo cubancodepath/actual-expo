@@ -43,7 +43,7 @@ describe("getBudgetMonth / computeToBudget — spreadsheet-backed (fix #14)", ()
     const catB = await createCategory({ name: "Dining", cat_group: expenseGroup });
     const acctId = await createAccount({ name: "Checking" });
 
-    const { initSpreadsheet, ensureMonthRange } = await import("@/core/domain/spreadsheet/sync");
+    const { initSpreadsheet, ensureMonthRange } = await import("@/core/server/sheet");
     await initSpreadsheet();
 
     const m0 = addMonths(currentMonth(), -2);
@@ -143,7 +143,7 @@ describe("getBudgetMonth / computeToBudget — spreadsheet-backed (fix #14)", ()
     const group = await createCategoryGroup({ name: "Expenses" });
     await createCategory({ name: "Groceries", cat_group: group });
 
-    const { initSpreadsheet } = await import("@/core/domain/spreadsheet/sync");
+    const { initSpreadsheet } = await import("@/core/server/sheet");
     await initSpreadsheet();
 
     const month = currentMonth();
@@ -154,7 +154,7 @@ describe("getBudgetMonth / computeToBudget — spreadsheet-backed (fix #14)", ()
   it("works for a month far outside the initial horizon (lazily extends the range)", async () => {
     await openTestDb();
     await createCategoryGroup({ name: "Expenses" });
-    const { initSpreadsheet } = await import("@/core/domain/spreadsheet/sync");
+    const { initSpreadsheet } = await import("@/core/server/sheet");
     await initSpreadsheet();
 
     const farMonth = addMonths(currentMonth(), 9);

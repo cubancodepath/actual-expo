@@ -3,12 +3,13 @@
  *
  * Ported from Actual Budget's desktop-client/src/spreadsheet/bindings.ts.
  * Defines the naming convention for all budget spreadsheet cells.
+ *
+ * Divergence: upstream keeps this file app-side (desktop-client). It lives in
+ * core here because the port's cell creation (server/budget/envelope.ts,
+ * tracking.ts) names cells through it — core must not import app modules.
  */
 
-/** Sheet name for a given month: "budget2026-03" */
-export function sheetForMonth(month: string): string {
-  return `budget${month}`;
-}
+export { sheetForMonth } from "@/core/shared/months";
 
 /** Parameterized field generator */
 function field(prefix: string) {

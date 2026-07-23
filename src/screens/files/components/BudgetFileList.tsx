@@ -6,7 +6,8 @@ import { Alert as HeroAlert, ListGroup, Spinner, Typography, useThemeColor } fro
 import { ScreenHeader } from "@/ui/ScreenHeader";
 import { InlineError } from "@/ui/feedback/InlineError";
 import { ConfirmDialog, type ConfirmRequest } from "@/ui/feedback/ConfirmDialog";
-import { BudgetFileRow, type RowRect } from "@/ui/BudgetFileRow";
+import { BudgetFileRow } from "@/ui/BudgetFileRow";
+import type { RowRect } from "@/ui/lift-menu";
 import { LoadingOverlay } from "@/ui/LoadingOverlay";
 import { useBudgetFiles, fileKey } from "@/screens/files/hooks/useBudgetFiles";
 import { BudgetFileRowMenuHost } from "./BudgetFileRowMenuHost";

@@ -1,21 +1,14 @@
-import { memo, useRef } from "react";
+import { memo } from "react";
 import { View } from "react-native";
-import { cn, PressableFeedback, Typography } from "heroui-native";
+import { cn, Typography } from "heroui-native";
 import { useSheetValue, useSheetValueNumber } from "@/hooks/useSheetValue";
 import { envelopeBudget } from "@/core/server/spreadsheet/bindings";
-import { mediumHaptic } from "@/ui/haptics";
+import { LiftMenu, type RowRect } from "@/ui/lift-menu";
 import { categoryChipStatus } from "../chipStatus";
 import { AvailableChip } from "./AvailableChip";
 import { BudgetAssignedField } from "./BudgetAssignedField";
 import { COL_ASSIGNED, COL_AVAILABLE, NumericCell } from "./columns";
-import type { RowRect } from "./CategoryRowMenu";
-
-/**
- * Press feedback: a slow scale that's barely visible on a quick edit tap, but
- * reads as clearly "held" during the long press that opens the menu. Module
- * scope — a fresh object here would re-derive the worklet on every row render.
- */
-const ROW_PRESS_ANIMATION = { scale: { value: 0.97, timingConfig: { duration: 450 } } };
+import type { LiftedCategory } from "./liftedCategory";
 
 interface BudgetCategoryRowProps {
   catId: string;
@@ -31,18 +24,11 @@ interface BudgetCategoryRowProps {
    */
   onPressRow: (catId: string, budgeted: number, pageY: number) => void;
   /**
-   * Open the category menu for this row. `rect` is the row's window frame, which
-   * the screen uses to anchor the menu and float the lifted preview over it.
-   * `carryover` rides along like `balance` so the menu can label its toggle.
+   * Open the category menu for this row: the row bundles itself into a
+   * `LiftedCategory` and hands it, with its measured window frame, to the
+   * screen's `LiftMenu.Host`.
    */
-  onLongPressRow: (
-    catId: string,
-    catName: string,
-    balance: number,
-    carryover: boolean,
-    rect: RowRect,
-    isIncome?: boolean,
-  ) => void;
+  onLongPressRow: (cat: LiftedCategory, rect: RowRect) => void;
   /**
    * Whether the menu is open on this row AND its floating preview is up. The row
    * hides itself then, so the preview replaces it without a seam.
@@ -76,51 +62,37 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
   const goal = useSheetValueNumber(sheet, envelopeBudget.catGoal(catId));
   const longGoalRaw = useSheetValue(sheet, envelopeBudget.catLongGoal(catId));
   const carryover = useSheetValue(sheet, envelopeBudget.catCarryover(catId)) === true;
-  const rowViewRef = useRef<View>(null);
 
   return (
-    <PressableFeedback
-      animation={ROW_PRESS_ANIMATION}
+    <LiftMenu.Row
       onPress={(e) => onPressRow(catId, budgeted, e.nativeEvent.pageY)}
-      onLongPress={() => {
-        mediumHaptic();
-        // The screen anchors the menu to this frame, so it has to be measured
-        // in window coordinates — the same space the menu's portal lives in.
-        rowViewRef.current?.measureInWindow((x, y, width, height) => {
-          onLongPressRow(catId, catName, balance, carryover, { x, y, width, height });
-        });
-      }}
+      onLongPress={(rect) =>
+        onLongPressRow({ catId, catName, balance, carryover, isIncome: false }, rect)
+      }
+      isLifted={isLifted}
+      contentClassName={cn("flex-row items-center gap-2 px-4 py-2.5", isEditing && "bg-accent/10")}
     >
-      <View
-        ref={rowViewRef}
-        className={cn(
-          "w-full flex-row items-center gap-2 px-4 py-2.5",
-          isEditing && "bg-accent/10",
-          isLifted && "opacity-0",
-        )}
-      >
-        <View className="flex-1">
-          <Typography className="text-base text-foreground" numberOfLines={1}>
-            {catName}
-          </Typography>
-        </View>
-        <NumericCell width={COL_ASSIGNED}>
-          <BudgetAssignedField value={budgeted} draft={draft} isEditing={isEditing} />
-        </NumericCell>
-        <NumericCell width={COL_AVAILABLE}>
-          <AvailableChip
-            cents={balance}
-            carryover={carryover}
-            status={categoryChipStatus({
-              balance,
-              budgeted,
-              goal,
-              longGoal: longGoalRaw === true || longGoalRaw === 1,
-              goalsEnabled,
-            })}
-          />
-        </NumericCell>
+      <View className="flex-1">
+        <Typography className="text-base text-foreground" numberOfLines={1}>
+          {catName}
+        </Typography>
       </View>
-    </PressableFeedback>
+      <NumericCell width={COL_ASSIGNED}>
+        <BudgetAssignedField value={budgeted} draft={draft} isEditing={isEditing} />
+      </NumericCell>
+      <NumericCell width={COL_AVAILABLE}>
+        <AvailableChip
+          cents={balance}
+          carryover={carryover}
+          status={categoryChipStatus({
+            balance,
+            budgeted,
+            goal,
+            longGoal: longGoalRaw === true || longGoalRaw === 1,
+            goalsEnabled,
+          })}
+        />
+      </NumericCell>
+    </LiftMenu.Row>
   );
 });

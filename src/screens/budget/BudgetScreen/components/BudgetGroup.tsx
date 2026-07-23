@@ -7,10 +7,11 @@ import { envelopeBudget } from "@/core/server/spreadsheet/bindings";
 import { Money } from "@/ui/Money";
 import { CollapsibleIndicator } from "@/ui/CollapsibleIndicator";
 import type { BudgetSection } from "@/screens/budget/hooks/useBudgetSections";
+import type { RowRect } from "@/ui/lift-menu";
 import { BudgetCategoryRow } from "./BudgetCategoryRow";
 import { IncomeCategoryRow } from "./IncomeCategoryRow";
 import { COL_ASSIGNED, COL_AVAILABLE, NumericCell } from "./columns";
-import type { RowRect } from "./CategoryRowMenu";
+import type { LiftedCategory } from "./liftedCategory";
 
 interface BudgetGroupProps {
   group: BudgetSection;
@@ -19,15 +20,8 @@ interface BudgetGroupProps {
   draft: number;
   onPressRow: (catId: string, budgeted: number, pageY: number) => void;
   /** Open the category menu for a row; `rect` is its measured window frame.
-   *  `isIncome` picks the income (auto hold) menu over the full expense one. */
-  onLongPressRow: (
-    catId: string,
-    catName: string,
-    balance: number,
-    carryover: boolean,
-    rect: RowRect,
-    isIncome?: boolean,
-  ) => void;
+   *  `cat.isIncome` picks the income (auto hold) menu over the full expense one. */
+  onLongPressRow: (cat: LiftedCategory, rect: RowRect) => void;
   /** The category whose menu preview is currently floating, if any. */
   liftedCatId: string | null;
   goalsEnabled: boolean;

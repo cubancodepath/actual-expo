@@ -1,4 +1,3 @@
-import { useRef } from "react";
 import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 import {
@@ -18,16 +17,8 @@ import {
   useThemeColor,
   type ThemeColor,
 } from "heroui-native";
-import { mediumHaptic } from "@/ui/haptics";
+import { ROW_PRESS_ANIMATION, useLiftLongPress, type RowRect } from "@/ui/lift-menu";
 import type { ReconciledBudgetFile, BudgetFileState } from "@/core/server/budgetfiles/app";
-
-/** Window frame of the row a lift menu is anchored to (window coordinates). */
-export interface RowRect {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
 
 export interface BudgetFileRowProps {
   file: ReconciledBudgetFile;
@@ -41,13 +32,6 @@ export interface BudgetFileRowProps {
   isLifted?: boolean;
   showSeparator?: boolean;
 }
-
-/**
- * Press feedback: a slow scale that's barely visible on a quick tap but reads as
- * "held" during the long-press that opens the menu. Module scope — a fresh object
- * would re-derive the worklet on every render.
- */
-const ROW_PRESS_ANIMATION = { scale: { value: 0.97, timingConfig: { duration: 450 } } };
 
 const STATE_ICON: Record<BudgetFileState, LucideIcon> = {
   synced: CloudCheck,
@@ -83,7 +67,6 @@ export function BudgetFileRow({
 }: BudgetFileRowProps) {
   const { t } = useTranslation();
   const { t: ta } = useTranslation("auth");
-  const rowViewRef = useRef<View>(null);
   const [accent, stateColor] = useThemeColor(["accent", STATE_ICON_COLOR[file.state]]);
 
   const StateIcon = STATE_ICON[file.state];
@@ -100,27 +83,20 @@ export function BudgetFileRow({
   // spinner (the full-screen open-budget loader covers the row).
   const locked = isSelecting || isActionInProgress;
 
+  // Too bespoke for LiftMenu.Row (ripple feedback, lock gating, separator
+  // outside the measured view) — shares just the long-press half.
+  const { rowRef, handleLongPress } = useLiftLongPress(locked ? undefined : onLongPress);
+
   return (
     <PressableFeedback
       animation={false}
       onPress={isActive || locked ? undefined : onPress}
-      onLongPress={
-        locked || !onLongPress
-          ? undefined
-          : () => {
-              mediumHaptic();
-              // Anchor the menu to this frame — measured in window coordinates,
-              // the same space the menu's portal lives in.
-              rowViewRef.current?.measureInWindow((x, y, width, height) => {
-                onLongPress({ x, y, width, height });
-              });
-            }
-      }
+      onLongPress={handleLongPress}
     >
       {/* ListGroup.Item is itself a Pressable — it must be `disabled` so it doesn't
           swallow the touch; the outer PressableFeedback owns onPress/onLongPress. */}
       <PressableFeedback.Scale animation={ROW_PRESS_ANIMATION.scale}>
-        <View ref={rowViewRef} className={cn(isLifted && "opacity-0")}>
+        <View ref={rowRef} className={cn(isLifted && "opacity-0")}>
           <ListGroup.Item className="flex-row items-center px-4 py-2 gap-4" disabled>
             <ListGroup.ItemPrefix>
               <StateIcon size={22} color={stateColor} />

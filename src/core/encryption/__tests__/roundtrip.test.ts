@@ -4,8 +4,8 @@ import { createKey, loadKey, unloadAllKeys, encrypt, decrypt } from "@/core/encr
 import * as internals from "@/core/encryption/internals";
 
 // Deterministic payload generator. NOTE: we deliberately do NOT use the
-// module's own `randomBytes()` here — under vitest, expo-crypto is stubbed
-// (src/__mocks__/expo-crypto.ts) to always return a fixed 16-byte array
+// module's own `randomBytes()` here — under vitest, the crypto capability resolves
+// to index.node.ts, which always returns a fixed 16-byte array
 // regardless of the requested length, so it can't produce payloads of
 // arbitrary size. That stub quirk is a test-environment artifact, not a
 // production bug.

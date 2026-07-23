@@ -271,7 +271,7 @@ describe("encoder — golden vector", () => {
     // deterministic. Encrypted mode is intentionally excluded: encrypt()
     // uses a random IV per call (see src/core/encryption/internals.ts),
     // so an encrypted golden vector would not be reproducible outside the
-    // vitest expo-crypto stub (src/__mocks__/expo-crypto.ts).
+    // Node crypto capability (src/core/platform/crypto/index.node.ts).
     //
     // IF THIS TEST STARTS FAILING: the wire format changed. Confirm server
     // compatibility (does the Actual server still accept/produce this exact

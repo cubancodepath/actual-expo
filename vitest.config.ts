@@ -21,11 +21,15 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      // Swap platform capabilities at the seam: tests run against the
+      // index.node.ts implementation of each capability's interface, so the
+      // suite depends on OUR contract, never on a native package's API shape.
+      // ORDER MATTERS: these must come before the "@" prefix alias below.
+      "@/core/platform/crypto": path.resolve(__dirname, "src/core/platform/crypto/index.node.ts"),
       // Path aliases matching tsconfig.json
       "@": path.resolve(__dirname, "src"),
       // Stub native modules that can't run in Node
       "expo-sqlite": path.resolve(__dirname, "src/__mocks__/expo-sqlite.ts"),
-      "expo-crypto": path.resolve(__dirname, "src/__mocks__/expo-crypto.ts"),
       "expo-secure-store": path.resolve(__dirname, "src/__mocks__/expo-secure-store.ts"),
       "expo-localization": path.resolve(__dirname, "src/__mocks__/expo-localization.ts"),
       "expo-file-system/legacy": path.resolve(

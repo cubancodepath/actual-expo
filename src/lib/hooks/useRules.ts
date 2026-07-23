@@ -15,7 +15,7 @@
 import { useMemo } from "react";
 import { q } from "@/core/queries";
 import { useLiveQuery } from "@/hooks/useQuery";
-import { makeRule, type Rule } from "@/core/domain/rules";
+import { makeRule, type Rule } from "@/core/server/rules";
 import type { RuleRow } from "@/core/db/types";
 
 export function useRules() {

@@ -12,7 +12,7 @@ import { runQuery, first, run } from "@/core/db";
 import { sendMessages, batchMessages } from "@/core/sync";
 import { undoable } from "@/core/sync/undo";
 import { Timestamp } from "@/core/crdt";
-import { createRule, updateRule, deleteRule, getRuleById } from "../rules";
+import { createRule, updateRule, deleteRule, getRuleById } from "@/core/server/rules";
 import {
   getNextOccurrence,
   getUpcomingDates as getUpcomingRecurDates,
@@ -551,9 +551,10 @@ export const skipNextDate = undoable(async function skipNextDate(id: string): Pr
 async function buildScheduledTransactionFields(
   schedule: Schedule,
   date: number,
-): Promise<import("../rules/apply").NewTransactionWithSplits> {
-  const { getRules } = await import("../rules");
-  const { applyRulesToNewTransactionWithSplits } = await import("../rules/apply");
+): Promise<import("@/core/server/transactions/transaction-rules").NewTransactionWithSplits> {
+  const { getRules } = await import("@/core/server/rules");
+  const { applyRulesToNewTransactionWithSplits } =
+    await import("@/core/server/transactions/transaction-rules");
 
   const amount = getScheduledAmount(schedule._amount);
   const rules = await getRules();
@@ -573,7 +574,7 @@ async function buildScheduledTransactionFields(
  * single row. Child amounts from the rule engine are already signed.
  */
 async function insertScheduledTransaction(
-  result: import("../rules/apply").NewTransactionWithSplits,
+  result: import("@/core/server/transactions/transaction-rules").NewTransactionWithSplits,
   scheduleId: string,
 ): Promise<void> {
   const { addTransaction } = await import("../transactions");

@@ -20,8 +20,6 @@ import { getMappings, ensureMappingsLoaded } from "@/core/db/mappings";
 
 export { Rule };
 export type { RuleCondition, RuleAction };
-export { runRules, runRulesWithSplits } from "./engine";
-export { execActionsWithSplits } from "./splitActions";
 
 // ── Field name mapping (internal ↔ public) ──
 

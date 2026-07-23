@@ -17,7 +17,7 @@ import { EmptyState } from "@/design-system/molecules/EmptyState";
 import { useRules } from "@/lib/hooks/useRules";
 import { sendMessages } from "@/core/sync";
 import { Timestamp } from "@/core/crdt";
-import type { Rule } from "@/core/domain/rules/rule";
+import type { Rule } from "@/core/server/rules/rule";
 
 const STAGE_LABELS: Record<string, string> = {
   pre: "Pre",

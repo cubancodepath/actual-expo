@@ -30,7 +30,7 @@ vi.mock("@/core/crdt", () => ({
   },
 }));
 
-vi.mock("../rules", () => ({
+vi.mock("@/core/server/rules", () => ({
   createRule: vi.fn().mockResolvedValue("rule-1"),
   updateRule: vi.fn(),
   deleteRule: vi.fn(),
@@ -65,7 +65,7 @@ vi.mock("@/core/shared/months", () => ({
 
 import { first, runQuery } from "@/core/db";
 import { sendMessages } from "@/core/sync";
-import { getRuleById } from "../rules";
+import { getRuleById } from "@/core/server/rules";
 import { setNextDate, advanceSchedules } from "./index";
 import { buildListData } from "@/features/transactions/hooks/transactionList/types";
 import type { PreviewTransaction } from "./preview";

@@ -7,7 +7,7 @@ import { Timestamp } from "@/core/crdt";
 import { createPayee, mergePayees } from "@/core/server/payees";
 import { createCategoryGroup, createCategory, deleteCategory } from "@/core/domain/categories";
 import { createRule, getRules } from "./index";
-import { suggestCategoryForPayee } from "./apply";
+import { suggestCategoryForPayee } from "@/core/server/transactions/transaction-rules";
 
 /**
  * Behavior tests for rule id-projection via migrateIds — mirrors upstream's

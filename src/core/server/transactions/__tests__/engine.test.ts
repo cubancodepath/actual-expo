@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { Condition } from "./condition";
-import { Action } from "./action";
-import { Rule } from "./rule";
-import { rankRules } from "./rule-utils";
-import { runRules } from "./engine";
+import { Condition } from "@/core/server/rules/condition";
+import { Action } from "@/core/server/rules/action";
+import { Rule } from "@/core/server/rules/rule";
+import { rankRules } from "@/core/server/rules/rule-utils";
+import { runRules } from "../transaction-rules";
 
 // ── Condition.eval ──
 

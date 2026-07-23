@@ -15,7 +15,8 @@ import { computePreviewTransactions, type PreviewTransaction } from "./computePr
 import type { Schedule } from "@/core/types/models";
 import { executeQuery } from "@/core/queries";
 import { getArbitraryPref } from "@/core/server/preferences";
-import { getRules, runRulesWithSplits } from "../rules";
+import { getRules } from "@/core/server/rules";
+import { runRulesWithSplits } from "@/core/server/transactions/transaction-rules";
 import { getPayees } from "@/core/server/payees";
 import { getCategories } from "../categories";
 import { getAccounts } from "@/core/server/accounts";

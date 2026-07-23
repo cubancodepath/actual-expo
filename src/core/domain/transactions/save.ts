@@ -22,9 +22,9 @@ import { createSchedule, setNextDate } from "@/core/domain/schedules";
 import { addDays } from "date-fns";
 import { parseDate } from "@/core/domain/schedules/recurrence";
 import type { RecurConfig, RuleCondition } from "@/core/types/models";
-import type { Rule } from "../rules/rule";
-import { applyRulesToForm } from "../rules/apply";
-import { updateCategoryRules } from "../rules/learn";
+import type { Rule } from "@/core/server/rules/rule";
+import { applyRulesToForm } from "@/core/server/transactions/transaction-rules";
+import { updateCategoryRules } from "@/core/server/transactions/transaction-rules";
 
 export type SplitLine = {
   id?: string;

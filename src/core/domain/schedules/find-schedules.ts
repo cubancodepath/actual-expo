@@ -21,7 +21,7 @@ import { randomUUID } from "@/core/platform/crypto";
 
 import { q } from "@/core/queries";
 import { executeQuery } from "@/core/queries";
-import { getApproxNumberThreshold } from "@/core/domain/rules/rule-utils";
+import { getApproxNumberThreshold } from "@/core/server/rules/rule-utils";
 import { parseDate, dayFromDate } from "./recurrence";
 import { intToStr } from "@/core/shared/months";
 

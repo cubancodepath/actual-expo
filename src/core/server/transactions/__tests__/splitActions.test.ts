@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { Action } from "./action";
-import { Rule } from "./rule";
-import { execActionsWithSplits } from "./splitActions";
-import { runRulesWithSplits } from "./engine";
+import { Action } from "@/core/server/rules/action";
+import { Rule } from "@/core/server/rules/rule";
+import { execActionsWithSplits } from "../transaction-rules";
+import { runRulesWithSplits } from "../transaction-rules";
 
 describe("execActionsWithSplits", () => {
   it("returns the plain transaction when there are no split actions", () => {

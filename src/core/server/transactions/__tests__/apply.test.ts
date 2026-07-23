@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { suggestCategoryForPayee, applyRulesToForm } from "./apply";
-import { Rule } from "./rule";
+import { suggestCategoryForPayee, applyRulesToForm } from "../transaction-rules";
+import { Rule } from "@/core/server/rules/rule";
 
 // ── Helper ──
 

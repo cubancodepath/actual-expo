@@ -8,8 +8,8 @@ import type { Transaction, GetTransactionsOptions, TransactionDisplay } from "@/
 import { onInsert, onUpdate, onDelete as onDeleteTransfer } from "./transfer";
 import { todayInt, startOfMonthInt, endOfMonthInt } from "@/core/shared/months";
 import { q, executeQuery } from "@/core/queries";
-import { getRules } from "../rules";
-import { applyRulesToNewTransaction } from "../rules/apply";
+import { getRules } from "@/core/server/rules";
+import { applyRulesToNewTransaction } from "@/core/server/transactions/transaction-rules";
 
 export type { TransactionDisplay } from "@/core/types/models";
 

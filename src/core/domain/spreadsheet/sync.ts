@@ -15,7 +15,7 @@ import * as envelopeEngine from "./envelope";
 import * as trackingEngine from "./tracking";
 import { getCategories, getCategoryGroups } from "../categories";
 import { getBudgetType } from "../preferences";
-import { addMonths } from "@/lib/date";
+import { addMonths } from "@/core/shared/months";
 
 type BudgetEngine = {
   createBudgetCells: typeof envelopeEngine.createBudgetCells;

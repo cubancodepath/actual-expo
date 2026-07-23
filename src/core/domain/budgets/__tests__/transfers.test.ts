@@ -9,7 +9,7 @@ import {
   transferMultipleCategories,
 } from "@/core/domain/budgets";
 import { undo } from "@/core/sync/undo";
-import { monthToInt, currentMonth } from "@/lib/date";
+import { monthToInt, currentMonth } from "@/core/shared/months";
 
 /**
  * Characterization tests for the money-mutation functions in

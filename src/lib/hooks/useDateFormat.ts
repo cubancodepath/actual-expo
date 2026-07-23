@@ -9,7 +9,7 @@
  */
 import { useMemo } from "react";
 import { useSyncedPref } from "@/lib/hooks/useSyncedPref";
-import { formatDateWith, formatDateShortWith } from "@/lib/date";
+import { formatDateWith, formatDateShortWith } from "@/core/shared/months";
 
 export type UseDateFormatResult = {
   /** e.g. "MM/dd/yyyy" */

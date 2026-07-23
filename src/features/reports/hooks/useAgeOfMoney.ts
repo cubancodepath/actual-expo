@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { q } from "@/core/queries";
 import { useLiveQuery } from "@/hooks/useQuery";
-import { addMonths } from "@/lib/date";
+import { addMonths } from "@/core/shared/months";
 
 function intToDate(d: number): Date {
   const y = Math.floor(d / 10000);

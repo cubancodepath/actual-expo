@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { BottomSheet, ListGroup, Separator, useThemeColor } from "heroui-native";
 import { Check, Repeat } from "lucide-react-native";
 import type { RecurConfig } from "@/core/types/models";
-import { intToStr, todayInt } from "@/lib/date";
+import { intToStr, todayInt } from "@/core/shared/months";
 import { CloseButton } from "@/ui/CloseButton";
 import { ScreenHeader } from "@/ui/ScreenHeader";
 import { FieldRow } from "./FieldRow";

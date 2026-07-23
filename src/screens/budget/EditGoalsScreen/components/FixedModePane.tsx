@@ -10,7 +10,7 @@ import {
   type FixedTemplate,
 } from "@/core/domain/goals";
 import type { Template } from "@/core/types/models";
-import { formatCents } from "@/lib/currency";
+import { formatCents } from "@/core/shared/util";
 
 /**
  * "Next time I want to…" — what the goal does each period. Three readings of

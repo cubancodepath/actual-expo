@@ -24,7 +24,7 @@ import { shapes } from "@expo/ui/swift-ui/modifiers";
 import { ScalableText } from "@modules/actual-ui";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { usePrivacyMode } from "@/lib/hooks/usePrivacyMode";
-import { formatPrivacyAware } from "@/lib/format";
+import { formatPrivacyAware } from "@/core/shared/util";
 import { useTranslation } from "react-i18next";
 
 interface SReadyToAssignPillProps {

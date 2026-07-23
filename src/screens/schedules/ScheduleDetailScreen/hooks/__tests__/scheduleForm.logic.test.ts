@@ -3,7 +3,7 @@ import type { Account } from "@/core/types/models";
 import type { Category } from "@/core/types/models";
 import type { Payee } from "@/core/types/models";
 import type { RecurConfig, Schedule } from "@/core/types/models";
-import { todayStr } from "@/lib/date";
+import { currentDay } from "@/core/shared/months";
 import {
   buildScheduleSaveRule,
   makeScheduleFormBaseline,
@@ -218,7 +218,7 @@ describe("buildScheduleSaveRule", () => {
 
   it("defaults the one-time date to today when neither recurConfig nor oneTimeDate is set", () => {
     const { conditions } = buildScheduleSaveRule(values({ recurConfig: null, oneTimeDate: null }));
-    expect(conditions).toContainEqual({ field: "date", op: "is", value: todayStr() });
+    expect(conditions).toContainEqual({ field: "date", op: "is", value: currentDay() });
   });
 
   it("emits a set-category action only when categoryId is set", () => {

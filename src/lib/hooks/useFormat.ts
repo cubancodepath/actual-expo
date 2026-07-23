@@ -10,14 +10,14 @@
  */
 import { useCallback, useMemo } from "react";
 import { useSyncedPref } from "@/lib/hooks/useSyncedPref";
-import { getCurrency, type Currency } from "@/lib/currencies";
+import { getCurrency, type Currency } from "@/core/shared/currencies";
 import {
   formatAmount,
-  formatBalance,
+  integerToCurrency,
   formatAmountShort,
   localeForNumberFormat,
   type NumberFormatType,
-} from "@/lib/format";
+} from "@/core/shared/util";
 
 /** Subset of upstream's FormatType relevant to money display. */
 export type MoneyFormatType = "financial" | "financial-with-sign" | "financial-no-decimals";
@@ -56,7 +56,7 @@ export function useFormat(): UseFormatResult {
         case "financial-no-decimals":
           return formatAmountShort(cents);
         default:
-          return formatBalance(cents);
+          return integerToCurrency(cents);
       }
     },
     // The engine reads its config from module state kept in sync by

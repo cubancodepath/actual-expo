@@ -9,7 +9,7 @@ import { Spreadsheet } from "@/core/domain/spreadsheet/spreadsheet";
 import { createBudgetCells, createAllBudgetCells } from "@/core/domain/spreadsheet/tracking";
 import { sheetForMonth, trackingBudget } from "@/core/domain/spreadsheet/bindings";
 import { getCategories, getCategoryGroups } from "@/core/domain/categories";
-import { currentMonth, addMonths, monthToInt } from "@/lib/date";
+import { currentMonth, addMonths, monthToInt } from "@/core/shared/months";
 
 function dateIntFor(month: string, day = "15"): number {
   return Number(month.replace("-", "") + day);

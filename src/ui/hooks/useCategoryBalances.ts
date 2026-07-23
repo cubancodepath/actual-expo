@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { getCategoryBalancesForMonth } from "@/core/domain/budgets";
-import { currentMonth } from "@/lib/date";
+import { currentMonth } from "@/core/shared/months";
 
 /**
  * Available balance per category for the month of `date` (a YYYYMMDD int).

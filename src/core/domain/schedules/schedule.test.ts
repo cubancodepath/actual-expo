@@ -50,8 +50,8 @@ vi.mock("../preferences", () => ({
   getArbitraryPref: vi.fn().mockResolvedValue("7"),
 }));
 
-vi.mock("@/lib/date", () => ({
-  todayStr: () => "2026-03-09",
+vi.mock("@/core/shared/months", () => ({
+  currentDay: () => "2026-03-09",
   todayInt: () => 20260309,
   intToStr: (n: number) => {
     const s = String(n);

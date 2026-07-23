@@ -34,7 +34,7 @@ import { getArbitraryPref } from "../preferences";
 import { getHasTransactionsQuery } from "./status";
 import { executeQuery } from "@/core/queries";
 import { emit as emitSyncEvent } from "@/core/sync/syncEvents";
-import { todayStr, todayInt, intToStr, strToInt } from "@/lib/date";
+import { currentDay, todayInt, intToStr, strToInt } from "@/core/shared/months";
 import { addDays, startOfDay, isFriday, isWeekend, nextMonday } from "date-fns";
 import type {
   Schedule,
@@ -767,7 +767,7 @@ export async function advanceSchedules(syncSuccess: boolean): Promise<void> {
           } catch {
             // Corrupt rule — skip
           }
-        } else if (typeof schedule._date === "string" && schedule._date < todayStr()) {
+        } else if (typeof schedule._date === "string" && schedule._date < currentDay()) {
           // Complete any past single schedules
           await updateSchedule({ schedule: { id: schedule.id, completed: true } });
         }
@@ -869,7 +869,7 @@ async function fixRuleForSchedule(id: string) {
   const newRuleId = await createRule({
     conditionsOp: "and",
     conditions: [
-      { op: "isapprox", field: "date", value: todayStr() },
+      { op: "isapprox", field: "date", value: currentDay() },
       { op: "isapprox", field: "amount", value: 0 },
     ],
     actions: [{ op: "link-schedule", value: id }],

@@ -13,7 +13,7 @@ import { useAccounts } from "@/lib/hooks/useAccounts";
 import { usePickerStore } from "@/stores/pickerStore";
 // categories no longer needed from store — picker handles selection
 import { getRecurringDescription, createSchedule } from "@/core/domain/schedules";
-import { todayStr } from "@/lib/date";
+import { currentDay } from "@/core/shared/months";
 import { withOpacity } from "@/lib/colors";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { Button } from "@/design-system/atoms/Button";
@@ -57,7 +57,7 @@ export default function NewScheduleScreen() {
   const [postsTransaction, setPostsTransaction] = useState(false);
   const [recurConfig, setRecurConfig] = useState<RecurConfig>({
     frequency: "monthly",
-    start: todayStr(),
+    start: currentDay(),
   });
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
   const scrollY = useSharedValue(0);

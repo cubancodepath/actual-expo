@@ -13,7 +13,7 @@
  * Pure — no native or React dependencies, safe to unit test in Node.
  */
 
-import { addMonths, currentMonth } from "@/lib/date";
+import { addMonths, currentMonth } from "@/core/shared/months";
 import type {
   AverageTemplate,
   ByTemplate,

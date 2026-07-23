@@ -1,9 +1,9 @@
 import { runQuery, first } from "@/core/db";
-import { formatBalance } from "@/lib/format";
+import { integerToCurrency } from "@/core/shared/util";
 import { sendMessages } from "@/core/sync";
 import { undoable } from "@/core/sync/undo";
 import { Timestamp } from "@/core/crdt";
-import { monthToInt } from "@/lib/date";
+import { monthToInt } from "@/core/shared/months";
 import type { ZeroBudgetRow, CategoryGroupRow, CategoryRow } from "@/core/db/types";
 import type { BudgetMonth, BudgetGroup, BudgetCategory } from "./types";
 import { inferGoalFromDef } from "../goals";
@@ -519,7 +519,7 @@ export async function addMovementNote(opts: {
   toName: string;
 }): Promise<void> {
   const noteId = `budget-${opts.month}`;
-  const displayAmount = formatBalance(Math.abs(opts.amountCents));
+  const displayAmount = integerToCurrency(Math.abs(opts.amountCents));
   const displayDay = new Date().toLocaleDateString(undefined, { month: "long", day: "numeric" });
   const line = `- Reassigned ${displayAmount} from ${opts.fromName} → ${opts.toName} on ${displayDay}`;
 

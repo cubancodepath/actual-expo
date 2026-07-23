@@ -5,7 +5,7 @@ import { setBudgetAmount } from "@/core/domain/budgets";
 import { initSpreadsheet, ensureMonthRange } from "@/core/domain/spreadsheet/sync";
 import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
 import { sheetForMonth, envelopeBudget } from "@/core/domain/spreadsheet/bindings";
-import { currentMonth, addMonths } from "@/lib/date";
+import { currentMonth, addMonths } from "@/core/shared/months";
 
 describe("ensureMonthRange — lazy month extension (fix #10)", () => {
   afterEach(async () => {

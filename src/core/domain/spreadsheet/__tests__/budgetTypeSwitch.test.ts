@@ -5,7 +5,7 @@ import { setArbitraryPref } from "@/core/domain/preferences";
 import { initSpreadsheet } from "@/core/domain/spreadsheet/sync";
 import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
 import { sheetForMonth, envelopeBudget, trackingBudget } from "@/core/domain/spreadsheet/bindings";
-import { currentMonth } from "@/lib/date";
+import { currentMonth } from "@/core/shared/months";
 
 describe("initSpreadsheet — dispatches to the right formula engine by budgetType", () => {
   afterEach(async () => {

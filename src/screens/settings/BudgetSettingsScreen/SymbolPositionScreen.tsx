@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useSyncedPref } from "@/lib/hooks/useSyncedPref";
-import { getCurrency } from "@/lib/currencies";
+import { getCurrency } from "@/core/shared/currencies";
 import { SettingsOptionList } from "@/screens/settings/components/SettingsOptionList";
 
 /** Currency symbol position (before/after the amount), with a live example. */

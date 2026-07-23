@@ -7,9 +7,9 @@ import {
 } from "./helpers";
 import type { RuleCondition, RecurConfig } from "@/core/types/models";
 
-// Mock todayStr so tests are deterministic
-vi.mock("@/lib/date", () => ({
-  todayStr: () => "2026-03-09",
+// Mock currentDay so tests are deterministic
+vi.mock("@/core/shared/months", () => ({
+  currentDay: () => "2026-03-09",
 }));
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -74,7 +74,7 @@ describe("extractScheduleConds", () => {
 // ═══════════════════════════════════════════════════════════════════════════
 
 describe("getStatus", () => {
-  // todayStr() is mocked to return '2026-03-09'
+  // currentDay() is mocked to return '2026-03-09'
 
   it("completed=true → completed", () => {
     expect(getStatus("2026-03-09", true, false)).toBe("completed");

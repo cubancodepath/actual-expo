@@ -14,7 +14,7 @@
 import type { Spreadsheet } from "./spreadsheet";
 import { sheetForMonth, trackingBudget } from "./bindings";
 import { firstSync } from "@/core/db";
-import { monthToInt, addMonths } from "@/lib/date";
+import { monthToInt, addMonths } from "@/core/shared/months";
 import { getCategories, getCategoryGroups } from "../categories";
 import type { Category, CategoryGroup } from "@/core/types/models";
 import { safeNumber } from "@/lib/number";

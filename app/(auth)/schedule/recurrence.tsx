@@ -9,7 +9,7 @@ import { Text, Card, Divider } from "@/design-system";
 import { GlassButton } from "@/design-system/atoms/GlassButton";
 import { usePickerStore } from "@/stores/pickerStore";
 import { getRecurringDescription } from "@/core/domain/schedules";
-import { todayStr } from "@/lib/date";
+import { currentDay } from "@/core/shared/months";
 import type { RecurConfig } from "@/core/types/models";
 
 // ---------------------------------------------------------------------------
@@ -56,7 +56,7 @@ export default function RecurrencePickerScreen() {
 
   const currentConfig: RecurConfig | null = configParam ? JSON.parse(configParam) : null;
 
-  const start = currentConfig?.start ?? todayStr();
+  const start = currentConfig?.start ?? currentDay();
   const presets = useMemo(() => buildPresets(start, t), [start, t]);
 
   // "Never" = no recurrence (null config)

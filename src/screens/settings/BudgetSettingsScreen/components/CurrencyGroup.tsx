@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { ListGroup, Separator, Switch, Typography, useThemeColor } from "heroui-native";
 import { ChevronRight } from "lucide-react-native";
 import { useSyncedPref } from "@/lib/hooks/useSyncedPref";
-import { getCurrency } from "@/lib/currencies";
+import { getCurrency } from "@/core/shared/currencies";
 
 /** Row with a current value that drills into a picker sub-screen. */
 function NavValueRow({

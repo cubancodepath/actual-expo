@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { StyleSheet, View } from "react-native";
 import { useThemeColor } from "heroui-native";
-import { formatCents } from "@/lib/currency";
+import { formatCents } from "@/core/shared/util";
 import { Money } from "@/ui/Money";
 import { BlinkingCursor } from "@/ui/BlinkingCursor";
 

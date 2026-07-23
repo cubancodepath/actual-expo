@@ -2,7 +2,7 @@ import { Fragment } from "react";
 import { useTranslation } from "react-i18next";
 import { ListGroup, Separator, Switch } from "heroui-native";
 import { Archive, CalendarDays, RotateCcw } from "lucide-react-native";
-import { todayStr } from "@/lib/date";
+import { currentDay } from "@/core/shared/months";
 import type { LimitTemplate } from "@/core/types/models";
 import { AmountRow } from "../fields/AmountRow";
 import { DateFieldRow } from "../fields/DateFieldRow";
@@ -32,7 +32,7 @@ export function LimitEditor({
       ...template,
       period,
       // Only a weekly cap has a start date, and only a monthly one can hold.
-      start: period === "weekly" ? (template.start ?? todayStr()) : undefined,
+      start: period === "weekly" ? (template.start ?? currentDay()) : undefined,
       hold: period === "monthly" ? template.hold : false,
     });
   };

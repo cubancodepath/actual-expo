@@ -17,7 +17,7 @@ import { Button } from "@/design-system/atoms/Button";
 import { GlassButton } from "@/design-system/atoms/GlassButton";
 import { SharedAmountInput } from "@/features/transactions/components/SharedAmountInput";
 import { CurrencyAmountDisplay } from "@/features/transactions/components/currency-input/CurrencyAmountDisplay";
-import { formatAmount } from "@/lib/format";
+import { formatAmount } from "@/core/shared/util";
 import type { Theme } from "@/design-system/tokens";
 
 // ---------------------------------------------------------------------------

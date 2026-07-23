@@ -12,7 +12,7 @@ import type { Account } from "@/core/types/models";
 import type { Category } from "@/core/types/models";
 import type { Payee } from "@/core/types/models";
 import type { RecurConfig, RuleAction, RuleCondition, Schedule } from "@/core/types/models";
-import { todayStr } from "@/lib/date";
+import { currentDay } from "@/core/shared/months";
 import type { AmountOp, ScheduleFormValues, ScheduleType } from "./useScheduleForm";
 
 /** The form's blank-slate values, before any schedule is hydrated into it. */
@@ -104,7 +104,7 @@ export function buildScheduleSaveRule(v: ScheduleFormValues): {
         : sign(v.amount),
   });
   if (v.recurConfig) conditions.push({ field: "date", op: "isapprox", value: v.recurConfig });
-  else conditions.push({ field: "date", op: "is", value: v.oneTimeDate ?? todayStr() });
+  else conditions.push({ field: "date", op: "is", value: v.oneTimeDate ?? currentDay() });
 
   const actions: RuleAction[] = v.categoryId
     ? [{ op: "set", field: "category", value: v.categoryId }]

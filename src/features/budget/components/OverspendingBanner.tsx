@@ -1,4 +1,4 @@
-import { formatPrivacyAware } from "@/lib/format";
+import { formatPrivacyAware } from "@/core/shared/util";
 import { Banner } from "@/design-system/molecules/Banner";
 
 interface OverspendingBannerProps {

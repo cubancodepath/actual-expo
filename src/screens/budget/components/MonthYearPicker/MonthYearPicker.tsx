@@ -3,7 +3,7 @@ import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { cn, Popover, PressableFeedback, Typography, useThemeColor } from "heroui-native";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react-native";
-import { currentMonth, formatMonth, monthKey, monthShortNames } from "@/lib/date";
+import { currentMonth, formatMonth, monthKey, monthShortNames } from "@/core/shared/months";
 
 interface MonthYearPickerProps {
   /** Selected budget month, "YYYY-MM". */

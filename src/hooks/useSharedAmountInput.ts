@@ -2,7 +2,7 @@ import { useId, useImperativeHandle, useRef } from "react";
 import { TextInput } from "react-native";
 import { useExpressionMode } from "./useExpressionMode";
 import { useKeyboardBlur } from "./useKeyboardBlur";
-import { MAX_CENTS } from "@/lib/currency";
+import { MAX_CENTS } from "@/core/shared/util";
 import type { CurrencyInputRef } from "@/features/transactions/components/currency-input";
 
 interface UseSharedAmountInputOptions {

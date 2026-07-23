@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useSyncedPref } from "@/lib/hooks/useSyncedPref";
-import { currencies, getCurrency } from "@/lib/currencies";
+import { currencies, getCurrency } from "@/core/shared/currencies";
 import { SettingsOptionList } from "@/screens/settings/components/SettingsOptionList";
 
 /**

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from "vitest";
 
-import { setCurrencyConfig } from "@/lib/format";
+import { setCurrencyConfig } from "@/core/shared/util";
 import { describeTemplate, translateDescription, type TemplateDescription } from "./describe";
 
 // Set up currency symbol so formatted amounts include "$"

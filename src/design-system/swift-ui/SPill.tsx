@@ -6,7 +6,7 @@
 
 import { background, cornerRadius, padding, frame } from "@expo/ui/swift-ui/modifiers";
 import { ScalableText } from "@modules/actual-ui";
-import { formatPrivacyAware } from "@/lib/format";
+import { formatPrivacyAware } from "@/core/shared/util";
 import { usePrivacyMode } from "@/lib/hooks/usePrivacyMode";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
 import type { CommonViewModifierProps } from "@expo/ui/swift-ui";

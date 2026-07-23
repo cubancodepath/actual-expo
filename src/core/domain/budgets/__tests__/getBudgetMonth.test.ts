@@ -10,8 +10,8 @@ import {
   getBudgetMonth,
   computeToBudget,
 } from "@/core/domain/budgets";
-import { monthToInt } from "@/lib/date";
-import { currentMonth, addMonths } from "@/lib/date";
+import { monthToInt } from "@/core/shared/months";
+import { currentMonth, addMonths } from "@/core/shared/months";
 
 function dateIntFor(month: string, day = "15"): number {
   return Number(month.replace("-", "") + day);

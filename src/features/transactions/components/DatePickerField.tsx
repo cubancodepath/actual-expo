@@ -3,7 +3,7 @@ import { Platform, Pressable, TextInput, View } from "react-native";
 import { Icon } from "@/design-system/atoms/Icon";
 import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvider";
 import { Text } from "@/design-system/atoms/Text";
-import { formatDateLong, formatInputDate, intToStr, strToInt } from "@/lib/date";
+import { formatDateLong, formatInputDate, intToStr, strToInt } from "@/core/shared/months";
 import type { Theme } from "@/design-system/tokens";
 
 // Conditionally import SwiftUI DatePicker on iOS

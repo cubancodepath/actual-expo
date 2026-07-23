@@ -6,7 +6,7 @@ import { addTransaction } from "@/core/domain/transactions";
 import { computeGoalAllocations, updateGoalIndicator } from "./apply";
 import { sendMessages } from "@/core/sync";
 import { Timestamp } from "@/core/crdt";
-import { currentMonth } from "@/lib/date";
+import { currentMonth } from "@/core/shared/months";
 import { first } from "@/core/db";
 
 async function setCategoryNote(categoryId: string, note: string): Promise<void> {

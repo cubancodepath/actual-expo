@@ -1,7 +1,7 @@
 import type { TextStyle } from "react-native";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { Text, type TextProps } from "./Text";
-import { formatAmount, formatBalance, PRIVACY_MASK } from "@/lib/format";
+import { formatAmount, integerToCurrency, PRIVACY_MASK } from "@/core/shared/util";
 import { usePrivacyMode } from "@/lib/hooks/usePrivacyMode";
 import { useSyncedPrefs } from "@/hooks/useSyncedPrefs";
 import type { TypographyVariant } from "@/design-system/tokens";
@@ -71,7 +71,7 @@ export function Amount({
     );
   }
 
-  const text = showSign ? formatAmount(value) : formatBalance(value);
+  const text = showSign ? formatAmount(value) : integerToCurrency(value);
   return (
     <Text variant={variant} color={color} style={textStyle} {...props}>
       {text}

@@ -9,7 +9,7 @@ import { closeAccount, getAccountProperties, type CloseAccountOpts } from "@/cor
 import type { Account } from "@/core/types/models";
 import { useAccounts } from "@/lib/hooks/useAccounts";
 import { useCategories } from "@/lib/hooks/useCategories";
-import { formatBalance } from "@/lib/format";
+import { integerToCurrency } from "@/core/shared/util";
 import { useUndoStore } from "@/stores/undoStore";
 import { dialog } from "@/ui/feedback/dialog";
 import { LoadingScreen } from "@/ui/LoadingScreen";
@@ -130,7 +130,7 @@ function CloseAccountForm({
         ) : !inCategoryStep ? (
           <View className="pt-2">
             <Typography className="mb-3 text-sm text-muted">
-              {t("close.balanceTransferMessage", { balance: formatBalance(balance) })}
+              {t("close.balanceTransferMessage", { balance: integerToCurrency(balance) })}
             </Typography>
             <AccountSelectView excludeAccountId={account.id} onPick={onPickAccount} />
             {showForceClose ? (

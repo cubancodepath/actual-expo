@@ -1,7 +1,7 @@
 import { useId, useImperativeHandle, useRef, useState } from "react";
 import { TextInput } from "react-native";
 import { useSyncedPrefs } from "@/hooks/useSyncedPrefs";
-import { MAX_CENTS } from "@/lib/currency";
+import { MAX_CENTS } from "@/core/shared/util";
 import { useExpressionMode } from "@/hooks/useExpressionMode";
 import { useCursorBlink } from "@/hooks/useCursorBlink";
 import { useKeyboardBlur } from "@/hooks/useKeyboardBlur";

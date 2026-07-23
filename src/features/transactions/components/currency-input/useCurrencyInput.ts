@@ -4,7 +4,7 @@ import { useExpressionMode } from "@/hooks/useExpressionMode";
 import { useCursorBlink } from "@/hooks/useCursorBlink";
 import { useKeyboardBlur } from "@/hooks/useKeyboardBlur";
 import { useSyncedPrefs } from "@/hooks/useSyncedPrefs";
-import { MAX_CENTS } from "@/lib/currency";
+import { MAX_CENTS } from "@/core/shared/util";
 
 interface UseCurrencyInputOptions {
   value: number;

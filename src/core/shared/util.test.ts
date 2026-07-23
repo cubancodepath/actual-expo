@@ -2,14 +2,14 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import {
   setNumberFormat,
   setCurrencyConfig,
-  formatBalance,
+  integerToCurrency,
   formatAmount,
   formatAmountShort,
   localeForNumberFormat,
   getFractionDigits,
   normalizeNumberFor,
   type NumberFormatType,
-} from "./format";
+} from "./util";
 
 // Normalize every kind of space (narrow no-break U+202F, no-break U+00A0,
 // regular) to a plain space so grouping assertions don't hinge on the exact
@@ -29,13 +29,13 @@ describe("format — numberFormat separators (upstream parity)", () => {
   for (const { format, expected } of cases) {
     it(`formats ${format} → ${expected}`, () => {
       setNumberFormat({ format, hideFraction: false });
-      expect(norm(formatBalance(1234567))).toBe(expected);
+      expect(norm(integerToCurrency(1234567))).toBe(expected);
     });
   }
 
   it("apostrophe-dot uses U+2019 and a dot decimal", () => {
     setNumberFormat({ format: "apostrophe-dot", hideFraction: false });
-    const out = formatBalance(1234567);
+    const out = integerToCurrency(1234567);
     expect(out).toContain("’"); // U+2019, never a keyboard '
     expect(out).not.toContain("'");
     expect(out.endsWith(".67")).toBe(true);
@@ -44,19 +44,19 @@ describe("format — numberFormat separators (upstream parity)", () => {
   it("comma-dot-in uses Indian grouping for large numbers", () => {
     setNumberFormat({ format: "comma-dot-in", hideFraction: false });
     // 123456.78 → 1,23,456.78 (last group of 3, then groups of 2)
-    expect(norm(formatBalance(12345678))).toBe("1,23,456.78");
+    expect(norm(integerToCurrency(12345678))).toBe("1,23,456.78");
   });
 });
 
 describe("format — hideFraction", () => {
   it("drops decimals when hideFraction is on", () => {
     setNumberFormat({ format: "comma-dot", hideFraction: true });
-    expect(norm(formatBalance(1234567))).toBe("12,346"); // rounded, no decimals
+    expect(norm(integerToCurrency(1234567))).toBe("12,346"); // rounded, no decimals
   });
 
   it("keeps decimals when off", () => {
     setNumberFormat({ format: "comma-dot", hideFraction: false });
-    expect(norm(formatBalance(1234567))).toBe("12,345.67");
+    expect(norm(integerToCurrency(1234567))).toBe("12,345.67");
   });
 });
 
@@ -108,18 +108,18 @@ describe("format — currency styling (upstream parity)", () => {
 
   it("no symbol when currency is unset", () => {
     setCurrencyConfig({ symbol: "", position: "before", spaceBetween: false });
-    expect(clean(formatBalance(1234567))).toBe("12,345.67");
+    expect(clean(integerToCurrency(1234567))).toBe("12,345.67");
   });
 
   it("symbol before, no space", () => {
     setCurrencyConfig({ symbol: "$", position: "before", spaceBetween: false });
-    expect(clean(formatBalance(1234567))).toBe("$12,345.67");
-    expect(clean(formatBalance(-1234567))).toBe("-$12,345.67"); // sign outside symbol
+    expect(clean(integerToCurrency(1234567))).toBe("$12,345.67");
+    expect(clean(integerToCurrency(-1234567))).toBe("-$12,345.67"); // sign outside symbol
   });
 
   it("symbol after, with space", () => {
     setCurrencyConfig({ symbol: "€", position: "after", spaceBetween: true });
-    expect(clean(formatBalance(1234567))).toBe("12,345.67 €");
-    expect(clean(formatBalance(-1234567))).toBe("-12,345.67 €");
+    expect(clean(integerToCurrency(1234567))).toBe("12,345.67 €");
+    expect(clean(integerToCurrency(-1234567))).toBe("-12,345.67 €");
   });
 });

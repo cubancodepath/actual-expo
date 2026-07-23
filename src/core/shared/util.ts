@@ -179,7 +179,7 @@ export function formatAmount(cents: number): string {
  * Format cents without "+" sign: "1,234.56" or "-1,234.56".
  * Used for balances where positive values don't need a sign.
  */
-export function formatBalance(cents: number): string {
+export function integerToCurrency(cents: number): string {
   const formatted = normalizeNumber(getFormatter().format(Math.abs(cents) / 100));
   const result = cents < 0 ? `-${formatted}` : formatted;
   return applyCurrencyStyling(result);
@@ -233,7 +233,7 @@ export function formatAmountParts(cents: number, showSign = false): FormattedAmo
  */
 export function formatPrivacyAware(cents: number, showSign = false): string {
   if (privacyMode) return PRIVACY_MASK;
-  return showSign ? formatAmount(cents) : formatBalance(cents);
+  return showSign ? formatAmount(cents) : integerToCurrency(cents);
 }
 
 // ── Parsing ───────────────────────────────────────────────────────────────────
@@ -250,12 +250,12 @@ function getDecimalSeparator(): string {
 /**
  * Parse a user-entered amount string to cents.
  * Respects the current number format's decimal separator.
- * @example parseCents("1,234.56") → 123456  (comma-dot)
- * @example parseCents("1.234,56") → 123456  (dot-comma)
- * @example parseCents("50") → 5000
- * @example parseCents("abc") → 0
+ * @example currencyToInteger("1,234.56") → 123456  (comma-dot)
+ * @example currencyToInteger("1.234,56") → 123456  (dot-comma)
+ * @example currencyToInteger("50") → 5000
+ * @example currencyToInteger("abc") → 0
  */
-export function parseCents(input: string): number {
+export function currencyToInteger(input: string): number {
   const decSep = getDecimalSeparator();
   // Remove everything except digits and decimal separator
   let cleaned = "";
@@ -266,4 +266,53 @@ export function parseCents(input: string): number {
   const num = parseFloat(cleaned);
   if (isNaN(num)) return 0;
   return Math.round(num * 100);
+}
+
+// ── Amount helpers (merged from src/lib/currency.ts; upstream: shared/util.ts) ──
+
+/** Max value: $9,999,999.99 = 999999999 cents */
+export const MAX_CENTS = 999999999;
+
+/** Apply direction to a magnitude: inflow stays positive, outflow negates. */
+export const signedCents = (magnitude: number, inflow: boolean): number =>
+  inflow ? magnitude : -magnitude;
+
+/**
+ * Format cents as a display string using the configured number format.
+ * 152 → "1.52" (comma-dot) or "1,52" (dot-comma)
+ * Supports negative values: -152 → "-1.52"
+ */
+export function formatCents(c: number): string {
+  // Delegate to integerToCurrency which uses the configured Intl.NumberFormat
+  return integerToCurrency(c);
+}
+
+/**
+ * Convert cents to a dollar string for expression mode.
+ * 150 → "1.50", 1500 → "15", 0 → "0"
+ */
+export function centsToDollars(cents: number): string {
+  const abs = Math.abs(cents);
+  const dollars = Math.floor(abs / 100);
+  const remainder = abs % 100;
+  if (remainder === 0) return String(dollars);
+  return `${dollars}.${String(remainder).padStart(2, "0")}`;
+}
+
+/**
+ * Convert a dollar amount to cents, clamped to MAX_CENTS.
+ */
+export function dollarsToCents(dollars: number): number {
+  return Math.min(Math.round(Math.abs(dollars) * 100), MAX_CENTS);
+}
+
+/**
+ * Format an expression for display: space around operators.
+ * "1.50+0.75" → "1.50 + 0.75"
+ */
+export function formatExpression(expr: string): string {
+  return expr
+    .replace(/([+\-*/])/g, " $1 ")
+    .replace(/\s+/g, " ")
+    .trim();
 }

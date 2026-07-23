@@ -6,7 +6,7 @@
  * auto-colors based on sign.
  */
 
-import { formatPrivacyAware } from "@/lib/format";
+import { formatPrivacyAware } from "@/core/shared/util";
 import { usePrivacyMode } from "@/lib/hooks/usePrivacyMode";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { ScalableText } from "@modules/actual-ui";

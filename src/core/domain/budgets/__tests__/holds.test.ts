@@ -12,7 +12,7 @@ import {
   resetIncomeCarryover,
   computeToBudget,
 } from "@/core/domain/budgets";
-import { monthToInt, currentMonth } from "@/lib/date";
+import { monthToInt, currentMonth } from "@/core/shared/months";
 
 /**
  * Characterization tests for holdForNextMonth / resetHold /

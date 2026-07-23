@@ -4,7 +4,7 @@ import { createCategoryGroup, createCategory } from "@/core/domain/categories";
 import { createSchedule } from "@/core/domain/schedules";
 import { calculateGoal } from "@/core/domain/goals/engine";
 import type { ScheduleTemplate } from "@/core/types/models";
-import { currentMonth, addMonths } from "@/lib/date";
+import { currentMonth, addMonths } from "@/core/shared/months";
 
 function scheduleTemplate(
   name: string,

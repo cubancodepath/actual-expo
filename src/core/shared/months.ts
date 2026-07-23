@@ -53,7 +53,7 @@ export function todayInt(): number {
 }
 
 /** Today as "YYYY-MM-DD" string. */
-export function todayStr(): string {
+export function currentDay(): string {
   return intToStr(todayInt());
 }
 

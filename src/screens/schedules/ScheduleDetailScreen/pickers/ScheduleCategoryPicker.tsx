@@ -1,7 +1,7 @@
 import { useRouter } from "expo-router";
 import { useSelector } from "@tanstack/react-store";
 import { CategorySelectView } from "@/ui/entity-select/CategorySelectView";
-import { todayInt } from "@/lib/date";
+import { todayInt } from "@/core/shared/months";
 import { useScheduleFormContext } from "../context/ScheduleFormProvider";
 
 /** The schedule form's category picker: CategorySelectView wired to the form. */

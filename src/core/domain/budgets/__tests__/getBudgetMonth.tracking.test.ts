@@ -5,7 +5,7 @@ import { createAccount } from "@/core/domain/accounts";
 import { addTransaction } from "@/core/domain/transactions";
 import { setArbitraryPref } from "@/core/domain/preferences";
 import { setBudgetAmount, getBudgetMonth, computeToBudget } from "@/core/domain/budgets";
-import { currentMonth } from "@/lib/date";
+import { currentMonth } from "@/core/shared/months";
 
 const day = (month: string) => Number(month.replace("-", "") + "15");
 

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { q } from "@/core/queries";
 import { useLiveQuery } from "@/hooks/useQuery";
-import { addMonths } from "@/lib/date";
+import { addMonths } from "@/core/shared/months";
 
 export type CashFlowPoint = {
   month: string;

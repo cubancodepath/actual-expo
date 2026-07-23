@@ -17,7 +17,7 @@ import { deleteTransaction } from "@/core/domain/transactions";
 import { loadTransactionWithSplitLines } from "@/screens/transactions/components/category-select/loadTransaction";
 import { saveTransaction, type SaveTransactionInput } from "@/core/domain/transactions/save";
 import { suggestCategoryForPayee } from "@/core/domain/rules/apply";
-import { todayInt } from "@/lib/date";
+import { todayInt } from "@/core/shared/months";
 import type { Account } from "@/core/types/models";
 import type { Category } from "@/core/types/models";
 import type { Rule } from "@/core/domain/rules/rule";

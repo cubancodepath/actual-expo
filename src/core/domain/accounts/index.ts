@@ -3,7 +3,7 @@ import { runQuery, run, first } from "@/core/db";
 import { sendMessages, batchMessages } from "@/core/sync";
 import { undoable } from "@/core/sync/undo";
 import { Timestamp } from "@/core/crdt";
-import { todayInt } from "@/lib/date";
+import { todayInt } from "@/core/shared/months";
 import { addTransaction } from "../transactions";
 import type { AccountRow } from "@/core/db/types";
 import type { Account } from "@/core/types/models";

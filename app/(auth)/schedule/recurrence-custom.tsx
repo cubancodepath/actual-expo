@@ -15,8 +15,8 @@ import {
   dayFromDate,
   getDateWithSkippedWeekend,
 } from "@/core/domain/schedules/recurrence";
-import { todayStr } from "@/lib/date";
-import { formatDateLong, strToInt } from "@/lib/date";
+import { currentDay } from "@/core/shared/months";
+import { formatDateLong, strToInt } from "@/core/shared/months";
 import type { RecurConfig } from "@/core/types/models";
 
 // ---------------------------------------------------------------------------
@@ -66,7 +66,7 @@ export default function RecurrenceCustomScreen() {
 
   const initial: RecurConfig = configParam
     ? JSON.parse(configParam)
-    : { frequency: "monthly", start: todayStr() };
+    : { frequency: "monthly", start: currentDay() };
 
   const [frequency, setFrequency] = useState<RecurConfig["frequency"]>(initial.frequency);
   const [interval, setIntervalVal] = useState(initial.interval ?? 1);

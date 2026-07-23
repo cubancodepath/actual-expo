@@ -2,7 +2,7 @@ import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
 import { sheetForMonth, envelopeBudget } from "@/core/domain/spreadsheet/bindings";
-import { currentMonth } from "./date";
+import { currentMonth } from "@/core/shared/months";
 import { getCategories, getCategoryGroups } from "@/core/domain/categories";
 import { getUncategorizedStats } from "@/core/domain/transactions";
 

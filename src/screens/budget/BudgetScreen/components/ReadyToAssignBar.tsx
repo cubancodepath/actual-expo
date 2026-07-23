@@ -6,7 +6,7 @@ import { Hourglass, PiggyBank, RotateCcw, Wallet } from "lucide-react-native";
 import { useSheetValueNumber } from "@/hooks/useSheetValue";
 import { envelopeBudget } from "@/core/domain/spreadsheet/bindings";
 import { resetHold, resetIncomeCarryover } from "@/core/domain/budgets";
-import { formatCents } from "@/lib/currency";
+import { formatCents } from "@/core/shared/util";
 import { dialog } from "@/ui/feedback/dialog";
 import { Money } from "@/ui/Money";
 

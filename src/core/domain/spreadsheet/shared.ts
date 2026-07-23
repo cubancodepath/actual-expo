@@ -7,7 +7,7 @@
 import type { Spreadsheet, CellValue } from "./spreadsheet";
 import { sheetForMonth, envelopeBudget } from "./bindings";
 import { firstSync, first } from "@/core/db";
-import { monthToInt, currentMonth, intToStr, addMonths } from "@/lib/date";
+import { monthToInt, currentMonth, intToStr, addMonths } from "@/core/shared/months";
 import { ALIVE_TX_FILTER } from "@/core/db/filters";
 import type { Category } from "@/core/types/models";
 

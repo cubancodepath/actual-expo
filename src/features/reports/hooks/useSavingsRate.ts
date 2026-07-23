@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { q } from "@/core/queries";
 import { useLiveQuery } from "@/hooks/useQuery";
-import { addMonths } from "@/lib/date";
+import { addMonths } from "@/core/shared/months";
 
 export type SavingsRatePoint = { month: string; rate: number; saved: number; overspent: number };
 export type SavingsRateRange = 3 | 6 | 12;

@@ -7,7 +7,7 @@
  */
 
 import { first, runQuery } from "@/core/db";
-import { addMonths, monthToInt } from "@/lib/date";
+import { addMonths, monthToInt } from "@/core/shared/months";
 import { ALIVE_TX_FILTER } from "@/core/db/filters";
 import { getScheduleById, getSchedules } from "../schedules";
 import type { RecurConfig } from "@/core/types/models";

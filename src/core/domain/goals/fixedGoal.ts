@@ -20,7 +20,7 @@
  * Pure — no native or React dependencies, safe to unit test in Node.
  */
 
-import { currentMonth } from "@/lib/date";
+import { currentMonth } from "@/core/shared/months";
 import type {
   ByTemplate,
   PeriodicTemplate,

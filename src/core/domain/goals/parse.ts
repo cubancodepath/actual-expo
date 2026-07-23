@@ -6,7 +6,7 @@
  * templates to/from note text. Safe to import in tests without mocking.
  */
 
-import { addMonths } from "@/lib/date";
+import { addMonths } from "@/core/shared/months";
 import type { Template, LimitDef } from "@/core/types/models";
 
 // ---------------------------------------------------------------------------

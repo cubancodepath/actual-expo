@@ -4,7 +4,7 @@ import { Card } from "@/design-system/atoms/Card";
 import { Text } from "@/design-system/atoms/Text";
 import { Amount } from "@/design-system/atoms/Amount";
 import { Divider } from "@/design-system/atoms/Divider";
-import { formatPrivacyAware } from "@/lib/format";
+import { formatPrivacyAware } from "@/core/shared/util";
 import type { Theme } from "@/design-system/tokens";
 
 interface SpendingOverviewCardProps {

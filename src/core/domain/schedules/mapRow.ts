@@ -9,7 +9,7 @@
  */
 
 import { extractScheduleConds } from "./helpers";
-import { intToStr } from "@/lib/date";
+import { intToStr } from "@/core/shared/months";
 import type { Schedule, RecurConfig } from "@/core/types/models";
 import type { RuleCondition, RuleAction } from "@/core/types/models";
 

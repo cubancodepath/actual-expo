@@ -10,7 +10,7 @@
  */
 
 import { runQuery, first } from "@/core/db";
-import { monthToInt } from "@/lib/date";
+import { monthToInt } from "@/core/shared/months";
 import { setBudgetAmount, computeToBudget, computeCarryoverChain, budgetTable } from "../budgets";
 import type { CategoryRow, ZeroBudgetRow } from "@/core/db/types";
 import { calculateGoal, type GoalContext } from "./engine";

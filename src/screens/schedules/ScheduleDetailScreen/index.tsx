@@ -29,7 +29,7 @@ import {
   Trash2,
 } from "lucide-react-native";
 import { AmountKeyboard } from "@/ui/amount-keyboard";
-import { intToStr, strToInt, todayInt } from "@/lib/date";
+import { intToStr, strToInt, todayInt } from "@/core/shared/months";
 import { CloseButton } from "@/ui/CloseButton";
 import { LoadingScreen } from "@/ui/LoadingScreen";
 import { Amount } from "@/ui/money-entry/Amount";

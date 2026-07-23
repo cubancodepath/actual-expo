@@ -11,7 +11,7 @@ import * as Haptics from "expo-haptics";
 import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvider";
 import { Text } from "@/design-system/atoms/Text";
 import { KeyboardToolbar } from "@/design-system/molecules/KeyboardToolbar";
-import { MAX_CENTS, formatCents, formatExpression } from "@/lib/currency";
+import { MAX_CENTS, formatCents, formatExpression } from "@/core/shared/util";
 import { withOpacity } from "@/lib/colors";
 import { useCurrencyInput } from "./useCurrencyInput";
 import { CalculatorPill } from "./CalculatorPill";

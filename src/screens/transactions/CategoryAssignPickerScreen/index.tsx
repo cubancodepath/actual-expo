@@ -9,7 +9,7 @@ import { PickerScreen } from "@/ui/PickerScreen";
 import { useCategories } from "@/lib/hooks/useCategories";
 import { getCategoryBalancesForMonth } from "@/core/domain/budgets";
 import { usePickerStore } from "@/stores/pickerStore";
-import { currentMonth } from "@/lib/date";
+import { currentMonth } from "@/core/shared/months";
 
 interface PickableCategory {
   id: string;

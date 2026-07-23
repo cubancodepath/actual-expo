@@ -4,7 +4,7 @@
  * occurrences + posted transactions) and `tracking-budget` (monthly).
  */
 import { runQuery } from "@/core/db";
-import { intToStr } from "@/lib/date";
+import { intToStr } from "@/core/shared/months";
 import { getBudgetType } from "../preferences";
 import { buildForecastFilter } from "./filters";
 import { resolveForecastAccounts } from "./accounts";

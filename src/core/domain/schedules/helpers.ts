@@ -12,7 +12,7 @@ import {
   differenceInCalendarDays,
 } from "date-fns";
 import type { RuleCondition, RuleAction, RecurConfig, ScheduleStatus } from "@/core/types/models";
-import { todayStr } from "@/lib/date";
+import { currentDay } from "@/core/shared/months";
 
 /**
  * Extract the schedule-specific conditions from a rule's conditions array.
@@ -44,7 +44,7 @@ export function extractScheduleConds(conditions: RuleCondition[]) {
  * getUpcomingDays: supports 'currentMonth', 'oneMonth', 'N-day|week|month|year',
  * and plain numeric strings.
  */
-export function getUpcomingDays(upcomingLength = "7", today = todayStr()): number {
+export function getUpcomingDays(upcomingLength = "7", today = currentDay()): number {
   const todayDate = parseLocalDate(today);
   const monthStart = startOfMonth(todayDate);
 
@@ -190,7 +190,7 @@ export function getStatus(
   if (hasTrans) return "paid";
   if (!nextDate) return "scheduled";
 
-  const today = todayStr();
+  const today = currentDay();
   const upcomingDays = getUpcomingDays(upcomingLength, today);
 
   if (nextDate === today) return "due";

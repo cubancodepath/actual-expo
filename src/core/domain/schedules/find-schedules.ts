@@ -23,7 +23,7 @@ import { q } from "@/core/queries";
 import { executeQuery } from "@/core/queries";
 import { getApproxNumberThreshold } from "@/core/domain/rules/rule-utils";
 import { parseDate, dayFromDate } from "./recurrence";
-import { intToStr } from "@/lib/date";
+import { intToStr } from "@/core/shared/months";
 
 // ---------------------------------------------------------------------------
 // Types

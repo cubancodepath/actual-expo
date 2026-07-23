@@ -4,7 +4,7 @@
  * The UI layer is responsible for translating via i18next.
  */
 
-import { formatBalance } from "@/lib/format";
+import { integerToCurrency } from "@/core/shared/util";
 import { amountToInteger } from "./engine";
 import type { Template } from "@/core/types/models";
 
@@ -27,7 +27,7 @@ export interface TemplateDescription {
 // ---------------------------------------------------------------------------
 
 function formatDisplayAmount(displayUnits: number): string {
-  return formatBalance(amountToInteger(displayUnits));
+  return integerToCurrency(amountToInteger(displayUnits));
 }
 
 function formatMonth(yyyyMm: string, locale: string): string {

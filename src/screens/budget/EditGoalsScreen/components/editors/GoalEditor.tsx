@@ -30,8 +30,8 @@ import type {
   Template,
 } from "@/core/types/models";
 import type { Schedule } from "@/core/types/models";
-import { formatCents } from "@/lib/currency";
-import { currentMonth } from "@/lib/date";
+import { formatCents } from "@/core/shared/util";
+import { currentMonth } from "@/core/shared/months";
 import { AmountRow } from "../fields/AmountRow";
 import { DateFieldRow } from "../fields/DateFieldRow";
 import { FieldRow } from "../fields/FieldRow";

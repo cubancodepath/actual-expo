@@ -10,7 +10,7 @@ import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvid
 import { Text } from "@/design-system/atoms/Text";
 import { Amount } from "@/design-system/atoms/Amount";
 import { GlassButton } from "@/design-system/atoms/GlassButton";
-import { currentMonth } from "@/lib/date";
+import { currentMonth } from "@/core/shared/months";
 import type { Theme } from "@/design-system/tokens";
 
 export default function SplitCategoryPickerScreen() {

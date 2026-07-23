@@ -8,7 +8,7 @@
  */
 
 import { create } from "zustand";
-import { currentMonth } from "@/lib/date";
+import { currentMonth } from "@/core/shared/months";
 
 /**
  * A category chosen in a picker sheet. The picker writes it and pops itself; the

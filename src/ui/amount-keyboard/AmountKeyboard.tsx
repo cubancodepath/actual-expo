@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Portal, useThemeColor } from "heroui-native";
 import { NumberPad } from "heroui-native-pro";
 import { Check } from "lucide-react-native";
-import { MAX_CENTS } from "@/lib/currency";
+import { MAX_CENTS } from "@/core/shared/util";
 import {
   AmountKeyboardActionsContext,
   AmountKeyboardStateContext,

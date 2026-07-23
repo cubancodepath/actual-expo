@@ -8,9 +8,9 @@ import {
   setCurrencyConfig,
   setPrivacyMode,
   type NumberFormatType,
-} from "@/lib/format";
-import { setDateFormat } from "@/lib/date";
-import { getCurrency } from "@/lib/currencies";
+} from "@/core/shared/util";
+import { setDateFormat } from "@/core/shared/months";
+import { getCurrency } from "@/core/shared/currencies";
 
 export function applyFormatConfig(prefs: {
   numberFormat: string;

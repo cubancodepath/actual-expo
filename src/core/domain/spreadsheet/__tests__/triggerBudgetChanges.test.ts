@@ -8,7 +8,7 @@ import { Timestamp } from "@/core/crdt";
 import { initSpreadsheet } from "@/core/domain/spreadsheet/sync";
 import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
 import { sheetForMonth, envelopeBudget } from "@/core/domain/spreadsheet/bindings";
-import { currentMonth } from "@/lib/date";
+import { currentMonth } from "@/core/shared/months";
 
 function dateIntFor(month: string, day = "15"): number {
   return Number(month.replace("-", "") + day);

@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Button, Label, Typography, useThemeColor } from "heroui-native";
 import { Check, X } from "lucide-react-native";
 import { holdForNextMonth } from "@/core/domain/budgets";
-import { formatCents } from "@/lib/currency";
+import { formatCents } from "@/core/shared/util";
 import { AmountKeyboard } from "@/ui/amount-keyboard";
 import { AmountField } from "@/ui/money-entry/AmountField";
 import { ScreenHeader } from "@/ui/ScreenHeader";

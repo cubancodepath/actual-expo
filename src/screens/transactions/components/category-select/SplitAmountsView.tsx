@@ -4,7 +4,7 @@ import { useFocusEffect } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Button, ListGroup, Menu, Separator, Typography, useThemeColor } from "heroui-native";
 import { Check, CircleMinus, Minus, MoreHorizontal, Plus } from "lucide-react-native";
-import { formatCents, signedCents } from "@/lib/currency";
+import { formatCents, signedCents } from "@/core/shared/util";
 import { dialog } from "@/ui/feedback/dialog";
 import { ScreenHeader } from "@/ui/ScreenHeader";
 import { BlinkingCursor } from "@/ui/BlinkingCursor";

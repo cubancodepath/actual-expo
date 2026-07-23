@@ -3,7 +3,7 @@ import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
 import { runQuery } from "@/core/db";
 import { sendMessages } from "@/core/sync";
 import { Timestamp } from "@/core/crdt";
-import { monthToInt } from "@/lib/date";
+import { monthToInt } from "@/core/shared/months";
 import { setBudget, setBudgetGoal, budgetTable } from "../index";
 
 /**

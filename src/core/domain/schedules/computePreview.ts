@@ -15,7 +15,7 @@ import {
 } from "./helpers";
 import { getNextOccurrence, applySkipWeekend, dayFromDate, parseDate } from "./recurrence";
 import { isForPreview, type ScheduleStatuses } from "./status";
-import { todayStr, strToInt } from "@/lib/date";
+import { currentDay, strToInt } from "@/core/shared/months";
 import type { Schedule, ScheduleStatus, RecurConfig } from "@/core/types/models";
 
 export type PreviewSubtransaction = {
@@ -71,7 +71,7 @@ export function computePreviewTransactions(
   if (forPreview.length === 0) return [];
 
   const today = startOfDay(new Date());
-  const todayString = todayStr();
+  const todayString = currentDay();
 
   const previews: PreviewTransaction[] = [];
 

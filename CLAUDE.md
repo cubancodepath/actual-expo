@@ -47,7 +47,14 @@ src/
 │   ├── errors/             # ActualError, ErrorCode — core only THROWS, never emits to the UI bus
 │   ├── queries/            # AQL query compiler, liveQuery, pagedQuery, queryCache, execute
 │   ├── proto/              # Protobuf definitions
-│   ├── platform/           # Native seams: fs, sqlite, crypto, fetch, asyncStorage, location
+│   ├── platform/           # Capability seams — one dir per capability with a NAMED interface
+│   │                       #   (types.ts: PlatformFileSystem, PlatformSqlite, PlatformCrypto,
+│   │                       #   PlatformHttp, PlatformAsyncStorage, PlatformKeyStore,
+│   │                       #   PlatformLocation), a native adapter (index.ts — the only place
+│   │                       #   expo-*/MMKV/ky may be imported) and, where Node needs one, an
+│   │                       #   index.node.ts impl that vitest swaps in via resolve.alias.
+│   │                       #   Contracts use OUR vocabulary (fs.readFile, db.all, http.get →
+│   │                       #   ActualError) — no vendor naming crosses the seam.
 │   ├── shared/             # Pure logic shared with UI (upstream loot-core/src/shared):
 │   │                       #   months, util (number/currency format), currencies, arithmetic,
 │   │                       #   schedules (status/recurrence/preview), tags (note parsing),

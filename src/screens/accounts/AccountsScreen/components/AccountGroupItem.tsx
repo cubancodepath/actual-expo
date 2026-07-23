@@ -7,7 +7,8 @@ import type { Account } from "@/core/types/models";
 import { Money } from "@/ui/Money";
 import { useAccountGroupBalance } from "@/lib/hooks/useAccounts";
 import { CollapsibleIndicator } from "@/ui/CollapsibleIndicator";
-import { AccountRow, type RowRect } from "./AccountRow";
+import type { RowRect } from "@/ui/lift-menu";
+import { AccountRow } from "./AccountRow";
 
 interface AccountGroupItemProps {
   group: AccountGroup;

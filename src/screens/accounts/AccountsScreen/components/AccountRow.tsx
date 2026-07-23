@@ -1,25 +1,11 @@
-import { memo, useRef } from "react";
+import { memo } from "react";
 import { View } from "react-native";
-import { cn, ListGroup, PressableFeedback, useThemeColor } from "heroui-native";
+import { ListGroup, useThemeColor } from "heroui-native";
 import { Banknote, ChartSpline, ChevronRight } from "lucide-react-native";
 import type { Account } from "@/core/types/models";
 import { Money } from "@/ui/Money";
 import { useAccountBalance } from "@/lib/hooks/useAccounts";
-import { mediumHaptic } from "@/ui/haptics";
-
-/** Window frame of the row the long-press menu anchors to. */
-export interface RowRect {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-/**
- * Press feedback: a slow scale that reads as "held" during the long press that
- * opens the menu (module scope so the worklet isn't re-derived per row).
- */
-const ROW_PRESS_ANIMATION = { scale: { value: 0.97, timingConfig: { duration: 450 } } };
+import { LiftMenu, type RowRect } from "@/ui/lift-menu";
 
 /**
  * The visual content of an account row — icon · name · balance · chevron.
@@ -65,10 +51,11 @@ interface AccountRowProps {
 }
 
 /**
- * A tappable account row (a `ListGroup.Item` wrapped in `PressableFeedback`, the
- * documented pattern for adding press feedback to list items). Tap navigates to
- * the account; long-press measures the row's frame and hands it to the screen,
- * which owns the anchored menu and floats a preview over the (hidden) row.
+ * A tappable account row (a `ListGroup.Item` wrapped in `LiftMenu.Row`, which
+ * provides the press feedback and long-press lift wiring). Tap navigates to
+ * the account; long-press hands the row's frame to the screen's
+ * `LiftMenu.Host`, which anchors the menu and floats a preview over the
+ * (hidden) row.
  */
 export const AccountRow = memo(function AccountRow({
   account,
@@ -76,24 +63,13 @@ export const AccountRow = memo(function AccountRow({
   onLongPress,
   isLifted = false,
 }: AccountRowProps) {
-  const rowViewRef = useRef<View>(null);
-
   return (
-    <PressableFeedback
-      animation={ROW_PRESS_ANIMATION}
+    <LiftMenu.Row
       onPress={() => onPress(account)}
-      onLongPress={() => {
-        mediumHaptic();
-        // Anchor the menu to this frame — measured in window coordinates, the
-        // space the menu's portal lives in.
-        rowViewRef.current?.measureInWindow((x, y, width, height) => {
-          onLongPress(account, { x, y, width, height });
-        });
-      }}
+      onLongPress={(rect) => onLongPress(account, rect)}
+      isLifted={isLifted}
     >
-      <View ref={rowViewRef} className={cn("w-full", isLifted && "opacity-0")}>
-        <AccountRowContent account={account} />
-      </View>
-    </PressableFeedback>
+      <AccountRowContent account={account} />
+    </LiftMenu.Row>
   );
 });

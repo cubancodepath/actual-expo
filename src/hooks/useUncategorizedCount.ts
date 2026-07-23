@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { listen } from "@/core/sync/syncEvents";
-import { getUncategorizedStats } from "@/core/domain/transactions";
+import { getUncategorizedStats } from "@/core/server/transactions";
 
 /**
  * Reactive hook for the uncategorized transaction count.

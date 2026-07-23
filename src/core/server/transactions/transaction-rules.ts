@@ -25,7 +25,7 @@ import {
   groupTransaction,
   recalculateSplit,
   ungroupTransaction,
-} from "@/core/domain/transactions/split";
+} from "@/core/shared/transactions";
 import type { Transaction, TransactionWithSubtransactions } from "@/core/types/models";
 
 // ═══ Rule running (former rules/engine.ts) ═══

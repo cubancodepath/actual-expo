@@ -4,7 +4,7 @@ import { first } from "@/core/db";
 import { monthToInt, currentMonth } from "@/core/shared/months";
 import { createCategoryGroup, createCategory } from "@/core/domain/categories";
 import { createAccount } from "@/core/server/accounts";
-import { addTransaction } from "@/core/domain/transactions";
+import { addTransaction } from "@/core/server/transactions";
 import { setBudgetAmount, setCategoryCarryover } from "@/core/domain/budgets";
 import { setNote } from "@/core/server/notes";
 import { storeNoteCleanups } from "./store";

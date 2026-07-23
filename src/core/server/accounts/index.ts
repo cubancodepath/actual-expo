@@ -4,7 +4,7 @@ import { sendMessages, batchMessages } from "@/core/sync";
 import { undoable } from "@/core/sync/undo";
 import { Timestamp } from "@/core/crdt";
 import { todayInt } from "@/core/shared/months";
-import { addTransaction } from "@/core/domain/transactions";
+import { addTransaction } from "@/core/server/transactions";
 import type { AccountRow } from "@/core/db/types";
 import type { Account } from "@/core/types/models";
 

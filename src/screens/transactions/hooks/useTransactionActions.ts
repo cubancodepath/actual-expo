@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { deleteTransaction, duplicateTransaction, toggleCleared } from "@/core/domain/transactions";
+import { deleteTransaction, duplicateTransaction, toggleCleared } from "@/core/server/transactions";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { useUndoStore } from "@/stores/undoStore";
 import { dialog } from "@/ui/feedback/dialog";

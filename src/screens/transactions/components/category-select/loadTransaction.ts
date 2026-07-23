@@ -1,4 +1,4 @@
-import { getChildTransactions, getTransactionById } from "@/core/domain/transactions";
+import { getChildTransactions, getTransactionById } from "@/core/server/transactions";
 import type { TransactionDisplay } from "@/core/types/models";
 import type { SplitLineForm } from "@/ui/entity-select/types";
 

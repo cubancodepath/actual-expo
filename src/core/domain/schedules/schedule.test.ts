@@ -42,7 +42,7 @@ vi.mock("@/core/server/payees", () => ({
   findOrCreatePayee: vi.fn().mockResolvedValue("payee-1"),
 }));
 
-vi.mock("../transactions", () => ({
+vi.mock("@/core/server/transactions", () => ({
   addTransaction: vi.fn().mockResolvedValue("txn-1"),
 }));
 
@@ -69,7 +69,7 @@ import { getRuleById } from "@/core/server/rules";
 import { setNextDate, advanceSchedules } from "./index";
 import { buildListData } from "@/features/transactions/hooks/transactionList/types";
 import type { PreviewTransaction } from "./preview";
-import type { TransactionDisplay } from "../transactions";
+import type { TransactionDisplay } from "@/core/server/transactions";
 
 const mockFirst = vi.mocked(first);
 const mockRunQuery = vi.mocked(runQuery);
@@ -329,7 +329,7 @@ describe("advanceSchedules", () => {
     // hasTransactionForSchedule(updated) → executeQuery → no rows
     mockRunQuery.mockResolvedValueOnce([]);
 
-    const { addTransaction } = await import("../transactions");
+    const { addTransaction } = await import("@/core/server/transactions");
     const mockAddTransaction = vi.mocked(addTransaction);
 
     await advanceSchedules(true);
@@ -352,7 +352,7 @@ describe("advanceSchedules", () => {
       [],
     );
 
-    const { addTransaction } = await import("../transactions");
+    const { addTransaction } = await import("@/core/server/transactions");
     const mockAddTransaction = vi.mocked(addTransaction);
     mockAddTransaction.mockClear();
 

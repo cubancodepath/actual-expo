@@ -1,4 +1,4 @@
-import type { TransactionDisplay } from "@/core/domain/transactions";
+import type { TransactionDisplay } from "@/core/server/transactions";
 import type { PreviewTransaction } from "@/core/domain/schedules/computePreview";
 
 export type DateHeader = { type: "date"; date: number; key: string; dailyTotal: number };

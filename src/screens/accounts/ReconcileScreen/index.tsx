@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { format, formatDistanceToNowStrict } from "date-fns";
 import { Button, Typography, useThemeColor } from "heroui-native";
 import { Check, X } from "lucide-react-native";
-import { lockTransactions, reconcileAccount } from "@/core/domain/transactions";
+import { lockTransactions, reconcileAccount } from "@/core/server/transactions";
 import { AmountKeyboard } from "@/ui/amount-keyboard";
 import { AmountField } from "@/ui/money-entry/AmountField";
 import { ScreenHeader } from "@/ui/ScreenHeader";

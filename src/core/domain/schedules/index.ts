@@ -577,7 +577,7 @@ async function insertScheduledTransaction(
   result: import("@/core/server/transactions/transaction-rules").NewTransactionWithSplits,
   scheduleId: string,
 ): Promise<void> {
-  const { addTransaction } = await import("../transactions");
+  const { addTransaction } = await import("@/core/server/transactions");
   const { fields, subtransactions } = result;
 
   if (!subtransactions || subtransactions.length === 0) {

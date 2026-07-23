@@ -11,7 +11,7 @@ import { Text } from "@/design-system/atoms/Text";
 import { Button } from "@/design-system/atoms/Button";
 import { TagPill } from "@/design-system/atoms/TagPill";
 import { SearchBar } from "@/design-system/molecules/SearchBar";
-import { getTransactionById, updateTransaction } from "@/core/domain/transactions";
+import { getTransactionById, updateTransaction } from "@/core/server/transactions";
 import { extractTagsFromNotes } from "@/core/shared/tags";
 import type { Theme } from "@/design-system/tokens";
 

@@ -4,7 +4,7 @@ import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
 import { sheetForMonth, envelopeBudget } from "@/core/domain/spreadsheet/bindings";
 import { currentMonth } from "@/core/shared/months";
 import { getCategories, getCategoryGroups } from "@/core/domain/categories";
-import { getUncategorizedStats } from "@/core/domain/transactions";
+import { getUncategorizedStats } from "@/core/server/transactions";
 
 let permissionGranted = false;
 

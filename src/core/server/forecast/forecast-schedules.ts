@@ -23,7 +23,7 @@ import type { RecurConfig } from "@/core/types/models";
 import type { RuleCondition } from "@/core/types/models";
 import { getRules } from "@/core/server/rules";
 import { runRules } from "@/core/server/transactions/transaction-rules";
-import { getTransferAccount } from "@/core/domain/transactions/transfer";
+import { getTransferAccount } from "@/core/server/transactions/transfer";
 import type { AccountWithComputedBalance, ForecastScheduleOccurrence } from "@/core/types/models";
 
 /** Synthetic account for schedules with no account. */

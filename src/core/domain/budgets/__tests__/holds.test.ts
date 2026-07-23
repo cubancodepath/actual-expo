@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach } from "vitest";
 import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
 import { createCategoryGroup, createCategory } from "@/core/domain/categories";
 import { createAccount } from "@/core/server/accounts";
-import { addTransaction } from "@/core/domain/transactions";
+import { addTransaction } from "@/core/server/transactions";
 import { first } from "@/core/db";
 import {
   setBudgetAmount,

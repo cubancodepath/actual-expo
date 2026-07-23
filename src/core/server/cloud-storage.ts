@@ -11,7 +11,7 @@ import { unzipSync, zipSync } from "fflate";
 import { fs } from "@/core/platform/fs";
 import { openDatabase } from "@/core/platform/sqlite";
 import { randomUUID } from "@/core/platform/crypto";
-import { http, toTransportError, parseResponse } from "@/core/platform/fetch";
+import { http, parseResponse, type HttpResponse } from "@/core/platform/fetch";
 import { mapServerReason } from "@/core/post";
 import { ActualError, type ErrorCode } from "@/core/errors";
 import * as encryption from "@/core/encryption";
@@ -35,7 +35,7 @@ import {
  * side effects. Other non-2xx map the sync server's raw-text file-state reason
  * (e.g. "file-has-reset") to a `sync/file-*` code, falling back to `code`.
  */
-async function checkResponse(res: Response, code: ErrorCode): Promise<void> {
+async function checkResponse(res: HttpResponse, code: ErrorCode): Promise<void> {
   if (res.status === 401 || res.status === 403) {
     throw new ActualError("auth/token-expired");
   }
@@ -117,12 +117,14 @@ export async function getRemoteFiles(
 ): Promise<RemoteBudgetFile[]> {
   let json: unknown;
   try {
-    json = await http
-      .get(`${serverUrl}/sync/list-user-files`, { headers: { "x-actual-token": token } })
-      .json();
+    json = await (
+      await http.get(`${serverUrl}/sync/list-user-files`, { headers: { "x-actual-token": token } })
+    ).json();
   } catch (e) {
-    const mapped = toTransportError(e);
-    throw mapped.code === "auth/unauthorized" ? new ActualError("auth/token-expired") : mapped;
+    if (e instanceof ActualError && e.code === "auth/unauthorized") {
+      throw new ActualError("auth/token-expired");
+    }
+    throw e;
   }
 
   return parseResponse(RemoteBudgetFilesResponseSchema, filesPayload(json)).map((file) => ({
@@ -250,7 +252,6 @@ export async function uploadBudget(
     headers,
     body: uploadContent.buffer as ArrayBuffer,
     timeout: false,
-    retry: 0,
     throwHttpErrors: false,
   });
 
@@ -326,13 +327,11 @@ export async function downloadBudget(
     http.get(`${serverUrl}/sync/download-user-file`, {
       headers: { "x-actual-token": token, "x-actual-file-id": file.fileId },
       timeout: false,
-      retry: 0,
       throwHttpErrors: false,
     }),
     http.get(`${serverUrl}/sync/get-user-file-info`, {
       headers: { "x-actual-token": token, "x-actual-file-id": file.fileId },
       timeout: false,
-      retry: 0,
       throwHttpErrors: false,
     }),
   ]);
@@ -424,7 +423,6 @@ export async function removeFile(
     json: { fileId: cloudFileId },
     headers: { "x-actual-token": token },
     timeout: false,
-    retry: 0,
     throwHttpErrors: false,
   });
   await checkResponse(res, "file/delete-failed");

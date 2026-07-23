@@ -1,5 +1,4 @@
-import { TimeoutError } from "ky";
-import { http } from "@/core/platform/fetch";
+import { http, type HttpResponse } from "@/core/platform/fetch";
 import { ActualError, type ErrorCode } from "@/core/errors";
 
 type ServerReasonBody = { status?: string; reason?: string; description?: string };
@@ -45,7 +44,7 @@ function toDomainError(reason: string | undefined, fallbackText: string): Actual
  * consumed by the caller (e.g. postBinary reading it via arrayBuffer) —
  * a Response body can only be read once.
  */
-async function toResponseError(res: Response, bodyText?: string): Promise<ActualError> {
+async function toResponseError(res: HttpResponse, bodyText?: string): Promise<ActualError> {
   if (res.status === 500) return new ActualError("http/server-error");
 
   const text = bodyText ?? (await res.text());
@@ -66,14 +65,6 @@ async function toResponseError(res: Response, bodyText?: string): Promise<Actual
   return toDomainError(undefined, text);
 }
 
-// Both callers below pass `throwHttpErrors: false`, so ky never throws
-// HTTPError here — non-2xx responses are handled via `!res.ok` + toResponseError.
-// This only sees genuine transport failures (offline, DNS, timeout).
-function toTransportError(e: unknown): ActualError {
-  if (e instanceof TimeoutError) return new ActualError("network/timeout");
-  return new ActualError("network/offline");
-}
-
 export async function post(
   url: string,
   data: unknown,
@@ -86,14 +77,14 @@ export async function post(
       json: data,
       headers,
       timeout,
-      retry: 0,
       throwHttpErrors: false,
     });
     if (!res.ok) throw await toResponseError(res);
     text = await res.text();
   } catch (e) {
+    // http.post rejects only with ActualError; guard the res.text() read.
     if (e instanceof ActualError) throw e;
-    throw toTransportError(e);
+    throw new ActualError("network/offline", { cause: e });
   }
 
   let responseData: ServerReasonBody & { data?: unknown };
@@ -121,22 +112,16 @@ export async function postBinary(
   headers: Record<string, string> = {},
   timeout: number = DEFAULT_BINARY_TIMEOUT,
 ): Promise<Uint8Array> {
-  let res: Response;
-  try {
-    res = await http.post(url, {
-      body: data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer,
-      timeout,
-      retry: 0,
-      throwHttpErrors: false,
-      headers: {
-        "Content-Length": String(data.byteLength),
-        "Content-Type": "application/actual-sync",
-        ...headers,
-      },
-    });
-  } catch (e) {
-    throw toTransportError(e);
-  }
+  const res = await http.post(url, {
+    body: data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer,
+    timeout,
+    throwHttpErrors: false,
+    headers: {
+      "Content-Length": String(data.byteLength),
+      "Content-Type": "application/actual-sync",
+      ...headers,
+    },
+  });
 
   const arrayBuffer = await res.arrayBuffer();
   const buffer = new Uint8Array(arrayBuffer);

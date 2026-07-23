@@ -1,5 +1,5 @@
 import { ActualError } from "@/core/errors";
-import { http, parseResponse, toTransportError } from "@/core/platform/fetch";
+import { http, parseResponse } from "@/core/platform/fetch";
 import { dataOrSelf } from "../util/response";
 import { BootstrapResponseDtoSchema } from "./bootstrap.dto";
 import { toBootstrapInfo } from "./bootstrap.mappers";
@@ -13,18 +13,17 @@ const PROBE_RETRY_DELAYS = [1500, 2500, 3000];
 export async function getBootstrapInfo(serverUrl: string): Promise<BootstrapInfo> {
   let json: unknown;
   try {
-    json = await http
-      .get(`${serverUrl}/account/needs-bootstrap`, {
+    json = await (
+      await http.get(`${serverUrl}/account/needs-bootstrap`, {
         retry: {
           limit: PROBE_RETRY_DELAYS.length,
-          delay: (attempt) => PROBE_RETRY_DELAYS[attempt - 1] ?? 3000,
-          shouldRetry: () => true,
+          delayMs: (attempt) => PROBE_RETRY_DELAYS[attempt - 1] ?? 3000,
         },
       })
-      .json();
+    ).json();
   } catch (e) {
-    const mapped = toTransportError(e);
-    throw mapped.code === "http/parse-error" ? mapped : new ActualError("network/offline");
+    if (e instanceof ActualError && e.code === "http/parse-error") throw e;
+    throw new ActualError("network/offline");
   }
 
   const dto = parseResponse(BootstrapResponseDtoSchema, dataOrSelf(json));

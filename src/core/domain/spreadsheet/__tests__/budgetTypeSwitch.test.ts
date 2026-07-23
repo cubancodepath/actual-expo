@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
 import { createCategoryGroup, createCategory } from "@/core/domain/categories";
-import { setArbitraryPref } from "@/core/domain/preferences";
+import { setArbitraryPref } from "@/core/server/preferences";
 import { initSpreadsheet } from "@/core/domain/spreadsheet/sync";
 import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
 import { sheetForMonth, envelopeBudget, trackingBudget } from "@/core/domain/spreadsheet/bindings";

@@ -4,7 +4,7 @@ import { useAccounts, useAccountBalance } from "@/lib/hooks/useAccounts";
 import { Icon } from "@/design-system/atoms/Icon";
 
 import { usePickerStore } from "@/stores/pickerStore";
-import { groupAccounts } from "@/core/domain/accounts";
+import { groupAccounts } from "@/core/server/accounts";
 import { useTheme, useThemedStyles } from "@/design-system/providers/ThemeProvider";
 import { Text } from "@/design-system/atoms/Text";
 import { GlassButton } from "@/design-system/atoms/GlassButton";

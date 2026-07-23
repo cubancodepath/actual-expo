@@ -14,7 +14,7 @@ import { getSpreadsheet } from "./instance";
 import * as envelopeEngine from "./envelope";
 import * as trackingEngine from "./tracking";
 import { getCategories, getCategoryGroups } from "../categories";
-import { getBudgetType } from "../preferences";
+import { getBudgetType } from "@/core/server/preferences";
 import { addMonths } from "@/core/shared/months";
 
 type BudgetEngine = {

@@ -2,8 +2,8 @@ import { useRouter } from "expo-router";
 import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
-import { updateAccount } from "@/core/domain/accounts";
-import { setNote } from "@/core/domain/notes";
+import { updateAccount } from "@/core/server/accounts";
+import { setNote } from "@/core/server/notes";
 import type { Account } from "@/core/types/models";
 
 const schema = z.object({

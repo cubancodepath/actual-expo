@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getAccounts } from "@/core/domain/accounts";
+import { getAccounts } from "@/core/server/accounts";
 import type { Account } from "@/core/types/models";
 
 /**

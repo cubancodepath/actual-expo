@@ -5,7 +5,7 @@ import {
   parseFlagValue,
   serializeFlagValue,
   type FeatureFlag,
-} from "@/core/domain/preferences/featureFlags";
+} from "@/core/server/preferences/featureFlags";
 
 /** Upstream signature: desktop-client/src/hooks/useFeatureFlag.ts */
 export function useFeatureFlag(name: FeatureFlag): boolean {

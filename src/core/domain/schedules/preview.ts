@@ -14,11 +14,11 @@ import { getHasTransactionsQuery, type ScheduleStatuses } from "./status";
 import { computePreviewTransactions, type PreviewTransaction } from "./computePreview";
 import type { Schedule } from "@/core/types/models";
 import { executeQuery } from "@/core/queries";
-import { getArbitraryPref } from "../preferences";
+import { getArbitraryPref } from "@/core/server/preferences";
 import { getRules, runRulesWithSplits } from "../rules";
-import { getPayees } from "../payees";
+import { getPayees } from "@/core/server/payees";
 import { getCategories } from "../categories";
-import { getAccounts } from "../accounts";
+import { getAccounts } from "@/core/server/accounts";
 
 export type { PreviewTransaction, PreviewSubtransaction } from "./computePreview";
 

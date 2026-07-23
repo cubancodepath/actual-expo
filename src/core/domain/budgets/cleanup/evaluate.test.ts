@@ -3,10 +3,10 @@ import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
 import { first } from "@/core/db";
 import { monthToInt, currentMonth } from "@/core/shared/months";
 import { createCategoryGroup, createCategory } from "@/core/domain/categories";
-import { createAccount } from "@/core/domain/accounts";
+import { createAccount } from "@/core/server/accounts";
 import { addTransaction } from "@/core/domain/transactions";
 import { setBudgetAmount, setCategoryCarryover } from "@/core/domain/budgets";
-import { setNote } from "@/core/domain/notes";
+import { setNote } from "@/core/server/notes";
 import { storeNoteCleanups } from "./store";
 import { computeCleanup, cleanupTemplate, type CleanupPlan } from "./evaluate";
 

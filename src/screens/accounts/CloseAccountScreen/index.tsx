@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button, ListGroup, Separator, Typography, useThemeColor } from "heroui-native";
 import { ChevronLeft } from "lucide-react-native";
-import { closeAccount, getAccountProperties, type CloseAccountOpts } from "@/core/domain/accounts";
+import { closeAccount, getAccountProperties, type CloseAccountOpts } from "@/core/server/accounts";
 import type { Account } from "@/core/types/models";
 import { useAccounts } from "@/lib/hooks/useAccounts";
 import { useCategories } from "@/lib/hooks/useCategories";

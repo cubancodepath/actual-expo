@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach } from "vitest";
 import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
 import { first, runQuery } from "@/core/db";
 import { createCategoryGroup, createCategory } from "@/core/domain/categories";
-import { setNote } from "@/core/domain/notes";
+import { setNote } from "@/core/server/notes";
 import { storeNoteCleanups } from "./store";
 import type { CleanupTemplate } from "@/core/types/models";
 

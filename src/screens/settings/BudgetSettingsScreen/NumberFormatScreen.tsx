@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useSyncedPref } from "@/lib/hooks/useSyncedPref";
-import { NUMBER_FORMAT_OPTIONS } from "@/core/domain/preferences/types";
+import { NUMBER_FORMAT_OPTIONS } from "@/core/server/preferences/types";
 import { SettingsOptionList } from "@/screens/settings/components/SettingsOptionList";
 
 /** Number format picker (comma-dot, dot-comma, …), aligned with upstream. */

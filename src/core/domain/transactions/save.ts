@@ -6,12 +6,12 @@
  * split child management, and CRDT batching.
  */
 
-import { findOrCreatePayee } from "../payees";
+import { findOrCreatePayee } from "@/core/server/payees";
 import { batchMessages } from "@/core/sync";
 import { undoable } from "@/core/sync/undo";
 import { getCurrentPosition } from "@/core/platform/location";
-import { isFeatureEnabled } from "../preferences";
-import { createPayeeLocation } from "../payee-locations";
+import { isFeatureEnabled } from "@/core/server/preferences";
+import { createPayeeLocation } from "@/core/server/payees";
 import {
   addTransaction,
   updateTransaction,

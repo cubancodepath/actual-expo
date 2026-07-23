@@ -4,7 +4,7 @@ import { first, runQuery } from "@/core/db";
 import { applyMessages } from "@/core/sync/apply";
 import { emit } from "@/core/sync/syncEvents";
 import { Timestamp } from "@/core/crdt";
-import { createPayee, mergePayees } from "@/core/domain/payees";
+import { createPayee, mergePayees } from "@/core/server/payees";
 import { createCategoryGroup, createCategory, deleteCategory } from "@/core/domain/categories";
 import { createRule, getRules } from "./index";
 import { suggestCategoryForPayee } from "./apply";

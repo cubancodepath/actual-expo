@@ -1,7 +1,7 @@
 import { randomUUID } from "@/core/platform/crypto";
 import { batchMessages, sendMessages } from "@/core/sync";
 import { Timestamp } from "@/core/crdt";
-import { createAccount } from "@/core/domain/accounts";
+import { createAccount } from "@/core/server/accounts";
 import { createCategoryGroup, createCategory } from "@/core/domain/categories";
 import { emit } from "@/core/sync/syncEvents";
 

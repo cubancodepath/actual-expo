@@ -1,7 +1,7 @@
 import { Platform } from "react-native";
 import { ExtensionStorage } from "@bacons/apple-targets";
 import Constants from "expo-constants";
-import { getAccounts } from "@/core/domain/accounts";
+import { getAccounts } from "@/core/server/accounts";
 import { getCategories, getCategoryGroups } from "@/core/domain/categories";
 
 const APP_GROUP =

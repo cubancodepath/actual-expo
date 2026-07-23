@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
-import { createAccount } from "@/core/domain/accounts";
+import { createAccount } from "@/core/server/accounts";
 import { createRule } from "@/core/domain/rules";
 import { runQuery } from "@/core/db";
 import { reconcileAccount } from "./index";

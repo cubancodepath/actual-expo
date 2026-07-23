@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { DAY_OF_WEEK_OPTIONS } from "@/core/domain/preferences/types";
+import { DAY_OF_WEEK_OPTIONS } from "@/core/server/preferences/types";
 
 /**
  * Localized day-of-week labels keyed by the `firstDayOfWeekIdx` value ("0"–"6",

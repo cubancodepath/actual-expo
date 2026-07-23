@@ -1,8 +1,8 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
-import { createAccount } from "@/core/domain/accounts";
+import { createAccount } from "@/core/server/accounts";
 import { createCategoryGroup, createCategory } from "@/core/domain/categories";
-import { findOrCreatePayee, createPayee, mergePayees } from "@/core/domain/payees";
+import { findOrCreatePayee, createPayee, mergePayees } from "@/core/server/payees";
 import { addTransaction } from "@/core/domain/transactions";
 import { getRules, createRule } from "./index";
 import { updateCategoryRules, getProbableCategory, type LearnTransaction } from "./learn";

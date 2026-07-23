@@ -11,9 +11,9 @@ import { getTransactionById, getChildTransactions } from "@/core/domain/transact
 import { saveTransaction } from "@/core/domain/transactions/save";
 import { getRecurringDescription } from "@/core/domain/schedules";
 import type { RecurConfig } from "@/core/types/models";
-import { extractTagsFromNotes } from "@/core/domain/tags";
+import { extractTagsFromNotes } from "@/core/shared/tags";
 import { suggestCategoryForPayee, applyRulesToForm } from "@/core/domain/rules/apply";
-import { findPayeeByName } from "@/core/domain/payees";
+import { findPayeeByName } from "@/core/server/payees";
 import { todayInt, intToStr, strToInt } from "@/core/shared/months";
 import type { TransactionType } from "@/features/transactions/components/TypeToggle";
 

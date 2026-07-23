@@ -12,7 +12,7 @@ import {
   Pencil,
   Trash2,
 } from "lucide-react-native";
-import { updateAccount } from "@/core/domain/accounts";
+import { updateAccount } from "@/core/server/accounts";
 import type { Account } from "@/core/types/models";
 
 /** Relative "2 days ago" for a last-reconciled epoch-ms (or date) string. */

@@ -3,8 +3,8 @@ import { usePickerStore } from "./pickerStore";
 import { useSyncStore } from "./syncStore";
 import { clearQueryCache } from "@/core/queries/queryCache";
 import { currentMonth } from "@/core/shared/months";
-import { PREFERENCE_DEFAULTS } from "@/core/domain/preferences/types";
-import { defaultFlagPrefs } from "@/core/domain/preferences/featureFlags";
+import { PREFERENCE_DEFAULTS } from "@/core/server/preferences/types";
+import { defaultFlagPrefs } from "@/core/server/preferences/featureFlags";
 
 /**
  * Reset all Zustand stores to their initial state.

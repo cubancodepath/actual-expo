@@ -2,7 +2,7 @@ import { View } from "react-native";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { Text } from "./Text";
 import { TagPill } from "./TagPill";
-import { parseNotes } from "@/core/domain/tags";
+import { parseNotes } from "@/core/shared/tags";
 import type { Tag } from "@/core/types/models";
 
 export interface NotesWithTagsProps {

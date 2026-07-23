@@ -38,7 +38,7 @@ vi.mock("../rules", () => ({
   getRules: vi.fn().mockResolvedValue([]),
 }));
 
-vi.mock("../payees", () => ({
+vi.mock("@/core/server/payees", () => ({
   findOrCreatePayee: vi.fn().mockResolvedValue("payee-1"),
 }));
 
@@ -46,7 +46,7 @@ vi.mock("../transactions", () => ({
   addTransaction: vi.fn().mockResolvedValue("txn-1"),
 }));
 
-vi.mock("../preferences", () => ({
+vi.mock("@/core/server/preferences", () => ({
   getArbitraryPref: vi.fn().mockResolvedValue("7"),
 }));
 

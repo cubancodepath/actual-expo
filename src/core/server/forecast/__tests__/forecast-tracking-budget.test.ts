@@ -2,9 +2,9 @@ import { describe, it, expect, afterEach } from "vitest";
 import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
 import { sendMessages } from "@/core/sync";
 import { Timestamp } from "@/core/crdt";
-import { createAccount } from "@/core/domain/accounts";
+import { createAccount } from "@/core/server/accounts";
 import { createCategoryGroup, createCategory } from "@/core/domain/categories";
-import { setArbitraryPref } from "@/core/domain/preferences";
+import { setArbitraryPref } from "@/core/server/preferences";
 import { setBudgetAmount } from "@/core/domain/budgets";
 import { generateForecast } from "../index";
 

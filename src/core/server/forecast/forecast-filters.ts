@@ -23,8 +23,8 @@
  * `category IS null` special-case (which upstream also requires not-transfer /
  * not-parent) is not expanded.
  */
-import { Condition } from "../rules/condition";
-import { getAccountRestrictionMode } from "./accounts";
+import { Condition } from "@/core/domain/rules/condition";
+import { getAccountRestrictionMode } from "./forecast-accounts";
 import type { RuleCondition } from "@/core/types/models";
 
 export type ForecastFilter = {

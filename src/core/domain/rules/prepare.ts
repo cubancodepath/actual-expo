@@ -10,7 +10,7 @@
  */
 
 import { first, runQuery } from "@/core/db";
-import { findOrCreatePayee } from "../payees";
+import { findOrCreatePayee } from "@/core/server/payees";
 import {
   collectFormulasFromActions,
   extractBalanceOfLiterals,

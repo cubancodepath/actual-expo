@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { ListGroup, Separator, Switch, Typography, useThemeColor } from "heroui-native";
 import { ChevronRight } from "lucide-react-native";
 import { useSyncedPref } from "@/lib/hooks/useSyncedPref";
-import { DATE_FORMAT_OPTIONS, NUMBER_FORMAT_OPTIONS } from "@/core/domain/preferences/types";
+import { DATE_FORMAT_OPTIONS, NUMBER_FORMAT_OPTIONS } from "@/core/server/preferences/types";
 import { useDaysOfWeek } from "@/screens/settings/lib/useDaysOfWeek";
 
 /** A row that shows the current value and drills into a picker sub-screen. */

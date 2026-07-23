@@ -30,7 +30,7 @@ import {
   updateActions,
   scheduleIsRecurring,
 } from "./helpers";
-import { getArbitraryPref } from "../preferences";
+import { getArbitraryPref } from "@/core/server/preferences";
 import { getHasTransactionsQuery } from "./status";
 import { executeQuery } from "@/core/queries";
 import { emit as emitSyncEvent } from "@/core/sync/syncEvents";

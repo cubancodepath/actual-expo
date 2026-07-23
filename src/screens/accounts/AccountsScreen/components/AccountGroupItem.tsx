@@ -2,7 +2,7 @@ import { Fragment, memo, useMemo } from "react";
 import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { Accordion, ListGroup, Separator, Typography } from "heroui-native";
-import type { AccountGroup } from "@/core/domain/accounts";
+import type { AccountGroup } from "@/core/server/accounts";
 import type { Account } from "@/core/types/models";
 import { Money } from "@/ui/Money";
 import { useAccountGroupBalance } from "@/lib/hooks/useAccounts";

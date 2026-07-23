@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useSyncedPref } from "@/lib/hooks/useSyncedPref";
-import { DATE_FORMAT_OPTIONS } from "@/core/domain/preferences/types";
+import { DATE_FORMAT_OPTIONS } from "@/core/server/preferences/types";
 import { SettingsOptionList } from "@/screens/settings/components/SettingsOptionList";
 
 /** Date format picker (MM/DD/YYYY, …). Label = pattern, description = example. */

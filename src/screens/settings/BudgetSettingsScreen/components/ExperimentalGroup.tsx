@@ -6,7 +6,7 @@ import {
   FEATURE_FLAG_REQUIRES,
   SUPPORTED_FEATURE_FLAGS,
   type FeatureFlag,
-} from "@/core/domain/preferences/featureFlags";
+} from "@/core/server/preferences/featureFlags";
 
 /**
  * One switch row for a feature flag (own hooks — kept out of a map loop).

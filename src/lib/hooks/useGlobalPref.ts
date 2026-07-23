@@ -2,7 +2,7 @@
  * useGlobalPref — read/write a single per-device, cross-budget preference.
  *
  * Faithful to upstream `desktop-client/src/hooks/useGlobalPref`: a thin React
- * wrapper over the GlobalPrefs engine (`@/core/domain/preferences/globalPrefs`).
+ * wrapper over the GlobalPrefs engine (`@/core/server/preferences/globalPrefs`).
  * A shared Zustand cache mirrors the persisted values so every component using
  * the same key re-renders together when one of them writes it.
  *
@@ -11,7 +11,7 @@
  */
 import { useCallback } from "react";
 import { create } from "zustand";
-import { getGlobalPref, setGlobalPref } from "@/core/domain/preferences/globalPrefs";
+import { getGlobalPref, setGlobalPref } from "@/core/server/preferences/globalPrefs";
 import type { GlobalPrefs } from "@/core/types/prefs";
 
 // Shared cache of already-read/written values (keyed by pref name). Values not

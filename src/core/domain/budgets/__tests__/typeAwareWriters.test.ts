@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach } from "vitest";
 import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
 import { runQuery } from "@/core/db";
 import { monthToInt } from "@/core/shared/months";
-import { setArbitraryPref } from "@/core/domain/preferences";
+import { setArbitraryPref } from "@/core/server/preferences";
 import { createCategoryGroup, createCategory } from "@/core/domain/categories";
 import {
   setBudgetAmount,

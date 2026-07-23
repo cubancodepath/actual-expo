@@ -2,7 +2,7 @@ import { useRouter } from "expo-router";
 import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
-import { createAccount } from "@/core/domain/accounts";
+import { createAccount } from "@/core/server/accounts";
 
 const schema = z.object({
   name: z.string().trim().min(1, "accounts:newAccount.accountNameRequired"),

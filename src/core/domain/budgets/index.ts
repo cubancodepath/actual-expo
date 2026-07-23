@@ -7,7 +7,7 @@ import { monthToInt } from "@/core/shared/months";
 import type { ZeroBudgetRow, CategoryGroupRow, CategoryRow } from "@/core/db/types";
 import type { BudgetMonth, BudgetGroup, BudgetCategory } from "./types";
 import { inferGoalFromDef } from "../goals";
-import { getBudgetType } from "../preferences";
+import { getBudgetType } from "@/core/server/preferences";
 import { ALIVE_TX_FILTER } from "@/core/db/filters";
 import { getSpreadsheet } from "@/core/domain/spreadsheet/instance";
 import { sheetForMonth, envelopeBudget, trackingBudget } from "@/core/domain/spreadsheet/bindings";

@@ -15,7 +15,7 @@ import { Icon } from "@/design-system/atoms/Icon";
 import { SearchBar } from "@/design-system/molecules/SearchBar";
 import { EmptyState } from "@/design-system/molecules/EmptyState";
 import { usePayees } from "@/lib/hooks/usePayees";
-import { deletePayee, updatePayee } from "@/core/domain/payees";
+import { deletePayee, updatePayee } from "@/core/server/payees";
 import type { Payee } from "@/core/types/models";
 
 function PayeeRow({ payee, onPress }: { payee: Payee; onPress: (p: Payee) => void }) {

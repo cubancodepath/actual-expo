@@ -1,6 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { parseDate } from "@/core/domain/schedules/recurrence";
-import { projectForecastData, buildForecastDateContext, dayRangeInclusive } from "../projection";
+import {
+  projectForecastData,
+  buildForecastDateContext,
+  dayRangeInclusive,
+} from "../forecast-projection";
 import type { AccountWithComputedBalance, ForecastScheduleOccurrence } from "@/core/types/models";
 
 /**

@@ -18,14 +18,14 @@ import {
   setPreference,
   setArbitraryPref,
   getAllFeatureFlags,
-} from "@/core/domain/preferences";
-import { PREFERENCE_DEFAULTS, type PreferenceKey } from "@/core/domain/preferences/types";
+} from "@/core/server/preferences";
+import { PREFERENCE_DEFAULTS, type PreferenceKey } from "@/core/server/preferences/types";
 import {
   defaultFlagPrefs,
   flagKey,
   type FeatureFlag,
-} from "@/core/domain/preferences/featureFlags";
-import { applyFormatConfig } from "@/core/domain/preferences/formatConfig";
+} from "@/core/server/preferences/featureFlags";
+import { applyFormatConfig } from "@/core/server/preferences/formatConfig";
 
 // ---------------------------------------------------------------------------
 // Internal Zustand store (global cache for all synced prefs)

@@ -3,7 +3,7 @@ import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
 import { first, runQuery } from "@/core/db";
 import { sendMessages } from "@/core/sync";
 import { Timestamp } from "@/core/crdt";
-import { createAccount } from "@/core/domain/accounts";
+import { createAccount } from "@/core/server/accounts";
 import { createCategoryGroup, createCategory } from "@/core/domain/categories";
 import { mergeTransactions } from "../merge";
 

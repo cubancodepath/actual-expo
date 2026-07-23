@@ -22,7 +22,7 @@ import { envelopeBudget, sheetForMonth } from "@/core/domain/spreadsheet/binding
 import { useCategories } from "@/lib/hooks/useCategories";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { deleteCategory, updateCategory } from "@/core/domain/categories";
-import { setNote } from "@/core/domain/notes";
+import { setNote } from "@/core/server/notes";
 import { getCategoryNote, parseGoalDef } from "@/core/domain/goals";
 import { describeTemplate, translateDescription } from "@/core/domain/goals/describe";
 import { dialog } from "@/ui/feedback/dialog/dialogStore";

@@ -18,6 +18,9 @@ import { loadKeyForBudget } from "@/core/encryption/keys";
 import { ActualError } from "@/core/errors";
 import { emitErrorEvent, toErrorCode } from "@/lib/errors/ErrorChannel";
 import { useSessionStore } from "@/stores/sessionStore";
+// busyStore directly (not the barrel) so this store never pulls the host
+// component (react-native/heroui) into Node test imports.
+import { busy } from "@/ui/feedback/busy/busyStore";
 import { mmkvStorage } from "./prefsStorage";
 
 // ---------------------------------------------------------------------------
@@ -38,10 +41,6 @@ type BudgetData = {
   encryptKeyId?: string;
   lastSyncedTimestamp?: string;
   isLocalOnly: boolean;
-  /** True while loadBudget is doing its blocking setup — drives the global
-   *  open-budget loader so it survives the file-picker screen unmounting. Transient
-   *  (not persisted). */
-  isOpening: boolean;
 };
 
 type BudgetContextState = BudgetData & {
@@ -63,6 +62,9 @@ type BudgetContextState = BudgetData & {
   deleteBudget(budgetId: string): Promise<void>;
 };
 
+/** Max time the busy overlay waits for the first post-download sync. */
+const FIRST_SYNC_OVERLAY_TIMEOUT_MS = 30_000;
+
 const INITIAL: BudgetData = {
   activeBudgetId: "",
   budgetName: undefined,
@@ -71,7 +73,6 @@ const INITIAL: BudgetData = {
   encryptKeyId: undefined,
   lastSyncedTimestamp: undefined,
   isLocalOnly: false,
-  isOpening: false,
 };
 
 export const useBudgetContextStore = create<BudgetContextState>()(
@@ -198,9 +199,13 @@ export const useBudgetContextStore = create<BudgetContextState>()(
           if (balanceQueries.length > 0) await Promise.all(balanceQueries);
           lap("pre-fetch queries");
 
-          // 6. Initialize spreadsheet engine with local data
+          // 6. Initialize spreadsheet engine with local data. Phase message +
+          // per-chunk progress on the busy overlay (no-ops when loadBudget runs
+          // outside busy.run, e.g. the splash-covered bootstrap reopen).
           const { initSpreadsheet } = await import("@/core/server/sheet");
-          await initSpreadsheet();
+          const { default: i18n } = await import("@/i18n/config");
+          busy.setMessage(i18n.t("common:calculatingBudget"));
+          await initSpreadsheet((done, total) => busy.setProgress(done, total));
           lap("initSpreadsheet");
 
           // 7. Set sync-related budget context (needed for fullSync)
@@ -280,15 +285,12 @@ export const useBudgetContextStore = create<BudgetContextState>()(
       },
 
       async closeAndLoadBudget(localId) {
-        set({ isOpening: true });
-        try {
-          // loadBudget already closes the previous budget first.
-          await get().loadBudget(localId);
-          set({ isOpening: false });
-        } catch (e) {
-          set({ isOpening: false });
-          throw e;
-        }
+        const { default: i18n } = await import("@/i18n/config");
+        // loadBudget already closes the previous budget first. The busy overlay
+        // lives at the app root, so it survives the file picker unmounting.
+        await busy.run(() => get().loadBudget(localId), {
+          message: i18n.t("common:openingBudget"),
+        });
       },
 
       async closeAndDownloadBudget(file, serverUrl, token) {
@@ -303,15 +305,27 @@ export const useBudgetContextStore = create<BudgetContextState>()(
           name: file.name,
           encryptKeyId: file.encryptKeyId,
         };
-        set({ isOpening: true });
-        try {
-          const localId = await downloadBudget(serverUrl, token, budgetFile);
-          await get().loadBudget(localId);
-          set({ isOpening: false });
-        } catch (e) {
-          set({ isOpening: false });
-          throw e;
-        }
+        const { default: i18n } = await import("@/i18n/config");
+        await busy.run(
+          async () => {
+            const localId = await downloadBudget(serverUrl, token, budgetFile);
+            busy.setMessage(i18n.t("common:openingBudget"));
+            await get().loadBudget(localId);
+
+            // First open after a download: the background sync applies the
+            // full message history and recomputes cells right after — a jank
+            // spike if the overlay is already gone. Hold it until that first
+            // sync settles. fullSync() dedupes: this returns the promise
+            // loadBudget already started. Timeboxed so a dead server can't
+            // trap the user behind the overlay.
+            busy.setMessage(i18n.t("common:syncingBudget"));
+            await Promise.race([
+              fullSync({ force: true }).catch(() => 0),
+              new Promise((resolve) => setTimeout(resolve, FIRST_SYNC_OVERLAY_TIMEOUT_MS)),
+            ]);
+          },
+          { message: i18n.t("common:downloadingBudget") },
+        );
       },
 
       async deleteBudget(budgetId) {

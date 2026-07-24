@@ -2,8 +2,9 @@ import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { ScreenHeader } from "@/ui/ScreenHeader";
-import { useDashboardWidgets, CARD_GAP } from "./hooks/useDashboardWidgets";
+import { useDashboardWidgets, widgetPixelHeight, CARD_GAP } from "./hooks/useDashboardWidgets";
 import { ReportWidgetView } from "./components/ReportWidgetView";
+import { PlaceholderWidget } from "./components/PlaceholderWidget";
 
 /**
  * Reports dashboard — a read-only, single-column render of the user's synced
@@ -14,7 +15,7 @@ import { ReportWidgetView } from "./components/ReportWidgetView";
 export function ReportsScreen() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation("reports");
-  const { widgets } = useDashboardWidgets();
+  const { widgets, isLoading } = useDashboardWidgets();
 
   return (
     <ScreenHeader.ScrollArea>
@@ -25,9 +26,16 @@ export function ReportsScreen() {
           gap: CARD_GAP,
         }}
       >
-        {widgets.map((widget) => (
-          <ReportWidgetView key={widget.id} widget={widget} />
-        ))}
+        {widgets.map((widget) =>
+          // Until the dashboard tables load, the widget list is the synthetic
+          // default layout — skeleton slots only, so no card fetches data that
+          // may not match the user's real dashboard.
+          isLoading ? (
+            <PlaceholderWidget key={widget.id} height={widgetPixelHeight(widget)} />
+          ) : (
+            <ReportWidgetView key={widget.id} widget={widget} />
+          ),
+        )}
       </ScreenHeader.Body>
 
       <ScreenHeader.Floating>

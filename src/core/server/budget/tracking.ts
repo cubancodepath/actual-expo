@@ -19,6 +19,7 @@ import { getCategories, getCategoryGroups } from "@/core/server/budget";
 import type { Category, CategoryGroup } from "@/core/types/models";
 import { safeNumber } from "@/lib/number";
 import { num, createSpentCells, getBudgetRange } from "@/core/server/spreadsheet/util";
+import { warmReflectBudget } from "@/core/server/spreadsheet/warm-cache";
 
 export async function createBudgetCells(
   ss: Spreadsheet,
@@ -41,6 +42,10 @@ export async function createBudgetCells(
     ss.createDynamic(sheet, trackingBudget.catBudgeted(cat.id), {
       dependencies: [],
       run: () => {
+        // Batch path during init/ensureMonthRange (see warm-cache.ts).
+        const cached = warmReflectBudget(monthInt, cat.id);
+        if (cached !== undefined) return cached?.amount ?? 0;
+
         const row = firstSync<{ amount: number }>(
           "SELECT amount FROM reflect_budgets WHERE month = ? AND category = ?",
           [monthInt, cat.id],
@@ -52,6 +57,9 @@ export async function createBudgetCells(
     ss.createDynamic(sheet, trackingBudget.catCarryover(cat.id), {
       dependencies: [],
       run: () => {
+        const cached = warmReflectBudget(monthInt, cat.id);
+        if (cached !== undefined) return cached?.carryover === 1;
+
         const row = firstSync<{ carryover: number }>(
           "SELECT carryover FROM reflect_budgets WHERE month = ? AND category = ?",
           [monthInt, cat.id],

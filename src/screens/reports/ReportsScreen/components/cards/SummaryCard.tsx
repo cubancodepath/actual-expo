@@ -1,13 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { View } from "react-native";
 import { Card, Skeleton } from "heroui-native";
 import * as monthUtils from "@/core/shared/monthUtils";
-import { getLatestTransaction } from "@/core/server/transactions";
 import { Money } from "@/ui/Money";
 import type { SummaryContent, SummaryWidget } from "@/core/types/models/dashboard";
 import type { TimeFrame } from "@/core/types/models/dashboard";
 import { ReportWidget } from "../ReportWidget";
 import { useReport } from "../../hooks/useReport";
+import { useLatestTransactionDate } from "../../hooks/useTransactionBounds";
 import { useLocale } from "../../hooks/useLocale";
 import { calculateTimeRange } from "../../data/reportRanges";
 import { summarySpreadsheet } from "../../data/spreadsheets/summary-spreadsheet";
@@ -44,24 +44,24 @@ type SummaryCardProps = {
 export function SummaryCard({ title, height, meta }: SummaryCardProps) {
   const locale = useLocale();
 
-  const [latestTransaction, setLatestTransaction] = useState("");
-  useEffect(() => {
-    let cancelled = false;
-    void getLatestTransaction().then((tx) => {
-      if (!cancelled) setLatestTransaction(tx ? tx.date : monthUtils.currentDay());
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const latestTransaction = useLatestTransactionDate();
 
-  const [start, end] = calculateTimeRange(meta?.timeFrame, defaultTimeFrame, latestTransaction);
+  const [start, end] = calculateTimeRange(
+    meta?.timeFrame,
+    defaultTimeFrame,
+    latestTransaction ?? "",
+  );
 
   const content = useMemo(() => parseContent(meta?.content), [meta?.content]);
 
+  // No spreadsheet until the boundary date resolves — building it with a
+  // placeholder range and rebuilding after would run the queries twice.
   const getData = useMemo(
-    () => summarySpreadsheet(start, end, meta?.conditions, meta?.conditionsOp, content, locale),
-    [start, end, meta?.conditions, meta?.conditionsOp, content, locale],
+    () =>
+      latestTransaction
+        ? summarySpreadsheet(start, end, meta?.conditions, meta?.conditionsOp, content, locale)
+        : async () => {},
+    [latestTransaction, start, end, meta?.conditions, meta?.conditionsOp, content, locale],
   );
 
   const data = useReport(getData);

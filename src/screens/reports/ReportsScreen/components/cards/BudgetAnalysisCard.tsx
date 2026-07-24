@@ -1,9 +1,9 @@
 import { useMemo } from "react";
-import { View } from "react-native";
 import { useCategories } from "@/lib/hooks/useCategories";
 import { Money } from "@/ui/Money";
 import type { BudgetAnalysisWidget } from "@/core/types/models/dashboard";
 import { ReportWidget } from "../ReportWidget";
+import { WidgetSkeleton } from "../WidgetSkeleton";
 import { BudgetAnalysisGraph } from "../graphs/BudgetAnalysisGraph";
 import { useReport } from "../../hooks/useReport";
 import { useLocale } from "../../hooks/useLocale";
@@ -73,7 +73,7 @@ export function BudgetAnalysisCard({ title, height, meta }: BudgetAnalysisCardPr
       </ReportWidget.Header>
 
       <ReportWidget.Body>
-        {data ? <BudgetAnalysisGraph data={data} /> : <View className="flex-1" />}
+        {data ? <BudgetAnalysisGraph data={data} /> : <WidgetSkeleton />}
       </ReportWidget.Body>
     </ReportWidget>
   );

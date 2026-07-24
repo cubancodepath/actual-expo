@@ -97,7 +97,10 @@ export function createBudgetAnalysisSpreadsheet({
     // carryover flags), so the first month's balance is correct.
     let runningBalance = 0;
     const monthBeforeStart = monthUtils.subMonths(monthUtils.getMonth(startDate), 1);
+    // Two boundary calls cover the whole range: ensureMonthRange guarantees a
+    // contiguous built span, so every month in between is built after these.
     await ensureMonthRange(monthBeforeStart);
+    await ensureMonthRange(monthUtils.getMonth(endDate));
     for (const cat of categoriesToInclude) {
       const catBalance = readCell(monthBeforeStart, envelopeBudget.catBalance(cat.id));
       const hasCarryover = Boolean(readCell(monthBeforeStart, envelopeBudget.catCarryover(cat.id)));
@@ -111,8 +114,15 @@ export function createBudgetAnalysisSpreadsheet({
     let totalOverspendingAdjustment = 0;
     let overspendingFromPrevMonth = 0;
 
+    let monthsSinceYield = 0;
     for (const month of intervals) {
-      await ensureMonthRange(month);
+      // The synchronous cell reads below fan out to months × categories × 4 —
+      // yield periodically so long ranges don't monopolize the JS thread.
+      // Safe: useReport keeps previous data visible and cancels late results.
+      if (++monthsSinceYield >= 8) {
+        monthsSinceYield = 0;
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
 
       let budgeted = 0;
       let spent = 0;

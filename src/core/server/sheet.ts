@@ -15,6 +15,11 @@ import * as envelopeEngine from "@/core/server/budget/envelope";
 import * as trackingEngine from "@/core/server/budget/tracking";
 import { getCategories, getCategoryGroups } from "@/core/server/budget";
 import { getBudgetType } from "@/core/server/preferences";
+import { getBudgetRange } from "@/core/server/spreadsheet/util";
+import {
+  warmSpreadsheetCache,
+  clearSpreadsheetWarmCache,
+} from "@/core/server/spreadsheet/warm-cache";
 import { addMonths } from "@/core/shared/months";
 
 type BudgetEngine = {
@@ -48,18 +53,63 @@ let builtEnd: string | null = null;
 /** Which engine (envelope/tracking) built the current cells — see runStructuralRefresh. */
 let lastEngine: BudgetEngine | null = null;
 
+/** Months per init transaction — each chunk computes synchronously, then the
+ * loop yields to the event loop so timers/renders/progress land in between. */
+const INIT_CHUNK_MONTHS = 6;
+
 /**
  * Initialize the spreadsheet with budget cells for all months.
  * Called during bootstrap in loadBudget().
+ *
+ * Divergence from `createAllBudgetCells` (which runs everything in ONE
+ * transaction and stays for structural refreshes): months are built in
+ * ascending chunks, each in its own transaction, with an event-loop yield
+ * between chunks. Cell values are identical — months already build strictly
+ * ascending, so every chunk's previous-month cells are computed before the
+ * chunk that reads them (same invariant `buildMonthsAscending` relies on) —
+ * but the JS thread is no longer blocked for the whole build, so the busy
+ * overlay's message/progress can update and timers/touch handlers don't pile
+ * up behind one multi-second span. `onProgress` reports built/total months
+ * between chunks (core stays UI-free — the caller wires it to the overlay).
  */
-export async function initSpreadsheet(): Promise<void> {
+export async function initSpreadsheet(
+  onProgress?: (done: number, total: number) => void,
+): Promise<void> {
   const ss = getSpreadsheet();
   ss.clear();
   const engine = await getEngine();
   lastEngine = engine;
-  const range = await engine.createAllBudgetCells(ss);
-  builtStart = range.start;
-  builtEnd = range.end;
+
+  const { start, end, months } = await getBudgetRange();
+  const [cats, groups] = await Promise.all([getCategories(), getCategoryGroups()]);
+
+  // Batch the leaf-cell reads: a handful of grouped queries replace the
+  // thousands of per-cell synchronous ones while the cells compute.
+  await warmSpreadsheetCache(start, end);
+  try {
+    for (let i = 0; i < months.length; i += INIT_CHUNK_MONTHS) {
+      const chunk = months.slice(i, i + INIT_CHUNK_MONTHS);
+      ss.startTransaction();
+      try {
+        for (const month of chunk) {
+          await engine.createBudgetCells(ss, month, cats, groups);
+        }
+      } finally {
+        ss.endTransaction();
+      }
+
+      const done = Math.min(i + INIT_CHUNK_MONTHS, months.length);
+      onProgress?.(done, months.length);
+      if (done < months.length) {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+    }
+  } finally {
+    clearSpreadsheetWarmCache();
+  }
+
+  builtStart = start;
+  builtEnd = end;
   lastInitTime = Date.now();
 }
 
@@ -97,6 +147,11 @@ export async function ensureMonthRange(month: string): Promise<void> {
   ]);
   const ss = getSpreadsheet();
 
+  // Batch the gap's leaf-cell reads (same batching as initSpreadsheet).
+  const gapStart = month < builtStart ? month : addMonths(builtEnd, 1);
+  const gapEnd = month > builtEnd ? month : addMonths(builtStart, -1);
+  await warmSpreadsheetCache(gapStart, gapEnd);
+
   ss.startTransaction();
   try {
     if (month > builtEnd) {
@@ -111,6 +166,7 @@ export async function ensureMonthRange(month: string): Promise<void> {
     }
   } finally {
     ss.endTransaction();
+    clearSpreadsheetWarmCache();
   }
 }
 
@@ -251,7 +307,16 @@ async function runStructuralRefresh(): Promise<void> {
       ss.clear();
       lastEngine = engine;
     }
-    const range = await engine.createAllBudgetCells(ss);
+    // Same leaf-cell batching as initSpreadsheet (createAllBudgetCells builds
+    // this exact range internally).
+    const fullRange = await getBudgetRange();
+    await warmSpreadsheetCache(fullRange.start, fullRange.end);
+    let range: { start: string; end: string };
+    try {
+      range = await engine.createAllBudgetCells(ss);
+    } finally {
+      clearSpreadsheetWarmCache();
+    }
     builtStart = range.start;
     builtEnd = range.end;
 

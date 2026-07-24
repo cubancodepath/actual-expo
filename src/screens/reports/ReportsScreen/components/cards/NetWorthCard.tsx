@@ -1,16 +1,16 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { View } from "react-native";
 import { TrendChip } from "heroui-native-pro";
-import * as monthUtils from "@/core/shared/monthUtils";
-import { getLatestTransaction } from "@/core/server/transactions";
 import { useAccounts } from "@/lib/hooks/useAccounts";
 import { useFormat } from "@/lib/hooks/useFormat";
 import { useFirstDayOfWeek } from "@/lib/hooks/useFirstDayOfWeek";
 import { Money } from "@/ui/Money";
 import type { NetWorthWidget } from "@/core/types/models/dashboard";
 import { ReportWidget } from "../ReportWidget";
+import { WidgetSkeleton } from "../WidgetSkeleton";
 import { NetWorthGraph } from "../graphs/NetWorthGraph";
 import { useReport } from "../../hooks/useReport";
+import { useLatestTransactionDate } from "../../hooks/useTransactionBounds";
 import { useLocale } from "../../hooks/useLocale";
 import { calculateTimeRange } from "../../data/reportRanges";
 import { createSpreadsheet } from "../../data/spreadsheets/net-worth-spreadsheet";
@@ -32,33 +32,29 @@ export function NetWorthCard({ title, height, meta }: NetWorthCardProps) {
   const { accounts } = useAccounts();
   const firstDayOfWeekIdx = String(useFirstDayOfWeek());
 
-  const [latestTransaction, setLatestTransaction] = useState("");
-  useEffect(() => {
-    let cancelled = false;
-    void getLatestTransaction().then((tx) => {
-      if (!cancelled) setLatestTransaction(tx ? tx.date : monthUtils.currentDay());
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const latestTransaction = useLatestTransactionDate();
 
-  const [start, end] = calculateTimeRange(meta?.timeFrame, undefined, latestTransaction);
+  const [start, end] = calculateTimeRange(meta?.timeFrame, undefined, latestTransaction ?? "");
 
+  // No spreadsheet until the boundary date resolves — building it with a
+  // placeholder range and rebuilding after would run the queries twice.
   const getData = useMemo(
     () =>
-      createSpreadsheet(
-        start,
-        end,
-        accounts,
-        meta?.conditions,
-        meta?.conditionsOp,
-        locale,
-        meta?.interval || "Monthly",
-        firstDayOfWeekIdx,
-        format,
-      ),
+      latestTransaction
+        ? createSpreadsheet(
+            start,
+            end,
+            accounts,
+            meta?.conditions,
+            meta?.conditionsOp,
+            locale,
+            meta?.interval || "Monthly",
+            firstDayOfWeekIdx,
+            format,
+          )
+        : async () => {},
     [
+      latestTransaction,
       start,
       end,
       accounts,
@@ -108,7 +104,7 @@ export function NetWorthCard({ title, height, meta }: NetWorthCardProps) {
         {data ? (
           <NetWorthGraph graphData={data.graphData} negative={data.netWorth < 0} />
         ) : (
-          <View className="flex-1" />
+          <WidgetSkeleton />
         )}
       </ReportWidget.Body>
     </ReportWidget>

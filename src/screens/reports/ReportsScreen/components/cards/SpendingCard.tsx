@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import { View } from "react-native";
 import { TrendChip } from "heroui-native-pro";
 import * as monthUtils from "@/core/shared/monthUtils";
 import { useCategories } from "@/lib/hooks/useCategories";
@@ -7,6 +6,7 @@ import { useFormat } from "@/lib/hooks/useFormat";
 import { useSyncedPref } from "@/lib/hooks/useSyncedPref";
 import type { SpendingWidget } from "@/core/types/models/dashboard";
 import { ReportWidget } from "../ReportWidget";
+import { WidgetSkeleton } from "../WidgetSkeleton";
 import { SpendingGraph } from "../graphs/SpendingGraph";
 import { useReport } from "../../hooks/useReport";
 import { useLocale } from "../../hooks/useLocale";
@@ -105,7 +105,7 @@ export function SpendingCard({ title, height, meta }: SpendingCardProps) {
       </ReportWidget.Header>
 
       <ReportWidget.Body>
-        {data ? <SpendingGraph data={data} mode={mode} /> : <View className="flex-1" />}
+        {data ? <SpendingGraph data={data} mode={mode} /> : <WidgetSkeleton />}
       </ReportWidget.Body>
     </ReportWidget>
   );

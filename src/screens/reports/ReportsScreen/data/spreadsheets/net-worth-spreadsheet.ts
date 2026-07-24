@@ -8,6 +8,11 @@
  *  - `keyBy` (es-toolkit) → inlined
  * Field names are upstream-faithful now (the AQL port uses `account`).
  * The outer closure drops upstream's unused `spreadsheet` arg.
+ *
+ * Intentional divergence from upstream: instead of 2 AQL queries PER account
+ * (2N+1 total), the starting balances and interval balances are fetched with
+ * two account-grouped queries and regrouped per account in JS. Same filters,
+ * same per-account numbers — `recalculate` is untouched.
  */
 import * as d from "date-fns";
 import type { Locale } from "date-fns";
@@ -79,65 +84,69 @@ export function createSpreadsheet(
       }
     }
 
-    const data = await Promise.all(
-      accounts.map(async (acct) => {
-        const [starting, balances]: [number, Balance[]] = await Promise.all([
-          aqlQuery<number>(
-            q("transactions")
-              .filter({
-                [conditionsOpKey]: filters,
-                account: acct.id,
-                date: { $lt: startDate },
-              })
-              .calculate({ $sum: "$amount" }),
-          ).then(({ data }) => data ?? 0),
+    // One row per account instead of one query per account; extra accounts
+    // (closed, not in the widget's list) are simply never read back.
+    const intervalExpr =
+      interval === "Yearly"
+        ? { $year: "$date" }
+        : interval === "Daily" || interval === "Weekly"
+          ? "date"
+          : { $month: "$date" };
 
-          aqlQuery<Balance[]>(
-            q("transactions")
-              .filter({ [conditionsOpKey]: filters })
-              .filter({
-                account: acct.id,
-                $and: [{ date: { $gte: startDate } }, { date: { $lte: endDate } }],
-              })
-              .groupBy(
-                interval === "Yearly"
-                  ? { $year: "$date" }
-                  : interval === "Daily" || interval === "Weekly"
-                    ? "date"
-                    : { $month: "$date" },
-              )
-              .select([
-                {
-                  date:
-                    interval === "Yearly"
-                      ? { $year: "$date" }
-                      : interval === "Daily" || interval === "Weekly"
-                        ? "date"
-                        : { $month: "$date" },
-                },
-                { amount: { $sum: "$amount" } },
-              ]),
-          ).then(({ data }) => data),
-        ]);
+    const [startingRows, balanceRows] = await Promise.all([
+      aqlQuery<Array<{ account: string; amount: number }>>(
+        q("transactions")
+          .filter({
+            [conditionsOpKey]: filters,
+            date: { $lt: startDate },
+          })
+          .groupBy("account")
+          .select(["account", { amount: { $sum: "$amount" } }]),
+      ).then(({ data }) => data),
 
-        let processedBalances: Record<string, Balance>;
-        if (interval === "Weekly") {
-          const weeklyBalances: Record<string, number> = {};
-          balances.forEach((b) => {
-            const weekDate = monthUtils.weekFromDate(b.date, firstDayOfWeekIdx);
-            weeklyBalances[weekDate] = (weeklyBalances[weekDate] || 0) + b.amount;
-          });
-          processedBalances = {};
-          Object.entries(weeklyBalances).forEach(([date, amount]) => {
-            processedBalances[date] = { date, amount };
-          });
-        } else {
-          processedBalances = keyBy(balances, (b) => b.date);
-        }
+      aqlQuery<Array<{ account: string; date: string; amount: number }>>(
+        q("transactions")
+          .filter({ [conditionsOpKey]: filters })
+          .filter({
+            $and: [{ date: { $gte: startDate } }, { date: { $lte: endDate } }],
+          })
+          .groupBy(["account", intervalExpr])
+          .select(["account", { date: intervalExpr }, { amount: { $sum: "$amount" } }]),
+      ).then(({ data }) => data),
+    ]);
 
-        return { id: acct.id, name: acct.name, balances: processedBalances, starting };
-      }),
-    );
+    const startingByAccount = new Map(startingRows.map((row) => [row.account, row.amount]));
+    const balancesByAccount = new Map<string, Balance[]>();
+    for (const row of balanceRows) {
+      let list = balancesByAccount.get(row.account);
+      if (!list) {
+        list = [];
+        balancesByAccount.set(row.account, list);
+      }
+      list.push({ date: row.date, amount: row.amount });
+    }
+
+    const data = accounts.map((acct) => {
+      const balances = balancesByAccount.get(acct.id) ?? [];
+      const starting = startingByAccount.get(acct.id) ?? 0;
+
+      let processedBalances: Record<string, Balance>;
+      if (interval === "Weekly") {
+        const weeklyBalances: Record<string, number> = {};
+        balances.forEach((b) => {
+          const weekDate = monthUtils.weekFromDate(b.date, firstDayOfWeekIdx);
+          weeklyBalances[weekDate] = (weeklyBalances[weekDate] || 0) + b.amount;
+        });
+        processedBalances = {};
+        Object.entries(weeklyBalances).forEach(([date, amount]) => {
+          processedBalances[date] = { date, amount };
+        });
+      } else {
+        processedBalances = keyBy(balances, (b) => b.date);
+      }
+
+      return { id: acct.id, name: acct.name, balances: processedBalances, starting };
+    });
 
     setData(recalculate(data, startDate, endDate, locale, interval, firstDayOfWeekIdx, format));
   };

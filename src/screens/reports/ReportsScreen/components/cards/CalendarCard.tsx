@@ -6,12 +6,12 @@ import { Calendar, useCalendar } from "heroui-native-pro";
 import { ArrowUp, ArrowDown } from "lucide-react-native";
 import { parseDate } from "@internationalized/date";
 import * as monthUtils from "@/core/shared/monthUtils";
-import { getLatestTransaction } from "@/core/server/transactions";
 import { useFirstDayOfWeek, weekdayCode } from "@/lib/hooks/useFirstDayOfWeek";
 import { useFormat, type MoneyFormatType } from "@/lib/hooks/useFormat";
 import type { CalendarWidget } from "@/core/types/models/dashboard";
 import { ReportWidget } from "../ReportWidget";
 import { useReport } from "../../hooks/useReport";
+import { useLatestTransactionDate } from "../../hooks/useTransactionBounds";
 import {
   calendarSpreadsheet,
   type CalendarDayValue,
@@ -219,21 +219,16 @@ export function CalendarCard({ title, meta }: CalendarCardProps) {
   const { format } = useFormat();
   const firstDay = useFirstDayOfWeek();
 
-  const [initialMonth, setInitialMonth] = useState<string | null>(null);
-  const [visibleMonth, setVisibleMonth] = useState("");
+  const latestDate = useLatestTransactionDate();
+  const initialMonth = useMemo(
+    () => (latestDate ? monthUtils.monthFromDate(latestDate) : null),
+    [latestDate],
+  );
 
+  const [visibleMonth, setVisibleMonth] = useState("");
   useEffect(() => {
-    let cancelled = false;
-    void getLatestTransaction().then((tx) => {
-      if (cancelled) return;
-      const month = monthUtils.monthFromDate(tx ? tx.date : monthUtils.currentDay());
-      setInitialMonth(month);
-      setVisibleMonth(month);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    if (initialMonth) setVisibleMonth(initialMonth);
+  }, [initialMonth]);
 
   const getData = useMemo<(setData: (d: CalendarMonthData) => void) => Promise<void>>(
     () =>

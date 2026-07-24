@@ -1,16 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { TrendChip } from "heroui-native-pro";
 import * as monthUtils from "@/core/shared/monthUtils";
-import { getLatestTransaction } from "@/core/server/transactions";
 import { useFormat } from "@/lib/hooks/useFormat";
 import { Money } from "@/ui/Money";
 import type { CashFlowWidget } from "@/core/types/models/dashboard";
 import type { TimeFrame } from "@/core/types/models/dashboard";
 import { ReportWidget } from "../ReportWidget";
+import { WidgetSkeleton } from "../WidgetSkeleton";
 import { CashFlowGraph } from "../graphs/CashFlowGraph";
 import { useReport } from "../../hooks/useReport";
+import { useLatestTransactionDate } from "../../hooks/useTransactionBounds";
 import { useLocale } from "../../hooks/useLocale";
 import { calculateTimeRange } from "../../data/reportRanges";
 import { simpleCashFlow } from "../../data/spreadsheets/cash-flow-spreadsheet";
@@ -39,22 +40,22 @@ export function CashFlowCard({ title, height, meta }: CashFlowCardProps) {
   const locale = useLocale();
   const { format } = useFormat();
 
-  const [latestTransaction, setLatestTransaction] = useState("");
-  useEffect(() => {
-    let cancelled = false;
-    void getLatestTransaction().then((tx) => {
-      if (!cancelled) setLatestTransaction(tx ? tx.date : monthUtils.currentDay());
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const latestTransaction = useLatestTransactionDate();
 
-  const [start, end] = calculateTimeRange(meta?.timeFrame, defaultTimeFrame, latestTransaction);
+  const [start, end] = calculateTimeRange(
+    meta?.timeFrame,
+    defaultTimeFrame,
+    latestTransaction ?? "",
+  );
 
+  // No spreadsheet until the boundary date resolves — building it with a
+  // placeholder range and rebuilding after would run the queries twice.
   const getData = useMemo(
-    () => simpleCashFlow(start, end, meta?.conditions, meta?.conditionsOp),
-    [start, end, meta?.conditions, meta?.conditionsOp],
+    () =>
+      latestTransaction
+        ? simpleCashFlow(start, end, meta?.conditions, meta?.conditionsOp)
+        : async () => {},
+    [latestTransaction, start, end, meta?.conditions, meta?.conditionsOp],
   );
 
   const data = useReport(getData);
@@ -84,7 +85,7 @@ export function CashFlowCard({ title, height, meta }: CashFlowCardProps) {
       </ReportWidget.Header>
 
       <ReportWidget.Body>
-        {data ? <CashFlowGraph income={income} expenses={expenses} /> : <View className="flex-1" />}
+        {data ? <CashFlowGraph income={income} expenses={expenses} /> : <WidgetSkeleton />}
       </ReportWidget.Body>
 
       {data ? (

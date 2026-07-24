@@ -18,6 +18,7 @@ import { getCategories, getCategoryGroups } from "@/core/server/budget";
 import type { Category, CategoryGroup } from "@/core/types/models";
 import { safeNumber } from "@/lib/number";
 import { num, createSpentCells, getBudgetRange } from "@/core/server/spreadsheet/util";
+import { warmBuffered, warmZeroBudget } from "@/core/server/spreadsheet/warm-cache";
 import { inferGoalFromDef } from "@/core/server/budget/goals";
 
 // ---------------------------------------------------------------------------
@@ -51,6 +52,10 @@ export async function createBudgetCells(
   ss.createDynamic(sheet, envelopeBudget.buffered, {
     dependencies: [],
     run: () => {
+      // Batch path during init/ensureMonthRange (see warm-cache.ts).
+      const cached = warmBuffered(month);
+      if (cached !== undefined) return cached;
+
       const row = firstSync<{ buffered: number }>(
         "SELECT buffered FROM zero_budget_months WHERE id = ?",
         [month],
@@ -70,6 +75,9 @@ export async function createBudgetCells(
     ss.createDynamic(sheet, envelopeBudget.catBudgeted(cat.id), {
       dependencies: [],
       run: () => {
+        const cached = warmZeroBudget(monthInt, cat.id);
+        if (cached !== undefined) return cached?.amount ?? 0;
+
         const row = firstSync<{ amount: number }>(
           "SELECT amount FROM zero_budgets WHERE month = ? AND category = ?",
           [monthInt, cat.id],
@@ -81,6 +89,9 @@ export async function createBudgetCells(
     ss.createDynamic(sheet, envelopeBudget.catCarryover(cat.id), {
       dependencies: [],
       run: () => {
+        const cached = warmZeroBudget(monthInt, cat.id);
+        if (cached !== undefined) return cached?.carryover === 1;
+
         const row = firstSync<{ carryover: number }>(
           "SELECT carryover FROM zero_budgets WHERE month = ? AND category = ?",
           [monthInt, cat.id],
@@ -124,6 +135,9 @@ export async function createBudgetCells(
     ss.createDynamic(sheet, envelopeBudget.catGoal(cat.id), {
       dependencies: [],
       run: () => {
+        const cached = warmZeroBudget(monthInt, cat.id);
+        if (cached !== undefined) return cached?.goal ?? inferred?.goal ?? 0;
+
         const row = firstSync<{ goal: number | null }>(
           "SELECT goal FROM zero_budgets WHERE month = ? AND category = ?",
           [monthInt, cat.id],
@@ -134,6 +148,11 @@ export async function createBudgetCells(
     ss.createDynamic(sheet, envelopeBudget.catLongGoal(cat.id), {
       dependencies: [],
       run: () => {
+        const cached = warmZeroBudget(monthInt, cat.id);
+        if (cached !== undefined) {
+          return cached?.long_goal != null ? cached.long_goal === 1 : (inferred?.longGoal ?? false);
+        }
+
         const row = firstSync<{ long_goal: number | null }>(
           "SELECT long_goal FROM zero_budgets WHERE month = ? AND category = ?",
           [monthInt, cat.id],

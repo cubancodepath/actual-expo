@@ -212,7 +212,17 @@ export function createSpendingSpreadsheet({
       months.unshift({ month: compareToMonth, perMonthAssets: 0, perMonthDebts: 0 });
     }
 
-    const intervalData = days.map((day) => {
+    // Sequential for-of instead of upstream's days.map: the triple-nested
+    // day × month × interval reduce below is synchronous JS-thread work, so
+    // yield periodically. Order-preserving — the running totals mutate in the
+    // same sequence. Safe: useReport keeps previous data and cancels late results.
+    const intervalData: SpendingEntity["intervalData"] = [];
+    let daysSinceYield = 0;
+    for (const day of days) {
+      if (++daysSinceYield >= 7) {
+        daysSinceYield = 0;
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
       let averageSum = 0;
       let monthCount = 0;
       const dayData = months.map((month) => {
@@ -291,15 +301,15 @@ export function createSpendingSpreadsheet({
       // cumulative is null for future days (upstream types it loosely under
       // @ts-strict-ignore); the graph guards for null.
       const indexedData = keyBy(dayData, (d) => d.month) as unknown as SpendingMonthEntity;
-      return {
+      intervalData.push({
         months: indexedData,
         day,
         average: monthCount === 0 ? 0 : Math.round(averageSum / monthCount),
         compare: dayData.filter((c) => c.month === compareMonth)[0].cumulative as number,
         compareTo: dayData.filter((c) => c.month === compareToMonth)[0].cumulative as number,
         budget: totalBudget,
-      };
-    });
+      });
+    }
 
     setData({
       intervalData,

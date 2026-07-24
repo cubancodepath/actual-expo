@@ -9,6 +9,7 @@ import { sheetForMonth, envelopeBudget } from "@/core/server/spreadsheet/binding
 import { firstSync, first } from "@/core/db";
 import { monthToInt, currentMonth, intToStr, addMonths } from "@/core/shared/months";
 import { ALIVE_TX_FILTER } from "@/core/db/filters";
+import { warmSpent } from "@/core/server/spreadsheet/warm-cache";
 import type { Category } from "@/core/types/models";
 
 export function num(v: CellValue): number {
@@ -79,6 +80,10 @@ export function createSpentCells(ss: Spreadsheet, month: string, categories: Cat
     ss.createDynamic(sheet, envelopeBudget.catSpent(cat.id), {
       dependencies: [],
       run: () => {
+        // Batch path during init/ensureMonthRange (see warm-cache.ts).
+        const cached = warmSpent(monthInt, cat.id);
+        if (cached !== undefined) return cached;
+
         const row = firstSync<{ total: number }>(
           `SELECT SUM(t.amount) AS total
            FROM transactions t

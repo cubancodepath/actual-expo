@@ -7,6 +7,7 @@ import { NetWorthCard } from "./cards/NetWorthCard";
 import { CashFlowCard } from "./cards/CashFlowCard";
 import { SummaryCard } from "./cards/SummaryCard";
 import { MarkdownCard } from "./cards/MarkdownCard";
+import { AgeOfMoneyCard } from "./cards/AgeOfMoneyCard";
 
 /**
  * Dispatches a dashboard widget to its card by type. Types without a ported
@@ -27,6 +28,8 @@ export function ReportWidgetView({ widget }: { widget: DashboardWidgetEntity }) 
       return <SummaryCard title={title} height={height} meta={widget.meta} />;
     case "markdown-card":
       return <MarkdownCard height={height} meta={widget.meta} />;
+    case "age-of-money-card":
+      return <AgeOfMoneyCard title={title} height={height} meta={widget.meta} />;
     default:
       return <PlaceholderWidget title={title} height={height} />;
   }

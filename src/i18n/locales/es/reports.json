@@ -46,5 +46,14 @@
     "singleMonth": "Este mes",
     "budget": "Presupuesto",
     "average": "Promedio"
+  },
+  "ageOfMoney": {
+    "days_one": "{{count}} día",
+    "days_other": "{{count}} días",
+    "notAvailable": "N/D",
+    "improving": "Mejorando",
+    "declining": "Empeorando",
+    "stable": "Estable",
+    "incompleteData": "Datos incompletos"
   }
 }

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { View } from "react-native";
-import { Card } from "heroui-native";
+import { Card, cn } from "heroui-native";
 import { CardErrorBoundary } from "./CardErrorBoundary";
 
 /**
@@ -47,12 +47,12 @@ function Heading({ children }: { children: ReactNode }) {
   return <View className="flex-1">{children}</View>;
 }
 
-function Title({ children }: { children: ReactNode }) {
-  return <Card.Title className="text-sm font-medium">{children}</Card.Title>;
+function Title({ children, className }: { children: ReactNode; className?: string }) {
+  return <Card.Title className={cn("text-sm font-medium", className)}>{children}</Card.Title>;
 }
 
-function Description({ children }: { children: ReactNode }) {
-  return <Card.Description className="text-xs">{children}</Card.Description>;
+function Description({ children, className }: { children: ReactNode; className?: string }) {
+  return <Card.Description className={cn("text-xs", className)}>{children}</Card.Description>;
 }
 
 /** Right side of the header (a KPI value + trend chip, or a legend). */

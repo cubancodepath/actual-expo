@@ -46,5 +46,14 @@
     "singleMonth": "This month",
     "budget": "Budget",
     "average": "Average"
+  },
+  "ageOfMoney": {
+    "days_one": "{{count}} day",
+    "days_other": "{{count}} days",
+    "notAvailable": "N/A",
+    "improving": "Improving",
+    "declining": "Declining",
+    "stable": "Stable",
+    "incompleteData": "Incomplete data"
   }
 }

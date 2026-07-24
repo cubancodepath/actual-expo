@@ -34,6 +34,7 @@ import { useSessionStore } from "@/stores/sessionStore";
 import { useSyncStore } from "@/stores/syncStore";
 import { resetAllStores } from "@/stores/operations/resetStores";
 import { clearAutoRecoveryGuard } from "@/stores/operations/autoRecoveryGuard";
+import { useSyncedPrefsStore } from "@/hooks/useSyncedPrefs";
 // busyStore directly (not the barrel) so this module never pulls the host
 // component (react-native/heroui) into Node test imports.
 import { busy } from "@/ui/feedback/busy/busyStore";
@@ -98,7 +99,6 @@ export async function loadBudget(budgetId: string, opts?: { force?: boolean }): 
     }
 
     // 4. Load synced prefs (format config, feature flags)
-    const { useSyncedPrefsStore } = await import("@/hooks/useSyncedPrefs");
     await useSyncedPrefsStore.getState().load();
 
     // 5. Pre-fetch core queries into cache — gives instant first render with local data.

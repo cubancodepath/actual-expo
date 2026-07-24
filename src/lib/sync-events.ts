@@ -15,17 +15,21 @@ import type { SyncEvent } from "@/core/sync/syncEvents";
 import { listen } from "@/core/sync/syncEvents";
 import { emitErrorEvent, toErrorCode } from "@/lib/errors/ErrorChannel";
 import type { ErrorCode } from "@/core/errors";
+import { useSyncStore } from "@/stores/syncStore";
+import { useBudgetContextStore } from "@/stores/budgetContextStore";
+import { signOut } from "@/stores/operations/users";
+import { handleSyncFileError } from "@/stores/operations/syncRecovery";
+
+// Static imports: sync-events is a leaf of the app graph (nothing it imports
+// imports it back), so there is no cycle to break with dynamic imports.
 
 async function handleSyncError(subtype: string, meta: unknown): Promise<void> {
-  const { useSyncStore } = await import("@/stores/syncStore");
-
   if (subtype === "auth/token-expired") {
     // Session teardown, not a user-visible error. signOut() is the single
     // full-teardown path (closes the budget + DB first) — same handler the
     // react-query 401 hook uses.
     emitErrorEvent(meta);
     useSyncStore.getState()._setStatus("idle");
-    const { signOut } = await import("@/stores/operations/users");
     await signOut();
     return;
   }
@@ -34,7 +38,6 @@ async function handleSyncError(subtype: string, meta: unknown): Promise<void> {
     // Server file-state rejection (reset/re-encrypted/format change on
     // another client): auto-recover or raise the conflict dialog.
     emitErrorEvent(meta);
-    const { handleSyncFileError } = await import("@/stores/operations/syncRecovery");
     await handleSyncFileError(subtype as ErrorCode);
     return;
   }
@@ -51,8 +54,6 @@ async function handleSyncError(subtype: string, meta: unknown): Promise<void> {
 }
 
 async function handleSyncEvent(event: SyncEvent): Promise<void> {
-  const { useSyncStore } = await import("@/stores/syncStore");
-
   switch (event.type) {
     case "start":
       useSyncStore.getState()._setStatus("syncing");
@@ -66,15 +67,13 @@ async function handleSyncEvent(event: SyncEvent): Promise<void> {
     case "error":
       await handleSyncError(event.subtype, event.meta);
       return;
-    case "prefs-updated": {
+    case "prefs-updated":
       // Mirror synced budget prefs into the reactive store (core already
       // persisted them via savePrefs).
       if (typeof event.prefs.budgetName === "string") {
-        const { useBudgetContextStore } = await import("@/stores/budgetContextStore");
         useBudgetContextStore.getState().setBudgetContext({ budgetName: event.prefs.budgetName });
       }
       return;
-    }
     default:
       return; // "applied" — data reactivity is liveQuery's job
   }

@@ -9,16 +9,16 @@ the same `testContent` shape).
 
 ## Module map (upstream → here)
 
-| upstream (`loot-core/src/server`)        | here                                   |
-| ---------------------------------------- | -------------------------------------- |
-| `encryption/index.ts` (Key + crypto)     | `src/core/encryption/index.ts`         |
-| `encryption/internals.*`                 | `src/core/encryption/internals.ts`     |
-| `encryption/app.ts` (`keyMake`,`keyTest`)| `src/core/encryption/app.ts`           |
-| `sync/make-test-message.ts`              | `src/core/sync/makeTestMessage.ts`     |
-| `cloud-storage.ts` (`checkKey`,`resetSyncState`) | `src/core/sync/cloudStorage.ts` |
-| `sync/reset.ts` (`resetSync`)            | `src/core/sync/reset.ts`               |
-| `platform/server/asyncStorage` (`encrypt-keys`) | `src/core/platform/keyStore.ts` |
-| (key loading on file open)               | `src/core/encryption/keys.ts`          |
+| upstream (`loot-core/src/server`)                | here                               |
+| ------------------------------------------------ | ---------------------------------- |
+| `encryption/index.ts` (Key + crypto)             | `src/core/encryption/index.ts`     |
+| `encryption/internals.*`                         | `src/core/encryption/internals.ts` |
+| `encryption/app.ts` (`keyMake`,`keyTest`)        | `src/core/encryption/app.ts`       |
+| `sync/make-test-message.ts`                      | `src/core/sync/makeTestMessage.ts` |
+| `cloud-storage.ts` (`checkKey`,`resetSyncState`) | `src/core/sync/cloudStorage.ts`    |
+| `sync/reset.ts` (`resetSync`)                    | `src/core/sync/reset.ts`           |
+| `platform/server/asyncStorage` (`encrypt-keys`)  | `src/core/platform/keyStore.ts`    |
+| (key loading on file open)                       | `src/core/encryption/keys.ts`      |
 
 The password UI is a route form-sheet (`app/(auth)/encryption-password.tsx` →
 `src/screens/encryption/EncryptionPasswordScreen`), driven imperatively via
@@ -39,7 +39,7 @@ real Actual server.
   derived key bytes are identical → byte-compatible.
 - **Key persistence: Keychain/Keystore (`core/platform/keyStore`,
   expo-secure-store) instead of upstream's unencrypted `asyncStorage
-  'encrypt-keys'` map.** Hardware-backed, device-only — a security improvement.
+'encrypt-keys'` map.** Hardware-backed, device-only — a security improvement.
   The platform-abstraction shape still mirrors upstream.
 - **No `connection.send('prefs-updated')`.** There's no loot-core connection bus;
   UI refreshes through Zustand stores instead.

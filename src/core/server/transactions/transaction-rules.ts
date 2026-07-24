@@ -6,12 +6,20 @@
  */
 
 import { subDays, addDays } from "date-fns";
+import * as monthUtils from "@/core/shared/monthUtils";
 import { first, runQuery } from "@/core/db";
 import { batchMessages } from "@/core/sync";
 import { findOrCreatePayee } from "@/core/server/payees";
 import type { Rule } from "@/core/server/rules/rule";
 import type { Action } from "@/core/server/rules/action";
-import { rankRules, fastSetMerge } from "@/core/server/rules/rule-utils";
+import { Condition } from "@/core/server/rules/condition";
+import {
+  rankRules,
+  fastSetMerge,
+  getApproxNumberThreshold,
+  sortNumbers,
+  extractTagsForFilter,
+} from "@/core/server/rules/rule-utils";
 import { RuleIndexer } from "@/core/server/rules/rule-indexer";
 import { getRules, createRule, updateRule } from "@/core/server/rules";
 import {
@@ -26,7 +34,12 @@ import {
   recalculateSplit,
   ungroupTransaction,
 } from "@/core/shared/transactions";
-import type { Transaction, TransactionWithSubtransactions } from "@/core/types/models";
+import type {
+  Transaction,
+  TransactionWithSubtransactions,
+  RuleCondition,
+} from "@/core/types/models";
+import type { ObjectExpression } from "@/core/shared/query";
 
 // ═══ Rule running (former rules/engine.ts) ═══
 
@@ -739,4 +752,338 @@ export async function updateCategoryRules(transactions: LearnTransaction[]): Pro
       }
     }
   });
+}
+
+// ═══ conditions → AQL (former make-filters-from-conditions handler) ═══
+//
+// Faithful port of loot-core/src/server/transactions/transaction-rules.ts
+// `conditionSpecialCases` + `conditionsToAQL`. Turns a rule/report's conditions
+// into AQL filter objects so a query can find every matching transaction — the
+// inverse of running a rule over one transaction.
+//
+// Differences from upstream are load-bearing, not stylistic:
+//  - Dates stay strings end-to-end (this port's decision), so the date helpers
+//    come from `monthUtils` (string-based) instead of date-fns.
+//  - `$regexp` (matches / hasTags / hasAnyTag) is emitted verbatim; expo-sqlite
+//    can't register the REGEXP function, so the DIALECT throws
+//    `RegexpUnsupportedError` when such a query actually runs. Callers that may
+//    hit these ops catch that at execution time and fall back per-widget.
+
+/**
+ * Some ops fan out into several conditions. Matching upstream: an `is category
+ * null` also excludes transfers and parents; `isNot category null` excludes
+ * parents. Everything else passes through unchanged.
+ */
+function conditionSpecialCases(cond: Condition | null): Condition | null {
+  if (!cond) {
+    return cond;
+  }
+
+  // special cases that require multiple conditions
+  if (cond.op === "is" && cond.field === "category" && cond.value === null) {
+    return new Condition(
+      "and",
+      cond.field,
+      [
+        cond,
+        new Condition("is", "transfer", false, undefined),
+        new Condition("is", "parent", false, undefined),
+      ],
+      {},
+    );
+  } else if (cond.op === "isNot" && cond.field === "category" && cond.value === null) {
+    return new Condition(
+      "and",
+      cond.field,
+      [cond, new Condition("is", "parent", false, undefined)],
+      {},
+    );
+  }
+  return cond;
+}
+
+export type ConditionsToAQLOptions = {
+  recurDateBounds?: number;
+  applySpecialCases?: boolean;
+};
+
+export type ConditionsToAQLResult = {
+  filters: ObjectExpression[];
+  errors: string[];
+};
+
+// This does the inverse: finds all the transactions matching a rule
+export function conditionsToAQL(
+  conditions: Array<Condition | RuleCondition>,
+  { recurDateBounds = 100, applySpecialCases = true }: ConditionsToAQLOptions = {},
+): ConditionsToAQLResult {
+  const errors: string[] = [];
+
+  const parsed = conditions
+    .map((cond) => {
+      if (cond instanceof Condition) {
+        return cond;
+      }
+
+      try {
+        return new Condition(cond.op, cond.field, cond.value, cond.options);
+      } catch (e) {
+        errors.push((e as { type?: string }).type || "internal");
+        return null;
+      }
+    })
+    .map((cond) => (applySpecialCases ? conditionSpecialCases(cond) : cond))
+    .filter(Boolean) as Condition[];
+
+  // rule -> actualql
+  const mapConditionToActualQL = (cond: Condition): ObjectExpression => {
+    const { type, options } = cond as {
+      type: string;
+      options: Record<string, unknown> | undefined;
+    };
+    let { field, op, value } = cond as {
+      field: string;
+      op: string;
+      value: unknown;
+    };
+
+    const getValue = (value: unknown): unknown => {
+      if (type === "number") {
+        return (value as { value: number }).value;
+      }
+      return value;
+    };
+
+    if (field === "transfer" && op === "is") {
+      field = "transfer_id";
+      if (value) {
+        op = "isNot";
+        value = null;
+      } else {
+        value = null;
+      }
+    } else if (field === "parent" && op === "is") {
+      field = "is_parent";
+      if (value) {
+        op = "true";
+      } else {
+        op = "false";
+      }
+    } else if (field === "category_group") {
+      field = "category.group";
+    }
+
+    const apply = (field: string, aqlOp: string, value: unknown): ObjectExpression => {
+      if (type === "number") {
+        if (options) {
+          if (options.outflow) {
+            return {
+              $and: [{ amount: { $lt: 0 } }, { [field]: { $transform: "$neg", [aqlOp]: value } }],
+            };
+          } else if (options.inflow) {
+            return {
+              $and: [{ amount: { $gt: 0 } }, { [field]: { [aqlOp]: value } }],
+            };
+          }
+        }
+
+        return { amount: { [aqlOp]: value } };
+      } else if (type === "string") {
+        return {
+          [field]: {
+            $transform: !["hasTags", "hasAnyTag"].includes(op) ? "$lower" : undefined,
+            [aqlOp]: value,
+          },
+        };
+      } else if (type === "date") {
+        return { [field]: { [aqlOp]: (value as { date: string }).date } };
+      }
+      return { [field]: { [aqlOp]: value } };
+    };
+
+    switch (op) {
+      case "isapprox":
+      case "is":
+        if (type === "date") {
+          const v = value as {
+            type: string;
+            date: string;
+            // rSchedule Schedule — occurrences() exists at runtime.
+            schedule?: {
+              occurrences: (opts: { take: number }) => { toArray: () => { date: Date }[] };
+            };
+          };
+          if (v.type === "recur") {
+            const dates = v
+              .schedule!.occurrences({ take: recurDateBounds })
+              .toArray()
+              .map((d) => monthUtils.dayFromDate(d.date));
+
+            return {
+              $or: dates.map((d) => {
+                if (op === "isapprox") {
+                  return {
+                    $and: [
+                      { date: { $gte: monthUtils.subDays(d, 2) } },
+                      { date: { $lte: monthUtils.addDays(d, 2) } },
+                    ],
+                  };
+                }
+                return { date: d };
+              }),
+            };
+          } else {
+            if (op === "isapprox") {
+              const fullDate = monthUtils.parseDate(v.date);
+              const high = monthUtils.addDays(fullDate, 2);
+              const low = monthUtils.subDays(fullDate, 2);
+
+              return {
+                $and: [{ date: { $gte: low } }, { date: { $lte: high } }],
+              };
+            } else {
+              switch (v.type) {
+                case "date":
+                  return { date: v.date };
+                case "month": {
+                  const low = v.date + "-00";
+                  const high = v.date + "-99";
+                  return {
+                    $and: [{ date: { $gte: low } }, { date: { $lte: high } }],
+                  };
+                }
+                case "year": {
+                  const low = v.date + "-00-00";
+                  const high = v.date + "-99-99";
+                  return {
+                    $and: [{ date: { $gte: low } }, { date: { $lte: high } }],
+                  };
+                }
+                default:
+              }
+            }
+          }
+        } else if (type === "number") {
+          const number = (value as { value: number }).value;
+          if (op === "isapprox") {
+            const threshold = getApproxNumberThreshold(number);
+
+            return {
+              $and: [
+                apply(field, "$gte", number - threshold),
+                apply(field, "$lte", number + threshold),
+              ],
+            };
+          }
+          return apply(field, "$eq", number);
+        } else if (type === "string") {
+          if (value === "") {
+            return {
+              $or: [apply(field, "$eq", null), apply(field, "$eq", "")],
+            };
+          }
+        }
+        return apply(field, "$eq", value);
+      case "isNot":
+        return apply(field, "$ne", value);
+
+      case "isbetween": {
+        // This operator is only applicable to the specific `between`
+        // number type so we don't use `apply`
+        const { num1, num2 } = value as { num1: number; num2: number };
+        const [low, high] = sortNumbers(num1, num2);
+        return {
+          [field]: [{ $gte: low }, { $lte: high }],
+        };
+      }
+      case "contains":
+        // Running contains with id will automatically reach into
+        // the `name` of the referenced table and do a string match
+        return apply(type === "id" ? field + ".name" : field, "$like", "%" + value + "%");
+      case "matches":
+        // Running contains with id will automatically reach into
+        // the `name` of the referenced table and do a regex match
+        return apply(type === "id" ? field + ".name" : field, "$regexp", value);
+      case "doesNotContain":
+        // Running contains with id will automatically reach into
+        // the `name` of the referenced table and do a string match
+        return apply(type === "id" ? field + ".name" : field, "$notlike", "%" + value + "%");
+      case "oneOf": {
+        const values = value as unknown[];
+        if (values.length === 0) {
+          // This forces it to match nothing
+          return { id: null };
+        }
+        return { $or: values.map((v) => apply(field, "$eq", v)) };
+      }
+
+      case "hasTags": {
+        const tagValues = extractTagsForFilter(value as string);
+
+        if (tagValues.length === 0) {
+          // No `#tag` patterns in the input — match nothing rather than
+          // returning an empty `$and` (which would match every row).
+          return { id: null };
+        }
+
+        return {
+          $and: tagValues.map((v) => {
+            const escapedTag = v.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\\\$/g, "[$]"); // Use '[$]' instead of '\$' so AQL string unescaping doesn't turn it into a bare '$' end-of-string anchor
+            const pattern = `(?<!#)${escapedTag}([\\s#]|$)`;
+            return apply(field, "$regexp", pattern);
+          }),
+        };
+      }
+
+      case "hasAnyTag": {
+        const tagValues = extractTagsForFilter(value as string);
+        if (tagValues.length === 0) {
+          return { id: null };
+        }
+        return {
+          $or: tagValues.map((v) => {
+            const escapedTag = v.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\\\$/g, "[$]"); // Use '[$]' instead of '\$' so AQL string unescaping doesn't turn it into a bare '$' end-of-string anchor
+            const pattern = `(?<!#)${escapedTag}([\\s#]|$)`;
+            return apply(field, "$regexp", pattern);
+          }),
+        };
+      }
+
+      case "notOneOf": {
+        const notValues = value as unknown[];
+        if (notValues.length === 0) {
+          // This forces it to match nothing
+          return { id: null };
+        }
+        return { $and: notValues.map((v) => apply(field, "$ne", v)) };
+      }
+      case "gt":
+        return apply(field, "$gt", getValue(value));
+      case "gte":
+        return apply(field, "$gte", getValue(value));
+      case "lt":
+        return apply(field, "$lt", getValue(value));
+      case "lte":
+        return apply(field, "$lte", getValue(value));
+      case "true":
+        return apply(field, "$eq", true);
+      case "false":
+        return apply(field, "$eq", false);
+      case "and":
+        return {
+          $and: (getValue(value) as Condition[]).map((subExpr) => mapConditionToActualQL(subExpr)),
+        };
+
+      case "onBudget":
+        return { "account.offbudget": false };
+      case "offBudget":
+        return { "account.offbudget": true };
+
+      default:
+        throw new Error("Unhandled operator: " + op);
+    }
+  };
+
+  const filters = parsed.map(mapConditionToActualQL);
+  return { filters, errors };
 }

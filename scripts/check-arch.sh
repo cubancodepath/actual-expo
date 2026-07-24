@@ -2,8 +2,10 @@
 #
 # Architecture guardrail — enforces the dependency direction (see ARCHITECTURE.md):
 #   app → screens → (ui | stores | lib) → core
-# The stores are the mobile "slices" (state + operations); side effects live in
-# core/server (transport/handlers) + core/platform (native seams). No services/.
+# Stores are pure state slices; cross-store orchestration lives in
+# src/stores/operations/ (Zustand equivalent of Redux thunks). Side effects
+# live in core/server (transport/handlers) + core/platform (native seams).
+# No services/.
 # Legacy layers (features/, components/, design-system/) still exist during the
 # strangler migration and are held to the same rules. Wired into husky pre-commit.
 #
@@ -21,10 +23,15 @@
 #   5. src/core imports app-side lib modules (@/lib/errors, @/lib/query) — core only
 #      THROWS typed ActualErrors; the error bus and react-query wiring are app-level.
 #      Pure utils (@/lib/format, date, currencies) stay allowed.
+#   6. A store file (src/stores/*.ts) imports another store — cross-store
+#      orchestration must live in src/stores/operations/ (thunks). Keeps the
+#      stores free of the module-init cycles the operations layer eliminated.
+#      Exempt: operations/** (the orchestration layer), session.selectors.ts
+#      (read-only composition), prefsStorage.ts (persistence adapter).
 #
 # WARNINGS (do not block):
-#   - src/core imports @/stores — known port compromise (sync code reads prefs/context
-#     from the store; see docs/architecture-differences).
+#   - src/core imports @/stores — core must own its state (prefs/server-config);
+#     this should find nothing now (kept as a guard).
 #   - "fat" route files in app/ (> 120 lines) — routes must stay thin re-exports of
 #     src/screens/ (ARCHITECTURE.md § rutas finas).
 #
@@ -148,7 +155,33 @@ if [ -n "$legacy_new" ]; then
   fail=1
 fi
 
-# WARN: core importing stores (known debt) — static AND dynamic imports
+# 7. STORE FILES must not import sibling stores — cross-store orchestration
+#    lives in src/stores/operations/ (thunks). Prevents the module-init cycles
+#    the operations layer was created to eliminate. Exempt: operations/** (the
+#    orchestration layer, checked recursively-excluded by the *.ts glob),
+#    session.selectors.ts (read-only composition), prefsStorage.ts (the
+#    persistence adapter — an allowed import target, matched out below).
+store_cross=""
+for f in src/stores/*.ts; do
+  [ -e "$f" ] || continue
+  case "$f" in
+    src/stores/session.selectors.ts | src/stores/prefsStorage.ts) continue ;;
+  esac
+  hits=$(grep -nE "from ['\"](@/stores/|\./)|import\(['\"]@/stores/" "$f" 2>/dev/null \
+    | grep -v "prefsStorage" || true)
+  if [ -n "$hits" ]; then
+    store_cross="${store_cross}${f}:
+${hits}
+"
+  fi
+done
+if [ -n "$store_cross" ]; then
+  echo "ARCH FAIL: store files import sibling stores (move orchestration to src/stores/operations/):"
+  echo "$store_cross" | sed 's/^/  - /'
+  fail=1
+fi
+
+# WARN: core importing stores (should be empty now) — static AND dynamic imports
 core_impure=$(grep -rln \
   -e "from ['\"]@/stores" \
   -e "import(['\"]@/stores" \

@@ -46,14 +46,19 @@ src/
 │   ├── swift-ui/           # bridges SwiftUI (SAmount, SPill, SText, …)
 │   └── theme/              # ThemeProvider + puente de tokens hacia global.css/Uniwind
 │
-├── stores/                 # Zustand — los "slices" del cliente: estado + operaciones (con lógica).
-│                           # Espejo de desktop-client/src/<feature>/<feature>Slice.ts del upstream:
-│                           #   sessionStore   = usersSlice     (loggedIn, signOut)
-│                           #   budgetContext… = budgetfilesSlice (loadBudget, closeBudget,
-│                           #                    closeAndLoadBudget, closeAndDownloadBudget, deleteBudget)
-│                           #   syncStore      = appSlice (sync, resetSync, redownloadBudget, handleSyncFileError)
-│                           # Las operaciones son ACCIONES del store (idiomático Zustand); en React se
-│                           # consumen con selectores useXStore(s => s.accion), fuera de React con getState().
+├── stores/                 # Zustand — SLICES DE ESTADO puro (estado + acciones que solo tocan
+│   │                       # su propio estado o core). Un store NUNCA importa otro store.
+│   │                       #   sessionStore   = usersSlice STATE
+│   │                       #   budgetContext… = budgetfilesSlice STATE
+│   │                       #   syncStore      = appSlice STATE (+ sync + setters de conflicto)
+│   │                       # En React se consumen con selectores useXStore(s => s.x), fuera con getState().
+│   └── operations/         # Los THUNKS del upstream (desktop-client slices' async thunks):
+│                           # workflows que orquestan VARIOS stores + core. Dependencia UNIDIRECCIONAL
+│                           # operations → stores → core, así los stores quedan sin ciclos de init.
+│                           #   budgetfiles.ts = loadBudget/closeBudget/closeAndLoad/closeAndDownload/deleteBudget
+│                           #   users.ts       = signOut
+│                           #   syncRecovery.ts= resetSync/redownloadBudget/handleSyncFileError
+│                           #   resetStores.ts = resetAllStores (fan-out)
 │                           # (Ya NO hay src/services/: los side effects viven en core/server + core/platform.)
 │
 ├── lib/                    # Utilidades puras sin React (currency, date, format, colors, screenOptions)
@@ -76,7 +81,9 @@ Ante cualquier archivo, pregunta en orden:
 1. **¿Es lógica de negocio/datos sin React?** → `core/` (o `lib/` si es un util genérico sin dominio).
 2. **¿Es un side effect hacia fuera (HTTP, fs, keychain, GPS)?** → transporte/handlers en
    `core/server/`; el módulo nativo se envuelve en un seam `core/platform/<capability>`.
-3. **¿Es estado + operaciones de una feature (el "slice")?** → `stores/` (acción del store Zustand).
+3. **¿Es estado de una feature (el "slice")?** → `stores/` (store Zustand con acciones que solo
+   tocan su propio estado). **¿Es un workflow que orquesta varios stores?** → `stores/operations/`
+   (thunk; importa stores en una sola dirección — un store jamás importa otro store).
 4. **¿Lo usa UNA sola pantalla?** → dentro de su carpeta `screens/<dominio>/<ScreenName>/`.
 5. **¿Lo usan varias pantallas del MISMO dominio?** → `screens/<dominio>/components|hooks/`.
 6. **¿Lo usan varios dominios?** → `ui/` si es visual, `lib/hooks/` si es un hook, `lib/` si es un util.
@@ -95,6 +102,9 @@ app → screens → (ui | stores | lib) → core   (core/server + core/platform 
   `core/platform/` (seams nativos: fetch, fs, sqlite, crypto, keyStore, location).
 - Una screen **nunca** importa de una screen de otro dominio. Si lo necesita, ese código sube a `ui/` o `lib/`.
 - `ui/` no importa de `screens/` ni de `stores/`.
+- **Un `store` no importa otro `store`.** La orquestación cross-store vive en `stores/operations/`
+  (thunks): `operations → stores → core`, nunca al revés. Exentos: `session.selectors.ts`
+  (composición read-only) y `prefsStorage.ts` (adaptador de persistencia). Lo aplica `check-arch.sh`.
 - `app/` solo importa de `screens/` y `lib/screenOptions`.
 - Prohibido crear imports nuevos hacia `@/features/`, `@/shared/`, `@/components/`, `@/design-system/` (legacy).
 

@@ -94,21 +94,19 @@ src/
 │   ├── feedback/           # ErrorBoundary, ErrorChannelConsumer, EncryptionPasswordPrompt, InlineError
 │   └── swift-ui/           # Native SwiftUI bridge components (SText, SAmount, SPill...)
 │
-├── stores/                 # Zustand — UI state ONLY (no SQL queries)
-│   ├── prefsStore.ts       # MMKV + SecureStore (theme, token, active budget)
-│   ├── budgetUIStore.ts    # Selected month, collapsed groups
-│   ├── syncStore.ts        # Sync status
-│   ├── undoStore.ts        # Undo/redo state
-│   ├── privacyStore.ts     # Privacy mode
-│   ├── pickerStore.ts      # Picker state
-│   └── tabBarStore.ts      # Tab bar visibility
-│
-├── services/               # Side effects out to the world (auth, file management, encryption)
-│   ├── authService.ts      # Login, bootstrap (connect to server, download budget)
-│   ├── budgetfiles.ts      # Open/close/switch budget, list files
-│   ├── budgetMetadata.ts   # Local budget metadata (exists, dir management)
-│   ├── encryptionService.ts# Key derivation, key storage, per-budget keys
-│   └── api/                # HTTP client (.api/.dto/.mappers/.types split)
+├── stores/                 # Zustand — PURE STATE slices (own state + actions that only touch
+│   │                       #   own state or core). A store NEVER imports another store.
+│   │                       #   sessionStore (session), budgetContextStore (open budget + sync
+│   │                       #   coords), syncStore (sync status + conflict), budgetUIStore,
+│   │                       #   undoStore, pickerStore, tabBarStore, uiPrefsStore.
+│   │                       #   session.selectors.ts = read-only composition; prefsStorage.ts =
+│   │                       #   MMKV/SecureStore persistence adapter.
+│   └── operations/         # Cross-store WORKFLOWS (upstream slice thunks). One-way deps
+│                           #   operations → stores → core, so stores stay cycle-free:
+│                           #   budgetfiles.ts (loadBudget/closeBudget/closeAndLoad/…),
+│                           #   users.ts (signOut), syncRecovery.ts (resetSync/redownloadBudget/
+│                           #   handleSyncFileError), resetStores.ts, autoRecoveryGuard.ts.
+│                           #   (No src/services/: side effects live in core/server + core/platform.)
 │
 ├── lib/                    # Pure app-level utilities, no React: colors, screenOptions, badge
 │                           #   (date/currency/format live in @/core/shared: months, util, currencies)
@@ -145,13 +143,13 @@ Auth guard uses `<Stack.Protected guard={condition}>` in root `_layout.tsx`.
 ### Architecture Rules
 
 1. **`src/core/` has zero UI, React, or react-query imports** — pure logic, safe to test in Node
-2. **`src/screens/<domain>/` owns domain-specific UI** — import from `@/core/server/` + `@/core/shared/`, `@/ui/`, `@/stores/`, `@/lib/`, `@/services/`
-3. **`src/stores/` holds only UI state** — never queries the DB directly
+2. **`src/screens/<domain>/` owns domain-specific UI** — import from `@/core/server/` + `@/core/shared/`, `@/ui/`, `@/stores/`, `@/lib/`
+3. **`src/stores/` holds pure state slices** — a store never queries the DB and **never imports another store**; cross-store workflows live in `src/stores/operations/` (thunks: `operations → stores → core`)
 4. **`app/` routes are thin re-exports** — `export { BudgetScreen as default } from '@/screens/budget/BudgetScreen'`; no business logic in `app/`, all UI lives under `src/screens/<domain>/`
 5. **`src/ui/` never imports `@/screens/` or `@/stores/`** — stays screen-agnostic
 6. **No new imports to legacy** — `@/features/`, `@/design-system/` may not gain new import sites; only removed as files migrate out
 
-Dependency direction: `app → screens → (ui | stores | lib | services) → core`. Enforced by `scripts/check-arch.sh` (husky pre-commit).
+Dependency direction: `app → screens → (ui | stores | lib) → core`. Enforced by `scripts/check-arch.sh` (husky pre-commit).
 
 ### Path Aliases
 

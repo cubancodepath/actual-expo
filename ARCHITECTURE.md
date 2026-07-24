@@ -105,6 +105,14 @@ app → screens → (ui | stores | lib) → core   (core/server + core/platform 
 - **Un `store` no importa otro `store`.** La orquestación cross-store vive en `stores/operations/`
   (thunks): `operations → stores → core`, nunca al revés. Exentos: `session.selectors.ts`
   (composición read-only) y `prefsStorage.ts` (adaptador de persistencia). Lo aplica `check-arch.sh`.
+- **Prohibidos los imports dinámicos de stores** (`await import("@/stores/…")`): cada uno tapaba un
+  ciclo; se rompen estructuralmente (evento por el bus / operation / inyección de handler). HARD FAIL en `check-arch.sh`.
+- **Wiring de arranque = ciclo de vida React, no efectos de import.** Los listeners de app-lifetime
+  (política de sync + política del 401) se registran en `lib/app-services.ts::installAppServices`,
+  llamado desde `useEffect(installAppServices, [])` en `app/_layout.tsx` (cleanup des-registra →
+  StrictMode/Fast-Refresh safe). El 401 tiene un único dueño: `lib/errors/authPolicy.ts` (subscriber
+  del ErrorChannel: `auth/token-expired` → `signOut`); nadie más desloguea. Fuera del root, en import
+  time: `Sentry.init` + `installGlobalHandlers` (crash handlers) y el singleton `queryClient`.
 - `app/` solo importa de `screens/` y `lib/screenOptions`.
 - Prohibido crear imports nuevos hacia `@/features/`, `@/shared/`, `@/components/`, `@/design-system/` (legacy).
 

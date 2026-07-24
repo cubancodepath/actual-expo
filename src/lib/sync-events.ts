@@ -17,7 +17,6 @@ import { emitErrorEvent, toErrorCode } from "@/lib/errors/ErrorChannel";
 import type { ErrorCode } from "@/core/errors";
 import { useSyncStore } from "@/stores/syncStore";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
-import { signOut } from "@/stores/operations/users";
 import { handleSyncFileError } from "@/stores/operations/syncRecovery";
 
 // Static imports: sync-events is a leaf of the app graph (nothing it imports
@@ -25,12 +24,11 @@ import { handleSyncFileError } from "@/stores/operations/syncRecovery";
 
 async function handleSyncError(subtype: string, meta: unknown): Promise<void> {
   if (subtype === "auth/token-expired") {
-    // Session teardown, not a user-visible error. signOut() is the single
-    // full-teardown path (closes the budget + DB first) — same handler the
-    // react-query 401 hook uses.
-    emitErrorEvent(meta);
+    // Not a user-visible sync error — clear the syncing status and report to
+    // the bus. The signOut reaction is owned centrally by authPolicy.ts (the
+    // bus's 401 policy subscriber), so no teardown call here.
     useSyncStore.getState()._setStatus("idle");
-    await signOut();
+    emitErrorEvent(meta);
     return;
   }
 

@@ -181,6 +181,18 @@ if [ -n "$store_cross" ]; then
   fail=1
 fi
 
+# 8. No DYNAMIC store imports anywhere — `await import("@/stores/...")`. Every
+#    such import used to paper over a module cycle; the operations layer +
+#    error-bus policy removed all of them. A new one signals a cycle that
+#    should be broken structurally (event/operation/injection), not hidden.
+dyn_store=$(grep -rnE "import\(['\"]@/stores/" src app --include='*.ts*' 2>/dev/null \
+  | grep -v '\.test\.' || true)
+if [ -n "$dyn_store" ]; then
+  echo "ARCH FAIL: dynamic store import — break the cycle structurally, don't hide it:"
+  echo "$dyn_store" | sed 's/^/  - /'
+  fail=1
+fi
+
 # WARN: core importing stores (should be empty now) — static AND dynamic imports
 core_impure=$(grep -rln \
   -e "from ['\"]@/stores" \

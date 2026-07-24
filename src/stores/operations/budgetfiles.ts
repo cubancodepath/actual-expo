@@ -24,6 +24,7 @@ import {
 } from "@/core/server/prefs";
 import { downloadBudget, possiblyUpload } from "@/core/server/cloud-storage";
 import type { RemoteBudgetFile } from "@/core/server/cloud-storage";
+import { emit } from "@/core/sync/syncEvents";
 import type { ReconciledBudgetFile } from "@/core/server/budgetfiles/app";
 import * as encryption from "@/core/encryption";
 import { loadKeyForBudget } from "@/core/encryption/keys";
@@ -212,16 +213,20 @@ export async function loadBudget(budgetId: string, opts?: { force?: boolean }): 
       // server-side message history grows unbounded forever. Core stays
       // store-free, so pass the session credentials in.
       const { serverUrl, token } = useSessionStore.getState();
-      possiblyUpload(serverUrl, token, budgetId).catch(async (e) => {
-        emitErrorEvent(e, { operation: "possiblyUpload" });
+      possiblyUpload(serverUrl, token, budgetId).catch((e) => {
         const code = toErrorCode(e);
         if (code.startsWith("sync/file-")) {
           // The 7-day re-upload hit a file-state rejection — same recovery
-          // flow as a rejected /sync/sync, not a silent warn. Dynamic import:
-          // syncRecovery imports this module (closeBudget/loadBudget), so this
-          // one deep-callback edge stays lazy to keep the graph acyclic.
-          const { handleSyncFileError } = await import("@/stores/operations/syncRecovery");
-          await handleSyncFileError(code);
+          // flow as a rejected /sync/sync, not a silent warn. Route it as a
+          // sync error EVENT so the listenForSyncEvent policy owner reports it
+          // AND runs handleSyncFileError, exactly like a rejected /sync/sync.
+          // (Importing syncRecovery here would be a module cycle — it imports
+          // this module's closeBudget/loadBudget.) The listener emits to the
+          // error bus itself, so don't also emitErrorEvent here (no double
+          // Sentry report).
+          emit({ type: "error", subtype: code, meta: e });
+        } else {
+          emitErrorEvent(e, { operation: "possiblyUpload" });
         }
       });
     }

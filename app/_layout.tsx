@@ -46,7 +46,7 @@ import { useShakeUndo } from "@/hooks/useShakeUndo";
 import { loadAllPersistedKeys } from "@/core/encryption/keys";
 import { installGlobalHandlers } from "@/lib/errors/install";
 import { scrubEvent } from "@/lib/errors/sentryScrub";
-import { listenForSyncEvent } from "@/lib/sync-events";
+import { installAppServices } from "@/lib/app-services";
 
 import { queryClient } from "@/lib/query/queryClient";
 
@@ -70,11 +70,6 @@ Sentry.init({
 
 // Must run after Sentry.init (chains onto the ErrorUtils handler Sentry installs).
 installGlobalHandlers();
-
-// The sync policy listener (upstream listenForSyncEvent) lives for the app's
-// lifetime — registered at module scope, BEFORE bootstrap's first background
-// sync can emit, so no event is ever missed.
-listenForSyncEvent();
 
 function RootLayout() {
   const ref = useNavigationContainerRef();
@@ -101,6 +96,13 @@ function RootLayout() {
     Inter_600SemiBold,
   });
   const handledTimestamp = useRef(0);
+
+  // App-lifetime service wiring (sync policy listener + 401 policy). Declared
+  // BEFORE the bootstrap effect so the listeners are registered before
+  // bootstrap's first background sync can emit — React runs a component's
+  // effects in declaration order. The returned cleanup unsubscribes, keeping
+  // it StrictMode/Fast-Refresh safe (no duplicate listeners in dev).
+  useEffect(() => installAppServices(), []);
 
   useEffect(() => {
     if (ref) {

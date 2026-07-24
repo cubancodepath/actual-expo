@@ -77,7 +77,10 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
       const [local, remote] = await Promise.all([
         getBudgets(),
         getRemoteFiles(serverUrl, token).catch((e: unknown) => {
-          // Expired session → full signOut; the root guard redirects to login
+          // Expired session → full signOut; the root guard redirects to login.
+          // Direct call (not the error-bus authPolicy): this catch SWALLOWS the
+          // error to return [], so it never reaches react-query's onError or
+          // the bus — this is the only place that can react to it here.
           if (e instanceof ActualError && e.code === "auth/token-expired") {
             void signOut();
           }

@@ -80,7 +80,9 @@ describe("mutator queue — interleaving", () => {
     // B applied as its OWN separate "applied" event — NOT folded into A's
     // single batch flush. Before this plan: only ONE "accounts" apply event
     // fires (B's message silently merged into A's `_batched` buffer).
-    const accountsApplies = appliedEvents.filter((e) => e.tables.includes("accounts"));
+    const accountsApplies = appliedEvents.filter(
+      (e) => "tables" in e && e.tables.includes("accounts"),
+    );
     expect(accountsApplies).toHaveLength(2);
   });
 
@@ -133,7 +135,9 @@ describe("mutator queue — interleaving", () => {
     expect(acc1?.name).toBe("One");
     expect(acc2?.name).toBe("Two");
 
-    const accountsApplies = appliedEvents.filter((e) => e.tables.includes("accounts"));
+    const accountsApplies = appliedEvents.filter(
+      (e) => "tables" in e && e.tables.includes("accounts"),
+    );
     expect(accountsApplies).toHaveLength(2);
   });
 

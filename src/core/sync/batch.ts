@@ -99,16 +99,15 @@ function scheduleFullSync(): void {
   setSyncTimeout(
     setTimeout(async () => {
       if (isSwitchingBudget()) return;
-      try {
-        const { useBudgetContextStore } = await import("@/stores/budgetContextStore");
-        const { getIsConfigured } = await import("@/stores/session.selectors");
-        if (useBudgetContextStore.getState().isLocalOnly || !getIsConfigured()) return;
-        // Lazy import to avoid circular dependency
-        const { fullSync } = await import("./fullSync");
-        await fullSync();
-      } catch {
-        // fullSync already writes the error into syncStore — nothing to do here
-      }
+      // No store reads here (upstream parity): local-only budgets are gated by
+      // the syncing MODE ("offline", set by loadBudget) checked above, and
+      // missing cloud coordinates make fullSync a no-op. Errors are reported
+      // by fullSync itself via sync events — the app-layer listenForSyncEvent
+      // owns the reaction policy, so nothing is silently dropped here.
+      const { fullSync } = await import("./fullSync"); // lazy: avoids module cycle
+      await fullSync().catch(() => {
+        // fullSync reports via events and doesn't rethrow; pure defense.
+      });
     }, FULL_SYNC_DELAY),
   );
 }

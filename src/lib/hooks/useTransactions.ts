@@ -46,7 +46,7 @@ export function useTransactions({ query, options }: UseTransactionsProps) {
     if (!refetchOnSync || !enabled) return;
     let timer: ReturnType<typeof setTimeout> | null = null;
     const unlisten = listen((event) => {
-      if (event.tables.some((t) => SYNC_TABLES.has(t))) {
+      if ("tables" in event && event.tables.some((t) => SYNC_TABLES.has(t))) {
         if (timer) clearTimeout(timer);
         timer = setTimeout(() => {
           timer = null;

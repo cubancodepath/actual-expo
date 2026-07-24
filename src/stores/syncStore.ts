@@ -123,6 +123,9 @@ export const useSyncStore = create<SyncState>((set, get) => ({
 
     const { groupId } = await uploadBudget(serverUrl, token, activeBudgetId);
     useBudgetContextStore.getState().setBudgetContext({ groupId });
+    // Refresh core's prefs snapshot — the sync engine reads groupId from there.
+    const { loadPrefs } = await import("@/core/server/prefs");
+    await loadPrefs(activeBudgetId);
 
     get()._resolveConflict();
     // Direct fullSync (not get().sync): a sync/file-* rejection here must not

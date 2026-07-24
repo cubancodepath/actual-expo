@@ -21,7 +21,7 @@ export function useUncategorizedCount(): number {
 
     // Re-fetch when transactions table changes
     const unlisten = listen((event) => {
-      if (event.tables.includes("transactions")) {
+      if ("tables" in event && event.tables.includes("transactions")) {
         getUncategorizedStats().then(({ count: c }) => {
           if (isMounted.current) setCount(c);
         });

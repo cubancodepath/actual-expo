@@ -137,6 +137,7 @@ function RootLayout() {
   useEffect(() => {
     if (!ready) return;
     return listen((event) => {
+      if (!("tables" in event)) return;
       const tables = new Set(event.tables);
       if (tables.has("accounts") || tables.has("categories") || tables.has("category_groups")) {
         syncShortcutCache();
@@ -157,6 +158,7 @@ function RootLayout() {
     };
 
     const unsubEvents = listen((event) => {
+      if (!("tables" in event)) return;
       const tables = new Set(event.tables);
       if (tables.has("transactions") || tables.has("spreadsheet_cells")) {
         debouncedBadge();

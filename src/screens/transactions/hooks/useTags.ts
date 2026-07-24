@@ -18,7 +18,7 @@ export function useTags(): { tags: Tag[]; isLoading: boolean } {
 
   useEffect(() => {
     return listen((event) => {
-      if (event.tables.includes("tags")) {
+      if ("tables" in event && event.tables.includes("tags")) {
         query.refetch();
       }
     });

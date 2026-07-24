@@ -72,6 +72,7 @@ export const useSyncedPrefsStore = create<SyncedPrefsState>((set) => ({
 
 // Auto-refresh when preferences table changes via syncEvents
 listen((event) => {
+  if (!("tables" in event)) return;
   if (event.tables.includes("preferences") || event.tables.includes("prefs")) {
     useSyncedPrefsStore.getState().load();
   }

@@ -27,7 +27,7 @@ export function useScheduleRecurringMap(): Map<string, boolean> {
 
   useEffect(() => {
     return listen((event) => {
-      if (event.tables.some((t) => SYNC_TABLES.has(t))) {
+      if ("tables" in event && event.tables.some((t) => SYNC_TABLES.has(t))) {
         query.refetch();
       }
     });

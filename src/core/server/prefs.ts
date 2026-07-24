@@ -150,6 +150,70 @@ export async function getBudgets(): Promise<BudgetMetadata[]> {
 }
 
 // ---------------------------------------------------------------------------
+// In-memory prefs (upstream loot-core/src/server/prefs.ts: loadPrefs /
+// getPrefs / savePrefs / unloadPrefs)
+// ---------------------------------------------------------------------------
+// The budget-scoped prefs snapshot the sync core reads (cloudFileId, groupId,
+// lastSyncedTimestamp, encryptKeyId) — the reason core/sync never needs to
+// import app stores. Loaded by loadBudget, cleared on close/switch. Backed by
+// the same metadata.json the CRUD above manages.
+
+export type MetadataPrefs = BudgetMetadata;
+
+let prefs: MetadataPrefs | null = null;
+
+export async function loadPrefs(id: string): Promise<MetadataPrefs> {
+  const meta = await readMetadata(id).catch(() => null);
+  // Upstream is lenient here: a corrupt/missing metadata file must not block
+  // opening the budget database — default the budget name to the id.
+  prefs = meta ?? { id, budgetName: id };
+  // No matter what is in the `id` field, force it to be the current id —
+  // resilient to users moving folders around (upstream comment).
+  prefs.id = id;
+  return prefs;
+}
+
+export async function savePrefs(
+  prefsToSet: Partial<MetadataPrefs>,
+  { avoidSync = false } = {},
+): Promise<void> {
+  if (!prefs) return;
+  Object.assign(prefs, prefsToSet);
+
+  if (!avoidSync && typeof prefsToSet.budgetName === "string") {
+    // Upstream whitelist: budgetName is the one pref that syncs to peers as a
+    // 'prefs' CRDT message. Dynamic imports break the prefs↔sync module cycle.
+    const [{ sendMessages }, { Timestamp }] = await Promise.all([
+      import("@/core/sync"),
+      import("@/core/crdt"),
+    ]);
+    await sendMessages([
+      {
+        dataset: "prefs",
+        row: "budgetName",
+        column: "value",
+        value: prefsToSet.budgetName,
+        timestamp: Timestamp.send()!,
+      },
+    ]);
+  }
+
+  await writeMetadata(prefs.id, prefs);
+}
+
+export function unloadPrefs(): void {
+  prefs = null;
+}
+
+export function getPrefs(): MetadataPrefs | null {
+  return prefs;
+}
+
+export function getDefaultPrefs(id: string, budgetName: string): MetadataPrefs {
+  return { id, budgetName };
+}
+
+// ---------------------------------------------------------------------------
 // ID generation
 // ---------------------------------------------------------------------------
 

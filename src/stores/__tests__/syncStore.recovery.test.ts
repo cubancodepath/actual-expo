@@ -48,6 +48,9 @@ vi.mock("@/core/server/prefs", () => ({
   readMetadata: readMetadataMock,
   updateMetadata: updateMetadataMock,
   deleteBudgetDir: deleteBudgetDirMock,
+  loadPrefs: vi.fn(async () => ({ id: "budget-1", budgetName: "b" })),
+  unloadPrefs: vi.fn(),
+  getPrefs: vi.fn(() => null),
 }));
 vi.mock("@/core/server/cloud-storage", () => ({
   getRemoteFiles: listRemoteBudgetFilesMock,

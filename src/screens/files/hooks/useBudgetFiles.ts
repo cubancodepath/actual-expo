@@ -5,14 +5,14 @@ import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { useSessionStore } from "@/stores/sessionStore";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import { getRemoteFiles, removeFile, uploadBudget } from "@/core/server/cloud-storage";
-import { getBudgets } from "@/core/server/prefs";
+import { getBudgets, loadPrefs, getPrefs } from "@/core/server/prefs";
 import {
   type ReconciledBudgetFile,
   reconcileFiles,
   convertToLocalOnly,
   reRegisterBudget,
 } from "@/core/server/budgetfiles/app";
-import { clearSwitchingFlag } from "@/core/sync";
+import { clearSwitchingFlag, setSyncingMode } from "@/core/sync";
 import { promptForPassword } from "@/ui/feedback/EncryptionPasswordPrompt";
 
 const QUERY_KEY = ["budgetFiles"] as const;
@@ -105,13 +105,19 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
   }
 
   /** Applies a budget-context patch only when the file is the active budget. */
-  function updateContextIfActive(
+  async function updateContextIfActive(
     localId: string,
     patch: Parameters<ReturnType<typeof useBudgetContextStore.getState>["setBudgetContext"]>[0],
   ) {
     const store = useBudgetContextStore.getState();
     if (store.activeBudgetId === localId) {
       store.setBudgetContext(patch);
+      // The cloud coordinates just changed on disk — refresh core's prefs
+      // snapshot and the syncing mode so the sync engine sees the new state
+      // without a budget reopen (offline = no cloud target, upstream main.ts).
+      await loadPrefs(localId);
+      const prefs = getPrefs();
+      setSyncingMode(prefs?.cloudFileId && prefs?.groupId ? "enabled" : "offline");
     }
   }
 
@@ -190,14 +196,18 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
         if (!file.localId) throw new Error("No local ID to upload");
         await ensureBudgetOpen(file.localId);
         const { cloudFileId, groupId } = await uploadBudget(serverUrl, token, file.localId);
-        updateContextIfActive(file.localId, { fileId: cloudFileId, groupId, isLocalOnly: false });
+        await updateContextIfActive(file.localId, {
+          fileId: cloudFileId,
+          groupId,
+          isLocalOnly: false,
+        });
       }),
 
     convertToLocal: (file) =>
       runAction(file, async () => {
         if (!file.localId) throw new Error("No local ID");
         await convertToLocalOnly(file.localId);
-        updateContextIfActive(file.localId, { fileId: "", groupId: "", isLocalOnly: true });
+        await updateContextIfActive(file.localId, { fileId: "", groupId: "", isLocalOnly: true });
       }),
 
     reRegister: (file) =>
@@ -205,7 +215,11 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
         if (!file.localId) throw new Error("No local ID");
         await ensureBudgetOpen(file.localId);
         const { cloudFileId, groupId } = await reRegisterBudget(serverUrl, token, file.localId);
-        updateContextIfActive(file.localId, { fileId: cloudFileId, groupId, isLocalOnly: false });
+        await updateContextIfActive(file.localId, {
+          fileId: cloudFileId,
+          groupId,
+          isLocalOnly: false,
+        });
       }),
 
     refresh: () => {

@@ -8,8 +8,16 @@ import {
   clearSwitchingFlag,
   fullSync,
   waitForSyncToSettle,
+  setSyncingMode,
 } from "@/core/sync";
-import { getBudgetDir, readMetadata, updateMetadata, deleteBudgetDir } from "@/core/server/prefs";
+import {
+  getBudgetDir,
+  readMetadata,
+  updateMetadata,
+  deleteBudgetDir,
+  loadPrefs,
+  unloadPrefs,
+} from "@/core/server/prefs";
 import { downloadBudget, possiblyUpload } from "@/core/server/cloud-storage";
 import type { ReconciledBudgetFile } from "@/core/server/budgetfiles/app";
 import type { RemoteBudgetFile } from "@/core/server/cloud-storage";
@@ -111,6 +119,7 @@ export const useBudgetContextStore = create<BudgetContextState>()(
           // the data transition happen atomically when activeBudgetId changes.
           await waitForSyncToSettle();
           resetSyncState();
+          unloadPrefs();
           await closeDatabase();
           lap("close + reset");
 
@@ -224,6 +233,14 @@ export const useBudgetContextStore = create<BudgetContextState>()(
             await loadKeyForBudget(meta.cloudFileId);
           }
 
+          // 9b. Load the core-owned prefs snapshot the sync engine reads
+          // (upstream loadPrefs) — AFTER all the metadata writes above so it
+          // can't go stale — and set the syncing mode for this budget:
+          // upstream main.ts runs budgets without a cloud sync target in
+          // "offline" mode (scheduled syncs skip, the CRDT log still records).
+          await loadPrefs(budgetId);
+          setSyncingMode(meta?.cloudFileId && meta?.groupId ? "enabled" : "offline");
+
           // 10. Activate UI — render with local data (upstream pattern: show before sync)
           get().setBudgetContext({
             activeBudgetId: budgetId,
@@ -273,6 +290,7 @@ export const useBudgetContextStore = create<BudgetContextState>()(
         // Dynamic import avoids a resetStores <-> budgetContextStore init cycle.
         const { resetAllStores } = await import("@/stores/resetStores");
         resetAllStores();
+        unloadPrefs();
         await closeDatabase();
         get().setBudgetContext({
           activeBudgetId: "",

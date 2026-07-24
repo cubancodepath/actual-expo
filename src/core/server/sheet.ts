@@ -335,6 +335,7 @@ async function runStructuralRefresh(): Promise<void> {
 }
 
 listen((event) => {
+  if (!("tables" in event)) return;
   if (event.tables.includes("categories") || event.tables.includes("category_groups")) {
     // Not initialized yet (e.g. wizard seed before loadBudget) — the later
     // initSpreadsheet() builds all cells anyway, and firing async reads here

@@ -3,6 +3,7 @@ import { persist } from "zustand/middleware";
 import * as SecureStore from "expo-secure-store";
 import { clearAllKeys as clearEncryptionKeys } from "@/core/platform/keyStore";
 import { unloadAllKeys } from "@/core/encryption";
+import { setServer, setUserToken } from "@/core/server/server-config";
 import { mmkvStorage, SECURE_TOKEN_KEY } from "./prefsStorage";
 
 // Key material must not leave this device (no backup migration) and must be
@@ -54,12 +55,17 @@ export const useSessionStore = create<SessionState>()(
       token: "",
       hasToken: false,
 
+      // Session changes are mirrored into core's server-config (upstream:
+      // setServer + asyncStorage 'user-token') so core/sync reads its own
+      // state and never imports this store.
       setServerUrl(url: string) {
+        setServer(url || null);
         set((state) => ({ serverUrl: url, hasToken: !!(url && state.token) }));
       },
 
       async loadToken() {
         const token = (await SecureStore.getItemAsync(SECURE_TOKEN_KEY)) ?? "";
+        setUserToken(token || null);
         set((state) => ({ token, hasToken: !!(state.serverUrl && token) }));
       },
 
@@ -69,10 +75,13 @@ export const useSessionStore = create<SessionState>()(
         } else {
           await SecureStore.deleteItemAsync(SECURE_TOKEN_KEY);
         }
+        setUserToken(token || null);
         set((state) => ({ token, hasToken: !!(state.serverUrl && token) }));
       },
 
       reset() {
+        setServer(null);
+        setUserToken(null);
         set({ serverUrl: "", token: "", hasToken: false });
       },
 
@@ -97,6 +106,12 @@ export const useSessionStore = create<SessionState>()(
       storage: mmkvStorage,
       // Token stays in SecureStore; only persist the server URL.
       partialize: (state) => ({ serverUrl: state.serverUrl }),
+      // Cold start rehydrates serverUrl without going through setServerUrl —
+      // mirror it into core's server-config here. The token mirror happens in
+      // loadToken() during bootstrap.
+      onRehydrateStorage: () => (state) => {
+        setServer(state?.serverUrl || null);
+      },
     },
   ),
 );

@@ -16,6 +16,8 @@ import { applyMessages, getMessagesSince } from "./apply";
 import { emit } from "./syncEvents";
 import { getSyncGeneration, isSwitchingBudget, setActiveSyncPromise } from "./lifecycle";
 import { checkSyncingMode, setSyncingMode } from "./syncMode";
+import { getPrefs, savePrefs } from "@/core/server/prefs";
+import { getServer, getUserToken } from "@/core/server/server-config";
 
 /** Normalize table names for event emission (upstream pattern) */
 function normalizeTables(datasets: string[]): string[] {
@@ -51,11 +53,18 @@ async function _fullSync(
   count: number,
   prevDiffTime: number | null,
   gen: number,
-  prefs: any,
   force?: boolean,
 ): Promise<SyncMessage[]> {
   if (!force && isSwitchingBudget()) return [];
   if (gen !== getSyncGeneration()) return [];
+
+  // Read the sync coordinates fresh on every pass (upstream _fullSync reads
+  // prefs.getPrefs() per recursion) — a budget switch or sync-reset mid-flight
+  // changes them and the abort below catches it.
+  const prefs = getPrefs();
+  const server = getServer();
+  const token = getUserToken();
+  if (!prefs?.cloudFileId || !prefs.groupId || !server || !token) return [];
 
   // Snapshot local clock before network request (upstream pattern)
   const currentTime = getClock().timestamp.toString();
@@ -81,15 +90,15 @@ async function _fullSync(
 
   const requestBytes = await encode(
     prefs.groupId,
-    prefs.fileId,
+    prefs.cloudFileId,
     since,
     localMessages,
     prefs.encryptKeyId,
   );
 
-  const responseBytes = await postBinary(`${prefs.serverUrl}/sync/sync`, requestBytes, {
-    "x-actual-token": prefs.token,
-    "x-actual-file-id": prefs.fileId,
+  const responseBytes = await postBinary(`${server.SYNC_SERVER}/sync`, requestBytes, {
+    "x-actual-token": token,
+    "x-actual-file-id": prefs.cloudFileId,
   });
 
   if (gen !== getSyncGeneration()) return [];
@@ -145,26 +154,17 @@ async function _fullSync(
       localTimeChanged ? 0 : count + 1,
       diffTime,
       gen,
-      prefs,
       force,
     );
 
     return receivedMessages.concat(retryMessages);
   }
 
-  // Merkle converged — save timestamp (upstream line 807-816)
-  // Only save when fully synced, NOT during retries
-  const requiresUpdate = getClock().timestamp.toString() !== prefs.lastSyncedTimestamp;
-  if (requiresUpdate) {
-    const syncTimestamp = getClock().timestamp.toString();
-    prefs.setPrefs({ lastSyncedTimestamp: syncTimestamp });
-
-    const activeBudgetId = prefs.activeBudgetId;
-    if (activeBudgetId) {
-      import("@/core/server/prefs").then(({ updateMetadata }) =>
-        updateMetadata(activeBudgetId, { lastSyncedTimestamp: syncTimestamp }).catch(() => {}),
-      );
-    }
+  // Merkle converged — save timestamp (upstream line 831-841). Only save when
+  // fully synced, NOT during retries. savePrefs persists metadata.json; the
+  // app store mirrors it on the next budget load.
+  if (getClock().timestamp.toString() !== prefs.lastSyncedTimestamp) {
+    await savePrefs({ lastSyncedTimestamp: getClock().timestamp.toString() }).catch(() => {});
   }
 
   return receivedMessages;
@@ -199,36 +199,32 @@ export function fullSync(opts?: { force?: boolean }): Promise<number> {
 
     const gen = getSyncGeneration();
 
-    const { useSessionStore } = await import("@/stores/sessionStore");
-    const { useBudgetContextStore } = await import("@/stores/budgetContextStore");
+    // Sync coordinates come from core-owned state — prefs (metadata snapshot
+    // loaded by loadBudget) and server-config (set by the session layer) —
+    // exactly upstream's prefs.getPrefs()/getServer() shape. Core never reads
+    // app stores.
+    const prefs = getPrefs();
+    const server = getServer();
+    const token = getUserToken();
 
-    // Combined view over session + budget context, preserving the `prefs` shape
-    // the inner _fullSync loop consumes (fields + a setPrefs that routes writes
-    // to the budget context store).
-    const session = useSessionStore.getState();
-    const budget = useBudgetContextStore.getState();
-    const prefs = {
-      ...session,
-      ...budget,
-      isConfigured: budget.isLocalOnly || (session.hasToken && !!budget.activeBudgetId),
-      setPrefs: (p: Parameters<typeof budget.setBudgetContext>[0]) =>
-        useBudgetContextStore.getState().setBudgetContext(p),
-    };
-    if (prefs.isLocalOnly) return 0;
-    if (!force && !prefs.isConfigured) {
+    // No cloud coordinates = local-only budget (or never uploaded) — nothing
+    // to sync. Mirrors loadBudget's own guard for the background sync.
+    if (!prefs?.cloudFileId || !prefs.groupId) return 0;
+    if (!force && (!server || !token)) {
       throw new ActualError("sync/not-configured", {
-        message: "Server not configured — set serverUrl, token, fileId, groupId first",
+        message: "Server not configured — set server URL and token first",
       });
     }
+    if (!server || !token) return 0; // forced but signed out — nothing to do
 
     // Proactively verify the key after a prior decrypt-failure — see
     // _lastSyncHadDecryptFailure's comment.
-    if (_lastSyncHadDecryptFailure && prefs.encryptKeyId && prefs.fileId) {
+    if (_lastSyncHadDecryptFailure && prefs.encryptKeyId && prefs.cloudFileId) {
       const { checkKey } = await import("@/core/sync/cloudStorage");
       const result = await checkKey({
-        serverUrl: prefs.serverUrl,
-        token: prefs.token,
-        cloudFileId: prefs.fileId,
+        serverUrl: server.BASE_SERVER,
+        token,
+        cloudFileId: prefs.cloudFileId,
         encryptKeyId: prefs.encryptKeyId,
       });
       if (!result.valid && result.error.reason === "key-mismatch") {
@@ -244,7 +240,7 @@ export function fullSync(opts?: { force?: boolean }): Promise<number> {
 
     try {
       // Run the sync loop (may recurse on merkle divergence)
-      const allMessages = await _fullSync(null, 0, null, gen, prefs, force);
+      const allMessages = await _fullSync(null, 0, null, gen, force);
 
       if (gen !== getSyncGeneration()) return 0;
 

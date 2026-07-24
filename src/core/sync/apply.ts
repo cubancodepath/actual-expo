@@ -15,6 +15,8 @@ import type { OldData } from "./undo";
 import { serializeValue, deserializeValue } from "./values";
 import { saveClockWith } from "./clock";
 import { checkSyncingMode } from "./syncMode";
+import { emit } from "./syncEvents";
+import { savePrefs } from "@/core/server/prefs";
 
 // Tables that exist in the schema purely for local bookkeeping and are
 // never legitimate CRDT sync targets — everything else in sqlite_master is
@@ -289,12 +291,13 @@ export const applyMessages = sequential(async function applyMessages(
   // in-memory clock to match what was just persisted.
   getClock().merkle = currentMerkle;
 
-  // Apply synced metadata (e.g. budgetName) to the budget context store
+  // Save any synced prefs (upstream: prefs.savePrefs(..., {avoidSync:true}) +
+  // connection.send('prefs-updated')). avoidSync — these came FROM a peer;
+  // re-sending them would echo. The app-layer listener mirrors them into its
+  // stores (budgetName in the header, etc.).
   if (Object.keys(prefsToSet).length > 0) {
-    const { useBudgetContextStore } = await import("@/stores/budgetContextStore");
-    if (typeof prefsToSet.budgetName === "string") {
-      useBudgetContextStore.getState().setBudgetContext({ budgetName: prefsToSet.budgetName });
-    }
+    await savePrefs(prefsToSet, { avoidSync: true }).catch(() => {});
+    emit({ type: "prefs-updated", prefs: prefsToSet });
   }
 
   return oldData;

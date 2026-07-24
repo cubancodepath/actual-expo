@@ -79,6 +79,7 @@ export function pagedQuery<T = Record<string, unknown>>(
   // Subscribe to sync events — re-run when dependent tables change
   const unlisten = listen((event) => {
     if (isUnsubscribed) return;
+    if (!("tables" in event)) return;
     const tables = new Set(event.tables);
     if (dependencies.some((d) => tables.has(d))) {
       scheduleRun();

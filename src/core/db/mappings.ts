@@ -45,6 +45,7 @@ async function doLoad(): Promise<void> {
 }
 
 function onSyncEvent(event: SyncEvent): void {
+  if (!("tables" in event)) return;
   if (event.tables.some((t) => t.includes("mapping"))) {
     // Reassign loadPromise so an in-flight refresh is awaitable via
     // ensureMappingsLoaded() — this closes the race between a mapping mutation

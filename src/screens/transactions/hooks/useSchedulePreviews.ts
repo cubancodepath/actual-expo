@@ -31,7 +31,7 @@ export function useSchedulePreviews(context: TransactionsListContext): {
   useEffect(() => {
     if (!enabled) return;
     return listen((event) => {
-      if (event.tables.some((t) => SYNC_TABLES.has(t))) {
+      if ("tables" in event && event.tables.some((t) => SYNC_TABLES.has(t))) {
         query.refetch();
       }
     });

@@ -130,7 +130,9 @@ export function SettingsScreen() {
   const [muted, danger, foreground] = useThemeColor(["muted", "danger", "foreground"]);
 
   const serverUrl = useSessionStore((s) => s.serverUrl);
-  const { budgetName, lastSyncedTimestamp, isLocalOnly } = useBudgetContextStore();
+  const budgetName = useBudgetContextStore((s) => s.budgetName);
+  const lastSyncedTimestamp = useBudgetContextStore((s) => s.lastSyncedTimestamp);
+  const isLocalOnly = useBudgetContextStore((s) => s.isLocalOnly);
   const lastSync = useSyncStore((s) => s.lastSync);
   const [, setLoggingOut] = useState(false);
 

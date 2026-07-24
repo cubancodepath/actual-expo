@@ -14,7 +14,7 @@ export function ChangeBudgetScreen() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const accent = useThemeColor("accent");
-  const { activeBudgetId } = useBudgetContextStore();
+  const activeBudgetId = useBudgetContextStore((s) => s.activeBudgetId);
 
   return (
     <BudgetFileList

@@ -85,6 +85,7 @@
     "react-native-ios-context-menu": "^3.2.1",
     "react-native-ios-utilities": "^5.2.0",
     "react-native-keyboard-controller": "1.20.7",
+    "react-native-markdown-display": "^7.0.2",
     "react-native-mmkv": "^4.1.2",
     "react-native-nitro-modules": "^0.34.1",
     "react-native-reanimated": "^4.2.1",

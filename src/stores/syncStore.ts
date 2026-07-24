@@ -16,7 +16,8 @@ const autoRecoveryAttempted = new Set<ErrorCode>();
 
 type SyncState = {
   status: SyncStatus;
-  /** Code of the error that last put status into "error" — for SyncBadge copy. */
+  /** Code of the error that last put status into "error". No UI renders it
+   *  (deliberate local-first silence); the conflict-recovery flow reads it. */
   lastErrorCode: ErrorCode | null;
   /**
    * Set when the server rejected sync with a file-state conflict

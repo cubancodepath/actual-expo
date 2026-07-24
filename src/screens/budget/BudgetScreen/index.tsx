@@ -7,6 +7,7 @@ import { envelopeBudget, sheetForMonth } from "@/core/server/spreadsheet/binding
 import { getSpreadsheet } from "@/core/server/spreadsheet/globals";
 import { resetHold, setBudgetAmount, setCategoryCarryover } from "@/core/server/budget/actions";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
+import { useSyncRefreshControl } from "@/lib/hooks/useSyncRefreshControl";
 import { useBudgetMonth } from "@/screens/budget/hooks/useBudgetMonth";
 import { HIDDEN_GROUP_ID, useBudgetSections } from "@/screens/budget/hooks/useBudgetSections";
 import { BudgetHeader } from "@/screens/budget/components/BudgetHeader";
@@ -29,6 +30,7 @@ import { ReadyToAssignBar } from "./components/ReadyToAssignBar";
 
 export function BudgetScreen() {
   const router = useRouter();
+  const refreshControl = useSyncRefreshControl();
   const { month } = useBudgetMonth();
   const sheet = sheetForMonth(month);
   const { sections, isLoading } = useBudgetSections();
@@ -270,6 +272,7 @@ export function BudgetScreen() {
             <Animated.ScrollView
               ref={scrollRef}
               {...scrollProps}
+              refreshControl={refreshControl}
               contentContainerStyle={{ paddingBottom: bottomPadding }}
               showsVerticalScrollIndicator={false}
             >

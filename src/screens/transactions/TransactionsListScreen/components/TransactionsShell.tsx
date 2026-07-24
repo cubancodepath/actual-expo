@@ -1,17 +1,12 @@
 import { useCallback, useMemo, type ReactNode } from "react";
-import {
-  RefreshControl,
-  View,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
-} from "react-native";
+import { View, type NativeScrollEvent, type NativeSyntheticEvent } from "react-native";
 import { LegendList } from "@legendapp/list";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Spinner, useThemeColor } from "heroui-native";
 import { ScreenHeader, useScreenHeaderScroll } from "@/ui/ScreenHeader";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
-import { useRefreshControl } from "@/hooks/useRefreshControl";
+import { useSyncRefreshControl } from "@/lib/hooks/useSyncRefreshControl";
 import { DateHeader } from "@/screens/transactions/components/transaction-list/DateHeader";
 import { EmptyTransactions } from "@/screens/transactions/components/transaction-list/EmptyTransactions";
 import {
@@ -163,7 +158,7 @@ function ListBody({
   contentPaddingTop = 0,
 }: ListBodyProps) {
   const accent = useThemeColor("accent");
-  const { refreshControlProps } = useRefreshControl();
+  const refreshControl = useSyncRefreshControl();
 
   // The category context defaults to the budget UI store's month.
   const storeMonth = useBudgetUIStore((s) => s.month);
@@ -235,13 +230,7 @@ function ListBody({
         ) : null
       }
       ListEmptyComponent={isPending ? null : <EmptyTransactions />}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshControlProps.refreshing}
-          onRefresh={refreshControlProps.onRefresh}
-          tintColor={refreshControlProps.tintColor}
-        />
-      }
+      refreshControl={refreshControl}
     />
   );
 }

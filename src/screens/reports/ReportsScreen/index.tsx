@@ -2,6 +2,7 @@ import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { ScreenHeader } from "@/ui/ScreenHeader";
+import { useSyncRefreshControl } from "@/lib/hooks/useSyncRefreshControl";
 import { useDashboardWidgets, widgetPixelHeight, CARD_GAP } from "./hooks/useDashboardWidgets";
 import { ReportWidgetView } from "./components/ReportWidgetView";
 import { PlaceholderWidget } from "./components/PlaceholderWidget";
@@ -16,10 +17,12 @@ export function ReportsScreen() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation("reports");
   const { widgets, isLoading } = useDashboardWidgets();
+  const refreshControl = useSyncRefreshControl();
 
   return (
     <ScreenHeader.ScrollArea>
       <ScreenHeader.Body
+        refreshControl={refreshControl}
         contentContainerStyle={{
           paddingHorizontal: 16,
           paddingBottom: insets.bottom + 32,

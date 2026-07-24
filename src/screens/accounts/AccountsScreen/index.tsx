@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { RefreshControl, View } from "react-native";
+import { View } from "react-native";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import Animated from "react-native-reanimated";
@@ -14,7 +14,7 @@ import { CirclePlus, Plus } from "lucide-react-native";
 import { groupAccounts, updateAccount } from "@/core/server/accounts";
 import type { Account } from "@/core/types/models";
 import { useAccounts } from "@/lib/hooks/useAccounts";
-import { useRefreshControl } from "@/hooks/useRefreshControl";
+import { useSyncRefreshControl } from "@/lib/hooks/useSyncRefreshControl";
 import { ScreenHeader } from "@/ui/ScreenHeader";
 import { LiftMenu } from "@/ui/lift-menu";
 import { AccountsHeader } from "./components/AccountsHeader";
@@ -27,7 +27,7 @@ export function AccountsScreen() {
   const router = useRouter();
   const [foreground, accent] = useThemeColor(["foreground", "accent"]);
   const { accounts, hasLoaded } = useAccounts();
-  const { refreshControlProps } = useRefreshControl();
+  const refreshControl = useSyncRefreshControl();
 
   // Closed accounts always show as their own group; it just starts collapsed.
   const groups = groupAccounts(accounts, true);
@@ -102,7 +102,7 @@ export function AccountsScreen() {
           ) : (
             <ScreenHeader.Body
               contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 120 }}
-              refreshControl={<RefreshControl {...refreshControlProps} />}
+              refreshControl={refreshControl}
             >
               <Animated.View layout={AccordionLayoutTransition}>
                 <Accordion

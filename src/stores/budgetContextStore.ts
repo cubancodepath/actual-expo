@@ -274,8 +274,8 @@ export const useBudgetContextStore = create<BudgetContextState>()(
               if (code.startsWith("sync/file-")) {
                 // The 7-day re-upload hit a file-state rejection — same recovery
                 // flow as a rejected /sync/sync, not a silent warn.
-                const { useSyncStore } = await import("@/stores/syncStore");
-                await useSyncStore.getState().handleSyncFileError(code);
+                const { handleSyncFileError } = await import("@/stores/operations/syncRecovery");
+                await handleSyncFileError(code);
               }
             });
           }

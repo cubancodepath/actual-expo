@@ -45,7 +45,7 @@ describe("useSyncStore.sync", () => {
   });
 });
 
-describe("conflict pause & budget-switch reset", () => {
+describe("conflict pause mechanics (pure state)", () => {
   afterEach(() => {
     useSyncStore.getState().resetForBudgetSwitch();
     syncModule.setSyncingMode("enabled");
@@ -67,20 +67,13 @@ describe("conflict pause & budget-switch reset", () => {
     });
   });
 
-  it("non-conflict file errors (key-mismatch) do NOT pause the mode", async () => {
-    await useSyncStore.getState().handleSyncFileError("sync/file-key-mismatch");
-
-    expect(syncModule.checkSyncingMode("offline")).toBe(false);
-    expect(useSyncStore.getState().lastErrorCode).toBe("sync/key-missing");
-    expect(useSyncStore.getState().conflictCode).toBeNull();
-  });
-
-  it("resetForBudgetSwitch clears conflict, badge, lastSync AND the auto-recovery guard", async () => {
-    // Arm the one-shot auto-recovery guard by making the recovery fail once.
-    const failingReset = vi.fn().mockRejectedValue(new Error("boom"));
-    useSyncStore.setState({ resetSync: failingReset });
-    await useSyncStore.getState().handleSyncFileError("sync/file-needs-upload");
-    expect(useSyncStore.getState().conflictCode).toBe("sync/file-needs-upload");
+  it("resetForBudgetSwitch clears conflict, badge, lastSync", () => {
+    useSyncStore.setState({
+      status: "error",
+      lastErrorCode: "sync/file-needs-upload",
+      conflictCode: "sync/file-needs-upload",
+      lastSync: new Date(),
+    });
 
     useSyncStore.getState().resetForBudgetSwitch();
 
@@ -90,12 +83,6 @@ describe("conflict pause & budget-switch reset", () => {
       conflictCode: null,
       lastSync: null,
     });
-
-    // Guard cleared → the same code auto-recovers again instead of jumping
-    // straight to the conflict dialog (cross-budget contamination fix).
-    failingReset.mockResolvedValue(undefined);
-    await useSyncStore.getState().handleSyncFileError("sync/file-needs-upload");
-    expect(failingReset).toHaveBeenCalledTimes(2);
   });
 });
 

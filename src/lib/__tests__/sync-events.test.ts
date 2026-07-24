@@ -1,6 +1,12 @@
 // The app-layer sync policy listener (upstream listenForSyncEvent): every
 // sync path reports through events, this maps them to store reactions.
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+
+const handleSyncFileErrorMock = vi.hoisted(() => vi.fn());
+vi.mock("@/stores/operations/syncRecovery", () => ({
+  handleSyncFileError: handleSyncFileErrorMock,
+}));
+
 import { emit } from "@/core/sync/syncEvents";
 import { listenForSyncEvent } from "@/lib/sync-events";
 import { useSyncStore } from "@/stores/syncStore";
@@ -42,11 +48,8 @@ describe("listenForSyncEvent", () => {
     expect(useSyncStore.getState().lastSync).toBeInstanceOf(Date);
   });
 
-  it("error sync/file-* routes to handleSyncFileError", async () => {
-    const spy = vi
-      .spyOn(useSyncStore.getState(), "handleSyncFileError")
-      .mockResolvedValue(undefined);
-    useSyncStore.setState({ handleSyncFileError: spy });
+  it("error sync/file-* routes to the syncRecovery handleSyncFileError", async () => {
+    handleSyncFileErrorMock.mockResolvedValue(undefined);
 
     emit({
       type: "error",
@@ -55,7 +58,7 @@ describe("listenForSyncEvent", () => {
     });
     await settle();
 
-    expect(spy).toHaveBeenCalledWith("sync/file-has-reset");
+    expect(handleSyncFileErrorMock).toHaveBeenCalledWith("sync/file-has-reset");
   });
 
   it("error network/offline stays silent — idle, no error code", async () => {

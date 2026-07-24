@@ -34,7 +34,8 @@ async function handleSyncError(subtype: string, meta: unknown): Promise<void> {
     // Server file-state rejection (reset/re-encrypted/format change on
     // another client): auto-recover or raise the conflict dialog.
     emitErrorEvent(meta);
-    await useSyncStore.getState().handleSyncFileError(subtype as ErrorCode);
+    const { handleSyncFileError } = await import("@/stores/operations/syncRecovery");
+    await handleSyncFileError(subtype as ErrorCode);
     return;
   }
 

@@ -3,6 +3,7 @@ import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { Button, Dialog, Spinner, useThemeColor } from "heroui-native";
 import { useSyncStore } from "@/stores/syncStore";
+import { resetSync, redownloadBudget } from "@/stores/operations/syncRecovery";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 
 type ConflictAction = "download" | "upload";
@@ -19,8 +20,6 @@ export function SyncConflictDialog() {
   const accentForeground = useThemeColor("accent-foreground");
 
   const conflictCode = useSyncStore((s) => s.conflictCode);
-  const resetSync = useSyncStore((s) => s.resetSync);
-  const redownloadBudget = useSyncStore((s) => s.redownloadBudget);
   // Cancel hides the dialog but keeps the conflict (sync stays paused);
   // a new/changed conflict shows it again.
   const [dismissed, setDismissed] = useState(false);

@@ -195,6 +195,26 @@ export function formatAmountShort(cents: number): string {
   return applyCurrencyStyling(result);
 }
 
+/** Drop a trailing ".0" so 1.0k → 1k. */
+function trimDecimalZero(s: string): string {
+  return s.replace(/\.0$/, "");
+}
+
+/**
+ * Compact currency for chart axes / dense KPIs: "$1.2M", "-$10k", "$540".
+ * Abbreviates thousands/millions/billions (k/M/B) with one decimal, keeps the
+ * app's currency symbol/position. Reusable across all report widgets.
+ */
+export function formatAmountCompact(cents: number): string {
+  const abs = Math.abs(cents) / 100;
+  let s: string;
+  if (abs >= 1e9) s = trimDecimalZero((abs / 1e9).toFixed(1)) + "B";
+  else if (abs >= 1e6) s = trimDecimalZero((abs / 1e6).toFixed(1)) + "M";
+  else if (abs >= 1e3) s = trimDecimalZero((abs / 1e3).toFixed(1)) + "k";
+  else s = String(Math.round(abs));
+  return applyCurrencyStyling(cents < 0 ? `-${s}` : s);
+}
+
 // ── Structured formatting (for component-based rendering with SVG symbols) ────
 
 export type FormattedAmountParts = {

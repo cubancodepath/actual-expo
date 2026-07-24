@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { View } from "react-native";
-import { useTranslation } from "react-i18next";
+import { TrendChip } from "heroui-native-pro";
 import * as monthUtils from "@/core/shared/monthUtils";
 import { getLatestTransaction } from "@/core/server/transactions";
 import { useAccounts } from "@/lib/hooks/useAccounts";
@@ -10,7 +10,6 @@ import { Money } from "@/ui/Money";
 import type { NetWorthWidget } from "@/core/types/models/dashboard";
 import { ReportWidget } from "../ReportWidget";
 import { NetWorthGraph } from "../graphs/NetWorthGraph";
-import { Change } from "../Change";
 import { useReport } from "../../hooks/useReport";
 import { useLocale } from "../../hooks/useLocale";
 import { calculateTimeRange } from "../../data/reportRanges";
@@ -25,10 +24,9 @@ type NetWorthCardProps = {
 
 /**
  * Net worth widget — port of desktop-client `NetWorthCard`, wired into the
- * mobile `ReportWidget` (heroui-native-pro `Widget`). Read-only, no navigation.
+ * mobile `ReportWidget` (a heroui-native `Card`). Read-only, no navigation.
  */
 export function NetWorthCard({ title, height, meta }: NetWorthCardProps) {
-  const { t } = useTranslation("reports");
   const locale = useLocale();
   const { format } = useFormat();
   const { accounts } = useAccounts();
@@ -76,24 +74,43 @@ export function NetWorthCard({ title, height, meta }: NetWorthCardProps) {
   const data = useReport(getData);
 
   const description = formatDateRange(start, end, locale) ?? undefined;
-  const legend = [{ label: t("series.change"), colorClassName: "bg-chart-1" }];
+
+  const trend = data
+    ? data.totalChange > 0
+      ? "up"
+      : data.totalChange < 0
+        ? "down"
+        : "neutral"
+    : "neutral";
 
   return (
-    <ReportWidget
-      title={title}
-      description={description}
-      legend={legend}
-      height={height}
-      footer={
-        data ? (
-          <View className="flex-row items-center justify-between">
-            <Money cents={data.netWorth} tone="plain" className="text-base font-semibold" />
-            <Change amount={data.totalChange} />
-          </View>
-        ) : null
-      }
-    >
-      {data ? <NetWorthGraph graphData={data.graphData} /> : <View className="flex-1" />}
+    <ReportWidget height={height}>
+      <ReportWidget.Header>
+        <ReportWidget.Heading>
+          <ReportWidget.Title>{title}</ReportWidget.Title>
+          {description ? <ReportWidget.Description>{description}</ReportWidget.Description> : null}
+        </ReportWidget.Heading>
+        {data ? (
+          <ReportWidget.HeaderRight>
+            <View className="items-end gap-1">
+              <View className="pr-2">
+                <Money cents={data.netWorth} tone="plain" className="text-xs font-semibold" />
+              </View>
+              <TrendChip trend={trend} size="sm" variant="primary">
+                {format(Math.abs(data.totalChange), "financial")}
+              </TrendChip>
+            </View>
+          </ReportWidget.HeaderRight>
+        ) : null}
+      </ReportWidget.Header>
+
+      <ReportWidget.Body>
+        {data ? (
+          <NetWorthGraph graphData={data.graphData} negative={data.netWorth < 0} />
+        ) : (
+          <View className="flex-1" />
+        )}
+      </ReportWidget.Body>
     </ReportWidget>
   );
 }

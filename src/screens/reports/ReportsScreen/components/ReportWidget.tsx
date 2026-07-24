@@ -1,7 +1,72 @@
 import type { ReactNode } from "react";
 import { View } from "react-native";
-import { Widget } from "heroui-native-pro";
+import { Card } from "heroui-native";
 import { CardErrorBoundary } from "./CardErrorBoundary";
+
+/**
+ * Report card as a compound component over heroui-native `Card`. Consumers
+ * compose the pieces they need instead of passing a bag of props:
+ *
+ * ```tsx
+ * <ReportWidget height={h}>
+ *   <ReportWidget.Header>
+ *     <ReportWidget.Heading>
+ *       <ReportWidget.Title>Net Worth</ReportWidget.Title>
+ *       <ReportWidget.Description>May – Jul</ReportWidget.Description>
+ *     </ReportWidget.Heading>
+ *     <ReportWidget.HeaderRight>{kpi}</ReportWidget.HeaderRight>
+ *   </ReportWidget.Header>
+ *   <ReportWidget.Body>{chart}</ReportWidget.Body>
+ *   <ReportWidget.Footer>{summary}</ReportWidget.Footer>
+ * </ReportWidget>
+ * ```
+ *
+ * The slots are pure layout wrappers (no shared state → no context needed). The
+ * root fixes the card height for the single-column layout and isolates the whole
+ * card behind a {@link CardErrorBoundary}.
+ */
+function ReportWidgetRoot({ height, children }: { height: number; children: ReactNode }) {
+  return (
+    <CardErrorBoundary>
+      <Card style={{ height }}>{children}</Card>
+    </CardErrorBoundary>
+  );
+}
+
+/** Header row: heading on the left, right-aligned content on the right. */
+function Header({ children }: { children: ReactNode }) {
+  return (
+    <Card.Header className="mb-3 flex-row items-start justify-between gap-3">
+      {children}
+    </Card.Header>
+  );
+}
+
+/** Left column of the header (title + description), takes the remaining width. */
+function Heading({ children }: { children: ReactNode }) {
+  return <View className="flex-1">{children}</View>;
+}
+
+function Title({ children }: { children: ReactNode }) {
+  return <Card.Title className="text-sm font-medium">{children}</Card.Title>;
+}
+
+function Description({ children }: { children: ReactNode }) {
+  return <Card.Description className="text-xs">{children}</Card.Description>;
+}
+
+/** Right side of the header (a KPI value + trend chip, or a legend). */
+function HeaderRight({ children }: { children: ReactNode }) {
+  return <View className="items-end justify-end">{children}</View>;
+}
+
+function Body({ children }: { children: ReactNode }) {
+  return <Card.Body className="flex-1">{children}</Card.Body>;
+}
+
+function Footer({ children }: { children: ReactNode }) {
+  return <Card.Footer className="mt-2">{children}</Card.Footer>;
+}
 
 export type LegendItem = {
   label: string;
@@ -11,58 +76,30 @@ export type LegendItem = {
   color?: string;
 };
 
-type ReportWidgetProps = {
-  title: string;
-  /** Secondary line under the title — typically the date range. */
-  description?: string;
-  legend?: LegendItem[];
-  /** Fixed rendered height for the card (single-column layout). */
-  height: number;
-  /** The chart / table / KPI payload, rendered in the elevated content card. */
-  children: ReactNode;
-  /** Optional footer content (summary line, ± change). */
-  footer?: ReactNode;
-};
-
-/**
- * Thin wrapper over heroui-native-pro's `Widget` — the dashboard container that
- * pairs a header (title + date range + legend) with an elevated content card.
- * Fixes the card height for the read-only single-column layout and isolates each
- * widget behind a {@link CardErrorBoundary}.
- */
-export function ReportWidget({
-  title,
-  description,
-  legend,
-  height,
-  children,
-  footer,
-}: ReportWidgetProps) {
+/** Convenience legend (colored dots + labels), typically placed in HeaderRight. */
+function Legend({ items }: { items: LegendItem[] }) {
   return (
-    <CardErrorBoundary>
-      <Widget style={{ height }}>
-        <Widget.Header>
-          <View className="flex-1">
-            <Widget.Title>{title}</Widget.Title>
-            {description ? <Widget.Description>{description}</Widget.Description> : null}
-          </View>
-          {legend && legend.length > 0 ? (
-            <Widget.Legend>
-              {legend.map((item) => (
-                <Widget.LegendItem
-                  key={item.label}
-                  colorClassName={item.colorClassName}
-                  color={item.color}
-                >
-                  {item.label}
-                </Widget.LegendItem>
-              ))}
-            </Widget.Legend>
-          ) : null}
-        </Widget.Header>
-        <Widget.Content className="flex-1">{children}</Widget.Content>
-        {footer ? <Widget.Footer>{footer}</Widget.Footer> : null}
-      </Widget>
-    </CardErrorBoundary>
+    <View className="flex-row flex-wrap items-center justify-end gap-x-3 gap-y-1">
+      {items.map((item) => (
+        <View key={item.label} className="flex-row items-center gap-1.5">
+          <View
+            className={`size-2 rounded-full ${item.colorClassName ?? ""}`}
+            style={item.color ? { backgroundColor: item.color } : undefined}
+          />
+          <Description>{item.label}</Description>
+        </View>
+      ))}
+    </View>
   );
 }
+
+export const ReportWidget = Object.assign(ReportWidgetRoot, {
+  Header,
+  Heading,
+  Title,
+  Description,
+  HeaderRight,
+  Body,
+  Footer,
+  Legend,
+});

@@ -1,0 +1,50 @@
+{
+  "title": "Reports",
+  "loading": "Loading…",
+  "widgetFailed": "This widget couldn't be loaded",
+  "reportDeleted": "This report has been deleted",
+  "notSupported": "Not available on mobile yet",
+  "formulaNotSupported": "Formula widgets aren't available on mobile yet",
+  "widgetNames": {
+    "net-worth-card": "Net Worth",
+    "cash-flow-card": "Cash Flow",
+    "spending-card": "Spending",
+    "budget-analysis-card": "Budget Analysis",
+    "custom-report": "Custom Report",
+    "crossover-card": "Crossover",
+    "markdown-card": "Notes",
+    "summary-card": "Summary",
+    "calendar-card": "Calendar",
+    "formula-card": "Formula",
+    "sankey-card": "Sankey",
+    "age-of-money-card": "Age of Money",
+    "balance-forecast-card": "Balance Forecast"
+  },
+  "series": {
+    "income": "Income",
+    "expenses": "Expenses",
+    "balance": "Balance",
+    "budgeted": "Budgeted",
+    "spent": "Spent",
+    "assets": "Assets",
+    "debt": "Debt",
+    "change": "Change",
+    "projected": "Projected",
+    "savings": "Savings",
+    "target": "Target"
+  },
+  "dateRange": {
+    "separator": "{{start}} – {{end}}",
+    "thisMonth": "This month",
+    "lastMonth": "Last month",
+    "yearToDate": "Year to date",
+    "lastYear": "Last year",
+    "allTime": "All time",
+    "last30Days": "Last 30 days"
+  },
+  "spendingMode": {
+    "singleMonth": "This month",
+    "budget": "Budget",
+    "average": "Average"
+  }
+}

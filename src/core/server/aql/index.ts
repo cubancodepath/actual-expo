@@ -37,7 +37,10 @@ export function aqlCompiledQuery(
   });
 }
 
-export function aqlQuery(query: Query | QueryState, params?: AqlQueryParams) {
+export function aqlQuery<T = unknown>(
+  query: Query | QueryState,
+  params?: AqlQueryParams,
+): Promise<{ data: T; dependencies: string[] }> {
   if (query instanceof Query) {
     query = query.serialize();
   }
@@ -45,7 +48,7 @@ export function aqlQuery(query: Query | QueryState, params?: AqlQueryParams) {
   return compileAndRunAqlQuery(schema, schemaConfig, query, {
     params,
     executors: schemaExecutors,
-  });
+  }) as Promise<{ data: T; dependencies: string[] }>;
 }
 
 /**

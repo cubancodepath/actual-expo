@@ -1,25 +1,13 @@
 import { Stack } from "expo-router";
-import { useTranslation } from "react-i18next";
-import { useTheme } from "@/design-system/providers/ThemeProvider";
 
+/**
+ * Reports stack. `ReportsScreen` owns its header via the app's `ScreenHeader`,
+ * so the native header is disabled here.
+ */
 export default function ReportsStack() {
-  const { colors } = useTheme();
-  const { t } = useTranslation();
-
   return (
-    <Stack
-      screenOptions={{
-        headerTintColor: colors.headerText,
-        headerShadowVisible: false,
-        contentStyle: { backgroundColor: colors.pageBackground },
-      }}
-    >
-      <Stack.Screen
-        name="index"
-        options={{
-          title: t("tabs.reports"),
-        }}
-      />
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="index" />
     </Stack>
   );
 }

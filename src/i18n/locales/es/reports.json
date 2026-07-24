@@ -1,0 +1,50 @@
+{
+  "title": "Informes",
+  "loading": "Cargando…",
+  "widgetFailed": "No se pudo cargar este widget",
+  "reportDeleted": "Este informe ha sido eliminado",
+  "notSupported": "Aún no disponible en móvil",
+  "formulaNotSupported": "Los widgets de fórmula aún no están disponibles en móvil",
+  "widgetNames": {
+    "net-worth-card": "Patrimonio neto",
+    "cash-flow-card": "Flujo de caja",
+    "spending-card": "Gastos",
+    "budget-analysis-card": "Análisis de presupuesto",
+    "custom-report": "Informe personalizado",
+    "crossover-card": "Cruce",
+    "markdown-card": "Notas",
+    "summary-card": "Resumen",
+    "calendar-card": "Calendario",
+    "formula-card": "Fórmula",
+    "sankey-card": "Sankey",
+    "age-of-money-card": "Edad del dinero",
+    "balance-forecast-card": "Previsión de saldo"
+  },
+  "series": {
+    "income": "Ingresos",
+    "expenses": "Gastos",
+    "balance": "Saldo",
+    "budgeted": "Presupuestado",
+    "spent": "Gastado",
+    "assets": "Activos",
+    "debt": "Deuda",
+    "change": "Cambio",
+    "projected": "Proyectado",
+    "savings": "Ahorro",
+    "target": "Objetivo"
+  },
+  "dateRange": {
+    "separator": "{{start}} – {{end}}",
+    "thisMonth": "Este mes",
+    "lastMonth": "Mes pasado",
+    "yearToDate": "Año hasta la fecha",
+    "lastYear": "Año pasado",
+    "allTime": "Todo el tiempo",
+    "last30Days": "Últimos 30 días"
+  },
+  "spendingMode": {
+    "singleMonth": "Este mes",
+    "budget": "Presupuesto",
+    "average": "Promedio"
+  }
+}

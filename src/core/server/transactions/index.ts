@@ -8,6 +8,7 @@ import type { Transaction, GetTransactionsOptions, TransactionDisplay } from "@/
 import { onInsert, onUpdate, onDelete as onDeleteTransfer } from "./transfer";
 import { todayInt, startOfMonthInt, endOfMonthInt, strToInt } from "@/core/shared/months";
 import { q, executeQuery } from "@/core/queries";
+import { aqlQuery } from "@/core/server/aql";
 import { getRules } from "@/core/server/rules";
 import { applyRulesToNewTransaction } from "@/core/server/transactions/transaction-rules";
 
@@ -586,4 +587,31 @@ export async function getChildTransactions(parentId: string): Promise<Transactio
       .select(DISPLAY_SELECT as unknown as string[]),
   );
   return data.map(normalizeDisplayRow);
+}
+
+// ---------------------------------------------------------------------------
+// Transaction date boundaries (report date ranges)
+// ---------------------------------------------------------------------------
+
+/** A boundary transaction — `date` as a "YYYY-MM-DD" string (report date logic). */
+export type BoundaryTransaction = { id: string; date: string };
+
+/**
+ * Earliest posted transaction (by date), or null when there are none. Mirrors
+ * upstream's `get-earliest-transaction` handler; reports use its `date` to
+ * compute "all time" ranges. `aqlQuery` returns `date` as a "YYYY-MM-DD" string.
+ */
+export async function getEarliestTransaction(): Promise<BoundaryTransaction | null> {
+  const { data } = await aqlQuery<BoundaryTransaction[]>(
+    q("transactions").orderBy({ date: "asc" }).select(["id", "date"]).limit(1),
+  );
+  return data[0] ?? null;
+}
+
+/** Latest posted transaction (by date), or null when there are none. */
+export async function getLatestTransaction(): Promise<BoundaryTransaction | null> {
+  const { data } = await aqlQuery<BoundaryTransaction[]>(
+    q("transactions").orderBy({ date: "desc" }).select(["id", "date"]).limit(1),
+  );
+  return data[0] ?? null;
 }

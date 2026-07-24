@@ -31,6 +31,23 @@
     --danger: oklch(65.32% 0.2328 25.73);
     --border: oklch(90% 0.006 286.11);
     --separator: oklch(92% 0.006 286.11);
+
+    /* Report chart palette — a multi-hue qualitative scale. chart-1..5 shadow
+       heroui-native-pro's monochrome accent ramp so chart components using the
+       default `accent-chart-3` pick these up automatically; 6..8 extend it.
+       See https://heroui.com/docs/native/getting-started/theming */
+    --chart-1: oklch(65.69% 0.1759 286.11); /* brand violet (= accent) */
+    --chart-2: oklch(70% 0.14 220); /* blue    */
+    --chart-3: oklch(72% 0.15 160); /* teal    */
+    --chart-4: oklch(80% 0.14 85); /* amber   */
+    --chart-5: oklch(68% 0.19 25); /* red     */
+    --chart-6: oklch(70% 0.15 330); /* magenta */
+    --chart-7: oklch(75% 0.12 120); /* green   */
+    --chart-8: oklch(65% 0.1 260); /* slate   */
+    /* Semantic series colors, keyed to the app's financial tokens. */
+    --chart-income: var(--positive);
+    --chart-expense: var(--danger);
+    --chart-neutral: var(--balanced);
   }
 
   @variant dark {
@@ -56,6 +73,20 @@
     --segment: oklch(39.64% 0.006 286.11);
     --border: oklch(28% 0.006 286.11);
     --separator: oklch(25% 0.006 286.11);
+
+    /* Report chart palette (dark): same hues, lifted lightness / trimmed chroma
+       so series stay legible on the dark surface. */
+    --chart-1: oklch(70% 0.16 286.11);
+    --chart-2: oklch(74% 0.13 220);
+    --chart-3: oklch(76% 0.14 160);
+    --chart-4: oklch(84% 0.13 85);
+    --chart-5: oklch(72% 0.18 25);
+    --chart-6: oklch(74% 0.14 330);
+    --chart-7: oklch(79% 0.12 120);
+    --chart-8: oklch(70% 0.09 260);
+    --chart-income: var(--positive);
+    --chart-expense: var(--danger);
+    --chart-neutral: var(--balanced);
   }
 }
 
@@ -64,4 +95,19 @@
 @theme {
   --color-positive: var(--positive);
   --color-balanced: var(--balanced);
+
+  /* Register chart tokens as color utilities. Redefining --color-chart-1..5
+     overrides heroui-native-pro's defaults; 6..8 + semantic tokens are new.
+     Enables bg-chart-N (legend dots), accent-chart-N (chart series), etc. */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+  --color-chart-7: var(--chart-7);
+  --color-chart-8: var(--chart-8);
+  --color-chart-income: var(--chart-income);
+  --color-chart-expense: var(--chart-expense);
+  --color-chart-neutral: var(--chart-neutral);
 }

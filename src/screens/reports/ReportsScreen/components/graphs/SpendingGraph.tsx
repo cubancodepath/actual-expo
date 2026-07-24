@@ -45,8 +45,14 @@ export function SpendingGraph({ data, mode }: SpendingGraphProps) {
         >
           {({ points: pts, chartBounds }) => (
             <>
-              {/* Comparison: just a neutral line (no fill) so it stays quiet
-                  behind the compare month. */}
+              {/* Comparison: neutral area + line, kept quiet behind the compare
+                  month's own filled area. */}
+              <AreaChart.Area
+                points={pts.comparison}
+                y0={chartBounds.bottom}
+                curveType="linear"
+                colorClassName="accent-chart-neutral"
+              />
               <LineChart.Line
                 points={pts.comparison}
                 curveType="linear"

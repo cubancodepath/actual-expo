@@ -22,13 +22,16 @@ export function ChangeBudgetScreen() {
       lockScrollWhileSwitching
       onSelect={(file, select) => {
         // Tapping the already-open budget just backs out; otherwise switch and
-        // pop the whole settings stack once the new budget is open.
+        // land back on the main app once the new budget is open. dismissAll()
+        // is NOT enough here: it only unwinds the nested settings stack to its
+        // index, leaving the settings fullScreenModal mounted — dismissTo the
+        // tabs pops the whole settings presentation too.
         if (file.localId && file.localId === activeBudgetId) {
           router.back();
           return;
         }
         void select().then((switched) => {
-          if (switched) router.dismissAll();
+          if (switched) router.dismissTo("/(auth)/(tabs)");
         });
       }}
       header={

@@ -63,6 +63,12 @@ export async function waitForSyncToSettle(): Promise<void> {
  * Reset all module-level sync state. Call during budget switch or disconnect
  * BEFORE opening a new database. Increments the generation counter so any
  * in-flight fullSync() silently discards its results.
+ *
+ * Naming note: three unrelated things share similar names —
+ *   · THIS resetSyncState: local module-state reset for a budget switch
+ *   · cloudStorage.resetSyncState: POST /reset-user-file (server-side reset)
+ *   · reset.ts resetSync: the full upstream reset op (uses the cloud one)
+ * Keep the upstream names, mind the difference.
  */
 export function resetSyncState(resetBatchState: () => void, clearFullSyncGuard?: () => void): void {
   _syncGeneration++;

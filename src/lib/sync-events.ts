@@ -20,14 +20,11 @@ async function handleSyncError(subtype: string, meta: unknown): Promise<void> {
   const { useSyncStore } = await import("@/stores/syncStore");
 
   if (subtype === "auth/token-expired") {
-    // Session teardown, not a user-visible error.
+    // Session teardown, not a user-visible error. signOut() is the single
+    // full-teardown path (closes the budget + DB first) — same handler the
+    // react-query 401 hook uses.
     emitErrorEvent(meta);
     useSyncStore.getState()._setStatus("idle");
-    const { useBudgetContextStore } = await import("@/stores/budgetContextStore");
-    await useBudgetContextStore
-      .getState()
-      .closeBudget()
-      .catch(() => {});
     const { useSessionStore } = await import("@/stores/sessionStore");
     await useSessionStore.getState().signOut();
     return;

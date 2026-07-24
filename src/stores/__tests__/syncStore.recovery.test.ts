@@ -30,6 +30,11 @@ vi.mock("@/core/sync", () => ({
   setSyncingMode: setSyncingModeMock,
   fullSync: fullSyncMock,
 }));
+// syncStore.resetSync delegates the reset protocol to core/sync/reset (the
+// order of steps is covered by that module's own test — resetProtocol.test.ts);
+// here we only care about the store-level orchestration around it.
+const coreResetSyncMock = vi.hoisted(() => vi.fn());
+vi.mock("@/core/sync/reset", () => ({ resetSync: coreResetSyncMock }));
 vi.mock("@/lib/errors/ErrorChannel", () => ({ emitErrorEvent: vi.fn() }));
 vi.mock("@/stores/sessionStore", () => ({
   useSessionStore: { getState: () => ({ serverUrl: "https://s", token: "tok" }) },
@@ -74,51 +79,44 @@ beforeEach(() => {
 });
 
 describe("resetSyncBudget", () => {
-  it("resets the server file BEFORE re-uploading, and clears local sync state in between", async () => {
-    const order: string[] = [];
-    postMock.mockImplementation(async (url: string) => order.push(url));
-    clearLocalSyncStateMock.mockImplementation(async () => order.push("clearLocalSyncState"));
-    uploadBudgetMock.mockImplementation(async () => {
-      order.push("uploadBudget");
-      return { cloudFileId: "cloud-1", groupId: "group-new" };
-    });
+  beforeEach(() => {
+    coreResetSyncMock.mockResolvedValue({ groupId: "group-new" });
+  });
 
+  it("delegates the reset protocol to core resetSync with the session context", async () => {
     await useSyncStore.getState().resetSync();
 
-    expect(order).toEqual([
-      "https://s/sync/reset-user-file",
-      "clearLocalSyncState",
-      "uploadBudget",
-    ]);
-    expect(postMock).toHaveBeenCalledWith("https://s/sync/reset-user-file", {
+    expect(coreResetSyncMock).toHaveBeenCalledWith({
+      serverUrl: "https://s",
       token: "tok",
-      fileId: "cloud-1",
+      cloudFileId: "cloud-1",
+      budgetId: "budget-1",
     });
   });
 
-  it("clears groupId/lastSyncedTimestamp/lastUploaded but keeps cloudFileId", async () => {
-    await useSyncStore.getState().resetSync();
+  it("maps a checkKey rejection to sync/file-has-new-key and does not resolve the conflict", async () => {
+    useSyncStore.setState({ conflictCode: "sync/file-has-reset" });
+    coreResetSyncMock.mockResolvedValue({ error: { reason: "file-has-new-key" } });
 
-    expect(updateMetadataMock).toHaveBeenCalledWith("budget-1", {
-      groupId: undefined,
-      lastSyncedTimestamp: undefined,
-      lastUploaded: undefined,
+    await expect(useSyncStore.getState().resetSync()).rejects.toMatchObject({
+      code: "sync/file-has-new-key",
     });
-    // cloudFileId untouched → uploadBudget reuses it (upstream keeps the fileId on reset)
-    const metaUpdates = updateMetadataMock.mock.calls.map((c) => c[1]);
-    for (const update of metaUpdates) {
-      expect(update).not.toHaveProperty("cloudFileId");
-    }
+    expect(useSyncStore.getState().conflictCode).toBe("sync/file-has-reset");
+    expect(fullSyncMock).not.toHaveBeenCalled();
   });
 
-  it("re-enables sync and clears the conflict on success", async () => {
+  it("re-enables sync, clears the conflict, and syncs with the new groupId on success", async () => {
     useSyncStore.setState({ conflictCode: "sync/file-has-reset" });
 
     await useSyncStore.getState().resetSync();
 
     expect(useSyncStore.getState().conflictCode).toBeNull();
     expect(setSyncingModeMock).toHaveBeenCalledWith("enabled");
-    expect(setBudgetContextMock).toHaveBeenCalledWith({ groupId: "group-new" });
+    expect(setBudgetContextMock).toHaveBeenCalledWith({
+      groupId: "group-new",
+      lastSyncedTimestamp: undefined,
+    });
+    expect(fullSyncMock).toHaveBeenCalledWith({ force: true });
   });
 });
 

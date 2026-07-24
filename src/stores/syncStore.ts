@@ -1,9 +1,8 @@
 import { create } from "zustand";
-import { post } from "@/core/post";
-import { clearLocalSyncState, fullSync, setSyncingMode } from "@/core/sync";
+import { fullSync, setSyncingMode } from "@/core/sync";
 import { ActualError, type ErrorCode } from "@/core/errors";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
-import { readMetadata, updateMetadata, deleteBudgetDir } from "@/core/server/prefs";
+import { readMetadata, deleteBudgetDir } from "@/core/server/prefs";
 import { getRemoteFiles, uploadBudget, downloadBudget } from "@/core/server/cloud-storage";
 import { useSessionStore } from "@/stores/sessionStore";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
@@ -81,20 +80,33 @@ export const useSyncStore = create<SyncState>((set, get) => ({
       throw new ActualError("file/upload-failed", { context: { reason: "no cloudFileId" } });
     }
 
-    await post(`${serverUrl}/sync/reset-user-file`, { token, fileId: meta.cloudFileId });
-
-    await clearLocalSyncState();
-    await updateMetadata(activeBudgetId, {
-      groupId: undefined,
-      lastSyncedTimestamp: undefined,
-      lastUploaded: undefined,
+    // Delegate the reset protocol (checkKey guard → server reset → wipe local
+    // CRDT state → clear sync metadata → re-upload) to core's resetSync —
+    // upstream sync/reset.ts, the same op the encryption flows use. The
+    // checkKey guard matters: it refuses to upload a file encrypted with a
+    // key the server no longer accepts.
+    const { resetSync: coreResetSync } = await import("@/core/sync/reset");
+    const result = await coreResetSync({
+      serverUrl,
+      token,
+      cloudFileId: meta.cloudFileId,
+      budgetId: activeBudgetId,
     });
+    if ("error" in result) {
+      const reason = result.error.reason;
+      throw new ActualError(
+        reason === "network"
+          ? "network/offline"
+          : reason === "file-has-new-key"
+            ? "sync/file-has-new-key"
+            : "file/upload-failed",
+        { context: { operation: "resetSync", reason } },
+      );
+    }
+
     useBudgetContextStore
       .getState()
-      .setBudgetContext({ groupId: "", lastSyncedTimestamp: undefined });
-
-    const { groupId } = await uploadBudget(serverUrl, token, activeBudgetId);
-    useBudgetContextStore.getState().setBudgetContext({ groupId });
+      .setBudgetContext({ groupId: result.groupId ?? "", lastSyncedTimestamp: undefined });
     // Refresh core's prefs snapshot — the sync engine reads groupId from there.
     const { loadPrefs } = await import("@/core/server/prefs");
     await loadPrefs(activeBudgetId);

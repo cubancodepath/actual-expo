@@ -1,8 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import * as SecureStore from "expo-secure-store";
-import { clearAllKeys as clearEncryptionKeys } from "@/core/platform/keyStore";
-import { unloadAllKeys } from "@/core/encryption";
 import { setServer, setUserToken } from "@/core/server/server-config";
 import { mmkvStorage, SECURE_TOKEN_KEY } from "./prefsStorage";
 
@@ -20,8 +18,10 @@ const SECURE_OPTS = {
 // `hasToken` is the single reactive signal the auth guard needs; the network
 // layer reads serverUrl/token imperatively via getState().
 
-// This store is the mobile usersSlice: session state + its operations
-// (`loggedIn`, `signOut`) live together as store actions (idiomatic Zustand).
+// This store is the mobile usersSlice STATE. Pure slice: own state + own-state
+// operations only (setServerUrl / loadToken / saveToken / loggedIn / reset),
+// mirrored into core's server-config. The cross-store `signOut` (which also
+// closes the budget) lives in src/stores/operations/users.ts.
 type SessionState = {
   serverUrl: string;
   token: string;
@@ -40,12 +40,6 @@ type SessionState = {
    * Navigation is the caller's job.
    */
   loggedIn(params: { serverUrl: string; token: string }): Promise<void>;
-  /**
-   * Full sign-out: wipe the token + encryption keys and reset the session and
-   * budget-context stores (upstream usersSlice `signOut`). UI prefs (theme,
-   * language, onboarding) are preserved by design. Navigation is the caller's job.
-   */
-  signOut(): Promise<void>;
 };
 
 export const useSessionStore = create<SessionState>()(
@@ -88,24 +82,6 @@ export const useSessionStore = create<SessionState>()(
       async loggedIn({ serverUrl, token }) {
         get().setServerUrl(serverUrl);
         await get().saveToken(token);
-      },
-
-      async signOut() {
-        // Full teardown, ALWAYS: close the budget first (settles in-flight
-        // sync, closes the DB, resets the data stores) so no caller of
-        // signOut — sync policy, react-query 401 handler, settings — can
-        // leave an open database or stale sync state behind. (Phase 3 moves
-        // signOut to operations/users, making these plain static calls.)
-        const { closeBudget } = await import("@/stores/operations/budgetfiles");
-        await closeBudget().catch(() => {});
-
-        await SecureStore.deleteItemAsync(SECURE_TOKEN_KEY);
-        await clearEncryptionKeys();
-        unloadAllKeys();
-
-        get().reset();
-        const { useBudgetContextStore } = await import("@/stores/budgetContextStore");
-        useBudgetContextStore.getState().reset();
       },
     }),
     {

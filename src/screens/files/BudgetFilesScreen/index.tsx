@@ -4,9 +4,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { Button, useThemeColor } from "heroui-native";
 import { Plus } from "lucide-react-native";
-import { useSessionStore } from "@/stores/sessionStore";
-import { resetAllStores } from "@/stores/operations/resetStores";
-import { resetSyncState, clearSwitchingFlag } from "@/core/sync";
+import { signOut } from "@/stores/operations/users";
+import { clearSwitchingFlag } from "@/core/sync";
 import { ScreenHeader } from "@/ui/ScreenHeader";
 import { dialog } from "@/ui/feedback/dialog/dialogStore";
 import { BudgetFileList } from "@/screens/files/components/BudgetFileList";
@@ -26,9 +25,8 @@ export function BudgetFilesScreen() {
       destructive: true,
     });
     if (!ok) return;
-    resetSyncState();
-    resetAllStores();
-    await useSessionStore.getState().signOut();
+    // signOut() is the full teardown (budget close + store resets + session).
+    await signOut();
     clearSwitchingFlag();
     router.replace("/");
   }

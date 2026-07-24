@@ -10,6 +10,7 @@ import {
   closeAndDownloadBudget,
   deleteBudget,
 } from "@/stores/operations/budgetfiles";
+import { signOut } from "@/stores/operations/users";
 import { getRemoteFiles, removeFile, uploadBudget } from "@/core/server/cloud-storage";
 import { getBudgets, loadPrefs, getPrefs } from "@/core/server/prefs";
 import {
@@ -78,7 +79,7 @@ export function useBudgetFiles(): UseBudgetFilesReturn {
         getRemoteFiles(serverUrl, token).catch((e: unknown) => {
           // Expired session → full signOut; the root guard redirects to login
           if (e instanceof ActualError && e.code === "auth/token-expired") {
-            void useSessionStore.getState().signOut();
+            void signOut();
           }
           return [];
         }),

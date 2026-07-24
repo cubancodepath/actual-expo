@@ -25,8 +25,8 @@ async function handleSyncError(subtype: string, meta: unknown): Promise<void> {
     // react-query 401 hook uses.
     emitErrorEvent(meta);
     useSyncStore.getState()._setStatus("idle");
-    const { useSessionStore } = await import("@/stores/sessionStore");
-    await useSessionStore.getState().signOut();
+    const { signOut } = await import("@/stores/operations/users");
+    await signOut();
     return;
   }
 

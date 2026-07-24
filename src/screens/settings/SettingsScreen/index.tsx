@@ -23,9 +23,8 @@ import { ScreenHeader } from "@/ui/ScreenHeader";
 import { useSessionStore } from "@/stores/sessionStore";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import { useSyncStore } from "@/stores/syncStore";
-import { resetAllStores } from "@/stores/operations/resetStores";
-import { closeBudget } from "@/stores/operations/budgetfiles";
-import { resetSyncState, clearSwitchingFlag, loadClock } from "@/core/sync";
+import { signOut } from "@/stores/operations/users";
+import { clearSwitchingFlag, loadClock } from "@/core/sync";
 import { Timestamp } from "@/core/crdt";
 import { clearLocalData } from "@/core/db";
 import { getServerInfo } from "@/core/server/server-info/serverInfo.api";
@@ -170,9 +169,10 @@ export function SettingsScreen() {
     if (!ok) return;
     setLoggingOut(true);
     try {
-      resetSyncState();
-      resetAllStores();
-      await useSessionStore.getState().signOut();
+      // signOut() closes the budget (settle sync, close DB, reset stores) and
+      // clears the session; then wipe the on-disk local data and re-init a
+      // clock for the fresh empty state.
+      await signOut();
       await clearLocalData();
       await loadClock();
     } finally {
@@ -182,10 +182,9 @@ export function SettingsScreen() {
   }
 
   async function handleConnectToServer() {
-    // signOut() first so hasToken flips false in the same commit that clears the budget
-    // context — otherwise the (files) guard briefly routes to the file list.
-    await useSessionStore.getState().signOut();
-    await closeBudget();
+    // signOut() is the full teardown (budget close + session reset) — routes
+    // straight to login without briefly flashing the (files) guard.
+    await signOut();
   }
 
   async function handleLogout() {
@@ -198,10 +197,7 @@ export function SettingsScreen() {
     if (!ok) return;
     setLoggingOut(true);
     try {
-      // signOut() first: it batches hasToken=false + budget-context reset into one commit
-      // → routes straight to login. closeBudget() then closes the DB after (auth) unmounts.
-      await useSessionStore.getState().signOut();
-      await closeBudget();
+      await signOut();
     } finally {
       setLoggingOut(false);
     }

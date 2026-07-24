@@ -207,38 +207,35 @@ export function fullSync(opts?: { force?: boolean }): Promise<number> {
     const server = getServer();
     const token = getUserToken();
 
-    // No cloud coordinates = local-only budget (or never uploaded) — nothing
-    // to sync. Mirrors loadBudget's own guard for the background sync.
+    // No cloud coordinates = local-only budget (or never uploaded), no
+    // server/token = signed out — nothing to sync, silently. Upstream _fullSync
+    // returns [] on missing coordinates the same way; the auth guard owns the
+    // signed-out UX.
     if (!prefs?.cloudFileId || !prefs.groupId) return 0;
-    if (!force && (!server || !token)) {
-      throw new ActualError("sync/not-configured", {
-        message: "Server not configured — set server URL and token first",
-      });
-    }
-    if (!server || !token) return 0; // forced but signed out — nothing to do
-
-    // Proactively verify the key after a prior decrypt-failure — see
-    // _lastSyncHadDecryptFailure's comment.
-    if (_lastSyncHadDecryptFailure && prefs.encryptKeyId && prefs.cloudFileId) {
-      const { checkKey } = await import("@/core/sync/cloudStorage");
-      const result = await checkKey({
-        serverUrl: server.BASE_SERVER,
-        token,
-        cloudFileId: prefs.cloudFileId,
-        encryptKeyId: prefs.encryptKeyId,
-      });
-      if (!result.valid && result.error.reason === "key-mismatch") {
-        throw new ActualError("sync/key-missing", { context: { keyRotated: true } });
-      }
-      // Either confirmed valid, or the check itself failed (e.g. network) —
-      // don't block the sync attempt on checkKey's own failure, just retry
-      // normally and let the real sync surface whatever actually happens.
-      _lastSyncHadDecryptFailure = false;
-    }
+    if (!server || !token) return 0;
 
     emit({ type: "start", tables: [] });
 
     try {
+      // Proactively verify the key after a prior decrypt-failure — see
+      // _lastSyncHadDecryptFailure's comment.
+      if (_lastSyncHadDecryptFailure && prefs.encryptKeyId && prefs.cloudFileId) {
+        const { checkKey } = await import("@/core/sync/cloudStorage");
+        const result = await checkKey({
+          serverUrl: server.BASE_SERVER,
+          token,
+          cloudFileId: prefs.cloudFileId,
+          encryptKeyId: prefs.encryptKeyId,
+        });
+        if (!result.valid && result.error.reason === "key-mismatch") {
+          throw new ActualError("sync/key-missing", { context: { keyRotated: true } });
+        }
+        // Either confirmed valid, or the check itself failed (e.g. network) —
+        // don't block the sync attempt on checkKey's own failure, just retry
+        // normally and let the real sync surface whatever actually happens.
+        _lastSyncHadDecryptFailure = false;
+      }
+
       // Run the sync loop (may recurse on merkle divergence)
       const allMessages = await _fullSync(null, 0, null, gen, force);
 
@@ -270,8 +267,12 @@ export function fullSync(opts?: { force?: boolean }): Promise<number> {
       if (gen !== getSyncGeneration()) return 0;
 
       // Core-owned bookkeeping only — reporting and recovery policy (logout,
-      // syncRecovery, sync badge state) belong to the app layer: every error
-      // is rethrown and syncStore.sync() decides what to do with it.
+      // syncRecovery, sync badge state) belong to the app layer. Upstream
+      // shape: fullSync never rethrows to its caller; it emits a sync error
+      // event (app.events 'sync' {type:'error', subtype}) and the client's
+      // listenForSyncEvent owns the reaction. Same here — so every caller
+      // (scheduled push, poll, foreground, pull-to-refresh) reports through
+      // one channel and nothing can be silently swallowed by a caller.
 
       if (e instanceof ActualError && e.code === "sync/key-missing") {
         // Make the *next* attempt proactively verify the key server-side.
@@ -294,7 +295,12 @@ export function fullSync(opts?: { force?: boolean }): Promise<number> {
         return 0;
       }
 
-      throw e;
+      emit({
+        type: "error",
+        subtype: e instanceof ActualError ? e.code : "unknown",
+        meta: e,
+      });
+      return 0;
     }
   })().finally(() => {
     _activeSyncPromise = null;

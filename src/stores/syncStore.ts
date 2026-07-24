@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { post } from "@/core/post";
 import { clearLocalSyncState, fullSync, setSyncingMode } from "@/core/sync";
 import { ActualError, type ErrorCode } from "@/core/errors";
-import { emitErrorEvent, toErrorCode } from "@/lib/errors/ErrorChannel";
+import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { readMetadata, updateMetadata, deleteBudgetDir } from "@/core/server/prefs";
 import { getRemoteFiles, uploadBudget, downloadBudget } from "@/core/server/cloud-storage";
 import { useSessionStore } from "@/stores/sessionStore";
@@ -63,42 +63,12 @@ export const useSyncStore = create<SyncState>((set, get) => ({
     // SyncConflictDialog's recovery actions (which clear it) may sync again.
     if (!force && get().conflictCode) return;
 
-    set({ status: "syncing", lastErrorCode: null });
-    try {
-      await fullSync(opts);
-      set({ status: "success", lastSync: new Date() });
-    } catch (e: unknown) {
-      if (e instanceof ActualError && e.code === "auth/token-expired") {
-        // Session teardown, not a user-visible error.
-        emitErrorEvent(e);
-        set({ status: "idle" });
-        await useBudgetContextStore
-          .getState()
-          .closeBudget()
-          .catch(() => {});
-        await useSessionStore.getState().signOut();
-        return;
-      }
-
-      if (e instanceof ActualError && e.code.startsWith("sync/file-")) {
-        // Server file-state rejection (reset/re-encrypted/format change on
-        // another client). handleSyncFileError pauses scheduled syncs and
-        // either auto-recovers or raises the conflict dialog via conflictCode.
-        emitErrorEvent(e);
-        await get().handleSyncFileError(e.code);
-        return;
-      }
-
-      if (e instanceof ActualError && e.code === "network/offline") {
-        // Expected local-first condition — log only, no error badge.
-        emitErrorEvent(e);
-        set({ status: "idle" });
-        return;
-      }
-
-      emitErrorEvent(e);
-      set({ status: "error", lastErrorCode: toErrorCode(e) });
-    }
+    // fullSync never rejects: it emits sync events (start/success/error) and
+    // the app-level listenForSyncEvent (src/lib/sync-events.ts) owns the
+    // reaction policy — status transitions, conflict recovery, session
+    // teardown. Upstream shape: the desktop sync button dispatches sync() the
+    // same way and lets the event listener do the rest.
+    await fullSync(opts);
   },
 
   async resetSync() {
@@ -128,9 +98,9 @@ export const useSyncStore = create<SyncState>((set, get) => ({
     await loadPrefs(activeBudgetId);
 
     get()._resolveConflict();
-    // Direct fullSync (not get().sync): a sync/file-* rejection here must not
-    // re-enter the recovery policy that called us. Report-only.
-    await fullSync({ force: true }).catch((e) => emitErrorEvent(e));
+    // A rejection here reports through the sync-event listener like any other
+    // sync; re-entry into this recovery is bounded by autoRecoveryAttempted.
+    await fullSync({ force: true });
   },
 
   async redownloadBudget() {
@@ -214,6 +184,7 @@ export const useSyncStore = create<SyncState>((set, get) => ({
   _setStatus(status) {
     set({ status });
     if (status === "success") set({ lastSync: new Date() });
+    if (status === "syncing") set({ lastErrorCode: null });
   },
 
   _setErrorCode(code) {

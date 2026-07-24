@@ -45,6 +45,7 @@ import { useShakeUndo } from "@/hooks/useShakeUndo";
 import { loadAllPersistedKeys } from "@/core/encryption/keys";
 import { installGlobalHandlers } from "@/lib/errors/install";
 import { scrubEvent } from "@/lib/errors/sentryScrub";
+import { listenForSyncEvent } from "@/lib/sync-events";
 
 import { queryClient } from "@/lib/query/queryClient";
 
@@ -68,6 +69,11 @@ Sentry.init({
 
 // Must run after Sentry.init (chains onto the ErrorUtils handler Sentry installs).
 installGlobalHandlers();
+
+// The sync policy listener (upstream listenForSyncEvent) lives for the app's
+// lifetime — registered at module scope, BEFORE bootstrap's first background
+// sync can emit, so no event is ever missed.
+listenForSyncEvent();
 
 function RootLayout() {
   const ref = useNavigationContainerRef();

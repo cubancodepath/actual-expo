@@ -40,7 +40,7 @@ describe("initSpreadsheet — dispatches to the right formula engine by budgetTy
   it("rebuilds with the tracking engine's cells after a synced budgetType change", async () => {
     await openTestDb();
     const incomeGroup = await createCategoryGroup({ name: "Income", is_income: true });
-    await createCategory({ name: "Paycheck", cat_group: incomeGroup, is_income: true });
+    await createCategory({ name: "Paycheck", group: incomeGroup, is_income: true });
     await createCategoryGroup({ name: "Expenses" });
     await initSpreadsheet();
 

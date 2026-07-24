@@ -194,7 +194,7 @@ function ExpenseCategoryList({ onPick }: { onPick: (categoryId: string) => void 
         id: g.id,
         name: g.name,
         categories: categories
-          .filter((c) => c.cat_group === g.id && !c.is_income && !c.hidden && !c.tombstone)
+          .filter((c) => c.group === g.id && !c.is_income && !c.hidden && !c.tombstone)
           .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)),
       }))
       .filter((g) => g.categories.length > 0);

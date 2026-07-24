@@ -20,7 +20,7 @@ export default function NewCategoryScreen() {
     if (!trimmed || !groupId || saving) return;
     setSaving(true);
     try {
-      await createCategory({ name: trimmed, cat_group: groupId });
+      await createCategory({ name: trimmed, group: groupId });
       router.back();
     } finally {
       setSaving(false);

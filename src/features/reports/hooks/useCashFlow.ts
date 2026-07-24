@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { q } from "@/core/queries";
 import { useLiveQuery } from "@/hooks/useQuery";
-import { addMonths } from "@/core/shared/months";
+import { addMonths, intToStr } from "@/core/shared/months";
 
 export type CashFlowPoint = {
   month: string;
@@ -50,7 +50,11 @@ function useMonthCashFlow(monthStr: string): MonthCashFlow {
   const { data: incomeData } = useLiveQuery<{ result: number }>(
     () =>
       q("transactions")
-        .filter({ date: { $gte: start, $lte: end }, amount: { $gt: 0 }, transferred_id: null })
+        .filter({
+          date: { $gte: intToStr(start), $lte: intToStr(end) },
+          amount: { $gt: 0 },
+          transfer_id: null,
+        })
         .calculate({ $sum: "$amount" }),
     [start, end],
   );
@@ -58,7 +62,11 @@ function useMonthCashFlow(monthStr: string): MonthCashFlow {
   const { data: expenseData } = useLiveQuery<{ result: number }>(
     () =>
       q("transactions")
-        .filter({ date: { $gte: start, $lte: end }, amount: { $lt: 0 }, transferred_id: null })
+        .filter({
+          date: { $gte: intToStr(start), $lte: intToStr(end) },
+          amount: { $lt: 0 },
+          transfer_id: null,
+        })
         .calculate({ $sum: "$amount" }),
     [start, end],
   );

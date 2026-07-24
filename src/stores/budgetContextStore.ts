@@ -145,22 +145,22 @@ export const useBudgetContextStore = create<BudgetContextState>()(
           // 5. Pre-fetch core queries into cache — gives instant first render with local data.
           // liveQuery takes over reactively after mount; sync updates flow through events.
           const { executeQuery } = await import("@/core/queries/execute");
-          const { q } = await import("@/core/queries/query");
+          const { q } = await import("@/core/shared/query");
           const { setQueryCache, clearQueryCache } = await import("@/core/queries/queryCache");
           clearQueryCache(); // Clear old budget's stale entries before populating with new data
 
-          const [accounts, categories, groups, payees, tags] = await Promise.all([
+          // Tags are not part of the AQL schema (queried via raw SQL in the
+          // `tags` domain), so they're not pre-fetched here.
+          const [accounts, categories, groups, payees] = await Promise.all([
             executeQuery(q("accounts")),
             executeQuery(q("categories")),
             executeQuery(q("category_groups")),
             executeQuery(q("payees")),
-            executeQuery(q("tags")),
           ]);
           setQueryCache(q("accounts").serializeAsString(), accounts.data);
           setQueryCache(q("categories").serializeAsString(), categories.data);
           setQueryCache(q("category_groups").serializeAsString(), groups.data);
           setQueryCache(q("payees").serializeAsString(), payees.data);
-          setQueryCache(q("tags").serializeAsString(), tags.data);
 
           // Pre-fetch account balances + group totals in parallel
           const typedAccounts = accounts.data as Array<{
@@ -173,14 +173,14 @@ export const useBudgetContextStore = create<BudgetContextState>()(
           const offBudgetIds = openAccounts.filter((a) => a.offbudget).map((a) => a.id);
 
           const balanceQueries = openAccounts.map((a) => {
-            const bq = q("transactions").filter({ acct: a.id }).calculate({ $sum: "$amount" });
+            const bq = q("transactions").filter({ account: a.id }).calculate({ $sum: "$amount" });
             return executeQuery(bq).then((r) => setQueryCache(bq.serializeAsString(), r.data));
           });
 
           // Group totals (same query shape as useAccountGroupBalance)
           if (budgetIds.length > 0) {
             const gq = q("transactions")
-              .filter({ acct: { $oneof: budgetIds } })
+              .filter({ account: { $oneof: budgetIds } })
               .calculate({ $sum: "$amount" });
             balanceQueries.push(
               executeQuery(gq).then((r) => setQueryCache(gq.serializeAsString(), r.data)),
@@ -188,7 +188,7 @@ export const useBudgetContextStore = create<BudgetContextState>()(
           }
           if (offBudgetIds.length > 0) {
             const gq = q("transactions")
-              .filter({ acct: { $oneof: offBudgetIds } })
+              .filter({ account: { $oneof: offBudgetIds } })
               .calculate({ $sum: "$amount" });
             balanceQueries.push(
               executeQuery(gq).then((r) => setQueryCache(gq.serializeAsString(), r.data)),
@@ -253,6 +253,7 @@ export const useBudgetContextStore = create<BudgetContextState>()(
             });
           }
         } catch (error) {
+          if (__DEV__) console.warn("[loadBudget] failed:", error);
           // Cleanup on failure (upstream pattern: closeBudget on error)
           await get()
             .closeBudget()

@@ -6,7 +6,7 @@ import { Timestamp } from "@/core/crdt";
 import type { TransactionRow } from "@/core/db/types";
 import type { Transaction, GetTransactionsOptions, TransactionDisplay } from "@/core/types/models";
 import { onInsert, onUpdate, onDelete as onDeleteTransfer } from "./transfer";
-import { todayInt, startOfMonthInt, endOfMonthInt } from "@/core/shared/months";
+import { todayInt, startOfMonthInt, endOfMonthInt, strToInt } from "@/core/shared/months";
 import { q, executeQuery } from "@/core/queries";
 import { getRules } from "@/core/server/rules";
 import { applyRulesToNewTransaction } from "@/core/server/transactions/transaction-rules";
@@ -445,13 +445,35 @@ export const deleteTransaction = undoable(async function deleteTransaction(
 // Display query — joins payee and category names
 // ---------------------------------------------------------------------------
 
+/**
+ * Resolve display names via AQL ref-paths (query-level joins — NOT a schema/view
+ * change) and normalize the AQL `date` string back to a YYYYMMDD int, matching
+ * `TransactionDisplay`. Used by the single-row/child edit fetches; the hot list
+ * path enriches in memory via `useTransactionEnrichment`.
+ */
+const DISPLAY_SELECT = [
+  "*",
+  { payeeName: "payee.name" },
+  { categoryName: "category.name" },
+  { accountName: "account.name" },
+] as const;
+
+function normalizeDisplayRow(row: Record<string, unknown>): TransactionDisplay {
+  const rawDate = row.date;
+  const date = typeof rawDate === "number" ? rawDate : (strToInt(String(rawDate)) ?? 0);
+  return { ...row, date } as unknown as TransactionDisplay;
+}
+
 export async function getTransactionById(id: string): Promise<TransactionDisplay | null> {
   // splits: "all" keeps parent-split rows (the default alive filter drops isParent=1),
   // so this can load a parent for editing as well as normal/child rows.
-  const { data } = await executeQuery<TransactionDisplay>(
-    q("transactions").options({ splits: "all" }).filter({ id }).select(["*", "accountName"]),
+  const { data } = await executeQuery<Record<string, unknown>>(
+    q("transactions")
+      .options({ splits: "all" })
+      .filter({ id })
+      .select(DISPLAY_SELECT as unknown as string[]),
   );
-  return data[0] ?? null;
+  return data[0] ? normalizeDisplayRow(data[0]) : null;
 }
 
 // ---------------------------------------------------------------------------
@@ -557,8 +579,11 @@ export async function getUnclearedCount(accountId?: string): Promise<number> {
 
 /** Fetch all child transactions for a parent split transaction. */
 export async function getChildTransactions(parentId: string): Promise<TransactionDisplay[]> {
-  const { data } = await executeQuery<TransactionDisplay>(
-    q("transactions").filter({ parent_id: parentId }).orderBy({ sort_order: "asc" }).select(["*"]),
+  const { data } = await executeQuery<Record<string, unknown>>(
+    q("transactions")
+      .filter({ parent_id: parentId })
+      .orderBy({ sort_order: "asc" })
+      .select(DISPLAY_SELECT as unknown as string[]),
   );
-  return data;
+  return data.map(normalizeDisplayRow);
 }

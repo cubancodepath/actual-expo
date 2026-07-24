@@ -90,7 +90,7 @@ export default function SplitCategoryPickerScreen() {
           })
           .map((g) => {
             const cats = categories
-              .filter((c) => c.cat_group === g.id && !c.hidden && !c.tombstone)
+              .filter((c) => c.group === g.id && !c.hidden && !c.tombstone)
               .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
             if (cats.length === 0) return null;
             return (

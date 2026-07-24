@@ -84,6 +84,10 @@ export async function runQuery<T = unknown>(
   return db.all<T>(sql, params);
 }
 
+/** Alias of {@link runQuery} — matches upstream `db.all`, so the ported AQL
+ *  exec/executors read verbatim. */
+export const all = runQuery;
+
 export async function first<T = unknown>(
   sql: string,
   params: SqliteBindParams = [],

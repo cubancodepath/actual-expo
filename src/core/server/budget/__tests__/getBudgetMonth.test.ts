@@ -35,12 +35,12 @@ describe("getBudgetMonth / computeToBudget — spreadsheet-backed (fix #14)", ()
     const incomeGroup = await createCategoryGroup({ name: "Income", is_income: true });
     const incomeCat = await createCategory({
       name: "Paycheck",
-      cat_group: incomeGroup,
+      group: incomeGroup,
       is_income: true,
     });
     const expenseGroup = await createCategoryGroup({ name: "Expenses" });
-    const catA = await createCategory({ name: "Groceries", cat_group: expenseGroup });
-    const catB = await createCategory({ name: "Dining", cat_group: expenseGroup });
+    const catA = await createCategory({ name: "Groceries", group: expenseGroup });
+    const catB = await createCategory({ name: "Dining", group: expenseGroup });
     const acctId = await createAccount({ name: "Checking" });
 
     const { initSpreadsheet, ensureMonthRange } = await import("@/core/server/sheet");
@@ -141,7 +141,7 @@ describe("getBudgetMonth / computeToBudget — spreadsheet-backed (fix #14)", ()
   it("computeToBudget matches getBudgetMonth().toBudget", async () => {
     await openTestDb();
     const group = await createCategoryGroup({ name: "Expenses" });
-    await createCategory({ name: "Groceries", cat_group: group });
+    await createCategory({ name: "Groceries", group: group });
 
     const { initSpreadsheet } = await import("@/core/server/sheet");
     await initSpreadsheet();

@@ -36,7 +36,7 @@ describe("mergeTransactions", () => {
     await openTestDb();
     const acct = await createAccount({ name: "Checking" });
     const g = await createCategoryGroup({ name: "Expenses" });
-    const cat = await createCategory({ name: "Food", cat_group: g });
+    const cat = await createCategory({ name: "Food", group: g });
     return { acct, cat };
   }
 

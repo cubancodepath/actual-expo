@@ -1,3 +1,4 @@
+import { intToStr } from "@/core/shared/months";
 import { useMemo } from "react";
 import { q } from "@/core/queries";
 import { useLiveQuery } from "@/hooks/useQuery";
@@ -43,9 +44,9 @@ export function useSpendingByCategory() {
     () =>
       q("transactions")
         .filter({
-          date: { $gte: start, $lte: end },
+          date: { $gte: intToStr(start), $lte: intToStr(end) },
           amount: { $lt: 0 },
-          transferred_id: null,
+          transfer_id: null,
         })
         .groupBy("category")
         .select(["category", { amount: { $sum: "$amount" } }]),

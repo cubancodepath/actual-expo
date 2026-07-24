@@ -1,14 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-vi.mock("@/core/db", () => ({
-  runQuery: vi.fn(),
-}));
+vi.mock("@/core/db", () => {
+  // The reactive layer runs through aqlQuery → db.all (alias of runQuery), so
+  // `all` must be the SAME mock fn the tests drive via `mockRunQuery`.
+  const runQuery = vi.fn();
+  return { runQuery, all: runQuery };
+});
 
 import { runQuery } from "@/core/db";
 import { liveQuery } from "../liveQuery";
 import { pagedQuery } from "../pagedQuery";
 import { emit } from "../../sync/syncEvents";
-import { q } from "../query";
+import { q } from "@/core/shared/query";
 
 const mockRunQuery = vi.mocked(runQuery);
 
@@ -26,15 +29,14 @@ beforeEach(() => {
 
 describe("liveQuery/pagedQuery initial dependency seeding", () => {
   it("liveQuery: a joined-table event fires a re-run BEFORE the first run() resolves", async () => {
-    // `payeeName` is a virtual field on the transactions view that joins in
-    // "payees" and "accounts" (see views.ts). The compiled dependency set for
-    // this query must include those tables synchronously, at construction
+    // `payee.name` is a ref-path that joins in "payees". The compiled dependency
+    // set for this query must include that table synchronously, at construction
     // time — not just after the first run() resolves.
     const firstRun = deferred<unknown[]>();
     mockRunQuery.mockImplementationOnce(() => firstRun.promise);
 
     const onData = vi.fn();
-    const live = liveQuery(q("transactions").select(["id", "payeeName"]), { onData });
+    const live = liveQuery(q("transactions").select(["id", "payee.name"]), { onData });
 
     // Before the first run() resolves, emit an "applied" event for a table
     // that is ONLY reachable via the join (not the base table).
@@ -59,9 +61,9 @@ describe("liveQuery/pagedQuery initial dependency seeding", () => {
     mockRunQuery.mockImplementationOnce(() => firstRunCount.promise);
 
     const onData = vi.fn();
-    const paged = pagedQuery(q("transactions").select(["id", "payeeName"]), { onData });
+    const paged = pagedQuery(q("transactions").select(["id", "payee.name"]), { onData });
 
-    emit({ type: "applied", tables: ["accounts"] });
+    emit({ type: "applied", tables: ["payees"] });
 
     // Each run() issues executeQuery + executeCount, so a second run means
     // 4 total runQuery calls.

@@ -39,9 +39,9 @@ describe("generateForecast — tracking-budget source", () => {
   it("projects monthly from on-budget balances + budgeted income − expenses", async () => {
     await openTestDb();
     const incomeGroup = await createCategoryGroup({ name: "Income", is_income: true });
-    const income = await createCategory({ name: "Pay", cat_group: incomeGroup, is_income: true });
+    const income = await createCategory({ name: "Pay", group: incomeGroup, is_income: true });
     const expenses = await createCategoryGroup({ name: "Expenses" });
-    const rent = await createCategory({ name: "Rent", cat_group: expenses });
+    const rent = await createCategory({ name: "Rent", group: expenses });
     const acct = await createAccount({ name: "Checking", offbudget: false });
     await mkTxn({ acct, amount: 50000, date: 20981201 }); // seed balance
 

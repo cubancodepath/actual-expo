@@ -95,7 +95,7 @@ export async function createBudgetCells(
   // ── Per-group: groupSpent/groupBudgeted/groupBalance for ALL groups
   //    (non-hidden categories only, matches upstream) ──
   for (const group of groups) {
-    const groupCats = categories.filter((c) => c.cat_group === group.id && !c.hidden);
+    const groupCats = categories.filter((c) => c.group === group.id && !c.hidden);
 
     ss.createDynamic(sheet, trackingBudget.groupSpent(group.id), {
       dependencies: groupCats.map((c) => trackingBudget.catSpent(c.id)),

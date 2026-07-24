@@ -62,8 +62,8 @@ describe("rules migrateIds — id projection on mapping changes", () => {
   it("projects a category `is` condition after deleteCategory-with-transfer", async () => {
     await openTestDb();
     const g = await createCategoryGroup({ name: "G" });
-    const from = await createCategory({ name: "From", cat_group: g });
-    const to = await createCategory({ name: "To", cat_group: g });
+    const from = await createCategory({ name: "From", group: g });
+    const to = await createCategory({ name: "To", group: g });
 
     await createRule({
       conditions: [{ field: "category", op: "is", value: from }],
@@ -141,7 +141,7 @@ describe("rules migrateIds — id projection on mapping changes", () => {
   it("suggestCategoryForPayee resolves against a rule written pre-merge", async () => {
     await openTestDb();
     const g = await createCategoryGroup({ name: "G" });
-    const cat = await createCategory({ name: "Groceries", cat_group: g });
+    const cat = await createCategory({ name: "Groceries", group: g });
     const target = await createPayee({ name: "Target" });
     const merged = await createPayee({ name: "Merged" });
 

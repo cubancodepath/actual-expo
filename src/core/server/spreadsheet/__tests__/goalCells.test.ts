@@ -15,7 +15,7 @@ describe("goal cells — catGoal / catLongGoal (chip funding colour)", () => {
   it("falls back to the goal_def template when zero_budgets has no goal yet", async () => {
     await openTestDb();
     const groupId = await createCategoryGroup({ name: "Expenses" });
-    const catId = await createCategory({ name: "Groceries", cat_group: groupId });
+    const catId = await createCategory({ name: "Groceries", group: groupId });
     // #template 100 → monthly goal of $100.00, budgeted-based (longGoal false).
     await updateCategory(catId, {
       goal_def: JSON.stringify([{ type: "simple", monthly: 100, limit: null }]),
@@ -31,7 +31,7 @@ describe("goal cells — catGoal / catLongGoal (chip funding colour)", () => {
   it("reflects zero_budgets.goal / long_goal once persisted and the trigger runs", async () => {
     await openTestDb();
     const groupId = await createCategoryGroup({ name: "Expenses" });
-    const catId = await createCategory({ name: "Savings", cat_group: groupId });
+    const catId = await createCategory({ name: "Savings", group: groupId });
     await initSpreadsheet();
 
     const month = currentMonth();

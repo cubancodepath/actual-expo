@@ -5,7 +5,7 @@
 
 import { infiniteQueryOptions, keepPreviousData } from "@tanstack/react-query";
 import { executeQuery } from "@/core/queries/execute";
-import type { Query } from "@/core/queries/query";
+import type { Query } from "@/core/shared/query";
 import type { TransactionDisplay } from "@/core/types/models";
 
 export const transactionQueries = {

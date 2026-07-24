@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useTransactions } from "@/lib/hooks/useTransactions";
+import { useTransactionEnrichment } from "@/lib/hooks/useTransactionEnrichment";
 import { buildSearchQuery, type SearchParams } from "../searchParams";
 
 /**
@@ -11,8 +12,11 @@ import { buildSearchQuery, type SearchParams } from "../searchParams";
 export function useTransactionSearch(params: SearchParams | null) {
   const query = useMemo(() => (params ? buildSearchQuery(params) : undefined), [params]);
 
-  return useTransactions({
+  const result = useTransactions({
     query,
     options: { enabled: params !== null },
   });
+  const { enrich } = useTransactionEnrichment();
+  const transactions = useMemo(() => enrich(result.transactions), [enrich, result.transactions]);
+  return { ...result, transactions };
 }

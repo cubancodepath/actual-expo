@@ -75,7 +75,7 @@ export function CategoryAssignPickerScreen() {
         id: g.id,
         name: g.name,
         categories: categories
-          .filter((c) => c.cat_group === g.id && !c.hidden && !c.tombstone)
+          .filter((c) => c.group === g.id && !c.hidden && !c.tombstone)
           .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
           .map((c) => ({ id: c.id, name: c.name, balance: balances.get(c.id) ?? 0 }))
           .filter((c) => needle === "" || c.name.toLowerCase().includes(needle)),

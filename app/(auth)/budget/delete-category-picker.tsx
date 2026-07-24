@@ -50,7 +50,7 @@ export default function DeleteCategoryPickerScreen() {
     return expenseGroups
       .map((g) => {
         const groupCats = categories
-          .filter((c) => c.cat_group === g.id && !excludeSet.has(c.id))
+          .filter((c) => c.group === g.id && !excludeSet.has(c.id))
           .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
 
         return {

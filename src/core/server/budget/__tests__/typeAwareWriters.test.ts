@@ -42,8 +42,8 @@ describe("type-aware budget writers", () => {
 
   async function cats() {
     const g = await createCategoryGroup({ name: "Expenses" });
-    const a = await createCategory({ name: "A", cat_group: g });
-    const b = await createCategory({ name: "B", cat_group: g });
+    const a = await createCategory({ name: "A", group: g });
+    const b = await createCategory({ name: "B", group: g });
     return { a, b };
   }
 
@@ -97,7 +97,7 @@ describe("type-aware budget writers", () => {
 
     // Both sources give 1000 each to a fresh target.
     const g = await createCategoryGroup({ name: "More" });
-    const target = await createCategory({ name: "T", cat_group: g });
+    const target = await createCategory({ name: "T", group: g });
     await transferMultipleCategories(
       M,
       target,

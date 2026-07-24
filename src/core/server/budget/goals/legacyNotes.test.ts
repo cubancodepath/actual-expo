@@ -27,7 +27,7 @@ async function seedAvailableFunds(amountCents: number): Promise<void> {
   const incomeGroup = await createCategoryGroup({ name: "Income", is_income: true });
   const incomeCat = await createCategory({
     name: "Paycheck",
-    cat_group: incomeGroup,
+    group: incomeGroup,
     is_income: true,
   });
   const acct = await createAccount({ name: "Checking" });
@@ -50,7 +50,7 @@ describe("goal application picks up legacy #template notes when goal_def is empt
     await openTestDb();
     await seedAvailableFunds(100000);
     const group = await createCategoryGroup({ name: "Bills" });
-    const cat = await createCategory({ name: "Rent", cat_group: group });
+    const cat = await createCategory({ name: "Rent", group: group });
     await setCategoryNote(cat, "Just a reminder\n#template 500");
 
     const month = currentMonth();
@@ -65,7 +65,7 @@ describe("goal application picks up legacy #template notes when goal_def is empt
     await openTestDb();
     await seedAvailableFunds(100000);
     const group = await createCategoryGroup({ name: "Bills" });
-    const cat = await createCategory({ name: "Rent", cat_group: group });
+    const cat = await createCategory({ name: "Rent", group: group });
     await setCategoryNote(cat, "Just a plain reminder note");
 
     const result = await computeGoalAllocations(currentMonth(), true);
@@ -75,7 +75,7 @@ describe("goal application picks up legacy #template notes when goal_def is empt
   it("updateGoalIndicator writes a goal indicator sourced from legacy notes", async () => {
     await openTestDb();
     const group = await createCategoryGroup({ name: "Bills" });
-    const cat = await createCategory({ name: "Rent", cat_group: group });
+    const cat = await createCategory({ name: "Rent", group: group });
     await setCategoryNote(cat, "#goal 1000");
 
     await updateGoalIndicator(currentMonth(), cat);
@@ -91,7 +91,7 @@ describe("goal application picks up legacy #template notes when goal_def is empt
     await seedAvailableFunds(100000);
     const { updateCategory } = await import("@/core/server/budget");
     const group = await createCategoryGroup({ name: "Bills" });
-    const cat = await createCategory({ name: "Rent", cat_group: group });
+    const cat = await createCategory({ name: "Rent", group: group });
     await setCategoryNote(cat, "#template 999");
     await updateCategory(cat, {
       goal_def: JSON.stringify([

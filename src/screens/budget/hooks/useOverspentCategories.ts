@@ -50,7 +50,7 @@ export function useOverspentCategories(sheet: string): OverspentCategory[] {
 
     for (const g of expenseGroups) {
       const groupCats = categories
-        .filter((c) => c.cat_group === g.id)
+        .filter((c) => c.group === g.id)
         .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
 
       for (const c of groupCats) {

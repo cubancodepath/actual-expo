@@ -3,7 +3,7 @@ import { q } from "@/core/queries";
 import { useLiveQuery } from "@/hooks/useQuery";
 import { useAccounts } from "@/lib/hooks/useAccounts";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
-import { addMonths } from "@/core/shared/months";
+import { addMonths, intToStr } from "@/core/shared/months";
 
 export type TrendPoint = {
   month: string;
@@ -96,7 +96,7 @@ export function useNetWorth() {
     () =>
       allIds.length > 0
         ? q("transactions")
-            .filter({ acct: { $oneof: allIds } })
+            .filter({ account: { $oneof: allIds } })
             .calculate({ $sum: "$amount" })
         : null,
     [allIdsKey],
@@ -104,13 +104,13 @@ export function useNetWorth() {
   const total = totalData?.[0]?.result ?? 0;
 
   // Assets/debt for current display (grouped by account)
-  const { data: assetDebtData } = useLiveQuery<{ acct: string; amount: number }>(
+  const { data: assetDebtData } = useLiveQuery<{ account: string; amount: number }>(
     () =>
       allIds.length > 0
         ? q("transactions")
-            .filter({ acct: { $oneof: allIds } })
-            .groupBy("acct")
-            .select([{ acct: "$acct" }, { amount: { $sum: "$amount" } }])
+            .filter({ account: { $oneof: allIds } })
+            .groupBy("account")
+            .select([{ account: "account" }, { amount: { $sum: "$amount" } }])
         : null,
     [allIdsKey],
   );
@@ -155,8 +155,8 @@ export function useNetWorth() {
       allIds.length > 0
         ? q("transactions")
             .filter({
-              acct: { $oneof: allIds },
-              date: { $gte: firstMonthStart, $lte: lastMonthEnd },
+              account: { $oneof: allIds },
+              date: { $gte: intToStr(firstMonthStart), $lte: intToStr(lastMonthEnd) },
             })
             .groupBy({ $month: "$date" })
             .select([{ bucket: { $month: "$date" } }, { sum: { $sum: "$amount" } }])
@@ -168,7 +168,7 @@ export function useNetWorth() {
     () =>
       allIds.length > 0
         ? q("transactions")
-            .filter({ acct: { $oneof: allIds }, date: { $lt: firstMonthStart } })
+            .filter({ account: { $oneof: allIds }, date: { $lt: intToStr(firstMonthStart) } })
             .calculate({ $sum: "$amount" })
         : null,
     [allIdsKey, firstMonthStart],
@@ -178,7 +178,9 @@ export function useNetWorth() {
   // All 12 months + cumulative values as parallel arrays
   const allValues = useMemo(() => {
     const rows = (bucketData ?? []).map((row) => ({
-      bucket: Number(row.bucket),
+      // AQL `$month` yields a "YYYY-MM" date-month string; the reducer keys on a
+      // YYYYMM int, so strip the dash.
+      bucket: Number(String(row.bucket).replace("-", "")),
       sum: row.sum,
     }));
     return cumulativeByMonth(rows, monthEnds, priorTotal);

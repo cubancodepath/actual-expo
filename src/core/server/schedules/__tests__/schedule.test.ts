@@ -9,11 +9,11 @@ vi.setSystemTime(new Date(2026, 2, 5, 12, 0, 0)); // March 5, 2026
 
 // ── Mock all native/DB dependencies ──────────────────────────────────────
 
-vi.mock("@/core/db", () => ({
-  first: vi.fn(),
-  runQuery: vi.fn(),
-  run: vi.fn(),
-}));
+vi.mock("@/core/db", () => {
+  // aqlQuery runs through db.all (alias of runQuery); mock both with one fn.
+  const runQuery = vi.fn();
+  return { first: vi.fn(), runQuery, all: runQuery, run: vi.fn() };
+});
 
 vi.mock("@/core/sync", () => ({
   sendMessages: vi.fn(),

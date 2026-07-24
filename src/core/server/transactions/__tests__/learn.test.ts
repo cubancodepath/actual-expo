@@ -42,7 +42,7 @@ describe("updateCategoryRules (category learning)", () => {
   async function seed() {
     const acct = await createAccount({ name: "A" });
     const group = await createCategoryGroup({ name: "G" });
-    const cat = await createCategory({ name: "Groceries", cat_group: group });
+    const cat = await createCategory({ name: "Groceries", group: group });
     const payee = await findOrCreatePayee("Store");
     const ids: string[] = [];
     for (let i = 0; i < 3; i++) {
@@ -80,7 +80,7 @@ describe("updateCategoryRules (category learning)", () => {
     await openTestDb();
     const { payee, cat, ids } = await seed();
     const group = await createCategoryGroup({ name: "G2" });
-    const oldCat = await createCategory({ name: "Old", cat_group: group });
+    const oldCat = await createCategory({ name: "Old", group: group });
 
     await createRule({
       conditions: [{ field: "payee", op: "is", value: payee }],
@@ -102,7 +102,7 @@ describe("updateCategoryRules (category learning)", () => {
     await openTestDb();
     const acct = await createAccount({ name: "A" });
     const group = await createCategoryGroup({ name: "G" });
-    const cat = await createCategory({ name: "Groceries", cat_group: group });
+    const cat = await createCategory({ name: "Groceries", group: group });
     const target = await createPayee({ name: "Target" });
     const merged = await createPayee({ name: "Merged" });
 
@@ -141,7 +141,7 @@ describe("updateCategoryRules (category learning)", () => {
     await openTestDb();
     const acct = await createAccount({ name: "A" });
     const group = await createCategoryGroup({ name: "G" });
-    const cat = await createCategory({ name: "Groceries", cat_group: group });
+    const cat = await createCategory({ name: "Groceries", group: group });
     const payee = await findOrCreatePayee("Store");
     const ids: string[] = [];
     for (let i = 0; i < 2; i++) {

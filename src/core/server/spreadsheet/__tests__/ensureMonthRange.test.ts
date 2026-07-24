@@ -15,7 +15,7 @@ describe("ensureMonthRange — lazy month extension (fix #10)", () => {
   it("builds no cells for a month far outside the initial horizon until ensureMonthRange is called", async () => {
     await openTestDb();
     const groupId = await createCategoryGroup({ name: "Expenses" });
-    const catId = await createCategory({ name: "Groceries", cat_group: groupId });
+    const catId = await createCategory({ name: "Groceries", group: groupId });
     await initSpreadsheet();
 
     // Default mobile horizon is today+3 months — 8 months out is a real gap.
@@ -43,7 +43,7 @@ describe("ensureMonthRange — lazy month extension (fix #10)", () => {
   it("carries a category balance forward correctly through the gap it fills (no missing prevSheet reads)", async () => {
     await openTestDb();
     const groupId = await createCategoryGroup({ name: "Expenses" });
-    const catId = await createCategory({ name: "Groceries", cat_group: groupId });
+    const catId = await createCategory({ name: "Groceries", group: groupId });
     await initSpreadsheet();
 
     const today = currentMonth();

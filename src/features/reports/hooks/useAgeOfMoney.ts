@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { q } from "@/core/queries";
 import { useLiveQuery } from "@/hooks/useQuery";
-import { addMonths } from "@/core/shared/months";
+import { addMonths, intToStr, strToInt } from "@/core/shared/months";
 
 function intToDate(d: number): Date {
   const y = Math.floor(d / 10000);
@@ -77,19 +77,24 @@ export function useAgeOfMoney() {
   const [y, m] = threeMonthsAgo.split("-").map(Number);
   const startDate = y * 10000 + m * 100 + 1;
 
-  const { data, isLoading } = useLiveQuery<TxRow>(
+  const { data, isLoading } = useLiveQuery<{ amount: number; date: string }>(
     () =>
       q("transactions")
         .filter({
-          date: { $gte: startDate },
-          transferred_id: null,
-          cleared: 1,
+          date: { $gte: intToStr(startDate) },
+          transfer_id: null,
+          cleared: true,
         })
         .select(["amount", "date"]),
     [startDate],
   );
 
-  const transactions = data ?? [];
+  // AQL now returns `date` as a "YYYY-MM-DD" string; this hook's math works on
+  // YYYYMMDD ints, so convert on the way in.
+  const transactions: TxRow[] = (data ?? []).map((r) => ({
+    amount: r.amount,
+    date: strToInt(r.date) ?? 0,
+  }));
 
   const age = useMemo(() => calcAge(transactions), [transactions]);
 

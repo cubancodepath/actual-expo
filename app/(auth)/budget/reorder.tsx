@@ -49,7 +49,7 @@ export default function ReorderBudgetScreen() {
       map.set(
         g.id,
         categories
-          .filter((c) => c.cat_group === g.id && !c.hidden)
+          .filter((c) => c.group === g.id && !c.hidden)
           .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)),
       );
     }
@@ -98,7 +98,7 @@ export default function ReorderBudgetScreen() {
   // ---------- Move category between groups ----------
 
   function handleMoveCategoryToGroup(cat: Category) {
-    const currentGroup = cat.cat_group;
+    const currentGroup = cat.group;
     const otherGroups = expenseGroups.filter((g) => g.id !== currentGroup);
     if (otherGroups.length === 0) return;
 

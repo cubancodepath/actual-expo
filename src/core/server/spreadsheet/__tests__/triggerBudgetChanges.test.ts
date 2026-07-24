@@ -22,7 +22,7 @@ describe("triggerBudgetChanges — accounts/category_mapping invalidation (fix #
   it("recomputes sum-amount- cells when an account is toggled off-budget", async () => {
     await openTestDb();
     const groupId = await createCategoryGroup({ name: "Expenses" });
-    const catId = await createCategory({ name: "Groceries", cat_group: groupId });
+    const catId = await createCategory({ name: "Groceries", group: groupId });
     const acctId = await createAccount({ name: "Checking" });
     await initSpreadsheet();
 
@@ -48,8 +48,8 @@ describe("triggerBudgetChanges — accounts/category_mapping invalidation (fix #
   it("recomputes sum-amount- cells for both categories when a category is remapped (merge)", async () => {
     await openTestDb();
     const groupId = await createCategoryGroup({ name: "Expenses" });
-    const catA = await createCategory({ name: "Groceries", cat_group: groupId });
-    const catB = await createCategory({ name: "Dining", cat_group: groupId });
+    const catA = await createCategory({ name: "Groceries", group: groupId });
+    const catB = await createCategory({ name: "Dining", group: groupId });
     const acctId = await createAccount({ name: "Checking" });
     await initSpreadsheet();
 

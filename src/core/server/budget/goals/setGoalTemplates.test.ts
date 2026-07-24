@@ -15,7 +15,7 @@ describe("setGoalTemplates — writes goal_def only, never the note (upstream al
   it("persists goal_def + source=ui and touches no note", async () => {
     await openTestDb();
     const group = await createCategoryGroup({ name: "Bills" });
-    const cat = await createCategory({ name: "Rent", cat_group: group });
+    const cat = await createCategory({ name: "Rent", group: group });
 
     await setGoalTemplates(cat, [SIMPLE]);
 
@@ -39,7 +39,7 @@ describe("setGoalTemplates — writes goal_def only, never the note (upstream al
   it("clears goal_def when passed no templates, still without a note", async () => {
     await openTestDb();
     const group = await createCategoryGroup({ name: "Bills" });
-    const cat = await createCategory({ name: "Rent", cat_group: group });
+    const cat = await createCategory({ name: "Rent", group: group });
 
     await setGoalTemplates(cat, []);
 

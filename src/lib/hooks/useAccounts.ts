@@ -27,7 +27,7 @@ export function useAccountBalance(accountId: string | undefined): number {
   const { data } = useLiveQuery<{ result: number }>(
     () =>
       accountId
-        ? q("transactions").filter({ acct: accountId }).calculate({ $sum: "$amount" })
+        ? q("transactions").filter({ account: accountId }).calculate({ $sum: "$amount" })
         : null,
     [accountId],
   );
@@ -47,7 +47,7 @@ export function useAccountBalances(accountId: string | undefined): {
   const { data: totalData } = useLiveQuery<{ result: number }>(
     () =>
       accountId
-        ? q("transactions").filter({ acct: accountId }).calculate({ $sum: "$amount" })
+        ? q("transactions").filter({ account: accountId }).calculate({ $sum: "$amount" })
         : null,
     [accountId],
   );
@@ -55,7 +55,7 @@ export function useAccountBalances(accountId: string | undefined): {
     () =>
       accountId
         ? q("transactions")
-            .filter({ acct: accountId, cleared: true })
+            .filter({ account: accountId, cleared: true })
             .calculate({ $sum: "$amount" })
         : null,
     [accountId],
@@ -75,7 +75,7 @@ export function useAccountGroupBalance(accountIds: string[]): number {
     () =>
       accountIds.length > 0
         ? q("transactions")
-            .filter({ acct: { $oneof: accountIds } })
+            .filter({ account: { $oneof: accountIds } })
             .calculate({ $sum: "$amount" })
         : null,
     [key],

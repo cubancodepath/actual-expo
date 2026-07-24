@@ -52,11 +52,11 @@ async function setupWithIncome() {
   const incomeGroup = await createCategoryGroup({ name: "Income", is_income: true });
   const incomeCat = await createCategory({
     name: "Paycheck",
-    cat_group: incomeGroup,
+    group: incomeGroup,
     is_income: true,
   });
   const expenseGroup = await createCategoryGroup({ name: "Expenses" });
-  const catA = await createCategory({ name: "A", cat_group: expenseGroup });
+  const catA = await createCategory({ name: "A", group: expenseGroup });
   const acctId = await createAccount({ name: "Checking" });
   const { initSpreadsheet } = await import("@/core/server/sheet");
   await initSpreadsheet();
@@ -121,7 +121,7 @@ describe("budgets/index — holdForNextMonth / resetHold / setCategoryCarryover 
     const { incomeCat, incomeGroup, month } = await setupWithIncome();
     const incomeCatB = await createCategory({
       name: "Bonus",
-      cat_group: incomeGroup,
+      group: incomeGroup,
       is_income: true,
     });
 

@@ -35,7 +35,7 @@ export async function updateAppBadge(): Promise<void> {
 
     let overspentCount = 0;
     for (const c of cats) {
-      if (!expenseGroupIds.has(c.cat_group)) continue;
+      if (!expenseGroupIds.has(c.group)) continue;
       const balance = (ss.getValue(sheet, envelopeBudget.catBalance(c.id)) as number) ?? 0;
       const carryover =
         ss.getValue(sheet, envelopeBudget.catCarryover(c.id)) === true ||

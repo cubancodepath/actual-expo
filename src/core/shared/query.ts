@@ -1,41 +1,31 @@
-/**
- * AQL Query Builder — ported from Actual Budget loot-core.
- *
- * Immutable fluent API for building database queries.
- * Each method returns a new Query instance with updated state.
- *
- * @example
- * q("transactions")
- *   .filter({ date: { $gte: "2024-01-01" }, amount: { $lt: 0 } })
- *   .select(["id", "amount", "date"])
- *   .orderBy({ date: "desc" })
- *   .limit(25)
- *   .serialize()
- */
+// Faithful port of loot-core src/shared/query.ts — the immutable AQL query
+// builder. `q(table)` starts a query; each method returns a new `Query`;
+// `serialize()` yields the `QueryState` the compiler consumes.
+import type { WithRequired } from "@/core/types/util";
 
-export type ObjectExpression = {
+type ObjectExpression = {
   [key: string]: ObjectExpression | unknown;
 };
 
 export type QueryState = {
-  table: string;
-  tableOptions: Readonly<Record<string, unknown>>;
-  filterExpressions: ReadonlyArray<ObjectExpression>;
-  selectExpressions: ReadonlyArray<ObjectExpression | string | "*">;
-  groupExpressions: ReadonlyArray<ObjectExpression | string>;
-  orderExpressions: ReadonlyArray<ObjectExpression | string>;
-  calculation: boolean;
-  rawMode: boolean;
-  withDead: boolean;
-  validateRefs: boolean;
-  limit: number | null;
-  offset: number | null;
+  get table(): string;
+  get tableOptions(): Readonly<Record<string, unknown>>;
+  get filterExpressions(): ReadonlyArray<ObjectExpression>;
+  get selectExpressions(): ReadonlyArray<ObjectExpression | string | "*">;
+  get groupExpressions(): ReadonlyArray<ObjectExpression | string>;
+  get orderExpressions(): ReadonlyArray<ObjectExpression | string>;
+  get calculation(): boolean;
+  get rawMode(): boolean;
+  get withDead(): boolean;
+  get validateRefs(): boolean;
+  get limit(): number | null;
+  get offset(): number | null;
 };
 
 export class Query {
   state: QueryState;
 
-  constructor(state: Partial<QueryState> & { table: string }) {
+  constructor(state: WithRequired<Partial<QueryState>, "table">) {
     this.state = {
       tableOptions: state.tableOptions || {},
       filterExpressions: state.filterExpressions || [],
@@ -52,17 +42,22 @@ export class Query {
     };
   }
 
-  filter(expr: ObjectExpression): Query {
+  filter(expr: ObjectExpression) {
     return new Query({
       ...this.state,
       filterExpressions: [...this.state.filterExpressions, expr],
     });
   }
 
-  unfilter(exprs?: string[]): Query {
+  unfilter(exprs?: Array<keyof ObjectExpression>) {
+    // Remove all filters if no arguments are passed
     if (!exprs) {
-      return new Query({ ...this.state, filterExpressions: [] });
+      return new Query({
+        ...this.state,
+        filterExpressions: [],
+      });
     }
+
     const exprSet = new Set(exprs);
     return new Query({
       ...this.state,
@@ -72,12 +67,11 @@ export class Query {
     });
   }
 
-  select(
-    exprs: Array<ObjectExpression | string> | ObjectExpression | string | "*" | ["*"] = [],
-  ): Query {
+  select(exprs: Array<ObjectExpression | string> | ObjectExpression | string | "*" | ["*"] = []) {
     if (!Array.isArray(exprs)) {
       exprs = [exprs];
     }
+
     return new Query({
       ...this.state,
       selectExpressions: exprs,
@@ -85,7 +79,7 @@ export class Query {
     });
   }
 
-  calculate(expr: ObjectExpression | string): Query {
+  calculate(expr: ObjectExpression | string) {
     return new Query({
       ...this.state,
       selectExpressions: [{ result: expr }],
@@ -93,83 +87,85 @@ export class Query {
     });
   }
 
-  groupBy(exprs: ObjectExpression | string | Array<ObjectExpression | string>): Query {
+  groupBy(exprs: ObjectExpression | string | Array<ObjectExpression | string>) {
     if (!Array.isArray(exprs)) {
       exprs = [exprs];
     }
+
     return new Query({
       ...this.state,
       groupExpressions: [...this.state.groupExpressions, ...exprs],
     });
   }
 
-  orderBy(exprs: ObjectExpression | string | Array<ObjectExpression | string>): Query {
+  orderBy(exprs: ObjectExpression | string | Array<ObjectExpression | string>) {
     if (!Array.isArray(exprs)) {
       exprs = [exprs];
     }
+
     return new Query({
       ...this.state,
       orderExpressions: [...this.state.orderExpressions, ...exprs],
     });
   }
 
-  limit(num: number): Query {
+  limit(num: number) {
     return new Query({ ...this.state, limit: num });
   }
 
-  offset(num: number): Query {
+  offset(num: number) {
     return new Query({ ...this.state, offset: num });
   }
 
-  raw(): Query {
+  raw() {
     return new Query({ ...this.state, rawMode: true });
   }
 
-  withDead(): Query {
+  withDead() {
     return new Query({ ...this.state, withDead: true });
   }
 
-  withoutValidatedRefs(): Query {
+  withoutValidatedRefs() {
     return new Query({ ...this.state, validateRefs: false });
   }
 
-  options(opts: Record<string, unknown>): Query {
+  options(opts: Record<string, unknown>) {
     return new Query({ ...this.state, tableOptions: opts });
   }
 
-  reset(): Query {
+  reset() {
     return q(this.state.table);
   }
 
-  serialize(): QueryState {
+  serialize() {
     return this.state;
   }
 
-  serializeAsString(): string {
+  serializeAsString() {
     return JSON.stringify(this.serialize());
   }
 }
 
-export function getPrimaryOrderBy(
-  query: Query,
-  defaultOrderBy: ObjectExpression | null,
-): { field: string; order: string } | null {
+export function getPrimaryOrderBy(query: Query, defaultOrderBy: ObjectExpression | null) {
   const orderExprs = query.serialize().orderExpressions;
   if (orderExprs.length === 0) {
     if (defaultOrderBy) {
-      const [field] = Object.keys(defaultOrderBy);
-      return { field, order: (defaultOrderBy[field] as string) ?? "asc" };
+      return { order: "asc", ...defaultOrderBy };
     }
     return null;
   }
+
   const firstOrder = orderExprs[0];
   if (typeof firstOrder === "string") {
     return { field: firstOrder, order: "asc" };
   }
+  // Handle this form: { field: 'desc' }
   const [field] = Object.keys(firstOrder);
-  return { field, order: firstOrder[field] as string };
+  return { field, order: firstOrder[field] };
 }
 
-export function q(table: string): Query {
+export function q(table: QueryState["table"]) {
   return new Query({ table });
 }
+
+export type { ObjectExpression };

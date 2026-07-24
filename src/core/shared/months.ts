@@ -41,6 +41,17 @@ function intToDate(d: number): Date {
   );
 }
 
+// ── Date → day string ─────────────────────────────────────────────────────────
+
+/**
+ * A native `Date` → "YYYY-MM-DD" (local time). Faithful to upstream
+ * `#shared/months` `dayFromDate` for the `Date` input case; used by the AQL
+ * schema-helpers when a `Date` is passed as a `date` query value.
+ */
+export function dayFromDate(date: Date): string {
+  return format(date, "yyyy-MM-dd");
+}
+
 // ── Today ─────────────────────────────────────────────────────────────────────
 
 /** Today as YYYYMMDD integer, e.g. 20250302 */

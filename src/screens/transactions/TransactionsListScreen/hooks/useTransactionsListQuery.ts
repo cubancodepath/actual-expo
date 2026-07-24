@@ -2,35 +2,37 @@ import { useMemo } from "react";
 import { q, type Query } from "@/core/queries";
 import { addMonths } from "@/core/shared/months";
 import { useTransactions } from "@/lib/hooks/useTransactions";
+import { useTransactionEnrichment } from "@/lib/hooks/useTransactionEnrichment";
 import type { TransactionsListContext } from "../types";
 
 /**
- * Build the AQL query for a list context. Exported for the compile unit test.
+ * Build the AQL query for a list context. Exported for the unit test. Display
+ * names (payee/account/category) are joined in memory by `useTransactionEnrichment`,
+ * so the query only selects the transaction's own fields.
  *
- * Category month filtering uses a date range: the expo AQL compiler has no
- * `$transform: "$month"` filter (upstream's approach) — string bounds are
- * converted to YYYYMMDD ints by the compiler's date input conversion.
+ * Category month filtering uses a date range (string bounds); the AQL compiler
+ * converts them to YYYYMMDD ints on input.
  */
 export function buildTransactionsListQuery(context: TransactionsListContext, month: string): Query {
   if (context.kind === "all") {
-    return q("transactions").select(["*", "accountName"]);
+    return q("transactions").select("*");
   }
   if (context.kind === "account") {
     // Hide reconciled (locked) transactions when the account's showReconciled
     // pref is off — same filter form as upstream's account query.
     return q("transactions")
       .filter({
-        acct: context.accountId,
+        account: context.accountId,
         ...(context.showReconciled === false ? { reconciled: { $eq: false } } : {}),
       })
-      .select(["*", "accountName"]);
+      .select("*");
   }
   return q("transactions")
     .filter({
       category: context.categoryId,
       date: { $gte: `${month}-01`, $lt: `${addMonths(month, 1)}-01` },
     })
-    .select(["*", "accountName"]);
+    .select("*");
 }
 
 /**
@@ -40,5 +42,8 @@ export function buildTransactionsListQuery(context: TransactionsListContext, mon
  */
 export function useTransactionsListQuery(context: TransactionsListContext, month: string) {
   const query = useMemo(() => buildTransactionsListQuery(context, month), [context, month]);
-  return useTransactions({ query });
+  const result = useTransactions({ query });
+  const { enrich } = useTransactionEnrichment();
+  const transactions = useMemo(() => enrich(result.transactions), [enrich, result.transactions]);
+  return { ...result, transactions };
 }

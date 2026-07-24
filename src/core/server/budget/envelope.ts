@@ -45,7 +45,7 @@ export async function createBudgetCells(
 
   const expenseGroups = groups.filter((g) => !g.is_income);
   const incomeGroup = groups.find((g) => g.is_income);
-  const incomeCats = categories.filter((c) => incomeGroup && c.cat_group === incomeGroup.id);
+  const incomeCats = categories.filter((c) => incomeGroup && c.group === incomeGroup.id);
 
   // ── Buffered (SQL cell) ──
   ss.createDynamic(sheet, envelopeBudget.buffered, {
@@ -64,7 +64,7 @@ export async function createBudgetCells(
 
   // ── Per-category: budget/carryover/balance for expense categories only ──
   for (const cat of categories) {
-    const group = groups.find((g) => g.id === cat.cat_group);
+    const group = groups.find((g) => g.id === cat.group);
     if (!group || group.is_income) continue;
 
     ss.createDynamic(sheet, envelopeBudget.catBudgeted(cat.id), {
@@ -145,7 +145,7 @@ export async function createBudgetCells(
 
   // ── Per-group: groupSpent for ALL groups (income + expense) ──
   for (const group of groups) {
-    const groupCats = categories.filter((c) => c.cat_group === group.id);
+    const groupCats = categories.filter((c) => c.group === group.id);
     ss.createDynamic(sheet, envelopeBudget.groupSpent(group.id), {
       dependencies: groupCats.map((c) => envelopeBudget.catSpent(c.id)),
       run: (...vals) => safeNumber(vals.reduce((sum: number, v) => sum + num(v), 0)),
@@ -154,7 +154,7 @@ export async function createBudgetCells(
 
   // ── Per-group: groupBudgeted/groupBalance for expense groups only ──
   for (const group of expenseGroups) {
-    const groupCats = categories.filter((c) => c.cat_group === group.id);
+    const groupCats = categories.filter((c) => c.group === group.id);
 
     ss.createDynamic(sheet, envelopeBudget.groupBudgeted(group.id), {
       dependencies: groupCats.map((c) => envelopeBudget.catBudgeted(c.id)),
@@ -227,7 +227,7 @@ export async function createBudgetCells(
   ss.createDynamic(sheet, envelopeBudget.lastMonthOverspent, {
     dependencies: categories
       .filter((c) => {
-        const g = groups.find((grp) => grp.id === c.cat_group);
+        const g = groups.find((grp) => grp.id === c.group);
         return g && !g.is_income;
       })
       .flatMap((c) => [

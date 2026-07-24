@@ -47,7 +47,7 @@ export function buildSearchParams(tokens: SearchToken[], accountId?: string): Se
 export function buildSearchQuery(params: SearchParams): Query {
   const filters: ObjectExpression[] = [];
 
-  if (params.accountId) filters.push({ acct: params.accountId });
+  if (params.accountId) filters.push({ account: params.accountId });
   if (params.categoryId) filters.push({ category: params.categoryId });
   if (params.payeeId) filters.push({ payee: params.payeeId });
 
@@ -67,18 +67,26 @@ export function buildSearchQuery(params: SearchParams): Query {
   if (params.uncategorized) {
     // Uncategorized on-budget rows, excluding transfers between on-budget
     // accounts (auto-categorized) but keeping transfers to off-budget accounts.
+    // A transfer is a payee with a transfer_acct; off-budget is on that account.
     filters.push({ category: null });
-    filters.push({ $or: [{ isTransfer: false }, { transferAccountOffbudget: true }] });
+    filters.push({
+      $or: [{ "payee.transfer_acct": null }, { "payee.transfer_acct.offbudget": true }],
+    });
   }
 
   if (params.text) {
     const like = { $like: `%${params.text}%` };
     filters.push({
-      $or: [{ payeeName: like }, { categoryName: like }, { notes: like }, { accountName: like }],
+      $or: [
+        { "payee.name": like },
+        { "category.name": like },
+        { notes: like },
+        { "account.name": like },
+      ],
     });
   }
 
   let query = q("transactions");
   for (const f of filters) query = query.filter(f);
-  return query.select(["*", "accountName"]);
+  return query.select("*");
 }

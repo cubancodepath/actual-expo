@@ -191,7 +191,7 @@ export function EditBudgetScreen() {
     let underfunded = 0;
     const expenseGroups = groups.filter((g) => !g.is_income);
     for (const g of expenseGroups) {
-      const groupCats = categories.filter((c) => c.cat_group === g.id);
+      const groupCats = categories.filter((c) => c.group === g.id);
       for (const c of groupCats) {
         const goalInfo = c.goal_def ? inferGoalFromDef(c.goal_def) : null;
         const goal = goalInfo?.goal ?? null;
@@ -234,7 +234,7 @@ export function EditBudgetScreen() {
     for (const g of [...expenseGroups, ...incomeGroups]) {
       const visible: Category[] = [];
       for (const c of categories
-        .filter((c) => c.cat_group === g.id)
+        .filter((c) => c.group === g.id)
         .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))) {
         if (c.hidden) {
           hidden.push(c);
@@ -246,7 +246,7 @@ export function EditBudgetScreen() {
     }
     // Also collect from hidden groups
     for (const g of groups.filter((g) => g.hidden)) {
-      for (const c of categories.filter((c) => c.cat_group === g.id)) {
+      for (const c of categories.filter((c) => c.group === g.id)) {
         hidden.push(c);
       }
     }

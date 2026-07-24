@@ -36,7 +36,7 @@ import type {
 } from "@/core/types/models";
 import { currentDay, strToInt } from "./months";
 import { q } from "@/core/queries";
-import type { Query } from "@/core/queries/query";
+import type { Query } from "@/core/shared/query";
 
 // ═══ former schedules/recurrence.ts ═══
 

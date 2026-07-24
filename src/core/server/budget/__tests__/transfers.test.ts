@@ -36,8 +36,8 @@ async function getBudgeted(month: string, categoryId: string): Promise<number> {
  * budgeted value via the spreadsheet's catBudgeted cell rather than SQL). */
 async function setupAB() {
   const group = await createCategoryGroup({ name: "Expenses" });
-  const catA = await createCategory({ name: "A", cat_group: group });
-  const catB = await createCategory({ name: "B", cat_group: group });
+  const catA = await createCategory({ name: "A", group: group });
+  const catB = await createCategory({ name: "B", group: group });
   const { initSpreadsheet } = await import("@/core/server/sheet");
   await initSpreadsheet();
   const month = currentMonth();
@@ -118,9 +118,9 @@ describe("budgets/index — setBudgetAmount / transferAvailable / transfer* char
     it("transferMultipleCategories with two sources: both applied, sum conserved", async () => {
       await openTestDb();
       const group = await createCategoryGroup({ name: "Expenses" });
-      const catA = await createCategory({ name: "A", cat_group: group });
-      const catB = await createCategory({ name: "B", cat_group: group });
-      const catC = await createCategory({ name: "C", cat_group: group });
+      const catA = await createCategory({ name: "A", group: group });
+      const catB = await createCategory({ name: "B", group: group });
+      const catC = await createCategory({ name: "C", group: group });
       const { initSpreadsheet } = await import("@/core/server/sheet");
       await initSpreadsheet();
       const month = currentMonth();
@@ -176,9 +176,9 @@ describe("budgets/index — setBudgetAmount / transferAvailable / transfer* char
       // from the plan, not the sendMessages-spy fallback.
       await openTestDb();
       const group = await createCategoryGroup({ name: "Expenses" });
-      const catA = await createCategory({ name: "A", cat_group: group });
-      const catB = await createCategory({ name: "B", cat_group: group });
-      const catC = await createCategory({ name: "C", cat_group: group });
+      const catA = await createCategory({ name: "A", group: group });
+      const catB = await createCategory({ name: "B", group: group });
+      const catC = await createCategory({ name: "C", group: group });
       const { initSpreadsheet } = await import("@/core/server/sheet");
       await initSpreadsheet();
       const month = currentMonth();

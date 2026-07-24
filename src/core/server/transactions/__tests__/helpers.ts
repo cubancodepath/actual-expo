@@ -39,8 +39,8 @@ export async function setupFixtures(): Promise<Fixtures> {
   const accountB = await createAccount({ name: "Savings", offbudget: true });
 
   const group = await createCategoryGroup({ name: "Expenses" });
-  const categoryId = await createCategory({ name: "Groceries", cat_group: group });
-  const categoryId2 = await createCategory({ name: "Dining", cat_group: group });
+  const categoryId = await createCategory({ name: "Groceries", group: group });
+  const categoryId2 = await createCategory({ name: "Dining", group: group });
 
   const payeeId = await createPayee({ name: "Coffee Shop" });
 

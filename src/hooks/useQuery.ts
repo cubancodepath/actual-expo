@@ -10,14 +10,14 @@
  *
  * // Paged live query (infinite scroll)
  * const { data, fetchNext, hasMore } = usePagedLiveQuery(
- *   () => q("transactions").filter({ acct: accountId }).orderBy({ date: "desc" }),
+ *   () => q("transactions").filter({ account: accountId }).orderBy({ date: "desc" }),
  *   [accountId],
  *   { pageSize: 25 },
  * );
  */
 
 import { useEffect, useMemo, useRef, useState, type DependencyList } from "react";
-import type { Query } from "@/core/queries/query";
+import type { Query } from "@/core/shared/query";
 import { liveQuery, type LiveQueryInstance } from "@/core/queries/liveQuery";
 import { getQueryCache } from "@/core/queries/queryCache";
 import { pagedQuery, type PagedQueryInstance } from "@/core/queries/pagedQuery";

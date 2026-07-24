@@ -26,15 +26,15 @@ describe("deleteCategory — category_mapping writes", () => {
   it("creates a self-mapping on category creation", async () => {
     await openTestDb();
     const g = await createCategoryGroup({ name: "G" });
-    const c = await createCategory({ name: "C", cat_group: g });
+    const c = await createCategory({ name: "C", group: g });
     expect(await transferIdOf(c)).toBe(c);
   });
 
   it("maps a deleted category to its transfer target and tombstones it", async () => {
     await openTestDb();
     const g = await createCategoryGroup({ name: "G" });
-    const target = await createCategory({ name: "Target", cat_group: g });
-    const deleted = await createCategory({ name: "Deleted", cat_group: g });
+    const target = await createCategory({ name: "Target", group: g });
+    const deleted = await createCategory({ name: "Deleted", group: g });
 
     await deleteCategory(deleted, target);
 
@@ -49,9 +49,9 @@ describe("deleteCategory — category_mapping writes", () => {
   it("flattens a chain: A -> deleted becomes A -> target", async () => {
     await openTestDb();
     const g = await createCategoryGroup({ name: "G" });
-    const target = await createCategory({ name: "Target", cat_group: g });
-    const deleted = await createCategory({ name: "Deleted", cat_group: g });
-    const a = await createCategory({ name: "A", cat_group: g });
+    const target = await createCategory({ name: "Target", group: g });
+    const deleted = await createCategory({ name: "Deleted", group: g });
+    const a = await createCategory({ name: "A", group: g });
 
     // Pre-existing redirect A -> deleted (as if A was deleted into `deleted`).
     await sendMessages([

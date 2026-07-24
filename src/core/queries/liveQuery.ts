@@ -13,9 +13,9 @@
  * live.unsubscribe();
  */
 
-import type { Query } from "./query";
+import type { Query } from "@/core/shared/query";
 import { executeQuery } from "./execute";
-import { compile } from "./compiler";
+import { getQueryDependencies } from "@/core/server/aql";
 import { listen } from "@/core/sync/syncEvents";
 
 let _nextId = 0;
@@ -104,7 +104,7 @@ export function liveQuery<T = Record<string, unknown>>(
   // Auto-start: seed dependencies from the full compiled query (base table +
   // joined tables), so writes to a joined table invalidate correctly even
   // before the first async run resolves. Then run.
-  dependencies = compile(query.serialize()).dependencies;
+  dependencies = getQueryDependencies(query.serialize());
   run();
 
   return {

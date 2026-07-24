@@ -62,7 +62,7 @@ describe("tracking.ts — report budget formulas (fix #9)", () => {
   it("computes catBalance for an expense category: budgeted + spent (+ carry-in if flagged)", async () => {
     await openTestDb();
     const group = await createCategoryGroup({ name: "Expenses" });
-    const cat = await createCategory({ name: "Groceries", cat_group: group });
+    const cat = await createCategory({ name: "Groceries", group: group });
     const acct = await createAccount({ name: "Checking" });
 
     const ss = new Spreadsheet();
@@ -84,7 +84,7 @@ describe("tracking.ts — report budget formulas (fix #9)", () => {
   it("carries forward the previous month's balance only when carryover is flagged", async () => {
     await openTestDb();
     const group = await createCategoryGroup({ name: "Expenses" });
-    const cat = await createCategory({ name: "Groceries", cat_group: group });
+    const cat = await createCategory({ name: "Groceries", group: group });
     const acct = await createAccount({ name: "Checking" });
 
     const m0 = addMonths(currentMonth(), -1);
@@ -111,7 +111,7 @@ describe("tracking.ts — report budget formulas (fix #9)", () => {
   it("computes spent-with-carryover: clamps to spent when carryover is off", async () => {
     await openTestDb();
     const group = await createCategoryGroup({ name: "Expenses" });
-    const cat = await createCategory({ name: "Groceries", cat_group: group });
+    const cat = await createCategory({ name: "Groceries", group: group });
     const acct = await createAccount({ name: "Checking" });
     const month = currentMonth();
     const [cats, groups] = await Promise.all([getCategories(), getCategoryGroups()]);
@@ -130,7 +130,7 @@ describe("tracking.ts — report budget formulas (fix #9)", () => {
   it("computes income leftover as budgeted - received (subtracted, unlike expense)", async () => {
     await openTestDb();
     const group = await createCategoryGroup({ name: "Income", is_income: true });
-    const cat = await createCategory({ name: "Paycheck", cat_group: group, is_income: true });
+    const cat = await createCategory({ name: "Paycheck", group: group, is_income: true });
     const acct = await createAccount({ name: "Checking" });
     const month = currentMonth();
     const [cats, groups] = await Promise.all([getCategories(), getCategoryGroups()]);
@@ -151,11 +151,11 @@ describe("tracking.ts — report budget formulas (fix #9)", () => {
     const incomeGroup = await createCategoryGroup({ name: "Income", is_income: true });
     const incomeCat = await createCategory({
       name: "Paycheck",
-      cat_group: incomeGroup,
+      group: incomeGroup,
       is_income: true,
     });
     const expenseGroup = await createCategoryGroup({ name: "Expenses" });
-    const expenseCat = await createCategory({ name: "Groceries", cat_group: expenseGroup });
+    const expenseCat = await createCategory({ name: "Groceries", group: expenseGroup });
     const acct = await createAccount({ name: "Checking" });
     const month = currentMonth();
 
@@ -191,8 +191,8 @@ describe("tracking.ts — report budget formulas (fix #9)", () => {
   it("excludes hidden categories from group/summary sums", async () => {
     await openTestDb();
     const group = await createCategoryGroup({ name: "Expenses" });
-    const visibleCat = await createCategory({ name: "Groceries", cat_group: group });
-    const hiddenCat = await createCategory({ name: "Misc", cat_group: group });
+    const visibleCat = await createCategory({ name: "Groceries", group: group });
+    const hiddenCat = await createCategory({ name: "Misc", group: group });
     const { updateCategory } = await import("@/core/server/budget");
     await updateCategory(hiddenCat, { hidden: true });
     const acct = await createAccount({ name: "Checking" });

@@ -96,7 +96,7 @@ export async function seedLocalBudget(opts: {
 
         await createCategory({
           name: cat.name,
-          cat_group: groupId,
+          group: groupId,
           is_income: group.is_income,
           sort_order: catSort,
         });

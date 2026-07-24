@@ -106,7 +106,7 @@ describe("fixSplitTransactions", () => {
     const a1 = await createAccount({ name: "On1", offbudget: false });
     const a2 = await createAccount({ name: "On2", offbudget: false });
     const g = await createCategoryGroup({ name: "G" });
-    const cat = await createCategory({ name: "C", cat_group: g });
+    const cat = await createCategory({ name: "C", group: g });
     const t2 = await mkTxn({ acct: a2, amount: 500, date: 20260101 });
     const t1 = await mkTxn({
       acct: a1,
@@ -126,7 +126,7 @@ describe("fixSplitTransactions", () => {
     await openTestDb();
     const acct = await createAccount({ name: "A" });
     const g = await createCategoryGroup({ name: "G" });
-    const cat = await createCategory({ name: "C", cat_group: g });
+    const cat = await createCategory({ name: "C", group: g });
     const withError = await mkTxn({ acct, amount: -100, date: 20260101, error: '{"x":1}' });
     const parentWithCat = await mkTxn({
       acct,

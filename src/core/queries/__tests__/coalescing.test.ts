@@ -1,14 +1,17 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-vi.mock("@/core/db", () => ({
-  runQuery: vi.fn(),
-}));
+vi.mock("@/core/db", () => {
+  // The reactive layer runs through aqlQuery → db.all (alias of runQuery), so
+  // `all` must be the SAME mock fn the tests drive via `mockRunQuery`.
+  const runQuery = vi.fn();
+  return { runQuery, all: runQuery };
+});
 
 import { runQuery } from "@/core/db";
 import { liveQuery } from "../liveQuery";
 import { pagedQuery } from "../pagedQuery";
 import { emit } from "../../sync/syncEvents";
-import { q } from "../query";
+import { q } from "@/core/shared/query";
 
 const mockRunQuery = vi.mocked(runQuery);
 

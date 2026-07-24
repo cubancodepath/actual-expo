@@ -24,7 +24,7 @@ const category: Category = {
   id: "cat-1",
   name: "Rent",
   is_income: false,
-  cat_group: "group-1",
+  group: "group-1",
   sort_order: null,
   hidden: false,
   goal_def: null,

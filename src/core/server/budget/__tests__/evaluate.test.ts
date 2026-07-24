@@ -25,12 +25,12 @@ const day = (month: string) => Number(month.replace("-", "") + "15");
 async function seed() {
   await openTestDb();
   const incomeGroup = await createCategoryGroup({ name: "Income", is_income: true });
-  const income = await createCategory({ name: "Pay", cat_group: incomeGroup, is_income: true });
+  const income = await createCategory({ name: "Pay", group: incomeGroup, is_income: true });
   const expenses = await createCategoryGroup({ name: "Expenses" });
   const acct = await createAccount({ name: "Checking" });
   const month = currentMonth();
 
-  const cat = (name: string) => createCategory({ name, cat_group: expenses });
+  const cat = (name: string) => createCategory({ name, group: expenses });
   async function start() {
     const { initSpreadsheet, ensureMonthRange } = await import("@/core/server/sheet");
     await initSpreadsheet();

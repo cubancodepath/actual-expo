@@ -33,7 +33,7 @@ export async function syncShortcutCache(): Promise<void> {
 
     const filteredCategories = allCategories
       .filter((c) => !c.hidden && !c.tombstone && !c.is_income)
-      .map((c) => ({ id: c.id, name: c.name ?? "", groupId: c.cat_group ?? "" }));
+      .map((c) => ({ id: c.id, name: c.name ?? "", groupId: c.group ?? "" }));
 
     const filteredGroups = allGroups
       .filter((g) => !g.hidden && !g.tombstone && !g.is_income)

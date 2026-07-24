@@ -80,7 +80,7 @@ export function CategoryPickerScreen() {
         id: g.id,
         name: g.name,
         categories: categories
-          .filter((c) => c.cat_group === g.id && !excludeSet.has(c.id))
+          .filter((c) => c.group === g.id && !excludeSet.has(c.id))
           .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
           .map((c) => ({
             id: c.id,

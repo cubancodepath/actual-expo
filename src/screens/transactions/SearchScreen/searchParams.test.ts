@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { compile } from "@/core/queries";
 import { buildSearchParams, buildSearchQuery } from "./searchParams";
 import type { SearchToken } from "./searchTokens";
 
@@ -36,42 +35,45 @@ describe("buildSearchParams", () => {
   });
 });
 
+// Query-builder structure tests — compiler-agnostic (valid across the AQL port).
+// End-to-end SQL execution is covered by the AQL smoke test.
 describe("buildSearchQuery", () => {
-  const compileFor = (params: Parameters<typeof buildSearchQuery>[0]) =>
-    compile(buildSearchQuery(params).serialize());
+  const filtersFor = (params: Parameters<typeof buildSearchQuery>[0]) =>
+    buildSearchQuery(params).serialize().filterExpressions as Array<Record<string, unknown>>;
 
-  it("compiles an empty search without throwing", () => {
-    expect(() => compileFor({})).not.toThrow();
+  it("empty search selects everything and has no filters", () => {
+    const state = buildSearchQuery({}).serialize();
+    expect(state.filterExpressions).toEqual([]);
+    expect(state.selectExpressions).toContain("*");
   });
 
-  it("text search matches payee, category, notes and account name", () => {
-    const { sql, params } = compileFor({ text: "coffee" });
-    expect(sql).toContain("OR");
-    expect(sql).toContain("LIKE");
-    // Uses the account-name virtual field JOIN
-    expect(sql).toContain("JOIN accounts acc ON");
-    expect(params).toContain("%coffee%");
+  it("text search matches payee, category, notes and account name (ref-paths)", () => {
+    const filters = filtersFor({ text: "coffee" });
+    const or = filters.find((f) => "$or" in f)!.$or as Array<Record<string, unknown>>;
+    const keys = or.flatMap((c) => Object.keys(c));
+    expect(keys).toEqual(
+      expect.arrayContaining(["payee.name", "category.name", "notes", "account.name"]),
+    );
   });
 
-  it("uncategorized excludes on-budget transfers via the transfer flags", () => {
-    const { sql, params } = compileFor({ uncategorized: true });
-    // category IS NULL is a literal (no param); the transfer flags are parameterized.
-    expect(sql).toContain("IS NULL");
-    expect(sql).toContain("(tr_acc.id IS NOT NULL) =");
-    expect(sql).toContain("tr_acc.offbudget =");
-    expect(params).toContain(0); // isTransfer: false
-    expect(params).toContain(1); // transferAccountOffbudget: true
+  it("uncategorized excludes on-budget transfers via the transfer ref-paths", () => {
+    const filters = filtersFor({ uncategorized: true });
+    expect(filters).toContainEqual({ category: null });
+    const or = filters.find((f) => "$or" in f)!.$or as Array<Record<string, unknown>>;
+    expect(or).toContainEqual({ "payee.transfer_acct": null });
+    expect(or).toContainEqual({ "payee.transfer_acct.offbudget": true });
   });
 
-  it("maps account/category/payee/tag filters", () => {
-    const { sql, params } = compileFor({
+  it("maps account/category/payee/tag filters (upstream field names)", () => {
+    const filters = filtersFor({
       accountId: "a1",
       categoryId: "c1",
       payeeId: "p1",
       tagNames: ["trip"],
     });
-    expect(sql).toContain("t.acct =");
-    expect(sql).toContain("t.notes LIKE");
-    expect(params).toEqual(expect.arrayContaining(["a1", "c1", "p1", "%#trip%"]));
+    expect(filters).toContainEqual({ account: "a1" });
+    expect(filters).toContainEqual({ category: "c1" });
+    expect(filters).toContainEqual({ payee: "p1" });
+    expect(filters).toContainEqual({ notes: { $like: "%#trip%" } });
   });
 });

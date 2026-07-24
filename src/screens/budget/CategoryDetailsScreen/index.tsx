@@ -78,7 +78,7 @@ export function CategoryDetailsScreen({ categoryId }: CategoryDetailsScreenProps
 
   const { categories, groups } = useCategories();
   const category = categories.find((c) => c.id === categoryId);
-  const isIncome = groups.find((g) => g.id === category?.cat_group)?.is_income ?? false;
+  const isIncome = groups.find((g) => g.id === category?.group)?.is_income ?? false;
   const categoryName = category?.name ?? t("category");
 
   // ── Spreadsheet-driven month data ──

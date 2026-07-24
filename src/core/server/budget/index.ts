@@ -23,7 +23,7 @@ function rowToCategory(r: CategoryRow): Category {
     id: r.id,
     name: r.name,
     is_income: r.is_income === 1,
-    cat_group: r.cat_group,
+    group: r.cat_group,
     sort_order: r.sort_order,
     hidden: r.hidden === 1,
     goal_def: r.goal_def,
@@ -52,7 +52,7 @@ export async function getCategoriesGrouped(): Promise<CategoryGroup[]> {
   const categories = await getCategories();
   return groups.map((g) => ({
     ...g,
-    categories: categories.filter((c) => c.cat_group === g.id),
+    categories: categories.filter((c) => c.group === g.id),
   }));
 }
 
@@ -78,13 +78,13 @@ export const createCategoryGroup = undoable(async function createCategoryGroup(
 });
 
 export const createCategory = undoable(async function createCategory(
-  fields: Pick<Category, "name" | "cat_group"> &
-    Partial<Pick<Category, "is_income" | "sort_order">>,
+  fields: Pick<Category, "name" | "group"> & Partial<Pick<Category, "is_income" | "sort_order">>,
 ): Promise<string> {
   const id = randomUUID();
   const dbFields: Record<string, unknown> = {
     name: fields.name,
-    cat_group: fields.cat_group,
+    // Physical column is `cat_group`; the entity field is `group`.
+    cat_group: fields.group,
     is_income: fields.is_income ? 1 : 0,
     sort_order: fields.sort_order ?? Date.now(),
   };

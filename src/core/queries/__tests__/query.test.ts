@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { q, Query } from "../query";
+import { q, Query } from "@/core/shared/query";
 
 describe("q() factory", () => {
   it("creates a query with the given table", () => {

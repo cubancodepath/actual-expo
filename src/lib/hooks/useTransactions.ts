@@ -13,7 +13,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { listen } from "@/core/sync/syncEvents";
 import { transactionQueries } from "@/lib/query/transactionQueries";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
-import type { Query } from "@/core/queries/query";
+import type { Query } from "@/core/shared/query";
 
 const SYNC_TABLES = new Set(["transactions", "category_mapping", "payee_mapping"]);
 

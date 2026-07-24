@@ -26,7 +26,7 @@ describe("storeNoteCleanups", () => {
 
   async function makeCategory(name: string, note: string | null): Promise<string> {
     const group = await createCategoryGroup({ name: `G-${name}` });
-    const id = await createCategory({ name, cat_group: group });
+    const id = await createCategory({ name, group: group });
     if (note !== null) await setNote(id, note);
     return id;
   }

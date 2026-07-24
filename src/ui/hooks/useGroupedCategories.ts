@@ -21,7 +21,7 @@ export function useGroupedCategories(
         group: g,
         items: categories.filter(
           (c) =>
-            c.cat_group === g.id &&
+            c.group === g.id &&
             !c.hidden &&
             !c.tombstone &&
             (q === "" || c.name.toLowerCase().includes(q)),

@@ -10,7 +10,7 @@ export function useIncomeCategoryIds(): Set<string> {
   return useMemo(() => {
     const incomeGroupIds = new Set(groups.filter((g) => g.is_income).map((g) => g.id));
     return new Set(
-      categories.filter((c) => c.is_income || incomeGroupIds.has(c.cat_group)).map((c) => c.id),
+      categories.filter((c) => c.is_income || incomeGroupIds.has(c.group)).map((c) => c.id),
     );
   }, [categories, groups]);
 }

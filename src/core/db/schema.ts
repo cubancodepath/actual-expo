@@ -1,4 +1,5 @@
 import type { PlatformDatabase } from "@/core/platform/sqlite";
+import { makeViews, schema, schemaConfig } from "@/core/server/aql";
 import { SNAPSHOT_MIGRATION_IDS } from "./migrations";
 import { migrate } from "./migrations/migrate";
 
@@ -345,7 +346,21 @@ async function ensureBaseSnapshot(db: PlatformDatabase): Promise<void> {
  * migration after the freeze point incrementally (mirroring upstream's
  * default-db.sqlite + migrate() flow).
  */
+/**
+ * Create the AQL SQLite VIEWS (v_transactions, v_transactions_internal(_alive),
+ * v_payees, v_categories, v_schedules) the compiler queries against. Runs AFTER
+ * migrations because the views select migration-added columns
+ * (custom_upcoming_length, cleanup_def, …). Idempotent — each statement is a
+ * `DROP VIEW IF EXISTS` / `CREATE VIEW` pair — so it's safe on every open and is
+ * NOT tracked in `__migrations__` (views are derived, not schema state).
+ */
+async function ensureViews(db: PlatformDatabase): Promise<void> {
+  const ddl = makeViews(schema, schemaConfig);
+  await db.exec(ddl);
+}
+
 export async function runSchema(db: PlatformDatabase): Promise<void> {
   await ensureBaseSnapshot(db);
   await migrate(db);
+  await ensureViews(db);
 }

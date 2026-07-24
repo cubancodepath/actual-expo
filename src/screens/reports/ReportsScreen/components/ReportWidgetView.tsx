@@ -4,6 +4,7 @@ import { widgetTitle } from "../lib/widgetTitle";
 import { widgetPixelHeight } from "../hooks/useDashboardWidgets";
 import { PlaceholderWidget } from "./PlaceholderWidget";
 import { NetWorthCard } from "./cards/NetWorthCard";
+import { CashFlowCard } from "./cards/CashFlowCard";
 
 /**
  * Dispatches a dashboard widget to its card by type. Types without a ported
@@ -18,6 +19,8 @@ export function ReportWidgetView({ widget }: { widget: DashboardWidgetEntity }) 
   switch (widget.type) {
     case "net-worth-card":
       return <NetWorthCard title={title} height={height} meta={widget.meta} />;
+    case "cash-flow-card":
+      return <CashFlowCard title={title} height={height} meta={widget.meta} />;
     default:
       return <PlaceholderWidget title={title} height={height} />;
   }

@@ -17,6 +17,9 @@ export type NumberFormatType =
   | "apostrophe-dot"
   | "comma-dot-in";
 
+/** Alias matching upstream loot-core's `NumberFormats` name (same set). */
+export type NumberFormats = NumberFormatType;
+
 const FORMAT_TO_LOCALE: Record<NumberFormatType, string> = {
   "comma-dot": "en-US",
   "dot-comma": "de-DE",
@@ -324,6 +327,25 @@ export function centsToDollars(cents: number): string {
  */
 export function dollarsToCents(dollars: number): number {
   return Math.min(Math.round(Math.abs(dollars) * 100), MAX_CENTS);
+}
+
+/**
+ * Convert a dollar amount to integer cents. Ported from loot-core's
+ * `amountToInteger` — the inverse of `integerToAmount`. Used by the rules
+ * formula engine and custom formula functions.
+ */
+export function amountToInteger(amount: number, decimalPlaces = 2): number {
+  const multiplier = Math.pow(10, decimalPlaces);
+  return Math.round(amount * multiplier);
+}
+
+/**
+ * Convert integer cents to a dollar amount. Ported from loot-core's
+ * `integerToAmount`.
+ */
+export function integerToAmount(integerAmount: number, decimalPlaces = 2): number {
+  const divisor = Math.pow(10, decimalPlaces);
+  return integerAmount / divisor;
 }
 
 /**

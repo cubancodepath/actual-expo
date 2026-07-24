@@ -73,6 +73,7 @@
     "handlebars": "^4.7.8",
     "heroui-native": "^1.0.5",
     "heroui-native-pro": "1.0.0-beta.5",
+    "hyperformula": "workspace:*",
     "i18next": "^25.8.18",
     "ky": "^2.0.2",
     "lucide-react-native": "^1.23.0",
@@ -104,6 +105,7 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
+    "@sentry/cli": "2.58.4",
     "@types/better-sqlite3": "^7.6.13",
     "@types/react": "~19.2.2",
     "better-sqlite3": "^12.11.1",
@@ -129,7 +131,9 @@
     "onlyBuiltDependencies": [
       "@sentry/cli",
       "@shopify/react-native-skia",
-      "better-sqlite3"
+      "@zowe/secrets-for-zowe-sdk",
+      "better-sqlite3",
+      "heroui-native-pro"
     ]
   }
 }

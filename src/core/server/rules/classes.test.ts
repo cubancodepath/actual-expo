@@ -1,14 +1,13 @@
 /**
  * Comprehensive tests for the rules engine classes ported from Actual Budget's loot-core.
  *
- * Covers: Condition, Action, Rule, evaluateFormula, RuleIndexer
+ * Covers: Condition, Action, Rule, RuleIndexer
  */
 
 import { describe, it, expect } from "vitest";
 import { Condition } from "./condition";
 import { Action } from "./action";
 import { Rule } from "./rule";
-import { evaluateFormula, amountToInteger } from "./formula";
 import { RuleIndexer } from "./rule-indexer";
 import { deserializeField } from "./rule-utils";
 import { RuleError } from "./errors";
@@ -875,25 +874,24 @@ describe("Action.exec — set", () => {
     it("evaluates formula and sets numeric field", () => {
       const txn: Record<string, unknown> = { amount: 5000, notes: "" };
       new Action("set", "amount", null, { formula: "=amount*2" }).exec(txn);
-      expect(txn.amount).toBe(10000);
+      // Upstream semantics: the numeric result (10000) is treated as dollars and
+      // rescaled to integer cents (×100).
+      expect(txn.amount).toBe(1000000);
     });
 
     it("evaluates constant formula", () => {
       const txn: Record<string, unknown> = { amount: 0, notes: "" };
       new Action("set", "amount", null, { formula: "=100+50" }).exec(txn);
-      expect(txn.amount).toBe(150);
+      expect(txn.amount).toBe(15000); // 150 dollars → cents
     });
 
-    it("records error in _ruleErrors when formula produces NaN", () => {
-      const txn: Record<string, unknown> = { amount: 0 };
-      // Force a situation where result is NaN by dividing string variable (which becomes 0)
-      // Actually the evaluator resolves unknowns to 0, so test a failing edge instead:
-      // Create a formula for a string field that produces non-numeric from string type
+    it("stringifies a numeric formula result for a string field", () => {
       const txn2: Record<string, unknown> = { notes: "hello" };
-      // Formula on a string field — result string is returned as-is
       new Action("set", "notes", null, { formula: "=1+1" }).exec(txn2);
-      // For string type fields, result is stringified
-      expect(txn2.notes).toBe("2");
+      // A numeric result is rescaled to cents (2 → 200) before it is stringified,
+      // even for a text field — an upstream side effect of scaling in
+      // executeFormulaSync regardless of the target field type.
+      expect(txn2.notes).toBe("200");
     });
 
     it("records error in _ruleErrors when formula evaluation fails", () => {
@@ -948,7 +946,8 @@ describe("Action.exec — non-set operations", () => {
       new Action("set-split-amount", null, null, { method: "formula", formula: "=amount/2" }).exec(
         txn,
       );
-      expect(txn.amount).toBe(-5000);
+      // -5000 dollars → integer cents (×100).
+      expect(txn.amount).toBe(-500000);
     });
 
     it("formula method records error when no formula is provided", () => {
@@ -1324,162 +1323,6 @@ describe("Rule.serialize", () => {
       actions: [],
     });
     expect(rule.serialize().stage).toBeNull();
-  });
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-// evaluateFormula
-// ─────────────────────────────────────────────────────────────────────────────
-
-describe("evaluateFormula", () => {
-  describe("basic arithmetic", () => {
-    it("addition: =1+2 → 3", () => {
-      expect(evaluateFormula("=1+2", {})).toBe(3);
-    });
-
-    it("subtraction: =10-3 → 7", () => {
-      expect(evaluateFormula("=10-3", {})).toBe(7);
-    });
-
-    it("multiplication: =4*5 → 20", () => {
-      expect(evaluateFormula("=4*5", {})).toBe(20);
-    });
-
-    it("division: =20/4 → 5", () => {
-      expect(evaluateFormula("=20/4", {})).toBe(5);
-    });
-
-    it("respects operator precedence: =2+3*4 → 14", () => {
-      expect(evaluateFormula("=2+3*4", {})).toBe(14);
-    });
-  });
-
-  describe("parentheses", () => {
-    it("=(1+2)*3 → 9", () => {
-      expect(evaluateFormula("=(1+2)*3", {})).toBe(9);
-    });
-
-    it("nested parentheses: =((2+3)*2)+1 → 11", () => {
-      expect(evaluateFormula("=((2+3)*2)+1", {})).toBe(11);
-    });
-  });
-
-  describe("variables", () => {
-    it("uses variable from context: =amount*0.1 with amount=5000 → 500", () => {
-      expect(evaluateFormula("=amount*0.1", { amount: 5000 })).toBe(500);
-    });
-
-    it("two variables: =amount+bonus with amount=1000, bonus=200 → 1200", () => {
-      expect(evaluateFormula("=amount+bonus", { amount: 1000, bonus: 200 })).toBe(1200);
-    });
-
-    it("unknown variable resolves to 0", () => {
-      expect(evaluateFormula("=unknown_var+10", {})).toBe(10);
-    });
-  });
-
-  describe("unary minus", () => {
-    it("negates a literal: =-5 → -5", () => {
-      expect(evaluateFormula("=-5", {})).toBe(-5);
-    });
-
-    it("negates a variable: =-amount with amount=1000 → -1000", () => {
-      expect(evaluateFormula("=-amount", { amount: 1000 })).toBe(-1000);
-    });
-
-    it("negation of a parenthesized expression: =-(amount) with amount=500 → -500", () => {
-      expect(evaluateFormula("=-(amount)", { amount: 500 })).toBe(-500);
-    });
-  });
-
-  describe("built-in functions", () => {
-    it("INTEGER_TO_AMOUNT(5000, 2) → 50", () => {
-      expect(evaluateFormula("=INTEGER_TO_AMOUNT(5000, 2)", {})).toBe(50);
-    });
-
-    it("INTEGER_TO_AMOUNT(5000) defaults to 2 decimal places → 50", () => {
-      expect(evaluateFormula("=INTEGER_TO_AMOUNT(5000)", {})).toBe(50);
-    });
-
-    it("FIXED(3.456, 2) → 3.46", () => {
-      expect(evaluateFormula("=FIXED(3.456, 2)", {})).toBe(3.46);
-    });
-
-    it("ABS(-42) → 42", () => {
-      expect(evaluateFormula("=ABS(-42)", {})).toBe(42);
-    });
-
-    it("ABS(42) → 42", () => {
-      expect(evaluateFormula("=ABS(42)", {})).toBe(42);
-    });
-
-    it("ROUND(3.5) → 4", () => {
-      expect(evaluateFormula("=ROUND(3.5)", {})).toBe(4);
-    });
-
-    it("ROUND(3.4) → 3", () => {
-      expect(evaluateFormula("=ROUND(3.4)", {})).toBe(3);
-    });
-
-    it("FLOOR(3.9) → 3", () => {
-      expect(evaluateFormula("=FLOOR(3.9)", {})).toBe(3);
-    });
-
-    it("CEIL(3.1) → 4", () => {
-      expect(evaluateFormula("=CEIL(3.1)", {})).toBe(4);
-    });
-
-    it("MIN(5, 3, 8) → 3", () => {
-      expect(evaluateFormula("=MIN(5, 3, 8)", {})).toBe(3);
-    });
-
-    it("MAX(5, 3, 8) → 8", () => {
-      expect(evaluateFormula("=MAX(5, 3, 8)", {})).toBe(8);
-    });
-
-    it("function with variable argument: =ABS(amount) with amount=-1500 → 1500", () => {
-      expect(evaluateFormula("=ABS(amount)", { amount: -1500 })).toBe(1500);
-    });
-
-    it("throws for unknown function", () => {
-      expect(() => evaluateFormula("=UNKNOWNFN(1)", {})).toThrow();
-    });
-  });
-
-  describe("error cases", () => {
-    it("throws when formula does not start with =", () => {
-      expect(() => evaluateFormula("1+2", {})).toThrow("Formula must start with =");
-    });
-
-    it("throws for empty formula (just =)", () => {
-      expect(() => evaluateFormula("=", {})).toThrow("Empty formula");
-    });
-
-    it("throws for formula with only whitespace after =", () => {
-      expect(() => evaluateFormula("=   ", {})).toThrow("Empty formula");
-    });
-
-    it("throws for unexpected character in formula", () => {
-      expect(() => evaluateFormula("=1@2", {})).toThrow();
-    });
-  });
-
-  describe("amountToInteger helper", () => {
-    it("converts 50.00 to 5000", () => {
-      expect(amountToInteger(50)).toBe(5000);
-    });
-
-    it("rounds correctly: 50.005 → 5001 (rounds half-up)", () => {
-      expect(amountToInteger(50.005)).toBe(5001);
-    });
-
-    it("handles negative amounts: -25.50 → -2550", () => {
-      expect(amountToInteger(-25.5)).toBe(-2550);
-    });
-
-    it("handles zero: 0 → 0", () => {
-      expect(amountToInteger(0)).toBe(0);
-    });
   });
 });
 

@@ -1,18 +1,35 @@
 /**
  * Action class — validates and executes rule actions.
- * Ported from loot-core/src/server/rules/action.ts
+ * Ported from loot-core/src/server/rules/action.ts.
  *
- * Uses Handlebars for templates and a lightweight formula evaluator
- * instead of HyperFormula (incompatible with Hermes).
+ * Formulas are evaluated with our Hermes-safe `hyperformula` package (a drop-in
+ * re-implementation of the HyperFormula API subset Actual uses — the real one
+ * stack-overflows on Hermes). Templates use Handlebars.
+ *
+ * Numeric results follow upstream: formulas are treated as dollars, so a numeric
+ * result is rescaled to integer cents with `amountToInteger` (×100) before it is
+ * written to the field. Pair raw integer-cent fields (e.g. `amount`) with
+ * `INTEGER_TO_AMOUNT(...)` inside the formula to work in dollars end to end.
  */
 
 import * as Handlebars from "handlebars";
 import { format, isValid, parseISO } from "date-fns";
+import { HyperFormula } from "hyperformula";
+import enUS from "hyperformula/i18n/languages/enUS";
 
 // Ensure helpers are registered
 import "./handlebars-helpers";
-import { evaluateFormula, amountToInteger, type FormulaValue } from "./formula";
+import {
+  CustomFunctionsPlugin,
+  customFunctionsTranslations,
+} from "@/core/shared/formulas/customFunctions";
+import { amountToInteger } from "@/core/shared/util";
 import { assert, FIELD_TYPES } from "./rule-utils";
+
+if (!HyperFormula.getRegisteredLanguagesCodes().includes("enUS")) {
+  HyperFormula.registerLanguage("enUS", enUS);
+}
+HyperFormula.registerFunctionPlugin(CustomFunctionsPlugin, customFunctionsTranslations);
 
 const ACTION_OPS = [
   "set",
@@ -95,21 +112,7 @@ export class Action {
             if (!object._ruleErrors) object._ruleErrors = [];
             const errors = object._ruleErrors as string[];
 
-            // Build variable map for formula (pass strings as-is, numbers as-is)
-            const variables: Record<string, FormulaValue> = {};
-            for (const key of Object.keys(object)) {
-              const val = object[key];
-              if (typeof val === "number" || typeof val === "string") {
-                variables[key] = val;
-              }
-            }
-            variables.today = new Date().toISOString().slice(0, 10);
-
-            const result = evaluateFormula(
-              this.options.formula as string,
-              variables,
-              object._balanceOfPrefetched as Map<string, number> | undefined,
-            );
+            const result = this.executeFormulaSync(this.options.formula as string, object);
 
             switch (this.type) {
               case "number": {
@@ -138,9 +141,8 @@ export class Action {
                 break;
               }
               case "boolean":
-                // The formula evaluator represents truthiness numerically
-                // (comparisons yield 1/0); accept the common truthy encodings.
-                object[this.field!] = result === 1 || result === "1" || result === "true";
+                object[this.field!] =
+                  typeof result === "boolean" ? result : String(result).toLowerCase() === "true";
                 break;
               default:
                 break;
@@ -205,16 +207,7 @@ export class Action {
               break;
             }
             try {
-              const variables: Record<string, FormulaValue> = {};
-              for (const key of Object.keys(object)) {
-                const v = object[key];
-                if (typeof v === "number" || typeof v === "string") variables[key] = v;
-              }
-              const result = evaluateFormula(
-                this.options.formula as string,
-                variables,
-                object._balanceOfPrefetched as Map<string, number> | undefined,
-              );
+              const result = this.executeFormulaSync(this.options.formula as string, object);
               const numValue = typeof result === "number" ? result : parseFloat(String(result));
               if (isNaN(numValue)) {
                 (object._ruleErrors as string[]).push(
@@ -251,6 +244,75 @@ export class Action {
       case "delete-transaction":
         object.tombstone = 1;
         break;
+    }
+  }
+
+  /**
+   * Evaluate a `=…` formula against a transaction. Transaction fields become
+   * named expressions; the formula lives in a single cell (A1). Mirrors
+   * upstream's HyperFormula flow, backed by the Hermes-safe engine.
+   */
+  private executeFormulaSync(formula: string, transaction: Record<string, unknown>): unknown {
+    if (!formula || !formula.startsWith("=")) {
+      throw new Error("Formula must start with =");
+    }
+
+    let hfInstance: HyperFormula | null = null;
+    try {
+      hfInstance = HyperFormula.buildEmpty({
+        licenseKey: "gpl-v3",
+        language: "enUS",
+        dateFormats: ["DD/MM/YYYY", "YYYY-MM-DD", "YYYY/MM/DD"],
+        context: {
+          balanceOfPrefetch:
+            (transaction._balanceOfPrefetched as Map<string, number> | undefined) ?? new Map(),
+        },
+      });
+
+      const sheetName = hfInstance.addSheet("Sheet1");
+      const sheetId = hfInstance.getSheetId(sheetName);
+      if (sheetId === undefined) {
+        throw new Error("Failed to create sheet");
+      }
+
+      const fieldValues: Record<string, unknown> = {
+        ...transaction,
+        today: currentDay(),
+        account_name: (transaction._account_name as string) || "",
+        category_name: (transaction._category_name as string) || "",
+      };
+
+      for (const key of Object.keys(fieldValues)) {
+        if (key === "_balanceOfPrefetched") continue;
+        const raw = fieldValues[key];
+        const cellValue =
+          raw === undefined || raw === null || typeof raw === "object"
+            ? ""
+            : (raw as string | number | boolean);
+        hfInstance.addNamedExpression(key, cellValue);
+      }
+
+      hfInstance.setCellContents({ sheet: sheetId, col: 0, row: 0 }, [[formula]]);
+      const cellValue = hfInstance.getCellValue({ sheet: sheetId, col: 0, row: 0 });
+
+      if (cellValue && typeof cellValue === "object" && "type" in cellValue) {
+        throw new Error(`Formula error: ${cellValue.message}`);
+      }
+
+      // Upstream semantics: a numeric result is a dollar amount, rescaled to
+      // integer cents. The Math.round(...*100)/100 guards float noise before
+      // amountToInteger multiplies by 100.
+      if (typeof cellValue === "number") {
+        return amountToInteger(Math.round(cellValue * 100) / 100);
+      }
+
+      return cellValue;
+    } finally {
+      try {
+        hfInstance?.destroy();
+      } catch (err) {
+        console.error("[rules] Error destroying formula engine instance:", err);
+      }
     }
   }
 

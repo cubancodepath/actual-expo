@@ -192,7 +192,10 @@ describe("schedule-posted transactions resolve BALANCE_OF in rule formulas (Phas
           op: "set",
           field: "amount",
           value: null,
-          options: { formula: '=BALANCE_OF("Checking")' },
+          // BALANCE_OF returns integer cents; under the dollars-native model it
+          // is wrapped in INTEGER_TO_AMOUNT so the ×100 rescale round-trips back
+          // to the original cent value.
+          options: { formula: '=INTEGER_TO_AMOUNT(BALANCE_OF("Checking"))' },
         },
       ],
     });

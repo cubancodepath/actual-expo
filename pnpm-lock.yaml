@@ -166,6 +166,9 @@ importers:
       heroui-native-pro:
         specifier: 1.0.0-beta.5
         version: 1.0.0-beta.5
+      hyperformula:
+        specifier: workspace:*
+        version: link:packages/hyperformula
       i18next:
         specifier: ^25.8.18
         version: 25.10.10(typescript@5.9.3)
@@ -254,6 +257,9 @@ importers:
         specifier: ^5.0.11
         version: 5.0.14(@types/react@19.2.17)(immer@11.1.9)(react@19.2.0)(use-sync-external-store@1.6.0(react@19.2.0))
     devDependencies:
+      '@sentry/cli':
+        specifier: 2.58.4
+        version: 2.58.4
       '@types/better-sqlite3':
         specifier: ^7.6.13
         version: 7.6.13
@@ -287,6 +293,8 @@ importers:
       vitest:
         specifier: ^4.0.18
         version: 4.1.9(@types/node@26.0.1)(vite@8.1.0(@types/node@26.0.1)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.0))
+
+  packages/hyperformula: {}
 
 packages:
 

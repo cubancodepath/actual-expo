@@ -11,7 +11,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    include: ["src/**/*.test.ts"],
+    include: ["src/**/*.test.ts", "packages/*/src/**/*.test.ts"],
     server: {
       deps: {
         // Prevent vitest from trying to parse react-native's Flow syntax

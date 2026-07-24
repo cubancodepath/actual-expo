@@ -32,7 +32,7 @@ export function ReportWidgetView({ widget }: { widget: DashboardWidgetEntity }) 
     case "age-of-money-card":
       return <AgeOfMoneyCard title={title} height={height} meta={widget.meta} />;
     case "calendar-card":
-      return <CalendarCard title={title} height={height} meta={widget.meta} />;
+      return <CalendarCard title={title} meta={widget.meta} />;
     default:
       return <PlaceholderWidget title={title} height={height} />;
   }

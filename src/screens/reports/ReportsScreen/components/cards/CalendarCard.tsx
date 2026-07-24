@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { View, Text } from "react-native";
 import { useTranslation } from "react-i18next";
-import { Skeleton, cn, useThemeColor } from "heroui-native";
+import { Popover, Skeleton, cn, useThemeColor } from "heroui-native";
 import { Calendar, useCalendar } from "heroui-native-pro";
 import { ArrowUp, ArrowDown } from "lucide-react-native";
 import { parseDate } from "@internationalized/date";
@@ -20,7 +20,6 @@ import {
 
 type CalendarCardProps = {
   title: string;
-  height: number;
   meta: CalendarWidget["meta"];
 };
 
@@ -75,16 +74,18 @@ function barPct(size: number, value: number): number {
  * a fixed-height slot, each scaled to the day's share of the month total and
  * capped with a rounded top like our other charts. The slot is always reserved
  * for in-month days so days with no activity keep the same layout. Today's number
- * gets a filled accent pill. Read-only, no selection.
+ * gets a filled accent circle. Tapping an in-month day opens a summary popover.
  */
 function CalendarDayCell({ renderProps }: { renderProps: DayCellRenderProps }) {
   const daysByKey = useContext(DayDataContext);
-  const { isOutsideMonth, isToday, formattedDate } = renderProps;
-  const day = isOutsideMonth ? undefined : daysByKey?.[keyOf(renderProps.date)];
+  const { format } = useFormat();
+  const { t, i18n } = useTranslation("reports");
+  const { isOutsideMonth, isToday, formattedDate, date } = renderProps;
+  const day = isOutsideMonth ? undefined : daysByKey?.[keyOf(date)];
   const incomePct = day ? barPct(day.incomeSize, day.incomeValue) : 0;
   const expensePct = day ? barPct(day.expenseSize, day.expenseValue) : 0;
 
-  return (
+  const content = (
     <View className="w-full items-center justify-center gap-0.5">
       {/* Fixed-size circle keeps the number a perfect circle when today is
           highlighted (a 2-digit padded pill reads as an oval) and gives every
@@ -118,6 +119,51 @@ function CalendarDayCell({ renderProps }: { renderProps: DayCellRenderProps }) {
         ) : null}
       </View>
     </View>
+  );
+
+  // Outside-month days belong to another month — not interactive.
+  if (isOutsideMonth) return content;
+
+  const income = day?.incomeValue ?? 0;
+  const expense = day?.expenseValue ?? 0;
+  const label = new Date(date.year, date.month - 1, date.day).toLocaleDateString(i18n.language, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+
+  // Tap a day to see its summary — the mobile stand-in for the desktop hover
+  // tooltip (date + income / expense amounts and their share of the month).
+  return (
+    <Popover>
+      <Popover.Trigger>{content}</Popover.Trigger>
+      <Popover.Portal>
+        <Popover.Overlay />
+        <Popover.Content
+          presentation="popover"
+          placement="top"
+          width={200}
+          className="gap-2 rounded-xl border border-border px-4 py-3"
+        >
+          <Popover.Arrow />
+          <Popover.Title className="text-sm">{label}</Popover.Title>
+          <View className="gap-1">
+            <View className="flex-row items-center justify-between">
+              <Text className="text-xs text-muted">{t("series.income")}</Text>
+              <Text className="text-xs font-medium text-positive">
+                {format(income, "financial")}
+              </Text>
+            </View>
+            <View className="flex-row items-center justify-between">
+              <Text className="text-xs text-muted">{t("series.expenses")}</Text>
+              <Text className="text-xs font-medium text-danger">
+                {format(-expense, "financial")}
+              </Text>
+            </View>
+          </View>
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover>
   );
 }
 
@@ -168,7 +214,7 @@ function FlowChip({
  * prev/next navigation, and localization; only the per-day income/expense content
  * is ours. Read-only.
  */
-export function CalendarCard({ title, height, meta }: CalendarCardProps) {
+export function CalendarCard({ title, meta }: CalendarCardProps) {
   const { i18n } = useTranslation("reports");
   const { format } = useFormat();
   const firstDay = useFirstDayOfWeek();
@@ -207,7 +253,9 @@ export function CalendarCard({ title, height, meta }: CalendarCardProps) {
   }, [data]);
 
   return (
-    <ReportWidget height={height}>
+    // No fixed height: the calendar sizes to its content so 5- and 6-week months
+    // fit exactly (a fixed height either clips the last week or leaves a big gap).
+    <ReportWidget>
       <ReportWidget.Header>
         <ReportWidget.Heading>
           <ReportWidget.Title>{title}</ReportWidget.Title>
@@ -229,7 +277,6 @@ export function CalendarCard({ title, height, meta }: CalendarCardProps) {
               defaultValue={parseDate(`${initialMonth}-01`)}
               firstDayOfWeek={weekdayCode(firstDay)}
               locale={i18n.language}
-              isReadOnly
             >
               <MonthSync onMonth={setVisibleMonth} />
               <Calendar.Header>

@@ -25,10 +25,18 @@ import { CardErrorBoundary } from "./CardErrorBoundary";
  * root fixes the card height for the single-column layout and isolates the whole
  * card behind a {@link CardErrorBoundary}.
  */
-function ReportWidgetRoot({ height, children }: { height: number; children: ReactNode }) {
+function ReportWidgetRoot({
+  height,
+  children,
+}: {
+  /** Fixed card height. Omit to let the card size to its content (e.g. the
+   *  calendar, whose grid is 5 or 6 weeks tall depending on the month). */
+  height?: number;
+  children: ReactNode;
+}) {
   return (
     <CardErrorBoundary>
-      <Card style={{ height }}>{children}</Card>
+      <Card style={height != null ? { height } : undefined}>{children}</Card>
     </CardErrorBoundary>
   );
 }

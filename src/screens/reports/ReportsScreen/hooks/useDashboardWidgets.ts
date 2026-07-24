@@ -34,6 +34,10 @@ export function getWidgetMinHeight(type: DashboardWidgetEntity["type"]): number 
       return 1;
     case "sankey-card":
       return 3;
+    case "calendar-card":
+      // Taller than upstream's default: a full 6-week grid plus the Apple-style
+      // number-over-rings day cells need the vertical room to breathe.
+      return 4;
     default:
       return 2;
   }

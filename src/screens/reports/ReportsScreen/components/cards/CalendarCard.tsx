@@ -62,50 +62,61 @@ type DayCellRenderProps = {
   isToday: boolean;
 };
 
-/** Give any non-zero flow a visible floor so small days still read as bars. */
-function barHeight(size: number, value: number): number {
+/** A day's flow as a bar height %: its share of the month total, floored so small
+ * days still show a visible bar, 0 when there was no flow. */
+function barPct(size: number, value: number): number {
   if (!value) return 0;
-  return Math.min(100, Math.max(Math.ceil(size), 12));
+  return Math.min(100, Math.max(Math.ceil(size), 15));
 }
 
 /**
- * A round day cell whose fill is a tiny gauge (upstream `DayButton`): income
- * (green, left) and expense (red, right) rise from the bottom, heights
- * proportional to each day's share of the month total, clipped to the circle by
- * `overflow-hidden`. We render our own cell (not `Calendar.CellBody`) so there's
- * no selection fill — today is marked with a ring only.
+ * A day cell laid out like Apple's activity calendar: the day number on top, and
+ * below it a small pair of bars — income (green) and expense (red) — rising from
+ * a fixed-height slot, each scaled to the day's share of the month total and
+ * capped with a rounded top like our other charts. The slot is always reserved
+ * for in-month days so days with no activity keep the same layout. Today's number
+ * gets a filled accent pill. Read-only, no selection.
  */
 function CalendarDayCell({ renderProps }: { renderProps: DayCellRenderProps }) {
   const daysByKey = useContext(DayDataContext);
   const { isOutsideMonth, isToday, formattedDate } = renderProps;
   const day = isOutsideMonth ? undefined : daysByKey?.[keyOf(renderProps.date)];
-  const incomeH = day ? barHeight(day.incomeSize, day.incomeValue) : 0;
-  const expenseH = day ? barHeight(day.expenseSize, day.expenseValue) : 0;
+  const incomePct = day ? barPct(day.incomeSize, day.incomeValue) : 0;
+  const expensePct = day ? barPct(day.expenseSize, day.expenseValue) : 0;
 
   return (
-    <View
-      className={cn(
-        "size-10 items-center justify-center overflow-hidden rounded-full",
-        isToday && "border border-accent",
-      )}
-    >
-      {incomeH > 0 ? (
-        <View
-          className="absolute bottom-0 left-0 w-1/2 bg-chart-income opacity-80"
-          style={{ height: `${incomeH}%` }}
-        />
-      ) : null}
-      {expenseH > 0 ? (
-        <View
-          className="absolute bottom-0 right-0 w-1/2 bg-chart-expense opacity-80"
-          style={{ height: `${expenseH}%` }}
-        />
-      ) : null}
-      <Text
-        className={cn("text-sm font-medium", isOutsideMonth ? "text-muted" : "text-foreground")}
+    <View className="w-full items-center justify-center gap-0.5">
+      {/* Fixed-size circle keeps the number a perfect circle when today is
+          highlighted (a 2-digit padded pill reads as an oval) and gives every
+          cell the same number height so rows stay aligned. */}
+      <View
+        className={cn("size-5 items-center justify-center rounded-full", isToday && "bg-accent")}
       >
-        {formattedDate}
-      </Text>
+        <Text
+          className={cn(
+            "text-xs font-medium",
+            isToday ? "text-accent-foreground" : isOutsideMonth ? "text-muted" : "text-foreground",
+          )}
+        >
+          {formattedDate}
+        </Text>
+      </View>
+      {/* Always reserve the bar slot (even for empty / outside-month days) so
+          every number sits at the same height. */}
+      <View className="h-7 flex-row items-end justify-center gap-1">
+        {incomePct > 0 ? (
+          <View
+            className="w-1.5 rounded-t-xs bg-chart-income"
+            style={{ height: `${incomePct}%` }}
+          />
+        ) : null}
+        {expensePct > 0 ? (
+          <View
+            className="w-1.5 rounded-t-xs bg-chart-expense"
+            style={{ height: `${expensePct}%` }}
+          />
+        ) : null}
+      </View>
     </View>
   );
 }
@@ -232,7 +243,10 @@ export function CalendarCard({ title, height, meta }: CalendarCardProps) {
                 </Calendar.GridHeader>
                 <Calendar.GridBody>
                   {(date) => (
-                    <Calendar.Cell date={date}>
+                    // Override the default aspect-square so the taller
+                    // number-over-rings cell fits (width + height both set ⇒ RN
+                    // ignores the base aspect-ratio).
+                    <Calendar.Cell date={date} className="aspect-auto h-[52px]">
                       {(rp) => <CalendarDayCell renderProps={rp} />}
                     </Calendar.Cell>
                   )}

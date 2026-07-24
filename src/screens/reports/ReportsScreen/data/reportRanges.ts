@@ -242,3 +242,40 @@ export function calculateTimeRange(
 
   return [start, end, "static"] as const;
 }
+
+/**
+ * Time range for the Spending report — port of desktop-client
+ * `calculateSpendingReportTimeRange`. In `budget`/`average` live modes both
+ * bounds collapse to the compare month; `single-month` live uses compare + the
+ * prior month; otherwise it defers to {@link calculateTimeRange}.
+ */
+export function calculateSpendingReportTimeRange({
+  compare,
+  compareTo,
+  isLive = true,
+  mode = "single-month",
+}: {
+  compare?: string;
+  compareTo?: string;
+  isLive?: boolean;
+  mode?: "budget" | "average" | "single-month";
+}): [string, string] {
+  if (["budget", "average"].includes(mode) && isLive) {
+    const month = compare ?? monthUtils.currentMonth();
+    return [month, month];
+  }
+
+  if (mode === "single-month" && isLive && compare) {
+    return [compare, compareTo ?? monthUtils.subMonths(compare, 1)];
+  }
+
+  const [start, end] = calculateTimeRange(
+    { start: compare, end: compareTo, mode: (isLive ?? true) ? "sliding-window" : "static" },
+    {
+      start: monthUtils.currentMonth(),
+      end: monthUtils.subMonths(monthUtils.currentMonth(), 1),
+      mode: "sliding-window",
+    },
+  );
+  return [start, end];
+}

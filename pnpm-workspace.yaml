@@ -3,7 +3,12 @@ packages:
   - "packages/*"
 
 overrides:
-  "@xmldom/xmldom@<0.8.13": ">=0.8.13"
+  # Security bump for CVE-affected xmldom <0.8.13, but capped below 0.9.0:
+  # @expo/plist@0.5.4 (used by `expo prebuild`) calls parseFromString() without a
+  # mimeType, which throws on xmldom 0.9.x. Leaving this unbounded collapses
+  # @expo/plist's ^0.8.8 onto 0.9.10 and breaks prebuild. plist@3.1.1 keeps 0.9.x
+  # via its own ^0.9.10 range (unaffected by this <0.8.13 selector).
+  "@xmldom/xmldom@<0.8.13": ">=0.8.13 <0.9.0"
   "uuid@<11.1.1": ">=11.1.1"
   "tar@<7.5.16": ">=7.5.16"
 

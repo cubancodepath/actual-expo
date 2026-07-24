@@ -120,6 +120,11 @@ export const useBudgetContextStore = create<BudgetContextState>()(
           await waitForSyncToSettle();
           resetSyncState();
           unloadPrefs();
+          // Sync UI state (conflict dialog, error badge, lastSync) is scoped
+          // to a budget — never carry it into the next one. Dynamic import:
+          // syncStore statically imports this store.
+          const { useSyncStore } = await import("@/stores/syncStore");
+          useSyncStore.getState().resetForBudgetSwitch();
           await closeDatabase();
           lap("close + reset");
 

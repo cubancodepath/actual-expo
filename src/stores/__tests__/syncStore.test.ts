@@ -45,6 +45,60 @@ describe("useSyncStore.sync", () => {
   });
 });
 
+describe("conflict pause & budget-switch reset", () => {
+  afterEach(() => {
+    useSyncStore.getState().resetForBudgetSwitch();
+    syncModule.setSyncingMode("enabled");
+  });
+
+  it("_setConflict pauses the core mode; _resolveConflict unpauses and clears the badge", () => {
+    useSyncStore.getState()._setConflict("sync/file-has-reset");
+
+    expect(syncModule.checkSyncingMode("offline")).toBe(true);
+    expect(useSyncStore.getState().conflictCode).toBe("sync/file-has-reset");
+
+    useSyncStore.getState()._resolveConflict();
+
+    expect(syncModule.checkSyncingMode("offline")).toBe(false);
+    expect(useSyncStore.getState()).toMatchObject({
+      conflictCode: null,
+      lastErrorCode: null,
+      status: "idle",
+    });
+  });
+
+  it("non-conflict file errors (key-mismatch) do NOT pause the mode", async () => {
+    await useSyncStore.getState().handleSyncFileError("sync/file-key-mismatch");
+
+    expect(syncModule.checkSyncingMode("offline")).toBe(false);
+    expect(useSyncStore.getState().lastErrorCode).toBe("sync/key-missing");
+    expect(useSyncStore.getState().conflictCode).toBeNull();
+  });
+
+  it("resetForBudgetSwitch clears conflict, badge, lastSync AND the auto-recovery guard", async () => {
+    // Arm the one-shot auto-recovery guard by making the recovery fail once.
+    const failingReset = vi.fn().mockRejectedValue(new Error("boom"));
+    useSyncStore.setState({ resetSync: failingReset });
+    await useSyncStore.getState().handleSyncFileError("sync/file-needs-upload");
+    expect(useSyncStore.getState().conflictCode).toBe("sync/file-needs-upload");
+
+    useSyncStore.getState().resetForBudgetSwitch();
+
+    expect(useSyncStore.getState()).toMatchObject({
+      status: "idle",
+      lastErrorCode: null,
+      conflictCode: null,
+      lastSync: null,
+    });
+
+    // Guard cleared → the same code auto-recovers again instead of jumping
+    // straight to the conflict dialog (cross-budget contamination fix).
+    failingReset.mockResolvedValue(undefined);
+    await useSyncStore.getState().handleSyncFileError("sync/file-needs-upload");
+    expect(failingReset).toHaveBeenCalledTimes(2);
+  });
+});
+
 describe("useSyncStore setters", () => {
   it("_setStatus success stamps lastSync; syncing clears lastErrorCode", () => {
     useSyncStore.setState({ lastErrorCode: "network/timeout" });

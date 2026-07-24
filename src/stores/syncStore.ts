@@ -48,6 +48,8 @@ type SyncState = {
   _setConflict(code: ErrorCode): void;
   clearConflict(): void;
   _resolveConflict(): void;
+  /** Clear all sync state (incl. the auto-recovery guard) on a budget switch. */
+  resetForBudgetSwitch(): void;
 };
 
 export const useSyncStore = create<SyncState>((set, get) => ({
@@ -131,11 +133,6 @@ export const useSyncStore = create<SyncState>((set, get) => ({
   },
 
   async handleSyncFileError(code) {
-    // Pause scheduled syncs while the conflict is unresolved. "offline", not
-    // "disabled": applyMessages keeps recording local mutations in the CRDT
-    // log, so nothing is lost whichever way the user resolves.
-    setSyncingMode("offline");
-
     switch (code) {
       case "sync/file-has-reset":
       case "sync/file-has-new-key":
@@ -193,6 +190,14 @@ export const useSyncStore = create<SyncState>((set, get) => ({
 
   _setConflict(code) {
     set({ status: "error", lastErrorCode: code, conflictCode: code });
+    // Pause scheduled syncs while the conflict is unresolved — the mode is
+    // the pause CORE can see (scheduleFullSync checks it without importing
+    // this store); conflictCode is the pause sync() and the dialog see.
+    // "offline", not "disabled": applyMessages keeps recording local
+    // mutations in the CRDT log, so nothing is lost whichever way the user
+    // resolves. Non-conflict errors (key-mismatch etc.) deliberately do NOT
+    // pause — the 60s poll retries and re-reports.
+    setSyncingMode("offline");
   },
 
   clearConflict() {
@@ -202,7 +207,17 @@ export const useSyncStore = create<SyncState>((set, get) => ({
   _resolveConflict() {
     autoRecoveryAttempted.clear();
     get().clearConflict();
+    set({ lastErrorCode: null });
     get()._setStatus("idle");
     setSyncingMode("enabled");
+  },
+
+  resetForBudgetSwitch() {
+    // A conflict, error badge, or lastSync from budget A must never leak into
+    // budget B: the dialog would pause B's syncs and its recovery actions
+    // would operate on B with A's conflict. Called by loadBudget before
+    // opening the new database. The auto-recovery guard is per-budget too.
+    autoRecoveryAttempted.clear();
+    set({ status: "idle", lastErrorCode: null, conflictCode: null, lastSync: null });
   },
 }));

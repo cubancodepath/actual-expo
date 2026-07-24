@@ -4,6 +4,12 @@ import { ActualError } from "@/core/errors";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { useSessionStore } from "@/stores/sessionStore";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
+import {
+  loadBudget,
+  closeAndLoadBudget,
+  closeAndDownloadBudget,
+  deleteBudget,
+} from "@/stores/operations/budgetfiles";
 import { getRemoteFiles, removeFile, uploadBudget } from "@/core/server/cloud-storage";
 import { getBudgets, loadPrefs, getPrefs } from "@/core/server/prefs";
 import {
@@ -60,11 +66,6 @@ type UseBudgetFilesReturn = {
 
 export function useBudgetFiles(): UseBudgetFilesReturn {
   const { serverUrl, token } = useSessionStore();
-  // budgetfilesSlice actions (stable identity — safe to select).
-  const loadBudget = useBudgetContextStore((s) => s.loadBudget);
-  const closeAndLoadBudget = useBudgetContextStore((s) => s.closeAndLoadBudget);
-  const closeAndDownloadBudget = useBudgetContextStore((s) => s.closeAndDownloadBudget);
-  const deleteBudget = useBudgetContextStore((s) => s.deleteBudget);
   const queryClient = useQueryClient();
   const [switching, setSwitching] = useState<SwitchingState>(null);
   const [errorDismissed, setErrorDismissed] = useState(false);

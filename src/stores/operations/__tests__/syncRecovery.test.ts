@@ -45,10 +45,14 @@ vi.mock("@/stores/budgetContextStore", () => ({
     getState: () => ({
       activeBudgetId: "budget-1",
       setBudgetContext: setBudgetContextMock,
-      closeBudget: closeBudgetMock,
-      loadBudget: loadBudgetMock,
     }),
   },
+}));
+// closeBudget/loadBudget are operations now — mock the operations module, not
+// the store (redownloadBudget imports them directly from budgetfiles).
+vi.mock("@/stores/operations/budgetfiles", () => ({
+  closeBudget: closeBudgetMock,
+  loadBudget: loadBudgetMock,
 }));
 vi.mock("@/core/server/prefs", () => ({
   readMetadata: readMetadataMock,

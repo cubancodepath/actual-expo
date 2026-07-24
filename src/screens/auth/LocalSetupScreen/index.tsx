@@ -6,6 +6,7 @@ import { Button, ListGroup, Spinner, Typography, useThemeColor } from "heroui-na
 import { getBudgets, type BudgetMetadata } from "@/core/server/prefs";
 import type { ReconciledBudgetFile } from "@/core/server/budgetfiles/app";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
+import { loadBudget } from "@/stores/operations/budgetfiles";
 import { BudgetFileRow } from "@/ui/BudgetFileRow";
 import { BudgetSetupWizard } from "@/screens/auth/components/BudgetSetupWizard";
 
@@ -27,7 +28,6 @@ export function LocalSetupScreen() {
   const router = useRouter();
   const { t } = useTranslation("auth");
   const accent = useThemeColor("accent");
-  const loadBudget = useBudgetContextStore((s) => s.loadBudget);
 
   const [screen, setScreen] = useState<ScreenState>("loading");
   const [budgets, setBudgets] = useState<BudgetMetadata[]>([]);

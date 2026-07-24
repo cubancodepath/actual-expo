@@ -32,6 +32,7 @@ import {
 import { Banner } from "@/design-system/molecules/Banner";
 import { useSessionStore } from "@/stores/sessionStore";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
+import { loadBudget } from "@/stores/operations/budgetfiles";
 import {
   DEFAULT_CATEGORY_GROUPS,
   getDefaultCategorySelection,
@@ -266,7 +267,6 @@ export function BudgetSetupWizard({ mode, onCancel, onComplete }: Props) {
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion() ?? false;
   const { t } = useTranslation("setup");
-  const loadBudget = useBudgetContextStore((s) => s.loadBudget);
 
   const [step, setStep] = useState<Step>("budget-name");
   const [prevStep, setPrevStep] = useState<Step | null>(null);

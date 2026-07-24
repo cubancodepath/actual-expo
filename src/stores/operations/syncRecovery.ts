@@ -13,17 +13,12 @@ import { resetSync as coreResetSync } from "@/core/sync/reset";
 import { useSyncStore } from "@/stores/syncStore";
 import { useSessionStore } from "@/stores/sessionStore";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
-
-// One-shot guard for the automatic recoveries: if e.g. resetSync's own upload
-// gets rejected again, retrying in a loop would hammer the server — fall
-// through to the conflict dialog instead. Cleared on any successful recovery
-// and on a budget switch (loadBudget calls clearAutoRecoveryGuard()).
-const autoRecoveryAttempted = new Set<ErrorCode>();
-
-/** Reset the one-shot auto-recovery guard (successful recovery / budget switch). */
-export function clearAutoRecoveryGuard(): void {
-  autoRecoveryAttempted.clear();
-}
+import { closeBudget, loadBudget } from "@/stores/operations/budgetfiles";
+import {
+  hasAttemptedRecovery,
+  markRecoveryAttempted,
+  clearAutoRecoveryGuard,
+} from "@/stores/operations/autoRecoveryGuard";
 
 /** Clear the conflict state AND the recovery guard (a resolution happened). */
 function resolveConflict(): void {
@@ -95,12 +90,12 @@ export async function redownloadBudget(): Promise<void> {
     });
   }
 
-  await useBudgetContextStore.getState().closeBudget();
+  await closeBudget();
   const newBudgetId = await downloadBudget(serverUrl, token, remote);
   await deleteBudgetDir(activeBudgetId);
 
   resolveConflict();
-  await useBudgetContextStore.getState().loadBudget(newBudgetId);
+  await loadBudget(newBudgetId);
 }
 
 /** Single entry point for sync/file-* rejections: auto-recover or raise conflict. */
@@ -119,11 +114,11 @@ export async function handleSyncFileError(code: ErrorCode): Promise<void> {
       // Server lost/never had the sync state for this file — this device's
       // copy is the only candidate, so re-registering it is safe to automate
       // (upstream's "Upload"/"Register" notification buttons).
-      if (autoRecoveryAttempted.has(code)) {
+      if (hasAttemptedRecovery(code)) {
         sync._setConflict(code);
         return;
       }
-      autoRecoveryAttempted.add(code);
+      markRecoveryAttempted(code);
       try {
         if (code === "sync/file-needs-upload") {
           await resetSync();

@@ -94,18 +94,17 @@ export const useSessionStore = create<SessionState>()(
         // Full teardown, ALWAYS: close the budget first (settles in-flight
         // sync, closes the DB, resets the data stores) so no caller of
         // signOut — sync policy, react-query 401 handler, settings — can
-        // leave an open database or stale sync state behind.
-        const { useBudgetContextStore } = await import("@/stores/budgetContextStore");
-        await useBudgetContextStore
-          .getState()
-          .closeBudget()
-          .catch(() => {});
+        // leave an open database or stale sync state behind. (Phase 3 moves
+        // signOut to operations/users, making these plain static calls.)
+        const { closeBudget } = await import("@/stores/operations/budgetfiles");
+        await closeBudget().catch(() => {});
 
         await SecureStore.deleteItemAsync(SECURE_TOKEN_KEY);
         await clearEncryptionKeys();
         unloadAllKeys();
 
         get().reset();
+        const { useBudgetContextStore } = await import("@/stores/budgetContextStore");
         useBudgetContextStore.getState().reset();
       },
     }),

@@ -26,6 +26,7 @@ import { Uniwind } from "uniwind";
 import { ThemeProvider } from "@/design-system/providers/ThemeProvider";
 import { useSessionStore } from "@/stores/sessionStore";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
+import { loadBudget } from "@/stores/operations/budgetfiles";
 import { useSyncStore } from "@/stores/syncStore";
 import { useGlobalPref } from "@/lib/hooks/useGlobalPref";
 import { useIsConfigured, getIsConfigured } from "@/stores/session.selectors";
@@ -93,7 +94,6 @@ function RootLayout() {
   const hasToken = useSessionStore((s) => s.hasToken);
   const isConfigured = useIsConfigured();
   const isLocalOnly = useBudgetContextStore((s) => s.isLocalOnly);
-  const loadBudget = useBudgetContextStore((s) => s.loadBudget);
   const [ready, setReady] = useState(false);
   const [fontsLoaded] = useFonts({
     Inter_400Regular,

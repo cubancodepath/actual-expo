@@ -23,7 +23,8 @@ import { ScreenHeader } from "@/ui/ScreenHeader";
 import { useSessionStore } from "@/stores/sessionStore";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import { useSyncStore } from "@/stores/syncStore";
-import { resetAllStores } from "@/stores/resetStores";
+import { resetAllStores } from "@/stores/operations/resetStores";
+import { closeBudget } from "@/stores/operations/budgetfiles";
 import { resetSyncState, clearSwitchingFlag, loadClock } from "@/core/sync";
 import { Timestamp } from "@/core/crdt";
 import { clearLocalData } from "@/core/db";
@@ -131,7 +132,6 @@ export function SettingsScreen() {
 
   const serverUrl = useSessionStore((s) => s.serverUrl);
   const { budgetName, lastSyncedTimestamp, isLocalOnly } = useBudgetContextStore();
-  const closeBudget = useBudgetContextStore((s) => s.closeBudget);
   const lastSync = useSyncStore((s) => s.lastSync);
   const [, setLoggingOut] = useState(false);
 

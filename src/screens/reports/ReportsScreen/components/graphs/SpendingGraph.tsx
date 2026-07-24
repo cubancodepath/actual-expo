@@ -49,12 +49,12 @@ export function SpendingGraph({ data, mode }: SpendingGraphProps) {
                 points={pts.comparison}
                 y0={chartBounds.bottom}
                 curveType="linear"
-                colorClassName="accent-chart-neutral"
+                colorClassName="accent-muted"
               />
               <LineChart.Line
                 points={pts.comparison}
                 curveType="linear"
-                colorClassName="accent-chart-neutral"
+                colorClassName="accent-muted"
               />
               <AreaChart.Area
                 points={pts.thisMonth}

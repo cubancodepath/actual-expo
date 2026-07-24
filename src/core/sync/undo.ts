@@ -242,8 +242,13 @@ function undoMessage(message: SyncMessage, oldData: OldData): SyncMessage | null
     return null;
   }
 
-  // Budget rows: only certain columns are reversible
-  if (message.dataset === "zero_budget_months" || message.dataset === "zero_budgets") {
+  // Budget rows: only certain columns are reversible (upstream includes
+  // reflect_budgets — the tracking-budget table — too; server/undo.ts:187-190)
+  if (
+    message.dataset === "zero_budget_months" ||
+    message.dataset === "zero_budgets" ||
+    message.dataset === "reflect_budgets"
+  ) {
     if (["buffered", "amount", "carryover"].includes(message.column)) {
       return { ...message, value: 0 };
     }

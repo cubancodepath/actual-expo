@@ -157,6 +157,34 @@ describe("undo — creation reversal", () => {
     expect(row?.amount).toBe(0);
   });
 
+  it("reflect_budgets.amount creation reverts to 0, not tombstone (tracking budget)", async () => {
+    await openTestDb();
+    const setBudget = undoable(async () => {
+      await sendMessages([
+        {
+          timestamp: Timestamp.send()!,
+          dataset: "reflect_budgets",
+          row: "rb1",
+          column: "amount",
+          value: 7000,
+        },
+      ]);
+    });
+    await setBudget();
+
+    let row = await first<{ amount: number }>("SELECT amount FROM reflect_budgets WHERE id = ?", [
+      "rb1",
+    ]);
+    expect(row?.amount).toBe(7000);
+
+    await undo();
+
+    row = await first<{ amount: number }>("SELECT amount FROM reflect_budgets WHERE id = ?", [
+      "rb1",
+    ]);
+    expect(row?.amount).toBe(0);
+  });
+
   it("category_mapping creation is NOT reversed (mapping row survives undo)", async () => {
     await openTestDb();
     const mapCategory = undoable(async () => {

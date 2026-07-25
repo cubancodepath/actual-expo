@@ -118,9 +118,32 @@ export function firstSync<T = unknown>(sql: string, params: SqliteBindParams = [
 }
 
 export async function transaction(fn: () => Promise<void>): Promise<void> {
-  // DEFERRED (not EXCLUSIVE) — the sequential guard in apply.ts prevents
-  // concurrent writers, so we don't need to block all readers during sync.
+  // DEFERRED (not EXCLUSIVE) — serializeDbWrite() prevents concurrent writers,
+  // so we don't need to block all readers during sync.
   await getDb().transaction(fn);
+}
+
+/**
+ * FIFO gate for every flow that opens a transaction.
+ *
+ * SQLite has no nested transactions: two overlapping `transaction()` calls
+ * fail with "cannot start a transaction within a transaction", and the loser's
+ * rollback then fails too. Since these flows are async, "overlapping" needs no
+ * concurrency — one awaiting mid-transaction while a timer fires is enough.
+ * Anything that opens a transaction must queue here instead of assuming it is
+ * the only writer.
+ */
+let writeQueue: Promise<unknown> = Promise.resolve();
+
+export function serializeDbWrite<T>(fn: () => Promise<T>): Promise<T> {
+  const result = writeQueue.then(fn);
+  // Swallow the outcome for the queue's purposes — one rejected write must not
+  // wedge every write behind it. The caller still sees the rejection.
+  writeQueue = result.then(
+    () => {},
+    () => {},
+  );
+  return result;
 }
 
 /** Wipe all local data by deleting rows from every table. Keeps the DB connection alive. */

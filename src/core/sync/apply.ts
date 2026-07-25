@@ -7,7 +7,7 @@
 
 import { getClock, merkle, Timestamp } from "@/core/crdt";
 import type { TrieNode } from "@/core/crdt/merkle";
-import { run, runQuery, runQuerySync, first, transaction } from "@/core/db";
+import { run, runQuery, runQuerySync, first, transaction, serializeDbWrite } from "@/core/db";
 import type { MessagesCrdtRow } from "@/core/db/types";
 import { ActualError } from "@/core/errors";
 import type { SyncMessage, OutgoingSyncMessage } from "./encoder";
@@ -65,23 +65,6 @@ function getWritableColumns(tables: Set<string>): Map<string, Set<string>> {
     map.set(table, new Set(rows.map((r) => r.name)));
   }
   return map;
-}
-
-/**
- * Sequential execution guard — prevents concurrent applyMessages calls
- * from corrupting the merkle trie or DB. Upstream wraps applyMessages
- * with sequential() for the same reason.
- */
-function sequential<T extends (...args: any[]) => Promise<any>>(fn: T): T {
-  let queue = Promise.resolve() as Promise<any>;
-  return ((...args: any[]) => {
-    const p = queue.then(() => fn(...args));
-    queue = p.then(
-      () => {},
-      () => {},
-    );
-    return p;
-  }) as T;
 }
 
 /**
@@ -152,9 +135,17 @@ async function applyMessagesForImport(messages: SyncMessage[]): Promise<void> {
   });
 }
 
-export const applyMessages = sequential(async function applyMessages(
-  messages: SyncMessage[],
-): Promise<OldData> {
+/**
+ * Concurrent applyMessages calls would corrupt the merkle trie and collide on
+ * transactions, so every call queues on the shared DB write gate — shared,
+ * because the spreadsheet's cache flush opens transactions too and must not
+ * interleave with an apply. Upstream wraps applyMessages with its own
+ * sequential() for the same reason.
+ */
+export const applyMessages = (messages: SyncMessage[]): Promise<OldData> =>
+  serializeDbWrite(() => applyMessagesBody(messages));
+
+async function applyMessagesBody(messages: SyncMessage[]): Promise<OldData> {
   if (messages.length === 0) return {};
 
   if (checkSyncingMode("import")) {
@@ -301,7 +292,7 @@ export const applyMessages = sequential(async function applyMessages(
   }
 
   return oldData;
-});
+}
 
 export async function getMessagesSince(since: string): Promise<OutgoingSyncMessage[]> {
   const rows = await runQuery<MessagesCrdtRow>(

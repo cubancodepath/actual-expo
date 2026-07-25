@@ -232,6 +232,9 @@ importers:
       react-native-worklets:
         specifier: ^0.7.4
         version: 0.7.4(@babel/core@7.29.7)(react-native@0.83.2(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.0))(react@19.2.0)
+      recurrence-fns:
+        specifier: workspace:*
+        version: link:packages/recurrence-fns
       tailwind-merge:
         specifier: ^3.6.0
         version: 3.6.0
@@ -295,6 +298,12 @@ importers:
         version: 4.1.9(@types/node@26.0.1)(vite@8.1.0(@types/node@26.0.1)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.0))
 
   packages/hyperformula: {}
+
+  packages/recurrence-fns:
+    devDependencies:
+      date-fns:
+        specifier: ^4.1.0
+        version: 4.4.0
 
 packages:
 

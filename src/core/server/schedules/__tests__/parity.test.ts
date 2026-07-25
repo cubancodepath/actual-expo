@@ -22,12 +22,7 @@ import {
   indexPostedScheduleTransactions,
   isScheduleOccurrencePosted,
 } from "@/core/shared/schedules";
-import {
-  getUpcomingDates,
-  applySkipWeekend,
-  parseDate,
-  dayFromDate,
-} from "@/core/shared/schedules";
+import { getUpcomingDates } from "@/core/server/schedules";
 import { computePreviewTransactions } from "@/core/shared/schedules";
 import type { Schedule, RuleCondition } from "@/core/types/models";
 import type { ScheduleStatuses } from "@/core/shared/schedules";
@@ -187,23 +182,34 @@ describe("posted-transaction matching", () => {
 });
 
 describe("getUpcomingDates applies skipWeekend", () => {
+  // "Today" is March 10 2026; a Saturday series starting March 7 is already
+  // running, so the upcoming dates are March 14, 21, ...
+  const saturdays = {
+    frequency: "weekly" as const,
+    interval: 1,
+    start: "2026-03-07",
+  };
+
   it("pushes weekend occurrences to the configured side", () => {
-    const config = {
-      frequency: "weekly" as const,
-      interval: 1,
-      start: "2026-03-07", // a Saturday
-      skipWeekend: true,
-      weekendSolveMode: "after" as const,
-    };
-    const dates = getUpcomingDates(config, 2, parseDate("2026-03-07")).map(dayFromDate);
+    const dates = getUpcomingDates({
+      config: { ...saturdays, skipWeekend: true, weekendSolveMode: "after" },
+      count: 2,
+    });
     // Each Saturday is pushed to the following Monday.
-    expect(dates.every((d) => new Date(d + "T12:00:00").getDay() === 1)).toBe(true);
+    expect(dates).toEqual(["2026-03-16", "2026-03-23"]);
   });
 
-  it("applySkipWeekend is a no-op when disabled", () => {
-    const config = { frequency: "weekly" as const, start: "2026-03-07" };
-    const sat = parseDate("2026-03-07");
-    expect(applySkipWeekend(config, sat).getTime()).toBe(sat.getTime());
+  it("solves backwards when asked", () => {
+    const dates = getUpcomingDates({
+      config: { ...saturdays, skipWeekend: true, weekendSolveMode: "before" },
+      count: 2,
+    });
+    expect(dates).toEqual(["2026-03-13", "2026-03-20"]);
+  });
+
+  it("leaves the dates alone when the skip is disabled", () => {
+    const dates = getUpcomingDates({ config: saturdays, count: 2 });
+    expect(dates).toEqual(["2026-03-14", "2026-03-21"]);
   });
 });
 

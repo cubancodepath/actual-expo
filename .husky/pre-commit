@@ -1,2 +1,3 @@
-bash scripts/check-arch.sh
+bash scripts/check-fat-routes.sh
+npm run check:arch
 npx lint-staged

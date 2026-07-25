@@ -37,6 +37,13 @@ import type {
 import { currentDay, strToInt } from "./months";
 import { q } from "@/core/queries";
 import type { Query } from "@/core/shared/query";
+import { RSchedule } from "@/core/server/util/rschedule";
+import type { ByDayOfWeekEntry, IRuleOptions } from "@/core/server/util/rschedule";
+
+/** The weekend-skip settings a schedule carries alongside its recurrence. */
+type ScheduleRecurData = { skipWeekend?: boolean; weekendSolve?: "before" | "after" };
+
+type ScheduleRuleOptions = IRuleOptions & { interval?: number; byHourOfDay?: number[] };
 
 // ═══ former schedules/recurrence.ts ═══
 
@@ -59,6 +66,104 @@ export function getDateWithSkippedWeekend(date: Date, solveMode: "before" | "aft
     return solveMode === "after" ? nextMonday(date) : previousFriday(date);
   }
   return date;
+}
+
+// ─── Recurrence engine ─────────────────────────────────────
+
+/** Port of loot-core/src/shared/schedules.ts `recurConfigToRSchedule`. */
+export function recurConfigToRSchedule(config: RecurConfig): IRuleOptions[] {
+  const base: ScheduleRuleOptions = {
+    start: parseDate(config.start),
+    frequency: config.frequency.toUpperCase() as IRuleOptions["frequency"],
+    byHourOfDay: [12],
+  };
+
+  if (config.interval) {
+    base.interval = config.interval;
+  }
+
+  switch (config.endMode) {
+    case "after_n_occurrences":
+      base.count = config.endOccurrences;
+      break;
+    case "on_date":
+      base.end = parseDate(config.endDate!);
+      break;
+    default:
+      break;
+  }
+
+  const abbrevDay = (name: string) => name.slice(0, 2).toUpperCase();
+
+  switch (config.frequency) {
+    case "daily":
+    case "weekly":
+    case "yearly":
+      return [base];
+    case "monthly":
+      if (config.patterns && config.patterns.length > 0) {
+        const days = config.patterns.filter((p) => p.type === "day");
+        const dayNames = config.patterns.filter((p) => p.type !== "day");
+
+        return [
+          days.length > 0 && { ...base, byDayOfMonth: days.map((p) => p.value) },
+          dayNames.length > 0 && {
+            ...base,
+            byDayOfWeek: dayNames.map((p) => [abbrevDay(p.type), p.value] as ByDayOfWeekEntry),
+          },
+        ].filter(Boolean) as IRuleOptions[];
+      }
+      return [base];
+    default:
+      throw new Error("Invalid recurring date config");
+  }
+}
+
+/** Build the recurrence for a schedule's date condition. */
+export function scheduleFromRecurConfig(config: RecurConfig): RSchedule<ScheduleRecurData> {
+  return new RSchedule<ScheduleRecurData>({
+    rrules: recurConfigToRSchedule(config),
+    data: { skipWeekend: config.skipWeekend, weekendSolve: config.weekendSolveMode },
+  });
+}
+
+/**
+ * Next date for a schedule's date condition, as 'YYYY-MM-DD'.
+ * Port of loot-core/src/shared/schedules.ts `getNextDate`.
+ *
+ * Upstream routes the condition value through `Condition.getValue()`; we read
+ * the two shapes it can hold directly, to keep src/core/shared free of an
+ * import cycle back into the rules engine.
+ */
+export function getNextDate(
+  dateCond: RuleCondition,
+  start: Date = startOfDay(new Date()),
+  noSkipWeekend = false,
+): string | null {
+  if (typeof dateCond.value === "string") {
+    return dateCond.value;
+  }
+  if (!dateCond.value || typeof dateCond.value !== "object") {
+    return null;
+  }
+
+  const schedule = scheduleFromRecurConfig(dateCond.value as RecurConfig);
+
+  let dates = schedule.occurrences({ start: startOfDay(start), take: 1 }).toArray();
+  if (dates.length === 0) {
+    // A finite schedule that has run out: fall back to its last occurrence, so
+    // the UI can still show when it ended.
+    dates = schedule.occurrences({ reverse: true, take: 1 }).toArray();
+  }
+  if (dates.length === 0) {
+    return null;
+  }
+
+  let date = dates[0].date;
+  if (schedule.data.skipWeekend && !noSkipWeekend) {
+    date = getDateWithSkippedWeekend(date, schedule.data.weekendSolve ?? "after");
+  }
+  return dayFromDate(date);
 }
 
 // ─── Day-of-week map ───────────────────────────────────────

@@ -2,11 +2,58 @@ import { useState } from "react";
 import { View } from "react-native";
 import { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { useTranslation } from "react-i18next";
-import { BottomSheet, Button, Chip, Input, useThemeColor } from "heroui-native";
+import {
+  BottomSheet,
+  Button,
+  Chip,
+  Input,
+  useBottomSheetAwareHandlers,
+  useThemeColor,
+} from "heroui-native";
 import { Plus, Tags as TagsIcon } from "lucide-react-native";
 import { extractTagsFromNotes } from "@/core/shared/tags";
 import type { Tag } from "@/core/types/models";
 import { FieldRow } from "@/ui/money-entry/FieldRow";
+
+/**
+ * The draft-tag input row. Its own component so it can call
+ * `useBottomSheetAwareHandlers`, which only works from inside
+ * `BottomSheet.Content` — without the `target` those handlers set, gorhom
+ * discards keyboard events for the sheet entirely.
+ */
+function TagDraftRow({
+  value,
+  onChangeText,
+  onAdd,
+  placeholder,
+  accent,
+}: {
+  value: string;
+  onChangeText: (next: string) => void;
+  onAdd: () => void;
+  placeholder: string;
+  accent: string;
+}) {
+  const { onFocus, onBlur } = useBottomSheetAwareHandlers();
+
+  return (
+    <View className="mb-3 flex-row items-center gap-2">
+      <Input
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        className="flex-1"
+        onSubmitEditing={onAdd}
+        autoCapitalize="none"
+        onFocus={onFocus}
+        onBlur={onBlur}
+      />
+      <Button size="sm" variant="secondary" isIconOnly onPress={onAdd}>
+        <Plus size={20} color={accent} />
+      </Button>
+    </View>
+  );
+}
 
 type TagsFieldProps = {
   notes: string;
@@ -65,19 +112,13 @@ export function TagsField({ notes, tags, onChangeNotes }: TagsFieldProps) {
             contentContainerClassName="h-full"
           >
             <BottomSheet.Title className="mb-3">{t("tags")}</BottomSheet.Title>
-            <View className="mb-3 flex-row items-center gap-2">
-              <Input
-                value={draft}
-                onChangeText={setDraft}
-                placeholder={t("addTag")}
-                className="flex-1"
-                onSubmitEditing={addDraft}
-                autoCapitalize="none"
-              />
-              <Button size="sm" variant="secondary" isIconOnly onPress={addDraft}>
-                <Plus size={20} color={accent} />
-              </Button>
-            </View>
+            <TagDraftRow
+              value={draft}
+              onChangeText={setDraft}
+              onAdd={addDraft}
+              placeholder={t("addTag")}
+              accent={accent}
+            />
             <BottomSheetScrollView keyboardShouldPersistTaps="handled">
               <View className="flex-row flex-wrap gap-2">
                 {all.map((tag) => {

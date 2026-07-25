@@ -2,19 +2,16 @@ import { View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Button } from "heroui-native";
-import { AmountSheet } from "@/screens/budget/components/AmountSheet";
+import { EnvelopeSheet } from "@/screens/budget/components/EnvelopeSheet";
 import { TransferEntryList } from "@/screens/budget/components/TransferEntryList";
 import { useTransferFlow } from "@/screens/budget/hooks/useTransferFlow";
 import { AmountKeyboard } from "@/ui/amount-keyboard";
 
-/** Hero height before its first onLayout measurement (title + amount). */
-const HERO_HEIGHT_FALLBACK = 180;
-
 /**
  * Cover-source screen: pick funding sources and how much to take from each to
  * cover an overspent category. A {@link useTransferFlow} pinned to `"to"` — money
- * only ever comes in — inside an {@link AmountSheet} whose hero shows what's still
- * missing, tinted danger while money is needed and success once covered.
+ * only ever comes in — inside an {@link EnvelopeSheet} whose hero shows what's
+ * still missing, tinted danger while money is needed and success once covered.
  */
 export function CoverSourceScreen() {
   const { t } = useTranslation("budget");
@@ -36,10 +33,10 @@ export function CoverSourceScreen() {
   const isCovered = flow.projected >= 0 && flow.entries.length > 0;
 
   return (
-    <AmountSheet status={isCovered ? "success" : "danger"} fallbackHeight={HERO_HEIGHT_FALLBACK}>
-      <AmountSheet.Backdrop />
+    <EnvelopeSheet tone={isCovered ? "success" : "danger"}>
+      <EnvelopeSheet.Backdrop />
 
-      <AmountSheet.Body
+      <EnvelopeSheet.Body
         ref={flow.scrollRef}
         {...flow.scrollProps}
         contentContainerStyle={{ paddingBottom: flow.bottomPadding }}
@@ -53,14 +50,14 @@ export function CoverSourceScreen() {
             onAddCategory={flow.handleAddCategory}
           />
         </View>
-      </AmountSheet.Body>
+      </EnvelopeSheet.Body>
 
-      <AmountSheet.Hero>
-        <AmountSheet.Title>{catName}</AmountSheet.Title>
-        <AmountSheet.Amount cents={flow.projected} />
-      </AmountSheet.Hero>
+      <EnvelopeSheet.Hero>
+        <EnvelopeSheet.Title>{catName}</EnvelopeSheet.Title>
+        <EnvelopeSheet.Amount cents={flow.projected} />
+      </EnvelopeSheet.Hero>
 
-      <AmountSheet.Close onPress={() => router.back()} />
+      <EnvelopeSheet.Close onPress={() => router.back()} />
 
       {/* Cover as a labelled FAB (AddTransactionFab pattern), hidden while the
           amount pad is open. */}
@@ -88,6 +85,6 @@ export function CoverSourceScreen() {
           <AmountKeyboard.Panel onHeightChange={flow.onKeyboardHeightChange} />
         </AmountKeyboard.Portal>
       </AmountKeyboard>
-    </AmountSheet>
+    </EnvelopeSheet>
   );
 }

@@ -3,20 +3,17 @@ import { View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Button } from "heroui-native";
-import { AmountSheet } from "@/screens/budget/components/AmountSheet";
+import { EnvelopeSheet } from "@/screens/budget/components/EnvelopeSheet";
 import { TransferEntryList } from "@/screens/budget/components/TransferEntryList";
 import { useTransferFlow, type TransferDirection } from "@/screens/budget/hooks/useTransferFlow";
 import { AmountKeyboard } from "@/ui/amount-keyboard";
 import { DirectionToggle } from "./components/DirectionToggle";
 
-/** Hero height before its first onLayout measurement (title + amount + toggle). */
-const HERO_HEIGHT_FALLBACK = 250;
-
 /**
  * Move-money screen: move budgeted money between the category it was opened for
  * and one or more counterparts, in either direction. The same
  * {@link useTransferFlow} the cover sheet runs on, but with the direction under
- * the user's control, and an {@link AmountSheet} whose hero carries the toggle
+ * the user's control, and an {@link EnvelopeSheet} whose hero carries the toggle
  * and whose tint tracks the projected balance — danger when the category would
  * end up negative, success when positive, balanced at zero.
  */
@@ -45,13 +42,10 @@ export function MoveMoneyScreen() {
   const { projected } = flow;
 
   return (
-    <AmountSheet
-      status={projected < 0 ? "danger" : projected > 0 ? "success" : "balanced"}
-      fallbackHeight={HERO_HEIGHT_FALLBACK}
-    >
-      <AmountSheet.Backdrop />
+    <EnvelopeSheet tone={projected < 0 ? "danger" : projected > 0 ? "success" : "balanced"}>
+      <EnvelopeSheet.Backdrop />
 
-      <AmountSheet.Body
+      <EnvelopeSheet.Body
         ref={flow.scrollRef}
         {...flow.scrollProps}
         contentContainerStyle={{ paddingBottom: flow.bottomPadding }}
@@ -66,17 +60,17 @@ export function MoveMoneyScreen() {
             onAddCategory={flow.handleAddCategory}
           />
         </View>
-      </AmountSheet.Body>
+      </EnvelopeSheet.Body>
 
-      <AmountSheet.Hero>
-        <AmountSheet.Title>{catName}</AmountSheet.Title>
-        <AmountSheet.Amount cents={projected} />
+      <EnvelopeSheet.Hero>
+        <EnvelopeSheet.Title>{catName}</EnvelopeSheet.Title>
+        <EnvelopeSheet.Amount cents={projected} />
         <View className="mt-2">
           <DirectionToggle value={direction} onChange={setDirection} />
         </View>
-      </AmountSheet.Hero>
+      </EnvelopeSheet.Hero>
 
-      <AmountSheet.Close onPress={() => router.back()} />
+      <EnvelopeSheet.Close onPress={() => router.back()} />
 
       {/* Move as a labelled FAB (AddTransactionFab pattern), hidden while the
           amount pad is open. */}
@@ -103,6 +97,6 @@ export function MoveMoneyScreen() {
           <AmountKeyboard.Panel onHeightChange={flow.onKeyboardHeightChange} />
         </AmountKeyboard.Portal>
       </AmountKeyboard>
-    </AmountSheet>
+    </EnvelopeSheet>
   );
 }

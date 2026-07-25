@@ -8,6 +8,7 @@ import {
   Eye,
   EyeOff,
   MoreHorizontal,
+  NotebookPen,
   Settings,
   SlidersHorizontal,
   Undo2,
@@ -19,8 +20,8 @@ import { noop } from "@/screens/budget/constants";
 
 /**
  * Budget screen header (HeroUI Native): month selector on the left, actions on
- * the right. Only the month picker is functional for now — Edit Plan and the
- * overflow menu are visual placeholders to be wired in later steps.
+ * the right. The month picker and Edit Plan are wired; the overflow menu's Undo
+ * is still a visual placeholder.
  */
 export function BudgetHeader() {
   const { t } = useTranslation("budget");
@@ -42,26 +43,21 @@ export function BudgetHeader() {
         <Button
           isIconOnly
           variant="tertiary"
-          size="sm"
-          onPress={noop}
+          onPress={() => router.push("/(auth)/budget/edit")}
           accessibilityLabel={t("editBudget")}
         >
-          <SlidersHorizontal size={20} color={foreground} />
+          <NotebookPen size={20} color={foreground} />
         </Button>
 
         <Menu>
           <Menu.Trigger asChild>
-            <Button isIconOnly variant="tertiary" size="sm">
+            <Button isIconOnly variant="tertiary">
               <MoreHorizontal size={20} color={foreground} />
             </Button>
           </Menu.Trigger>
           <Menu.Portal>
             <Menu.Overlay />
             <Menu.Content presentation="popover" width={220} placement="bottom" align="end">
-              <Menu.Item className="gap-3" onPress={noop}>
-                <ChartNoAxesColumn size={18} color={foreground} />
-                <Menu.ItemTitle>{t("showProgress")}</Menu.ItemTitle>
-              </Menu.Item>
               <Menu.Item className="gap-3" onPress={noop}>
                 <Undo2 size={18} color={foreground} />
                 <Menu.ItemTitle>{t("undo")}</Menu.ItemTitle>

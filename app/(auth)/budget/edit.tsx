@@ -1,5 +1,1 @@
-import { EditBudgetScreen } from "@/features/budget/screens/EditBudgetScreen";
-
-export default function EditBudgetRoute() {
-  return <EditBudgetScreen />;
-}
+export { EditBudgetScreen as default } from "@/screens/budget/EditBudgetScreen";

@@ -1,0 +1,27 @@
+import {
+  EnvelopeSheetAmount,
+  EnvelopeSheetBackdrop,
+  EnvelopeSheetBody,
+  EnvelopeSheetClose,
+  EnvelopeSheetHero,
+  EnvelopeSheetPinned,
+  EnvelopeSheetRoot,
+  EnvelopeSheetTitle,
+} from "./EnvelopeSheet";
+
+export const EnvelopeSheet = Object.assign(EnvelopeSheetRoot, {
+  /** The curved slab; behind the body, or over it when there's a pinned card. */
+  Backdrop: EnvelopeSheetBackdrop,
+  /** Root-level scrolling content, tucked under the hero. */
+  Body: EnvelopeSheetBody,
+  /** A card fixed in the backdrop's curve; the body scrolls behind it. */
+  Pinned: EnvelopeSheetPinned,
+  /** The measured front layer holding the title, the amount and anything else. */
+  Hero: EnvelopeSheetHero,
+  Title: EnvelopeSheetTitle,
+  Amount: EnvelopeSheetAmount,
+  /** Floating dismiss control; pass children to swap the default button. */
+  Close: EnvelopeSheetClose,
+});
+
+export type { EnvelopeSheetPresentation, EnvelopeSheetTone } from "./context";

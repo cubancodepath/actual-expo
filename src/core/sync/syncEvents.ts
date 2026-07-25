@@ -44,6 +44,17 @@ type Listener = (event: SyncEvent) => void;
 
 const listeners = new Set<Listener>();
 
+// While a budget is being CREATED its file is not the active one — notifying
+// listeners would make the old budget's mounted liveQueries/spreadsheet
+// re-query the temporary connection (racing the close that follows → native
+// SIGSEGV in expo-sqlite) and repaint old screens with the wrong budget's
+// data. The create workflow mutes the bus for that window.
+let muted = false;
+
+export function setSyncEventsMuted(m: boolean): void {
+  muted = m;
+}
+
 /**
  * Subscribe to sync events. Returns an unsubscribe function.
  */
@@ -58,6 +69,7 @@ export function listen(fn: Listener): () => void {
  * Emit a sync event to all listeners.
  */
 export function emit(event: SyncEvent): void {
+  if (muted) return;
   for (const fn of listeners) {
     fn(event);
   }

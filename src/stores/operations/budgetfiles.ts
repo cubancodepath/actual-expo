@@ -22,9 +22,10 @@ import {
   loadPrefs,
   unloadPrefs,
 } from "@/core/server/prefs";
-import { downloadBudget, possiblyUpload } from "@/core/server/cloud-storage";
+import { downloadBudget, possiblyUpload, uploadBudget } from "@/core/server/cloud-storage";
 import type { RemoteBudgetFile } from "@/core/server/cloud-storage";
-import { emit } from "@/core/sync/syncEvents";
+import { emit, setSyncEventsMuted } from "@/core/sync/syncEvents";
+import { createBudget } from "@/core/server/budgetfiles/app";
 import type { ReconciledBudgetFile } from "@/core/server/budgetfiles/app";
 import * as encryption from "@/core/encryption";
 import { loadKeyForBudget } from "@/core/encryption/keys";
@@ -42,6 +43,24 @@ import { busy } from "@/ui/feedback/busy/busyStore";
 
 /** Max time the busy overlay waits for the first post-download sync. */
 const FIRST_SYNC_OVERLAY_TIMEOUT_MS = 30_000;
+
+/**
+ * Settle sync and close the current budget's DB safely — the shared "step 1"
+ * of every budget switch. Does NOT resetAllStores() (see the note in
+ * loadBudget). After this, the db handle is null so any late liveQuery
+ * refetch no-ops via runQuery's guard instead of racing the native close.
+ */
+async function settleAndCloseCurrentBudget(): Promise<void> {
+  await waitForSyncToSettle();
+  resetSyncState();
+  unloadPrefs();
+  // Sync UI state (conflict dialog, error badge, lastSync) is scoped to a
+  // budget — never carry it into the next one. The recovery guard is
+  // per-budget too (cross-budget contamination fix).
+  useSyncStore.getState().resetForBudgetSwitch();
+  clearAutoRecoveryGuard();
+  await closeDatabase();
+}
 
 /** Open an existing local budget (upstream budgetfilesSlice `loadBudget`). */
 export async function loadBudget(budgetId: string, opts?: { force?: boolean }): Promise<void> {
@@ -63,15 +82,7 @@ export async function loadBudget(budgetId: string, opts?: { force?: boolean }): 
     // components with EaseView (BudgetGroupHeader, etc.), causing a native SIGSEGV
     // when Fabric tries to update props on deallocating views. Instead, we let
     // the data transition happen atomically when activeBudgetId changes.
-    await waitForSyncToSettle();
-    resetSyncState();
-    unloadPrefs();
-    // Sync UI state (conflict dialog, error badge, lastSync) is scoped to a
-    // budget — never carry it into the next one. The recovery guard is
-    // per-budget too (cross-budget contamination fix).
-    useSyncStore.getState().resetForBudgetSwitch();
-    clearAutoRecoveryGuard();
-    await closeDatabase();
+    await settleAndCloseCurrentBudget();
     lap("close + reset");
 
     // 2. Open DB + load clock
@@ -158,13 +169,14 @@ export async function loadBudget(budgetId: string, opts?: { force?: boolean }): 
     if (balanceQueries.length > 0) await Promise.all(balanceQueries);
     lap("pre-fetch queries");
 
-    // 6. Initialize spreadsheet engine with local data. Phase message +
-    // per-chunk progress on the busy overlay (no-ops when loadBudget runs
-    // outside busy.run, e.g. the splash-covered bootstrap reopen).
+    // 6. Initialize spreadsheet engine with local data. Phase message on the
+    // busy overlay (no-op when loadBudget runs outside busy.run, e.g. the
+    // splash-covered bootstrap reopen). initSpreadsheet still takes an
+    // onProgress callback, but the overlay deliberately shows no counter.
     const { initSpreadsheet } = await import("@/core/server/sheet");
     const { default: i18n } = await import("@/i18n/config");
     busy.setMessage(i18n.t("common:calculatingBudget"));
-    await initSpreadsheet((done, total) => busy.setProgress(done, total));
+    await initSpreadsheet();
     lap("initSpreadsheet");
 
     // 7. Set sync-related budget context (needed for fullSync)
@@ -236,6 +248,69 @@ export async function loadBudget(budgetId: string, opts?: { force?: boolean }): 
     await closeBudget().catch(() => {});
     throw error;
   }
+}
+
+/**
+ * Create a new budget file and open it (the "New Budget" screen workflow).
+ *
+ * Sequencing matters — createBudget opens a raw connection on the GLOBAL db
+ * handle to seed the new file, and the sync-event bus is global too. Without
+ * the settle/mute discipline two native races appear (SIGSEGV on
+ * expo.module.sqlite.AsyncQueue):
+ *   1. createBudget's openDatabase would steal the ACTIVE budget's connection
+ *      while its liveQueries/spreadsheet/sync still run statements on it.
+ *   2. the seed's batched writes emit "applied" events, making the old
+ *      screens' liveQueries re-query the temporary connection right as we
+ *      close it before the proper loadBudget.
+ * Upstream never hits this: its server runs behind an IPC layer with no
+ * shared connection, and create-budget copies a bundled template db.
+ *
+ * On a server-mode upload failure the local file already exists — pass the
+ * returned/previous id back as `existingBudgetId` to retry without
+ * re-seeding (duplicate data otherwise).
+ */
+export async function createAndLoadBudget(opts: {
+  budgetName: string;
+  mode: "local" | "server";
+  existingBudgetId?: string;
+}): Promise<string> {
+  // Blocking overlay for the whole thing — this ends in loadBudget, the same
+  // heavy work closeAndLoadBudget already covers. No message: the overlay's
+  // generic label is deliberate (LoadingOverlay: "same overlay everywhere").
+  return busy.run(async () => {
+    // 1. Settle + close whatever budget is open (kills race 1; the switching
+    // flag also pauses the periodic sync until loadBudget clears it).
+    await settleAndCloseCurrentBudget();
+
+    // 2. Create + seed + upload with the event bus muted (kills race 2: nothing
+    // re-queries the temporary connection, so the close below can't race).
+    let budgetId = opts.existingBudgetId;
+    setSyncEventsMuted(true);
+    try {
+      if (!budgetId) {
+        budgetId = await createBudget({ budgetName: opts.budgetName });
+      }
+      if (opts.mode === "server") {
+        // Writes cloudFileId/groupId into metadata — loadBudget picks them up
+        // and enables syncing + the background fullSync on its own.
+        const { serverUrl, token } = useSessionStore.getState();
+        await uploadBudget(serverUrl, token, budgetId);
+      }
+      // Close the raw seed connection; safe now — no statements in flight.
+      await closeDatabase();
+    } finally {
+      setSyncEventsMuted(false);
+    }
+
+    // 3. Proper open: prefs, pre-fetch, spreadsheet, context, background sync.
+    await loadBudget(budgetId);
+
+    // loadBudget doesn't own the local-only flag — it comes from how the
+    // budget was created, not from metadata.
+    useBudgetContextStore.getState().setBudgetContext({ isLocalOnly: opts.mode === "local" });
+
+    return budgetId;
+  });
 }
 
 /** Close the currently open budget without opening another. */

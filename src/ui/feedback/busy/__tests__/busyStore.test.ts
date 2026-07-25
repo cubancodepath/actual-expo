@@ -5,7 +5,7 @@ const state = () => useBusyStore.getState();
 
 describe("busy service", () => {
   beforeEach(() => {
-    useBusyStore.setState({ count: 0, message: null, progress: null });
+    useBusyStore.setState({ count: 0, message: null });
   });
 
   it("shows during run and cleans up after", async () => {
@@ -19,7 +19,7 @@ describe("busy service", () => {
     );
 
     expect(result).toBe(42);
-    expect(state()).toMatchObject({ count: 0, message: null, progress: null });
+    expect(state()).toMatchObject({ count: 0, message: null });
   });
 
   it("always cleans up when the wrapped fn throws", async () => {
@@ -29,7 +29,7 @@ describe("busy service", () => {
       }),
     ).rejects.toThrow("boom");
 
-    expect(state()).toMatchObject({ count: 0, message: null, progress: null });
+    expect(state()).toMatchObject({ count: 0, message: null });
   });
 
   it("is re-entrant: nested runs keep the overlay up until the last one ends", async () => {
@@ -50,23 +50,18 @@ describe("busy service", () => {
     expect(state().count).toBe(0);
   });
 
-  it("updates message and progress only while running", async () => {
+  it("updates the message only while running", async () => {
     busy.setMessage("ignored");
-    busy.setProgress(1, 2);
     expect(state().message).toBeNull();
-    expect(state().progress).toBeNull();
 
     await busy.run(async () => {
       busy.setMessage("phase 2");
-      busy.setProgress(3, 10);
       expect(state().message).toBe("phase 2");
-      expect(state().progress).toEqual({ done: 3, total: 10 });
 
-      // A new phase message invalidates the previous phase's progress.
       busy.setMessage("phase 3");
-      expect(state().progress).toBeNull();
+      expect(state().message).toBe("phase 3");
     });
 
-    expect(state()).toMatchObject({ count: 0, message: null, progress: null });
+    expect(state()).toMatchObject({ count: 0, message: null });
   });
 });

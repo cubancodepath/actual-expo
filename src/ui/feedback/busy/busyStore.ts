@@ -14,8 +14,8 @@ import { create } from "zustand";
  * never leave the app stuck behind the overlay. Raw begin/end are deliberately
  * not exported. Messages are already-translated strings (callers own i18n);
  * the host falls back to the generic `common:justAMoment` when null. When
- * nested runs finish, the last message/progress set wins until the counter
- * drains to zero.
+ * nested runs finish, the last message set wins until the counter drains to
+ * zero.
  */
 
 type BusyState = {
@@ -23,14 +23,11 @@ type BusyState = {
   count: number;
   /** Current phase message, or null for the host's generic fallback. */
   message: string | null;
-  /** Optional progress shown as a secondary "done/total" line. */
-  progress: { done: number; total: number } | null;
 };
 
 export const useBusyStore = create<BusyState>(() => ({
   count: 0,
   message: null,
-  progress: null,
 }));
 
 export const busy = {
@@ -45,18 +42,13 @@ export const busy = {
     } finally {
       useBusyStore.setState((s) => {
         const count = Math.max(0, s.count - 1);
-        return count === 0 ? { count, message: null, progress: null } : { count };
+        return count === 0 ? { count, message: null } : { count };
       });
     }
   },
 
-  /** Update the phase message of the running operation (clears progress). */
+  /** Update the phase message of the running operation. */
   setMessage(message: string | null): void {
-    useBusyStore.setState((s) => (s.count > 0 ? { message, progress: null } : s));
-  },
-
-  /** Update the "done/total" progress line of the running operation. */
-  setProgress(done: number, total: number): void {
-    useBusyStore.setState((s) => (s.count > 0 ? { progress: { done, total } } : s));
+    useBusyStore.setState((s) => (s.count > 0 ? { message } : s));
   },
 };

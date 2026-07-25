@@ -8,7 +8,7 @@ import { keyMake, keyTest } from "@/core/encryption/app";
 import { useSessionStore } from "@/stores/sessionStore";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import { ScreenHeader } from "@/ui/ScreenHeader";
-import { LoadingOverlay } from "@/ui/LoadingOverlay";
+import { busy } from "@/ui/feedback/busy";
 import {
   settleEncryptionPrompt,
   useEncryptionPromptStore,
@@ -63,12 +63,10 @@ export function EncryptionPasswordScreen() {
     setError("");
     setLoading(true);
 
-    const { serverUrl, token } = useSessionStore.getState();
-    const result = await keyTest({
-      serverUrl,
-      token,
-      cloudFileId,
-      password: password.trim(),
+    // Blocks behind the root overlay (which reaches over this form sheet).
+    const result = await busy.run(() => {
+      const { serverUrl, token } = useSessionStore.getState();
+      return keyTest({ serverUrl, token, cloudFileId, password: password.trim() });
     });
 
     if (!("error" in result)) {
@@ -91,17 +89,19 @@ export function EncryptionPasswordScreen() {
     setError("");
     setLoading(true);
 
-    // Yield so the loading state paints before the heavy crypto work.
-    await new Promise((resolve) => setTimeout(resolve, 50));
-
-    const { serverUrl, token } = useSessionStore.getState();
     const { activeBudgetId } = useBudgetContextStore.getState();
-    const result = await keyMake({
-      serverUrl,
-      token,
-      cloudFileId,
-      budgetId: activeBudgetId,
-      password: password.trim(),
+    // Blocks behind the root overlay (which reaches over this form sheet).
+    const result = await busy.run(async () => {
+      // Yield so the overlay paints before the heavy crypto work.
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      const { serverUrl, token } = useSessionStore.getState();
+      return keyMake({
+        serverUrl,
+        token,
+        cloudFileId,
+        budgetId: activeBudgetId,
+        password: password.trim(),
+      });
     });
 
     if (!("error" in result)) {
@@ -208,8 +208,6 @@ export function EncryptionPasswordScreen() {
           <Button.Label>{isEnable ? t("encryption.enable") : t("encryption.unlock")}</Button.Label>
         </Button>
       </View>
-
-      <LoadingOverlay visible={loading} />
     </View>
   );
 }

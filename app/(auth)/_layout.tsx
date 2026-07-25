@@ -192,7 +192,10 @@ export default function AuthLayout() {
         name="settings"
         options={{ headerShown: false, presentation: "fullScreenModal" }}
       />
-      <Stack.Screen name="new-budget" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="new-budget"
+        options={{ headerShown: false, presentation: "fullScreenModal" }}
+      />
     </Stack>
   );
 }

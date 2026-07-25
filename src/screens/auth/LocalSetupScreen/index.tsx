@@ -8,7 +8,7 @@ import type { ReconciledBudgetFile } from "@/core/server/budgetfiles/app";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import { loadBudget } from "@/stores/operations/budgetfiles";
 import { BudgetFileRow } from "@/ui/BudgetFileRow";
-import { BudgetSetupWizard } from "@/screens/auth/components/BudgetSetupWizard";
+import { NewBudgetScreen } from "@/screens/auth/NewBudgetScreen";
 
 type ScreenState = "loading" | "picker" | "wizard";
 
@@ -62,9 +62,14 @@ export function LocalSetupScreen() {
     );
   }
 
+  // Deliberate exception to the fullScreenModal signature the new-budget routes
+  // use: at first launch there is nothing underneath worth presenting over, so
+  // the same intent is expressed as a plain full-screen swap. Routing it would
+  // mean exposing new-budget in the (public) group and reworking the protected
+  // route guards, for no visible difference.
   if (screen === "wizard") {
     return (
-      <BudgetSetupWizard
+      <NewBudgetScreen
         mode="local"
         onCancel={() => {
           if (budgets.length > 0) {

@@ -1,8 +1,8 @@
 import { useRouter } from "expo-router";
-import { BudgetSetupWizard } from "@/screens/auth/components/BudgetSetupWizard";
+import { NewBudgetScreen } from "@/screens/auth/NewBudgetScreen";
 
-export default function NewBudgetScreen() {
+export default function NewBudget() {
   const router = useRouter();
 
-  return <BudgetSetupWizard mode="server" onCancel={() => router.back()} />;
+  return <NewBudgetScreen mode="server" onCancel={() => router.back()} />;
 }

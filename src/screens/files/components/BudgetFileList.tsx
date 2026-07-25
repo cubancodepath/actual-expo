@@ -8,12 +8,13 @@ import { InlineError } from "@/ui/feedback/InlineError";
 import { ConfirmDialog, type ConfirmRequest } from "@/ui/feedback/ConfirmDialog";
 import { BudgetFileRow } from "@/ui/BudgetFileRow";
 import type { RowRect } from "@/ui/lift-menu";
-import { LoadingOverlay } from "@/ui/LoadingOverlay";
 import { useBudgetFiles, fileKey } from "@/screens/files/hooks/useBudgetFiles";
 import { BudgetFileRowMenuHost } from "./BudgetFileRowMenuHost";
 import { buildActionRequest } from "./confirmRequests";
 import type { FileAction } from "./fileActions";
 import type { ReconciledBudgetFile } from "@/core/server/budgetfiles/app";
+import { EmptyState } from "heroui-native-pro";
+import { Landmark, SquareChartGantt } from "lucide-react-native";
 
 interface BudgetFileListProps {
   /** Content rendered inside `ScreenHeader.Floating` (insets spacer + `ScreenHeader`). */
@@ -76,6 +77,7 @@ export function BudgetFileList({
   const scrollLocked = lockScrollWhileSwitching && isSwitching;
   const hasFiles = localFiles.length > 0 || remoteFiles.length > 0;
   const hasDetached = localFiles.some((f) => f.state === "detached");
+  const foreground = useThemeColor("foreground");
 
   function handleFileAction(action: FileAction, file: ReconciledBudgetFile) {
     if (action === "download") {
@@ -138,7 +140,10 @@ export function BudgetFileList({
         <>
           <ScreenHeader.ScrollArea>
             <ScreenHeader.Body
-              contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: insets.bottom + 64 }}
+              contentContainerStyle={{
+                paddingHorizontal: 24,
+                paddingBottom: insets.bottom + 64,
+              }}
               scrollEnabled={!scrollLocked}
               refreshControl={
                 <RefreshControl
@@ -182,13 +187,16 @@ export function BudgetFileList({
                 </>
               ) : (
                 <View className="items-center gap-2 pt-24">
-                  <Typography type="body" weight="semibold">
-                    {ta("noBudgetsFound")}
-                  </Typography>
-                  <Typography type="body-sm" color="muted" className="text-center">
-                    {ta("noBudgetsDescription")}
-                  </Typography>
-                  {emptyExtra}
+                  <EmptyState>
+                    <EmptyState.Header>
+                      <EmptyState.Media variant="icon">
+                        <SquareChartGantt size={20} color={foreground} />
+                      </EmptyState.Media>
+                      <EmptyState.Title>{ta("noBudgetsFound")}</EmptyState.Title>
+                      <EmptyState.Description>{ta("noBudgetsDescription")}</EmptyState.Description>
+                    </EmptyState.Header>
+                    {emptyExtra}
+                  </EmptyState>
                 </View>
               )}
             </ScreenHeader.Body>
@@ -196,8 +204,10 @@ export function BudgetFileList({
             <ScreenHeader.Floating>{header}</ScreenHeader.Floating>
           </ScreenHeader.ScrollArea>
 
+          {/* No local overlay: the root BusyOverlayHost covers the switch (and
+              now reaches over native presentations). `isSwitching` still locks
+              the rows and the scroll. */}
           <ConfirmDialog request={confirm} onClose={() => setConfirm(null)} />
-          <LoadingOverlay visible={isSwitching} />
         </>
       )}
     </BudgetFileRowMenuHost>

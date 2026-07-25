@@ -14,7 +14,11 @@ import {
   idFromBudgetName,
 } from "@/core/server/prefs";
 import { uploadBudget, type RemoteBudgetFile } from "@/core/server/cloud-storage";
-import { seedLocalBudget, type CategorySelection } from "@/core/server/budgetfiles/seed";
+import {
+  seedLocalBudget,
+  getDefaultCategorySelection,
+  type CategorySelection,
+} from "@/core/server/budgetfiles/seed";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -99,14 +103,14 @@ export function reconcileFiles(
 
 /**
  * Create a new local budget: metadata + database + CRDT clock + seed data.
+ * Seeds the default category groups + dashboard but NO account (upstream also
+ * creates the plan without an account — accounts are added afterwards).
  * Leaves the raw DB connection open (callers do a proper loadBudget() once
  * setup finishes). Returns the new budgetId.
  */
 export async function createBudget(opts: {
   budgetName: string;
-  accountName: string;
-  startingBalance: number;
-  selectedCategories: CategorySelection;
+  selectedCategories?: CategorySelection;
 }): Promise<string> {
   const budgetId = idFromBudgetName(opts.budgetName);
   if (__DEV__) console.log("[budgetfiles] Creating budget:", budgetId);
@@ -117,9 +121,7 @@ export async function createBudget(opts: {
   await loadClock();
 
   await seedLocalBudget({
-    accountName: opts.accountName,
-    startingBalance: opts.startingBalance,
-    selectedCategories: opts.selectedCategories,
+    selectedCategories: opts.selectedCategories ?? getDefaultCategorySelection(),
   });
 
   return budgetId;

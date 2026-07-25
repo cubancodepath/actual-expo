@@ -3,7 +3,6 @@ import { batchMessages, sendMessages } from "@/core/sync";
 import { Timestamp } from "@/core/crdt";
 import { createAccount } from "@/core/server/accounts";
 import { createCategoryGroup, createCategory } from "@/core/server/budget";
-import { emit } from "@/core/sync/syncEvents";
 
 // ---------------------------------------------------------------------------
 // Default category data — matches what Actual Budget server bundles
@@ -59,11 +58,11 @@ export function getDefaultCategorySelection(): CategorySelection {
 // ---------------------------------------------------------------------------
 
 export async function seedLocalBudget(opts: {
-  accountName: string;
-  startingBalance: number;
+  accountName?: string;
+  startingBalance?: number;
   selectedCategories: CategorySelection;
 }): Promise<void> {
-  const { accountName, startingBalance, selectedCategories } = opts;
+  const { accountName, startingBalance = 0, selectedCategories } = opts;
 
   // Create categories first in a batch so they're committed to the DB
   // before createAccount queries for "Starting Balances" category.
@@ -106,25 +105,19 @@ export async function seedLocalBudget(opts: {
   });
 
   // Create account separately — it queries the DB for the "Starting Balances"
-  // category and payee, which must already be committed.
-  await createAccount({ name: accountName, offbudget: false }, startingBalance);
+  // category and payee, which must already be committed. Skipped when no
+  // account name is given (upstream creates the plan without an account).
+  if (accountName) {
+    await createAccount({ name: accountName, offbudget: false }, startingBalance);
+  }
 
   // Seed default dashboard (required by desktop app — without this, dashboard is stuck loading)
   await seedDashboard();
 
-  // Notify all listeners to refresh from DB
-  emit({
-    type: "applied",
-    tables: [
-      "accounts",
-      "categories",
-      "category_groups",
-      "transactions",
-      "payees",
-      "zero_budgets",
-      "dashboard",
-    ],
-  });
+  // No "applied" emit here: the budget being seeded isn't the active one, and
+  // liveQueries recreate themselves when activeBudgetId changes after the
+  // caller's loadBudget (same reasoning as the note in loadBudget). The
+  // create workflow also mutes the event bus for this whole window.
 }
 
 // ---------------------------------------------------------------------------

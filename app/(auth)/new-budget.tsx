@@ -1,24 +1,16 @@
 import { useRouter } from "expo-router";
-import { BudgetSetupWizard } from "@/screens/auth/components/BudgetSetupWizard";
-import { useBudgetContextStore } from "@/stores/budgetContextStore";
-import { loadBudget } from "@/stores/operations/budgetfiles";
+import { NewBudgetScreen } from "@/screens/auth/NewBudgetScreen";
 
-export default function NewBudgetScreen() {
+export default function NewBudget() {
   const router = useRouter();
 
   return (
-    <BudgetSetupWizard
+    <NewBudgetScreen
       mode="server"
       onCancel={() => router.back()}
-      onComplete={() => {
-        // The wizard already set prefs (activeBudgetId etc).
-        // Open the budget and dismiss back to tabs.
-        const { activeBudgetId } = useBudgetContextStore.getState();
-        if (activeBudgetId) {
-          loadBudget(activeBudgetId).catch(console.warn);
-        }
-        router.dismissAll();
-      }}
+      // createAndLoadBudget already opened the new budget — just dismiss back
+      // to the tabs, which now render it.
+      onComplete={() => router.dismissAll()}
     />
   );
 }

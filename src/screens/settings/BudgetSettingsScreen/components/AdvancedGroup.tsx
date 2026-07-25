@@ -4,7 +4,8 @@ import { useTranslation } from "react-i18next";
 import { resetBudgetCache } from "@/core/server/budget/base";
 import { resetSync } from "@/core/sync/reset";
 import { fixSplitTransactions } from "@/core/tools/fixSplitTransactions";
-import { LoadingOverlay } from "@/ui/LoadingOverlay";
+// Aliased: `busy` is already this component's in-row loading state.
+import { busy as busyOverlay } from "@/ui/feedback/busy";
 import { dialog } from "@/ui/feedback/dialog/dialogStore";
 import { useMetadataPref } from "@/lib/hooks/useMetadataPref";
 import { useSessionStore } from "@/stores/sessionStore";
@@ -86,12 +87,11 @@ export function AdvancedGroup() {
     const { serverUrl, token } = useSessionStore.getState();
     const { fileId, activeBudgetId } = useBudgetContextStore.getState();
     await run("sync", async () => {
-      const result = await resetSync({
-        serverUrl,
-        token,
-        cloudFileId: fileId,
-        budgetId: activeBudgetId,
-      });
+      // Only this action blocks the screen (slow + affects other devices), so
+      // it runs behind the root overlay, which reaches over the settings modal.
+      const result = await busyOverlay.run(() =>
+        resetSync({ serverUrl, token, cloudFileId: fileId, budgetId: activeBudgetId }),
+      );
       if ("error" in result) {
         await dialog.alert({ title: t("resetSync"), message: t("resetSyncFailed") });
       } else if (result.groupId) {
@@ -157,9 +157,6 @@ export function AdvancedGroup() {
       {!canResetSync && (
         <Typography className="mt-3 ml-2 text-sm text-muted">{t("resetSyncDisabled")}</Typography>
       )}
-
-      {/* Only Reset sync blocks the screen (slow + affects other devices). */}
-      <LoadingOverlay visible={busy === "sync"} />
     </>
   );
 }

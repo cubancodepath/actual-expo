@@ -8,12 +8,6 @@ type LoadingOverlayProps = {
   /** Optional override; defaults to the generic `common:justAMoment`. */
   message?: string;
   /**
-   * Optional secondary line under the message (e.g. "12/40"). Text only — a
-   * JS-driven progress bar would stall during the synchronous blocks this
-   * overlay exists to cover, while text updates land between work chunks.
-   */
-  progressText?: string;
-  /**
    * When `true` (default) the overlay renders through a native `Modal` so it
    * covers the entire screen regardless of where it sits in the tree. Set it
    * `false` for an overlay rendered at the app ROOT (a full-screen sibling above
@@ -30,12 +24,7 @@ type LoadingOverlayProps = {
  * material as the ScreenHeader) fades in and swallows touches. The label is
  * intentionally generic — same overlay everywhere.
  */
-export function LoadingOverlay({
-  visible,
-  message,
-  progressText,
-  asModal = true,
-}: LoadingOverlayProps) {
+export function LoadingOverlay({ visible, message, asModal = true }: LoadingOverlayProps) {
   const { t } = useTranslation("common");
   const accent = useThemeColor("accent");
 
@@ -51,11 +40,6 @@ export function LoadingOverlay({
       <Typography type="body" weight="semibold" className="mt-4 text-center">
         {message ?? t("justAMoment")}
       </Typography>
-      {progressText ? (
-        <Typography type="body-sm" className="mt-1 text-center text-muted">
-          {progressText}
-        </Typography>
-      ) : null}
     </View>
   );
 

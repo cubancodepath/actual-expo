@@ -18,7 +18,7 @@ import { monthToInt, addMonths } from "@/core/shared/months";
 import { getCategories, getCategoryGroups } from "@/core/server/budget";
 import type { Category, CategoryGroup } from "@/core/types/models";
 import { safeNumber } from "@/lib/number";
-import { num, createSpentCells, getBudgetRange } from "@/core/server/spreadsheet/util";
+import { num, createSpentCells, getBudgetRange } from "@/core/server/budget/base";
 import { warmReflectBudget } from "@/core/server/spreadsheet/warm-cache";
 
 export async function createBudgetCells(
@@ -87,6 +87,11 @@ export async function createBudgetCells(
     });
 
     ss.createDynamic(sheet, trackingBudget.spentWithCarryover(cat.id), {
+      // Upstream forces this one to recompute rather than trust a restored
+      // value (its own comment there asks why). Costs nothing to honour — it's
+      // a pure formula over cells that are themselves restored — so keep the
+      // parity rather than guess that upstream's caution is unfounded.
+      refresh: true,
       dependencies: [
         trackingBudget.catBudgeted(cat.id),
         trackingBudget.catSpent(cat.id),
@@ -130,6 +135,7 @@ export async function createBudgetCells(
   });
 
   ss.createDynamic(sheet, trackingBudget.totalSpent, {
+    refresh: true, // same upstream parity as spentWithCarryover above
     dependencies: expenseGroups.map((g) => trackingBudget.groupSpent(g.id)),
     run: (...vals) => safeNumber(vals.reduce((sum: number, v) => sum + num(v), 0)),
   });

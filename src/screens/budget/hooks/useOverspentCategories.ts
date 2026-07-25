@@ -1,14 +1,14 @@
 import { useMemo } from "react";
 import { useCategories } from "@/lib/hooks/useCategories";
 import { envelopeBudget } from "@/core/server/spreadsheet/bindings";
-import { getSpreadsheet } from "@/core/server/spreadsheet/globals";
+import { getSpreadsheet } from "@/core/server/sheet";
 import { useSpreadsheetVersionWhere } from "@/hooks/useSheetValue";
 
 /**
  * Matches resolved cell names (`${sheet}!${localName}`) for the two cell
  * kinds this hook scans: category balance (`leftover-<id>`) and carryover
  * flag (`carryover-<id>`). Verified format via bindings.ts (`field("leftover")`,
- * `field("carryover")`) and spreadsheet.ts's `resolveName` (`${sheet}!${name}`).
+ * `field("carryover")`) and util.ts's `resolveName` (`${sheet}!${name}`).
  */
 export function makeCategoryCellMatcher(sheet: string): (name: string) => boolean {
   const prefix = `${sheet}!`;

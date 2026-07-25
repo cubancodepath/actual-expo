@@ -26,6 +26,7 @@ import { downloadBudget, possiblyUpload, uploadBudget } from "@/core/server/clou
 import type { RemoteBudgetFile } from "@/core/server/cloud-storage";
 import { emit, setSyncEventsMuted } from "@/core/sync/syncEvents";
 import { createBudget } from "@/core/server/budgetfiles/app";
+import { unloadRules } from "@/core/server/transactions/transaction-rules";
 import type { ReconciledBudgetFile } from "@/core/server/budgetfiles/app";
 import * as encryption from "@/core/encryption";
 import { loadKeyForBudget } from "@/core/encryption/keys";
@@ -52,8 +53,13 @@ const FIRST_SYNC_OVERLAY_TIMEOUT_MS = 30_000;
  */
 async function settleAndCloseCurrentBudget(): Promise<void> {
   await waitForSyncToSettle();
+  // Also clears the undo history — it holds this budget's CRDT messages.
   resetSyncState();
   unloadPrefs();
+  // The in-memory rule store mirrors the DB we're about to close; leaving it
+  // loaded would run the old file's rules against the next one (upstream
+  // reloads rules per budget open).
+  unloadRules();
   // Sync UI state (conflict dialog, error badge, lastSync) is scoped to a
   // budget — never carry it into the next one. The recovery guard is
   // per-budget too (cross-budget contamination fix).
@@ -171,13 +177,13 @@ export async function loadBudget(budgetId: string, opts?: { force?: boolean }): 
 
     // 6. Initialize spreadsheet engine with local data. Phase message on the
     // busy overlay (no-op when loadBudget runs outside busy.run, e.g. the
-    // splash-covered bootstrap reopen). initSpreadsheet still takes an
+    // splash-covered bootstrap reopen). loadSpreadsheet still takes an
     // onProgress callback, but the overlay deliberately shows no counter.
-    const { initSpreadsheet } = await import("@/core/server/sheet");
+    const { loadSpreadsheet } = await import("@/core/server/sheet");
     const { default: i18n } = await import("@/i18n/config");
     busy.setMessage(i18n.t("common:calculatingBudget"));
-    await initSpreadsheet();
-    lap("initSpreadsheet");
+    await loadSpreadsheet();
+    lap("loadSpreadsheet");
 
     // 7. Set sync-related budget context (needed for fullSync)
     ctx().setBudgetContext({
@@ -319,6 +325,7 @@ export async function closeBudget(): Promise<void> {
   resetSyncState();
   resetAllStores();
   unloadPrefs();
+  unloadRules();
   await closeDatabase();
   useBudgetContextStore.getState().setBudgetContext({
     activeBudgetId: "",

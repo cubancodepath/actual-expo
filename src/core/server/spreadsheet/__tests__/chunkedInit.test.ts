@@ -1,4 +1,4 @@
-// Guards the chunked initSpreadsheet: building months in yielded chunks (each
+// Guards the chunked loadSpreadsheet: building months in yielded chunks (each
 // in its own transaction) must produce exactly the same cells and values as
 // upstream's single-transaction createAllBudgetCells.
 import { describe, it, expect, afterEach } from "vitest";
@@ -7,8 +7,7 @@ import { run } from "@/core/db";
 import { createCategoryGroup, createCategory } from "@/core/server/budget";
 import { setBudgetAmount } from "@/core/server/budget/actions";
 import { createAllBudgetCells } from "@/core/server/budget/envelope";
-import { initSpreadsheet } from "@/core/server/sheet";
-import { getSpreadsheet } from "@/core/server/spreadsheet/globals";
+import { loadSpreadsheet, getSpreadsheet } from "@/core/server/sheet";
 import { sheetForMonth, envelopeBudget } from "@/core/server/spreadsheet/bindings";
 import { currentMonth, addMonths } from "@/core/shared/months";
 
@@ -54,7 +53,7 @@ async function seed() {
   return { catId };
 }
 
-describe("chunked initSpreadsheet", () => {
+describe("chunked loadSpreadsheet", () => {
   afterEach(async () => {
     await closeTestDb();
   });
@@ -63,7 +62,7 @@ describe("chunked initSpreadsheet", () => {
     await openTestDb();
     const { catId } = await seed();
 
-    await initSpreadsheet();
+    await loadSpreadsheet();
     const chunked = snapshotCells();
 
     // Reference build: upstream's one-big-transaction path on a cleared sheet.
@@ -89,7 +88,7 @@ describe("chunked initSpreadsheet", () => {
     await seed();
 
     const calls: Array<[number, number]> = [];
-    await initSpreadsheet((done, total) => calls.push([done, total]));
+    await loadSpreadsheet((done, total) => calls.push([done, total]));
 
     expect(calls.length).toBeGreaterThan(1); // multi-chunk range
     const total = calls[0][1];

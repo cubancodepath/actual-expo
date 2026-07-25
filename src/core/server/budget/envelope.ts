@@ -17,7 +17,7 @@ import { monthToInt, addMonths } from "@/core/shared/months";
 import { getCategories, getCategoryGroups } from "@/core/server/budget";
 import type { Category, CategoryGroup } from "@/core/types/models";
 import { safeNumber } from "@/lib/number";
-import { num, createSpentCells, getBudgetRange } from "@/core/server/spreadsheet/util";
+import { num, createSpentCells, getBudgetRange } from "@/core/server/budget/base";
 import { warmBuffered, warmZeroBudget } from "@/core/server/spreadsheet/warm-cache";
 import { inferGoalFromDef } from "@/core/server/budget/goals";
 
@@ -286,7 +286,7 @@ export async function createBudgetCells(
 // Multi-month loading
 // ---------------------------------------------------------------------------
 
-export { getBudgetRange } from "@/core/server/spreadsheet/util";
+export { getBudgetRange } from "@/core/server/budget/base";
 
 /**
  * Create budget cells for ALL months in the budget range.

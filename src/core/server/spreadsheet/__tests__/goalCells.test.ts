@@ -2,8 +2,7 @@ import { describe, it, expect, afterEach } from "vitest";
 import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
 import { createCategoryGroup, createCategory, updateCategory } from "@/core/server/budget";
 import { setGoalResult } from "@/core/server/budget/goal-template";
-import { initSpreadsheet } from "@/core/server/sheet";
-import { getSpreadsheet } from "@/core/server/spreadsheet/globals";
+import { loadSpreadsheet, getSpreadsheet } from "@/core/server/sheet";
 import { sheetForMonth, envelopeBudget } from "@/core/server/spreadsheet/bindings";
 import { currentMonth } from "@/core/shared/months";
 
@@ -20,7 +19,7 @@ describe("goal cells — catGoal / catLongGoal (chip funding colour)", () => {
     await updateCategory(catId, {
       goal_def: JSON.stringify([{ type: "simple", monthly: 100, limit: null }]),
     });
-    await initSpreadsheet();
+    await loadSpreadsheet();
 
     const ss = getSpreadsheet();
     const sheet = sheetForMonth(currentMonth());
@@ -32,7 +31,7 @@ describe("goal cells — catGoal / catLongGoal (chip funding colour)", () => {
     await openTestDb();
     const groupId = await createCategoryGroup({ name: "Expenses" });
     const catId = await createCategory({ name: "Savings", group: groupId });
-    await initSpreadsheet();
+    await loadSpreadsheet();
 
     const month = currentMonth();
     const sheet = sheetForMonth(month);

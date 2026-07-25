@@ -17,7 +17,7 @@ import { useCategories } from "@/lib/hooks/useCategories";
 import { deleteCategory as deleteCategoryFn, deleteCategoryGroup } from "@/core/server/budget";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { sheetForMonth, envelopeBudget } from "@/core/server/spreadsheet/bindings";
-import { getSpreadsheet } from "@/core/server/spreadsheet/globals";
+import { getSpreadsheet } from "@/core/server/sheet";
 import { inferGoalFromDef, parseGoalDef } from "@/core/server/budget/goals";
 import { useUndo } from "@/lib/hooks/useUndo";
 import { Text } from "@/design-system/atoms/Text";

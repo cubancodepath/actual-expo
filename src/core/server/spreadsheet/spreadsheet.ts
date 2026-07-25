@@ -10,6 +10,11 @@
  */
 
 import { DependencyGraph } from "@/core/server/spreadsheet/graph-data-structure";
+import { resolveName } from "@/core/server/spreadsheet/util";
+// Type-only (erased at build): keeps the budget-type vocabulary in one place
+// without giving the engine a runtime dependency on preferences. Upstream
+// imports BudgetType into spreadsheet.ts the same way.
+import type { BudgetType } from "@/core/server/preferences";
 
 /**
  * The exact prefix strings triggerBudgetChanges() (spreadsheet/sync.ts)
@@ -27,6 +32,15 @@ const QUERYABLE_PREFIXES = [
   "goal-",
   "long-goal-",
 ];
+
+/**
+ * Version numbers are drawn from one module-level counter rather than per
+ * instance, so they stay unique across a budget switch (which publishes a
+ * brand-new Spreadsheet — see server/sheet.ts). Consumers memoize on
+ * the bare number; a per-instance counter restarting at 0 would look like
+ * "nothing changed" right after the swap.
+ */
+let versionCounter = 0;
 
 // ---------------------------------------------------------------------------
 // Types
@@ -52,18 +66,42 @@ export type Cell = StaticCell | DynamicCell;
 
 export type CellChangeListener = (changedNames: string[]) => void;
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
+/**
+ * Per-instance description of what this spreadsheet holds (upstream's
+ * `_meta`). It lives on the instance, not in module state, so it can never
+ * describe a budget other than the one whose cells are in `cells` — an
+ * in-flight build that gets superseded mutates its own detached instance and
+ * the live one is untouched.
+ */
+export type SpreadsheetMeta = {
+  /**
+   * The contiguous [builtStart, builtEnd] month range built here ("YYYY-MM",
+   * compare lexicographically). Contiguity is load-bearing: budget cells
+   * depend on the immediately preceding month (from-last-month, carryover
+   * chains), so extending the range must never leave a gap.
+   */
+  builtStart: string | null;
+  builtEnd: string | null;
+  /** Which formula set built these cells — envelope and tracking differ wholesale. */
+  budgetType: BudgetType | null;
+};
 
-export function resolveName(sheet: string, name: string): string {
-  return `${sheet}!${name}`;
-}
-
-export function unresolveName(resolved: string): { sheet: string; name: string } {
-  const idx = resolved.indexOf("!");
-  return { sheet: resolved.slice(0, idx), name: resolved.slice(idx + 1) };
-}
+/**
+ * Persistence for computed values (upstream's `saveCache`/`setCacheStatus`
+ * constructor args). The engine stays storage-agnostic: sheet.ts supplies
+ * hooks that write to the budget's `kvcache` table so the next open can skip
+ * recomputing. Without hooks the instance simply never persists anything.
+ */
+export type CacheHooks = {
+  /** Persist the current values of these resolved cell names. */
+  saveCache: (names: string[]) => void;
+  /**
+   * Record whether what's persisted is a complete, trustworthy snapshot.
+   * `clean: false` must take effect immediately — being wrongly dirty costs a
+   * rebuild, being wrongly clean shows stale numbers.
+   */
+  setCacheStatus: (status: { clean: boolean }) => void;
+};
 
 // ---------------------------------------------------------------------------
 // Spreadsheet
@@ -93,8 +131,34 @@ export class Spreadsheet {
    */
   private prefixIndex = new Map<string, Set<string>>();
 
-  /** Monotonic counter incremented after every computation with changes. */
-  version = 0;
+  /** Monotonic counter bumped after every computation with changes. */
+  version = ++versionCounter;
+
+  private _meta: SpreadsheetMeta = { builtStart: null, builtEnd: null, budgetType: null };
+
+  /**
+   * Values restored from the persisted cache, consumed as cells get created.
+   * A cell that finds its value here starts out already correct and is NOT
+   * marked dirty, so its `run()` — and the SQL inside it — never executes.
+   * That is the whole point: a warm open builds the graph without querying.
+   */
+  private preloadedValues = new Map<string, CellValue>();
+
+  /** While true, no computation may declare the persisted cache trustworthy. */
+  private cacheBarrier = false;
+
+  constructor(private readonly hooks?: CacheHooks) {}
+
+  // ---- Meta ----
+
+  /** What this instance holds — see {@link SpreadsheetMeta}. */
+  meta(): SpreadsheetMeta {
+    return this._meta;
+  }
+
+  setMeta(patch: Partial<SpreadsheetMeta>): void {
+    Object.assign(this._meta, patch);
+  }
 
   // ---- Cell Creation ----
 
@@ -140,6 +204,16 @@ export class Spreadsheet {
     this.dirtyCells.push(resolved);
   }
 
+  /**
+   * The cached value for a cell about to be created, or `undefined` when
+   * there is none. Kept separate from the value itself because `null` is a
+   * legitimate cached value.
+   */
+  private takePreloaded(resolved: string): { value: CellValue } | undefined {
+    if (!this.preloadedValues.has(resolved)) return undefined;
+    return { value: this.preloadedValues.get(resolved) as CellValue };
+  }
+
   createDynamic(
     sheet: string,
     name: string,
@@ -147,6 +221,12 @@ export class Spreadsheet {
       dependencies: string[];
       run: (...args: CellValue[]) => CellValue | Promise<CellValue>;
       initialValue?: CellValue;
+      /**
+       * Recompute even when a cached value is available. For cells whose
+       * result depends on something the cache can't witness (upstream marks
+       * its tracking spent/total-spent cells this way).
+       */
+      refresh?: boolean;
     },
   ): void {
     const resolved = resolveName(sheet, name);
@@ -161,10 +241,12 @@ export class Spreadsheet {
       return;
     }
 
+    const preloaded = this.takePreloaded(resolved);
+
     this.cells.set(resolved, {
       type: "dynamic",
       name: resolved,
-      value: opts.initialValue ?? 0,
+      value: preloaded ? preloaded.value : (opts.initialValue ?? 0),
       dependencies: resolvedDeps,
       run: opts.run,
     });
@@ -174,7 +256,13 @@ export class Spreadsheet {
       this.graph.addEdge(dep, resolved);
     }
     this.indexCell(resolved);
-    this.dirtyCells.push(resolved);
+    // A cell restored from cache already holds its computed value, so leaving
+    // it clean is what skips the query. Anything not cached still computes,
+    // and the topological cascade pulls its cached dependents along with it —
+    // a partially-warm build heals itself.
+    if (!preloaded || opts.refresh) {
+      this.dirtyCells.push(resolved);
+    }
   }
 
   // ---- Read ----
@@ -305,7 +393,7 @@ export class Spreadsheet {
 
     // Notify listeners
     if (changed.length > 0) {
-      this.version++;
+      this.version = ++versionCounter;
       for (const listener of this.listeners) {
         listener(changed);
       }
@@ -319,7 +407,62 @@ export class Spreadsheet {
           listener(value);
         }
       }
+
+      this.saveCachedCells(changed);
     }
+
+    // The queue drained, so what's persisted now matches the data it was
+    // computed from — unless a barrier says a mutation is still mid-flight.
+    this.markCacheSafe();
+  }
+
+  // ---- Persisted value cache ----
+
+  /**
+   * Seed a value restored from the persisted cache. Deliberately does not
+   * mark anything dirty (upstream's `Spreadsheet.load`) — call before building
+   * cells, and the build will adopt these values instead of computing them.
+   */
+  load(resolvedName: string, value: CellValue): void {
+    this.preloadedValues.set(resolvedName, value);
+  }
+
+  /** Whether any cached values are still waiting to be adopted by a build. */
+  hasPreloadedValues(): boolean {
+    return this.preloadedValues.size > 0;
+  }
+
+  saveCachedCells(names: string[]): void {
+    if (names.length > 0) this.hooks?.saveCache(names);
+  }
+
+  markCacheSafe(): void {
+    if (!this.cacheBarrier) this.hooks?.setCacheStatus({ clean: true });
+  }
+
+  /**
+   * The persisted cache no longer describes the data. Also drops any
+   * unconsumed preloads: they were read at open time, so a month built later
+   * (ensureMonthRange) would otherwise adopt pre-mutation values — those cells
+   * don't exist yet, so no invalidation can reach them.
+   */
+  markCacheDirty(): void {
+    this.preloadedValues.clear();
+    this.hooks?.setCacheStatus({ clean: false });
+  }
+
+  /**
+   * Bracket a mutation window: nothing computed inside it may declare the
+   * cache trustworthy, because the data is only partway updated.
+   */
+  startCacheBarrier(): void {
+    this.cacheBarrier = true;
+    this.markCacheDirty();
+  }
+
+  endCacheBarrier(): void {
+    this.cacheBarrier = false;
+    if (this.dirtyCells.length === 0 && !this.computing) this.markCacheSafe();
   }
 
   /**
@@ -399,12 +542,19 @@ export class Spreadsheet {
   /**
    * Remove all cells for a sheet (e.g., when navigating away from a month).
    */
-  removeSheet(sheet: string): void {
+  clearSheet(sheet: string): void {
     const prefix = `${sheet}!`;
     for (const name of [...this.cells.keys()]) {
       if (name.startsWith(prefix)) {
         this.graph.removeNode(name);
         this.cells.delete(name);
+        // The name must leave the prefix index and the optimistic-write set
+        // too, or getCellsByPrefix() keeps handing dead names to
+        // triggerBudgetChanges and directlySet leaks a stale entry.
+        this.directlySet.delete(name);
+        for (const set of this.prefixIndex.values()) {
+          set.delete(name);
+        }
       }
     }
   }

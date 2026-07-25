@@ -236,20 +236,30 @@ export function fullSync(opts?: { force?: boolean }): Promise<number> {
         _lastSyncHadDecryptFailure = false;
       }
 
-      // Run the sync loop (may recurse on merkle divergence)
-      const allMessages = await _fullSync(null, 0, null, gen, force);
+      // Bracket the apply loop: incoming messages land table by table, so
+      // until they're all in and the cells have caught up, nothing computed
+      // may be persisted as a trustworthy cache.
+      const sheet = await import("@/core/server/sheet");
+      const ss = sheet.getSpreadsheet();
+      let allMessages: SyncMessage[];
+      ss.startCacheBarrier();
+      try {
+        // Run the sync loop (may recurse on merkle divergence)
+        allMessages = await _fullSync(null, 0, null, gen, force);
 
-      if (gen !== getSyncGeneration()) return 0;
+        if (gen !== getSyncGeneration()) return 0;
 
-      // Post-sync: emit success, trigger budget changes, advance schedules
-      // These only run ONCE after the full sync completes (not per retry)
+        if (allMessages.length > 0 && allMessages.some((m) => BUDGET_TABLES.has(m.dataset))) {
+          sheet.triggerBudgetChanges(allMessages);
+        }
+      } finally {
+        ss.endCacheBarrier();
+      }
+
+      // Post-sync: emit success, advance schedules — only ONCE after the full
+      // sync completes (not per retry)
       const tables = normalizeTables(allMessages.map((m) => m.dataset));
       emit({ type: "success", tables });
-
-      if (allMessages.length > 0 && allMessages.some((m) => BUDGET_TABLES.has(m.dataset))) {
-        const { triggerBudgetChanges } = await import("@/core/server/sheet");
-        triggerBudgetChanges(allMessages);
-      }
 
       setSyncingMode("enabled"); // clears any prior "offline" from a network failure
       _lastSyncHadDecryptFailure = false;

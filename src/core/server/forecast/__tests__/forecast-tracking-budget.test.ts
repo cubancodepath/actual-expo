@@ -46,8 +46,8 @@ describe("generateForecast — tracking-budget source", () => {
     await mkTxn({ acct, amount: 50000, date: 20981201 }); // seed balance
 
     await setArbitraryPref("budgetType", "tracking");
-    const { initSpreadsheet } = await import("@/core/server/sheet");
-    await initSpreadsheet();
+    const { loadSpreadsheet } = await import("@/core/server/sheet");
+    await loadSpreadsheet();
 
     // Budget expected income/expense for the forecast month (→ reflect_budgets).
     await setBudgetAmount("2099-01", income, 10000);

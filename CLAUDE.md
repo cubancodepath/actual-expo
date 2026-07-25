@@ -76,11 +76,14 @@ src/
 │       ├── preferences/    # Synced prefs, feature flags, format config, global prefs
 │       ├── rules/          # Rule/Condition/Action classes, indexer, formulas
 │       ├── schedules/      # CRUD/post/advance, find-schedules, preview
-│       ├── spreadsheet/    # spreadsheet, graph-data-structure, globals, util, bindings
+│       ├── spreadsheet/    # spreadsheet (engine), graph-data-structure, util
+│       │                   #   (resolveName), bindings (cell names), warm-cache
 │       ├── transactions/   # CRUD, transaction-rules (rule running/learning), transfer,
 │       │                   #   merge, save pipeline, export/
 │       ├── undo.ts          # Undo/redo engine (marker history, withUndo/undoable, redo)
-│       └── sheet.ts        # Spreadsheet lifecycle (initSpreadsheet/ensureMonthRange)
+│       └── sheet.ts        # Spreadsheet lifecycle: owns the loaded instance
+│                           #   (loadSpreadsheet/unloadSpreadsheet/getSpreadsheet,
+│                           #   one per budget file) + ensureMonthRange + sync refresh
 │
 ├── screens/                # ALL UI, organized by screen (mirrors the navigation tree), e.g.:
 │   ├── auth/               # OpenIdSignInScreen/, PasswordSignInScreen/, ServerConnectScreen/ — migrated

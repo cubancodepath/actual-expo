@@ -8,7 +8,7 @@ import { useCategories } from "@/lib/hooks/useCategories";
 import { useSheetValueNumber, useSpreadsheetVersionWhere } from "@/hooks/useSheetValue";
 import { makeCategoryCellMatcher } from "@/screens/budget/hooks/useOverspentCategories";
 import { envelopeBudget, sheetForMonth } from "@/core/server/spreadsheet/bindings";
-import { getSpreadsheet } from "@/core/server/spreadsheet/globals";
+import { getSpreadsheet } from "@/core/server/sheet";
 import { TO_BUDGET_ID } from "@/screens/budget/constants";
 import { Money } from "@/ui/Money";
 

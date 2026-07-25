@@ -13,9 +13,8 @@
  * Envelope-only, like upstream (it always reads the envelope month).
  */
 import * as monthUtils from "@/core/shared/monthUtils";
-import { getSpreadsheet } from "@/core/server/spreadsheet/globals";
 import { sheetForMonth, envelopeBudget } from "@/core/server/spreadsheet/bindings";
-import { ensureMonthRange } from "@/core/server/sheet";
+import { getSpreadsheet, ensureMonthRange } from "@/core/server/sheet";
 import type { Category, CategoryGroup, RuleCondition } from "@/core/types/models";
 import { filterCategoriesByConditions } from "../budgetDataQuery";
 

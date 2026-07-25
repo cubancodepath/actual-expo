@@ -2,12 +2,11 @@ import { describe, it, expect, afterEach } from "vitest";
 import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
 import { createCategoryGroup, createCategory } from "@/core/server/budget";
 import { setArbitraryPref } from "@/core/server/preferences";
-import { initSpreadsheet } from "@/core/server/sheet";
-import { getSpreadsheet } from "@/core/server/spreadsheet/globals";
+import { loadSpreadsheet, getSpreadsheet } from "@/core/server/sheet";
 import { sheetForMonth, envelopeBudget, trackingBudget } from "@/core/server/spreadsheet/bindings";
 import { currentMonth } from "@/core/shared/months";
 
-describe("initSpreadsheet — dispatches to the right formula engine by budgetType", () => {
+describe("loadSpreadsheet — dispatches to the right formula engine by budgetType", () => {
   afterEach(async () => {
     await closeTestDb();
   });
@@ -15,7 +14,7 @@ describe("initSpreadsheet — dispatches to the right formula engine by budgetTy
   it("builds envelope cells (to-budget, buffered) by default", async () => {
     await openTestDb();
     await createCategoryGroup({ name: "Expenses" });
-    await initSpreadsheet();
+    await loadSpreadsheet();
 
     const ss = getSpreadsheet();
     const sheet = sheetForMonth(currentMonth());
@@ -28,7 +27,7 @@ describe("initSpreadsheet — dispatches to the right formula engine by budgetTy
     await createCategoryGroup({ name: "Income", is_income: true });
     await createCategoryGroup({ name: "Expenses" });
     await setArbitraryPref("budgetType", "tracking");
-    await initSpreadsheet();
+    await loadSpreadsheet();
 
     const ss = getSpreadsheet();
     const sheet = sheetForMonth(currentMonth());
@@ -42,11 +41,11 @@ describe("initSpreadsheet — dispatches to the right formula engine by budgetTy
     const incomeGroup = await createCategoryGroup({ name: "Income", is_income: true });
     await createCategory({ name: "Paycheck", group: incomeGroup, is_income: true });
     await createCategoryGroup({ name: "Expenses" });
-    await initSpreadsheet();
+    await loadSpreadsheet();
 
-    const ss = getSpreadsheet();
+    const before = getSpreadsheet();
     const sheet = sheetForMonth(currentMonth());
-    expect(ss.hasCell(sheet, envelopeBudget.toBudget)).toBe(true);
+    expect(before.hasCell(sheet, envelopeBudget.toBudget)).toBe(true);
 
     // Simulate a peer switching the file to tracking mode via sync — this
     // is exactly what a "preferences"/"budgetType" CRDT message looks like.
@@ -54,12 +53,15 @@ describe("initSpreadsheet — dispatches to the right formula engine by budgetTy
 
     // triggerBudgetChanges() runs the structural rebuild asynchronously
     // (fire-and-forget, matching the existing categories/groups refresh
-    // pattern) — poll briefly for it to land.
-    for (let i = 0; i < 20 && !ss.hasCell(sheet, trackingBudget.totalSaved); i++) {
+    // pattern) — poll briefly for it to land. The rebuild publishes a NEW
+    // instance (the whole formula set differs), so re-read the live one.
+    for (let i = 0; i < 20 && !getSpreadsheet().hasCell(sheet, trackingBudget.totalSaved); i++) {
       await new Promise((r) => setTimeout(r, 10));
     }
 
-    expect(ss.hasCell(sheet, trackingBudget.totalSaved)).toBe(true);
-    expect(ss.hasCell(sheet, envelopeBudget.toBudget)).toBe(false);
+    const after = getSpreadsheet();
+    expect(after).not.toBe(before);
+    expect(after.hasCell(sheet, trackingBudget.totalSaved)).toBe(true);
+    expect(after.hasCell(sheet, envelopeBudget.toBudget)).toBe(false);
   });
 });

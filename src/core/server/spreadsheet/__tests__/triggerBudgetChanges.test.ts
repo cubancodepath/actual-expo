@@ -5,8 +5,7 @@ import { createAccount, updateAccount } from "@/core/server/accounts";
 import { addTransaction } from "@/core/server/transactions";
 import { sendMessages } from "@/core/sync";
 import { Timestamp } from "@/core/crdt";
-import { initSpreadsheet } from "@/core/server/sheet";
-import { getSpreadsheet } from "@/core/server/spreadsheet/globals";
+import { loadSpreadsheet, getSpreadsheet } from "@/core/server/sheet";
 import { sheetForMonth, envelopeBudget } from "@/core/server/spreadsheet/bindings";
 import { currentMonth } from "@/core/shared/months";
 
@@ -24,7 +23,7 @@ describe("triggerBudgetChanges — accounts/category_mapping invalidation (fix #
     const groupId = await createCategoryGroup({ name: "Expenses" });
     const catId = await createCategory({ name: "Groceries", group: groupId });
     const acctId = await createAccount({ name: "Checking" });
-    await initSpreadsheet();
+    await loadSpreadsheet();
 
     const today = currentMonth();
     await addTransaction({
@@ -51,7 +50,7 @@ describe("triggerBudgetChanges — accounts/category_mapping invalidation (fix #
     const catA = await createCategory({ name: "Groceries", group: groupId });
     const catB = await createCategory({ name: "Dining", group: groupId });
     const acctId = await createAccount({ name: "Checking" });
-    await initSpreadsheet();
+    await loadSpreadsheet();
 
     const today = currentMonth();
     await addTransaction({

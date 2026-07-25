@@ -195,14 +195,25 @@ const BUDGET_TABLES = new Set([
 ]);
 
 async function _applyAndRecord(messages: SyncMessage[]): Promise<void> {
-  const oldData: OldData = await applyMessages(messages);
-  undoAppendMessages(messages, oldData);
-  // Granular budget cell invalidation (like loot-core's triggerBudgetChanges)
+  // Bracket the whole window: while the data is partway updated, nothing the
+  // spreadsheet computes may be persisted as a trustworthy cache (upstream
+  // sync/index.ts does the same around its apply loop).
+  const sheet = await import("@/core/server/sheet");
+  const ss = sheet.getSpreadsheet();
   const tables = [...new Set(messages.map((m) => m.dataset))];
-  if (tables.some((t) => BUDGET_TABLES.has(t))) {
-    const { triggerBudgetChanges } = await import("@/core/server/sheet");
-    triggerBudgetChanges(messages);
+
+  ss.startCacheBarrier();
+  try {
+    const oldData: OldData = await applyMessages(messages);
+    undoAppendMessages(messages, oldData);
+    // Granular budget cell invalidation (like loot-core's triggerBudgetChanges)
+    if (tables.some((t) => BUDGET_TABLES.has(t))) {
+      sheet.triggerBudgetChanges(messages);
+    }
+  } finally {
+    ss.endCacheBarrier();
   }
+
   // Notify all listeners (stores, live queries) about changed tables
   emit({ type: "applied", tables });
   scheduleFullSync(); // upload local changes to server after every mutation

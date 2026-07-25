@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
-import { Spreadsheet, resolveName } from "@/core/server/spreadsheet/spreadsheet";
+import { Spreadsheet } from "@/core/server/spreadsheet/spreadsheet";
+import { resolveName } from "@/core/server/spreadsheet/util";
 
 describe("Spreadsheet — prefix index (regression: compound-prefix / UUID-id bucketing)", () => {
   it("finds cells by a compound prefix ('sum-amount-') even when the cell id itself contains dashes", () => {
@@ -47,6 +48,19 @@ describe("Spreadsheet — prefix index (regression: compound-prefix / UUID-id bu
 
     expect(ss.getCellsByPrefix("budget-").size).toBe(1);
     expect(ss.getCellsByPrefix("carryover-").size).toBe(1);
+  });
+
+  it("drops removed cells from the index so triggerBudgetChanges never sees dead names", () => {
+    const ss = new Spreadsheet();
+    const catId = "cat-1";
+    ss.createStatic("budget2026-07", `budget-${catId}`, 5000);
+    ss.createStatic("budget2026-08", `budget-${catId}`, 6000);
+
+    ss.clearSheet("budget2026-07");
+
+    const found = ss.getCellsByPrefix("budget-");
+    expect(found.size).toBe(1);
+    expect([...found][0]).toContain("budget2026-08");
   });
 });
 

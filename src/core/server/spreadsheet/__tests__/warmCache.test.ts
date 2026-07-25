@@ -11,8 +11,7 @@ import { createCategoryGroup, createCategory } from "@/core/server/budget";
 import { setArbitraryPref } from "@/core/server/preferences";
 import { createAllBudgetCells } from "@/core/server/budget/envelope";
 import { createAllBudgetCells as createAllTrackingCells } from "@/core/server/budget/tracking";
-import { initSpreadsheet } from "@/core/server/sheet";
-import { getSpreadsheet } from "@/core/server/spreadsheet/globals";
+import { loadSpreadsheet, getSpreadsheet } from "@/core/server/sheet";
 import { currentMonth, addMonths, monthToInt } from "@/core/shared/months";
 
 function snapshotCells(): Map<string, unknown> {
@@ -107,7 +106,7 @@ describe("spreadsheet warm cache — equivalence with per-cell queries", () => {
     await openTestDb();
     await seedHostile();
 
-    await initSpreadsheet(); // warm-cached, chunked
+    await loadSpreadsheet(); // warm-cached, chunked
     const warmed = snapshotCells();
 
     const ss = getSpreadsheet();
@@ -121,7 +120,7 @@ describe("spreadsheet warm cache — equivalence with per-cell queries", () => {
     await seedHostile();
     await setArbitraryPref("budgetType", "tracking");
 
-    await initSpreadsheet();
+    await loadSpreadsheet();
     const warmed = snapshotCells();
 
     const ss = getSpreadsheet();

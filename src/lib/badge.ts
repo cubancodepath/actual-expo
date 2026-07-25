@@ -1,6 +1,6 @@
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
-import { getSpreadsheet } from "@/core/server/spreadsheet/globals";
+import { getSpreadsheet } from "@/core/server/sheet";
 import { sheetForMonth, envelopeBudget } from "@/core/server/spreadsheet/bindings";
 import { currentMonth } from "@/core/shared/months";
 import { getCategories, getCategoryGroups } from "@/core/server/budget";

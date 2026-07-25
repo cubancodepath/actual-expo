@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import Animated from "react-native-reanimated";
 import { Accordion, AccordionLayoutTransition } from "heroui-native";
 import { envelopeBudget, sheetForMonth } from "@/core/server/spreadsheet/bindings";
-import { getSpreadsheet } from "@/core/server/spreadsheet/globals";
+import { getSpreadsheet } from "@/core/server/sheet";
 import { resetHold, setBudgetAmount, setCategoryCarryover } from "@/core/server/budget/actions";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { useSyncRefreshControl } from "@/lib/hooks/useSyncRefreshControl";

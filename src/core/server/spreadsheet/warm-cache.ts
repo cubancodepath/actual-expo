@@ -3,7 +3,7 @@
  *
  * Building budget cells runs, per month × category, ~5 synchronous one-row
  * queries (`firstSync`) on the JS thread — thousands of blocking round-trips
- * for a budget with history. During `initSpreadsheet`/`ensureMonthRange` the
+ * for a budget with history. During `loadSpreadsheet`/`ensureMonthRange` the
  * same data is prefetched here with a handful of GROUPED async queries and the
  * leaf `run()` closures read from these maps instead. Outside those windows
  * the cache is inactive and every cell falls back to its own `firstSync` —
@@ -16,7 +16,7 @@
  * `undefined` from an accessor means "month not covered, run your own query";
  * a covered month with no row returns the same default the cell would compute.
  */
-import { runQuery } from "@/core/db";
+import { isDatabaseOpen, runQuery } from "@/core/db";
 import { ALIVE_TX_FILTER } from "@/core/db/filters";
 import { monthToInt } from "@/core/shared/months";
 
@@ -28,6 +28,14 @@ type BudgetRow = {
 };
 
 let active = false;
+/**
+ * Ownership token. Every warm pass takes the next epoch; a pass whose epoch
+ * has been superseded neither installs its maps nor lets its `finally` clear
+ * the newer pass's cache. Without this a stale ensureMonthRange left over from
+ * the previous budget — they run fire-and-forget and loadSpreadsheet yields
+ * between chunks — could pull the cache out from under an in-flight build.
+ */
+let epoch = 0;
 let coveredStart = 0; // monthInt, inclusive
 let coveredEnd = 0;
 let spentByMonthCat = new Map<string, number>();
@@ -37,8 +45,21 @@ let bufferedByMonth = new Map<string, number>();
 
 const key = (monthInt: number, catId: string) => `${monthInt}|${catId}`;
 
-/** Prefetch all leaf-cell data for [startMonth, endMonth] ("YYYY-MM"). */
-export async function warmSpreadsheetCache(startMonth: string, endMonth: string): Promise<void> {
+/**
+ * Prefetch all leaf-cell data for [startMonth, endMonth] ("YYYY-MM").
+ * Returns the pass's epoch — hand it back to {@link clearSpreadsheetWarmCache}.
+ */
+export async function warmSpreadsheetCache(startMonth: string, endMonth: string): Promise<number> {
+  const myEpoch = ++epoch;
+  // Supersede any previous pass immediately: its maps describe a range we're
+  // about to replace, and leaving them active would serve them to our cells.
+  active = false;
+
+  // Mid-switch the db handle is null and runQuery answers [] — installing that
+  // would mark the whole range "covered, no rows", i.e. hand every cell a
+  // fabricated 0. Staying inactive makes cells fall back to their own query.
+  if (!isDatabaseOpen()) return myEpoch;
+
   const startInt = monthToInt(startMonth);
   const endInt = monthToInt(endMonth);
   const startDate = startInt * 100 + 1;
@@ -67,6 +88,10 @@ export async function warmSpreadsheetCache(startMonth: string, endMonth: string)
     ),
   ]);
 
+  // A newer pass took ownership while we queried — its maps are the ones the
+  // in-flight build wants; ours describe the range (or budget) we just left.
+  if (myEpoch !== epoch) return myEpoch;
+
   spentByMonthCat = new Map();
   for (const row of spentRows) {
     if (row.cat != null) spentByMonthCat.set(key(row.m, row.cat), row.total ?? 0);
@@ -81,10 +106,16 @@ export async function warmSpreadsheetCache(startMonth: string, endMonth: string)
   coveredStart = startInt;
   coveredEnd = endInt;
   active = true;
+  return myEpoch;
 }
 
-/** Deactivate and release — call in `finally` after the build completes. */
-export function clearSpreadsheetWarmCache(): void {
+/**
+ * Deactivate and release — call in `finally` after the build completes, passing
+ * the token {@link warmSpreadsheetCache} returned. A token from a superseded
+ * pass is ignored so a stale flow can't clear the current build's cache.
+ */
+export function clearSpreadsheetWarmCache(token?: number): void {
+  if (token !== undefined && token !== epoch) return;
   active = false;
   spentByMonthCat = new Map();
   zeroBudgetRows = new Map();

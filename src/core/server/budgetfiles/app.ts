@@ -98,6 +98,31 @@ export function reconcileFiles(
 }
 
 // ---------------------------------------------------------------------------
+// Budget cache
+// ---------------------------------------------------------------------------
+
+/**
+ * Rebuild every budget cell and recompute — the mobile equivalent of upstream
+ * `resetBudgetCache` (`loadUserBudgets(db); sheet.recomputeAll();
+ * waitOnSpreadsheet()`), which lives in this same file upstream.
+ *
+ * `loadSpreadsheet()` builds into a fresh instance and publishes it, which
+ * re-seeds and re-subscribes every `useSheetValue` consumer against the
+ * recomputed values. There's no danger — all values are derived, so this only
+ * corrects a stale cache.
+ */
+export async function resetBudgetCache(): Promise<void> {
+  // Dynamic import: sheet.ts drives budget building, so a static edge from
+  // here would tangle the budget-file handlers into that graph.
+  const { loadSpreadsheet, getSpreadsheet } = await import("@/core/server/sheet");
+  // Distrusting the persisted values is the whole point of this action — throw
+  // them away first so the rebuild comes from SQL, not from the cache.
+  getSpreadsheet().markCacheDirty();
+  await loadSpreadsheet();
+  getSpreadsheet().recomputeAll();
+}
+
+// ---------------------------------------------------------------------------
 // Create
 // ---------------------------------------------------------------------------
 

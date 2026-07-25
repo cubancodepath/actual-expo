@@ -28,10 +28,10 @@ describe("getBudgetMonth — tracking budget", () => {
     const groceries = await createCategory({ name: "Groceries", group: expenses });
     const acct = await createAccount({ name: "Checking" });
 
-    // Select tracking BEFORE initSpreadsheet so getEngine() builds tracking cells.
+    // Select tracking BEFORE loadSpreadsheet so getEngine() builds tracking cells.
     await setArbitraryPref("budgetType", "tracking");
-    const { initSpreadsheet, ensureMonthRange } = await import("@/core/server/sheet");
-    await initSpreadsheet();
+    const { loadSpreadsheet, ensureMonthRange } = await import("@/core/server/sheet");
+    await loadSpreadsheet();
     const month = currentMonth();
     await ensureMonthRange(month);
 

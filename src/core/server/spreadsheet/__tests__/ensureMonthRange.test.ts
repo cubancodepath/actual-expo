@@ -2,8 +2,7 @@ import { describe, it, expect, afterEach } from "vitest";
 import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
 import { createCategoryGroup, createCategory } from "@/core/server/budget";
 import { setBudgetAmount } from "@/core/server/budget/actions";
-import { initSpreadsheet, ensureMonthRange } from "@/core/server/sheet";
-import { getSpreadsheet } from "@/core/server/spreadsheet/globals";
+import { loadSpreadsheet, ensureMonthRange, getSpreadsheet } from "@/core/server/sheet";
 import { sheetForMonth, envelopeBudget } from "@/core/server/spreadsheet/bindings";
 import { currentMonth, addMonths } from "@/core/shared/months";
 
@@ -16,7 +15,7 @@ describe("ensureMonthRange — lazy month extension (fix #10)", () => {
     await openTestDb();
     const groupId = await createCategoryGroup({ name: "Expenses" });
     const catId = await createCategory({ name: "Groceries", group: groupId });
-    await initSpreadsheet();
+    await loadSpreadsheet();
 
     // Default mobile horizon is today+3 months — 8 months out is a real gap.
     const farMonth = addMonths(currentMonth(), 8);
@@ -32,7 +31,7 @@ describe("ensureMonthRange — lazy month extension (fix #10)", () => {
   it("is a no-op when the requested month is already within the built range", async () => {
     await openTestDb();
     await createCategoryGroup({ name: "Expenses" });
-    await initSpreadsheet();
+    await loadSpreadsheet();
 
     const ss = getSpreadsheet();
     const versionBefore = ss.getCells().size;
@@ -44,7 +43,7 @@ describe("ensureMonthRange — lazy month extension (fix #10)", () => {
     await openTestDb();
     const groupId = await createCategoryGroup({ name: "Expenses" });
     const catId = await createCategory({ name: "Groceries", group: groupId });
-    await initSpreadsheet();
+    await loadSpreadsheet();
 
     const today = currentMonth();
     await setBudgetAmount(today, catId, 10000); // budget $100.00, never spent
@@ -64,7 +63,7 @@ describe("ensureMonthRange — lazy month extension (fix #10)", () => {
   it("extends backward correctly when navigating to a month before the built range", async () => {
     await openTestDb();
     await createCategoryGroup({ name: "Expenses" });
-    await initSpreadsheet();
+    await loadSpreadsheet();
 
     const earlyMonth = addMonths(currentMonth(), -10);
     const ss = getSpreadsheet();

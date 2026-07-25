@@ -9,7 +9,7 @@ vi.mock("@/core/server/transactions", () => ({
   getLatestTransaction: mocks.getLatestTransaction,
 }));
 
-vi.mock("@/core/sync/syncEvents", () => ({
+vi.mock("@/core/server/sync/syncEvents", () => ({
   listen: (cb: (event: { type: string }) => void) => {
     mocks.listeners.push(cb);
     return () => {};

@@ -2,8 +2,8 @@
 // in its own transaction) must produce exactly the same cells and values as
 // upstream's single-transaction createAllBudgetCells.
 import { describe, it, expect, afterEach } from "vitest";
-import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
-import { run } from "@/core/db";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
+import { run } from "@/core/server/db";
 import { createCategoryGroup, createCategory } from "@/core/server/budget";
 import { setBudgetAmount } from "@/core/server/budget/actions";
 import { createAllBudgetCells } from "@/core/server/budget/envelope";
@@ -23,7 +23,7 @@ function snapshotCells(): Map<string, unknown> {
 
 async function seed() {
   const groupId = await createCategoryGroup({ name: "Expenses" });
-  const catId = await createCategory({ name: "Groceries", group: groupId });
+  const catId = await createCategory({ name: "Groceries", groupId: groupId });
 
   await run("INSERT INTO accounts (id, name, offbudget, tombstone) VALUES (?,?,?,?)", [
     "acc1",

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { listen } from "@/core/sync/syncEvents";
+import { listen } from "@/core/server/sync/syncEvents";
 import { getUncategorizedStats } from "@/core/server/transactions";
 
 /**

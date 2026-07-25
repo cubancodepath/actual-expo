@@ -10,7 +10,7 @@
  */
 import * as monthUtils from "@/core/shared/monthUtils";
 import { getLatestTransaction } from "@/core/server/transactions";
-import { listen } from "@/core/sync/syncEvents";
+import { listen } from "@/core/server/sync/syncEvents";
 
 let cachedBudgetId: string | null | undefined;
 let cachedPromise: Promise<string> | null = null;

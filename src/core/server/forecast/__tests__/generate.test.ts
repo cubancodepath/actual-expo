@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
-import { sendMessages } from "@/core/sync";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
+import { sendMessages } from "@/core/server/sync";
 import { Timestamp } from "@/core/crdt";
 import { createAccount } from "@/core/server/accounts";
 import { createSchedule } from "@/core/server/schedules";

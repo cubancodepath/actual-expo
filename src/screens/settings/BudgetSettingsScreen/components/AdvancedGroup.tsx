@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ListGroup, Separator, Spinner, Typography, useThemeColor } from "heroui-native";
 import { useTranslation } from "react-i18next";
 import { resetBudgetCache } from "@/core/server/budgetfiles/app";
-import { resetSync } from "@/core/sync/reset";
+import { resetSync } from "@/core/server/sync/reset";
 import { fixSplitTransactions } from "@/core/tools/fixSplitTransactions";
 // Aliased: `busy` is already this component's in-row loading state.
 import { busy as busyOverlay } from "@/ui/feedback/busy";

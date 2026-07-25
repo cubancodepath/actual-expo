@@ -3,7 +3,7 @@
  * Read-only. Two sources: `schedules` (day-by-day projection from schedule
  * occurrences + posted transactions) and `tracking-budget` (monthly).
  */
-import { runQuery } from "@/core/db";
+import { runQuery } from "@/core/server/db";
 import { intToStr } from "@/core/shared/months";
 import { getBudgetType } from "../preferences";
 import { buildForecastFilter } from "./forecast-filters";

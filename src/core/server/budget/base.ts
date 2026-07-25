@@ -9,9 +9,9 @@
 
 import type { Spreadsheet, CellValue } from "@/core/server/spreadsheet/spreadsheet";
 import { sheetForMonth, envelopeBudget } from "@/core/server/spreadsheet/bindings";
-import { firstSync, first } from "@/core/db";
+import { firstSync, first } from "@/core/server/db";
 import { monthToInt, currentMonth, intToStr, addMonths } from "@/core/shared/months";
-import { ALIVE_TX_FILTER } from "@/core/db/filters";
+import { ALIVE_TX_FILTER } from "@/core/server/db/filters";
 import { warmSpent } from "@/core/server/spreadsheet/warm-cache";
 import type { Category } from "@/core/types/models";
 

@@ -1,9 +1,9 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
 import { createCategoryGroup, createCategory } from "@/core/server/budget";
 import { createAccount } from "@/core/server/accounts";
 import { addTransaction } from "@/core/server/transactions";
-import { first } from "@/core/db";
+import { first } from "@/core/server/db";
 import {
   setBudgetAmount,
   setCategoryCarryover,
@@ -49,14 +49,14 @@ async function getCarryoverFlag(month: string, categoryId: string): Promise<bool
  * returns a positive value — holdForNextMonth() no-ops when
  * currentToBudget <= 0 and no hold already exists. */
 async function setupWithIncome() {
-  const incomeGroup = await createCategoryGroup({ name: "Income", is_income: true });
+  const incomeGroup = await createCategoryGroup({ name: "Income", isIncome: true });
   const incomeCat = await createCategory({
     name: "Paycheck",
-    group: incomeGroup,
-    is_income: true,
+    groupId: incomeGroup,
+    isIncome: true,
   });
   const expenseGroup = await createCategoryGroup({ name: "Expenses" });
-  const catA = await createCategory({ name: "A", group: expenseGroup });
+  const catA = await createCategory({ name: "A", groupId: expenseGroup });
   const acctId = await createAccount({ name: "Checking" });
   const { loadSpreadsheet } = await import("@/core/server/sheet");
   await loadSpreadsheet();
@@ -121,8 +121,8 @@ describe("budgets/index — holdForNextMonth / resetHold / setCategoryCarryover 
     const { incomeCat, incomeGroup, month } = await setupWithIncome();
     const incomeCatB = await createCategory({
       name: "Bonus",
-      group: incomeGroup,
-      is_income: true,
+      groupId: incomeGroup,
+      isIncome: true,
     });
 
     await setCategoryCarryover(month, incomeCat, true);

@@ -20,7 +20,7 @@
  */
 
 import { Timestamp } from "@/core/crdt";
-import type { SyncMessage } from "@/core/sync/encoder";
+import type { SyncMessage } from "@/core/server/sync/encoder";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -128,7 +128,7 @@ export function undoable<T extends (...args: any[]) => Promise<any>>(
 
     // Lazy import to avoid a circular dependency (batch.ts imports
     // appendMessages from this module).
-    const { runMutator, isInMutator } = await import("@/core/sync/batch");
+    const { runMutator, isInMutator } = await import("@/core/server/sync/batch");
     // Already serialized by an outer mutator unit — don't re-enter the FIFO.
     if (isInMutator()) return runInGroup();
     return runMutator(runInGroup);
@@ -179,7 +179,7 @@ export async function withUndo<T>(func: () => Promise<T>, meta?: unknown): Promi
  * queued via `runMutator`, serialized relative to concurrent flows.
  */
 export async function undo(): Promise<string[]> {
-  const { runMutator } = await import("@/core/sync/batch");
+  const { runMutator } = await import("@/core/server/sync/batch");
   return runMutator(() => undoBody());
 }
 
@@ -227,7 +227,7 @@ async function undoBody(): Promise<string[]> {
  * Like `undo()`, a top-level entry point routed through `runMutator`.
  */
 export async function redo(): Promise<string[]> {
-  const { runMutator } = await import("@/core/sync/batch");
+  const { runMutator } = await import("@/core/server/sync/batch");
   return runMutator(() => redoBody());
 }
 
@@ -274,7 +274,7 @@ async function redoBody(): Promise<string[]> {
 async function applyReplay(messages: SyncMessage[]): Promise<string[]> {
   if (messages.length === 0) return [];
 
-  const { sendMessages } = await import("@/core/sync");
+  const { sendMessages } = await import("@/core/server/sync");
 
   _undoDisabled = true;
   try {

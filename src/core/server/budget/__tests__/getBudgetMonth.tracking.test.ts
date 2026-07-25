@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
 import { createCategoryGroup, createCategory } from "@/core/server/budget";
 import { createAccount } from "@/core/server/accounts";
 import { addTransaction } from "@/core/server/transactions";
@@ -22,10 +22,10 @@ describe("getBudgetMonth — tracking budget", () => {
 
   it("reads reflect_budgets amounts and exposes saved summaries, no To-Budget", async () => {
     await openTestDb();
-    const incomeGroup = await createCategoryGroup({ name: "Income", is_income: true });
-    const income = await createCategory({ name: "Pay", group: incomeGroup, is_income: true });
+    const incomeGroup = await createCategoryGroup({ name: "Income", isIncome: true });
+    const income = await createCategory({ name: "Pay", groupId: incomeGroup, isIncome: true });
     const expenses = await createCategoryGroup({ name: "Expenses" });
-    const groceries = await createCategory({ name: "Groceries", group: expenses });
+    const groceries = await createCategory({ name: "Groceries", groupId: expenses });
     const acct = await createAccount({ name: "Checking" });
 
     // Select tracking BEFORE loadSpreadsheet so getEngine() builds tracking cells.

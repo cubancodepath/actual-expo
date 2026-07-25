@@ -9,13 +9,13 @@ vi.setSystemTime(new Date(2026, 2, 5, 12, 0, 0)); // March 5, 2026
 
 // ── Mock all native/DB dependencies ──────────────────────────────────────
 
-vi.mock("@/core/db", () => {
+vi.mock("@/core/server/db", () => {
   // aqlQuery runs through db.all (alias of runQuery); mock both with one fn.
   const runQuery = vi.fn();
   return { first: vi.fn(), runQuery, all: runQuery, run: vi.fn() };
 });
 
-vi.mock("@/core/sync", () => ({
+vi.mock("@/core/server/sync", () => ({
   sendMessages: vi.fn(),
   batchMessages: vi.fn((fn: () => Promise<void>) => fn()),
 }));
@@ -63,8 +63,8 @@ vi.mock("@/core/shared/months", () => ({
   },
 }));
 
-import { first, runQuery } from "@/core/db";
-import { sendMessages } from "@/core/sync";
+import { first, runQuery } from "@/core/server/db";
+import { sendMessages } from "@/core/server/sync";
 import { getRuleById } from "@/core/server/rules";
 import { setNextDate, advanceSchedules } from "../index";
 import { buildListData } from "@/features/transactions/hooks/transactionList/types";

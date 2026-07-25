@@ -1,5 +1,5 @@
-import { first, runQuery } from "@/core/db";
-import { sendMessages } from "@/core/sync";
+import { first, runQuery } from "@/core/server/db";
+import { sendMessages } from "@/core/server/sync";
 import { Timestamp } from "@/core/crdt";
 import { PREFERENCE_DEFAULTS, type PreferenceKey } from "./types";
 import {

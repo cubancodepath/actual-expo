@@ -9,7 +9,7 @@
 
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { listen } from "@/core/sync/syncEvents";
+import { listen } from "@/core/server/sync/syncEvents";
 import { getTags } from "@/core/server/tags";
 import type { Tag } from "@/core/types/models";
 

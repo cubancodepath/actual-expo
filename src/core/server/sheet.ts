@@ -10,9 +10,16 @@
  * 2. Structural: Full cell re-creation when categories/groups change.
  */
 
-import { listen } from "@/core/sync/syncEvents";
-import type { SyncMessage } from "@/core/sync/encoder";
-import { first, isDatabaseOpen, run, runQuery, serializeDbWrite, transaction } from "@/core/db";
+import { listen } from "@/core/server/sync/syncEvents";
+import type { SyncMessage } from "@/core/server/sync/encoder";
+import {
+  first,
+  isDatabaseOpen,
+  run,
+  runQuery,
+  serializeDbWrite,
+  transaction,
+} from "@/core/server/db";
 import {
   Spreadsheet,
   type CacheHooks,

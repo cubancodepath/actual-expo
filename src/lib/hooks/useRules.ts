@@ -13,10 +13,10 @@
  */
 
 import { useMemo } from "react";
-import { q } from "@/core/queries";
+import { q } from "@/lib/queries";
 import { useLiveQuery } from "@/hooks/useQuery";
 import { makeRule, type Rule } from "@/core/server/rules";
-import type { RuleRow } from "@/core/db/types";
+import type { RuleRow } from "@/core/server/db/types";
 
 export function useRules() {
   const { data: rows, isLoading } = useLiveQuery<Record<string, unknown>>(

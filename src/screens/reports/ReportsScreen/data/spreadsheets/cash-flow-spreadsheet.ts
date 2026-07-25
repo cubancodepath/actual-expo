@@ -9,7 +9,7 @@
  * The full `cashFlowByDate` (the detail-screen series) is intentionally NOT
  * ported yet — the card only needs `simpleCashFlow`.
  */
-import { q } from "@/core/queries";
+import { q } from "@/lib/queries";
 import { aqlQuery } from "@/core/server/aql";
 import * as monthUtils from "@/core/shared/monthUtils";
 import type { RuleCondition } from "@/core/types/models";

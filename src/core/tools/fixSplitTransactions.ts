@@ -4,8 +4,8 @@
  * CRDT batch. Repair #4 (mismatched split totals) is detection-only, matching
  * upstream — it is reported, never auto-corrected.
  */
-import { runQuery } from "@/core/db";
-import { sendMessages } from "@/core/sync";
+import { runQuery } from "@/core/server/db";
+import { sendMessages } from "@/core/server/sync";
 import { Timestamp } from "@/core/crdt";
 
 export type FixSplitsResult = {

@@ -7,7 +7,7 @@
  */
 
 import { useMemo } from "react";
-import { q } from "@/core/queries";
+import { q } from "@/lib/queries";
 import { useLiveQuery } from "@/hooks/useQuery";
 import type { Account } from "@/core/types/models";
 

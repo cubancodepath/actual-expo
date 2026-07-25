@@ -5,8 +5,8 @@
 // flags, goals, and buffered amounts. The reference build runs
 // createAllBudgetCells directly, which never activates the cache.
 import { describe, it, expect, afterEach } from "vitest";
-import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
-import { run } from "@/core/db";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
+import { run } from "@/core/server/db";
 import { createCategoryGroup, createCategory } from "@/core/server/budget";
 import { setArbitraryPref } from "@/core/server/preferences";
 import { createAllBudgetCells } from "@/core/server/budget/envelope";
@@ -46,10 +46,10 @@ async function insertTx(
 
 async function seedHostile() {
   const groupId = await createCategoryGroup({ name: "Expenses" });
-  const catA = await createCategory({ name: "Groceries", group: groupId });
-  const catB = await createCategory({ name: "Transport", group: groupId });
+  const catA = await createCategory({ name: "Groceries", groupId: groupId });
+  const catB = await createCategory({ name: "Transport", groupId: groupId });
   // A merged-away category that maps onto catA via category_mapping.
-  const catMerged = await createCategory({ name: "Old Groceries", group: groupId });
+  const catMerged = await createCategory({ name: "Old Groceries", groupId: groupId });
   await run("UPDATE category_mapping SET transferId = ? WHERE id = ?", [catA, catMerged]);
 
   await run("INSERT INTO accounts (id, name, offbudget, tombstone) VALUES (?,?,?,?)", [

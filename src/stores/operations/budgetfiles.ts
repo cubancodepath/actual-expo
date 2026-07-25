@@ -4,7 +4,7 @@
 // store during a budget open/close, so they live in the operations layer
 // (one-way: operations → stores → core), keeping budgetContextStore itself a
 // pure state slice free of sibling-store imports and module-init cycles.
-import { closeDatabase, openDatabase, isDatabaseOpen } from "@/core/db";
+import { closeDatabase, openDatabase, isDatabaseOpen } from "@/core/server/db";
 import {
   loadClock,
   saveClock,
@@ -13,7 +13,7 @@ import {
   fullSync,
   waitForSyncToSettle,
   setSyncingMode,
-} from "@/core/sync";
+} from "@/core/server/sync";
 import {
   getBudgetDir,
   readMetadata,
@@ -24,12 +24,12 @@ import {
 } from "@/core/server/prefs";
 import { downloadBudget, possiblyUpload, uploadBudget } from "@/core/server/cloud-storage";
 import type { RemoteBudgetFile } from "@/core/server/cloud-storage";
-import { emit, setSyncEventsMuted } from "@/core/sync/syncEvents";
+import { emit, setSyncEventsMuted } from "@/core/server/sync/syncEvents";
 import { createBudget } from "@/core/server/budgetfiles/app";
 import { unloadRules } from "@/core/server/transactions/transaction-rules";
 import type { ReconciledBudgetFile } from "@/core/server/budgetfiles/app";
-import * as encryption from "@/core/encryption";
-import { loadKeyForBudget } from "@/core/encryption/keys";
+import * as encryption from "@/core/server/encryption";
+import { loadKeyForBudget } from "@/core/server/encryption/keys";
 import { ActualError } from "@/core/errors";
 import { emitErrorEvent, toErrorCode } from "@/lib/errors/ErrorChannel";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
@@ -100,7 +100,7 @@ export async function loadBudget(budgetId: string, opts?: { force?: boolean }): 
     // Warm the payee/category mapping cache before rules, pre-fetch, or the
     // background fullSync can read rules — so migrateIds projects merged ids.
     // Mirrors loot-core loading mappings before the rules sync listeners.
-    const { loadMappings } = await import("@/core/db/mappings");
+    const { loadMappings } = await import("@/core/server/db/mappings");
     await loadMappings();
     lap("openDB + loadClock");
 
@@ -121,9 +121,9 @@ export async function loadBudget(budgetId: string, opts?: { force?: boolean }): 
 
     // 5. Pre-fetch core queries into cache — gives instant first render with local data.
     // liveQuery takes over reactively after mount; sync updates flow through events.
-    const { executeQuery } = await import("@/core/queries/execute");
+    const { executeQuery } = await import("@/core/server/aql/execute");
     const { q } = await import("@/core/shared/query");
-    const { setQueryCache, clearQueryCache } = await import("@/core/queries/queryCache");
+    const { setQueryCache, clearQueryCache } = await import("@/lib/queries/queryCache");
     clearQueryCache(); // Clear old budget's stale entries before populating with new data
 
     // Tags are not part of the AQL schema (queried via raw SQL in the

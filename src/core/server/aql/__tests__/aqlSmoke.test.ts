@@ -2,8 +2,8 @@
 // expo dialect, running against the better-sqlite3 node adapter. This is the
 // first place the @ts-nocheck verbatim compiler meets a real DB.
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
-import { run, runQuery } from "@/core/db";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
+import { run, runQuery } from "@/core/server/db";
 import { aqlQuery, getQueryDependencies } from "@/core/server/aql";
 import { q } from "@/core/shared/query";
 import type { Query } from "@/core/shared/query";

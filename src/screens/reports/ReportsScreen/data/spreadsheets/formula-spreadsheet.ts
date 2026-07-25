@@ -20,7 +20,7 @@
 
 import { HyperFormula } from "hyperformula";
 
-import { q } from "@/core/queries";
+import { q } from "@/lib/queries";
 import { aqlQuery } from "@/core/server/aql";
 import { getCategories, getCategoriesGrouped } from "@/core/server/budget";
 import { getBudgetMonth } from "@/core/server/budget/actions";

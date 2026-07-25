@@ -7,8 +7,8 @@ import { setupFixtures, closeTestDb, getTxnRow } from "./helpers";
 import { saveTransaction } from "../save";
 import type { SaveTransactionInput } from "../save";
 import { deleteTransaction, getChildTransactions } from "../index";
-import { runQuery } from "@/core/db";
-import type { TransactionRow } from "@/core/db/types";
+import { runQuery } from "@/core/server/db";
+import type { TransactionRow } from "@/core/server/db/types";
 import { undo, canUndo, clearUndo } from "@/core/server/undo";
 
 /**

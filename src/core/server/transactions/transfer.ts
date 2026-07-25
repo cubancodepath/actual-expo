@@ -7,8 +7,8 @@
  */
 
 import { randomUUID } from "@/core/platform/crypto";
-import { first } from "@/core/db";
-import { sendMessages, batchMessages } from "@/core/sync";
+import { first } from "@/core/server/db";
+import { sendMessages, batchMessages } from "@/core/server/sync";
 import { Timestamp } from "@/core/crdt";
 
 /** Returns the destination account ID if payeeId is a transfer payee, else null. */

@@ -1,9 +1,9 @@
 import { randomUUID } from "@/core/platform/crypto";
-import { runQuery, first } from "@/core/db";
-import { sendMessages } from "@/core/sync";
+import { runQuery, first } from "@/core/server/db";
+import { sendMessages } from "@/core/server/sync";
 import { undoable } from "@/core/server/undo";
 import { Timestamp } from "@/core/crdt";
-import type { PayeeRow, PayeeLocationRow } from "@/core/db/types";
+import type { PayeeRow, PayeeLocationRow } from "@/core/server/db/types";
 import type { Payee, PayeeLocation, NearbyPayee, Coordinates } from "@/core/types/models";
 
 function rowToPayee(r: PayeeRow): Payee {

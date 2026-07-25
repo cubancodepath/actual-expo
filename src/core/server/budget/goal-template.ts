@@ -4,10 +4,10 @@
  * merged from the port's former goals/{apply,persist}.
  */
 
-import { first, runQuery } from "@/core/db";
+import { first, runQuery } from "@/core/server/db";
 import { monthToInt } from "@/core/shared/months";
 import { budgetTable, computeCarryoverChain, computeToBudget, setBudgetAmount } from "./actions";
-import type { CategoryRow, ZeroBudgetRow } from "@/core/db/types";
+import type { CategoryRow, ZeroBudgetRow } from "@/core/server/db/types";
 import { calculateGoal, type GoalContext } from "./category-template-context";
 import { parseGoalDef, parseTemplateNotes } from "./goal-template-parser";
 import type { Template } from "@/core/types/models";

@@ -10,8 +10,8 @@
 
 import { useEffect, useMemo } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { listen } from "@/core/sync/syncEvents";
-import { transactionQueries } from "@/lib/query/transactionQueries";
+import { listen } from "@/core/server/sync/syncEvents";
+import { transactionQueries } from "@/lib/tanstack/transactionQueries";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import type { Query } from "@/core/shared/query";
 

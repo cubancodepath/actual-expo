@@ -62,60 +62,10 @@ export default function AuthLayout() {
       />
       <Stack.Screen name="budget/edit" options={{ headerShown: false }} />
       <Stack.Screen
-        name="budget/reorder"
-        options={{
-          ...screen,
-          title: t("nav.reorder"),
-          presentation: "formSheet",
-          sheetAllowedDetents: [1.0],
-          contentStyle: { backgroundColor: theme.colors.pageBackground },
-        }}
-      />
-      <Stack.Screen
-        name="budget/new-group"
-        options={{
-          ...screen,
-          title: t("nav.newGroup"),
-          presentation: "formSheet",
-          sheetAllowedDetents: "fitToContents",
-          contentStyle: { backgroundColor: theme.colors.pageBackground },
-        }}
-      />
-      <Stack.Screen
-        name="budget/new-category"
-        options={{
-          ...screen,
-          title: t("nav.newCategory"),
-          presentation: "formSheet",
-          sheetAllowedDetents: "fitToContents",
-          contentStyle: { backgroundColor: theme.colors.pageBackground },
-        }}
-      />
-      <Stack.Screen
         name="budget/rename-category"
         options={{
           headerShown: false,
           ...modal,
-        }}
-      />
-      <Stack.Screen
-        name="budget/quick-edit-category"
-        options={{
-          ...screen,
-          title: t("nav.editCategory"),
-          presentation: "formSheet",
-          sheetAllowedDetents: "fitToContents",
-          contentStyle: { backgroundColor: theme.colors.pageBackground },
-        }}
-      />
-      <Stack.Screen
-        name="budget/edit-group"
-        options={{
-          ...screen,
-          title: t("nav.editGroup"),
-          presentation: "formSheet",
-          sheetAllowedDetents: "fitToContents",
-          contentStyle: { backgroundColor: theme.colors.pageBackground },
         }}
       />
       <Stack.Screen
@@ -128,7 +78,6 @@ export default function AuthLayout() {
       {/* A directory route with its own nested stack (list → editor → mode),
           presented as one card modal — same arrangement as `transaction`. */}
       <Stack.Screen name="budget/goal" options={{ headerShown: false, ...modal }} />
-      <Stack.Screen name="budget/notes" options={{ title: t("nav.budgetMovements"), ...modal }} />
       <Stack.Screen
         name="budget/category-transactions"
         options={{ ...modal, headerShown: false }}

@@ -4,7 +4,7 @@
  * (amount > 0) and "debts" (amount < 0), grouped by interval + account + payee +
  * category, with the category/account/payee metadata each row needs.
  */
-import { q } from "@/core/queries";
+import { q } from "@/lib/queries";
 import type { ObjectExpression } from "@/core/shared/query";
 import { ReportOptions } from "./ReportOptions";
 

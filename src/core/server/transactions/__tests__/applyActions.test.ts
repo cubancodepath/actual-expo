@@ -1,9 +1,9 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
 import { createAccount } from "@/core/server/accounts";
 import { createCategory } from "@/core/server/budget";
 import { createPayee } from "@/core/server/payees";
-import { runQuery, first } from "@/core/db";
+import { runQuery, first } from "@/core/server/db";
 import { addTransaction, batchUpdateTransactions } from "@/core/server/transactions";
 import { applyActions } from "@/core/server/transactions/transaction-rules";
 import { ruleModel, serializeConditionsOrActions } from "@/core/server/rules";
@@ -55,7 +55,7 @@ describe("applyActions", () => {
     await openTestDb();
     const acct = await createAccount({ name: "A" });
     const payee = await createPayee({ name: "P" });
-    const cat = await createCategory({ name: "Food", group: "g" });
+    const cat = await createCategory({ name: "Food", groupId: "g" });
 
     const t1 = await addTransaction({ account: acct, date: 20240101, amount: -100, payee });
     const t2 = await addTransaction({ account: acct, date: 20240102, amount: -200, payee });

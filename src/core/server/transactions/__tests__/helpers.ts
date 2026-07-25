@@ -6,12 +6,12 @@
  * payee for the new account (payees.transfer_acct = <account id>), so we lean
  * on that instead of hand-rolling CRDT messages.
  */
-import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
-import { first } from "@/core/db";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
+import { first } from "@/core/server/db";
 import { createAccount } from "@/core/server/accounts";
 import { createCategoryGroup, createCategory } from "@/core/server/budget";
 import { createPayee } from "@/core/server/payees";
-import type { TransactionRow } from "@/core/db/types";
+import type { TransactionRow } from "@/core/server/db/types";
 
 export { openTestDb, closeTestDb };
 
@@ -39,8 +39,8 @@ export async function setupFixtures(): Promise<Fixtures> {
   const accountB = await createAccount({ name: "Savings", offbudget: true });
 
   const group = await createCategoryGroup({ name: "Expenses" });
-  const categoryId = await createCategory({ name: "Groceries", group: group });
-  const categoryId2 = await createCategory({ name: "Dining", group: group });
+  const categoryId = await createCategory({ name: "Groceries", groupId: group });
+  const categoryId2 = await createCategory({ name: "Dining", groupId: group });
 
   const payeeId = await createPayee({ name: "Coffee Shop" });
 

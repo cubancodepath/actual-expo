@@ -8,8 +8,8 @@
  */
 
 import { randomUUID } from "@/core/platform/crypto";
-import { runQuery, first, run } from "@/core/db";
-import { sendMessages, batchMessages } from "@/core/sync";
+import { runQuery, first, run } from "@/core/server/db";
+import { sendMessages, batchMessages } from "@/core/server/sync";
 import { undoable } from "@/core/server/undo";
 import { Timestamp } from "@/core/crdt";
 import { createRule, updateRule, deleteRule, getRuleById } from "@/core/server/rules";
@@ -33,8 +33,8 @@ import {
 } from "@/core/shared/schedules";
 import { getArbitraryPref } from "@/core/server/preferences";
 import { getHasTransactionsQuery } from "@/core/shared/schedules";
-import { executeQuery } from "@/core/queries";
-import { emit as emitSyncEvent } from "@/core/sync/syncEvents";
+import { executeQuery } from "@/core/server/aql/execute";
+import { emit as emitSyncEvent } from "@/core/server/sync/syncEvents";
 import { currentDay, todayInt, intToStr, strToInt } from "@/core/shared/months";
 import { addDays, startOfDay, isFriday, isWeekend, nextMonday } from "date-fns";
 import type {
@@ -44,7 +44,7 @@ import type {
   RecurConfig,
   ScheduleStatus,
 } from "@/core/types/models";
-import type { ScheduleRow, ScheduleNextDateRow } from "@/core/db/types";
+import type { ScheduleRow, ScheduleNextDateRow } from "@/core/server/db/types";
 
 export type { Schedule } from "@/core/types/models";
 export {
@@ -576,7 +576,7 @@ async function insertScheduledTransaction(
     return;
   }
 
-  const { batchMessages } = await import("@/core/sync");
+  const { batchMessages } = await import("@/core/server/sync");
   await batchMessages(async () => {
     const parentId = await addTransaction({
       ...fields,

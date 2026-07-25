@@ -1,13 +1,13 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
 import { createCategoryGroup, createCategory } from "@/core/server/budget";
 import { createAccount } from "@/core/server/accounts";
 import { addTransaction } from "@/core/server/transactions";
 import { computeGoalAllocations, updateGoalIndicator } from "../goal-template";
-import { sendMessages } from "@/core/sync";
+import { sendMessages } from "@/core/server/sync";
 import { Timestamp } from "@/core/crdt";
 import { currentMonth } from "@/core/shared/months";
-import { first } from "@/core/db";
+import { first } from "@/core/server/db";
 
 async function setCategoryNote(categoryId: string, note: string): Promise<void> {
   await sendMessages([
@@ -24,11 +24,11 @@ async function setCategoryNote(categoryId: string, note: string): Promise<void> 
 /** Seeds income + an initialized spreadsheet so computeToBudget() has funds to allocate. */
 async function seedAvailableFunds(amountCents: number): Promise<void> {
   const { loadSpreadsheet } = await import("@/core/server/sheet");
-  const incomeGroup = await createCategoryGroup({ name: "Income", is_income: true });
+  const incomeGroup = await createCategoryGroup({ name: "Income", isIncome: true });
   const incomeCat = await createCategory({
     name: "Paycheck",
-    group: incomeGroup,
-    is_income: true,
+    groupId: incomeGroup,
+    isIncome: true,
   });
   const acct = await createAccount({ name: "Checking" });
   await loadSpreadsheet();
@@ -50,7 +50,7 @@ describe("goal application picks up legacy #template notes when goal_def is empt
     await openTestDb();
     await seedAvailableFunds(100000);
     const group = await createCategoryGroup({ name: "Bills" });
-    const cat = await createCategory({ name: "Rent", group: group });
+    const cat = await createCategory({ name: "Rent", groupId: group });
     await setCategoryNote(cat, "Just a reminder\n#template 500");
 
     const month = currentMonth();
@@ -65,7 +65,7 @@ describe("goal application picks up legacy #template notes when goal_def is empt
     await openTestDb();
     await seedAvailableFunds(100000);
     const group = await createCategoryGroup({ name: "Bills" });
-    const cat = await createCategory({ name: "Rent", group: group });
+    const cat = await createCategory({ name: "Rent", groupId: group });
     await setCategoryNote(cat, "Just a plain reminder note");
 
     const result = await computeGoalAllocations(currentMonth(), true);
@@ -75,7 +75,7 @@ describe("goal application picks up legacy #template notes when goal_def is empt
   it("updateGoalIndicator writes a goal indicator sourced from legacy notes", async () => {
     await openTestDb();
     const group = await createCategoryGroup({ name: "Bills" });
-    const cat = await createCategory({ name: "Rent", group: group });
+    const cat = await createCategory({ name: "Rent", groupId: group });
     await setCategoryNote(cat, "#goal 1000");
 
     await updateGoalIndicator(currentMonth(), cat);
@@ -91,7 +91,7 @@ describe("goal application picks up legacy #template notes when goal_def is empt
     await seedAvailableFunds(100000);
     const { updateCategory } = await import("@/core/server/budget");
     const group = await createCategoryGroup({ name: "Bills" });
-    const cat = await createCategory({ name: "Rent", group: group });
+    const cat = await createCategory({ name: "Rent", groupId: group });
     await setCategoryNote(cat, "#template 999");
     await updateCategory(cat, {
       goal_def: JSON.stringify([

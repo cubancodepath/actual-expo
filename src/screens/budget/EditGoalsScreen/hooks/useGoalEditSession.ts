@@ -10,7 +10,7 @@ import {
   type DisplayTemplateType,
 } from "@/core/server/budget/goals";
 import { updateGoalIndicator } from "@/core/server/budget/goal-template";
-import { batchMessages } from "@/core/sync/batch";
+import { batchMessages } from "@/core/server/sync/batch";
 import { useBudgetMonth } from "@/screens/budget/hooks/useBudgetMonth";
 import { goalAutomationsQueryKey, type GoalAutomationsData } from "./useGoalAutomationsQuery";
 import { computeGoalEditSeed, computeNextEntries } from "./goalEditSession.logic";

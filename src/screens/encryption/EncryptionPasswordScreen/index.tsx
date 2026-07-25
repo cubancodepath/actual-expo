@@ -4,7 +4,7 @@ import { useNavigation, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Button, FieldError, Input, TextField, Typography, useThemeColor } from "heroui-native";
 import { X } from "lucide-react-native";
-import { keyMake, keyTest } from "@/core/encryption/app";
+import { keyMake, keyTest } from "@/core/server/encryption/app";
 import { useSessionStore } from "@/stores/sessionStore";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import { ScreenHeader } from "@/ui/ScreenHeader";

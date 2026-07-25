@@ -5,7 +5,7 @@
 // sibling-store imports.
 import * as SecureStore from "expo-secure-store";
 import { clearAllKeys as clearEncryptionKeys } from "@/core/platform/keyStore";
-import { unloadAllKeys } from "@/core/encryption";
+import { unloadAllKeys } from "@/core/server/encryption";
 import { useSessionStore } from "@/stores/sessionStore";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import { closeBudget } from "@/stores/operations/budgetfiles";

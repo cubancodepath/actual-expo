@@ -15,7 +15,7 @@
  * an object; `parseWidget` still tolerates a raw string defensively.
  */
 import { useMemo } from "react";
-import { q } from "@/core/queries";
+import { q } from "@/lib/queries";
 import { useLiveQuery } from "@/hooks/useQuery";
 import { DEFAULT_DASHBOARD_STATE } from "@/core/shared/dashboard";
 import type { DashboardWidgetEntity, DashboardPageEntity } from "@/core/types/models/dashboard";

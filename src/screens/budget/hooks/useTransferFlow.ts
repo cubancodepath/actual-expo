@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "expo-router";
 import { transferAvailable, transferMultipleCategories } from "@/core/server/budget/actions";
-import { batchMessages } from "@/core/sync/batch";
+import { batchMessages } from "@/core/server/sync/batch";
 import { TO_BUDGET_ID } from "@/screens/budget/constants";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { useAmountKeyboardAvoidance } from "@/ui/amount-keyboard";

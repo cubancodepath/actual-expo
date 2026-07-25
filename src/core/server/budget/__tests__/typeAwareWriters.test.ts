@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
-import { runQuery } from "@/core/db";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
+import { runQuery } from "@/core/server/db";
 import { monthToInt } from "@/core/shared/months";
 import { setArbitraryPref } from "@/core/server/preferences";
 import { createCategoryGroup, createCategory } from "@/core/server/budget";
@@ -42,8 +42,8 @@ describe("type-aware budget writers", () => {
 
   async function cats() {
     const g = await createCategoryGroup({ name: "Expenses" });
-    const a = await createCategory({ name: "A", group: g });
-    const b = await createCategory({ name: "B", group: g });
+    const a = await createCategory({ name: "A", groupId: g });
+    const b = await createCategory({ name: "B", groupId: g });
     return { a, b };
   }
 
@@ -97,7 +97,7 @@ describe("type-aware budget writers", () => {
 
     // Both sources give 1000 each to a fresh target.
     const g = await createCategoryGroup({ name: "More" });
-    const target = await createCategory({ name: "T", group: g });
+    const target = await createCategory({ name: "T", groupId: g });
     await transferMultipleCategories(
       M,
       target,

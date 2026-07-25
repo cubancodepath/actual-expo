@@ -6,7 +6,7 @@
 
 import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { listen } from "@/core/sync/syncEvents";
+import { listen } from "@/core/server/sync/syncEvents";
 import { getSchedules } from "@/core/server/schedules";
 
 const SYNC_TABLES = new Set(["schedules", "schedules_next_date", "rules"]);

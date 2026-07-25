@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Button, useThemeColor } from "heroui-native";
 import { Plus } from "lucide-react-native";
 import { signOut } from "@/stores/operations/users";
-import { clearSwitchingFlag } from "@/core/sync";
+import { clearSwitchingFlag } from "@/core/server/sync";
 import { ScreenHeader } from "@/ui/ScreenHeader";
 import { dialog } from "@/ui/feedback/dialog/dialogStore";
 import { BudgetFileList } from "@/screens/files/components/BudgetFileList";

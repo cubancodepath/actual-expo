@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
 import { createAccount } from "@/core/server/accounts";
 import { createSchedule } from "@/core/server/schedules";
 import { createPayee } from "@/core/server/payees";

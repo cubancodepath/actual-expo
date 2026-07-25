@@ -184,7 +184,7 @@ export async function savePrefs(
     // Upstream whitelist: budgetName is the one pref that syncs to peers as a
     // 'prefs' CRDT message. Dynamic imports break the prefs↔sync module cycle.
     const [{ sendMessages }, { Timestamp }] = await Promise.all([
-      import("@/core/sync"),
+      import("@/core/server/sync"),
       import("@/core/crdt"),
     ]);
     await sendMessages([

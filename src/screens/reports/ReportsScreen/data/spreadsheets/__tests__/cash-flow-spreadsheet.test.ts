@@ -1,8 +1,8 @@
 // simpleCashFlow against the real AQL compiler + expo-sqlite dialect: pins the
 // filter logic (on-budget only, non-transfer only) and the income/expense split.
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
-import { run } from "@/core/db";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
+import { run } from "@/core/server/db";
 import { simpleCashFlow, type CashFlowData } from "../cash-flow-spreadsheet";
 
 async function seed() {

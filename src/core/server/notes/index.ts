@@ -7,8 +7,8 @@
  * a plain `SELECT note FROM notes WHERE id = ?` (see `goals/persist.getCategoryNote`).
  */
 
-import { first } from "@/core/db";
-import { sendMessages } from "@/core/sync";
+import { first } from "@/core/server/db";
+import { sendMessages } from "@/core/server/sync";
 import { undoable } from "@/core/server/undo";
 import { Timestamp } from "@/core/crdt";
 

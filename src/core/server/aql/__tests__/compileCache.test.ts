@@ -1,8 +1,8 @@
 // The compile cache must be invisible: cached compilations return the same
 // data as fresh ones, and caching never caches RESULTS (only sqlPieces/state).
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
-import { run } from "@/core/db";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
+import { run } from "@/core/server/db";
 import { aqlQuery, __clearCompileCache, __getCompileCacheSize } from "@/core/server/aql";
 import { q } from "@/core/shared/query";
 

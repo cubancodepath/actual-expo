@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
-import { first } from "@/core/db";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
+import { first } from "@/core/server/db";
 import { monthToInt, currentMonth } from "@/core/shared/months";
 import { createCategoryGroup, createCategory } from "@/core/server/budget";
 import { createAccount } from "@/core/server/accounts";
@@ -24,13 +24,13 @@ const day = (month: string) => Number(month.replace("-", "") + "15");
 /** Opens a DB and returns builders; call cat() for every category, then start(). */
 async function seed() {
   await openTestDb();
-  const incomeGroup = await createCategoryGroup({ name: "Income", is_income: true });
-  const income = await createCategory({ name: "Pay", group: incomeGroup, is_income: true });
+  const incomeGroup = await createCategoryGroup({ name: "Income", isIncome: true });
+  const income = await createCategory({ name: "Pay", groupId: incomeGroup, isIncome: true });
   const expenses = await createCategoryGroup({ name: "Expenses" });
   const acct = await createAccount({ name: "Checking" });
   const month = currentMonth();
 
-  const cat = (name: string) => createCategory({ name, group: expenses });
+  const cat = (name: string) => createCategory({ name, groupId: expenses });
   async function start() {
     const { loadSpreadsheet, ensureMonthRange } = await import("@/core/server/sheet");
     await loadSpreadsheet();

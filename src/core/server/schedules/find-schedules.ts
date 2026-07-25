@@ -19,8 +19,8 @@ import {
 } from "date-fns";
 import { randomUUID } from "@/core/platform/crypto";
 
-import { q } from "@/core/queries";
-import { executeQuery } from "@/core/queries";
+import { q } from "@/core/shared/query";
+import { executeQuery } from "@/core/server/aql/execute";
 import { getApproxNumberThreshold } from "@/core/server/rules/rule-utils";
 import { parseDate, dayFromDate, recurConfigToRSchedule } from "@/core/shared/schedules";
 import { intToStr } from "@/core/shared/months";

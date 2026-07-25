@@ -1,13 +1,14 @@
 import { randomUUID } from "@/core/platform/crypto";
-import { runQuery, first } from "@/core/db";
-import { sendMessages, batchMessages } from "@/core/sync";
+import { runQuery, first } from "@/core/server/db";
+import { sendMessages, batchMessages } from "@/core/server/sync";
 import { undoable } from "@/core/server/undo";
 import { Timestamp } from "@/core/crdt";
-import type { TransactionRow } from "@/core/db/types";
+import type { TransactionRow } from "@/core/server/db/types";
 import type { Transaction, GetTransactionsOptions, TransactionDisplay } from "@/core/types/models";
 import { onInsert, onUpdate, onDelete as onDeleteTransfer } from "./transfer";
 import { todayInt, startOfMonthInt, endOfMonthInt, strToInt } from "@/core/shared/months";
-import { q, executeQuery } from "@/core/queries";
+import { q } from "@/core/shared/query";
+import { executeQuery } from "@/core/server/aql/execute";
 import { aqlQuery } from "@/core/server/aql";
 import { getRules } from "@/core/server/rules";
 import {

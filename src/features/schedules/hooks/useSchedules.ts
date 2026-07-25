@@ -8,7 +8,7 @@
  */
 
 import { useMemo } from "react";
-import { q } from "@/core/queries";
+import { q } from "@/lib/queries";
 import { useLiveQuery } from "@/hooks/useQuery";
 import { getStatus } from "@/core/shared/schedules";
 import { getHasTransactionsQuery, type ScheduleStatuses } from "@/core/shared/schedules";

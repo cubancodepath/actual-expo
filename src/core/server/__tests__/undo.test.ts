@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
-import { first, runQuery } from "@/core/db";
-import { sendMessages, batchMessages } from "@/core/sync/batch";
-import { resetBatchState } from "@/core/sync/batch";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
+import { first, runQuery } from "@/core/server/db";
+import { sendMessages, batchMessages } from "@/core/server/sync/batch";
+import { resetBatchState } from "@/core/server/sync/batch";
 import { Timestamp } from "@/core/crdt";
 import { undoable, undo, redo, canUndo, canRedo, clearUndo } from "@/core/server/undo";
 

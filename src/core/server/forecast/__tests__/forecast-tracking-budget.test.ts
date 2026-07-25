@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
-import { sendMessages } from "@/core/sync";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
+import { sendMessages } from "@/core/server/sync";
 import { Timestamp } from "@/core/crdt";
 import { createAccount } from "@/core/server/accounts";
 import { createCategoryGroup, createCategory } from "@/core/server/budget";
@@ -38,10 +38,10 @@ describe("generateForecast — tracking-budget source", () => {
 
   it("projects monthly from on-budget balances + budgeted income − expenses", async () => {
     await openTestDb();
-    const incomeGroup = await createCategoryGroup({ name: "Income", is_income: true });
-    const income = await createCategory({ name: "Pay", group: incomeGroup, is_income: true });
+    const incomeGroup = await createCategoryGroup({ name: "Income", isIncome: true });
+    const income = await createCategory({ name: "Pay", groupId: incomeGroup, isIncome: true });
     const expenses = await createCategoryGroup({ name: "Expenses" });
-    const rent = await createCategory({ name: "Rent", group: expenses });
+    const rent = await createCategory({ name: "Rent", groupId: expenses });
     const acct = await createAccount({ name: "Checking", offbudget: false });
     await mkTxn({ acct, amount: 50000, date: 20981201 }); // seed balance
 

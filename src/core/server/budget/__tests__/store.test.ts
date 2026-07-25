@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
-import { first, runQuery } from "@/core/db";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
+import { first, runQuery } from "@/core/server/db";
 import { createCategoryGroup, createCategory } from "@/core/server/budget";
 import { setNote } from "@/core/server/notes";
 import { storeNoteCleanups } from "../cleanup-template-notes";
@@ -26,7 +26,7 @@ describe("storeNoteCleanups", () => {
 
   async function makeCategory(name: string, note: string | null): Promise<string> {
     const group = await createCategoryGroup({ name: `G-${name}` });
-    const id = await createCategory({ name, group: group });
+    const id = await createCategory({ name, groupId: group });
     if (note !== null) await setNote(id, note);
     return id;
   }

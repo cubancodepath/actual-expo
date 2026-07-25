@@ -2,8 +2,8 @@
 // DB-free evaluation path (math / string / errors) and the QUERY / QUERY_COUNT
 // prefetch path that runs real AQL queries over seeded transactions.
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
-import { run } from "@/core/db";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
+import { run } from "@/core/server/db";
 import { formulaSpreadsheet, type FormulaData, type QueriesMap } from "../formula-spreadsheet";
 
 async function seed() {

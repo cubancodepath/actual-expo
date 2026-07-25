@@ -11,8 +11,8 @@
  * background sync) reports through this one channel, no path can silently
  * swallow a failure — the bug this architecture replaced.
  */
-import type { SyncEvent } from "@/core/sync/syncEvents";
-import { listen } from "@/core/sync/syncEvents";
+import type { SyncEvent } from "@/core/server/sync/syncEvents";
+import { listen } from "@/core/server/sync/syncEvents";
 import { emitErrorEvent, toErrorCode } from "@/lib/errors/ErrorChannel";
 import type { ErrorCode } from "@/core/errors";
 import { useSyncStore } from "@/stores/syncStore";

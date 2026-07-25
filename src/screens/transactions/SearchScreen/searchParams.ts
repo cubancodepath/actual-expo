@@ -1,5 +1,5 @@
-import { q, type Query } from "@/core/queries";
-import type { ObjectExpression } from "@/core/queries";
+import { q, type Query } from "@/lib/queries";
+import type { ObjectExpression } from "@/lib/queries";
 import type { SearchToken } from "./searchTokens";
 
 /**

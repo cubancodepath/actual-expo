@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
 import { createCategoryGroup, createCategory } from "@/core/server/budget";
 import { createAccount } from "@/core/server/accounts";
 import { addTransaction } from "@/core/server/transactions";
@@ -32,15 +32,15 @@ describe("getBudgetMonth / computeToBudget — spreadsheet-backed (fix #14)", ()
   it("computes toBudget, buffered, and per-category carry-forward across months", async () => {
     await openTestDb();
 
-    const incomeGroup = await createCategoryGroup({ name: "Income", is_income: true });
+    const incomeGroup = await createCategoryGroup({ name: "Income", isIncome: true });
     const incomeCat = await createCategory({
       name: "Paycheck",
-      group: incomeGroup,
-      is_income: true,
+      groupId: incomeGroup,
+      isIncome: true,
     });
     const expenseGroup = await createCategoryGroup({ name: "Expenses" });
-    const catA = await createCategory({ name: "Groceries", group: expenseGroup });
-    const catB = await createCategory({ name: "Dining", group: expenseGroup });
+    const catA = await createCategory({ name: "Groceries", groupId: expenseGroup });
+    const catB = await createCategory({ name: "Dining", groupId: expenseGroup });
     const acctId = await createAccount({ name: "Checking" });
 
     const { loadSpreadsheet, ensureMonthRange } = await import("@/core/server/sheet");
@@ -141,7 +141,7 @@ describe("getBudgetMonth / computeToBudget — spreadsheet-backed (fix #14)", ()
   it("computeToBudget matches getBudgetMonth().toBudget", async () => {
     await openTestDb();
     const group = await createCategoryGroup({ name: "Expenses" });
-    await createCategory({ name: "Groceries", group: group });
+    await createCategory({ name: "Groceries", groupId: group });
 
     const { loadSpreadsheet } = await import("@/core/server/sheet");
     await loadSpreadsheet();

@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
 import { createCategoryGroup, createCategory, updateCategory } from "@/core/server/budget";
 import { setGoalResult } from "@/core/server/budget/goal-template";
 import { loadSpreadsheet, getSpreadsheet } from "@/core/server/sheet";
@@ -14,7 +14,7 @@ describe("goal cells — catGoal / catLongGoal (chip funding colour)", () => {
   it("falls back to the goal_def template when zero_budgets has no goal yet", async () => {
     await openTestDb();
     const groupId = await createCategoryGroup({ name: "Expenses" });
-    const catId = await createCategory({ name: "Groceries", group: groupId });
+    const catId = await createCategory({ name: "Groceries", groupId: groupId });
     // #template 100 → monthly goal of $100.00, budgeted-based (longGoal false).
     await updateCategory(catId, {
       goal_def: JSON.stringify([{ type: "simple", monthly: 100, limit: null }]),
@@ -30,7 +30,7 @@ describe("goal cells — catGoal / catLongGoal (chip funding colour)", () => {
   it("reflects zero_budgets.goal / long_goal once persisted and the trigger runs", async () => {
     await openTestDb();
     const groupId = await createCategoryGroup({ name: "Expenses" });
-    const catId = await createCategory({ name: "Savings", group: groupId });
+    const catId = await createCategory({ name: "Savings", groupId: groupId });
     await loadSpreadsheet();
 
     const month = currentMonth();

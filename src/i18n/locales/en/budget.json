@@ -215,7 +215,7 @@
   "moveTransactionsTo": "Move transactions to",
   "confirmDeleteTitle": "Confirm Delete",
   "confirmDeleteMessage": "Transactions will be moved to \"{{name}}\". This cannot be undone.",
-  "addCategory": "Add Category",
+  "addCategory": "New Category",
   "addAnother": "Add Another",
   "coveringEllipsis": "Covering...",
   "cover": "Cover",

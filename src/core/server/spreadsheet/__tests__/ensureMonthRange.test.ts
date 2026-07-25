@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
 import { createCategoryGroup, createCategory } from "@/core/server/budget";
 import { setBudgetAmount } from "@/core/server/budget/actions";
 import { loadSpreadsheet, ensureMonthRange, getSpreadsheet } from "@/core/server/sheet";
@@ -14,7 +14,7 @@ describe("ensureMonthRange — lazy month extension (fix #10)", () => {
   it("builds no cells for a month far outside the initial horizon until ensureMonthRange is called", async () => {
     await openTestDb();
     const groupId = await createCategoryGroup({ name: "Expenses" });
-    const catId = await createCategory({ name: "Groceries", group: groupId });
+    const catId = await createCategory({ name: "Groceries", groupId: groupId });
     await loadSpreadsheet();
 
     // Default mobile horizon is today+3 months — 8 months out is a real gap.
@@ -42,7 +42,7 @@ describe("ensureMonthRange — lazy month extension (fix #10)", () => {
   it("carries a category balance forward correctly through the gap it fills (no missing prevSheet reads)", async () => {
     await openTestDb();
     const groupId = await createCategoryGroup({ name: "Expenses" });
-    const catId = await createCategory({ name: "Groceries", group: groupId });
+    const catId = await createCategory({ name: "Groceries", groupId: groupId });
     await loadSpreadsheet();
 
     const today = currentMonth();

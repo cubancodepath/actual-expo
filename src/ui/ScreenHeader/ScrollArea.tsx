@@ -50,7 +50,7 @@ export function ScreenHeaderScrollArea({
   /**
    * Render only the context provider, no container View — for screens
    * presented as a native formSheet, where a plain flex-1 View root does not
-   * paint its scroll content (same quirk AmountSheet.Body documents). The
+   * paint its scroll content (same quirk EnvelopeSheet.Body documents). The
    * Body becomes the screen's root-level scroll and the Floating header
    * positions against the screen itself; the sheet's `contentStyle` owns the
    * background.

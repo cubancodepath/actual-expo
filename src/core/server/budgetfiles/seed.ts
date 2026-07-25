@@ -1,5 +1,5 @@
 import { randomUUID } from "@/core/platform/crypto";
-import { batchMessages, sendMessages } from "@/core/sync";
+import { batchMessages, sendMessages } from "@/core/server/sync";
 import { Timestamp } from "@/core/crdt";
 import { createAccount } from "@/core/server/accounts";
 import { createCategoryGroup, createCategory } from "@/core/server/budget";
@@ -80,8 +80,8 @@ export async function seedLocalBudget(opts: {
 
       const groupId = await createCategoryGroup({
         name: group.name,
-        is_income: group.is_income,
-        sort_order: groupSort,
+        isIncome: group.is_income,
+        sortOrder: groupSort,
       });
       groupSort += 1000;
 
@@ -95,9 +95,9 @@ export async function seedLocalBudget(opts: {
 
         await createCategory({
           name: cat.name,
-          group: groupId,
-          is_income: group.is_income,
-          sort_order: catSort,
+          groupId: groupId,
+          isIncome: group.is_income,
+          sortOrder: catSort,
         });
         catSort += 1000;
       }

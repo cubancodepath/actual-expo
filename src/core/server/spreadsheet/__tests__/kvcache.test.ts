@@ -10,8 +10,8 @@
 // that queries sees the new number, a build that trusts the cache sees the old
 // one. That distinction is the whole feature.
 import { describe, it, expect, afterEach } from "vitest";
-import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
-import { first, run, runQuery, serializeDbWrite, transaction } from "@/core/db";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
+import { first, run, runQuery, serializeDbWrite, transaction } from "@/core/server/db";
 import { createCategoryGroup, createCategory } from "@/core/server/budget";
 import { setBudgetAmount } from "@/core/server/budget/actions";
 import {
@@ -49,7 +49,7 @@ function snapshotValues(): Map<string, unknown> {
 
 async function seedBudget(): Promise<string> {
   const groupId = await createCategoryGroup({ name: "Expenses" });
-  const catId = await createCategory({ name: "Groceries", group: groupId });
+  const catId = await createCategory({ name: "Groceries", groupId: groupId });
   await run("INSERT INTO accounts (id, name, offbudget, tombstone) VALUES (?,?,?,?)", [
     "acct1",
     "Checking",

@@ -7,10 +7,10 @@
 
 import { subDays, addDays } from "date-fns";
 import * as monthUtils from "@/core/shared/monthUtils";
-import { first, runQuery } from "@/core/db";
-import { batchMessages } from "@/core/sync";
-import { listen, type SyncEvent } from "@/core/sync/syncEvents";
-import { ensureMappingsLoaded } from "@/core/db/mappings";
+import { first, runQuery } from "@/core/server/db";
+import { batchMessages } from "@/core/server/sync";
+import { listen, type SyncEvent } from "@/core/server/sync/syncEvents";
+import { ensureMappingsLoaded } from "@/core/server/db/mappings";
 import { findOrCreatePayee } from "@/core/server/payees";
 import { Rule, execActions } from "@/core/server/rules/rule";
 import { Action } from "@/core/server/rules/action";
@@ -36,7 +36,7 @@ import type {
   RuleAction,
   TransactionWithSubtransactions,
 } from "@/core/types/models";
-import type { RuleRow } from "@/core/db/types";
+import type { RuleRow } from "@/core/server/db/types";
 import type { ObjectExpression } from "@/core/shared/query";
 
 // ═══ In-memory rule store (upstream module state) ═══

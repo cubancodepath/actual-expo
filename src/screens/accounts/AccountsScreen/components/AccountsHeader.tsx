@@ -31,7 +31,6 @@ export function AccountsHeader() {
           <Button
             isIconOnly
             variant="tertiary"
-            size="sm"
             onPress={() => router.push("/(auth)/account/new")}
             accessibilityLabel={t("addAccount")}
           >
@@ -40,7 +39,7 @@ export function AccountsHeader() {
 
           <Menu>
             <Menu.Trigger asChild>
-              <Button isIconOnly variant="tertiary" size="sm">
+              <Button isIconOnly variant="tertiary">
                 <MoreHorizontal size={20} color={foreground} />
               </Button>
             </Menu.Trigger>

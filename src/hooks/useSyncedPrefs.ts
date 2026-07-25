@@ -12,7 +12,7 @@
 
 import { useCallback } from "react";
 import { create } from "zustand";
-import { listen } from "@/core/sync/syncEvents";
+import { listen } from "@/core/server/sync/syncEvents";
 import {
   getAllPreferences,
   setPreference,
@@ -49,7 +49,7 @@ export const useSyncedPrefsStore = create<SyncedPrefsState>((set) => ({
       getAllPreferences(),
       getAllFeatureFlags(),
       // Load ALL preferences (including per-account keys like hide-cleared-xxx)
-      import("@/core/db").then(({ runQuery }) =>
+      import("@/core/server/db").then(({ runQuery }) =>
         runQuery<{ id: string; value: string }>("SELECT id, value FROM preferences"),
       ),
     ]);

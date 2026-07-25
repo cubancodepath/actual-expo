@@ -6,18 +6,18 @@
  */
 
 import { randomUUID } from "@/core/platform/crypto";
-import { sendMessages } from "@/core/sync";
+import { sendMessages } from "@/core/server/sync";
 import { undoable } from "@/core/server/undo";
-import { first, runQuery } from "@/core/db";
+import { first, runQuery } from "@/core/server/db";
 import { Timestamp } from "@/core/crdt";
-import type { RuleRow } from "@/core/db/types";
+import type { RuleRow } from "@/core/server/db/types";
 import type { RuleCondition, RuleAction, RuleStage } from "@/core/types/models";
 import { Rule } from "./rule";
 import { Condition } from "./condition";
 import { Action } from "./action";
 import { deserializeField, migrateIds } from "./rule-utils";
 import { RuleError } from "./errors";
-import { getMappings, ensureMappingsLoaded } from "@/core/db/mappings";
+import { getMappings, ensureMappingsLoaded } from "@/core/server/db/mappings";
 
 export { Rule };
 export type { RuleCondition, RuleAction };

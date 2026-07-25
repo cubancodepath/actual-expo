@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
-import { first, runQuery } from "@/core/db";
-import { sendMessages } from "@/core/sync";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
+import { first, runQuery } from "@/core/server/db";
+import { sendMessages } from "@/core/server/sync";
 import { Timestamp } from "@/core/crdt";
 import { createAccount } from "@/core/server/accounts";
 import { createCategoryGroup, createCategory } from "@/core/server/budget";
@@ -36,7 +36,7 @@ describe("mergeTransactions", () => {
     await openTestDb();
     const acct = await createAccount({ name: "Checking" });
     const g = await createCategoryGroup({ name: "Expenses" });
-    const cat = await createCategory({ name: "Food", group: g });
+    const cat = await createCategory({ name: "Food", groupId: g });
     return { acct, cat };
   }
 

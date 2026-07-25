@@ -1,0 +1,131 @@
+import { describe, it, expect, afterEach } from "vitest";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
+import { sendMessages, batchMessages, resetBatchState } from "@/core/server/sync/batch";
+import { runQuery } from "@/core/server/db";
+import { Timestamp } from "@/core/crdt";
+
+describe("batchMessages — error semantics", () => {
+  afterEach(async () => {
+    resetBatchState();
+    await closeTestDb();
+  });
+
+  it("applies all buffered messages once the batch body completes successfully", async () => {
+    await openTestDb();
+
+    await batchMessages(async () => {
+      await sendMessages([
+        {
+          timestamp: Timestamp.send()!,
+          dataset: "accounts",
+          row: "acc1",
+          column: "name",
+          value: "First",
+        },
+      ]);
+      await sendMessages([
+        {
+          timestamp: Timestamp.send()!,
+          dataset: "accounts",
+          row: "acc2",
+          column: "name",
+          value: "Second",
+        },
+      ]);
+    });
+
+    const rows = await runQuery<{ id: string }>("SELECT id FROM accounts ORDER BY id");
+    expect(rows.map((r) => r.id)).toEqual(["acc1", "acc2"]);
+  });
+
+  it("discards the buffered messages and rejects when the batch body throws — nothing is applied", async () => {
+    await openTestDb();
+
+    const boom = new Error("boom");
+    await expect(
+      batchMessages(async () => {
+        await sendMessages([
+          {
+            timestamp: Timestamp.send()!,
+            dataset: "accounts",
+            row: "acc1",
+            column: "name",
+            value: "Should not persist",
+          },
+        ]);
+        throw boom;
+      }),
+    ).rejects.toThrow(boom);
+
+    const rowsAfterThrow = await runQuery<{ id: string }>("SELECT id FROM accounts");
+    expect(rowsAfterThrow).toEqual([]);
+
+    // The buffer and batching flag must be fully reset so a subsequent
+    // standalone sendMessages() applies normally.
+    await sendMessages([
+      {
+        timestamp: Timestamp.send()!,
+        dataset: "accounts",
+        row: "acc3",
+        column: "name",
+        value: "Standalone",
+      },
+    ]);
+    const rowsAfterRecovery = await runQuery<{ id: string }>("SELECT id FROM accounts");
+    expect(rowsAfterRecovery.map((r) => r.id)).toEqual(["acc3"]);
+  });
+});
+
+describe("batchMessages — nested re-entrancy (fix #4)", () => {
+  afterEach(async () => {
+    resetBatchState();
+    await closeTestDb();
+  });
+
+  it("applies messages from a nested batchMessages call together with the outer batch, in one apply", async () => {
+    await openTestDb();
+
+    await batchMessages(async () => {
+      await sendMessages([
+        {
+          timestamp: Timestamp.send()!,
+          dataset: "accounts",
+          row: "acc1",
+          column: "name",
+          value: "Outer",
+        },
+      ]);
+
+      // Nested call: must NOT flush the outer buffer early or drop batching
+      // mode for the rest of the outer callback.
+      await batchMessages(async () => {
+        await sendMessages([
+          {
+            timestamp: Timestamp.send()!,
+            dataset: "accounts",
+            row: "acc2",
+            column: "name",
+            value: "Inner",
+          },
+        ]);
+      });
+
+      await sendMessages([
+        {
+          timestamp: Timestamp.send()!,
+          dataset: "accounts",
+          row: "acc3",
+          column: "name",
+          value: "Outer again",
+        },
+      ]);
+
+      // While still inside the outer batch, nothing should have hit the DB yet.
+      const rowsMidway = await runQuery("SELECT id FROM accounts");
+      expect(rowsMidway).toEqual([]);
+    });
+
+    const rows = await runQuery<{ id: string }>("SELECT id FROM accounts ORDER BY id");
+    expect(rows.map((r) => r.id)).toEqual(["acc1", "acc2", "acc3"]);
+  });
+});

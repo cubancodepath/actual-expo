@@ -2,8 +2,8 @@
 // the per-day income/expense sums, the month totals, and the bar-size % (value /
 // month total * 100).
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
-import { run } from "@/core/db";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
+import { run } from "@/core/server/db";
 import { calendarSpreadsheet, type CalendarMonthData } from "../calendar-spreadsheet";
 
 async function seed() {

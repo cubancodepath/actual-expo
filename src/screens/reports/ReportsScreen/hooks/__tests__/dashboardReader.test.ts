@@ -1,9 +1,9 @@
 // The dashboard reader against a real DB: the `dashboard`/`dashboard_pages`
 // tables must be queryable via AQL and `meta` must come back parsed (json).
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
-import { run } from "@/core/db";
-import { executeQuery } from "@/core/queries";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
+import { run } from "@/core/server/db";
+import { executeQuery } from "@/lib/queries";
 import { q } from "@/core/shared/query";
 import { widgetPixelHeight, getWidgetMinHeight, ROW_HEIGHT } from "../useDashboardWidgets";
 

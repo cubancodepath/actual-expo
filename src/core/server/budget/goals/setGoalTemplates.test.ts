@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
 import { createCategoryGroup, createCategory } from "@/core/server/budget";
-import { runQuery } from "@/core/db";
+import { runQuery } from "@/core/server/db";
 import { setGoalTemplates } from "../goal-template";
 import type { Template } from "@/core/types/models";
 
@@ -15,7 +15,7 @@ describe("setGoalTemplates — writes goal_def only, never the note (upstream al
   it("persists goal_def + source=ui and touches no note", async () => {
     await openTestDb();
     const group = await createCategoryGroup({ name: "Bills" });
-    const cat = await createCategory({ name: "Rent", group: group });
+    const cat = await createCategory({ name: "Rent", groupId: group });
 
     await setGoalTemplates(cat, [SIMPLE]);
 
@@ -39,7 +39,7 @@ describe("setGoalTemplates — writes goal_def only, never the note (upstream al
   it("clears goal_def when passed no templates, still without a note", async () => {
     await openTestDb();
     const group = await createCategoryGroup({ name: "Bills" });
-    const cat = await createCategory({ name: "Rent", group: group });
+    const cat = await createCategory({ name: "Rent", groupId: group });
 
     await setGoalTemplates(cat, []);
 

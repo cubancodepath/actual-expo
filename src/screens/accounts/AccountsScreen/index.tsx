@@ -20,7 +20,11 @@ import { EmptyState } from "heroui-native-pro";
 export function AccountsScreen() {
   const { t } = useTranslation("accounts");
   const router = useRouter();
-  const [accentForeground, foreground] = useThemeColor(["accent-foreground", "foreground"]);
+  const [accentForeground, foreground, accent] = useThemeColor([
+    "accent-foreground",
+    "foreground",
+    "accent",
+  ]);
   const { accounts, hasLoaded } = useAccounts();
   const refreshControl = useSyncRefreshControl();
 
@@ -128,7 +132,7 @@ export function AccountsScreen() {
 
               <View className="mt-2">
                 <Button variant="secondary" onPress={() => router.push("/(auth)/account/new")}>
-                  <CirclePlus size={18} color={foreground} />
+                  <CirclePlus size={18} color={accent} />
                   <Button.Label>{t("addAccount")}</Button.Label>
                 </Button>
               </View>

@@ -6,7 +6,7 @@ import { describe, it, expect, afterEach } from "vitest";
 import { setupFixtures, closeTestDb, getTxnRow } from "./helpers";
 import { saveTransaction } from "../save";
 import type { SaveTransactionInput } from "../save";
-import { first } from "@/core/db";
+import { first } from "@/core/server/db";
 
 /**
  * Characterization tests for saveTransaction() (plan 002) — simple-new and

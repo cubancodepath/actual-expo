@@ -18,9 +18,9 @@
 
 import { useEffect, useMemo, useRef, useState, type DependencyList } from "react";
 import type { Query } from "@/core/shared/query";
-import { liveQuery, type LiveQueryInstance } from "@/core/queries/liveQuery";
-import { getQueryCache } from "@/core/queries/queryCache";
-import { pagedQuery, type PagedQueryInstance } from "@/core/queries/pagedQuery";
+import { liveQuery, type LiveQueryInstance } from "@/lib/queries/liveQuery";
+import { getQueryCache } from "@/lib/queries/queryCache";
+import { pagedQuery, type PagedQueryInstance } from "@/lib/queries/pagedQuery";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
 

@@ -1,9 +1,9 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
 import { createCategoryGroup, createCategory } from "@/core/server/budget";
 import { createAccount, updateAccount } from "@/core/server/accounts";
 import { addTransaction } from "@/core/server/transactions";
-import { sendMessages } from "@/core/sync";
+import { sendMessages } from "@/core/server/sync";
 import { Timestamp } from "@/core/crdt";
 import { loadSpreadsheet, getSpreadsheet } from "@/core/server/sheet";
 import { sheetForMonth, envelopeBudget } from "@/core/server/spreadsheet/bindings";
@@ -21,7 +21,7 @@ describe("triggerBudgetChanges — accounts/category_mapping invalidation (fix #
   it("recomputes sum-amount- cells when an account is toggled off-budget", async () => {
     await openTestDb();
     const groupId = await createCategoryGroup({ name: "Expenses" });
-    const catId = await createCategory({ name: "Groceries", group: groupId });
+    const catId = await createCategory({ name: "Groceries", groupId: groupId });
     const acctId = await createAccount({ name: "Checking" });
     await loadSpreadsheet();
 
@@ -47,8 +47,8 @@ describe("triggerBudgetChanges — accounts/category_mapping invalidation (fix #
   it("recomputes sum-amount- cells for both categories when a category is remapped (merge)", async () => {
     await openTestDb();
     const groupId = await createCategoryGroup({ name: "Expenses" });
-    const catA = await createCategory({ name: "Groceries", group: groupId });
-    const catB = await createCategory({ name: "Dining", group: groupId });
+    const catA = await createCategory({ name: "Groceries", groupId: groupId });
+    const catB = await createCategory({ name: "Dining", groupId: groupId });
     const acctId = await createAccount({ name: "Checking" });
     await loadSpreadsheet();
 

@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
 import { createAccount } from "@/core/server/accounts";
 import { createRule } from "@/core/server/rules";
-import { runQuery } from "@/core/db";
+import { runQuery } from "@/core/server/db";
 import { reconcileAccount } from "./index";
 
 describe("reconcileAccount", () => {

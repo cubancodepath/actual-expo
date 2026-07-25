@@ -7,8 +7,8 @@
  * keep-wins semantics. Splits and transfers are handled (see below). All writes
  * go out as raw CRDT messages in a single undoable batch.
  */
-import { first, runQuery } from "@/core/db";
-import { sendMessages } from "@/core/sync";
+import { first, runQuery } from "@/core/server/db";
+import { sendMessages } from "@/core/server/sync";
 import { undoable } from "@/core/server/undo";
 import { Timestamp } from "@/core/crdt";
 

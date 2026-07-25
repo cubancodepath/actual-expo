@@ -26,7 +26,7 @@ const {
   loadBudgetMock: vi.fn(),
 }));
 
-vi.mock("@/core/sync", () => ({
+vi.mock("@/core/server/sync", () => ({
   clearLocalSyncState: clearLocalSyncStateMock,
   setSyncingMode: setSyncingModeMock,
   fullSync: fullSyncMock,
@@ -35,7 +35,7 @@ vi.mock("@/core/sync", () => ({
 // steps is covered by that module's own test — resetProtocol.test.ts); here we
 // only care about the operation-level orchestration around it.
 const coreResetSyncMock = vi.hoisted(() => vi.fn());
-vi.mock("@/core/sync/reset", () => ({ resetSync: coreResetSyncMock }));
+vi.mock("@/core/server/sync/reset", () => ({ resetSync: coreResetSyncMock }));
 vi.mock("@/lib/errors/ErrorChannel", () => ({ emitErrorEvent: vi.fn() }));
 vi.mock("@/stores/sessionStore", () => ({
   useSessionStore: { getState: () => ({ serverUrl: "https://s", token: "tok" }) },

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { fullSync, setSyncingMode } from "@/core/sync";
+import { fullSync, setSyncingMode } from "@/core/server/sync";
 import { type ErrorCode } from "@/core/errors";
 
 type SyncStatus = "idle" | "syncing" | "error" | "success";

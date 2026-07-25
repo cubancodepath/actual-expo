@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useSyncStore } from "../syncStore";
-import * as syncModule from "@/core/sync";
+import * as syncModule from "@/core/server/sync";
 
 beforeEach(() => {
   useSyncStore.setState({

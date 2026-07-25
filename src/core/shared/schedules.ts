@@ -35,7 +35,7 @@ import type {
   ScheduleStatus,
 } from "@/core/types/models";
 import { currentDay, strToInt } from "./months";
-import { q } from "@/core/queries";
+import { q } from "@/core/shared/query";
 import type { Query } from "@/core/shared/query";
 import { RSchedule } from "@/core/server/util/rschedule";
 import type { ByDayOfWeekEntry, IRuleOptions } from "@/core/server/util/rschedule";

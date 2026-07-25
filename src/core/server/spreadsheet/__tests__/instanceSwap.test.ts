@@ -5,7 +5,7 @@
 // that recomputes to the same 0 its fresh placeholder holds notifies nobody,
 // so "Ready to assign" / "holding for next month" kept the old budget's value.
 import { describe, it, expect, afterEach } from "vitest";
-import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
 import { createCategoryGroup, createCategory } from "@/core/server/budget";
 import { setBudgetAmount } from "@/core/server/budget/actions";
 import {
@@ -35,7 +35,7 @@ describe("spreadsheet instance per budget", () => {
     // Budget A: something budgeted, so to-budget is non-zero.
     await openTestDb();
     const groupId = await createCategoryGroup({ name: "Expenses" });
-    const catId = await createCategory({ name: "Groceries", group: groupId });
+    const catId = await createCategory({ name: "Groceries", groupId: groupId });
     await setBudgetAmount(currentMonth(), catId, 10000);
     await loadSpreadsheet();
 
@@ -161,7 +161,7 @@ describe("warm cache ownership", () => {
   it("ignores a clear from a superseded pass", async () => {
     await openTestDb();
     const groupId = await createCategoryGroup({ name: "Expenses" });
-    const catId = await createCategory({ name: "Groceries", group: groupId });
+    const catId = await createCategory({ name: "Groceries", groupId: groupId });
 
     const month = currentMonth();
     const monthInt = monthToInt(month);
@@ -181,7 +181,7 @@ describe("warm cache ownership", () => {
   it("stays inactive when the database is closed", async () => {
     await openTestDb();
     const groupId = await createCategoryGroup({ name: "Expenses" });
-    const catId = await createCategory({ name: "Groceries", group: groupId });
+    const catId = await createCategory({ name: "Groceries", groupId: groupId });
     const month = currentMonth();
 
     await closeTestDb();

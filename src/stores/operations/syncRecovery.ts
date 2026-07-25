@@ -4,12 +4,12 @@
 // live in the operations layer (one-way: operations → stores → core), NOT
 // inside a store — that keeps the stores free of sibling-store imports and
 // out of module-init cycles.
-import { fullSync } from "@/core/sync";
+import { fullSync } from "@/core/server/sync";
 import { ActualError, type ErrorCode } from "@/core/errors";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { readMetadata, deleteBudgetDir, loadPrefs } from "@/core/server/prefs";
 import { getRemoteFiles, uploadBudget, downloadBudget } from "@/core/server/cloud-storage";
-import { resetSync as coreResetSync } from "@/core/sync/reset";
+import { resetSync as coreResetSync } from "@/core/server/sync/reset";
 import { useSyncStore } from "@/stores/syncStore";
 import { useSessionStore } from "@/stores/sessionStore";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";

@@ -8,8 +8,8 @@
  * 'ui') are skipped so stale note text can't clobber them. Runs the orphan
  * group sweep at the end. All writes go through one CRDT batch.
  */
-import { runQuery } from "@/core/db";
-import { sendMessages } from "@/core/sync";
+import { runQuery } from "@/core/server/db";
+import { sendMessages } from "@/core/server/sync";
 import { Timestamp } from "@/core/crdt";
 import { parseCleanupNote } from "./cleanup-template";
 import { resolveCleanupGroups, tombstoneOrphanCleanupGroups } from "./cleanup-groups";

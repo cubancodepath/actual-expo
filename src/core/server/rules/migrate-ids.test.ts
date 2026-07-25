@@ -1,8 +1,8 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
-import { first, runQuery } from "@/core/db";
-import { applyMessages } from "@/core/sync/apply";
-import { emit } from "@/core/sync/syncEvents";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
+import { first, runQuery } from "@/core/server/db";
+import { applyMessages } from "@/core/server/sync/apply";
+import { emit } from "@/core/server/sync/syncEvents";
 import { Timestamp } from "@/core/crdt";
 import { createPayee, mergePayees } from "@/core/server/payees";
 import { createCategoryGroup, createCategory, deleteCategory } from "@/core/server/budget";
@@ -62,8 +62,8 @@ describe("rules migrateIds — id projection on mapping changes", () => {
   it("projects a category `is` condition after deleteCategory-with-transfer", async () => {
     await openTestDb();
     const g = await createCategoryGroup({ name: "G" });
-    const from = await createCategory({ name: "From", group: g });
-    const to = await createCategory({ name: "To", group: g });
+    const from = await createCategory({ name: "From", groupId: g });
+    const to = await createCategory({ name: "To", groupId: g });
 
     await createRule({
       conditions: [{ field: "category", op: "is", value: from }],
@@ -141,7 +141,7 @@ describe("rules migrateIds — id projection on mapping changes", () => {
   it("suggestCategoryForPayee resolves against a rule written pre-merge", async () => {
     await openTestDb();
     const g = await createCategoryGroup({ name: "G" });
-    const cat = await createCategory({ name: "Groceries", group: g });
+    const cat = await createCategory({ name: "Groceries", groupId: g });
     const target = await createPayee({ name: "Target" });
     const merged = await createPayee({ name: "Merged" });
 

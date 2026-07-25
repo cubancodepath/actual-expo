@@ -9,7 +9,7 @@
  *    (the card has them via `useCategories`; the spreadsheet is not a hook)
  *  - `aqlQuery` → `@/core/server/aql`; `keyBy` inlined; dates stay strings.
  */
-import { q } from "@/core/queries";
+import { q } from "@/lib/queries";
 import { aqlQuery } from "@/core/server/aql";
 import * as monthUtils from "@/core/shared/monthUtils";
 import { getEarliestTransaction } from "@/core/server/transactions";

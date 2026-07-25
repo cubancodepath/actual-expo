@@ -6,9 +6,9 @@
  * noted otherwise (template definition amounts are in display units).
  */
 
-import { first, runQuery } from "@/core/db";
+import { first, runQuery } from "@/core/server/db";
 import { addMonths, monthToInt } from "@/core/shared/months";
-import { ALIVE_TX_FILTER } from "@/core/db/filters";
+import { ALIVE_TX_FILTER } from "@/core/server/db/filters";
 import { getScheduleById, getSchedules } from "@/core/server/schedules";
 import type { RecurConfig } from "@/core/types/models";
 import type {

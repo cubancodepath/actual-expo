@@ -15,10 +15,18 @@ app/                        # SOLO rutas de Expo Router. Cada archivo = re-expor
                             #   export { BudgetScreen as default } from '@/screens/budget/BudgetScreen'
 src/
 ├── core/                   # Dominio puro (SIN React ni UI, tampoco react-query). Espejo del layout
-│                           # de loot-core upstream: server/ (motor por dominio), shared/ (lógica pura:
-│                           # months, util, schedules, tags, transactions…), types/models/ (entidades),
-│                           # db/, sync/, crdt/, queries/ (compilador AQL), encryption/, errors/,
-│                           # proto/, platform/. El wiring de react-query vive en lib/query/.
+│                           # de loot-core upstream, cuyo src/ solo tiene platform/, server/, shared/
+│                           # y types/ — todo lo demás cuelga de server/:
+│                           #   server/     motor por dominio (accounts, budget, rules…) + db/ (SQL +
+│                           #               helpers CRDT + sort.ts), sync/, encryption/, aql/ (compilador)
+│                           #   shared/     lógica pura (months, util, schedules, tags, transactions…)
+│                           #   types/      models/ (entidades)
+│                           #   platform/   seams nativos
+│                           # Pendientes de alinear: crdt/ y proto/ (upstream los tiene en un paquete
+│                           # aparte, packages/crdt).
+│                           # La capa reactiva de AQL (liveQuery/pagedQuery/queryCache) vive en
+│                           # lib/queries/, como el desktop-client del upstream; el wiring de
+│                           # react-query, en lib/tanstack/.
 │
 ├── screens/                # Toda la UI, organizada por pantalla (espejo del árbol de navegación)
 │   ├── budget/
@@ -64,8 +72,11 @@ src/
 ├── lib/                    # Utilidades puras sin React (currency, date, format, colors, screenOptions)
 │   ├── errors/             # bus de errores de la app (ErrorChannel, emitErrorEvent, toErrorCode)
 │   │                       # + install.ts (handler global). core NO emite: solo lanza ActualError.
-│   ├── query/              # wiring de TanStack Query: queryClient (singleton + error handlers),
-│   │                       # react-query.d.ts (ambient types) y query options multi-dominio
+│   ├── queries/            # capa reactiva de AQL: liveQuery, pagedQuery, queryCache (espejo del
+│   │                       # desktop-client/src/queries upstream). El MOTOR está en core/server/aql/
+│   ├── tanstack/           # wiring de TanStack Query: queryClient (singleton + error handlers),
+│   │                       # react-query.d.ts (ambient types) y query options multi-dominio.
+│   │                       # Lleva el nombre de la librería para no confundirse con queries/
 │   └── hooks/              # hooks React verdaderamente globales (useQuery, useLocale…).
 │                           # Si un hook solo lo usa un dominio → screens/<dominio>/hooks/
 │
@@ -104,9 +115,9 @@ app → screens → (ui | stores | lib) → core   (core/server + core/platform 
 - `ui/` no importa de `screens/` ni de `stores/`.
 - **Un `store` no importa otro `store`.** La orquestación cross-store vive en `stores/operations/`
   (thunks): `operations → stores → core`, nunca al revés. Exentos: `session.selectors.ts`
-  (composición read-only) y `prefsStorage.ts` (adaptador de persistencia). Lo aplica `check-arch.sh`.
+  (composición read-only) y `prefsStorage.ts` (adaptador de persistencia). Lo aplica la regla `stores-no-sibling-stores` de `.dependency-cruiser.cjs`.
 - **Prohibidos los imports dinámicos de stores** (`await import("@/stores/…")`): cada uno tapaba un
-  ciclo; se rompen estructuralmente (evento por el bus / operation / inyección de handler). HARD FAIL en `check-arch.sh`.
+  ciclo; se rompen estructuralmente (evento por el bus / operation / inyección de handler). HARD FAIL: regla `no-dynamic-store-imports` de `.dependency-cruiser.cjs`.
 - **Wiring de arranque = ciclo de vida React, no efectos de import.** Los listeners de app-lifetime
   (política de sync + política del 401) se registran en `lib/app-services.ts::installAppServices`,
   llamado desde `useEffect(installAppServices, [])` en `app/_layout.tsx` (cleanup des-registra →
@@ -134,17 +145,22 @@ app → screens → (ui | stores | lib) → core   (core/server + core/platform 
 | `src/features/auth/`                                                                                                                     | `src/screens/auth/`                                                                                                                                                                                                                             | ✅ hecho 2026-07-08 — primer dominio migrado (patrón de referencia)                            |
 | files.tsx + change-budget.tsx + hooks de settings                                                                                        | `src/screens/files/` (Budget­FilesScreen, ChangeBudgetScreen, hooks/, components/)                                                                                                                                                              | ✅ hecho 2026-07-09 — todo heroui; BudgetFileRow → `src/ui/`, InlineError → `src/ui/feedback/` |
 | Pipeline de errores `reportError`/policy/errorStore/ErrorPresenter                                                                       | **borrado** — queda solo el bus `ErrorChannel` + `ErrorChannelConsumer` (`src/ui/feedback/`, log + Sentry)                                                                                                                                      | ✅ hecho 2026-07-09 — consumers de UI se colgarán del bus cuando toque                         |
-| react-query en core (`core/queries/queryClient.ts`, `react-query.d.ts`, `core/domain/transactions/queries.ts`)                           | `src/lib/query/` (queryClient, ambient types, transactionQueries); `useTransactions` → `src/lib/hooks/` (multi-dominio)                                                                                                                         | ✅ hecho 2026-07-09 — check-arch regla 4 prohíbe paquetes React en core                        |
-| Bus de errores en core (`core/errors/ErrorChannel.ts`, `normalizeError`, `CODE_META`)                                                    | `src/lib/errors/ErrorChannel.ts` (bus slim + `toErrorCode`); core queda con `ActualError` + `ErrorCode` y solo LANZA; `syncStore.sync()` es el entry point con la política (logout, syncRecovery, offline); i18n por convención `errors:<code>` | ✅ hecho 2026-07-09 — check-arch regla 5 prohíbe `@/lib/errors\|query` en core                 |
+| react-query en core (`core/queries/queryClient.ts`, `react-query.d.ts`, `core/domain/transactions/queries.ts`)                           | `src/lib/tanstack/` (queryClient, ambient types, transactionQueries); `useTransactions` → `src/lib/hooks/` (multi-dominio)                                                                                                                         | ✅ hecho 2026-07-09 — regla `core-no-react` prohíbe paquetes React en core                        |
+| Bus de errores en core (`core/errors/ErrorChannel.ts`, `normalizeError`, `CODE_META`)                                                    | `src/lib/errors/ErrorChannel.ts` (bus slim + `toErrorCode`); core queda con `ActualError` + `ErrorCode` y solo LANZA; `syncStore.sync()` es el entry point con la política (logout, syncRecovery, offline); i18n por convención `errors:<code>` | ✅ hecho 2026-07-09 — regla `core-no-lib` prohíbe TODO `@/lib` en core                 |
 | `src/stores/`, `src/services/`, `src/lib/`, `src/core/`, `src/i18n/`                                                                     | se quedan donde están                                                                                                                                                                                                                           |                                                                                                |
 | Rutas gordas: `app/(auth)/settings/budget.tsx` (526), `transaction/split.tsx` (455), `account/close.tsx` (435), `schedule/new.tsx` (406) | extraer a `screens/settings/`, `screens/transactions/`, `screens/accounts/`, `screens/schedules/`                                                                                                                                               | siguiente candidato cada vez que se toquen                                                     |
 
 ## Guardarraíles
 
-- `scripts/check-arch.sh` (pre-commit): valida la dirección de dependencias de arriba. Regla 6
-  prohíbe imports nuevos a `@/features`/`@/design-system` con lista de grandfathering explícita
-  (quitar líneas al migrar cada archivo, nunca añadir); ratchet de rutas gordas en `max_fat=25`
-  (bajar al migrar rutas, nunca subir).
+- **`.dependency-cruiser.cjs`** (`npm run check:arch`, pre-commit): valida la dirección de
+  dependencias sobre el grafo real de módulos (resuelve los `paths` de tsconfig), así que ve
+  también los `import()` dinámicos y los imports de solo-tipo. `no-new-legacy-imports` congela
+  `@/features`/`@/design-system` con una lista de grandfathering **archivo a archivo** (quitar
+  líneas al migrar, nunca añadir; nada de globs anchos, que dejarían colar deuda nueva).
+  `no-circular` está en `warn` mientras se limpian los ciclos heredados — el de `db ↔ sync` es
+  de diseño y lo tiene igual el upstream. `npm run check:arch:graph` saca el grafo en DOT.
+- `scripts/check-fat-routes.sh` (pre-commit): ratchet de rutas gordas, `max_fat=13`
+  (bajar al migrar rutas, nunca subir). Cuenta líneas, no imports, por eso vive fuera.
 - `tsconfig.json`: un solo alias `@/* → src/*`. Eliminar aliases muertos si reaparecen.
 - Al mover un archivo: `npx tsc --noEmit` + `npm test` antes de commitear.
 

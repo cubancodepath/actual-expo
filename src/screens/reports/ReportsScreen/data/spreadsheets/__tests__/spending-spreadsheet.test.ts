@@ -2,8 +2,8 @@
 // spreadsheet (makeQuery + cumulative math) against the AQL compiler / expo
 // dialect. The integration test pins the compare/compareTo cumulative series.
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
-import { run } from "@/core/db";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
+import { run } from "@/core/server/db";
 import type { Category, CategoryGroup, SpendingEntity } from "@/core/types/models";
 import { isSupportedCategoryCondition, filterCategoriesByConditions } from "../../budgetDataQuery";
 import { resolveSpendingAverageRange } from "../../spendingAverageRange";

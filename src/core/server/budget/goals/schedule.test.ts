@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
 import { createCategoryGroup, createCategory } from "@/core/server/budget";
 import { createSchedule } from "@/core/server/schedules";
 import { calculateGoal } from "@/core/server/budget/category-template-context";
@@ -21,7 +21,7 @@ describe("goals engine — schedule template (fix #12)", () => {
   it("budgets the full amount this month when the schedule is due this month (pay-month-of)", async () => {
     await openTestDb();
     const group = await createCategoryGroup({ name: "Bills" });
-    const cat = await createCategory({ name: "Rent", group: group });
+    const cat = await createCategory({ name: "Rent", groupId: group });
     const month = currentMonth();
 
     await createSchedule({
@@ -43,7 +43,7 @@ describe("goals engine — schedule template (fix #12)", () => {
   it("spreads the contribution evenly across months when the schedule is due later (sinking)", async () => {
     await openTestDb();
     const group = await createCategoryGroup({ name: "Bills" });
-    const cat = await createCategory({ name: "Insurance", group: group });
+    const cat = await createCategory({ name: "Insurance", groupId: group });
     const month = currentMonth();
     const dueMonth = addMonths(month, 3);
 
@@ -67,7 +67,7 @@ describe("goals engine — schedule template (fix #12)", () => {
   it("applies a percent adjustment to the schedule's target amount", async () => {
     await openTestDb();
     const group = await createCategoryGroup({ name: "Bills" });
-    const cat = await createCategory({ name: "Subscription", group: group });
+    const cat = await createCategory({ name: "Subscription", groupId: group });
     const month = currentMonth();
 
     await createSchedule({
@@ -90,8 +90,8 @@ describe("goals engine — schedule template (fix #12)", () => {
 
   it("resolves an income schedule with the opposite sign", async () => {
     await openTestDb();
-    const group = await createCategoryGroup({ name: "Income", is_income: true });
-    const cat = await createCategory({ name: "Freelance", group: group, is_income: true });
+    const group = await createCategoryGroup({ name: "Income", isIncome: true });
+    const cat = await createCategory({ name: "Freelance", groupId: group, isIncome: true });
     const month = currentMonth();
 
     await createSchedule({
@@ -113,7 +113,7 @@ describe("goals engine — schedule template (fix #12)", () => {
   it("returns 0 when the referenced schedule doesn't exist", async () => {
     await openTestDb();
     const group = await createCategoryGroup({ name: "Bills" });
-    const cat = await createCategory({ name: "Ghost", group: group });
+    const cat = await createCategory({ name: "Ghost", groupId: group });
     const month = currentMonth();
 
     const result = await calculateGoal(cat, month, [scheduleTemplate("Nonexistent")], {

@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
-import { runQuery, first } from "@/core/db";
-import { sendMessages } from "@/core/sync";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
+import { runQuery, first } from "@/core/server/db";
+import { sendMessages } from "@/core/server/sync";
 import { Timestamp } from "@/core/crdt";
 import { createPayee, mergePayees } from "./index";
 

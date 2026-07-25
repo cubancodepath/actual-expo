@@ -3,7 +3,7 @@
  * Replaces usePayeesStore for data reads.
  */
 
-import { q } from "@/core/queries";
+import { q } from "@/lib/queries";
 import { useLiveQuery } from "@/hooks/useQuery";
 import type { Payee } from "@/core/types/models";
 

@@ -7,7 +7,7 @@ vi.mock("@/stores/operations/syncRecovery", () => ({
   handleSyncFileError: handleSyncFileErrorMock,
 }));
 
-import { emit } from "@/core/sync/syncEvents";
+import { emit } from "@/core/server/sync/syncEvents";
 import { listenForSyncEvent } from "@/lib/sync-events";
 import { useSyncStore } from "@/stores/syncStore";
 import { errorChannel, type ErrorEvent } from "@/lib/errors/ErrorChannel";

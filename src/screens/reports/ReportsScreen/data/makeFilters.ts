@@ -13,7 +13,7 @@
  */
 import { conditionsToAQL } from "@/core/server/transactions/transaction-rules";
 import type { RuleCondition } from "@/core/types/models";
-import type { ObjectExpression } from "@/core/queries";
+import type { ObjectExpression } from "@/lib/queries";
 
 export type ReportFilters = {
   filters: ObjectExpression[];

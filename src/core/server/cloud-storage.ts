@@ -14,8 +14,8 @@ import { randomUUID } from "@/core/platform/crypto";
 import { http, parseResponse, type HttpResponse } from "@/core/platform/fetch";
 import { mapServerReason } from "@/core/post";
 import { ActualError, type ErrorCode } from "@/core/errors";
-import * as encryption from "@/core/encryption";
-import { loadKeyForBudget } from "@/core/encryption/keys";
+import * as encryption from "@/core/server/encryption";
+import { loadKeyForBudget } from "@/core/server/encryption/keys";
 import {
   getBudgetDir,
   readMetadata,

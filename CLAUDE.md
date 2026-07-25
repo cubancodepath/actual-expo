@@ -40,13 +40,10 @@ Mobile client for [Actual Budget](https://actualbudget.com/) — local-first bud
 src/
 ├── core/                   # Domain logic — NO React, UI, or react-query imports allowed here.
 │   │                       # Mirrors upstream loot-core's src/ layout (server/ + shared/ + types/).
-│   ├── db/                 # SQLite connection, query helpers, schema, migrations
 │   ├── crdt/               # HLC timestamps (timestamp.ts), Merkle tree diff (merkle.ts)
-│   ├── sync/               # fullSync, syncEvents, encoder (protobuf + AES), clock
-│   ├── encryption/         # AES-256-GCM via @noble/ciphers, PBKDF2 key derivation
+│   │                       #   TODO(align): upstream ships this as its own package (packages/crdt)
 │   ├── errors/             # ActualError, ErrorCode — core only THROWS, never emits to the UI bus
-│   ├── queries/            # AQL query compiler, liveQuery, pagedQuery, queryCache, execute
-│   ├── proto/              # Protobuf definitions
+│   ├── proto/              # Protobuf definitions (see crdt/ — same upstream package)
 │   ├── platform/           # Capability seams — one dir per capability with a NAMED interface
 │   │                       #   (types.ts: PlatformFileSystem, PlatformSqlite, PlatformCrypto,
 │   │                       #   PlatformHttp, PlatformAsyncStorage, PlatformKeyStore,
@@ -63,6 +60,11 @@ src/
 │   │                       #   transaction, payee, rule, schedule, templates…), upstream names
 │   └── server/             # Engine by domain (upstream loot-core/src/server; index.ts per
 │       │                   #   domain instead of app.ts — no IPC layer, UI calls directly):
+│       ├── db/             # SQLite connection, query helpers, CRDT write helpers (insert/
+│       │                   #   insertWithUUID/update/delete_), entity SQL, sort.ts, schema, migrations
+│       ├── sync/           # fullSync, syncEvents, encoder (protobuf + AES), clock
+│       ├── encryption/     # AES-256-GCM via @noble/ciphers, PBKDF2 key derivation
+│       ├── aql/            # AQL query engine: compiler, exec, schema, views (faithful port)
 │       ├── accounts/       # Account CRUD (raw SQL)
 │       ├── auth/, budgetfiles/, server-info/  # sync-server transport + handlers
 │       ├── budget/         # Category CRUD (index.ts) + sort-categories, budget actions
@@ -115,7 +117,10 @@ src/
 ├── lib/                    # Pure app-level utilities, no React: colors, screenOptions, badge
 │                           #   (date/currency/format live in @/core/shared: months, util, currencies)
 │   ├── errors/             # ErrorChannel bus (emitErrorEvent, toErrorCode) + install.ts
-│   ├── query/               # TanStack Query wiring: queryClient singleton, ambient types
+│   ├── queries/            # AQL reactive layer: liveQuery, pagedQuery, queryCache (upstream's
+│   │                       #   desktop-client/src/queries). The ENGINE is core/server/aql/
+│   ├── tanstack/           # TanStack Query wiring: queryClient singleton, ambient types.
+│   │                       #   Named for the library so it can't be confused with queries/ above
 │   └── hooks/              # Truly global React hooks (useQuery, useLocale...); single-domain
 │                           #   hooks live in screens/<domain>/hooks/ instead
 │
@@ -153,7 +158,7 @@ Auth guard uses `<Stack.Protected guard={condition}>` in root `_layout.tsx`.
 5. **`src/ui/` never imports `@/screens/` or `@/stores/`** — stays screen-agnostic
 6. **No new imports to legacy** — `@/features/`, `@/design-system/` may not gain new import sites; only removed as files migrate out
 
-Dependency direction: `app → screens → (ui | stores | lib) → core`. Enforced by `scripts/check-arch.sh` (husky pre-commit).
+Dependency direction: `app → screens → (ui | stores | lib) → core`. Enforced by `dependency-cruiser` (`npm run check:arch`, husky pre-commit) against the real module graph — dynamic `import()` and type-only imports included. Rules live in `.dependency-cruiser.cjs`.
 
 ### Path Aliases
 
@@ -167,7 +172,7 @@ Single alias `@/` for everything under `src/` (the old `@core`/`@ds`/`@features`
 ### Key Patterns
 
 - **Raw SQL everywhere**: No ORM. Queries use `db/index.ts` helpers (`runQuery`, `first`, `run`, `transaction`). Schema column names match Actual's original.
-- **AQL queries**: `src/core/queries/` has a full query compiler + liveQuery system. `useQuery(q)` in `src/hooks/useQuery.ts` (migrating to `src/lib/hooks/`) wraps it for React.
+- **AQL queries**: the engine (compiler/exec/schema) lives in `src/core/server/aql/`; the reactive layer (`liveQuery`/`pagedQuery`/`queryCache`) in `src/lib/queries/`, matching upstream's `desktop-client/src/queries/`. `useQuery(q)` in `src/hooks/useQuery.ts` (migrating to `src/lib/hooks/`) wraps it for React.
 - **Zustand stores**: Pure UI state. After mutations, re-query via hooks rather than `.getState().load()`.
 - **Bootstrap flow** (`app/_layout.tsx`): Load prefs → open DB → load CRDT clock → open budget → show UI. Sync runs in background after ready.
 - **Sync on foreground**: AppState listener triggers `fullSync()` when app returns to foreground. Also polls every 60s.

@@ -16,7 +16,7 @@
  */
 import * as d from "date-fns";
 import type { Locale } from "date-fns";
-import { q } from "@/core/queries";
+import { q } from "@/lib/queries";
 import { aqlQuery } from "@/core/server/aql";
 import * as monthUtils from "@/core/shared/monthUtils";
 import { getEarliestTransaction } from "@/core/server/transactions";

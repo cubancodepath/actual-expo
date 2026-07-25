@@ -3,8 +3,8 @@
 // built from conditions via conditionsToAQL).
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { enUS } from "date-fns/locale";
-import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
-import { run } from "@/core/db";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
+import { run } from "@/core/server/db";
 import type { SummaryContent } from "@/core/types/models/dashboard";
 import { summarySpreadsheet, type SummaryData } from "../summary-spreadsheet";
 

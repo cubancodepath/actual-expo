@@ -3,7 +3,7 @@ import { usePickerStore } from "@/stores/pickerStore";
 import { useSyncStore } from "@/stores/syncStore";
 import { useSyncedPrefsStore } from "@/hooks/useSyncedPrefs";
 import { unloadSpreadsheet } from "@/core/server/sheet";
-import { clearQueryCache } from "@/core/queries/queryCache";
+import { clearQueryCache } from "@/lib/queries/queryCache";
 import { currentMonth } from "@/core/shared/months";
 import { PREFERENCE_DEFAULTS } from "@/core/server/preferences/types";
 import { defaultFlagPrefs } from "@/core/server/preferences/featureFlags";

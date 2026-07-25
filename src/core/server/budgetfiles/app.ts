@@ -3,8 +3,8 @@
 // (createBudget, reconcileFiles, convertToLocalOnly, reRegisterBudget); the
 // store-orchestrating flows (loadBudget/closeBudget/switchBudget/deleteBudget)
 // stay in the app layer, mirroring upstream's desktop-client budgetfilesSlice.
-import { openDatabase } from "@/core/db";
-import { loadClock } from "@/core/sync";
+import { openDatabase } from "@/core/server/db";
+import { loadClock } from "@/core/server/sync";
 import {
   type BudgetMetadata,
   ensureBudgetsDir,

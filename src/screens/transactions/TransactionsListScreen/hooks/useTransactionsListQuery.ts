@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { q, type Query } from "@/core/queries";
+import { q, type Query } from "@/lib/queries";
 import { addMonths } from "@/core/shared/months";
 import { useTransactions } from "@/lib/hooks/useTransactions";
 import { useTransactionEnrichment } from "@/lib/hooks/useTransactionEnrichment";

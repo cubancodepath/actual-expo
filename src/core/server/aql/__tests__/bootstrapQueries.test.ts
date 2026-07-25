@@ -4,9 +4,9 @@
 // real DB. This runs them (and the transaction/search/schedule shapes) against
 // better-sqlite3 so that class of regression fails loudly here.
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
-import { run } from "@/core/db";
-import { executeQuery } from "@/core/queries";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
+import { run } from "@/core/server/db";
+import { executeQuery } from "@/core/server/aql/execute";
 import { q } from "@/core/shared/query";
 import { getTags } from "@/core/server/tags";
 import { buildSearchQuery } from "@/screens/transactions/SearchScreen/searchParams";

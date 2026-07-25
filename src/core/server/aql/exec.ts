@@ -1,7 +1,7 @@
 // Faithful port of loot-core src/server/aql/exec.ts. Runs compiled AQL against
-// the DB (via the `@/core/db` seam — already async on expo-sqlite) and maps rows
+// the DB (via the `@/core/server/db` seam — already async on expo-sqlite) and maps rows
 // back through `convertOutputType`. `.calculate()` unwraps to a scalar.
-import * as db from "@/core/db";
+import * as db from "@/core/server/db";
 import type { QueryState } from "@/core/shared/query";
 
 import { compileQuery, defaultConstructQuery } from "./compiler";

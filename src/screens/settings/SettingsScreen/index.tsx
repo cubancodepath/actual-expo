@@ -24,9 +24,9 @@ import { useSessionStore } from "@/stores/sessionStore";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import { useSyncStore } from "@/stores/syncStore";
 import { signOut } from "@/stores/operations/users";
-import { clearSwitchingFlag, loadClock } from "@/core/sync";
+import { clearSwitchingFlag, loadClock } from "@/core/server/sync";
 import { Timestamp } from "@/core/crdt";
-import { clearLocalData } from "@/core/db";
+import { clearLocalData } from "@/core/server/db";
 import { getServerInfo } from "@/core/server/server-info/serverInfo.api";
 import { dialog } from "@/ui/feedback/dialog/dialogStore";
 

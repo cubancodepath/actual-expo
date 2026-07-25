@@ -12,11 +12,11 @@
 
 import { Spreadsheet } from "@/core/server/spreadsheet/spreadsheet";
 import { sheetForMonth, envelopeBudget } from "@/core/server/spreadsheet/bindings";
-import { firstSync } from "@/core/db";
+import { firstSync } from "@/core/server/db";
 import { monthToInt, addMonths } from "@/core/shared/months";
 import { getCategories, getCategoryGroups } from "@/core/server/budget";
 import type { Category, CategoryGroup } from "@/core/types/models";
-import { safeNumber } from "@/lib/number";
+import { safeNumber } from "@/core/shared/util";
 import { num, createSpentCells, getBudgetRange } from "@/core/server/budget/base";
 import { warmBuffered, warmZeroBudget } from "@/core/server/spreadsheet/warm-cache";
 import { inferGoalFromDef } from "@/core/server/budget/goals";

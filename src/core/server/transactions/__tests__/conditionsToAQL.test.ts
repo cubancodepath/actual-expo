@@ -3,8 +3,8 @@
 // + expo-sqlite dialect (better-sqlite3 node adapter). Also pins the two seams
 // that diverge from upstream: string dates and the unsupported REGEXP function.
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
-import { run } from "@/core/db";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
+import { run } from "@/core/server/db";
 import { aqlQuery, RegexpUnsupportedError } from "@/core/server/aql";
 import { q } from "@/core/shared/query";
 import type { RuleCondition } from "@/core/types/models";

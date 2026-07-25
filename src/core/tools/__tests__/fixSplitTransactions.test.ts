@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
-import { first } from "@/core/db";
-import { sendMessages } from "@/core/sync";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
+import { first } from "@/core/server/db";
+import { sendMessages } from "@/core/server/sync";
 import { Timestamp } from "@/core/crdt";
 import { createAccount } from "@/core/server/accounts";
 import { createCategoryGroup, createCategory } from "@/core/server/budget";
@@ -106,7 +106,7 @@ describe("fixSplitTransactions", () => {
     const a1 = await createAccount({ name: "On1", offbudget: false });
     const a2 = await createAccount({ name: "On2", offbudget: false });
     const g = await createCategoryGroup({ name: "G" });
-    const cat = await createCategory({ name: "C", group: g });
+    const cat = await createCategory({ name: "C", groupId: g });
     const t2 = await mkTxn({ acct: a2, amount: 500, date: 20260101 });
     const t1 = await mkTxn({
       acct: a1,
@@ -126,7 +126,7 @@ describe("fixSplitTransactions", () => {
     await openTestDb();
     const acct = await createAccount({ name: "A" });
     const g = await createCategoryGroup({ name: "G" });
-    const cat = await createCategory({ name: "C", group: g });
+    const cat = await createCategory({ name: "C", groupId: g });
     const withError = await mkTxn({ acct, amount: -100, date: 20260101, error: '{"x":1}' });
     const parentWithCat = await mkTxn({
       acct,

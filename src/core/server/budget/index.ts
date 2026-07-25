@@ -1,11 +1,21 @@
-import { randomUUID } from "@/core/platform/crypto";
-import { runQuery } from "@/core/db";
-import { sendMessages } from "@/core/sync";
+/**
+ * Category / category-group handlers — mirrors upstream's `server/budget/app.ts`.
+ *
+ * This layer does what upstream's handlers do and nothing more: validate the
+ * request, map between entities and DB rows, and wrap the mutation in `undoable`.
+ * The SQL, the duplicate-name rules and the sort_order maths belong to the DB
+ * layer (`@/core/server/db`) — never reimplement them here.
+ *
+ * Divergence from upstream, on purpose: `updateCategory`/`updateCategoryGroup`
+ * take `(id, fields)` partials instead of a whole entity. Upstream can take the
+ * entity because its updates always come from a form; ours are targeted (toggle
+ * `hidden`, set `goal_def`), and the entity shape would force a read-modify-write
+ * at every call site.
+ */
+import * as db from "@/core/server/db";
 import { undoable } from "@/core/server/undo";
-import { Timestamp } from "@/core/crdt";
-import type { CategoryGroupRow, CategoryRow } from "@/core/db/types";
+import type { CategoryGroupRow, CategoryRow } from "@/core/server/db/types";
 import type { Category, CategoryGroup } from "@/core/types/models";
-import { shoveSortOrders } from "./sort-categories";
 
 function rowToGroup(r: CategoryGroupRow): CategoryGroup {
   return {
@@ -31,82 +41,78 @@ function rowToCategory(r: CategoryRow): Category {
   };
 }
 
-export async function getCategoryGroups(): Promise<CategoryGroup[]> {
-  return (
-    await runQuery<CategoryGroupRow>(
-      "SELECT * FROM category_groups WHERE tombstone = 0 ORDER BY sort_order ASC",
-    )
-  ).map(rowToGroup);
+export async function getCategoryGroups({ hidden }: { hidden?: boolean } = {}): Promise<
+  CategoryGroup[]
+> {
+  const groups = (await db.getCategoryGroups()).map(rowToGroup);
+  return hidden === undefined ? groups : groups.filter((g) => g.hidden === hidden);
 }
 
-export async function getCategories(): Promise<Category[]> {
-  return (
-    await runQuery<CategoryRow>(
-      "SELECT * FROM categories WHERE tombstone = 0 ORDER BY sort_order ASC",
-    )
-  ).map(rowToCategory);
+export async function getCategories({ hidden }: { hidden?: boolean } = {}): Promise<Category[]> {
+  const categories = (await db.getCategories()).map(rowToCategory);
+  return hidden === undefined ? categories : categories.filter((c) => c.hidden === hidden);
+}
+
+export async function getCategory(id: string): Promise<Category | null> {
+  const row = await db.getCategory(id);
+  return row ? rowToCategory(row) : null;
 }
 
 export async function getCategoriesGrouped(): Promise<CategoryGroup[]> {
-  const groups = await getCategoryGroups();
-  const categories = await getCategories();
-  return groups.map((g) => ({
-    ...g,
-    categories: categories.filter((c) => c.group === g.id),
+  return (await db.getCategoriesGrouped()).map((g) => ({
+    ...rowToGroup(g),
+    categories: g.categories.map(rowToCategory),
   }));
 }
 
-export const createCategoryGroup = undoable(async function createCategoryGroup(
-  fields: Pick<CategoryGroup, "name"> & Partial<Pick<CategoryGroup, "is_income" | "sort_order">>,
-): Promise<string> {
-  const id = randomUUID();
-  const dbFields: Record<string, unknown> = {
-    name: fields.name,
-    is_income: fields.is_income ? 1 : 0,
-    sort_order: fields.sort_order ?? Date.now(),
-  };
-  await sendMessages(
-    Object.entries(dbFields).map(([column, value]) => ({
-      timestamp: Timestamp.send()!,
-      dataset: "category_groups",
-      row: id,
-      column,
-      value: value as string | number | null,
-    })),
-  );
-  return id;
+export const createCategoryGroup = undoable(async function createCategoryGroup({
+  name,
+  isIncome,
+  hidden,
+  sortOrder,
+}: {
+  name: string;
+  isIncome?: boolean;
+  hidden?: boolean;
+  /** Expo-only escape hatch for the seeder — see `db.insertCategoryGroup`. */
+  sortOrder?: number;
+}): Promise<string> {
+  return db.insertCategoryGroup({
+    name: name.trim(),
+    is_income: isIncome ? 1 : 0,
+    hidden: hidden ? 1 : 0,
+    ...(sortOrder !== undefined && { sort_order: sortOrder }),
+  });
 });
 
-export const createCategory = undoable(async function createCategory(
-  fields: Pick<Category, "name" | "group"> & Partial<Pick<Category, "is_income" | "sort_order">>,
-): Promise<string> {
-  const id = randomUUID();
-  const dbFields: Record<string, unknown> = {
-    name: fields.name,
-    // Physical column is `cat_group`; the entity field is `group`.
-    cat_group: fields.group,
-    is_income: fields.is_income ? 1 : 0,
-    sort_order: fields.sort_order ?? Date.now(),
-  };
-  await sendMessages([
-    ...Object.entries(dbFields).map(([column, value]) => ({
-      timestamp: Timestamp.send()!,
-      dataset: "categories",
-      row: id,
-      column,
-      value: value as string | number | null,
-    })),
-    // Self-referential mapping — mirrors loot-core's insertCategory behaviour.
-    // Required so the chaining logic in deleteCategory can walk the full graph.
-    {
-      timestamp: Timestamp.send()!,
-      dataset: "category_mapping",
-      row: id,
-      column: "transferId",
-      value: id,
-    },
-  ]);
-  return id;
+export const createCategory = undoable(async function createCategory({
+  name,
+  groupId,
+  isIncome,
+  hidden,
+  sortOrder,
+}: {
+  name: string;
+  groupId: string;
+  isIncome?: boolean;
+  hidden?: boolean;
+  /** Expo-only escape hatch for the seeder — see `db.insertCategory`. */
+  sortOrder?: number;
+}): Promise<string> {
+  if (!groupId) {
+    // Plain Error, like the duplicate-name rejections in the DB layer: these
+    // are user-facing messages the sheet shows verbatim, not coded failures the
+    // error bus routes. (Upstream throws `APIError` here, same idea.)
+    throw new Error("Creating a category: groupId is required");
+  }
+
+  return db.insertCategory({
+    name: name.trim(),
+    cat_group: groupId,
+    is_income: isIncome ? 1 : 0,
+    hidden: hidden ? 1 : 0,
+    ...(sortOrder !== undefined && { sort_order: sortOrder }),
+  });
 });
 
 export const updateCategory = undoable(async function updateCategory(
@@ -115,106 +121,42 @@ export const updateCategory = undoable(async function updateCategory(
     Pick<Category, "name" | "hidden" | "sort_order" | "goal_def"> & { template_settings: string }
   >,
 ): Promise<void> {
-  const dbFields: Record<string, unknown> = {};
-  if (fields.name !== undefined) dbFields.name = fields.name;
-  if (fields.hidden !== undefined) dbFields.hidden = fields.hidden ? 1 : 0;
-  if (fields.sort_order !== undefined) dbFields.sort_order = fields.sort_order;
-  if (fields.goal_def !== undefined) dbFields.goal_def = fields.goal_def;
-  if (fields.template_settings !== undefined) dbFields.template_settings = fields.template_settings;
-  if (Object.keys(dbFields).length === 0) return;
-  await sendMessages(
-    Object.entries(dbFields).map(([column, value]) => ({
-      timestamp: Timestamp.send()!,
-      dataset: "categories",
-      row: id,
-      column,
-      value: value as string | number | null,
-    })),
-  );
+  await db.updateCategory({
+    id,
+    ...(fields.name !== undefined && { name: fields.name.trim() }),
+    ...(fields.hidden !== undefined && { hidden: fields.hidden ? 1 : 0 }),
+    ...(fields.sort_order !== undefined && { sort_order: fields.sort_order }),
+    ...(fields.goal_def !== undefined && { goal_def: fields.goal_def }),
+    ...(fields.template_settings !== undefined && {
+      template_settings: fields.template_settings,
+    }),
+  } as Partial<CategoryRow> & { id: string });
 });
 
 export const deleteCategory = undoable(async function deleteCategory(
   id: string,
   transferId?: string,
 ): Promise<void> {
-  if (transferId) {
-    // Walk every mapping that currently points to `id` and forward it to `transferId`.
-    // This handles chains: if A → id, after deletion A should point to transferId.
-    const chained = await runQuery<{ id: string }>(
-      "SELECT id FROM category_mapping WHERE transferId = ?",
-      [id],
-    );
-    const chainMsgs = chained.map((m) => ({
-      timestamp: Timestamp.send()!,
-      dataset: "category_mapping",
-      row: m.id,
-      column: "transferId",
-      value: transferId as string | number | null,
-    }));
-
-    // Map this category itself to transferId
-    const selfMsg = {
-      timestamp: Timestamp.send()!,
-      dataset: "category_mapping",
-      row: id,
-      column: "transferId",
-      value: transferId as string | number | null,
-    };
-
-    await sendMessages([...chainMsgs, selfMsg]);
-  }
-  await sendMessages([
-    { timestamp: Timestamp.send()!, dataset: "categories", row: id, column: "tombstone", value: 1 },
-  ]);
+  await db.deleteCategory({ id }, transferId);
 });
 
 export const updateCategoryGroup = undoable(async function updateCategoryGroup(
   id: string,
   fields: Partial<Pick<CategoryGroup, "name" | "hidden" | "sort_order">>,
 ): Promise<void> {
-  const dbFields: Record<string, unknown> = {};
-  if (fields.name !== undefined) dbFields.name = fields.name;
-  if (fields.hidden !== undefined) dbFields.hidden = fields.hidden ? 1 : 0;
-  if (fields.sort_order !== undefined) dbFields.sort_order = fields.sort_order;
-  if (Object.keys(dbFields).length === 0) return;
-  await sendMessages(
-    Object.entries(dbFields).map(([column, value]) => ({
-      timestamp: Timestamp.send()!,
-      dataset: "category_groups",
-      row: id,
-      column,
-      value: value as string | number | null,
-    })),
-  );
+  await db.updateCategoryGroup({
+    id,
+    ...(fields.name !== undefined && { name: fields.name.trim() }),
+    ...(fields.hidden !== undefined && { hidden: fields.hidden ? 1 : 0 }),
+    ...(fields.sort_order !== undefined && { sort_order: fields.sort_order }),
+  } as Partial<CategoryGroupRow> & { id: string });
 });
 
 export const moveCategoryGroup = undoable(async function moveCategoryGroup(
   id: string,
   targetId: string | null = null,
 ): Promise<void> {
-  const groups = await runQuery<{ id: string; sort_order: number }>(
-    "SELECT id, sort_order FROM category_groups WHERE tombstone = 0 ORDER BY sort_order ASC, id ASC",
-  );
-
-  const { updates, sort_order } = shoveSortOrders(groups, targetId);
-
-  const messages = [
-    ...updates.map((u) => ({
-      timestamp: Timestamp.send()!,
-      dataset: "category_groups",
-      row: u.id,
-      column: "sort_order",
-      value: u.sort_order as string | number | null,
-    })),
-    {
-      timestamp: Timestamp.send()!,
-      dataset: "category_groups",
-      row: id,
-      column: "sort_order",
-      value: sort_order as string | number | null,
-    },
-  ];
-  await sendMessages(messages);
+  await db.moveCategoryGroup(id, targetId);
 });
 
 export const moveCategory = undoable(async function moveCategory(
@@ -222,58 +164,24 @@ export const moveCategory = undoable(async function moveCategory(
   groupId: string,
   targetId: string | null = null,
 ): Promise<void> {
-  const categories = await runQuery<{ id: string; sort_order: number }>(
-    "SELECT id, sort_order FROM categories WHERE cat_group = ? AND tombstone = 0 ORDER BY sort_order ASC, id ASC",
-    [groupId],
-  );
-
-  const { updates, sort_order } = shoveSortOrders(categories, targetId);
-
-  const messages = [
-    ...updates.map((u) => ({
-      timestamp: Timestamp.send()!,
-      dataset: "categories",
-      row: u.id,
-      column: "sort_order",
-      value: u.sort_order as string | number | null,
-    })),
-    {
-      timestamp: Timestamp.send()!,
-      dataset: "categories",
-      row: id,
-      column: "sort_order",
-      value: sort_order as string | number | null,
-    },
-    {
-      timestamp: Timestamp.send()!,
-      dataset: "categories",
-      row: id,
-      column: "cat_group",
-      value: groupId as string | number | null,
-    },
-  ];
-  await sendMessages(messages);
+  await db.moveCategory(id, groupId, targetId);
 });
 
 export const deleteCategoryGroup = undoable(async function deleteCategoryGroup(
   id: string,
   transferId?: string,
 ): Promise<void> {
-  // Cascade: delete every category in this group (mirrors loot-core behavior)
-  const groupCategories = await runQuery<{ id: string }>(
-    "SELECT id FROM categories WHERE cat_group = ? AND tombstone = 0",
+  await db.deleteCategoryGroup({ id }, transferId);
+});
+
+/**
+ * Whether deleting this category needs the caller to nominate a transfer target
+ * first — true once anything still points at it. Upstream's `must-category-transfer`.
+ */
+export async function isCategoryTransferRequired(id: string): Promise<boolean> {
+  const rows = await db.all<{ count: number }>(
+    `SELECT COUNT(*) as count FROM transactions WHERE category = ? AND tombstone = 0`,
     [id],
   );
-  for (const cat of groupCategories) {
-    await deleteCategory(cat.id, transferId);
-  }
-  await sendMessages([
-    {
-      timestamp: Timestamp.send()!,
-      dataset: "category_groups",
-      row: id,
-      column: "tombstone",
-      value: 1,
-    },
-  ]);
-});
+  return (rows[0]?.count ?? 0) > 0;
+}

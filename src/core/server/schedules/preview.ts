@@ -13,7 +13,7 @@ import { getStatus } from "@/core/shared/schedules";
 import { getHasTransactionsQuery, type ScheduleStatuses } from "@/core/shared/schedules";
 import { computePreviewTransactions, type PreviewTransaction } from "@/core/shared/schedules";
 import type { Schedule } from "@/core/types/models";
-import { executeQuery } from "@/core/queries";
+import { executeQuery } from "@/core/server/aql/execute";
 import { getArbitraryPref } from "@/core/server/preferences";
 import { getRules, applyRankedRules } from "@/core/server/transactions/transaction-rules";
 import { getPayees } from "@/core/server/payees";

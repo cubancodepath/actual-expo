@@ -19,7 +19,7 @@ import {
   convertToLocalOnly,
   reRegisterBudget,
 } from "@/core/server/budgetfiles/app";
-import { clearSwitchingFlag, setSyncingMode } from "@/core/sync";
+import { clearSwitchingFlag, setSyncingMode } from "@/core/server/sync";
 import { promptForPassword } from "@/ui/feedback/EncryptionPasswordPrompt";
 
 const QUERY_KEY = ["budgetFiles"] as const;

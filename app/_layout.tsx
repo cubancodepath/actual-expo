@@ -30,9 +30,9 @@ import { loadBudget } from "@/stores/operations/budgetfiles";
 import { useSyncStore } from "@/stores/syncStore";
 import { useGlobalPref } from "@/lib/hooks/useGlobalPref";
 import { useIsConfigured, getIsConfigured } from "@/stores/session.selectors";
-import { listen } from "@/core/sync/syncEvents";
+import { listen } from "@/core/server/sync/syncEvents";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
-import { isSwitchingBudget, setSyncingMode } from "@/core/sync";
+import { isSwitchingBudget, setSyncingMode } from "@/core/server/sync";
 import { ensureBudgetsDir, budgetExists } from "@/core/server/prefs";
 import { updateAppBadge } from "@/lib/badge";
 import { syncShortcutCache } from "@/lib/syncShortcutCache";
@@ -43,12 +43,12 @@ import { SyncConflictDialog } from "@/ui/feedback/SyncConflictDialog";
 import { DialogHost } from "@/ui/feedback/dialog";
 import { BusyOverlayHost } from "@/ui/feedback/busy";
 import { useShakeUndo } from "@/hooks/useShakeUndo";
-import { loadAllPersistedKeys } from "@/core/encryption/keys";
+import { loadAllPersistedKeys } from "@/core/server/encryption/keys";
 import { installGlobalHandlers } from "@/lib/errors/install";
 import { scrubEvent } from "@/lib/errors/sentryScrub";
 import { installAppServices } from "@/lib/app-services";
 
-import { queryClient } from "@/lib/query/queryClient";
+import { queryClient } from "@/lib/tanstack/queryClient";
 
 // Keep splash screen visible until bootstrap + data pre-load completes
 SplashScreen.preventAutoHideAsync();

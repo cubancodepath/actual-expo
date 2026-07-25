@@ -16,8 +16,8 @@
  * `undefined` from an accessor means "month not covered, run your own query";
  * a covered month with no row returns the same default the cell would compute.
  */
-import { isDatabaseOpen, runQuery } from "@/core/db";
-import { ALIVE_TX_FILTER } from "@/core/db/filters";
+import { isDatabaseOpen, runQuery } from "@/core/server/db";
+import { ALIVE_TX_FILTER } from "@/core/server/db/filters";
 import { monthToInt } from "@/core/shared/months";
 
 type BudgetRow = {

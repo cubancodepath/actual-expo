@@ -15,7 +15,7 @@
  * are debounced so a batch of applied messages coalesces into one refetch.
  */
 import { useEffect, useState } from "react";
-import { listen } from "@/core/sync/syncEvents";
+import { listen } from "@/core/server/sync/syncEvents";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
 
 export type ReportDataFn<T> = (setData: (results: T) => void) => Promise<void>;

@@ -3,8 +3,8 @@
 // numbers the old 2-queries-per-account shape produced.
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { enUS } from "date-fns/locale";
-import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
-import { run } from "@/core/db";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
+import { run } from "@/core/server/db";
 import { createSpreadsheet, type NetWorthData } from "../net-worth-spreadsheet";
 
 async function insertTx(id: string, acct: string, amount: number, date: number) {

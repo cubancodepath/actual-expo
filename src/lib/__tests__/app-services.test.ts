@@ -6,7 +6,7 @@ const signOutMock = vi.hoisted(() => vi.fn());
 vi.mock("@/stores/operations/users", () => ({ signOut: signOutMock }));
 
 import { installAppServices } from "@/lib/app-services";
-import { emit } from "@/core/sync/syncEvents";
+import { emit } from "@/core/server/sync/syncEvents";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { useSyncStore } from "@/stores/syncStore";
 import { ActualError } from "@/core/errors";

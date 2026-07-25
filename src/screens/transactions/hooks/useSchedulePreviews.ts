@@ -8,7 +8,7 @@
 
 import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { listen } from "@/core/sync/syncEvents";
+import { listen } from "@/core/server/sync/syncEvents";
 import { getSchedulePreviews } from "@/core/server/schedules";
 import type { PreviewTransaction } from "@/core/server/schedules";
 import type { TransactionsListContext } from "../TransactionsListScreen/types";

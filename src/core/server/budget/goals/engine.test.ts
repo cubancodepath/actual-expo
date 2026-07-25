@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock DB module before importing engine
-vi.mock("@/core/db", () => ({
+vi.mock("@/core/server/db", () => ({
   first: vi.fn(),
   runQuery: vi.fn(),
 }));
 
-import { first, runQuery } from "@/core/db";
+import { first, runQuery } from "@/core/server/db";
 import {
   amountToInteger,
   integerToAmount,

@@ -11,7 +11,7 @@ import { resolveName } from "@/core/server/spreadsheet/util";
 import { setBudgetAmount } from "@/core/server/budget/actions";
 import { setGoalResult } from "@/core/server/budget/goals";
 import type { GoalAllocation } from "@/core/server/budget/goal-template";
-import { batchMessages } from "@/core/sync/batch";
+import { batchMessages } from "@/core/server/sync/batch";
 import { useSheetValueNumber } from "@/hooks/useSheetValue";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { useBudgetMonth } from "@/screens/budget/hooks/useBudgetMonth";

@@ -1,11 +1,11 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
 import { createCategoryGroup, createCategory } from "@/core/server/budget";
 import { createAccount } from "@/core/server/accounts";
 import { addTransaction } from "@/core/server/transactions";
 import { createRule } from "@/core/server/rules";
 import { createSchedule, postTransactionForScheduleToday } from "@/core/server/schedules";
-import { runQuery } from "@/core/db";
+import { runQuery } from "@/core/server/db";
 
 describe("schedule-posted transactions run the general rule set (fix #16 / Phase 3.3)", () => {
   afterEach(async () => {
@@ -15,8 +15,8 @@ describe("schedule-posted transactions run the general rule set (fix #16 / Phase
   it("applies a category-setting rule to a schedule-posted transaction, overriding the schedule's own category", async () => {
     await openTestDb();
     const group = await createCategoryGroup({ name: "Bills" });
-    const scheduleCat = await createCategory({ name: "Misc", group: group });
-    const ruleCat = await createCategory({ name: "Rent", group: group });
+    const scheduleCat = await createCategory({ name: "Misc", groupId: group });
+    const ruleCat = await createCategory({ name: "Rent", groupId: group });
     const acct = await createAccount({ name: "Checking" });
 
     // A general rule: any transaction on this account gets categorized as Rent.
@@ -50,7 +50,7 @@ describe("schedule-posted transactions run the general rule set (fix #16 / Phase
   it("keeps the schedule's own category when no rule matches", async () => {
     await openTestDb();
     const group = await createCategoryGroup({ name: "Bills" });
-    const scheduleCat = await createCategory({ name: "Misc", group: group });
+    const scheduleCat = await createCategory({ name: "Misc", groupId: group });
     const acct = await createAccount({ name: "Checking" });
 
     const scheduleId = await createSchedule({
@@ -75,8 +75,8 @@ describe("schedule-posted transactions run the general rule set (fix #16 / Phase
   it("materializes a split (parent + children) when a matching rule has set-split-amount actions", async () => {
     await openTestDb();
     const group = await createCategoryGroup({ name: "Bills" });
-    const catA = await createCategory({ name: "A", group: group });
-    const catB = await createCategory({ name: "B", group: group });
+    const catA = await createCategory({ name: "A", groupId: group });
+    const catB = await createCategory({ name: "B", groupId: group });
     const acct = await createAccount({ name: "Checking" });
 
     // A general rule that splits any transaction on this account: 3000 to A,
@@ -135,7 +135,7 @@ describe("schedule-posted transactions run the general rule set (fix #16 / Phase
   it("posts a single row (no split) when the matching rule has no split actions", async () => {
     await openTestDb();
     const group = await createCategoryGroup({ name: "Bills" });
-    const cat = await createCategory({ name: "Rent", group: group });
+    const cat = await createCategory({ name: "Rent", groupId: group });
     const acct = await createAccount({ name: "Checking" });
 
     await createRule({

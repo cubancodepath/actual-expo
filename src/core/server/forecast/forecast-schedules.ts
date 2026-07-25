@@ -5,7 +5,7 @@
  * (getSchedules), posted-dedup (posted.ts), rules engine (runRules), and
  * transfer resolution (getTransferAccount).
  */
-import { runQuery } from "@/core/db";
+import { runQuery } from "@/core/server/db";
 import { getSchedules } from "@/core/server/schedules";
 import { getScheduledAmount } from "@/core/shared/schedules";
 import {

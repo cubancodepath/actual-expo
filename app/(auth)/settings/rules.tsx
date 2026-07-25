@@ -15,7 +15,7 @@ import { Icon } from "@/design-system/atoms/Icon";
 import { SearchBar } from "@/design-system/molecules/SearchBar";
 import { EmptyState } from "@/design-system/molecules/EmptyState";
 import { useRules } from "@/lib/hooks/useRules";
-import { sendMessages } from "@/core/sync";
+import { sendMessages } from "@/core/server/sync";
 import { Timestamp } from "@/core/crdt";
 import type { Rule } from "@/core/server/rules/rule";
 

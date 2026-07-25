@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
+import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
 import { createCategoryGroup, createCategory } from "@/core/server/budget";
 import { setArbitraryPref } from "@/core/server/preferences";
 import { loadSpreadsheet, getSpreadsheet } from "@/core/server/sheet";
@@ -24,7 +24,7 @@ describe("loadSpreadsheet — dispatches to the right formula engine by budgetTy
 
   it("builds tracking cells (total-saved, real-saved) when budgetType is 'tracking'", async () => {
     await openTestDb();
-    await createCategoryGroup({ name: "Income", is_income: true });
+    await createCategoryGroup({ name: "Income", isIncome: true });
     await createCategoryGroup({ name: "Expenses" });
     await setArbitraryPref("budgetType", "tracking");
     await loadSpreadsheet();
@@ -38,8 +38,8 @@ describe("loadSpreadsheet — dispatches to the right formula engine by budgetTy
 
   it("rebuilds with the tracking engine's cells after a synced budgetType change", async () => {
     await openTestDb();
-    const incomeGroup = await createCategoryGroup({ name: "Income", is_income: true });
-    await createCategory({ name: "Paycheck", group: incomeGroup, is_income: true });
+    const incomeGroup = await createCategoryGroup({ name: "Income", isIncome: true });
+    await createCategory({ name: "Paycheck", groupId: incomeGroup, isIncome: true });
     await createCategoryGroup({ name: "Expenses" });
     await loadSpreadsheet();
 

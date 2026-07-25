@@ -5,8 +5,8 @@
  */
 
 import type { CleanupTemplate, ParsedCleanupRow } from "@/core/types/models";
-import { runQuery } from "@/core/db";
-import { batchMessages } from "@/core/sync";
+import { runQuery } from "@/core/server/db";
+import { batchMessages } from "@/core/server/sync";
 import { undoable } from "@/core/server/undo";
 import { getBudgetMonth, setBudget, setBudgetGoal } from "./actions";
 import { storeNoteCleanups } from "./cleanup-template-notes";

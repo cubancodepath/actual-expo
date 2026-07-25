@@ -8,8 +8,8 @@
  * category's `cleanup_def` JSON — there is no FK column.
  */
 import { randomUUID } from "@/core/platform/crypto";
-import { first, runQuery } from "@/core/db";
-import { sendMessages } from "@/core/sync";
+import { first, runQuery } from "@/core/server/db";
+import { sendMessages } from "@/core/server/sync";
 import { Timestamp } from "@/core/crdt";
 
 /**

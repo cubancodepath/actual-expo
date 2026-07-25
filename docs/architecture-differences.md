@@ -102,7 +102,7 @@ Port de `loot-core/server/forecast/*` en `src/core/domain/forecast/` (core-puro,
 
 |                     | Original                                                          | Expo                                                                                        |
 | ------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| **Recurrencia**     | `@rschedule/core`                                                 | `recurrence.ts` (date-fns) — **única adaptación forzada** (rschedule no corre en Hermes)    |
+| **Recurrencia**     | `@rschedule/core`                                                 | `recurrence-fns` (paquete propio, date-fns) tras `server/util/rschedule` — misma API, mismo código de app. Sin divergencia |
 | **Fechas**          | `'yyyy-MM-dd'` strings; DB guarda int (`fromDateRepr`)            | Idéntico — DB int, string en lectura (compilador AQL / `intToStr`). Sin divergencia         |
 | **Seed**            | Σ transacciones antes del start (no `account.balance`)            | Igual                                                                                       |
 | **Occurrences**     | expandir schedules, dedup vs posted, rules, transfers (2 patas)   | Igual (reusa `posted.ts`, `runRules`, `getTransferAccount`)                                 |

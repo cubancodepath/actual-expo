@@ -14,7 +14,7 @@ import { useAccounts } from "@/lib/hooks/useAccounts";
 import { usePayees } from "@/lib/hooks/usePayees";
 import { useCategories } from "@/lib/hooks/useCategories";
 import { usePickerStore } from "@/stores/pickerStore";
-import { useUndoStore } from "@/stores/undoStore";
+import { useUndo } from "@/lib/hooks/useUndo";
 import {
   getScheduleById,
   getStatus,
@@ -45,6 +45,7 @@ export interface ScheduleDetailScreenProps {
 
 export function ScheduleDetailScreen({ id }: ScheduleDetailScreenProps) {
   const router = useRouter();
+  const { showUndoNotification } = useUndo();
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
@@ -295,7 +296,7 @@ export function ScheduleDetailScreen({ id }: ScheduleDetailScreenProps) {
         text: t("skip"),
         onPress: async () => {
           await skipNextDate(schedule!.id);
-          useUndoStore.getState().showUndo(t("dateSkipped"));
+          showUndoNotification(t("dateSkipped"));
         },
       },
     ]);
@@ -308,7 +309,7 @@ export function ScheduleDetailScreen({ id }: ScheduleDetailScreenProps) {
         text: t("post"),
         onPress: async () => {
           await postTransactionForSchedule(schedule!.id);
-          useUndoStore.getState().showUndo(t("transactionPosted"));
+          showUndoNotification(t("transactionPosted"));
         },
       },
     ]);
@@ -337,7 +338,7 @@ export function ScheduleDetailScreen({ id }: ScheduleDetailScreenProps) {
         style: "destructive",
         onPress: async () => {
           await deleteSchedule(schedule!.id);
-          useUndoStore.getState().showUndo(t("scheduleDeleted"));
+          showUndoNotification(t("scheduleDeleted"));
           router.dismiss();
         },
       },

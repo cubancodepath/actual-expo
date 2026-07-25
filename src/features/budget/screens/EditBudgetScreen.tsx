@@ -19,7 +19,7 @@ import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { sheetForMonth, envelopeBudget } from "@/core/server/spreadsheet/bindings";
 import { getSpreadsheet } from "@/core/server/spreadsheet/globals";
 import { inferGoalFromDef, parseGoalDef } from "@/core/server/budget/goals";
-import { useUndoStore } from "@/stores/undoStore";
+import { useUndo } from "@/lib/hooks/useUndo";
 import { Text } from "@/design-system/atoms/Text";
 import { Amount } from "@/design-system/atoms/Amount";
 import { Button } from "@/design-system/atoms/Button";
@@ -168,6 +168,7 @@ function ComparativeBars({
 
 export function EditBudgetScreen() {
   const { t } = useTranslation("budget");
+  const { showUndoNotification } = useUndo();
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const goalsEnabled = useFeatureFlag("goalTemplatesEnabled");
   const router = useRouter();
@@ -355,7 +356,7 @@ export function EditBudgetScreen() {
         style: "destructive",
         onPress: async () => {
           await deleteCategoryGroup(group.id);
-          useUndoStore.getState().showUndo(t("categoryGroupDeleted"));
+          showUndoNotification(t("categoryGroupDeleted"));
         },
       },
     ]);
@@ -371,7 +372,7 @@ export function EditBudgetScreen() {
         style: "destructive",
         onPress: async () => {
           await deleteCategoryFn(cat.id);
-          useUndoStore.getState().showUndo(t("categoryDeleted"));
+          showUndoNotification(t("categoryDeleted"));
         },
       },
     ]);

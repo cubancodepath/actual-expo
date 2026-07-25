@@ -3,7 +3,7 @@ import { Alert, ScrollView } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
-import { useUndoStore } from "@/stores/undoStore";
+import { useUndo } from "@/lib/hooks/useUndo";
 import { updateCategoryGroup, deleteCategoryGroup } from "@/core/server/budget";
 import { useCategories } from "@/lib/hooks/useCategories";
 import { Text } from "@/design-system/atoms/Text";
@@ -16,6 +16,7 @@ export default function EditGroupScreen() {
   const router = useRouter();
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
   const { groups } = useCategories();
+  const { showUndoNotification } = useUndo();
   const group = groups.find((g) => g.id === groupId);
 
   const [name, setName] = useState("");
@@ -46,7 +47,7 @@ export default function EditGroupScreen() {
         style: "destructive",
         onPress: async () => {
           await deleteCategoryGroup(groupId);
-          useUndoStore.getState().showUndo(t("categoryGroupDeleted"));
+          showUndoNotification(t("categoryGroupDeleted"));
           router.back();
         },
       },

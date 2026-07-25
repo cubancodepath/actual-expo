@@ -36,7 +36,7 @@ import { isSwitchingBudget, setSyncingMode } from "@/core/sync";
 import { ensureBudgetsDir, budgetExists } from "@/core/server/prefs";
 import { updateAppBadge } from "@/lib/badge";
 import { syncShortcutCache } from "@/lib/syncShortcutCache";
-import { UndoToast } from "@/design-system";
+import { ToastKeyboardAvoider } from "@/ui/feedback/ToastKeyboardAvoider";
 import { ErrorBoundary } from "@/ui/feedback/ErrorBoundary";
 import { ErrorChannelConsumer } from "@/ui/feedback/ErrorChannelConsumer";
 import { SyncConflictDialog } from "@/ui/feedback/SyncConflictDialog";
@@ -311,7 +311,16 @@ function RootLayout() {
           <KeyboardProvider>
             <NavigationThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
               <ThemeProvider>
-                <HeroUINativeProvider>
+                <HeroUINativeProvider
+                  config={{
+                    toast: {
+                      defaultProps: { placement: "bottom" },
+                      contentWrapper: (children) => (
+                        <ToastKeyboardAvoider>{children}</ToastKeyboardAvoider>
+                      ),
+                    },
+                  }}
+                >
                   <Stack>
                     <Stack.Protected guard={!hasToken && !isLocalOnly}>
                       <Stack.Screen name="(public)" options={{ headerShown: false }} />
@@ -323,7 +332,6 @@ function RootLayout() {
                       <Stack.Screen name="(auth)" options={{ headerShown: false }} />
                     </Stack.Protected>
                   </Stack>
-                  <UndoToast />
                   <SyncConflictDialog />
                   <DialogHost />
 

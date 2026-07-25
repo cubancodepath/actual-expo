@@ -7,7 +7,7 @@
 import type { CleanupTemplate, ParsedCleanupRow } from "@/core/types/models";
 import { runQuery } from "@/core/db";
 import { batchMessages } from "@/core/sync";
-import { undoable } from "@/core/sync/undo";
+import { undoable } from "@/core/server/undo";
 import { getBudgetMonth, setBudget, setBudgetGoal } from "./actions";
 import { storeNoteCleanups } from "./cleanup-template-notes";
 

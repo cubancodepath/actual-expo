@@ -1,21 +1,17 @@
 import { create } from "zustand";
-import { undo as performUndo, canUndo as checkCanUndo, setOnStateChange } from "@/core/sync/undo";
-
-type UndoNotification = {
-  message: string;
-  key: number; // unique key to force re-render on repeated notifications
-};
+import { undo as performUndo, redo as performRedo, setOnStateChange } from "@/core/server/undo";
 
 type UndoState = {
   canUndo: boolean;
-  notification: UndoNotification | null;
+  canRedo: boolean;
   /** Human-readable label for the last undoable action (e.g. "Delete Transaction") */
   lastAction: string | null;
-  /** Incremented after each successful undo — screens with local state can watch this to refresh */
+  /** Incremented after each successful undo/redo — screens with local state can watch this to refresh */
   undoVersion: number;
   undo(): Promise<void>;
-  showUndo(message: string): void;
-  clearNotification(): void;
+  redo(): Promise<void>;
+  /** Records the label for the last undoable action (used by shake-to-undo). */
+  recordAction(message: string): void;
 };
 
 /**
@@ -39,37 +35,34 @@ function deriveActionLabel(message: string): string {
 export const useUndoStore = create<UndoState>((set) => {
   // Wire up the undo module's state change callback.
   // Deferred via queueMicrotask to avoid triggering Zustand re-renders
-  // during React's commit phase (e.g. when called from sync/undo.ts
+  // during React's commit phase (e.g. when called from core/server/undo.ts
   // inside an ongoing render cycle).
-  setOnStateChange((canUndo) => {
-    queueMicrotask(() => set({ canUndo, ...(!canUndo ? { lastAction: null } : {}) }));
+  setOnStateChange(({ canUndo, canRedo }) => {
+    queueMicrotask(() => set({ canUndo, canRedo, ...(!canUndo ? { lastAction: null } : {}) }));
   });
 
   return {
     canUndo: false,
-    notification: null,
+    canRedo: false,
     lastAction: null,
     undoVersion: 0,
 
     async undo() {
       const tables = await performUndo();
       if (tables.length > 0) {
-        set((s) => ({
-          notification: { message: "Undone", key: Date.now() },
-          undoVersion: s.undoVersion + 1,
-          lastAction: null,
-        }));
+        set((s) => ({ undoVersion: s.undoVersion + 1, lastAction: null }));
       }
     },
 
-    showUndo(message: string) {
-      // Auto-derive action label: "Transaction deleted" → "Delete Transaction"
-      const action = deriveActionLabel(message);
-      set({ notification: { message, key: Date.now() }, lastAction: action });
+    async redo() {
+      const tables = await performRedo();
+      if (tables.length > 0) {
+        set((s) => ({ undoVersion: s.undoVersion + 1 }));
+      }
     },
 
-    clearNotification() {
-      set({ notification: null });
+    recordAction(message: string) {
+      set({ lastAction: deriveActionLabel(message) });
     },
   };
 });

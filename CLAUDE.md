@@ -42,7 +42,7 @@ src/
 │   │                       # Mirrors upstream loot-core's src/ layout (server/ + shared/ + types/).
 │   ├── db/                 # SQLite connection, query helpers, schema, migrations
 │   ├── crdt/               # HLC timestamps (timestamp.ts), Merkle tree diff (merkle.ts)
-│   ├── sync/               # fullSync, syncEvents, encoder (protobuf + AES), undo, clock
+│   ├── sync/               # fullSync, syncEvents, encoder (protobuf + AES), clock
 │   ├── encryption/         # AES-256-GCM via @noble/ciphers, PBKDF2 key derivation
 │   ├── errors/             # ActualError, ErrorCode — core only THROWS, never emits to the UI bus
 │   ├── queries/            # AQL query compiler, liveQuery, pagedQuery, queryCache, execute
@@ -79,6 +79,7 @@ src/
 │       ├── spreadsheet/    # spreadsheet, graph-data-structure, globals, util, bindings
 │       ├── transactions/   # CRUD, transaction-rules (rule running/learning), transfer,
 │       │                   #   merge, save pipeline, export/
+│       ├── undo.ts          # Undo/redo engine (marker history, withUndo/undoable, redo)
 │       └── sheet.ts        # Spreadsheet lifecycle (initSpreadsheet/ensureMonthRange)
 │
 ├── screens/                # ALL UI, organized by screen (mirrors the navigation tree), e.g.:

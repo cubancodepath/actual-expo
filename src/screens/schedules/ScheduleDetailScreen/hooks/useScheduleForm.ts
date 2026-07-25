@@ -25,7 +25,7 @@ import type { RecurConfig } from "@/core/types/models";
 import type { Account } from "@/core/types/models";
 import type { Category } from "@/core/types/models";
 import type { Payee } from "@/core/types/models";
-import { useUndoStore } from "@/stores/undoStore";
+import { useUndo } from "@/lib/hooks/useUndo";
 import {
   buildScheduleSaveRule,
   makeScheduleFormBaseline,
@@ -57,6 +57,7 @@ type ScheduleFormData = { accounts: Account[]; categories: Category[]; payees: P
 export function useScheduleForm({ accounts, categories, payees }: ScheduleFormData) {
   const { t } = useTranslation(["schedules", "common"]);
   const router = useRouter();
+  const { showUndoNotification } = useUndo();
 
   const scheduleIdRef = useRef<string | null>(null);
   const [isHydrating, setIsHydrating] = useState(true);
@@ -163,7 +164,7 @@ export function useScheduleForm({ accounts, categories, payees }: ScheduleFormDa
           text: t("post"),
           onPress: async () => {
             await postTransactionForSchedule(id);
-            useUndoStore.getState().showUndo(t("transactionPosted"));
+            showUndoNotification(t("transactionPosted"));
           },
         },
       ]),
@@ -179,7 +180,7 @@ export function useScheduleForm({ accounts, categories, payees }: ScheduleFormDa
           text: t("skip"),
           onPress: async () => {
             await skipNextDate(id);
-            useUndoStore.getState().showUndo(t("dateSkipped"));
+            showUndoNotification(t("dateSkipped"));
           },
         },
       ]),
@@ -212,7 +213,7 @@ export function useScheduleForm({ accounts, categories, payees }: ScheduleFormDa
           style: "destructive",
           onPress: async () => {
             await deleteSchedule(id);
-            useUndoStore.getState().showUndo(t("scheduleDeleted"));
+            showUndoNotification(t("scheduleDeleted"));
             router.dismiss();
           },
         },

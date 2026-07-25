@@ -1,7 +1,7 @@
 import { runQuery, first } from "@/core/db";
 import { integerToCurrency } from "@/core/shared/util";
 import { sendMessages } from "@/core/sync";
-import { undoable } from "@/core/sync/undo";
+import { undoable } from "@/core/server/undo";
 import { Timestamp } from "@/core/crdt";
 import { monthToInt } from "@/core/shared/months";
 import type { ZeroBudgetRow, CategoryGroupRow, CategoryRow } from "@/core/db/types";

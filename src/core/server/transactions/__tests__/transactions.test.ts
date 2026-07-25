@@ -9,7 +9,7 @@ import type { SaveTransactionInput } from "../save";
 import { deleteTransaction, getChildTransactions } from "../index";
 import { runQuery } from "@/core/db";
 import type { TransactionRow } from "@/core/db/types";
-import { undo, canUndo, clearUndo } from "@/core/sync/undo";
+import { undo, canUndo, clearUndo } from "@/core/server/undo";
 
 /**
  * Characterization tests for saveTransaction()'s split-new / split-edit paths

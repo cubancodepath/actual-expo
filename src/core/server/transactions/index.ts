@@ -1,7 +1,7 @@
 import { randomUUID } from "@/core/platform/crypto";
 import { runQuery, first } from "@/core/db";
 import { sendMessages, batchMessages } from "@/core/sync";
-import { undoable } from "@/core/sync/undo";
+import { undoable } from "@/core/server/undo";
 import { Timestamp } from "@/core/crdt";
 import type { TransactionRow } from "@/core/db/types";
 import type { Transaction, GetTransactionsOptions, TransactionDisplay } from "@/core/types/models";

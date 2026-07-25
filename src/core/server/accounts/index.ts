@@ -1,7 +1,7 @@
 import { randomUUID } from "@/core/platform/crypto";
 import { runQuery, run, first } from "@/core/db";
 import { sendMessages, batchMessages } from "@/core/sync";
-import { undoable } from "@/core/sync/undo";
+import { undoable } from "@/core/server/undo";
 import { Timestamp } from "@/core/crdt";
 import { todayInt } from "@/core/shared/months";
 import { addTransaction } from "@/core/server/transactions";

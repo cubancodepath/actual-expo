@@ -26,7 +26,7 @@ import { setNote } from "@/core/server/notes";
 import { getCategoryNote, parseGoalDef } from "@/core/server/budget/goals";
 import { describeTemplate, translateDescription } from "@/core/server/budget/goals/describe";
 import { dialog } from "@/ui/feedback/dialog/dialogStore";
-import { useUndoStore } from "@/stores/undoStore";
+import { useUndo } from "@/lib/hooks/useUndo";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 
 // ---------------------------------------------------------------------------
@@ -62,6 +62,7 @@ export interface CategoryDetailsScreenProps {
 export function CategoryDetailsScreen({ categoryId }: CategoryDetailsScreenProps) {
   const { t, i18n } = useTranslation("budget");
   const router = useRouter();
+  const { showUndoNotification } = useUndo();
   const foreground = useThemeColor("foreground");
   const muted = useThemeColor("muted");
   const accent = useThemeColor("accent");
@@ -175,7 +176,7 @@ export function CategoryDetailsScreen({ categoryId }: CategoryDetailsScreenProps
       setDeleting(true);
       try {
         await deleteCategory(categoryId, pickedCategory.catId);
-        useUndoStore.getState().showUndo(t("categoryDeleted"));
+        showUndoNotification(t("categoryDeleted"));
         setPickedCategory(null);
         setPendingDelete(false);
         router.back();

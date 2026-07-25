@@ -20,7 +20,7 @@ vi.mock("@/core/sync", () => ({
   batchMessages: vi.fn((fn: () => Promise<void>) => fn()),
 }));
 
-vi.mock("@/core/sync/undo", () => ({
+vi.mock("@/core/server/undo", () => ({
   undoable: (fn: any) => fn,
 }));
 

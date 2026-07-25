@@ -5,7 +5,7 @@ import { useRouter } from "expo-router";
 import { Accordion, Typography } from "heroui-native";
 import { deleteSchedule, postTransactionForSchedule, skipNextDate } from "@/core/server/schedules";
 import type { PreviewTransaction } from "@/core/server/schedules";
-import { useUndoStore } from "@/stores/undoStore";
+import { useUndo } from "@/lib/hooks/useUndo";
 import { CollapsibleIndicator } from "@/ui/CollapsibleIndicator";
 import { LiftMenu } from "@/ui/lift-menu";
 import { DateHeader } from "./DateHeader";
@@ -26,6 +26,7 @@ interface UpcomingSectionProps {
 export function UpcomingSection({ previews }: UpcomingSectionProps) {
   const { t } = useTranslation(["transactions", "schedules", "common"]);
   const router = useRouter();
+  const { showUndoNotification } = useUndo();
 
   // Controlled + initialised empty → collapsed on mount.
   const [expanded, setExpanded] = useState<string[]>([]);
@@ -43,7 +44,7 @@ export function UpcomingSection({ previews }: UpcomingSectionProps) {
               text: t("post", { ns: "schedules" }),
               onPress: async () => {
                 await postTransactionForSchedule(scheduleId);
-                useUndoStore.getState().showUndo(t("transactionPosted", { ns: "schedules" }));
+                showUndoNotification(t("transactionPosted", { ns: "schedules" }));
               },
             },
           ],
@@ -59,7 +60,7 @@ export function UpcomingSection({ previews }: UpcomingSectionProps) {
               text: t("skip", { ns: "schedules" }),
               onPress: async () => {
                 await skipNextDate(scheduleId);
-                useUndoStore.getState().showUndo(t("dateSkipped", { ns: "schedules" }));
+                showUndoNotification(t("dateSkipped", { ns: "schedules" }));
               },
             },
           ],
@@ -79,7 +80,7 @@ export function UpcomingSection({ previews }: UpcomingSectionProps) {
               style: "destructive",
               onPress: async () => {
                 await deleteSchedule(scheduleId);
-                useUndoStore.getState().showUndo(t("scheduleDeleted", { ns: "schedules" }));
+                showUndoNotification(t("scheduleDeleted", { ns: "schedules" }));
               },
             },
           ],

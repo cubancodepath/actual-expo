@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach } from "vitest";
 import { openTestDb, closeTestDb } from "@/core/db/__tests__/testDb";
 import { first } from "@/core/db";
 import { sendMessages, batchMessages, resetBatchState } from "@/core/sync/batch";
-import { undo, canUndo, clearUndo, undoable } from "@/core/sync/undo";
+import { undo, canUndo, clearUndo, undoable } from "@/core/server/undo";
 import { listen, type SyncEvent } from "@/core/sync/syncEvents";
 import { Timestamp } from "@/core/crdt";
 

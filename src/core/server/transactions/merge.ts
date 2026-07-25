@@ -9,7 +9,7 @@
  */
 import { first, runQuery } from "@/core/db";
 import { sendMessages } from "@/core/sync";
-import { undoable } from "@/core/sync/undo";
+import { undoable } from "@/core/server/undo";
 import { Timestamp } from "@/core/crdt";
 
 type Msg = {

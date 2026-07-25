@@ -21,6 +21,7 @@
   "none": "Ninguno",
   "unnamed": "Sin nombre",
   "undo": "Deshacer",
+  "redo": "Rehacer",
   "continue": "Continuar",
   "back": "Atrás",
   "add": "Añadir",
@@ -203,6 +204,7 @@
   },
 
   "undoAction": "Deshacer {{action}}",
+  "redoAction": "Rehacer {{action}}",
 
   "shakeUndo": {
     "cancel": "Cancelar",

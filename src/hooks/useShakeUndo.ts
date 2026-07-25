@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Alert, AppState } from "react-native";
+import { Alert, AppState, Platform } from "react-native";
 import { Accelerometer } from "expo-sensors";
 import * as Haptics from "expo-haptics";
 import i18n from "@/i18n/config";
@@ -20,6 +20,11 @@ export function useShakeUndo() {
   const lastAlertAt = useRef(0);
 
   useEffect(() => {
+    // Shake-to-undo is an Apple HIG pattern — iOS only. On Android we don't
+    // subscribe the accelerometer at all (undo stays available via the toolbar
+    // menu and the undo toast).
+    if (Platform.OS !== "ios") return;
+
     Accelerometer.setUpdateInterval(100); // 10Hz
 
     const subscription = Accelerometer.addListener(({ x, y, z }) => {

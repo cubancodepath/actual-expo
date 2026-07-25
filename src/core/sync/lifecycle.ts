@@ -5,7 +5,7 @@
  * user switches budgets. scheduleFullSync timeout is also managed here.
  */
 
-import { clearUndo } from "./undo";
+import { clearUndo } from "@/core/server/undo";
 
 let _syncGeneration = 0;
 let _switchingBudget = false;

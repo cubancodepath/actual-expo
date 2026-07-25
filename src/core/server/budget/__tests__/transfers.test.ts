@@ -8,7 +8,7 @@ import {
   transferBetweenCategories,
   transferMultipleCategories,
 } from "@/core/server/budget/actions";
-import { undo } from "@/core/sync/undo";
+import { undo } from "@/core/server/undo";
 import { monthToInt, currentMonth } from "@/core/shared/months";
 
 /**
@@ -171,7 +171,7 @@ describe("budgets/index — setBudgetAmount / transferAvailable / transfer* char
 
   describe("undo grouping", () => {
     it("undoes a two-source transferMultipleCategories call in a single undo step", async () => {
-      // Route taken: call the real undo() API from src/core/sync/undo
+      // Route taken: call the real undo() API from src/core/server/undo
       // directly (no UI store dependency needed) — the "preferred" route
       // from the plan, not the sendMessages-spy fallback.
       await openTestDb();

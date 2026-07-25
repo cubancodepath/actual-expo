@@ -4,11 +4,12 @@ import { first, runQuery } from "@/core/db";
 import { sendMessages, batchMessages } from "@/core/sync/batch";
 import { resetBatchState } from "@/core/sync/batch";
 import { Timestamp } from "@/core/crdt";
-import { undoable, undo, canUndo, clearUndo } from "@/core/sync/undo";
+import { undoable, undo, redo, canUndo, canRedo, clearUndo } from "@/core/server/undo";
 
 /**
- * Tests for the undo system (src/core/sync/undo.ts), plan 003. Pins CURRENT
- * behavior — see plans/003-undo-tests.md. No redo exists; do not test redo.
+ * Tests for the undo system (src/core/server/undo.ts), plan 003. Pins undo
+ * round-trip behavior — see plans/003-undo-tests.md. Redo coverage lives in
+ * the "redo" describe block below.
  */
 
 describe("undo — basic round-trip", () => {
@@ -473,5 +474,117 @@ describe("undo — batchMessages + undoable interaction (fixed by plan 004)", ()
     expect(acc1Row?.tombstone).toBe(1);
     expect(acc2Row?.tombstone).toBe(1);
     expect(canUndo()).toBe(false); // it was the only group
+  });
+});
+
+describe("redo", () => {
+  beforeEach(() => {
+    clearUndo();
+  });
+  afterEach(async () => {
+    resetBatchState();
+    await closeTestDb();
+  });
+
+  it("undo then redo restores the change; canUndo/canRedo transition correctly", async () => {
+    await openTestDb();
+    await sendMessages([
+      {
+        timestamp: Timestamp.send()!,
+        dataset: "accounts",
+        row: "acc1",
+        column: "name",
+        value: "Original",
+      },
+    ]);
+
+    const updateName = undoable(async (name: string) => {
+      await sendMessages([
+        {
+          timestamp: Timestamp.send()!,
+          dataset: "accounts",
+          row: "acc1",
+          column: "name",
+          value: name,
+        },
+      ]);
+    });
+    await updateName("Changed");
+    expect(canUndo()).toBe(true);
+    expect(canRedo()).toBe(false);
+
+    await undo();
+    let row = await first<{ name: string }>("SELECT name FROM accounts WHERE id = ?", ["acc1"]);
+    expect(row?.name).toBe("Original");
+    expect(canRedo()).toBe(true);
+
+    const tables = await redo();
+    expect(tables).toContain("accounts");
+    row = await first<{ name: string }>("SELECT name FROM accounts WHERE id = ?", ["acc1"]);
+    expect(row?.name).toBe("Changed");
+    expect(canRedo()).toBe(false);
+    expect(canUndo()).toBe(true);
+  });
+
+  it("redo resurrects a row that undo tombstoned (creation → undo → redo)", async () => {
+    await openTestDb();
+    const createAcc = undoable(async () => {
+      await sendMessages([
+        {
+          timestamp: Timestamp.send()!,
+          dataset: "accounts",
+          row: "newacc",
+          column: "name",
+          value: "Fresh",
+        },
+      ]);
+    });
+    await createAcc();
+
+    await undo();
+    const tombstoned = await first<{ tombstone: number }>(
+      "SELECT tombstone FROM accounts WHERE id = ?",
+      ["newacc"],
+    );
+    expect(tombstoned?.tombstone).toBe(1);
+    expect(canRedo()).toBe(true);
+
+    await redo();
+    const resurrected = await first<{ tombstone: number; name: string }>(
+      "SELECT tombstone, name FROM accounts WHERE id = ?",
+      ["newacc"],
+    );
+    // Resurrected: tombstone cleared and the original column re-applied.
+    expect(resurrected?.tombstone).toBe(0);
+    expect(resurrected?.name).toBe("Fresh");
+  });
+
+  it("a new undoable op after undo() invalidates the redo (forward history is trimmed)", async () => {
+    await openTestDb();
+    const setName = undoable(async (id: string, name: string) => {
+      await sendMessages([
+        { timestamp: Timestamp.send()!, dataset: "accounts", row: id, column: "name", value: name },
+      ]);
+    });
+
+    await setName("acc1", "First");
+    await undo();
+    expect(canRedo()).toBe(true);
+
+    // A brand-new op must wipe the redo branch.
+    await setName("acc2", "Second");
+    expect(canRedo()).toBe(false);
+
+    // redo() is now a no-op.
+    const tables = await redo();
+    expect(tables).toEqual([]);
+  });
+
+  it("redo() with nothing to redo is a no-op and does not throw", async () => {
+    await openTestDb();
+    expect(canRedo()).toBe(false);
+    const tables = await redo();
+    expect(tables).toEqual([]);
+    expect(canRedo()).toBe(false);
   });
 });

@@ -9,7 +9,7 @@
 
 import { first } from "@/core/db";
 import { sendMessages } from "@/core/sync";
-import { undoable } from "@/core/sync/undo";
+import { undoable } from "@/core/server/undo";
 import { Timestamp } from "@/core/crdt";
 
 /** Read the note for any entity keyed by `id` (null if none). */

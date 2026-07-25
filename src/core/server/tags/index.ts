@@ -1,7 +1,7 @@
 import { randomUUID } from "@/core/platform/crypto";
 import { runQuery, first } from "@/core/db";
 import { sendMessages } from "@/core/sync";
-import { undoable } from "@/core/sync/undo";
+import { undoable } from "@/core/server/undo";
 import { Timestamp } from "@/core/crdt";
 import type { TagRow } from "@/core/db/types";
 import type { Tag } from "@/core/types/models";

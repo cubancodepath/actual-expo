@@ -28,7 +28,6 @@ export { SearchBar, type SearchBarProps } from "./molecules/SearchBar";
 export { EmptyState, type EmptyStateProps } from "./molecules/EmptyState";
 export { Banner, type BannerProps } from "./molecules/Banner";
 export { KeyboardToolbar } from "./molecules/KeyboardToolbar";
-export { UndoToast } from "./molecules/UndoToast";
 // NOTE: feature components (CurrencyInput, MonthPicker, budget list items, banners)
 // are NOT re-exported here. Import them directly from @/features/... to keep the
 // dependency direction app → features → design-system (no design-system → features).

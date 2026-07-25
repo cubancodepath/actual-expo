@@ -4,7 +4,7 @@ import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
-import { useUndoStore } from "@/stores/undoStore";
+import { useUndo } from "@/lib/hooks/useUndo";
 import { updateCategory, deleteCategory } from "@/core/server/budget";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { useCategories } from "@/lib/hooks/useCategories";
@@ -18,6 +18,7 @@ import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 
 export default function QuickEditCategoryScreen() {
   const { t } = useTranslation("budget");
+  const { showUndoNotification } = useUndo();
   const { colors, spacing, borderRadius: br, borderWidth: bw } = useTheme();
   const goalsEnabled = useFeatureFlag("goalTemplatesEnabled");
   const router = useRouter();
@@ -86,7 +87,7 @@ export default function QuickEditCategoryScreen() {
     (async () => {
       try {
         await deleteCategory(categoryId, pickedCategory.catId);
-        useUndoStore.getState().showUndo(t("categoryDeleted"));
+        showUndoNotification(t("categoryDeleted"));
         setPickedCategory(null);
         setPendingDelete(false);
         router.back();

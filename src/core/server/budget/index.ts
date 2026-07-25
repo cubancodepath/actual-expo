@@ -1,7 +1,7 @@
 import { randomUUID } from "@/core/platform/crypto";
 import { runQuery } from "@/core/db";
 import { sendMessages } from "@/core/sync";
-import { undoable } from "@/core/sync/undo";
+import { undoable } from "@/core/server/undo";
 import { Timestamp } from "@/core/crdt";
 import type { CategoryGroupRow, CategoryRow } from "@/core/db/types";
 import type { Category, CategoryGroup } from "@/core/types/models";
@@ -188,7 +188,10 @@ export const updateCategoryGroup = undoable(async function updateCategoryGroup(
   );
 });
 
-export async function moveCategoryGroup(id: string, targetId: string | null = null): Promise<void> {
+export const moveCategoryGroup = undoable(async function moveCategoryGroup(
+  id: string,
+  targetId: string | null = null,
+): Promise<void> {
   const groups = await runQuery<{ id: string; sort_order: number }>(
     "SELECT id, sort_order FROM category_groups WHERE tombstone = 0 ORDER BY sort_order ASC, id ASC",
   );
@@ -212,9 +215,9 @@ export async function moveCategoryGroup(id: string, targetId: string | null = nu
     },
   ];
   await sendMessages(messages);
-}
+});
 
-export async function moveCategory(
+export const moveCategory = undoable(async function moveCategory(
   id: string,
   groupId: string,
   targetId: string | null = null,
@@ -250,7 +253,7 @@ export async function moveCategory(
     },
   ];
   await sendMessages(messages);
-}
+});
 
 export const deleteCategoryGroup = undoable(async function deleteCategoryGroup(
   id: string,

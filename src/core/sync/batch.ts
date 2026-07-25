@@ -19,8 +19,8 @@
  */
 
 import type { SyncMessage } from "./encoder";
-import type { OldData } from "./undo";
-import { appendMessages as undoAppendMessages } from "./undo";
+import type { OldData } from "@/core/server/undo";
+import { appendMessages as undoAppendMessages } from "@/core/server/undo";
 import { applyMessages } from "./apply";
 import { emit } from "./syncEvents";
 import { isSwitchingBudget, clearSyncTimeout, setSyncTimeout, getSyncTimeout } from "./lifecycle";

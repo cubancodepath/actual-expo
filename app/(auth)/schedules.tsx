@@ -17,7 +17,7 @@ import { useSchedules } from "@/features/schedules/hooks/useSchedules";
 import { deleteSchedule } from "@/core/server/schedules";
 import { usePayees } from "@/lib/hooks/usePayees";
 import { useAccounts } from "@/lib/hooks/useAccounts";
-import { useUndoStore } from "@/stores/undoStore";
+import { useUndo } from "@/lib/hooks/useUndo";
 import { getStatus, getScheduledAmount, getRecurringDescription } from "@/core/server/schedules";
 import type { Schedule, ScheduleStatus, RecurConfig } from "@/core/types/models";
 import type { Theme } from "@/design-system/tokens";
@@ -133,6 +133,7 @@ function ScheduleRow({
 
 export default function SchedulesScreen() {
   const router = useRouter();
+  const { showUndoNotification } = useUndo();
   const { colors, spacing } = useTheme();
   const styles = useThemedStyles(createStyles);
   const { t } = useTranslation(["schedules", "common"]);
@@ -155,7 +156,7 @@ export default function SchedulesScreen() {
         style: "destructive",
         onPress: async () => {
           await deleteSchedule(schedule.id);
-          useUndoStore.getState().showUndo(t("scheduleDeleted"));
+          showUndoNotification(t("scheduleDeleted"));
         },
       },
     ]);

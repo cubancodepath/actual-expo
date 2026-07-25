@@ -11,7 +11,7 @@ import { run, runQuery, runQuerySync, first, transaction } from "@/core/db";
 import type { MessagesCrdtRow } from "@/core/db/types";
 import { ActualError } from "@/core/errors";
 import type { SyncMessage, OutgoingSyncMessage } from "./encoder";
-import type { OldData } from "./undo";
+import type { OldData } from "@/core/server/undo";
 import { serializeValue, deserializeValue } from "./values";
 import { saveClockWith } from "./clock";
 import { checkSyncingMode } from "./syncMode";

@@ -8,7 +8,7 @@
 
 import { findOrCreatePayee } from "@/core/server/payees";
 import { batchMessages } from "@/core/sync";
-import { undoable } from "@/core/sync/undo";
+import { undoable } from "@/core/server/undo";
 import { getCurrentPosition } from "@/core/platform/location";
 import { isFeatureEnabled } from "@/core/server/preferences";
 import { createPayeeLocation } from "@/core/server/payees";

@@ -1,4 +1,4 @@
-import { useId, useMemo, type ReactNode } from "react";
+import { useEffect, useId, useMemo, type ReactNode } from "react";
 import { Keyboard, Platform, Pressable, StyleSheet, View, type ViewProps } from "react-native";
 import Animated, { SlideInDown, SlideOutDown } from "react-native-reanimated";
 import { FullWindowOverlay } from "react-native-screens";
@@ -7,6 +7,7 @@ import { Portal, useThemeColor } from "heroui-native";
 import { NumberPad } from "heroui-native-pro";
 import { Check } from "lucide-react-native";
 import { MAX_CENTS } from "@/core/shared/util";
+import { useKeyboardStore } from "@/stores/keyboardStore";
 import {
   AmountKeyboardActionsContext,
   AmountKeyboardStateContext,
@@ -202,6 +203,14 @@ function AmountKeyboardPanel({ children, onHeightChange }: AmountKeyboardPanelPr
   const insets = useSafeAreaInsets();
   const { isOpen } = useAmountKeyboardState();
 
+  // Publish open/close to the global keyboard store so root-mounted overlays
+  // (the undo Toast) can lift themselves above the pad.
+  useEffect(() => {
+    const store = useKeyboardStore.getState();
+    store.setAmountKeyboardOpen(isOpen);
+    return () => store.setAmountKeyboardOpen(false);
+  }, [isOpen]);
+
   if (!isOpen) return null;
   return (
     <Animated.View
@@ -209,7 +218,11 @@ function AmountKeyboardPanel({ children, onHeightChange }: AmountKeyboardPanelPr
       exiting={SlideOutDown}
       className="absolute inset-x-0 bottom-0 border-t border-border bg-surface px-4 pt-3"
       style={{ paddingBottom: insets.bottom + 8 }}
-      onLayout={(e) => onHeightChange?.(e.nativeEvent.layout.height)}
+      onLayout={(e) => {
+        const height = e.nativeEvent.layout.height;
+        onHeightChange?.(height);
+        useKeyboardStore.getState().setAmountKeyboardHeight(height);
+      }}
     >
       {children ?? <AmountKeyboardPad />}
     </Animated.View>

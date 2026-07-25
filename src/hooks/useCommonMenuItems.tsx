@@ -22,6 +22,7 @@ import type { ReactNode } from "react";
 export function useCommonMenuActions(): ReactNode[] {
   const router = useRouter();
   const canUndo = useUndoStore((s) => s.canUndo);
+  const canRedo = useUndoStore((s) => s.canRedo);
   const [privacyMode, togglePrivacy] = usePrivacyMode();
 
   const actions: ReactNode[] = [
@@ -34,6 +35,16 @@ export function useCommonMenuActions(): ReactNode[] {
       }}
     >
       Undo
+    </Stack.Toolbar.MenuAction>,
+    <Stack.Toolbar.MenuAction
+      key="redo"
+      icon="arrow.uturn.forward"
+      disabled={!canRedo}
+      onPress={async () => {
+        await useUndoStore.getState().redo();
+      }}
+    >
+      Redo
     </Stack.Toolbar.MenuAction>,
     <Stack.Toolbar.MenuAction
       key="privacy"

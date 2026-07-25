@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { deleteTransaction, duplicateTransaction, toggleCleared } from "@/core/server/transactions";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
-import { useUndoStore } from "@/stores/undoStore";
+import { useUndo } from "@/lib/hooks/useUndo";
 import { dialog } from "@/ui/feedback/dialog";
 import { successHaptic } from "@/ui/haptics";
 import type { TransactionDisplay } from "@/core/types/models";
@@ -15,6 +15,7 @@ import type { TransactionDisplay } from "@/core/types/models";
  */
 export function useTransactionActions() {
   const { t } = useTranslation("transactions");
+  const { showUndoNotification } = useUndo();
 
   /** Confirm (stronger copy when reconciled — upstream parity) then delete + undo toast. */
   const deleteWithConfirm = useCallback(
@@ -37,12 +38,12 @@ export function useTransactionActions() {
       if (!ok) return;
       try {
         await deleteTransaction(txn.id);
-        useUndoStore.getState().showUndo(t("deleteTransaction"));
+        showUndoNotification(t("deleteTransaction"));
       } catch (e) {
         emitErrorEvent(e, { operation: "transaction.delete" });
       }
     },
-    [t],
+    [t, showUndoNotification],
   );
 
   /** Toggle cleared; reconciled (locked) transactions get an explanatory alert instead. */

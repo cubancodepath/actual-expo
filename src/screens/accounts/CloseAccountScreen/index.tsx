@@ -10,7 +10,7 @@ import type { Account } from "@/core/types/models";
 import { useAccounts } from "@/lib/hooks/useAccounts";
 import { useCategories } from "@/lib/hooks/useCategories";
 import { integerToCurrency } from "@/core/shared/util";
-import { useUndoStore } from "@/stores/undoStore";
+import { useUndo } from "@/lib/hooks/useUndo";
 import { dialog } from "@/ui/feedback/dialog";
 import { LoadingScreen } from "@/ui/LoadingScreen";
 import { CloseButton } from "@/ui/CloseButton";
@@ -58,6 +58,7 @@ function CloseAccountForm({
 }) {
   const { t } = useTranslation("accounts");
   const router = useRouter();
+  const { showUndoNotification } = useUndo();
   const foreground = useThemeColor("foreground");
   const danger = useThemeColor("danger");
   const { accounts } = useAccounts();
@@ -70,7 +71,7 @@ function CloseAccountForm({
     mutationFn: (opts: CloseAccountOpts) => closeAccount(opts),
     onSuccess: (_data, opts) => {
       const deleted = opts.forced || canDelete;
-      useUndoStore.getState().showUndo(t(deleted ? "close.accountDeleted" : "close.accountClosed"));
+      showUndoNotification(t(deleted ? "close.accountDeleted" : "close.accountClosed"));
       router.dismiss();
     },
   });

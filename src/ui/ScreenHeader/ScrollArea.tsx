@@ -1,5 +1,11 @@
-import { useMemo, useState, type Ref, type ReactNode } from "react";
-import { StyleSheet, View, type ScrollView, type ScrollViewProps } from "react-native";
+import { cloneElement, isValidElement, useMemo, useState, type Ref, type ReactNode } from "react";
+import {
+  StyleSheet,
+  View,
+  type RefreshControlProps,
+  type ScrollView,
+  type ScrollViewProps,
+} from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import MaskedView from "@react-native-masked-view/masked-view";
 import { BlurView } from "expo-blur";
@@ -101,6 +107,7 @@ export function ScreenHeaderBody({
   onScrollY,
   keyboardAware = false,
   bottomOffset = 24,
+  refreshControl,
   ...rest
 }: ScreenHeaderBodyProps) {
   const { scrollOffset, headerHeight } = useScreenHeaderScrollContext();
@@ -110,11 +117,23 @@ export function ScreenHeaderBody({
     if (onScrollY) runOnJS(onScrollY)(e.contentOffset.y);
   });
 
+  // The header floats over the scroll content (paddingTop = headerHeight), so a
+  // RefreshControl's spinner would sit at y=0, behind the header row. Offset it
+  // by the same measured header height so it appears just below the header —
+  // the caller can't do this itself (it's above the ScrollArea provider). An
+  // explicit progressViewOffset on the passed control still wins.
+  const offsetRefreshControl =
+    isValidElement<RefreshControlProps>(refreshControl) &&
+    refreshControl.props.progressViewOffset === undefined
+      ? cloneElement(refreshControl, { progressViewOffset: headerHeight })
+      : refreshControl;
+
   const scrollProps = {
     ref,
     scrollEventThrottle: 16,
     showsVerticalScrollIndicator: false,
     ...rest,
+    refreshControl: offsetRefreshControl,
     onScroll,
     style: [styles.fill, style],
     contentContainerStyle: [{ paddingTop: headerHeight }, contentContainerStyle],

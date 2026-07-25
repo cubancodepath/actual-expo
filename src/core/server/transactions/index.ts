@@ -10,7 +10,11 @@ import { todayInt, startOfMonthInt, endOfMonthInt, strToInt } from "@/core/share
 import { q, executeQuery } from "@/core/queries";
 import { aqlQuery } from "@/core/server/aql";
 import { getRules } from "@/core/server/rules";
-import { applyRulesToNewTransaction } from "@/core/server/transactions/transaction-rules";
+import {
+  applyRulesToNewTransaction,
+  updateCategoryRules,
+  type LearnTransaction,
+} from "@/core/server/transactions/transaction-rules";
 
 export type { TransactionDisplay } from "@/core/types/models";
 
@@ -125,6 +129,70 @@ export const addTransaction = undoable(async function addTransaction(
   }
 
   return id;
+});
+
+/**
+ * Diff-driven batch writer — upstream `batchUpdateTransactions`. Applies
+ * `deleted` (tombstone + child cascade), `added` (new rows) and `updated`
+ * (changed columns / split-child upsert) as one CRDT batch = one undo group.
+ *
+ * Divergences from upstream (correct for the port):
+ * - No separate `runTransfers` pass: the port runs transfer hooks INSIDE
+ *   addTransaction/updateTransaction/deleteTransaction (guarded for split rows),
+ *   so transfers are handled by delegation.
+ * - No `orphaned-payees` event (that's an IPC signal for a UI the port lacks).
+ * Callers must ungroup split transactions first (see applyActions).
+ */
+export const batchUpdateTransactions = undoable(async function batchUpdateTransactions({
+  added = [],
+  updated = [],
+  deleted = [],
+  learnCategories = false,
+}: {
+  added?: Array<
+    Omit<Partial<Transaction>, "id" | "tombstone"> & {
+      account: string;
+      date: number;
+      amount: number;
+    }
+  >;
+  updated?: Array<Partial<Transaction> & { id: string }>;
+  deleted?: Array<{ id: string }>;
+  learnCategories?: boolean;
+}): Promise<{
+  added: Array<Partial<Transaction> & { id: string }>;
+  updated: Array<Partial<Transaction> & { id: string }>;
+  deleted: Array<{ id: string }>;
+  errors: unknown[];
+}> {
+  const addedWithIds: Array<Partial<Transaction> & { id: string }> = [];
+
+  await batchMessages(async () => {
+    for (const t of deleted) await deleteTransaction(t.id);
+    for (const t of added) {
+      const id = await addTransaction(t);
+      addedWithIds.push({ ...t, id });
+    }
+    for (const t of updated) await updateTransaction(t.id, t);
+  });
+
+  if (learnCategories) {
+    const learn: LearnTransaction[] = [...addedWithIds, ...updated]
+      .filter((t) => t.category)
+      .map((t) => ({
+        id: t.id,
+        payee: (t.payee ?? null) as string | null,
+        category: (t.category ?? null) as string | null,
+        date: t.date as number,
+      }));
+    if (learn.length > 0) await updateCategoryRules(learn);
+  }
+
+  const errors = [...addedWithIds, ...updated].flatMap(
+    (t) => (t as { _ruleErrors?: unknown[] })._ruleErrors ?? [],
+  );
+
+  return { added: addedWithIds, updated, deleted, errors };
 });
 
 /** Duplicate a transaction — copies all fields except cleared/reconciled (reset to false). */

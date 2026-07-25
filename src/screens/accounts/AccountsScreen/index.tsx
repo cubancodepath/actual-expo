@@ -3,14 +3,8 @@ import { View } from "react-native";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import Animated from "react-native-reanimated";
-import {
-  Accordion,
-  AccordionLayoutTransition,
-  Button,
-  Typography,
-  useThemeColor,
-} from "heroui-native";
-import { CirclePlus, Plus } from "lucide-react-native";
+import { Accordion, AccordionLayoutTransition, Button, useThemeColor } from "heroui-native";
+import { CirclePlus, Landmark } from "lucide-react-native";
 import { groupAccounts, updateAccount } from "@/core/server/accounts";
 import type { Account } from "@/core/types/models";
 import { useAccounts } from "@/lib/hooks/useAccounts";
@@ -21,11 +15,12 @@ import { AccountsHeader } from "./components/AccountsHeader";
 import { AccountGroupItem } from "./components/AccountGroupItem";
 import { AccountRowContent } from "./components/AccountRow";
 import { AccountRowMenu, type AccountMenuAction } from "./components/AccountRowMenu";
+import { EmptyState } from "heroui-native-pro";
 
 export function AccountsScreen() {
   const { t } = useTranslation("accounts");
   const router = useRouter();
-  const [foreground, accent] = useThemeColor(["foreground", "accent"]);
+  const [accentForeground, foreground] = useThemeColor(["accent-foreground", "foreground"]);
   const { accounts, hasLoaded } = useAccounts();
   const refreshControl = useSyncRefreshControl();
 
@@ -85,23 +80,29 @@ export function AccountsScreen() {
       >
         {({ liftedId, onLongPressRow }) =>
           isEmpty ? (
-            <View className="flex-1 items-center justify-center gap-6 px-8">
-              <View className="items-center gap-2">
-                <Typography className="text-lg font-semibold text-foreground">
-                  {t("emptyState.title")}
-                </Typography>
-                <Typography className="text-center text-sm text-muted">
-                  {t("emptyState.description")}
-                </Typography>
-              </View>
-              <Button variant="secondary" onPress={() => router.push("/(auth)/account/new")}>
-                <Plus size={18} color={foreground} />
-                <Button.Label>{t("addAccount")}</Button.Label>
-              </Button>
+            <View className="flex-1 items-center justify-center gap-6 px-8 ">
+              <EmptyState>
+                <EmptyState.Header>
+                  <EmptyState.Media variant="icon">
+                    <Landmark size={20} color={foreground} />
+                  </EmptyState.Media>
+                  <EmptyState.Title>{t("emptyState.title")}</EmptyState.Title>
+                  <EmptyState.Description>{t("emptyState.description")}</EmptyState.Description>
+                </EmptyState.Header>
+                <EmptyState.Content>
+                  <Button variant="primary" onPress={() => router.push("/(auth)/account/new")}>
+                    <CirclePlus size={18} color={accentForeground} />
+                    <Button.Label>{t("addAccount")}</Button.Label>
+                  </Button>
+                </EmptyState.Content>
+              </EmptyState>
             </View>
           ) : (
             <ScreenHeader.Body
-              contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 120 }}
+              contentContainerStyle={{
+                paddingHorizontal: 16,
+                paddingBottom: 120,
+              }}
               refreshControl={refreshControl}
             >
               <Animated.View layout={AccordionLayoutTransition}>
@@ -127,7 +128,7 @@ export function AccountsScreen() {
 
               <View className="mt-2">
                 <Button variant="secondary" onPress={() => router.push("/(auth)/account/new")}>
-                  <CirclePlus size={18} color={accent} />
+                  <CirclePlus size={18} color={foreground} />
                   <Button.Label>{t("addAccount")}</Button.Label>
                 </Button>
               </View>

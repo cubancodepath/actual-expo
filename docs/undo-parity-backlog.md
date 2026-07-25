@@ -18,32 +18,32 @@ no añade filas a esta tabla.
 
 ## Dominios completos ausentes
 
-| Dominio | Ops upstream con undo | Bloqueo |
-|---|---|---|
+| Dominio   | Ops upstream con undo                                                                                     | Bloqueo            |
+| --------- | --------------------------------------------------------------------------------------------------------- | ------------------ |
 | dashboard | create, delete, rename, update, update-widget, reset, add-widget, remove-widget, copy-widget, import (10) | Dominio no portado |
-| reports | create, update, delete (3) | Dominio no portado |
-| filters | filter-delete (1) | Dominio no portado |
+| reports   | create, update, delete (3)                                                                                | Dominio no portado |
+| filters   | filter-delete (1)                                                                                         | Dominio no portado |
 
 ## Funciones ausentes en dominios que sí existen
 
-| Dominio | Función (nombre upstream) | Estado | Nota |
-|---|---|---|---|
-| accounts | `reopenAccount` | No existe | No hay flujo de reabrir cuenta en la UI |
-| accounts | `moveAccount` | No existe | Reordenar cuentas no portado |
-| accounts | `importTransactions` | No existe | Import CSV/banco no portado |
-| payees | `batchChangePayees` | No existe | Port usa `updatePayee`/`deletePayee` (ya undoable) |
-| tags | `deleteAllTags` | No existe | Feature no portada |
-| tags | `hideAllTags` | No existe | Feature no portada |
-| tags | `unhideAllTags` | No existe | Feature no portada |
-| budget (cat) | `sortCategories` | No existe | Reorder usa `moveCategory`/`moveCategoryGroup` (ya undoable) |
-| budget (quick) | `setZero` | No existe | "Quick budget" no portado |
-| budget (quick) | `set3MonthAvg` / `set6MonthAvg` / `set12MonthAvg` / `setNMonthAvg` | No existe | Promedios no portados |
-| budget (quick) | `copyPreviousMonth` / `copySinglePreviousMonth` / `copyUntilYearEnd` | No existe | Copiar mes no portado |
-| budget (quick) | `coverOverbudgeted` | No existe | — |
-| budget (quick) | `coverOverspending` | No existe como fn | Flujo cubierto por `transferBetweenCategories` (ya undoable) |
-| budget (goals) | `runCheckTemplates`, `applyTemplate`, `applyMultipleCategoryTemplates`, `applySingleCategoryTemplate`, `overwriteTemplate`, `storeTemplates`, `createCleanupGroup` | No existen | Plantillas de metas; `cleanupTemplate` solo parcial vía `persistCleanup` |
-| rules | `applyRuleActions`, `deleteAllRules` | No existen | Feature no portada |
-| preferences | `saveSyncedPrefs` | Existe, sin envolver | Upstream lo hace undoable; deshacer un pref es UX dudosa en móvil |
+| Dominio        | Función (nombre upstream)                                                                                                                                          | Estado               | Nota                                                                     |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------- | ------------------------------------------------------------------------ |
+| accounts       | `reopenAccount`                                                                                                                                                    | No existe            | No hay flujo de reabrir cuenta en la UI                                  |
+| accounts       | `moveAccount`                                                                                                                                                      | No existe            | Reordenar cuentas no portado                                             |
+| accounts       | `importTransactions`                                                                                                                                               | No existe            | Import CSV/banco no portado                                              |
+| payees         | `batchChangePayees`                                                                                                                                                | No existe            | Port usa `updatePayee`/`deletePayee` (ya undoable)                       |
+| tags           | `deleteAllTags`                                                                                                                                                    | No existe            | Feature no portada                                                       |
+| tags           | `hideAllTags`                                                                                                                                                      | No existe            | Feature no portada                                                       |
+| tags           | `unhideAllTags`                                                                                                                                                    | No existe            | Feature no portada                                                       |
+| budget (cat)   | `sortCategories`                                                                                                                                                   | No existe            | Reorder usa `moveCategory`/`moveCategoryGroup` (ya undoable)             |
+| budget (quick) | `setZero`                                                                                                                                                          | No existe            | "Quick budget" no portado                                                |
+| budget (quick) | `set3MonthAvg` / `set6MonthAvg` / `set12MonthAvg` / `setNMonthAvg`                                                                                                 | No existe            | Promedios no portados                                                    |
+| budget (quick) | `copyPreviousMonth` / `copySinglePreviousMonth` / `copyUntilYearEnd`                                                                                               | No existe            | Copiar mes no portado                                                    |
+| budget (quick) | `coverOverbudgeted`                                                                                                                                                | No existe            | —                                                                        |
+| budget (quick) | `coverOverspending`                                                                                                                                                | No existe como fn    | Flujo cubierto por `transferBetweenCategories` (ya undoable)             |
+| budget (goals) | `runCheckTemplates`, `applyTemplate`, `applyMultipleCategoryTemplates`, `applySingleCategoryTemplate`, `overwriteTemplate`, `storeTemplates`, `createCleanupGroup` | No existen           | Plantillas de metas; `cleanupTemplate` solo parcial vía `persistCleanup` |
+| rules          | `applyRuleActions`, `deleteAllRules`                                                                                                                               | No existen           | Feature no portada                                                       |
+| preferences    | `saveSyncedPrefs`                                                                                                                                                  | Existe, sin envolver | Upstream lo hace undoable; deshacer un pref es UX dudosa en móvil        |
 
 ## Por revisar
 

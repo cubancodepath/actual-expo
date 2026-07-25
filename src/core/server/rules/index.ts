@@ -220,6 +220,64 @@ function toInternalField(item: Record<string, unknown>): Record<string, unknown>
   return item;
 }
 
+/**
+ * Serialize rule conditions/actions to their stored JSON form (public → internal
+ * field names). Inverse of `parseConditionsOrActions`. Upstream
+ * `serializeConditionsOrActions`.
+ */
+export function serializeConditionsOrActions(arr: Record<string, unknown>[]): string {
+  return JSON.stringify(arr.map((item) => toInternalField(item)));
+}
+
+/**
+ * Rule row ↔ JS model, mirroring upstream `ruleModel` (validate / toJS / fromJS).
+ * `toJS` parses the stored conditions/actions and maps `conditions_op →
+ * conditionsOp`; `fromJS` does the reverse (serializing arrays). Used by import
+ * paths (e.g. YNAB5) and any code that round-trips a raw rule row.
+ */
+export const ruleModel = {
+  validate(rule: Record<string, unknown>, { update }: { update?: boolean } = {}) {
+    if (!update && (rule.conditions == null || rule.actions == null)) {
+      throw new RuleError("internal", "Rule must have conditions and actions");
+    }
+    if (!update || "stage" in rule) {
+      const s = rule.stage;
+      if (s !== "pre" && s !== "post" && s !== null) {
+        throw new RuleError("internal", `Invalid rule stage: ${String(s)}`);
+      }
+    }
+    if (!update || "conditionsOp" in rule) {
+      if (!["and", "or"].includes(rule.conditionsOp as string)) {
+        throw new RuleError("internal", `Invalid rule conditionsOp: ${String(rule.conditionsOp)}`);
+      }
+    }
+    return rule;
+  },
+
+  toJS(row: Record<string, unknown>) {
+    const { conditions, conditions_op, actions, ...fields } = row;
+    return {
+      ...fields,
+      conditionsOp: conditions_op,
+      conditions: parseConditionsOrActions(conditions as string | null),
+      actions: parseConditionsOrActions(actions as string | null),
+    };
+  },
+
+  fromJS(rule: Record<string, unknown>) {
+    const { conditions, conditionsOp, actions, ...rest } = rule;
+    const row = rest as Record<string, unknown>;
+    if (conditionsOp) row.conditions_op = conditionsOp;
+    if (Array.isArray(conditions)) {
+      row.conditions = serializeConditionsOrActions(conditions as Record<string, unknown>[]);
+    }
+    if (Array.isArray(actions)) {
+      row.actions = serializeConditionsOrActions(actions as Record<string, unknown>[]);
+    }
+    return row;
+  },
+};
+
 export async function createRule(opts: {
   stage?: RuleStage;
   conditionsOp?: "and" | "or";

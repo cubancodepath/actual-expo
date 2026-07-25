@@ -12,8 +12,10 @@ import { batchMessages } from "@/core/sync";
 import { listen, type SyncEvent } from "@/core/sync/syncEvents";
 import { ensureMappingsLoaded } from "@/core/db/mappings";
 import { findOrCreatePayee } from "@/core/server/payees";
-import { Rule } from "@/core/server/rules/rule";
+import { Rule, execActions } from "@/core/server/rules/rule";
+import { Action } from "@/core/server/rules/action";
 import { Condition } from "@/core/server/rules/condition";
+import { ungroupTransaction } from "@/core/shared/transactions";
 import {
   rankRules,
   fastSetMerge,
@@ -29,7 +31,11 @@ import {
   extractBalanceOfLiterals,
   resolveAccountIdForBalanceOf,
 } from "@/core/server/rules/balanceOfFormula";
-import type { RuleCondition } from "@/core/types/models";
+import type {
+  RuleCondition,
+  RuleAction,
+  TransactionWithSubtransactions,
+} from "@/core/types/models";
 import type { RuleRow } from "@/core/db/types";
 import type { ObjectExpression } from "@/core/shared/query";
 
@@ -854,6 +860,69 @@ export async function updateCategoryRules(transactions: LearnTransaction[]): Pro
       }
     }
   });
+}
+
+// ═══ Apply rule actions to existing transactions (upstream applyActions) ═══
+
+/**
+ * Apply a set of rule actions to the given transactions and persist the result
+ * (upstream `applyActions` / the `rule-apply-actions` handler). Enriches each
+ * transaction, prefetches BALANCE_OF, runs the actions (split-aware), ungroups
+ * to flat rows, finalizes, and writes via `batchUpdateTransactions`. Returns the
+ * batch result, or `null` if any action failed to parse.
+ */
+export async function applyActions(
+  transactions: Array<Record<string, unknown>>,
+  actions: Array<Action | RuleAction>,
+): Promise<unknown | null> {
+  const parsedActions = actions
+    .map((action) => {
+      if (action instanceof Action) return action;
+      try {
+        const a = action as RuleAction;
+        switch (a.op) {
+          case "set-split-amount":
+            return new Action(a.op, null, a.value, a.options);
+          case "link-schedule":
+            return new Action(a.op, null, a.value, undefined);
+          case "prepend-notes":
+          case "append-notes":
+            return new Action(a.op, null, a.value, undefined);
+          case "delete-transaction":
+            return new Action(a.op, null, null, undefined);
+          default:
+            return new Action(a.op, a.field ?? null, a.value, a.options);
+        }
+      } catch {
+        return null;
+      }
+    })
+    .filter((a): a is Action => a != null);
+
+  // A parse failure (bad op/field) aborts the whole apply — matches upstream.
+  if (parsedActions.length !== actions.length) return null;
+
+  const prepared = await Promise.all(transactions.map((t) => prepareTransactionForRules({ ...t })));
+  for (const trans of prepared) {
+    trans._balanceOfPrefetched = await prefetchBalanceOfForTransaction(
+      [{ actions: parsedActions }],
+      trans,
+    );
+  }
+
+  const updated: Array<Record<string, unknown>> = [];
+  for (const trans of prepared) {
+    const flat = ungroupTransaction(
+      execActions(parsedActions, trans) as unknown as TransactionWithSubtransactions,
+    );
+    for (const t of flat) {
+      updated.push(await finalizeTransactionForRules(t as unknown as EnrichedTransaction));
+    }
+  }
+
+  // Lazy import to avoid a static cycle (transactions/index imports this module).
+  const { batchUpdateTransactions } = await import("./index");
+  return batchUpdateTransactions({ updated: updated as never });
 }
 
 // ═══ conditions → AQL (former make-filters-from-conditions handler) ═══

@@ -15,8 +15,7 @@ import { computePreviewTransactions, type PreviewTransaction } from "@/core/shar
 import type { Schedule } from "@/core/types/models";
 import { executeQuery } from "@/core/queries";
 import { getArbitraryPref } from "@/core/server/preferences";
-import { getRules } from "@/core/server/rules";
-import { runRulesWithSplits } from "@/core/server/transactions/transaction-rules";
+import { getRules, applyRankedRules } from "@/core/server/transactions/transaction-rules";
 import { getPayees } from "@/core/server/payees";
 import { getCategories } from "@/core/server/budget";
 import { getAccounts } from "@/core/server/accounts";
@@ -91,7 +90,7 @@ export async function getSchedulePreviews(
       notes: null,
     };
 
-    const applied = runRulesWithSplits(rules, input);
+    const applied = applyRankedRules(rules, input);
 
     const category = (applied.category as string | null) ?? preview.category ?? null;
     const payee = (applied.payee as string | null) ?? preview.payee;

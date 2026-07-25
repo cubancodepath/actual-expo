@@ -3,6 +3,7 @@
 // instead of the no-op expo-sqlite stub.
 import { openDatabase, closeDatabase } from "@/core/db";
 import { loadClock } from "@/core/sync/clock";
+import { unloadRules } from "@/core/server/transactions/transaction-rules";
 
 let counter = 0;
 
@@ -15,9 +16,13 @@ export async function openTestDb(directory?: string): Promise<string> {
   const dir = directory ?? `test-${++counter}`;
   await openDatabase(dir);
   await loadClock();
+  // Fresh DB → drop any rules store from a prior test (module state outlives
+  // the per-test DB otherwise).
+  unloadRules();
   return dir;
 }
 
 export async function closeTestDb(): Promise<void> {
+  unloadRules();
   await closeDatabase();
 }

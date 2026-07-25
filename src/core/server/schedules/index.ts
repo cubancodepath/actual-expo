@@ -13,7 +13,14 @@ import { sendMessages, batchMessages } from "@/core/sync";
 import { undoable } from "@/core/server/undo";
 import { Timestamp } from "@/core/crdt";
 import { createRule, updateRule, deleteRule, getRuleById } from "@/core/server/rules";
-import { getNextDate, parseDate, dayFromDate } from "@/core/shared/schedules";
+import {
+  getNextDate,
+  parseDate,
+  dayFromDate,
+  recurConfigToRSchedule,
+  getDateWithSkippedWeekend,
+} from "@/core/shared/schedules";
+import { RSchedule } from "@/core/server/util/rschedule";
 import {
   extractScheduleConds,
   getStatus,
@@ -139,6 +146,33 @@ export async function getScheduleById(id: string): Promise<Schedule | null> {
     [id],
   );
   return rows.length > 0 ? rowToSchedule(rows[0]) : null;
+}
+
+// ── Upcoming dates ───────────────────────────────────────────────
+
+/**
+ * The next `count` dates a recurrence produces, as 'YYYY-MM-DD', with the
+ * weekend-skip rule applied. Port of loot-core's schedules/app.ts
+ * `getUpcomingDates`.
+ */
+export function getUpcomingDates({
+  config,
+  count,
+}: {
+  config: RecurConfig;
+  count: number;
+}): string[] {
+  const schedule = new RSchedule({ rrules: recurConfigToRSchedule(config) });
+
+  return schedule
+    .occurrences({ start: startOfDay(new Date()), take: count })
+    .toArray()
+    .map(({ date }) =>
+      config.skipWeekend
+        ? getDateWithSkippedWeekend(date, config.weekendSolveMode ?? "after")
+        : date,
+    )
+    .map(dayFromDate);
 }
 
 // ── setNextDate ──────────────────────────────────────────────────

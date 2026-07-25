@@ -1,28 +1,27 @@
 /**
  * Expand schedules into future occurrences for the forecast. Port of
- * server/forecast/forecast-schedules.ts, reusing the port's recurrence engine
- * (date-fns; rschedule doesn't run on Hermes), schedule normalization
+ * server/forecast/forecast-schedules.ts, reusing the recurrence engine
+ * (recurrence-fns via server/util/rschedule), schedule normalization
  * (getSchedules), posted-dedup (posted.ts), rules engine (runRules), and
  * transfer resolution (getTransferAccount).
  */
-import { addDays } from "date-fns";
 import { runQuery } from "@/core/db";
 import { getSchedules } from "@/core/server/schedules";
 import { getScheduledAmount } from "@/core/shared/schedules";
 import {
-  getNextOccurrence,
-  applySkipWeekend,
+  recurConfigToRSchedule,
+  getDateWithSkippedWeekend,
   parseDate,
   dayFromDate,
 } from "@/core/shared/schedules";
+import { RSchedule } from "@/core/server/util/rschedule";
 import {
   indexPostedScheduleTransactions,
   isScheduleOccurrencePosted,
 } from "@/core/shared/schedules";
 import type { RecurConfig } from "@/core/types/models";
 import type { RuleCondition } from "@/core/types/models";
-import { getRules } from "@/core/server/rules";
-import { runRules } from "@/core/server/transactions/transaction-rules";
+import { getRules, applyRankedRules } from "@/core/server/transactions/transaction-rules";
 import { getTransferAccount } from "@/core/server/transactions/transfer";
 import type { AccountWithComputedBalance, ForecastScheduleOccurrence } from "@/core/types/models";
 
@@ -80,26 +79,27 @@ export function getFutureOccurrenceDates(schedule: NormalizedSchedule, endDate: 
     return single <= endDate ? [dayFromDate(single)] : [];
   }
   const config = schedule._date;
-  const maxIterations = 10_000;
   const dates = [schedule.next_date];
   const seen = new Set(dates);
-  let day = parseDate(schedule.next_date);
-  let iterations = 0;
 
-  while (day <= endDate && iterations < maxIterations) {
-    iterations++;
-    const nextRaw = getNextOccurrence(config, day);
-    if (!nextRaw) break;
-    const skipped = applySkipWeekend(config, nextRaw);
-    if (skipped > endDate) break;
-    const nextDate = dayFromDate(skipped);
-    if (seen.has(nextDate)) {
-      day = addDays(day, 1);
-      continue;
-    }
-    dates.push(nextDate);
-    seen.add(nextDate);
-    day = addDays(skipped, 1);
+  // One bounded query instead of stepping day by day. The weekend skip runs
+  // after the range filter, so it can push an occurrence past endDate — those
+  // are dropped here, keeping the range closed as the forecast expects, and it
+  // can also collapse a Saturday and a Sunday onto the same Monday.
+  const occurrences = new RSchedule({ rrules: recurConfigToRSchedule(config) })
+    .occurrences({ start: parseDate(schedule.next_date), end: endDate })
+    .toArray();
+
+  for (const { date } of occurrences) {
+    const adjusted = config.skipWeekend
+      ? getDateWithSkippedWeekend(date, config.weekendSolveMode ?? "after")
+      : date;
+    if (adjusted > endDate) continue;
+
+    const day = dayFromDate(adjusted);
+    if (seen.has(day)) continue;
+    seen.add(day);
+    dates.push(day);
   }
   return dates;
 }
@@ -167,7 +167,7 @@ export async function buildFutureScheduleOccurrences(
         schedule: schedule.id,
         cleared: false,
       };
-      const source = runRules(rules, base);
+      const source = applyRankedRules(rules, base);
       const sourceAccount = source.account as string;
       occurrences.push({
         transaction: source,
@@ -201,7 +201,7 @@ export async function buildFutureScheduleOccurrences(
         schedule: schedule.id,
         cleared: false,
       };
-      const transfer = runRules(rules, mirror);
+      const transfer = applyRankedRules(rules, mirror);
 
       const srcAcc = accountsById.get(sourceAccount);
       const dstAcc = accountsById.get(transfer.account as string);

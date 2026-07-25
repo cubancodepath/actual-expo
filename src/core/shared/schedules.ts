@@ -965,18 +965,19 @@ export function computePreviewTransactions(
       dates.push(schedule.next_date);
 
       if (isRecurring && conds.date?.value) {
-        const recurConfig = conds.date.value as RecurConfig;
+        // Expand through getNextDate, which already applies the weekend skip,
+        // then step past the adjusted date. Mirrors upstream's preview loop.
         let day = parseDate(schedule.next_date);
         while (day <= boundary) {
-          const rawNext = getNextOccurrence(recurConfig, day);
-          if (!rawNext) break;
+          const nextDateStr = getNextDate(conds.date, day);
+          if (!nextDateStr) break;
 
-          // Apply the weekend-skip rule (Actual expands via getNextDate, which
-          // adjusts the date), then advance past the adjusted date.
-          const nextDay = applySkipWeekend(recurConfig, rawNext);
+          const nextDay = parseDate(nextDateStr);
+          // An exhausted schedule reports its last occurrence, which is behind
+          // us — without this the loop would walk backwards forever.
+          if (nextDay < day) break;
           if (startOfDay(nextDay) > boundary) break;
 
-          const nextDateStr = dayFromDate(nextDay);
           if (!dates.includes(nextDateStr)) {
             dates.push(nextDateStr);
           }

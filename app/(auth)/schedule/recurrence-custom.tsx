@@ -9,8 +9,7 @@ import { Text, Card, SectionHeader } from "@/design-system";
 import { ListItem } from "@/design-system/molecules/ListItem";
 import { GlassButton } from "@/design-system/atoms/GlassButton";
 import { usePickerStore } from "@/stores/pickerStore";
-import { getRecurringDescription } from "@/core/server/schedules";
-import { getUpcomingDates, dayFromDate, getDateWithSkippedWeekend } from "@/core/shared/schedules";
+import { getRecurringDescription, getUpcomingDates } from "@/core/server/schedules";
 import { currentDay } from "@/core/shared/months";
 import { formatDateLong, strToInt } from "@/core/shared/months";
 import type { RecurConfig } from "@/core/types/models";
@@ -107,17 +106,10 @@ export default function RecurrenceCustomScreen() {
 
   const description = getRecurringDescription(config);
 
-  // Preview next 5 dates
+  // Preview next 5 dates. getUpcomingDates already applies the weekend skip.
   const previewDates = useMemo(() => {
     try {
-      const dates: Date[] = getUpcomingDates(config, 5);
-      return dates.map((d) => {
-        let date = d;
-        if (config.skipWeekend) {
-          date = getDateWithSkippedWeekend(date, config.weekendSolveMode ?? "after");
-        }
-        return dayFromDate(date);
-      });
+      return getUpcomingDates({ config, count: 5 });
     } catch {
       return [];
     }

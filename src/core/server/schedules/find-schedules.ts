@@ -22,8 +22,10 @@ import { randomUUID } from "@/core/platform/crypto";
 import { q } from "@/core/queries";
 import { executeQuery } from "@/core/queries";
 import { getApproxNumberThreshold } from "@/core/server/rules/rule-utils";
-import { parseDate, dayFromDate } from "@/core/shared/schedules";
+import { parseDate, dayFromDate, recurConfigToRSchedule } from "@/core/shared/schedules";
 import { intToStr } from "@/core/shared/months";
+import { RSchedule } from "@/core/server/util/rschedule";
+import type { RecurConfig as SharedRecurConfig } from "@/core/types/models";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -73,59 +75,18 @@ type FoundSchedule = {
 };
 
 // ---------------------------------------------------------------------------
-// RSchedule integration (lazy-loaded same as rule-utils.ts)
+// Occurrences
 // ---------------------------------------------------------------------------
 
-let RScheduleClass: unknown = null;
-
-async function ensureRSchedule() {
-  if (RScheduleClass) return;
-  try {
-    await import("@rschedule/standard-date-adapter/setup");
-    const { Schedule } = await import("@rschedule/core/generators");
-    RScheduleClass = Schedule;
-  } catch {
-    // rschedule unavailable
-  }
-}
-
-function recurConfigToRScheduleRules(config: RecurConfig): unknown[] {
-  const start = parseDate(config.start);
-  const frequency = config.frequency.toUpperCase();
-  const base: Record<string, unknown> = { start, frequency, byHourOfDay: [12] };
-  if (config.interval) base.interval = config.interval;
-
-  if (config.frequency === "monthly" && config.patterns && config.patterns.length > 0) {
-    const days = config.patterns.filter((p) => p.type === "day");
-    const dayNames = config.patterns.filter((p) => p.type !== "day");
-    const abbrev = (name: string) => name.slice(0, 2).toUpperCase();
-    return [
-      days.length > 0 && { ...base, byDayOfMonth: days.map((p) => p.value) },
-      dayNames.length > 0 && {
-        ...base,
-        byDayOfWeek: dayNames.map((p) => [abbrev(p.type), p.value]),
-      },
-    ].filter(Boolean) as unknown[];
-  }
-  return [base];
-}
-
+/** Port of loot-core/src/server/schedules/find-schedules.ts `takeDates`. */
 function takeDates(config: RecurConfig): Date[] {
-  if (!RScheduleClass) return [];
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const ScheduleClass = RScheduleClass as any;
-    const schedule = new ScheduleClass({ rrules: recurConfigToRScheduleRules(config) });
-    return (
-      schedule
-        .occurrences({ take: 3 })
-        .toArray()
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .map((o: any) => o.date as Date)
-    );
-  } catch {
-    return [];
-  }
+  const schedule = new RSchedule({
+    rrules: recurConfigToRSchedule(config as unknown as SharedRecurConfig),
+  });
+  return schedule
+    .occurrences({ take: 3 })
+    .toArray()
+    .map((o) => o.date);
 }
 
 // ---------------------------------------------------------------------------
@@ -387,8 +348,6 @@ async function findStartDate(schedule: FoundSchedule): Promise<FoundSchedule> {
 // ---------------------------------------------------------------------------
 
 export async function findSchedules(): Promise<FoundSchedule[]> {
-  await ensureRSchedule();
-
   const { data: accounts } = await executeQuery<{ id: string }>(
     q("accounts").filter({ closed: false }).select(["id"]),
   );

@@ -7,6 +7,7 @@
 
 import { randomUUID } from "@/core/platform/crypto";
 import { sendMessages } from "@/core/sync";
+import { undoable } from "@/core/server/undo";
 import { first, runQuery } from "@/core/db";
 import { Timestamp } from "@/core/crdt";
 import type { RuleRow } from "@/core/db/types";
@@ -14,7 +15,7 @@ import type { RuleCondition, RuleAction, RuleStage } from "@/core/types/models";
 import { Rule } from "./rule";
 import { Condition } from "./condition";
 import { Action } from "./action";
-import { deserializeField, ensureRSchedule, migrateIds } from "./rule-utils";
+import { deserializeField, migrateIds } from "./rule-utils";
 import { RuleError } from "./errors";
 import { getMappings, ensureMappingsLoaded } from "@/core/db/mappings";
 
@@ -114,6 +115,46 @@ function validateActions(actions: RuleAction[]): void {
   }
 }
 
+/**
+ * Validate a rule's conditions/actions individually, returning per-item error
+ * codes (or null when valid). Mirrors upstream server/rules/app.ts validateRule
+ * — surfaces which condition/action is bad without throwing.
+ */
+export function validateRule(rule: { conditions: RuleCondition[]; actions: RuleAction[] }): {
+  conditionErrors: (string | null)[];
+  actionErrors: (string | null)[];
+} | null {
+  const conditionError = (raw: RuleCondition): string | null => {
+    try {
+      const c = expandConditionField(raw as unknown as Record<string, unknown>);
+      new Condition(
+        c.op as string,
+        c.field as string,
+        c.value,
+        c.options as Record<string, unknown> | undefined,
+      );
+      return null;
+    } catch (e) {
+      return e instanceof RuleError ? e.type : "internal";
+    }
+  };
+  const actionError = (a: RuleAction): string | null => {
+    try {
+      new Action(a.op, (a.field ?? null) as string | null, a.value, a.options);
+      return null;
+    } catch (e) {
+      return e instanceof RuleError ? e.type : "internal";
+    }
+  };
+
+  const conditionErrors = rule.conditions.map(conditionError);
+  const actionErrors = rule.actions.map(actionError);
+  if (conditionErrors.some(Boolean) || actionErrors.some(Boolean)) {
+    return { conditionErrors, actionErrors };
+  }
+  return null;
+}
+
 export function makeRule(row: RuleRow): Rule | null {
   try {
     const conditions = parseConditionsOrActions(row.conditions).map(expandConditionField);
@@ -155,21 +196,15 @@ export function makeRule(row: RuleRow): Rule | null {
 // ── Queries ──
 
 export async function getRules(): Promise<Rule[]> {
-  // Ensure the recurring-date engine is loaded before building any Condition
-  // that may carry a recur config (avoids the "RSchedule not available" race).
-  await ensureRSchedule();
-  // Ensure the mappings cache is warm so makeRule → migrateIds projects ids
-  // against current merges (also covers the lazy-load path if bootstrap was
-  // skipped, e.g. in tests).
-  await ensureMappingsLoaded();
-  const rows = await runQuery<RuleRow>(
-    "SELECT * FROM rules WHERE tombstone = 0 AND conditions IS NOT NULL AND actions IS NOT NULL",
-  );
-  return rows.map(makeRule).filter((r): r is Rule => r !== null);
+  // Authoritative rules now live in the in-memory store owned by
+  // transaction-rules.ts (upstream layout). Delegate to it (dynamic import
+  // breaks the module cycle — transaction-rules imports makeRule/createRule
+  // from here). The store lazy-loads from the DB + ensures RSchedule/mappings.
+  const { getRules: storeGetRules } = await import("@/core/server/transactions/transaction-rules");
+  return storeGetRules();
 }
 
 export async function getRuleById(id: string): Promise<Rule | null> {
-  await ensureRSchedule();
   await ensureMappingsLoaded();
   const row = await first<RuleRow>("SELECT * FROM rules WHERE id = ? AND tombstone = 0", [id]);
   if (!row) return null;
@@ -186,13 +221,12 @@ function toInternalField(item: Record<string, unknown>): Record<string, unknown>
 }
 
 export async function createRule(opts: {
+  stage?: RuleStage;
   conditionsOp?: "and" | "or";
   conditions: RuleCondition[];
   actions: RuleAction[];
 }): Promise<string> {
-  // Preload the recurring-date engine so validating a recur-date condition
-  // doesn't hit the "RSchedule not available" race, then reject invalid rules.
-  await ensureRSchedule();
+  // Reject invalid rules up front.
   validateConditions(opts.conditions);
   validateActions(opts.actions);
 
@@ -200,7 +234,7 @@ export async function createRule(opts: {
 
   await sendMessages(
     Object.entries({
-      stage: null,
+      stage: normalizeStage(opts.stage),
       conditions_op: opts.conditionsOp ?? "and",
       conditions: JSON.stringify(
         opts.conditions.map((c) => toInternalField(c as unknown as Record<string, unknown>)),
@@ -221,12 +255,11 @@ export async function createRule(opts: {
   return id;
 }
 
-export async function updateRule(
+export const updateRule = undoable(async function updateRule(
   id: string,
   fields: { conditions?: RuleCondition[]; conditionsOp?: string; actions?: RuleAction[] },
 ): Promise<void> {
   if (fields.conditions !== undefined || fields.actions !== undefined) {
-    await ensureRSchedule();
     if (fields.conditions !== undefined) validateConditions(fields.conditions);
     if (fields.actions !== undefined) validateActions(fields.actions);
   }
@@ -256,7 +289,7 @@ export async function updateRule(
       value,
     })),
   );
-}
+});
 
 /**
  * Tombstone a rule. By default refuses to delete a rule still referenced by a
@@ -264,7 +297,10 @@ export async function updateRule(
  * from the rule-management UI). Schedule teardown passes `force` because it
  * deletes the schedule's own rule as part of removing the schedule.
  */
-export async function deleteRule(id: string, opts?: { force?: boolean }): Promise<void> {
+export const deleteRule = undoable(async function deleteRule(
+  id: string,
+  opts?: { force?: boolean },
+): Promise<void> {
   if (!opts?.force) {
     const schedule = await first<{ id: string }>(
       "SELECT id FROM schedules WHERE rule = ? AND tombstone = 0",
@@ -287,4 +323,19 @@ export async function deleteRule(id: string, opts?: { force?: boolean }): Promis
       value: 1,
     },
   ]);
-}
+});
+
+/** Tombstone every rule (upstream `rule-delete-all`). */
+export const deleteAllRules = undoable(async function deleteAllRules(): Promise<void> {
+  const rows = await runQuery<{ id: string }>("SELECT id FROM rules WHERE tombstone = 0");
+  if (rows.length === 0) return;
+  await sendMessages(
+    rows.map((r) => ({
+      timestamp: Timestamp.send()!,
+      dataset: "rules",
+      row: r.id,
+      column: "tombstone",
+      value: 1 as number,
+    })),
+  );
+});

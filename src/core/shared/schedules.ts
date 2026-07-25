@@ -41,7 +41,7 @@ import { RSchedule } from "@/core/server/util/rschedule";
 import type { ByDayOfWeekEntry, IRuleOptions } from "@/core/server/util/rschedule";
 
 /** The weekend-skip settings a schedule carries alongside its recurrence. */
-type ScheduleRecurData = { skipWeekend?: boolean; weekendSolve?: "before" | "after" };
+export type ScheduleRecurData = { skipWeekend?: boolean; weekendSolve?: "before" | "after" };
 
 type ScheduleRuleOptions = IRuleOptions & { interval?: number; byHourOfDay?: number[] };
 

@@ -9,9 +9,10 @@ import { subDays, addDays } from "date-fns";
 import * as monthUtils from "@/core/shared/monthUtils";
 import { first, runQuery } from "@/core/db";
 import { batchMessages } from "@/core/sync";
+import { listen, type SyncEvent } from "@/core/sync/syncEvents";
+import { ensureMappingsLoaded } from "@/core/db/mappings";
 import { findOrCreatePayee } from "@/core/server/payees";
-import type { Rule } from "@/core/server/rules/rule";
-import type { Action } from "@/core/server/rules/action";
+import { Rule } from "@/core/server/rules/rule";
 import { Condition } from "@/core/server/rules/condition";
 import {
   rankRules,
@@ -19,58 +20,144 @@ import {
   getApproxNumberThreshold,
   sortNumbers,
   extractTagsForFilter,
+  iterateIds,
 } from "@/core/server/rules/rule-utils";
 import { RuleIndexer } from "@/core/server/rules/rule-indexer";
-import { getRules, createRule, updateRule } from "@/core/server/rules";
+import { makeRule, createRule, updateRule } from "@/core/server/rules";
 import {
   collectFormulasFromActions,
   extractBalanceOfLiterals,
   resolveAccountIdForBalanceOf,
 } from "@/core/server/rules/balanceOfFormula";
-import {
-  splitTransaction,
-  addSplitTransaction,
-  groupTransaction,
-  recalculateSplit,
-  ungroupTransaction,
-} from "@/core/shared/transactions";
-import type {
-  Transaction,
-  TransactionWithSubtransactions,
-  RuleCondition,
-} from "@/core/types/models";
+import type { RuleCondition } from "@/core/types/models";
+import type { RuleRow } from "@/core/db/types";
 import type { ObjectExpression } from "@/core/shared/query";
+
+// ═══ In-memory rule store (upstream module state) ═══
+
+let allRules: Map<string, Rule> | null = null;
+let firstcharIndexer: RuleIndexer;
+let payeeIndexer: RuleIndexer;
+let unlistenSync: (() => void) | null = null;
+
+export function resetState(): void {
+  allRules = new Map();
+  firstcharIndexer = new RuleIndexer({ field: "imported_payee", method: "firstchar" });
+  payeeIndexer = new RuleIndexer({ field: "payee" });
+}
+
+/**
+ * Load all rules from the DB into the in-memory store + indexers and register a
+ * sync listener so the store stays fresh. Idempotent — safe to call repeatedly
+ * (re-registers the listener). Mirrors upstream loadRules().
+ */
+export async function loadRules(): Promise<void> {
+  await ensureMappingsLoaded();
+  resetState();
+
+  const rows = await runQuery<RuleRow>(
+    "SELECT * FROM rules WHERE conditions IS NOT NULL AND actions IS NOT NULL AND tombstone = 0",
+  );
+  for (const row of rows) {
+    // Migrate legacy stages (cleanup/modify → pre), like upstream.
+    const stage = (row as { stage?: string }).stage;
+    if (stage === "cleanup" || stage === "modify") {
+      (row as { stage?: string }).stage = "pre";
+    }
+    const rule = makeRule(row);
+    if (rule) {
+      allRules!.set(rule.getId()!, rule);
+      firstcharIndexer.index(rule);
+      payeeIndexer.index(rule);
+    }
+  }
+
+  if (unlistenSync) unlistenSync();
+  unlistenSync = listen(onApplySync);
+}
+
+/** In-memory rules — lazy-loads the store on first use. */
+export async function getRules(): Promise<Rule[]> {
+  if (allRules == null) await loadRules();
+  return [...allRules!.values()];
+}
+
+/**
+ * Drop the in-memory store and detach the sync listener so the next
+ * getRules()/runRules() reloads from the (possibly new) DB. Call on budget
+ * close / DB swap — the store's lifetime must not outlive the DB it mirrors.
+ */
+export function unloadRules(): void {
+  if (unlistenSync) unlistenSync();
+  unlistenSync = null;
+  allRules = null;
+}
+
+/**
+ * Keep the in-memory store fresh after a CRDT apply. Adaptation of upstream's
+ * `onApplySync(oldValues, newValues)`: our sync bus (syncEvents) carries only
+ * table NAMES, not row data, so on a `rules` change we reload the table and on
+ * a `*mapping*` change we re-run migrateIds over the stored rules — the same
+ * pattern used by src/core/db/mappings.ts.
+ */
+function onApplySync(event: SyncEvent): void {
+  if (!("tables" in event)) return;
+  // Invalidate the store on rule CRUD OR any mapping change (payee/category
+  // merges re-project rule ids). The next getRules()/runRules() reloads from
+  // the DB — makeRule re-runs migrateIds against the (by-then refreshed)
+  // mappings, matching the original always-fresh semantics. A synchronous,
+  // awaited reload avoids the stale-read race a fire-and-forget reload would
+  // create, and it sidesteps listener-ordering vs the mappings module. Pure
+  // transaction writes don't touch these tables, so bulk imports stay warm.
+  if (event.tables.includes("rules") || event.tables.some((t) => t.includes("mapping"))) {
+    allRules = null;
+  }
+}
+
+// ═══ Schedule ↔ rule linkage ═══
+
+export async function getRuleIdFromScheduleId(scheduleId: string): Promise<string | null> {
+  const row = await first<{ rule: string | null }>("SELECT rule FROM schedules WHERE id = ?", [
+    scheduleId,
+  ]);
+  return row?.rule || null;
+}
+
+export async function getAllRuleIdsFromSchedules(excluding: string): Promise<string[]> {
+  const rows = await runQuery<{ rule: string | null }>("SELECT rule FROM schedules");
+  return rows
+    .map((r) => r.rule)
+    .filter((ruleId): ruleId is string => !!ruleId && ruleId !== excluding);
+}
 
 // ═══ Rule running (former rules/engine.ts) ═══
 
 /**
- * Narrow the rule set to those that could apply to `transaction`, then rank
- * them. Mirrors upstream's runRules: a payee indexer + an imported_payee
- * firstchar indexer return the rules keyed on the transaction's values plus the
- * wildcard rules (those without such a condition); their union is the candidate
- * set. This never drops a rule that could match — each returned rule's
- * conditions are still evaluated in apply()/evalConditions — so it is a pure
- * optimization of the linear scan.
+ * Narrow a given rule set to those that could apply to `transaction`, then rank
+ * them. Pure helper used to apply an explicit, caller-provided rule set (form
+ * bridging, previews); the stateful `runRules` below uses the module indexers.
  */
 function getApplicableRankedRules(rules: Rule[], transaction: Record<string, unknown>): Rule[] {
-  const firstcharIndexer = new RuleIndexer({ field: "imported_payee", method: "firstchar" });
-  const payeeIndexer = new RuleIndexer({ field: "payee" });
+  const fc = new RuleIndexer({ field: "imported_payee", method: "firstchar" });
+  const pe = new RuleIndexer({ field: "payee" });
   for (const rule of rules) {
-    firstcharIndexer.index(rule);
-    payeeIndexer.index(rule);
+    fc.index(rule);
+    pe.index(rule);
   }
   const applicable = fastSetMerge(
-    firstcharIndexer.getApplicableRules(transaction),
-    payeeIndexer.getApplicableRules(transaction),
+    fc.getApplicableRules(transaction),
+    pe.getApplicableRules(transaction),
   );
   return rankRules([...applicable]);
 }
 
 /**
- * Run all applicable rules against a transaction in ranked order.
- * Returns a new transaction object with all applicable rules applied.
+ * Apply an explicit, ranked rule set against a transaction. Split-aware (a
+ * matching rule with `set-split-amount` actions produces `subtransactions`, via
+ * rule.apply → rules/rule.ts::execActions). Pure — used by the form/preview
+ * bridges; not the stateful entry point.
  */
-export function runRules(
+export function applyRankedRules(
   rules: Rule[],
   transaction: Record<string, unknown>,
 ): Record<string, unknown> {
@@ -83,111 +170,53 @@ export function runRules(
 }
 
 /**
- * Like runRules, but split-aware: a matching rule with `set-split-amount`
- * actions produces `subtransactions`. Used by schedule previews and the
- * system-generated posting path.
+ * Run all active rules against a transaction using the in-memory store —
+ * upstream `runRules(trans, accounts)`. Enriches, resolves schedule↔rule
+ * linkage (a transaction's own schedule rule runs unconditionally; other
+ * schedules' rules are skipped; unlinked rules run normally), prefetches
+ * BALANCE_OF, applies in ranked order, then finalizes. Split-aware.
+ *
+ * `accounts` is accepted for signature parity; enrichment builds its own
+ * account map internally (getAccountMap).
  */
-export function runRulesWithSplits(
-  rules: Rule[],
-  transaction: Record<string, unknown>,
-): Record<string, unknown> {
-  const ranked = getApplicableRankedRules(rules, transaction);
-  let result = { ...transaction };
-  for (const rule of ranked) {
-    if (rule.evalConditions(result)) {
-      result = execActionsWithSplits(rule.actions, result);
-    }
+export async function runRules(
+  trans: Record<string, unknown>,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  accounts: Map<string, unknown> | null = null,
+): Promise<Record<string, unknown>> {
+  if (allRules == null) await loadRules();
+
+  let finalTrans = await prepareTransactionForRules({ ...trans });
+
+  let scheduleRuleID = "";
+  if (trans.schedule != null) {
+    scheduleRuleID = (await getRuleIdFromScheduleId(trans.schedule as string)) ?? "";
   }
-  return result;
-}
+  const ruleIdsLinkedToSchedules = await getAllRuleIdsFromSchedules(scheduleRuleID);
 
-// ═══ Split-aware action execution (former rules/splitActions.ts) ═══
-
-type LooseTxn = Record<string, unknown>;
-
-const asTxns = (list: LooseTxn[]): Transaction[] => list as unknown as Transaction[];
-const method = (a: Action): unknown => (a.options as Record<string, unknown> | undefined)?.method;
-const splitIndex = (a: Action): number =>
-  ((a.options as Record<string, unknown> | undefined)?.splitIndex as number) ?? 0;
-
-/** Parent amount minus the sum of child amounts (0 when balanced). */
-function getSplitRemainder(transactions: LooseTxn[]): number {
-  const { error } = recalculateSplit(groupTransaction(asTxns(transactions)));
-  return error ? error.difference : 0;
-}
-
-function execNonSplitActions(actions: Action[], transaction: LooseTxn): LooseTxn {
-  for (const action of actions) action.exec(transaction);
-  return transaction;
-}
-
-function execSplitActions(actions: Action[], transaction: LooseTxn): LooseTxn {
-  const splitAmountActions = actions.filter((a) => a.op === "set-split-amount");
-
-  // Convert to a split transaction (parent + one reserved child).
-  const { data } = splitTransaction(
-    ungroupTransaction(transaction as unknown as TransactionWithSubtransactions),
-    transaction.id as string,
+  const rules = rankRules(
+    fastSetMerge(
+      firstcharIndexer.getApplicableRules(trans),
+      payeeIndexer.getApplicableRules(trans),
+    ),
   );
-  let newTransactions = data as unknown as LooseTxn[];
 
-  // Add empty splits and apply per-split actions (fixed amounts + categories).
-  for (const action of actions) {
-    const idx = splitIndex(action) + 1;
-    if (idx >= newTransactions.length) {
-      const res = addSplitTransaction(asTxns(newTransactions), transaction.id as string);
-      newTransactions = res.data as unknown as LooseTxn[];
+  finalTrans._balanceOfPrefetched = await prefetchBalanceOfForTransaction(rules, finalTrans);
+
+  for (const rule of rules) {
+    const ruleId = rule.getId() ?? "";
+    if (scheduleRuleID !== "") {
+      if (ruleId === scheduleRuleID) {
+        // The transaction's own schedule rule runs unconditionally.
+        Object.assign(finalTrans, rule.execActions(finalTrans));
+        continue;
+      }
+      if (ruleIdsLinkedToSchedules.includes(ruleId)) continue;
     }
-    newTransactions[idx].parent_amount = transaction.amount;
-    // Propagate enrichment so child formulas can reference the parent's balance
-    // and BALANCE_OF prefetch (Phase 2.2 / 3d).
-    newTransactions[idx].balance = transaction.balance;
-    newTransactions[idx]._balanceOfPrefetched = transaction._balanceOfPrefetched;
-    action.exec(newTransactions[idx]);
+    finalTrans = rule.apply(finalTrans);
   }
 
-  // Distribute to fixed-percent splits.
-  const remainingAfterFixedAmounts = getSplitRemainder(newTransactions);
-  for (const action of splitAmountActions.filter((a) => method(a) === "fixed-percent")) {
-    const idx = splitIndex(action) + 1;
-    const percent = (action.value as number) / 100;
-    newTransactions[idx].amount = Math.round(remainingAfterFixedAmounts * percent);
-  }
-
-  // Distribute to remainder splits (last one absorbs rounding leftovers).
-  const remainderActions = splitAmountActions.filter((a) => method(a) === "remainder");
-  const remainingAfterFixedPercents = getSplitRemainder(newTransactions);
-  if (remainderActions.length !== 0) {
-    const per = Math.round(remainingAfterFixedPercents / remainderActions.length);
-    let lastIdx = -1;
-    for (const action of remainderActions) {
-      const idx = splitIndex(action) + 1;
-      newTransactions[idx].amount = per;
-      lastIdx = Math.max(lastIdx, idx);
-    }
-    newTransactions[lastIdx].amount =
-      (newTransactions[lastIdx].amount as number) + getSplitRemainder(newTransactions);
-  }
-
-  // Split index 0 (transaction index 1) is the reserved "apply to all" slot.
-  newTransactions.splice(1, 1);
-  return recalculateSplit(groupTransaction(asTxns(newTransactions))) as unknown as LooseTxn;
-}
-
-/**
- * Apply a rule's actions to a transaction, producing `subtransactions` when the
- * rule carries `set-split-amount` actions. Faithful port of Actual's execActions.
- */
-export function execActionsWithSplits(actions: Action[], transaction: LooseTxn): LooseTxn {
-  const parentActions = actions.filter((a) => !splitIndex(a));
-  const childActions = actions.filter((a) => splitIndex(a));
-  const totalSplitCount = actions.reduce((prev, cur) => Math.max(prev, splitIndex(cur)), 0) + 1;
-
-  const nonSplitResult = execNonSplitActions(parentActions, transaction);
-  if (totalSplitCount === 1) return nonSplitResult; // no splits
-  if (nonSplitResult.is_child) return nonSplitResult; // can't split a child
-
-  return execSplitActions(childActions, nonSplitResult);
+  return finalizeTransactionForRules(finalTrans);
 }
 
 // ═══ Enrichment: prepare / finalize / BALANCE_OF prefetch (former rules/prepare.ts) ═══
@@ -328,7 +357,7 @@ async function getRunningBalanceBefore(
  * the given rules' action formulas, so the synchronous evaluator can read them.
  * Returns an empty map (no queries) when no formula references BALANCE_OF.
  */
-export async function prefetchBalanceOf(
+export async function prefetchBalanceOfForTransaction(
   rules: Array<{ actions: Array<{ options?: Record<string, unknown> }> }>,
   txn: Record<string, unknown>,
 ): Promise<Map<string, number>> {
@@ -352,6 +381,9 @@ export async function prefetchBalanceOf(
   }
   return map;
 }
+
+/** Legacy name kept for internal callers. */
+export const prefetchBalanceOf = prefetchBalanceOfForTransaction;
 
 // ── Finalize ──
 
@@ -425,7 +457,7 @@ export function applyRulesToForm(rules: Rule[], form: TransactionFormData): Rule
     cleared: form.cleared,
   };
 
-  const result = runRules(rules, txn);
+  const result = applyRankedRules(rules, txn);
 
   return {
     acctId: (result.account as string | null) ?? null,
@@ -456,7 +488,7 @@ export function suggestCategoryForPayee(
     cleared: false,
   };
 
-  const result = runRules(rules, txn);
+  const result = applyRankedRules(rules, txn);
   return (result.category as string | null) ?? null;
 }
 
@@ -477,7 +509,7 @@ export async function applyRulesEnriched(
 ): Promise<Record<string, unknown>> {
   const enriched = await prepareTransactionForRules(txn, opts);
   enriched._balanceOfPrefetched = await prefetchBalanceOf(rules, enriched);
-  const result = runRules(rules, enriched);
+  const result = applyRankedRules(rules, enriched);
   return finalizeTransactionForRules(result);
 }
 
@@ -565,7 +597,7 @@ export async function applyRulesToNewTransactionWithSplits(
 
   const enriched = await prepareTransactionForRules(txn);
   enriched._balanceOfPrefetched = await prefetchBalanceOf(rules, enriched);
-  const applied = runRulesWithSplits(rules, enriched);
+  const applied = applyRankedRules(rules, enriched);
   const result = await finalizeTransactionForRules(applied);
 
   const newFields: NewTransactionFields = {
@@ -664,6 +696,76 @@ function* getIsSetterRules(
       yield rule;
     }
   }
+}
+
+/**
+ * Rules that are a single `<condField> oneOf [...]` condition setting
+ * `<actionField>` — the shape of the payee-rename rule.
+ */
+function* getOneOfSetterRules(
+  rules: Rule[],
+  stage: string | null,
+  condField: string,
+  actionField: string,
+  { condValue, actionValue }: { condValue?: string; actionValue?: string },
+): Generator<Rule> {
+  for (const rule of rules) {
+    if (
+      rule.stage === stage &&
+      rule.actions.length === 1 &&
+      rule.actions[0].op === "set" &&
+      rule.actions[0].field === actionField &&
+      (actionValue == null || rule.actions[0].value === actionValue) &&
+      rule.conditions.length === 1 &&
+      rule.conditions[0].op === "oneOf" &&
+      rule.conditions[0].field === condField &&
+      (condValue == null || (rule.conditions[0].value as string[]).indexOf(condValue) !== -1)
+    ) {
+      yield rule;
+    }
+  }
+}
+
+/** All rules referencing `payeeId` in a payee condition/action, ranked. */
+export async function getRulesForPayee(payeeId: string): Promise<Rule[]> {
+  const rules = new Set<Rule>();
+  iterateIds(await getRules(), "payee", (rule, id) => {
+    if (id === payeeId) rules.add(rule);
+  });
+  return rankRules([...rules]);
+}
+
+/**
+ * Find or create the `pre` payee-rename rule (`imported_payee oneOf [...] →
+ * set payee <to>`), merging `fromNames` into its condition. Returns the rule id.
+ * Faithful port of upstream updatePayeeRenameRule.
+ */
+export async function updatePayeeRenameRule(fromNames: string[], to: string): Promise<string> {
+  const rules = await getRules();
+  const renameRule = getOneOfSetterRules(rules, "pre", "imported_payee", "payee", {
+    actionValue: to,
+  }).next().value;
+
+  if (renameRule) {
+    const condition = renameRule.conditions[0];
+    const newValue = [
+      ...fastSetMerge(
+        new Set(condition.value as string[]),
+        new Set(fromNames.filter((n) => n !== "")),
+      ),
+    ];
+    await updateRule(renameRule.getId()!, {
+      conditions: [{ field: "imported_payee", op: "oneOf", value: newValue }],
+    });
+    return renameRule.getId()!;
+  }
+
+  return createRule({
+    stage: "pre",
+    conditionsOp: "and",
+    conditions: [{ field: "imported_payee", op: "oneOf", value: fromNames }],
+    actions: [{ op: "set", field: "payee", value: to }],
+  });
 }
 
 /**
@@ -774,7 +876,7 @@ export async function updateCategoryRules(transactions: LearnTransaction[]): Pro
  * null` also excludes transfers and parents; `isNot category null` excludes
  * parents. Everything else passes through unchanged.
  */
-function conditionSpecialCases(cond: Condition | null): Condition | null {
+export function conditionSpecialCases(cond: Condition | null): Condition | null {
   if (!cond) {
     return cond;
   }

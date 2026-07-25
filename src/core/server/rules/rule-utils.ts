@@ -7,6 +7,26 @@ import { isValid, parseISO } from "date-fns";
 
 import { RuleError } from "./errors";
 import type { Rule } from "./rule";
+import { scheduleFromRecurConfig } from "@/core/shared/schedules";
+import type { ScheduleRecurData } from "@/core/shared/schedules";
+import type { RSchedule } from "@/core/server/util/rschedule";
+import type { RecurConfig } from "@/core/types/models";
+
+// Field/op metadata + value (un)parsers now live in the shared layer
+// (@/core/shared/rules, mirroring upstream loot-core/src/shared/rules.ts).
+// Re-exported here so existing engine imports keep resolving.
+export {
+  FIELD_TYPES,
+  isValidOp,
+  getValidOps,
+  deserializeField,
+  sortNumbers,
+  getApproxNumberThreshold,
+  getFieldError,
+  parse,
+  unparse,
+  makeValue,
+} from "@/core/shared/rules";
 
 // ── Assert ──
 
@@ -53,117 +73,18 @@ export function parseBetweenAmount(
   return { type: "between", num1, num2 };
 }
 
-// ── Recurring date parsing (via RSchedule) ──
+// ── Recurring date parsing ──
 
-let rscheduleAvailable = false;
-let RScheduleClass: unknown = null;
-let recurConfigToRScheduleFn: ((config: unknown) => unknown[]) | null = null;
-
-// Lazy-load rschedule to avoid issues if the package is missing. Exported so
-// callers that build recurring-date conditions (e.g. loading rules from the DB)
-// can await readiness first and avoid the "RSchedule not available" race.
-export async function ensureRSchedule() {
-  if (rscheduleAvailable) return;
-  try {
-    await import("@rschedule/standard-date-adapter/setup");
-    const { Schedule } = await import("@rschedule/core/generators");
-    RScheduleClass = Schedule;
-    // We'll port recurConfigToRSchedule inline since importing from loot-core isn't possible
-    rscheduleAvailable = true;
-  } catch {
-    // rschedule not available — recurring dates won't work
-  }
-}
-
-// Port of recurConfigToRSchedule from loot-core/src/shared/schedules.ts
-function recurConfigToRSchedule(config: Record<string, unknown>): unknown[] {
-  const start = parseISO(config.start as string);
-  const frequency = (config.frequency as string).toUpperCase();
-
-  const base: Record<string, unknown> = {
-    start,
-    frequency,
-    byHourOfDay: [12],
-  };
-
-  if (config.interval) {
-    base.interval = config.interval;
-  }
-
-  switch (config.endMode) {
-    case "after_n_occurrences":
-      base.count = config.endOccurrences;
-      break;
-    case "on_date":
-      base.end = parseISO(config.endDate as string);
-      break;
-  }
-
-  const abbrevDay = (name: string) => name.slice(0, 2).toUpperCase();
-
-  switch (config.frequency) {
-    case "daily":
-    case "weekly":
-    case "yearly":
-      return [base];
-    case "monthly": {
-      const patterns = config.patterns as Array<{ type: string; value: number }> | undefined;
-      if (patterns && patterns.length > 0) {
-        const days = patterns.filter((p) => p.type === "day");
-        const dayNames = patterns.filter((p) => p.type !== "day");
-        return [
-          days.length > 0 && { ...base, byDayOfMonth: days.map((p) => p.value) },
-          dayNames.length > 0 && {
-            ...base,
-            byDayOfWeek: dayNames.map((p) => [abbrevDay(p.type), p.value]),
-          },
-        ].filter(Boolean) as unknown[];
-      }
-      return [base];
-    }
-    default:
-      throw new Error("Invalid recurring date config");
-  }
-}
-
+/** Port of loot-core/src/server/rules/rule-utils.ts `parseRecurDate`. */
 export function parseRecurDate(desc: Record<string, unknown>): {
   type: "recur";
-  schedule: {
-    occursOn: (opts: unknown) => boolean;
-    occursBetween: (start: Date, end: Date) => boolean;
-  };
+  schedule: RSchedule<ScheduleRecurData>;
 } {
-  if (!rscheduleAvailable || !RScheduleClass) {
-    throw new RuleError("parse-recur-date", "RSchedule not available");
-  }
   try {
-    const rules = recurConfigToRSchedule(desc);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const ScheduleClass = RScheduleClass as any;
-    const schedule = new ScheduleClass({
-      rrules: rules,
-      data: {
-        skipWeekend: desc.skipWeekend,
-        weekendSolve: desc.weekendSolveMode,
-      },
-    });
-    return { type: "recur", schedule };
+    return { type: "recur", schedule: scheduleFromRecurConfig(desc as unknown as RecurConfig) };
   } catch (e) {
     throw new RuleError("parse-recur-date", e instanceof Error ? e.message : String(e));
   }
-}
-
-// Initialize rschedule on module load (non-blocking)
-ensureRSchedule();
-
-// ── Shared rule helpers ──
-
-export function sortNumbers(num1: number, num2: number): [number, number] {
-  return num1 < num2 ? [num1, num2] : [num2, num1];
-}
-
-export function getApproxNumberThreshold(n: number): number {
-  return Math.round(Math.abs(n) * 0.075);
 }
 
 // ── Tag helpers ──
@@ -186,98 +107,6 @@ export function extractTagsForFilter(value: string): string[] {
     }
   }
   return tagValues;
-}
-
-// ── Serialized field expansion ──
-
-/**
- * Expands a serialized condition field name into a base field + options.
- * `amount-inflow`/`amount-outflow` map to `amount` with an inflow/outflow
- * option; every other field is returned unchanged. Port of
- * loot-core/src/shared/rules.ts `deserializeField`.
- */
-export function deserializeField(field: string): {
-  field: string;
-  options?: Record<string, unknown>;
-} {
-  if (field === "amount-inflow") {
-    return { field: "amount", options: { inflow: true } };
-  }
-  if (field === "amount-outflow") {
-    return { field: "amount", options: { outflow: true } };
-  }
-  return { field };
-}
-
-// ── Field type info ──
-
-export const FIELD_TYPES = new Map<string, string>([
-  ["imported_payee", "string"],
-  ["payee", "id"],
-  ["payee_name", "string"],
-  ["date", "date"],
-  ["notes", "string"],
-  ["amount", "number"],
-  ["category", "id"],
-  ["category_group", "id"],
-  ["account", "id"],
-  ["cleared", "boolean"],
-  ["reconciled", "boolean"],
-  ["saved", "saved"],
-  ["transfer", "boolean"],
-  ["parent", "boolean"],
-]);
-
-// Field-specific disallowed ops
-const FIELD_DISALLOWED_OPS: Record<string, Set<string>> = {
-  imported_payee: new Set(["hasTags", "hasAnyTag"]),
-  payee: new Set(["onBudget", "offBudget"]),
-  notes: new Set(["oneOf", "notOneOf"]),
-  category: new Set(["onBudget", "offBudget"]),
-  category_group: new Set(["onBudget", "offBudget"]),
-};
-
-// Field-specific internal ops (not in TYPE_INFO but allowed)
-const FIELD_INTERNAL_OPS: Record<string, Set<string>> = {
-  category: new Set(["and"]),
-  category_group: new Set(["and"]),
-};
-
-// Type-level ops
-const TYPE_OPS: Record<string, readonly string[]> = {
-  date: ["is", "isapprox", "gt", "gte", "lt", "lte"],
-  id: [
-    "is",
-    "contains",
-    "matches",
-    "oneOf",
-    "isNot",
-    "doesNotContain",
-    "notOneOf",
-    "onBudget",
-    "offBudget",
-  ],
-  string: [
-    "is",
-    "contains",
-    "matches",
-    "oneOf",
-    "isNot",
-    "doesNotContain",
-    "notOneOf",
-    "hasTags",
-    "hasAnyTag",
-  ],
-  number: ["is", "isapprox", "isbetween", "gt", "gte", "lt", "lte"],
-  boolean: ["is"],
-  saved: [],
-};
-
-export function isValidOp(field: string, op: string): boolean {
-  const type = FIELD_TYPES.get(field);
-  if (!type) return false;
-  if (FIELD_DISALLOWED_OPS[field]?.has(op)) return false;
-  return TYPE_OPS[type]?.includes(op) || FIELD_INTERNAL_OPS[field]?.has(op) || false;
 }
 
 // ── Rule scoring & ranking ──

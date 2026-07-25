@@ -34,8 +34,14 @@ function fieldHasTag(tag: string, fieldValue: string): boolean {
 
 // ── Date helpers (matching loot-core's months.ts interface) ──
 
+/**
+ * Anchored at noon, like monthUtils.parseDate. It has to match the anchor the
+ * recurrence engine uses: `occursOn` compares exact instants, so a midnight
+ * date would never match an occurrence generated at noon.
+ */
 function parseDate(str: string): Date {
-  return parseISO(str);
+  const [y, m, d] = str.split("-").map(Number);
+  return new Date(y, m - 1, d, 12, 0, 0);
 }
 
 function addDaysStr(dateStr: string, days: number): string {

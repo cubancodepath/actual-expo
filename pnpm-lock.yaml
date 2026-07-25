@@ -58,15 +58,6 @@ importers:
       '@react-navigation/native-stack':
         specifier: 7.17.6
         version: 7.17.6(@react-native-masked-view/masked-view@0.3.2(react-native@0.83.2(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.0))(react@19.2.0))(@react-navigation/native@7.3.4(react-native@0.83.2(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.0))(react@19.2.0))(react-native-safe-area-context@5.6.2(react-native@0.83.2(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.0))(react@19.2.0))(react-native-screens@4.23.0(react-native@0.83.2(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.0))(react@19.2.0))(react-native@0.83.2(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.0))(react@19.2.0)
-      '@rschedule/core':
-        specifier: ^1.5.0
-        version: 1.5.0
-      '@rschedule/json-tools':
-        specifier: ^1.5.0
-        version: 1.5.0(@rschedule/core@1.5.0)
-      '@rschedule/standard-date-adapter':
-        specifier: ^1.5.0
-        version: 1.5.0(@rschedule/core@1.5.0)
       '@sentry/react-native':
         specifier: ~7.11.0
         version: 7.11.0(expo@55.0.27)(react-native@0.83.2(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.0))(react@19.2.0)
@@ -2005,19 +1996,6 @@ packages:
 
   '@rolldown/pluginutils@1.0.1':
     resolution: {integrity: sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==}
-
-  '@rschedule/core@1.5.0':
-    resolution: {integrity: sha512-uN6Kjx4dnpheesXx+wm0B3E+xJPCw3TdNFmNAIXj9oPVD5t4smbpu/IBPZIzfv8bf7I88s/ahDKkltU6W3H6dw==}
-
-  '@rschedule/json-tools@1.5.0':
-    resolution: {integrity: sha512-vwqBc1qkkjE7JzU5wrgCNMBVBUJgWcA9t8zrFr6Dmtd/npEO2XRrKaH5zamFgwsl1O3xqk1Law6EbeH5TJ1RHQ==}
-    peerDependencies:
-      '@rschedule/core': ^1.5.0
-
-  '@rschedule/standard-date-adapter@1.5.0':
-    resolution: {integrity: sha512-gQUlCOmYVaGvq6IZT29VVl4uZhaauwgG9aWxXLvC7x3lSF1f+z52iLAj853Mc4a1UgXQtEwt7Wujb9twl740Ew==}
-    peerDependencies:
-      '@rschedule/core': ^1.5.0
 
   '@sentry-internal/browser-utils@10.37.0':
     resolution: {integrity: sha512-rqdESYaVio9Ktz55lhUhtBsBUCF3wvvJuWia5YqoHDd+egyIfwWxITTAa0TSEyZl7283A4WNHNl0hyeEMblmfA==}
@@ -7339,16 +7317,6 @@ snapshots:
     optional: true
 
   '@rolldown/pluginutils@1.0.1': {}
-
-  '@rschedule/core@1.5.0': {}
-
-  '@rschedule/json-tools@1.5.0(@rschedule/core@1.5.0)':
-    dependencies:
-      '@rschedule/core': 1.5.0
-
-  '@rschedule/standard-date-adapter@1.5.0(@rschedule/core@1.5.0)':
-    dependencies:
-      '@rschedule/core': 1.5.0
 
   '@sentry-internal/browser-utils@10.37.0':
     dependencies:

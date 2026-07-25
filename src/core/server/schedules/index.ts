@@ -13,13 +13,7 @@ import { sendMessages, batchMessages } from "@/core/sync";
 import { undoable } from "@/core/server/undo";
 import { Timestamp } from "@/core/crdt";
 import { createRule, updateRule, deleteRule, getRuleById } from "@/core/server/rules";
-import {
-  getNextOccurrence,
-  getUpcomingDates as getUpcomingRecurDates,
-  getDateWithSkippedWeekend,
-  parseDate,
-  dayFromDate,
-} from "@/core/shared/schedules";
+import { getNextDate, parseDate, dayFromDate } from "@/core/shared/schedules";
 import {
   extractScheduleConds,
   getStatus,
@@ -54,7 +48,6 @@ export {
   getUpcomingDays,
   scheduleIsRecurring,
 } from "@/core/shared/schedules";
-export { getUpcomingDates as getUpcomingRecurDates } from "@/core/shared/schedules";
 export {
   getScheduleOccurrenceMatchStartDate,
   indexPostedScheduleTransactions,
@@ -148,45 +141,6 @@ export async function getScheduleById(id: string): Promise<Schedule | null> {
   return rows.length > 0 ? rowToSchedule(rows[0]) : null;
 }
 
-// ── Next Date Calculation ────────────────────────────────────────
-
-/**
- * Compute the next date from a date condition.
- * Mirrors original Actual's getNextDate from shared/schedules.ts.
- */
-function computeNextDate(
-  dateCond: RuleCondition,
-  start: Date = startOfDay(new Date()),
-  noSkipWeekend = false,
-): string | null {
-  if (typeof dateCond.value === "string") {
-    // Simple one-time date
-    return dateCond.value;
-  }
-
-  const config = dateCond.value as RecurConfig;
-  const next = getNextOccurrence(config, start);
-  if (!next) {
-    // Finite schedule exhausted — try last occurrence
-    const { getLastOccurrence } = require("@/core/shared/schedules");
-    const last = getLastOccurrence(config);
-    if (last) {
-      let date = last;
-      if (config.skipWeekend && !noSkipWeekend) {
-        date = getDateWithSkippedWeekend(date, config.weekendSolveMode ?? "after");
-      }
-      return dayFromDate(date);
-    }
-    return null;
-  }
-
-  let date = next;
-  if (config.skipWeekend && !noSkipWeekend) {
-    date = getDateWithSkippedWeekend(date, config.weekendSolveMode ?? "after");
-  }
-  return dayFromDate(date);
-}
-
 // ── setNextDate ──────────────────────────────────────────────────
 
 export async function setNextDate(opts: {
@@ -239,7 +193,7 @@ export async function setNextDate(opts: {
 
   const startDate = opts.start && nextDate ? opts.start(nextDate) : startOfDay(new Date());
 
-  const newNextDate = computeNextDate(dateCond, startDate);
+  const newNextDate = getNextDate(dateCond, startDate);
 
   // Never regress the date unless this is an explicit reset (e.g. condition change)
   if (
@@ -310,7 +264,7 @@ export const createSchedule = undoable(async function createSchedule(opts: {
     }
   }
 
-  const nextDate = computeNextDate(dateCond);
+  const nextDate = getNextDate(dateCond);
   const nextDateRepr = nextDate ? toDateRepr(nextDate) : null;
 
   // Create the rule with link-schedule action + optional set actions

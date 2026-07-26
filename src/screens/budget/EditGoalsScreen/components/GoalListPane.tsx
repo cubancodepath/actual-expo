@@ -7,7 +7,6 @@ import { Info, Target, TriangleAlert } from "lucide-react-native";
 import {
   describeTemplate,
   NON_CONTRIBUTION_TYPES,
-  translateDescription,
   type AutomationEntry,
   type AutomationErrorKind,
   type GlobalConflictKind,
@@ -82,9 +81,7 @@ export function GoalListPane({
     const Icon = meta.icon;
     const error = entry ? errorsByEntry.get(entry.id) : undefined;
     const flagged = error != null && !isSilentError(error);
-    const summary = entry
-      ? translateDescription(describeTemplate(entry.template, i18n.language), t)
-      : null;
+    const summary = entry ? describeTemplate(entry.template, t, i18n.language) : null;
 
     return (
       <ListGroup.Item

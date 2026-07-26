@@ -25,7 +25,7 @@ import { deleteCategory, updateCategory } from "@/core/server/budget";
 import { setNote } from "@/core/server/notes";
 import { getCategoryNote } from "@/core/server/budget/goal-template";
 import { parseGoalDef } from "@/core/server/budget/goal-template-parser";
-import { describeTemplate, translateDescription } from "@/screens/budget/goals";
+import { describeTemplate } from "@/screens/budget/goals";
 import { dialog } from "@/ui/feedback/dialog/dialogStore";
 import { useUndo } from "@/lib/hooks/useUndo";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
@@ -108,8 +108,7 @@ export function CategoryDetailsScreen({ categoryId }: CategoryDetailsScreenProps
   // ── Goal description ──
   const templates = parseGoalDef(category?.goal_def ?? null);
   const hasGoal = goalsEnabled && templates.length > 0;
-  const goalDesc = hasGoal ? describeTemplate(templates[0], i18n.language) : null;
-  const goalDescription = goalDesc ? translateDescription(goalDesc, t) : null;
+  const goalDescription = hasGoal ? describeTemplate(templates[0], t, i18n.language) : null;
 
   // ── Category note (editable, autosaved on blur / unmount) ──
   // The note is plain user text — a separate entity from the goal. Legacy

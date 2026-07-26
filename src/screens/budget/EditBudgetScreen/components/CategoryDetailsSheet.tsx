@@ -5,7 +5,7 @@ import { Button, ListGroup, Separator, useThemeColor } from "heroui-native";
 import { Eye, EyeOff, Target, Trash2 } from "lucide-react-native";
 import { NameSheet } from "@/screens/budget/components/NameSheet";
 import { parseGoalDef } from "@/core/server/budget/goal-template-parser";
-import { describeTemplate, translateDescription } from "@/screens/budget/goals";
+import { describeTemplate } from "@/screens/budget/goals";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import type { BudgetSectionCategory } from "@/screens/budget/hooks/useBudgetSections";
 
@@ -55,7 +55,7 @@ function GoalCard({
               </ListGroup.ItemPrefix>
               <ListGroup.ItemContent>
                 <ListGroup.ItemTitle>
-                  {translateDescription(describeTemplate(tmpl, i18n.language), t)}
+                  {describeTemplate(tmpl, t, i18n.language)}
                 </ListGroup.ItemTitle>
               </ListGroup.ItemContent>
             </ListGroup.Item>

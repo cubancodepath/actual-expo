@@ -2,11 +2,7 @@ import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { ListGroup, Typography, useThemeColor } from "heroui-native";
 import { ChevronRight, TriangleAlert } from "lucide-react-native";
-import {
-  describeTemplate,
-  translateDescription,
-  type AutomationEntry,
-} from "@/screens/budget/goals";
+import { describeTemplate, type AutomationEntry } from "@/screens/budget/goals";
 import type { AutomationErrorKind } from "@/screens/budget/goals";
 import { isSilentError } from "../messages";
 import { displayTypeMeta } from "../displayTypeMeta";
@@ -40,7 +36,7 @@ export function GoalListRow({
   const summary =
     entry.displayType === "schedule" && scheduleName
       ? t("goals.summary.linkedToScheduleNamed", { name: scheduleName })
-      : translateDescription(describeTemplate(entry.template, i18n.language), t);
+      : describeTemplate(entry.template, t, i18n.language);
 
   return (
     <ListGroup.Item onPress={onPress}>

@@ -1,26 +1,21 @@
 /**
- * Human-readable description of a goal template.
- * Returns structured data (translation key + params) instead of hardcoded strings.
- * The UI layer is responsible for translating via i18next.
+ * A goal template in plain language.
+ *
+ * Upstream's counterpart is `TemplateSentence.tsx`, a component per template
+ * type. This is one pure function instead — it keeps running under vitest's
+ * node environment, which never sees a `.test.tsx`.
+ *
+ * It takes `t` rather than returning a key/params pair for the caller to
+ * translate: that indirection only existed because the file used to live in
+ * core, where react-i18next is off limits.
  */
 
 import { integerToCurrency } from "@/core/shared/util";
 import { amountToInteger } from "@/core/server/budget/category-template-context";
 import type { Template } from "@/core/types/models";
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-export interface TemplateDescription {
-  /** i18next translation key (e.g. 'budget:describe.saveBy') */
-  key: string;
-  /** Interpolation params for the translation key */
-  params?: Record<string, string | number>;
-  /** When set, the UI must translate this period key separately
-   *  (e.g. 'week' → t('budget:describe.period.week')) and inject as `period` param */
-  periodKey?: string;
-}
+/** Structurally compatible with i18next's TFunction. */
+export type Translate = (key: any, params?: any) => string;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -35,48 +30,48 @@ function formatMonth(yyyyMm: string, locale: string): string {
   return new Date(year, month - 1).toLocaleDateString(locale, { month: "short", year: "numeric" });
 }
 
+/** Periods are their own key set, so they read right inside a sentence. */
+function period(t: Translate, key: string): string {
+  return t(`budget:describe.period.${key}`);
+}
+
+/**
+ * Recurrences are stored as adverbs ("monthly") but the period key set holds
+ * nouns ("month"), because that is what reads right mid-sentence.
+ */
+function periodNoun(recurrence: "daily" | "weekly" | "monthly"): string {
+  return recurrence === "weekly" ? "week" : recurrence === "daily" ? "day" : "month";
+}
+
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
 
-export function describeTemplate(tmpl: Template, locale: string = "en"): TemplateDescription {
+export function describeTemplate(tmpl: Template, t: Translate, locale: string = "en"): string {
   switch (tmpl.type) {
     case "simple": {
       if (tmpl.monthly != null) {
         if (tmpl.limit?.amount) {
-          return {
-            key: "budget:describe.budgetMonthlyWithLimit",
-            params: {
-              amount: formatDisplayAmount(tmpl.monthly),
-              limit: formatDisplayAmount(tmpl.limit.amount),
-            },
-          };
+          return t("budget:describe.budgetMonthlyWithLimit", {
+            amount: formatDisplayAmount(tmpl.monthly),
+            limit: formatDisplayAmount(tmpl.limit.amount),
+          });
         }
-        return {
-          key: "budget:describe.budgetMonthly",
-          params: { amount: formatDisplayAmount(tmpl.monthly) },
-        };
+        return t("budget:describe.budgetMonthly", {
+          amount: formatDisplayAmount(tmpl.monthly),
+        });
       }
       if (tmpl.limit) {
         // No contribution, only a cap: refill up to the cap each period.
-        return {
-          key: "budget:describe.refillUpTo",
-          params: { amount: formatDisplayAmount(tmpl.limit.amount) },
-          periodKey:
-            tmpl.limit.period === "weekly"
-              ? "week"
-              : tmpl.limit.period === "daily"
-                ? "day"
-                : "month",
-        };
+        return t("budget:describe.refillUpTo", {
+          amount: formatDisplayAmount(tmpl.limit.amount),
+          period: period(t, periodNoun(tmpl.limit.period)),
+        });
       }
-      return { key: "budget:describe.budgetMonthlyBase" };
+      return t("budget:describe.budgetMonthlyBase");
     }
     case "goal":
-      return {
-        key: "budget:describe.reachBalance",
-        params: { amount: formatDisplayAmount(tmpl.amount) },
-      };
+      return t("budget:describe.reachBalance", { amount: formatDisplayAmount(tmpl.amount) });
     case "by": {
       const baseParams = {
         amount: formatDisplayAmount(tmpl.amount),
@@ -84,93 +79,60 @@ export function describeTemplate(tmpl: Template, locale: string = "en"): Templat
       };
       if (tmpl.repeat) {
         if (tmpl.annual) {
-          return {
-            key: "budget:describe.saveByRepeatsAnnually",
-            params: baseParams,
-          };
+          return t("budget:describe.saveByRepeatsAnnually", baseParams);
         }
-        return {
-          key: "budget:describe.saveByEveryNMonths",
-          params: { ...baseParams, count: tmpl.repeat },
-        };
+        return t("budget:describe.saveByEveryNMonths", { ...baseParams, count: tmpl.repeat });
       }
-      return { key: "budget:describe.saveBy", params: baseParams };
+      return t("budget:describe.saveBy", baseParams);
     }
     case "average": {
       if (tmpl.adjustment) {
         const sign = tmpl.adjustment > 0 ? "+" : "";
         const suffix = tmpl.adjustmentType === "percent" ? "%" : "";
-        return {
-          key: "budget:describe.averageOfLastWithAdjustment",
-          params: { count: tmpl.numMonths, sign, value: tmpl.adjustment, suffix },
-        };
+        return t("budget:describe.averageOfLastWithAdjustment", {
+          count: tmpl.numMonths,
+          sign,
+          value: tmpl.adjustment,
+          suffix,
+        });
       }
-      return {
-        key: "budget:describe.averageOfLast",
-        params: { count: tmpl.numMonths },
-      };
+      return t("budget:describe.averageOfLast", { count: tmpl.numMonths });
     }
     case "copy":
-      return {
-        key: "budget:describe.copyFrom",
-        params: { count: tmpl.lookBack },
-      };
+      return t("budget:describe.copyFrom", { count: tmpl.lookBack });
     case "periodic": {
       const p = tmpl.period.period;
       const plural = tmpl.period.amount > 1 ? `${p}s` : p;
-      return {
-        key: "budget:describe.budgetEvery",
-        params: { amount: formatDisplayAmount(tmpl.amount), periodAmount: tmpl.period.amount },
-        periodKey: plural,
-      };
+      return t("budget:describe.budgetEvery", {
+        amount: formatDisplayAmount(tmpl.amount),
+        periodAmount: tmpl.period.amount,
+        period: period(t, plural),
+      });
     }
     case "spend":
-      return {
-        key: "budget:describe.spendBy",
-        params: { amount: formatDisplayAmount(tmpl.amount), date: formatMonth(tmpl.month, locale) },
-      };
-    case "percentage": {
-      const key = tmpl.previous
-        ? "budget:describe.percentOfLastIncome"
-        : "budget:describe.percentOfIncome";
-      return { key, params: { percent: tmpl.percent } };
-    }
+      return t("budget:describe.spendBy", {
+        amount: formatDisplayAmount(tmpl.amount),
+        date: formatMonth(tmpl.month, locale),
+      });
+    case "percentage":
+      return t(
+        tmpl.previous ? "budget:describe.percentOfLastIncome" : "budget:describe.percentOfIncome",
+        { percent: tmpl.percent },
+      );
     case "remainder": {
       if (tmpl.weight !== 1) {
-        return {
-          key: "budget:describe.fillRemainingWeight",
-          params: { weight: tmpl.weight },
-        };
+        return t("budget:describe.fillRemainingWeight", { weight: tmpl.weight });
       }
-      return { key: "budget:describe.fillRemaining" };
+      return t("budget:describe.fillRemaining");
     }
     case "refill":
-      return { key: "budget:describe.refillToLimit" };
-    case "limit": {
-      const key = tmpl.hold ? "budget:describe.limitPeriodHold" : "budget:describe.limitPeriod";
-      return {
-        key,
-        params: { amount: formatDisplayAmount(tmpl.amount) },
-        periodKey: tmpl.period,
-      };
-    }
+      return t("budget:describe.refillToLimit");
+    case "limit":
+      return t(tmpl.hold ? "budget:describe.limitPeriodHold" : "budget:describe.limitPeriod", {
+        amount: formatDisplayAmount(tmpl.amount),
+        period: period(t, periodNoun(tmpl.period)),
+      });
     case "schedule":
-      return { key: "budget:describe.linkedToSchedule" };
+      return t("budget:describe.linkedToSchedule");
   }
-}
-
-/**
- * Helper to translate a TemplateDescription using a t() function.
- * Resolves periodKey sub-translations automatically.
- * Accepts any translation function compatible with i18next's TFunction.
- */
-export function translateDescription(
-  desc: TemplateDescription,
-  t: (key: any, params?: any) => string,
-): string {
-  const params: Record<string, unknown> = { ...desc.params };
-  if (desc.periodKey) {
-    params.period = t(`budget:describe.period.${desc.periodKey}`);
-  }
-  return t(desc.key, params);
 }

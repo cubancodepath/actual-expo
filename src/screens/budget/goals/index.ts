@@ -43,8 +43,8 @@ export {
   validateSchedulePriorities,
 } from "./validate";
 export type { AutomationErrorKind, GlobalConflictKind } from "./validate";
-export { describeTemplate, translateDescription } from "./describe";
-export type { TemplateDescription } from "./describe";
+export { describeTemplate } from "./describe";
+export type { Translate } from "./describe";
 export {
   fixedConfigFromTemplate,
   templateFromFixedConfig,

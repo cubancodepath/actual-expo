@@ -7,6 +7,15 @@
  *
  * When a cell changes, the engine recomputes only its dependents in
  * topological order, then notifies subscribers.
+ *
+ * Deliberately absent: upstream's `triggerDatabaseChanges(oldValues, newValues)`,
+ * which walks every node and dirties the ones whose SQL query reads a changed
+ * table. It guards a node type we don't have — upstream's `createQuery` cells,
+ * built from arbitrary AQL for reports and the sidebar. Here every SQL-reading
+ * cell is a budget cell with a known table, and `budget/base.ts`'s handlers
+ * already invalidate all of them by name. Port it the day we grow cells whose
+ * tables aren't known up front; until then it would only re-dirty what the
+ * handlers just dirtied.
  */
 
 import { DependencyGraph } from "@/core/server/spreadsheet/graph-data-structure";
@@ -470,6 +479,53 @@ export class Spreadsheet {
    */
   recompute(sheet: string, name: string): void {
     this.markDirty(resolveName(sheet, name));
+  }
+
+  // ---- Mutable dependency edges ----
+  //
+  // Cells declare their dependencies once, at creation. These two let an
+  // aggregate gain or lose an input afterwards — which is what makes adding a
+  // category incremental instead of a full rebuild: the group's total simply
+  // grows an edge to the new category's cell.
+
+  /**
+   * Wire `deps` into an existing cell. Idempotent: edges already present are
+   * skipped, and if none are new the cell isn't recomputed — so calling this
+   * for every month on every sync is cheap. Bare names resolve against `sheet`.
+   */
+  addDependencies(sheet: string, name: string, deps: string[]): void {
+    const resolved = resolveName(sheet, name);
+    const cell = this.cells.get(resolved);
+    if (!cell || cell.type !== "dynamic") return;
+
+    const resolvedDeps = deps.map((dep) => (dep.includes("!") ? dep : resolveName(sheet, dep)));
+    const added = resolvedDeps.filter((dep) => !cell.dependencies.includes(dep));
+    if (added.length === 0) return;
+
+    cell.dependencies = cell.dependencies.concat(added);
+    for (const dep of added) {
+      this.graph.addEdge(dep, resolved);
+    }
+    this.markDirty(resolved);
+  }
+
+  /**
+   * Unwire `deps` from an existing cell. Always recomputes: dropping an input
+   * changes the result even when the edge was already gone.
+   */
+  removeDependencies(sheet: string, name: string, deps: string[]): void {
+    const resolved = resolveName(sheet, name);
+    const cell = this.cells.get(resolved);
+    if (!cell || cell.type !== "dynamic") return;
+
+    const resolvedDeps = deps.map((dep) => (dep.includes("!") ? dep : resolveName(sheet, dep)));
+    const dropping = new Set(resolvedDeps);
+
+    cell.dependencies = cell.dependencies.filter((dep) => !dropping.has(dep));
+    for (const dep of resolvedDeps) {
+      this.graph.removeEdge(dep, resolved);
+    }
+    this.markDirty(resolved);
   }
 
   /**

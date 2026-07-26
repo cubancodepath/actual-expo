@@ -7,14 +7,7 @@
 
 import { getClock, merkle, Timestamp } from "@/core/crdt";
 import type { TrieNode } from "@/core/crdt/merkle";
-import {
-  run,
-  runQuery,
-  runQuerySync,
-  first,
-  transaction,
-  serializeDbWrite,
-} from "@/core/server/db";
+import { run, runQuery, runQuerySync, transaction, serializeDbWrite } from "@/core/server/db";
 import type { MessagesCrdtRow } from "@/core/server/db/types";
 import { ActualError } from "@/core/errors";
 import type { SyncMessage, OutgoingSyncMessage } from "./encoder";
@@ -149,46 +142,24 @@ async function applyMessagesForImport(messages: SyncMessage[]): Promise<void> {
  * interleave with an apply. Upstream wraps applyMessages with its own
  * sequential() for the same reason.
  */
-export const applyMessages = (messages: SyncMessage[]): Promise<OldData> =>
+/**
+ * Row snapshots either side of a batch. `oldData` feeds undo; the pair feeds
+ * `triggerBudgetChanges`, which needs the diff to know which cells to touch.
+ */
+export type ApplyResult = { oldData: OldData; newData: OldData };
+
+export const applyMessages = (messages: SyncMessage[]): Promise<ApplyResult> =>
   serializeDbWrite(() => applyMessagesBody(messages));
 
-async function applyMessagesBody(messages: SyncMessage[]): Promise<OldData> {
-  if (messages.length === 0) return {};
-
-  if (checkSyncingMode("import")) {
-    await applyMessagesForImport(messages);
-    return {};
-  }
-
-  // Deduplicate against existing CRDT log (upstream pattern)
-  const deduped = compareMessages(messages);
-  if (__DEV__) {
-    const newCount = deduped.filter((m) => !m.old).length;
-    const oldCount = deduped.filter((m) => m.old).length;
-    const skipped = messages.length - deduped.length;
-    console.log(
-      `[applyMessages] ${messages.length} in → ${newCount} new, ${oldCount} old, ${skipped} skipped`,
-    );
-  }
-  if (deduped.length === 0) return {};
-
-  // Sort by timestamp for deterministic application
-  const sorted = [...deduped].sort((a, b) =>
-    a.timestamp.toString() < b.timestamp.toString() ? -1 : 1,
-  );
-
-  const prefsToSet: Record<string, string | number | null> = {};
-  const writableTables = getWritableTables();
-  const writableColumns = getWritableColumns(writableTables);
-
-  // Capture current DB state for each affected row BEFORE mutating (needed for undo)
-  const oldData: OldData = {};
-  const rowsToFetch = new Map<string, Set<string>>(); // dataset → Set<rowId>
-  for (const msg of sorted) {
-    if (msg.dataset === "prefs" || !writableTables.has(msg.dataset)) continue;
-    if (!rowsToFetch.has(msg.dataset)) rowsToFetch.set(msg.dataset, new Set());
-    rowsToFetch.get(msg.dataset)!.add(msg.row);
-  }
+/**
+ * Snapshot the given rows, `dataset → rowId → row`. Called twice per batch —
+ * before and after applying — so `triggerBudgetChanges` can tell what actually
+ * changed instead of guessing from the messages alone. Rows that didn't exist
+ * yet are simply absent, which is how an insert shows up as `oldValue ===
+ * undefined` downstream.
+ */
+async function fetchRows(rowsToFetch: Map<string, Set<string>>): Promise<OldData> {
+  const data: OldData = {};
 
   for (const [dataset, rowIds] of rowsToFetch) {
     const ids = [...rowIds];
@@ -202,13 +173,58 @@ async function applyMessagesBody(messages: SyncMessage[]): Promise<OldData> {
         chunk,
       );
       if (rows.length > 0) {
-        if (!oldData[dataset]) oldData[dataset] = {};
+        if (!data[dataset]) data[dataset] = {};
         for (const row of rows) {
-          oldData[dataset][row.id as string] = row;
+          data[dataset][row.id as string] = row;
         }
       }
     }
   }
+
+  return data;
+}
+
+async function applyMessagesBody(messages: SyncMessage[]): Promise<ApplyResult> {
+  if (messages.length === 0) return { oldData: {}, newData: {} };
+
+  if (checkSyncingMode("import")) {
+    await applyMessagesForImport(messages);
+    return { oldData: {}, newData: {} };
+  }
+
+  // Deduplicate against existing CRDT log (upstream pattern)
+  const deduped = compareMessages(messages);
+  if (__DEV__) {
+    const newCount = deduped.filter((m) => !m.old).length;
+    const oldCount = deduped.filter((m) => m.old).length;
+    const skipped = messages.length - deduped.length;
+    console.log(
+      `[applyMessages] ${messages.length} in → ${newCount} new, ${oldCount} old, ${skipped} skipped`,
+    );
+  }
+  if (deduped.length === 0) return { oldData: {}, newData: {} };
+
+  // Sort by timestamp for deterministic application
+  const sorted = [...deduped].sort((a, b) =>
+    a.timestamp.toString() < b.timestamp.toString() ? -1 : 1,
+  );
+
+  const prefsToSet: Record<string, string | number | null> = {};
+  const writableTables = getWritableTables();
+  const writableColumns = getWritableColumns(writableTables);
+
+  // Which rows each message touches — fetched twice, before and after applying,
+  // so the budget layer can diff them (upstream sync/index.ts reuses its
+  // `idsPerTable` for the same two `fetchData()` calls).
+  const rowsToFetch = new Map<string, Set<string>>(); // dataset → Set<rowId>
+  for (const msg of sorted) {
+    if (msg.dataset === "prefs" || !writableTables.has(msg.dataset)) continue;
+    if (!rowsToFetch.has(msg.dataset)) rowsToFetch.set(msg.dataset, new Set());
+    rowsToFetch.get(msg.dataset)!.add(msg.row);
+  }
+
+  // Capture current DB state for each affected row BEFORE mutating (needed for undo)
+  const oldData = await fetchRows(rowsToFetch);
 
   // Accumulated locally and only assigned to the real clock (getClock().merkle)
   // and persisted after the transaction commits — so a mid-apply throw can
@@ -298,7 +314,8 @@ async function applyMessagesBody(messages: SyncMessage[]): Promise<OldData> {
     emit({ type: "prefs-updated", prefs: prefsToSet });
   }
 
-  return oldData;
+  // Second snapshot of the same rows, now that the transaction has committed.
+  return { oldData, newData: await fetchRows(rowsToFetch) };
 }
 
 export async function getMessagesSince(since: string): Promise<OutgoingSyncMessage[]> {

@@ -19,9 +19,9 @@
  */
 
 import type { SyncMessage } from "./encoder";
-import type { OldData } from "@/core/server/undo";
 import { appendMessages as undoAppendMessages } from "@/core/server/undo";
 import { applyMessages } from "./apply";
+import { triggerBudgetChanges, BUDGET_TABLES } from "@/core/server/budget/base";
 import { emit } from "./syncEvents";
 import { isSwitchingBudget, clearSyncTimeout, setSyncTimeout, getSyncTimeout } from "./lifecycle";
 import { checkSyncingMode } from "./syncMode";
@@ -184,16 +184,6 @@ async function batchMessagesBody(fn: () => Promise<void>): Promise<void> {
   }
 }
 
-const BUDGET_TABLES = new Set([
-  "zero_budgets",
-  "reflect_budgets",
-  "zero_budget_months",
-  "transactions",
-  "accounts",
-  "category_mapping",
-  "preferences", // watched for the budgetType row — see triggerBudgetChanges
-]);
-
 async function _applyAndRecord(messages: SyncMessage[]): Promise<void> {
   // Bracket the whole window: while the data is partway updated, nothing the
   // spreadsheet computes may be persisted as a trustworthy cache (upstream
@@ -204,12 +194,15 @@ async function _applyAndRecord(messages: SyncMessage[]): Promise<void> {
 
   ss.startCacheBarrier();
   try {
-    const oldData: OldData = await applyMessages(messages);
+    const { oldData, newData } = await applyMessages(messages);
     undoAppendMessages(messages, oldData);
-    // Granular budget cell invalidation (like loot-core's triggerBudgetChanges)
+    // Granular budget cell invalidation (upstream: budget/base.ts).
     if (tables.some((t) => BUDGET_TABLES.has(t))) {
-      sheet.triggerBudgetChanges(messages);
+      triggerBudgetChanges(ss, oldData, newData, sheet.getBuiltMonths());
     }
+    // Structural changes (categories/groups) still go through sheet.ts's
+    // refresh — porting handleCategoryChange needs mutable dependency edges.
+    sheet.triggerStructuralChanges(messages);
   } finally {
     ss.endCacheBarrier();
   }

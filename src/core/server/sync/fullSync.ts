@@ -13,6 +13,7 @@ import type { SyncMessage } from "./encoder";
 import { postBinary } from "@/core/post";
 import { ActualError } from "@/core/errors";
 import { applyMessages, getMessagesSince } from "./apply";
+import { triggerBudgetChanges, BUDGET_TABLES } from "@/core/server/budget/base";
 import { emit } from "./syncEvents";
 import { getSyncGeneration, isSwitchingBudget, setActiveSyncPromise } from "./lifecycle";
 import { checkSyncingMode, setSyncingMode } from "./syncMode";
@@ -32,15 +33,22 @@ function normalizeTables(datasets: string[]): string[] {
 // round-trip to the hot path) — only after a real decrypt failure.
 let _lastSyncHadDecryptFailure = false;
 
-const BUDGET_TABLES = new Set([
-  "zero_budgets",
-  "reflect_budgets",
-  "zero_budget_months",
-  "transactions",
-  "accounts",
-  "category_mapping",
-  "preferences", // watched for the budgetType row — see triggerBudgetChanges
-]);
+/**
+ * Mark the cells this batch of incoming messages made stale. Mirrors what
+ * `_applyAndRecord` does for local mutations — the sheet is reached through a
+ * dynamic import to keep the module cycle broken.
+ */
+async function invalidateBudgetCells(
+  messages: SyncMessage[],
+  oldData: Record<string, Record<string, Record<string, unknown>>>,
+  newData: Record<string, Record<string, Record<string, unknown>>>,
+): Promise<void> {
+  if (!messages.some((m) => BUDGET_TABLES.has(m.dataset))) return;
+
+  const sheet = await import("@/core/server/sheet");
+  triggerBudgetChanges(sheet.getSpreadsheet(), oldData, newData, sheet.getBuiltMonths());
+  sheet.triggerStructuralChanges(messages);
+}
 
 /**
  * Inner sync function — may be called recursively on merkle divergence.
@@ -129,7 +137,12 @@ async function _fullSync(
     }
 
     if (gen !== getSyncGeneration()) return [];
-    await applyMessages(serverMessages);
+    // Invalidate against THIS batch's own before/after snapshots, right where
+    // it lands — same as upstream, and the only way the handlers can diff. The
+    // caller's cache barrier already brackets the whole loop, recursion
+    // included.
+    const { oldData, newData } = await applyMessages(serverMessages);
+    await invalidateBudgetCells(serverMessages, oldData, newData);
     receivedMessages = serverMessages;
   }
 
@@ -248,10 +261,6 @@ export function fullSync(opts?: { force?: boolean }): Promise<number> {
         allMessages = await _fullSync(null, 0, null, gen, force);
 
         if (gen !== getSyncGeneration()) return 0;
-
-        if (allMessages.length > 0 && allMessages.some((m) => BUDGET_TABLES.has(m.dataset))) {
-          sheet.triggerBudgetChanges(allMessages);
-        }
       } finally {
         ss.endCacheBarrier();
       }

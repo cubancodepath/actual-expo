@@ -10,7 +10,6 @@
  * 2. Structural: Full cell re-creation when categories/groups change.
  */
 
-import { listen } from "@/core/server/sync/syncEvents";
 import type { SyncMessage } from "@/core/server/sync/encoder";
 import {
   first,
@@ -312,15 +311,13 @@ function engineForType(type: BudgetType): BudgetEngine {
 }
 
 /** Timestamp of last loadSpreadsheet — suppresses structural refresh cooldown. */
-let lastInitTime = 0;
-const INIT_COOLDOWN = 500; // ms — brief cooldown to prevent double-init, short enough for sync refresh
 
 /**
  * The instance an in-flight loadSpreadsheet is building into, before it's
  * published. Doubles as the supersede token: a second init takes over the slot,
  * and the first one discards its work instead of publishing a stale budget.
  * Non-null also means "a full rebuild is coming", so the incremental paths
- * (ensureMonthRange / runStructuralRefresh) stand down.
+ * (ensureMonthRange / rebuildForBudgetTypeChange) stand down.
  */
 let currentInit: Spreadsheet | null = null;
 
@@ -426,7 +423,6 @@ export async function loadSpreadsheet(
     if (currentInit !== ss) return;
 
     ss.setMeta({ builtStart: start, builtEnd: end, budgetType });
-    lastInitTime = Date.now();
     // Swap + notify last: subscribers re-seed off this instance, so every
     // value they read here is final.
     publishSpreadsheet(ss);
@@ -462,9 +458,7 @@ export function unloadSpreadsheet(): void {
   cancelCacheWrites = null;
   // The built range and budget type die with the instance (they live in its
   // meta), so only the module's own scheduling state needs clearing.
-  lastInitTime = 0;
   currentInit = null;
-  pendingRefresh = false;
   instance = null;
   generation++;
   notifySwap();
@@ -553,118 +547,42 @@ export async function ensureMonthRange(month: string): Promise<void> {
 // ── Granular budget invalidation (ported from loot-core/budget/base.ts) ──
 
 /**
- * Inspect CRDT messages and mark affected SQL cells (deps=[]) dirty.
- * Formula cells cascade automatically through the dependency graph:
- *   catSpent → groupSpent → totalIncome → incomeAvailable → toBudget
- *   catBudgeted → catBalance → groupBalance → totalBalance → toBudget
+ * The months the live spreadsheet has cells for. `triggerBudgetChanges` needs
+ * them to know which sheets a category-wide change touches (upstream reads the
+ * equivalent from `meta().createdMonths`).
  */
-export function triggerBudgetChanges(messages: SyncMessage[]): void {
-  const ss = getSpreadsheet();
-  const affectedCells = new Set<string>();
+export function getBuiltMonths(): string[] {
+  const { builtStart, builtEnd } = getSpreadsheet().meta();
+  if (builtStart === null || builtEnd === null) return [];
 
-  // Determine which cell prefixes are affected by the messages
-  let touchTransactions = false;
-  let touchBudgets = false;
-  let touchGoals = false;
-  let touchMonths = false;
-  // accounts.offbudget/closed/tombstone changes which categories' spending
-  // counts toward "on budget" totals; category_mapping (category merges)
-  // changes which category a transaction's spend is attributed to. Both
-  // affect every "sum-amount-" cell's underlying query the same way a
-  // transaction edit does (loot-core: handleAccountChange,
-  // handleCategoryMappingChange). We don't track per-account/per-category
-  // scope here — a conservative full "sum-amount-" invalidation is cheap
-  // via the prefix index and these are rare operations.
-  let touchAccountsOrMapping = false;
-
-  for (const msg of messages) {
-    if (msg.dataset === "transactions") {
-      if (
-        msg.column === "amount" ||
-        msg.column === "category" ||
-        msg.column === "date" ||
-        msg.column === "acct" ||
-        msg.column === "tombstone" ||
-        msg.column === "isParent"
-      ) {
-        touchTransactions = true;
-      }
-    } else if (msg.dataset === "zero_budgets" || msg.dataset === "reflect_budgets") {
-      if (msg.column === "amount" || msg.column === "carryover") {
-        touchBudgets = true;
-      } else if (msg.column === "goal" || msg.column === "long_goal") {
-        touchGoals = true;
-      }
-    } else if (msg.dataset === "zero_budget_months") {
-      touchMonths = true;
-    } else if (msg.dataset === "accounts") {
-      if (msg.column === "offbudget" || msg.column === "closed" || msg.column === "tombstone") {
-        touchAccountsOrMapping = true;
-      }
-    } else if (msg.dataset === "category_mapping") {
-      touchAccountsOrMapping = true;
-    } else if (msg.dataset === "preferences" && msg.row === "budgetType") {
-      // The entire formula set differs between envelope and tracking mode —
-      // no amount of granular cell invalidation covers that, only a full
-      // structural rebuild (upstream: base.ts reads getBudgetType() fresh
-      // on every triggerBudgetChanges call for the same reason).
-      if (!refreshing) runStructuralRefresh();
-      else pendingRefresh = true;
-    }
+  const months: string[] = [];
+  let current = builtStart;
+  while (current <= builtEnd) {
+    months.push(current);
+    current = addMonths(current, 1);
   }
-
-  // O(1) lookup via prefix index — avoids O(N) cell iteration
-  if (touchTransactions || touchAccountsOrMapping) {
-    // "sum-amount-" cells cascade to: groupSpent → totalIncome → incomeAvailable → toBudget
-    for (const name of ss.getCellsByPrefix("sum-amount-")) {
-      affectedCells.add(name);
-    }
-  }
-  if (touchBudgets) {
-    // "budget-" and "carryover-" cascade to: catBalance → groupBalance → totals → toBudget
-    for (const name of ss.getCellsByPrefix("budget-")) {
-      affectedCells.add(name);
-    }
-    for (const name of ss.getCellsByPrefix("carryover-")) {
-      affectedCells.add(name);
-    }
-  }
-  if (touchGoals) {
-    // "goal-" and "long-goal-" feed the category chip colour (funded/underfunded).
-    // Separate prefixes: "long-goal-" does not start with "goal-".
-    for (const name of ss.getCellsByPrefix("goal-")) {
-      affectedCells.add(name);
-    }
-    for (const name of ss.getCellsByPrefix("long-goal-")) {
-      affectedCells.add(name);
-    }
-  }
-  if (touchMonths) {
-    // "buffered" cascades to: bufferedSelected → toBudget
-    for (const name of ss.getCellsByPrefix("buffered")) {
-      affectedCells.add(name);
-    }
-  }
-
-  if (__DEV__) {
-    console.log(
-      `[triggerBudgetChanges] ${affectedCells.size} cells to recompute from ${messages.length} messages`,
-    );
-  }
-
-  if (affectedCells.size > 0) {
-    ss.startTransaction();
-    for (const name of affectedCells) {
-      ss.recomputeResolved(name);
-    }
-    ss.endTransaction();
-  }
+  return months;
 }
 
-// ── Structural refresh (categories/groups changed) ──
-
-let refreshing = false;
-let pendingRefresh = false;
+/**
+ * Structural changes — the ones that add or remove CELLS rather than change
+ * what existing cells evaluate to. Value-level invalidation lives in
+ * `budget/base.ts::triggerBudgetChanges`, where upstream keeps it.
+ *
+ * Only budgetType lands here: the entire formula set differs between envelope
+ * and tracking, so no amount of granular invalidation covers it — only a
+ * structural rebuild (upstream does the same in `setType`). Categories and
+ * groups don't come through here at all: `budget/base.ts`'s handlers wire them
+ * in cell by cell.
+ */
+export function triggerStructuralChanges(messages: SyncMessage[]): void {
+  for (const msg of messages) {
+    if (msg.dataset === "preferences" && msg.row === "budgetType") {
+      void rebuildForBudgetTypeChange();
+      return;
+    }
+  }
+}
 
 /**
  * Re-widen the live spreadsheet to a range a previous build had reached — a
@@ -682,87 +600,34 @@ async function restorePreviousRange(
   if (prevEnd > builtEnd) await ensureMonthRange(prevEnd);
 }
 
-async function runStructuralRefresh(): Promise<void> {
-  // A full rebuild already in flight recreates every cell — nothing to refresh.
-  if (currentInit) {
-    pendingRefresh = false;
-    return;
-  }
-  refreshing = true;
-  pendingRefresh = false;
+/**
+ * The one change no amount of granular invalidation covers: switching between
+ * envelope and tracking swaps the entire formula set, so the old cells must not
+ * linger. Rebuilds through `loadSpreadsheet` rather than clearing in place —
+ * subscribers would otherwise stay on the old numbers for every cell whose new
+ * value happens to equal its placeholder. Upstream's `setType` does the same.
+ *
+ * Categories and groups used to come through here too, rebuilding every month's
+ * cells to add one category. They're incremental now — see
+ * `handleCategoryChange` in envelope.ts/tracking.ts.
+ */
+async function rebuildForBudgetTypeChange(): Promise<void> {
+  // A full rebuild already in flight recreates every cell anyway.
+  if (currentInit) return;
+
   try {
     const ss = getSpreadsheet();
-    // Remember any range previously widened by ensureMonthRange() — a
-    // structural rebuild only recreates the mobile-tightened default
-    // range, so without this the new category's cells for a
-    // previously-visited far month would silently go missing again.
+    // Remember any range previously widened by ensureMonthRange(): a rebuild
+    // only recreates the mobile-tightened default range, so without this the
+    // cells for an already-visited far month would silently go missing.
     const { builtStart: prevStart, builtEnd: prevEnd } = ss.meta();
 
     const budgetType = await getBudgetType();
-    if (isStale(ss)) return;
+    if (isStale(ss) || budgetType === ss.meta().budgetType) return;
 
-    if (budgetType !== ss.meta().budgetType) {
-      // Budget type changed since the last build — the entire formula set
-      // differs (envelope vs tracking cell names/deps), so the old cells must
-      // not linger. Rebuild through loadSpreadsheet: a clear()+rebuild on the
-      // live instance would leave subscribers on the old numbers for every
-      // cell whose new value happens to equal its placeholder (same reason a
-      // budget switch builds a fresh instance). A plain categories/groups
-      // change reuses the same engine and keeps the cheaper incremental
-      // (no-clear) rebuild below.
-      await loadSpreadsheet();
-      await restorePreviousRange(prevStart, prevEnd);
-      return;
-    }
-
-    // Same leaf-cell batching as loadSpreadsheet (createAllBudgetCells builds
-    // this exact range internally).
-    const fullRange = await getBudgetRange();
-    if (isStale(ss)) return;
-    // Cells appear and disappear as this runs — nothing computed partway
-    // through describes the finished graph.
-    ss.startCacheBarrier();
-    const warmToken = await warmSpreadsheetCache(fullRange.start, fullRange.end);
-    let range: { start: string; end: string };
-    try {
-      range = await engineForType(budgetType).createAllBudgetCells(ss);
-    } finally {
-      clearSpreadsheetWarmCache(warmToken);
-      ss.endCacheBarrier();
-    }
-    ss.setMeta({ builtStart: range.start, builtEnd: range.end });
-
+    await loadSpreadsheet();
     await restorePreviousRange(prevStart, prevEnd);
-    // Categories/groups changed, so cells were added or removed — persist the
-    // whole graph rather than only what happened to change value.
-    ss.saveCachedCells([...ss.getCells().keys()]);
   } catch (err) {
-    if (__DEV__) console.warn("[spreadsheet/sync] structural refresh failed:", err);
-  } finally {
-    refreshing = false;
-    if (pendingRefresh) {
-      runStructuralRefresh();
-    }
+    if (__DEV__) console.warn("[spreadsheet/sync] budget-type rebuild failed:", err);
   }
 }
-
-listen((event) => {
-  if (!("tables" in event)) return;
-  if (event.tables.includes("categories") || event.tables.includes("category_groups")) {
-    // Not initialized yet (e.g. wizard seed before loadBudget) — the later
-    // loadSpreadsheet() builds all cells anyway, and firing async reads here
-    // just races with other work on the shared connection.
-    if (getSpreadsheet().meta().builtStart === null) return;
-
-    // Skip structural refresh if we just initialized — cells are already fresh.
-    // This prevents the post-open sync from triggering a massive re-render
-    // that can reset Expo Router's tab navigation state.
-    if (Date.now() - lastInitTime < INIT_COOLDOWN) return;
-
-    if (refreshing) {
-      pendingRefresh = true;
-      return;
-    }
-    runStructuralRefresh();
-  }
-});

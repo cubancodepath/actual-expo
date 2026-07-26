@@ -33,6 +33,109 @@ import { inferGoalFromDef } from "@/core/server/budget/goals";
  * Can be called with or without an outer transaction.
  * When called from createAllBudgetCells, the caller wraps in startTransaction/endTransaction.
  */
+/**
+ * The per-category cells of one month: what's budgeted, whether it carries
+ * over, the resulting balance and the goal pair. Expense categories only —
+ * income ones get their spend cell from `createSpentCells` and nothing else.
+ *
+ * Split out of the build loop so `handleCategoryChange` can create exactly
+ * these for a single new category, instead of rebuilding the month.
+ */
+export function createCategory(ss: Spreadsheet, cat: Category, month: string): void {
+  const sheet = sheetForMonth(month);
+  const prevSheet = sheetForMonth(addMonths(month, -1));
+  const monthInt = monthToInt(month);
+
+  ss.createDynamic(sheet, envelopeBudget.catBudgeted(cat.id), {
+    dependencies: [],
+    run: () => {
+      const cached = warmZeroBudget(monthInt, cat.id);
+      if (cached !== undefined) return cached?.amount ?? 0;
+
+      const row = firstSync<{ amount: number }>(
+        "SELECT amount FROM zero_budgets WHERE month = ? AND category = ?",
+        [monthInt, cat.id],
+      );
+      return row?.amount ?? 0;
+    },
+  });
+
+  ss.createDynamic(sheet, envelopeBudget.catCarryover(cat.id), {
+    dependencies: [],
+    run: () => {
+      const cached = warmZeroBudget(monthInt, cat.id);
+      if (cached !== undefined) return cached?.carryover === 1;
+
+      const row = firstSync<{ carryover: number }>(
+        "SELECT carryover FROM zero_budgets WHERE month = ? AND category = ?",
+        [monthInt, cat.id],
+      );
+      return row?.carryover === 1;
+    },
+  });
+
+  ss.createDynamic(sheet, envelopeBudget.catBalance(cat.id), {
+    dependencies: [
+      envelopeBudget.catBudgeted(cat.id),
+      envelopeBudget.catSpent(cat.id),
+      `${prevSheet}!${envelopeBudget.catCarryover(cat.id)}`,
+      `${prevSheet}!${envelopeBudget.catBalance(cat.id)}`,
+      `${prevSheet}!${envelopeBudget.catBalancePos(cat.id)}`,
+    ],
+    run: (budgetedVal, spentVal, prevCarryoverVal, prevBalance, prevBalancePos) => {
+      const prevCo = prevCarryoverVal === true || prevCarryoverVal === 1;
+      return safeNumber(
+        num(budgetedVal) + num(spentVal) + (prevCo ? num(prevBalance) : num(prevBalancePos)),
+      );
+    },
+  });
+
+  ss.createDynamic(sheet, envelopeBudget.catBalancePos(cat.id), {
+    dependencies: [envelopeBudget.catBalance(cat.id)],
+    run: (balance) => Math.max(0, num(balance)),
+  });
+
+  // Goal cells mirror zero_budgets.goal/long_goal — the values applyGoals()
+  // persists — so applying templates / remote sync updates category colors
+  // live (parity with upstream handleBudgetChange, which re-sets these cells
+  // on every budget change). Dynamic (not static) so triggerBudgetChanges can
+  // invalidate them via the "goal-"/"long-goal-" prefixes.
+  //
+  // Fallback when no zero_budgets row/value yet (month before applyGoals):
+  // infer from goal_def, the same inference the getBudgetMonth() read path
+  // uses. carryIn isn't available at this synchronous point, so "by"
+  // sinking-fund goals approximate it as 0 — the function's documented fallback.
+  const inferred = cat.goal_def ? inferGoalFromDef(cat.goal_def, month) : null;
+  ss.createDynamic(sheet, envelopeBudget.catGoal(cat.id), {
+    dependencies: [],
+    run: () => {
+      const cached = warmZeroBudget(monthInt, cat.id);
+      if (cached !== undefined) return cached?.goal ?? inferred?.goal ?? 0;
+
+      const row = firstSync<{ goal: number | null }>(
+        "SELECT goal FROM zero_budgets WHERE month = ? AND category = ?",
+        [monthInt, cat.id],
+      );
+      return row?.goal ?? inferred?.goal ?? 0;
+    },
+  });
+  ss.createDynamic(sheet, envelopeBudget.catLongGoal(cat.id), {
+    dependencies: [],
+    run: () => {
+      const cached = warmZeroBudget(monthInt, cat.id);
+      if (cached !== undefined) {
+        return cached?.long_goal != null ? cached.long_goal === 1 : (inferred?.longGoal ?? false);
+      }
+
+      const row = firstSync<{ long_goal: number | null }>(
+        "SELECT long_goal FROM zero_budgets WHERE month = ? AND category = ?",
+        [monthInt, cat.id],
+      );
+      return row?.long_goal != null ? row.long_goal === 1 : (inferred?.longGoal ?? false);
+    },
+  });
+}
+
 export async function createBudgetCells(
   ss: Spreadsheet,
   month: string,
@@ -42,7 +145,6 @@ export async function createBudgetCells(
   const sheet = sheetForMonth(month);
   const prevMonth = addMonths(month, -1);
   const prevSheet = sheetForMonth(prevMonth);
-  const monthInt = monthToInt(month);
 
   const expenseGroups = groups.filter((g) => !g.is_income);
   const incomeGroup = groups.find((g) => g.is_income);
@@ -71,95 +173,7 @@ export async function createBudgetCells(
   for (const cat of categories) {
     const group = groups.find((g) => g.id === cat.group);
     if (!group || group.is_income) continue;
-
-    ss.createDynamic(sheet, envelopeBudget.catBudgeted(cat.id), {
-      dependencies: [],
-      run: () => {
-        const cached = warmZeroBudget(monthInt, cat.id);
-        if (cached !== undefined) return cached?.amount ?? 0;
-
-        const row = firstSync<{ amount: number }>(
-          "SELECT amount FROM zero_budgets WHERE month = ? AND category = ?",
-          [monthInt, cat.id],
-        );
-        return row?.amount ?? 0;
-      },
-    });
-
-    ss.createDynamic(sheet, envelopeBudget.catCarryover(cat.id), {
-      dependencies: [],
-      run: () => {
-        const cached = warmZeroBudget(monthInt, cat.id);
-        if (cached !== undefined) return cached?.carryover === 1;
-
-        const row = firstSync<{ carryover: number }>(
-          "SELECT carryover FROM zero_budgets WHERE month = ? AND category = ?",
-          [monthInt, cat.id],
-        );
-        return row?.carryover === 1;
-      },
-    });
-
-    ss.createDynamic(sheet, envelopeBudget.catBalance(cat.id), {
-      dependencies: [
-        envelopeBudget.catBudgeted(cat.id),
-        envelopeBudget.catSpent(cat.id),
-        `${prevSheet}!${envelopeBudget.catCarryover(cat.id)}`,
-        `${prevSheet}!${envelopeBudget.catBalance(cat.id)}`,
-        `${prevSheet}!${envelopeBudget.catBalancePos(cat.id)}`,
-      ],
-      run: (budgetedVal, spentVal, prevCarryoverVal, prevBalance, prevBalancePos) => {
-        const prevCo = prevCarryoverVal === true || prevCarryoverVal === 1;
-        return safeNumber(
-          num(budgetedVal) + num(spentVal) + (prevCo ? num(prevBalance) : num(prevBalancePos)),
-        );
-      },
-    });
-
-    ss.createDynamic(sheet, envelopeBudget.catBalancePos(cat.id), {
-      dependencies: [envelopeBudget.catBalance(cat.id)],
-      run: (balance) => Math.max(0, num(balance)),
-    });
-
-    // Goal cells mirror zero_budgets.goal/long_goal — the values applyGoals()
-    // persists — so applying templates / remote sync updates category colors
-    // live (parity with upstream handleBudgetChange, which re-sets these cells
-    // on every budget change). Dynamic (not static) so triggerBudgetChanges can
-    // invalidate them via the "goal-"/"long-goal-" prefixes.
-    //
-    // Fallback when no zero_budgets row/value yet (month before applyGoals):
-    // infer from goal_def, the same inference the getBudgetMonth() read path
-    // uses. carryIn isn't available at this synchronous point, so "by"
-    // sinking-fund goals approximate it as 0 — the function's documented fallback.
-    const inferred = cat.goal_def ? inferGoalFromDef(cat.goal_def, month) : null;
-    ss.createDynamic(sheet, envelopeBudget.catGoal(cat.id), {
-      dependencies: [],
-      run: () => {
-        const cached = warmZeroBudget(monthInt, cat.id);
-        if (cached !== undefined) return cached?.goal ?? inferred?.goal ?? 0;
-
-        const row = firstSync<{ goal: number | null }>(
-          "SELECT goal FROM zero_budgets WHERE month = ? AND category = ?",
-          [monthInt, cat.id],
-        );
-        return row?.goal ?? inferred?.goal ?? 0;
-      },
-    });
-    ss.createDynamic(sheet, envelopeBudget.catLongGoal(cat.id), {
-      dependencies: [],
-      run: () => {
-        const cached = warmZeroBudget(monthInt, cat.id);
-        if (cached !== undefined) {
-          return cached?.long_goal != null ? cached.long_goal === 1 : (inferred?.longGoal ?? false);
-        }
-
-        const row = firstSync<{ long_goal: number | null }>(
-          "SELECT long_goal FROM zero_budgets WHERE month = ? AND category = ?",
-          [monthInt, cat.id],
-        );
-        return row?.long_goal != null ? row.long_goal === 1 : (inferred?.longGoal ?? false);
-      },
-    });
+    createCategory(ss, cat, month);
   }
 
   // ── Per-group: groupSpent for ALL groups (income + expense) ──
@@ -307,4 +321,149 @@ export async function createAllBudgetCells(
   ss.endTransaction();
 
   return { start, end };
+}
+
+/**
+ * The three group aggregates a category feeds, paired with the cell of its own
+ * that feeds each. Upstream keeps the same trio inside `handleCategoryChange`.
+ */
+function groupEdges(groupId: string, catId: string): [string, string][] {
+  return [
+    [envelopeBudget.groupSpent(groupId), envelopeBudget.catSpent(catId)],
+    [envelopeBudget.groupBudgeted(groupId), envelopeBudget.catBudgeted(catId)],
+    [envelopeBudget.groupBalance(groupId), envelopeBudget.catBalance(catId)],
+  ];
+}
+
+function addDeps(ss: Spreadsheet, sheet: string, groupId: string, catId: string): void {
+  for (const [aggregate, input] of groupEdges(groupId, catId)) {
+    ss.addDependencies(sheet, aggregate, [input]);
+  }
+}
+
+function removeDeps(ss: Spreadsheet, sheet: string, groupId: string, catId: string): void {
+  for (const [aggregate, input] of groupEdges(groupId, catId)) {
+    ss.removeDependencies(sheet, aggregate, [input]);
+  }
+}
+
+/**
+ * Keep the sheet in step with a category appearing, disappearing or moving
+ * group — incrementally, instead of rebuilding every month.
+ *
+ * Faithful to upstream's three branches, including its asymmetry: deleting a
+ * category only unwires its aggregate edges, it does NOT delete the cells.
+ * They linger, disconnected, until the next full build. Envelope has no
+ * `hidden` branch — hidden categories stay in their group's totals (only
+ * tracking hides them).
+ */
+export function handleCategoryChange(
+  ss: Spreadsheet,
+  months: string[],
+  oldValue: { cat_group?: unknown; tombstone?: unknown } | undefined,
+  newValue: Category & { tombstone?: boolean },
+): void {
+  const id = newValue.id;
+  const wasAlive = oldValue ? oldValue.tombstone === 0 || oldValue.tombstone === false : false;
+  const isAlive = !newValue.tombstone;
+  const oldGroup = typeof oldValue?.cat_group === "string" ? oldValue.cat_group : null;
+
+  if (oldValue && wasAlive && !isAlive) {
+    for (const month of months) {
+      removeDeps(ss, sheetForMonth(month), newValue.group, id);
+    }
+    return;
+  }
+
+  if (isAlive && (!oldValue || !wasAlive)) {
+    // No blank month like upstream's createBlankCategory: our engine reads a
+    // missing cell as 0, so the carryover chain starts on its own.
+    for (const month of months) {
+      const sheet = sheetForMonth(month);
+      const prevSheet = sheetForMonth(addMonths(month, -1));
+
+      createCategory(ss, newValue, month);
+      addDeps(ss, sheet, newValue.group, id);
+
+      ss.addDependencies(sheet, envelopeBudget.lastMonthOverspent, [
+        `${prevSheet}!${envelopeBudget.catBalance(id)}`,
+        `${prevSheet}!${envelopeBudget.catCarryover(id)}`,
+      ]);
+
+      if (newValue.is_income) {
+        ss.addDependencies(sheet, envelopeBudget.bufferedAuto, [
+          envelopeBudget.catSpent(id),
+          envelopeBudget.catCarryover(id),
+        ]);
+      }
+    }
+    return;
+  }
+
+  if (oldGroup && oldGroup !== newValue.group) {
+    for (const month of months) {
+      const sheet = sheetForMonth(month);
+      removeDeps(ss, sheet, oldGroup, id);
+      addDeps(ss, sheet, newValue.group, id);
+    }
+  }
+}
+
+/** The month totals a group feeds, paired with the group cell that feeds each. */
+function monthEdges(groupId: string): [string, string][] {
+  return [
+    [envelopeBudget.totalBudgeted, envelopeBudget.groupBudgeted(groupId)],
+    [envelopeBudget.totalBalance, envelopeBudget.groupBalance(groupId)],
+  ];
+}
+
+/**
+ * Keep the month totals in step with a group appearing or disappearing.
+ * Income groups are excluded, matching the build: their money is income, not
+ * budgeted spend.
+ */
+export function handleCategoryGroupChange(
+  ss: Spreadsheet,
+  months: string[],
+  oldValue: { tombstone?: unknown } | undefined,
+  newValue: CategoryGroup & { tombstone?: boolean },
+): void {
+  if (newValue.is_income) return;
+
+  const wasAlive = oldValue ? oldValue.tombstone === 0 || oldValue.tombstone === false : false;
+  const isAlive = !newValue.tombstone;
+
+  if (oldValue && wasAlive && !isAlive) {
+    for (const month of months) {
+      const sheet = sheetForMonth(month);
+      for (const [total, input] of monthEdges(newValue.id)) {
+        ss.removeDependencies(sheet, total, [input]);
+      }
+    }
+    return;
+  }
+
+  if (isAlive && (!oldValue || !wasAlive)) {
+    for (const month of months) {
+      const sheet = sheetForMonth(month);
+      // The group's own aggregates start empty; categories wire themselves in
+      // as they arrive, via handleCategoryChange.
+      ss.createDynamic(sheet, envelopeBudget.groupSpent(newValue.id), {
+        dependencies: [],
+        run: (...vals) => safeNumber(vals.reduce((sum: number, v) => sum + num(v), 0)),
+      });
+      ss.createDynamic(sheet, envelopeBudget.groupBudgeted(newValue.id), {
+        dependencies: [],
+        run: (...vals) => safeNumber(vals.reduce((sum: number, v) => sum + num(v), 0)),
+      });
+      ss.createDynamic(sheet, envelopeBudget.groupBalance(newValue.id), {
+        dependencies: [],
+        run: (...vals) => safeNumber(vals.reduce((sum: number, v) => sum + num(v), 0)),
+      });
+
+      for (const [total, input] of monthEdges(newValue.id)) {
+        ss.addDependencies(sheet, total, [input]);
+      }
+    }
+  }
 }

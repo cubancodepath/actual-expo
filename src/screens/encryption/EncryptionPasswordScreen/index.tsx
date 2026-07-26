@@ -66,7 +66,12 @@ export function EncryptionPasswordScreen() {
     // Blocks behind the root overlay (which reaches over this form sheet).
     const result = await busy.run(() => {
       const { serverUrl, token } = useSessionStore.getState();
-      return keyTest({ serverUrl, token, cloudFileId, password: password.trim() });
+      return keyTest({
+        serverUrl,
+        token,
+        cloudFileId,
+        password: password.trim(),
+      });
     });
 
     if (!("error" in result)) {
@@ -132,7 +137,7 @@ export function EncryptionPasswordScreen() {
     : password.trim().length > 0;
 
   return (
-    <View className="flex-1">
+    <View className="flex-1 bg-background">
       <ScreenHeader>
         <ScreenHeader.Back>
           <Button

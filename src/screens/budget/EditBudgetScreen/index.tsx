@@ -95,7 +95,10 @@ export function EditBudgetScreen() {
 
   function openGoalEditor(category: BudgetSectionCategory) {
     setCategoryDetails(null);
-    router.push({ pathname: "/(auth)/budget/goal", params: { categoryId: category.id } });
+    router.push({
+      pathname: "/(auth)/budget/goal",
+      params: { categoryId: category.id },
+    });
   }
 
   return (
@@ -145,7 +148,11 @@ export function EditBudgetScreen() {
                 </View>
                 <ListGroup className="overflow-hidden rounded-2xl">
                   <ListGroup.Item
-                    onPress={() => router.push({ pathname: "/(auth)/budget/hidden-categories" })}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/(auth)/budget/hidden-categories",
+                      })
+                    }
                   >
                     <ListGroup.ItemContent>
                       <ListGroup.ItemTitle>

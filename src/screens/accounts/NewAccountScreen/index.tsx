@@ -42,7 +42,7 @@ export function NewAccountScreen() {
       value={values.startingBalance}
       onValueChange={(cents) => form.setFieldValue("startingBalance", cents)}
     >
-      <View className="flex-1">
+      <View className="flex-1 bg-background">
         <ScreenHeader>
           <ScreenHeader.Back>
             <Button

@@ -101,7 +101,11 @@ export function EnvelopeSheetRoot({
     [tone, presentation, insets.top, heroHeight, pinnedHeight, hasPinned, registerPinned],
   );
 
-  return <EnvelopeSheetContext value={value}>{children}</EnvelopeSheetContext>;
+  return (
+    <EnvelopeSheetContext value={value}>
+      <View className="flex-1 bg-background">{children}</View>
+    </EnvelopeSheetContext>
+  );
 }
 
 /**
@@ -163,10 +167,12 @@ export function EnvelopeSheetBody({
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
       {...rest}
-      className="z-[1] flex-1"
+      className="z-1 flex-1 "
       style={[{ opacity: ready ? 1 : 0 }, style]}
       contentContainerStyle={[
-        { paddingTop: (heroHeight ?? 0) + HERO_CURVE - CARD_OVERLAP + (pinnedHeight ?? 0) },
+        {
+          paddingTop: (heroHeight ?? 0) + HERO_CURVE - CARD_OVERLAP + (pinnedHeight ?? 0),
+        },
         contentContainerStyle,
       ]}
     >
@@ -195,7 +201,7 @@ export function EnvelopeSheetPinned({ children }: { children: ReactNode }) {
 
   return (
     <View
-      className="absolute inset-x-0 z-[15]"
+      className="absolute inset-x-0 z-15"
       style={{
         top: (heroHeight ?? 0) + HERO_CURVE - CARD_OVERLAP,
         opacity: ready ? 1 : 0,
@@ -279,7 +285,10 @@ function useCornerStyle() {
   const { topInset } = useEnvelopeSheetContext();
   const ready = useEnvelopeSheetReady();
 
-  return { opacity: ready ? 1 : 0, ...(topInset > 0 ? { top: topInset + 4 } : null) };
+  return {
+    opacity: ready ? 1 : 0,
+    ...(topInset > 0 ? { top: topInset + 4 } : null),
+  };
 }
 
 /**

@@ -2,5 +2,5 @@
   "$schema": "./node_modules/oxfmt/configuration_schema.json",
   "printWidth": 100,
   "trailingComma": "all",
-  "ignorePatterns": ["node_modules/**", "ios/**", "android/**", ".expo/**"]
+  "ignorePatterns": ["node_modules/**", "ios/**", "android/**", ".expo/**", "uniwind-types.d.ts"]
 }

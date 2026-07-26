@@ -18,7 +18,6 @@ export { ScheduleStatusBadge } from "./atoms/ScheduleStatusBadge";
 export { GlassButton } from "./atoms/GlassButton";
 export { ContextMenu } from "./atoms/ContextMenu";
 export { Input, type InputProps } from "./atoms/Input";
-export { CircularProgress } from "./atoms/CircularProgress";
 export { Skeleton } from "./atoms/Skeleton";
 
 // Molecules

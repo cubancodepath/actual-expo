@@ -168,7 +168,6 @@
   "noCategoryGroupsYet": "No category groups yet",
   "organizeByCreating": "Organize your budget by creating groups",
   "reorder": "Reorder",
-  "addGroup": "Add Group",
   "fromMonth": "From {{month}}",
   "assignedForMonth": "Budgeted for {{month}}",
   "activityInMonth": "Activity in {{month}}",
@@ -479,5 +478,8 @@
       "remainder": "Whatever is left"
     },
     "sectionTracking": "Limits & tracking"
-  }
+  },
+  "newCategoryGroup": "New Category Group",
+  "reorderCategories": "Reorder Categories",
+  "details": "Details"
 }

@@ -1,4 +1,5 @@
 import {
+  EnvelopeSheetActions,
   EnvelopeSheetAmount,
   EnvelopeSheetBackdrop,
   EnvelopeSheetBody,
@@ -20,8 +21,10 @@ export const EnvelopeSheet = Object.assign(EnvelopeSheetRoot, {
   Hero: EnvelopeSheetHero,
   Title: EnvelopeSheetTitle,
   Amount: EnvelopeSheetAmount,
-  /** Floating dismiss control; pass children to swap the default button. */
+  /** Floating dismiss control (top-left); pass children to swap the default button. */
   Close: EnvelopeSheetClose,
+  /** Top-right corner, opposite Close — an overflow menu, typically. */
+  Actions: EnvelopeSheetActions,
 });
 
 export type { EnvelopeSheetPresentation, EnvelopeSheetTone } from "./context";

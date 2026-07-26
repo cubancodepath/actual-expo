@@ -172,7 +172,6 @@
   "noCategoryGroupsYet": "Aún no hay grupos de categorías",
   "organizeByCreating": "Organiza tu presupuesto creando grupos",
   "reorder": "Reordenar",
-  "addGroup": "Agregar grupo",
   "fromMonth": "De {{month}}",
   "assignedForMonth": "Presupuestado para {{month}}",
   "activityInMonth": "Actividad en {{month}}",
@@ -466,5 +465,8 @@
       "remainder": "Lo que sobre"
     },
     "sectionTracking": "Límites y seguimiento"
-  }
+  },
+  "newCategoryGroup": "Nuevo grupo de categorías",
+  "reorderCategories": "Reordenar categorías",
+  "details": "Detalles"
 }

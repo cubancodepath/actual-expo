@@ -1,122 +1,35 @@
-import { Fragment, useState } from "react";
+import { useEffect, useState } from "react";
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
-import { Button, ListGroup, Menu, Separator, Typography, useThemeColor } from "heroui-native";
-import { CirclePlus, MoreHorizontal, Pencil, Trash2 } from "lucide-react-native";
 import { EnvelopeSheet } from "@/screens/budget/components/EnvelopeSheet";
-import { SingleInputSheet } from "@/screens/budget/components/SingleInputSheet";
-import { HIDDEN_GROUP_ID, useBudgetSections } from "@/screens/budget/hooks/useBudgetSections";
-import type { BudgetSection } from "@/screens/budget/hooks/useBudgetSections";
+import { useRouter } from "expo-router";
+import { useBudgetSections } from "@/screens/budget/hooks/useBudgetSections";
+import type {
+  BudgetSection,
+  BudgetSectionCategory,
+} from "@/screens/budget/hooks/useBudgetSections";
 import {
-  createCategory,
-  createCategoryGroup,
+  deleteCategory,
   deleteCategoryGroup,
+  isCategoryTransferRequired,
+  updateCategory,
   updateCategoryGroup,
 } from "@/core/server/budget";
+import { useBudgetUIStore } from "@/stores/budgetUIStore";
+import { useUndo } from "@/lib/hooks/useUndo";
+import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { ConfirmDialog, type ConfirmRequest } from "@/ui/feedback/ConfirmDialog";
 import { ScreenHeader } from "@/ui/ScreenHeader";
-import { Money } from "@/ui/Money";
+import { EditPlanGroup } from "./components/EditPlanGroup";
+import { CategoryDetailsSheet } from "./components/CategoryDetailsSheet";
+import { GroupDetailsSheet } from "./components/GroupDetailsSheet";
+import { NewItemSheet, type NewItemIntent } from "./components/NewItemSheet";
+import { PlanActionsMenu } from "./components/PlanActionsMenu";
+import { PlanSummaryCard } from "./components/PlanSummaryCard";
 
-// Placeholder figures. The layout landed before the bindings did, so these are
-// deliberately fixed and named — swapping each for a real spreadsheet read is a
-// one-line change once we settle on what this screen should total.
+/** Placeholder until we settle what this screen's headline figure should be. */
 const PLACEHOLDER_HERO_CENTS = 0;
-const PLACEHOLDER_ASSIGNED_CENTS = 0;
-const PLACEHOLDER_AVAILABLE_CENTS = 0;
-
-/**
- * One group in the plan editor: a header row outside the card (name + actions)
- * over a card of its category names. Unlike the budget table's groups these
- * don't collapse — the whole point of this screen is seeing the plan at once.
- */
-function EditPlanGroup({
-  section,
-  onAddCategory,
-  onRename,
-  onDelete,
-}: {
-  section: BudgetSection;
-  onAddCategory: () => void;
-  onRename: () => void;
-  onDelete: () => void;
-}) {
-  const { t } = useTranslation("budget");
-  const foreground = useThemeColor("foreground");
-  const danger = useThemeColor("danger");
-  // The hidden bucket is synthetic, not a real group — there's nothing to add
-  // a category to and no group to edit, so it gets the header without actions.
-  const isSynthetic = section.id === HIDDEN_GROUP_ID;
-
-  return (
-    <View>
-      <View className="flex-row items-center gap-1 px-1 pb-1 pt-4">
-        <Typography className="flex-1 text-sm font-semibold text-foreground" numberOfLines={1}>
-          {section.name}
-        </Typography>
-        {!isSynthetic && (
-          <>
-            <Button
-              isIconOnly
-              variant="ghost"
-              size="sm"
-              onPress={onAddCategory}
-              accessibilityLabel={t("addGroupAccessibility", { name: section.name })}
-            >
-              <CirclePlus size={18} color={foreground} />
-            </Button>
-            <Menu>
-              <Menu.Trigger asChild>
-                <Button
-                  isIconOnly
-                  variant="ghost"
-                  size="sm"
-                  accessibilityLabel={t("editGroupAccessibility", { name: section.name })}
-                >
-                  <MoreHorizontal size={18} color={foreground} />
-                </Button>
-              </Menu.Trigger>
-              <Menu.Portal>
-                <Menu.Overlay />
-                <Menu.Content presentation="popover" width={220} placement="bottom" align="end">
-                  <Menu.Item className="gap-3" onPress={onRename}>
-                    <Pencil size={18} color={foreground} />
-                    <Menu.ItemTitle>{t("renameGroup")}</Menu.ItemTitle>
-                  </Menu.Item>
-                  <Menu.Item className="gap-3" onPress={onDelete}>
-                    <Trash2 size={18} color={danger} />
-                    <Menu.ItemTitle>{t("deleteGroup")}</Menu.ItemTitle>
-                  </Menu.Item>
-                </Menu.Content>
-              </Menu.Portal>
-            </Menu>
-          </>
-        )}
-      </View>
-
-      {section.categories.length > 0 && (
-        <ListGroup className="overflow-hidden rounded-2xl">
-          {section.categories.map((cat, i) => (
-            <Fragment key={cat.id}>
-              {i > 0 ? <Separator className="mx-4" /> : null}
-              <ListGroup.Item>
-                <ListGroup.ItemContent>
-                  <ListGroup.ItemTitle numberOfLines={1}>{cat.name}</ListGroup.ItemTitle>
-                </ListGroup.ItemContent>
-              </ListGroup.Item>
-            </Fragment>
-          ))}
-        </ListGroup>
-      )}
-    </View>
-  );
-}
-
-/** What the single-input sheet is currently doing, if anything. */
-type SheetIntent =
-  | { kind: "new-category"; group: BudgetSection }
-  | { kind: "new-group" }
-  | { kind: "rename-group"; group: BudgetSection };
 
 /**
  * Plan editor: the whole set of groups and categories on one screen, for
@@ -124,33 +37,106 @@ type SheetIntent =
  * {@link EnvelopeSheet} — accent hero (this screen's figure tracks no good/bad
  * state), a summary card pinned in its curve, and the group list scrolling
  * underneath it.
+ *
+ * The overlays hang off it, each keyed by its own piece of state so the target
+ * and the open/closed state are always the same value: create a category or a
+ * group, one group's or category's details, and the delete confirmation. Every
+ * action lives here rather than in the sheets — deleting needs the dialog and
+ * sometimes the transfer picker, and nesting overlays is asking for trouble.
  */
 export function EditBudgetScreen() {
   const { t } = useTranslation("budget");
   const insets = useSafeAreaInsets();
   const { sections, isLoading } = useBudgetSections();
-  const foreground = useThemeColor("foreground");
-  const [intent, setIntent] = useState<SheetIntent | null>(null);
+  const router = useRouter();
+  const { showUndoNotification } = useUndo();
+  const pickedCategory = useBudgetUIStore((s) => s.pickedCategory);
+  const setPickedCategory = useBudgetUIStore((s) => s.setPickedCategory);
+
+  const [newItem, setNewItem] = useState<NewItemIntent | null>(null);
+  const [details, setDetails] = useState<BudgetSection | null>(null);
+  const [categoryDetails, setCategoryDetails] = useState<BudgetSectionCategory | null>(null);
   const [confirm, setConfirm] = useState<ConfirmRequest | null>(null);
 
-  function requestDeleteGroup(section: BudgetSection) {
-    const count = section.categories.length;
+  // ── Deleting a category: only ask for a transfer target when one is needed ──
+  //
+  // A category with transactions can't just vanish — they'd be left
+  // uncategorised — so the picker hands back a destination through
+  // `budgetUIStore.pickedCategory`. One without transactions skips all that.
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!pendingDelete || !pickedCategory) return;
+    const categoryId = pendingDelete;
+    void (async () => {
+      try {
+        await deleteCategory(categoryId, pickedCategory.catId);
+        showUndoNotification(t("categoryDeleted"));
+      } catch (e) {
+        emitErrorEvent(e);
+      } finally {
+        setPendingDelete(null);
+        setPickedCategory(null);
+      }
+    })();
+  }, [pendingDelete, pickedCategory, showUndoNotification, setPickedCategory, t]);
+
+  function openGoalEditor(category: BudgetSectionCategory) {
+    setCategoryDetails(null);
+    router.push({ pathname: "/(auth)/budget/goal", params: { categoryId: category.id } });
+  }
+
+  function confirmDeleteCategory(category: BudgetSectionCategory) {
     setConfirm({
-      title: t("deleteGroupTitle"),
-      description:
-        count > 0
-          ? t("deleteGroupMessageWithCategories", {
-              name: section.name,
-              count,
-              suffix: count === 1 ? "y" : "ies",
-            })
-          : t("deleteGroupMessageEmpty", { name: section.name }),
+      title: t("deleteCategory"),
+      description: t("deleteCategoryMessage", { name: category.name }),
       actions: [
         {
           label: t("delete"),
           isDestructive: true,
           onPress: () => {
-            void deleteCategoryGroup(section.id);
+            setConfirm(null);
+            void (async () => {
+              try {
+                if (await isCategoryTransferRequired(category.id)) {
+                  setPickedCategory(null);
+                  setPendingDelete(category.id);
+                  router.push({
+                    pathname: "/(auth)/budget/delete-category-picker",
+                    params: { excludeIds: category.id, moveCatId: category.id },
+                  });
+                  return;
+                }
+                await deleteCategory(category.id);
+                showUndoNotification(t("categoryDeleted"));
+              } catch (e) {
+                emitErrorEvent(e);
+              }
+            })();
+          },
+        },
+      ],
+    });
+  }
+
+  function confirmDeleteGroup(group: BudgetSection) {
+    const count = group.categories.length;
+    setConfirm({
+      title: t("deleteGroupTitle"),
+      description:
+        count > 0
+          ? t("deleteGroupMessageWithCategories", {
+              name: group.name,
+              count,
+              suffix: count === 1 ? "y" : "ies",
+            })
+          : t("deleteGroupMessageEmpty", { name: group.name }),
+      actions: [
+        {
+          label: t("delete"),
+          isDestructive: true,
+          onPress: () => {
+            void deleteCategoryGroup(group.id);
             setConfirm(null);
           },
         },
@@ -169,57 +155,17 @@ export function EditBudgetScreen() {
               <EditPlanGroup
                 key={section.id}
                 section={section}
-                onAddCategory={() => setIntent({ kind: "new-category", group: section })}
-                onRename={() => setIntent({ kind: "rename-group", group: section })}
-                onDelete={() => requestDeleteGroup(section)}
+                onAddCategory={() => setNewItem({ kind: "category", group: section })}
+                onOpenDetails={() => setDetails(section)}
+                onOpenCategory={setCategoryDetails}
+                onAddGoal={openGoalEditor}
               />
             ))}
-
-          {!isLoading && (
-            <Button
-              variant="tertiary"
-              className="mt-4"
-              onPress={() => setIntent({ kind: "new-group" })}
-            >
-              <CirclePlus size={18} color={foreground} />
-              <Button.Label>{t("addGroup")}</Button.Label>
-            </Button>
-          )}
         </View>
       </EnvelopeSheet.Body>
 
-      {/* The card that cuts the hero. Pinned, not scrolled: it's a summary of the
-          plan as a whole, so it stays put while the groups move under it. */}
       <EnvelopeSheet.Pinned>
-        <View className="px-4">
-          <ListGroup className="overflow-hidden rounded-2xl shadow-md">
-            <ListGroup.Item>
-              <ListGroup.ItemContent>
-                <ListGroup.ItemTitle>{t("columnBudgeted")}</ListGroup.ItemTitle>
-              </ListGroup.ItemContent>
-              <ListGroup.ItemSuffix>
-                <Money
-                  cents={PLACEHOLDER_ASSIGNED_CENTS}
-                  tone="plain"
-                  className="text-base font-semibold"
-                />
-              </ListGroup.ItemSuffix>
-            </ListGroup.Item>
-            <Separator className="mx-4" />
-            <ListGroup.Item>
-              <ListGroup.ItemContent>
-                <ListGroup.ItemTitle>{t("columnAvailable")}</ListGroup.ItemTitle>
-              </ListGroup.ItemContent>
-              <ListGroup.ItemSuffix>
-                <Money
-                  cents={PLACEHOLDER_AVAILABLE_CENTS}
-                  tone="plain"
-                  className="text-base font-semibold"
-                />
-              </ListGroup.ItemSuffix>
-            </ListGroup.Item>
-          </ListGroup>
-        </View>
+        <PlanSummaryCard />
       </EnvelopeSheet.Pinned>
 
       <EnvelopeSheet.Hero>
@@ -231,45 +177,41 @@ export function EditBudgetScreen() {
         <ScreenHeader.Back />
       </EnvelopeSheet.Close>
 
-      {/* One sheet for all three text prompts; `intent` picks the copy and the
-          action, so the target and the open state can't disagree. */}
-      <SingleInputSheet
-        target={
-          intent == null
-            ? null
-            : { id: intent.kind === "new-group" ? "new-group" : intent.group.id + intent.kind }
-        }
-        title={
-          intent?.kind === "new-group"
-            ? t("addGroup")
-            : intent?.kind === "rename-group"
-              ? t("renameGroup")
-              : t("addCategory")
-        }
-        label={intent?.kind === "new-category" ? t("categoryNameLabel") : t("groupNameLabel")}
-        placeholder={
-          intent?.kind === "new-category" ? t("newCategoryPlaceholder") : t("newGroupPlaceholder")
-        }
-        submitLabel={t("save")}
-        initialValue={intent?.kind === "rename-group" ? intent.group.name : ""}
-        onSubmit={async (value) => {
-          if (intent == null) return;
-          if (intent.kind === "new-category") {
-            // is_income comes from the group being added to — a category in the
-            // income group must be an income category.
-            await createCategory({
-              name: value,
-              groupId: intent.group.id,
-              isIncome: intent.group.is_income,
-            });
-          } else if (intent.kind === "new-group") {
-            await createCategoryGroup({ name: value });
-          } else {
-            await updateCategoryGroup(intent.group.id, { name: value });
-          }
-          setIntent(null);
+      <EnvelopeSheet.Actions>
+        <PlanActionsMenu onNewGroup={() => setNewItem({ kind: "group" })} />
+      </EnvelopeSheet.Actions>
+
+      <NewItemSheet intent={newItem} onClose={() => setNewItem(null)} />
+
+      {/* The three group actions live here, not in the sheet: delete needs the
+          screen's confirmation dialog, and nesting overlays is asking for it. */}
+      <GroupDetailsSheet
+        group={details}
+        onClose={() => setDetails(null)}
+        onRename={(group, name) => updateCategoryGroup(group.id, { name })}
+        onHide={(group) => {
+          void updateCategoryGroup(group.id, { hidden: true });
+          setDetails(null);
         }}
-        onClose={() => setIntent(null)}
+        onDelete={(group) => {
+          setDetails(null);
+          confirmDeleteGroup(group);
+        }}
+      />
+
+      <CategoryDetailsSheet
+        category={categoryDetails}
+        onClose={() => setCategoryDetails(null)}
+        onRename={(category, name) => updateCategory(category.id, { name })}
+        onToggleHidden={(category) => {
+          void updateCategory(category.id, { hidden: !category.hidden });
+          setCategoryDetails(null);
+        }}
+        onDelete={(category) => {
+          setCategoryDetails(null);
+          confirmDeleteCategory(category);
+        }}
+        onEditGoals={openGoalEditor}
       />
 
       <ConfirmDialog request={confirm} onClose={() => setConfirm(null)} />

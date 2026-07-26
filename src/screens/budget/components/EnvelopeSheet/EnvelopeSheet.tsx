@@ -254,13 +254,22 @@ export function EnvelopeSheetAmount({ cents }: { cents: number }) {
 }
 
 /**
- * Floating dismiss control, pinned to the sheet's top-left corner above every
- * layer. It's a root-level part rather than a hero child on purpose: the hero's
- * column is padded, and Yoga lays absolute children out against their parent's
- * content box, which would push the button off the corner.
- *
- * Renders a {@link CloseButton} by default; pass `children` to swap in another
- * control (a back chevron, say) and keep only the positioning.
+ * Shared positioning for the two floating corner controls. They're root-level
+ * parts rather than hero children on purpose: the hero's column is padded, and
+ * Yoga lays absolute children out against their parent's content box, which
+ * would push them off the corner.
+ */
+function useCornerStyle() {
+  const { topInset } = useEnvelopeSheetContext();
+  const ready = useEnvelopeSheetReady();
+
+  return { opacity: ready ? 1 : 0, ...(topInset > 0 ? { top: topInset + 4 } : null) };
+}
+
+/**
+ * Floating dismiss control, pinned to the sheet's top-LEFT corner above every
+ * layer. Renders a {@link CloseButton} by default; pass `children` to swap in
+ * another control (a back chevron, say) and keep only the positioning.
  */
 export function EnvelopeSheetClose({
   onPress,
@@ -270,15 +279,22 @@ export function EnvelopeSheetClose({
   onPress?: () => void;
   children?: ReactNode;
 }) {
-  const { topInset } = useEnvelopeSheetContext();
-  const ready = useEnvelopeSheetReady();
-
   return (
-    <View
-      className="absolute left-4 top-4 z-20"
-      style={{ opacity: ready ? 1 : 0, ...(topInset > 0 ? { top: topInset + 4 } : null) }}
-    >
+    <View className="absolute left-4 top-4 z-20" style={useCornerStyle()}>
       {children ?? <CloseButton onPress={onPress} />}
+    </View>
+  );
+}
+
+/**
+ * The top-RIGHT counterpart to {@link EnvelopeSheetClose} — an overflow menu or
+ * whatever else the screen needs opposite the dismiss control. Bring your own
+ * control; this part only owns the corner.
+ */
+export function EnvelopeSheetActions({ children }: { children: ReactNode }) {
+  return (
+    <View className="absolute right-4 top-4 z-20" style={useCornerStyle()}>
+      {children}
     </View>
   );
 }

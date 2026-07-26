@@ -8,6 +8,10 @@ export const HIDDEN_GROUP_ID = "__hidden__";
 export interface BudgetSectionCategory {
   id: string;
   name: string;
+  /** JSON of the saved goal templates, or null. Drives the details sheet's goal card. */
+  goal_def: string | null;
+  is_income: boolean;
+  hidden: boolean;
 }
 
 export interface BudgetSection {
@@ -44,8 +48,15 @@ export function useBudgetSections(): { sections: BudgetSection[]; isLoading: boo
 
       const visibleCats: BudgetSectionCategory[] = [];
       for (const c of groupCats) {
-        if (g.hidden || c.hidden) hiddenCats.push({ id: c.id, name: c.name });
-        else visibleCats.push({ id: c.id, name: c.name });
+        const entry: BudgetSectionCategory = {
+          id: c.id,
+          name: c.name,
+          goal_def: c.goal_def,
+          is_income: c.is_income,
+          hidden: c.hidden,
+        };
+        if (g.hidden || c.hidden) hiddenCats.push(entry);
+        else visibleCats.push(entry);
       }
 
       if (!g.hidden) {

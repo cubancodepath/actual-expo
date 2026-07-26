@@ -254,6 +254,22 @@ export function EnvelopeSheetAmount({ cents }: { cents: number }) {
 }
 
 /**
+ * A line of small print qualifying the figure — where it comes from, what it
+ * covers.
+ *
+ * Faded `foreground` rather than `muted`: the hero is painted with the sheet's
+ * tint, and muted is a grey picked to sit on the plain background, so on top of
+ * a tint it drops to barely legible. Same ink as the title, just lighter.
+ */
+export function EnvelopeSheetCaption({ children }: { children: ReactNode }) {
+  return (
+    <Typography className="text-xs text-foreground/70" numberOfLines={1}>
+      {children}
+    </Typography>
+  );
+}
+
+/**
  * Shared positioning for the two floating corner controls. They're root-level
  * parts rather than hero children on purpose: the hero's column is padded, and
  * Yoga lays absolute children out against their parent's content box, which

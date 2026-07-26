@@ -3,6 +3,7 @@ import {
   EnvelopeSheetAmount,
   EnvelopeSheetBackdrop,
   EnvelopeSheetBody,
+  EnvelopeSheetCaption,
   EnvelopeSheetClose,
   EnvelopeSheetHero,
   EnvelopeSheetPinned,
@@ -21,6 +22,8 @@ export const EnvelopeSheet = Object.assign(EnvelopeSheetRoot, {
   Hero: EnvelopeSheetHero,
   Title: EnvelopeSheetTitle,
   Amount: EnvelopeSheetAmount,
+  /** Small print under the figure, legible on the hero's tint. */
+  Caption: EnvelopeSheetCaption,
   /** Floating dismiss control (top-left); pass children to swap the default button. */
   Close: EnvelopeSheetClose,
   /** Top-right corner, opposite Close — an overflow menu, typically. */

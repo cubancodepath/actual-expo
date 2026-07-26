@@ -301,6 +301,12 @@
   },
   "nGoals_one": "{{count}} goal",
   "nGoals_other": "{{count}} goals",
+  "planHeroQuestion": "What does it cost to be me?",
+  "planCaptionSpending_one": "average of {{count}} month",
+  "planCaptionSpending_other": "average of the last {{count}} months",
+  "planCaptionNoHistory": "no finished months to average yet",
+  "planIncomeLabel": "I earn",
+  "planLeftover": "Left over",
   "describe": {
     "budgetMonthly": "Budget {{amount}} monthly",
     "budgetMonthlyBase": "Budget monthly",

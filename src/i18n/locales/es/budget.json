@@ -287,6 +287,12 @@
   },
   "nGoals_one": "{{count}} objetivo",
   "nGoals_other": "{{count}} objetivos",
+  "planHeroQuestion": "¿Cuánto cuesta ser yo?",
+  "planCaptionSpending_one": "promedio de {{count}} mes",
+  "planCaptionSpending_other": "promedio de los últimos {{count}} meses",
+  "planCaptionNoHistory": "aún no hay meses terminados que promediar",
+  "planIncomeLabel": "Gano",
+  "planLeftover": "Te queda",
   "describe": {
     "budgetMonthly": "Presupuesto {{amount}} mensual",
     "budgetMonthlyBase": "Presupuesto mensual",

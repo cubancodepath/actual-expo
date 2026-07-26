@@ -6,8 +6,8 @@ import {
   describeTemplate,
   translateDescription,
   type AutomationEntry,
-} from "@/core/server/budget/goals";
-import type { AutomationErrorKind } from "@/core/server/budget/goals";
+} from "@/screens/budget/goals";
+import type { AutomationErrorKind } from "@/screens/budget/goals";
 import { isSilentError } from "../messages";
 import { displayTypeMeta } from "../displayTypeMeta";
 

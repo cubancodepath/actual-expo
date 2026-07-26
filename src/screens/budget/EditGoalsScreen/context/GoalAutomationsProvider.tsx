@@ -8,7 +8,7 @@ import {
   type AutomationEntry,
   type AutomationErrorKind,
   type GlobalConflictKind,
-} from "@/core/server/budget/goals";
+} from "@/screens/budget/goals";
 import type { Schedule } from "@/core/types/models";
 import { useCategories } from "@/lib/hooks/useCategories";
 import { useGoalAutomationsQuery } from "../hooks/useGoalAutomationsQuery";

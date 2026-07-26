@@ -12,7 +12,7 @@ import {
   createDefaultTemplate,
   type AutomationEntry,
   type DisplayTemplateType,
-} from "@/core/server/budget/goals";
+} from "@/screens/budget/goals";
 import type { GoalFormValues } from "../validation/goalForm.schema";
 
 /** The editing session's identity + initial form values, from the route. */

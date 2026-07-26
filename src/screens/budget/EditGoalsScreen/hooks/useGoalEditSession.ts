@@ -5,11 +5,10 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   entriesToTemplates,
   retypeTemplate,
-  setGoalTemplates,
   type AutomationEntry,
   type DisplayTemplateType,
-} from "@/core/server/budget/goals";
-import { updateGoalIndicator } from "@/core/server/budget/goal-template";
+} from "@/screens/budget/goals";
+import { setGoalTemplates, updateGoalIndicator } from "@/core/server/budget/goal-template";
 import { batchMessages } from "@/core/server/sync/batch";
 import { useBudgetMonth } from "@/screens/budget/hooks/useBudgetMonth";
 import { goalAutomationsQueryKey, type GoalAutomationsData } from "./useGoalAutomationsQuery";

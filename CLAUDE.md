@@ -70,9 +70,8 @@ src/
 │       ├── budget/         # Category CRUD (index.ts) + sort-categories, budget actions
 │       │                   #   (actions.ts), envelope/tracking cells, goal-template +
 │       │                   #   category-template-context + goal-template-parser,
-│       │                   #   cleanup-template*, goals/ (editor-facing: automations,
-│       │                   #   describe, progress, validate, fixedGoal — upstream keeps
-│       │                   #   these in desktop-client)
+│       │                   #   cleanup-template*. Solo el MOTOR: describir, dar forma o
+│       │                   #   validar un template es UI y vive en screens/budget/goals/
 │       ├── forecast/       # forecast-* files, upstream names
 │       ├── notes/, tags/, payees/  # payees includes payee-locations (like upstream)
 │       ├── preferences/    # Synced prefs, feature flags, format config, global prefs

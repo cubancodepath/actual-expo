@@ -20,7 +20,7 @@ import {
   type DisplayTemplateType,
   type FixedGoalConfig,
   type RecurrenceSegment,
-} from "@/core/server/budget/goals";
+} from "@/screens/budget/goals";
 import type {
   AverageTemplate,
   CopyTemplate,

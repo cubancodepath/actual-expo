@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { createDefaultTemplate } from "@/core/server/budget/goals";
-import type { AutomationEntry } from "@/core/server/budget/goals";
+import { createDefaultTemplate } from "@/screens/budget/goals";
+import type { AutomationEntry } from "@/screens/budget/goals";
 import type { GoalFormValues } from "../../validation/goalForm.schema";
 import { computeGoalEditSeed, computeNextEntries } from "../goalEditSession.logic";
 

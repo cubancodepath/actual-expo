@@ -5,7 +5,7 @@
  */
 
 import { integerToCurrency } from "@/core/shared/util";
-import { amountToInteger } from "../category-template-context";
+import { amountToInteger } from "@/core/server/budget/category-template-context";
 import type { Template } from "@/core/types/models";
 
 // ---------------------------------------------------------------------------

@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Button, LinkButton, ListGroup, Separator, Typography, useThemeColor } from "heroui-native";
 import { CirclePlus, EllipsisVertical } from "lucide-react-native";
 import { HIDDEN_GROUP_ID } from "@/screens/budget/hooks/useBudgetSections";
-import { parseGoalDef } from "@/core/server/budget/goals";
+import { parseGoalDef } from "@/core/server/budget/goal-template-parser";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import type { BudgetSection } from "@/screens/budget/hooks/useBudgetSections";
 

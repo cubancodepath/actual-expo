@@ -4,7 +4,8 @@ import { useTranslation } from "react-i18next";
 import { Button, ListGroup, Separator, useThemeColor } from "heroui-native";
 import { Eye, EyeOff, Target, Trash2 } from "lucide-react-native";
 import { NameSheet } from "@/screens/budget/components/NameSheet";
-import { describeTemplate, parseGoalDef, translateDescription } from "@/core/server/budget/goals";
+import { parseGoalDef } from "@/core/server/budget/goal-template-parser";
+import { describeTemplate, translateDescription } from "@/screens/budget/goals";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import type { BudgetSectionCategory } from "@/screens/budget/hooks/useBudgetSections";
 

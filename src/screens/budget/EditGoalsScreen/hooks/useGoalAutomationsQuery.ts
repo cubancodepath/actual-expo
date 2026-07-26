@@ -1,13 +1,11 @@
 import { useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { getCategoryNote, getGoalTemplates } from "@/core/server/budget/goal-template";
 import {
-  getCategoryNote,
-  getGoalTemplates,
   hasLegacyTemplateNotes,
   parseTemplateNotes,
-  templatesToEntries,
-  type AutomationEntry,
-} from "@/core/server/budget/goals";
+} from "@/core/server/budget/goal-template-parser";
+import { templatesToEntries, type AutomationEntry } from "@/screens/budget/goals";
 import type { Template } from "@/core/types/models";
 import { getSchedules } from "@/core/server/schedules";
 import type { Schedule } from "@/core/types/models";

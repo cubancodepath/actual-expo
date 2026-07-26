@@ -35,6 +35,9 @@ src/
 │   │   ├── EditBudgetScreen/
 │   │   ├── EditCategoryScreen/
 │   │   ├── components/         # compartidos SOLO entre screens de budget (MonthPicker, skeletons…)
+│   │   ├── goals/              # describir/moldear/validar templates — espejo de
+│   │   │                       #   desktop-client/src/components/budget/goals del upstream.
+│   │   │                       #   El MOTOR (goal-template, el parser) se queda en core
 │   │   └── hooks/              # hooks compartidos del dominio budget (useCategories, useGoalEditor)
 │   ├── transactions/           # TransactionDetailScreen/, SplitTransactionScreen/, components/, hooks/
 │   ├── accounts/               # AccountScreen/, AccountSearchScreen/

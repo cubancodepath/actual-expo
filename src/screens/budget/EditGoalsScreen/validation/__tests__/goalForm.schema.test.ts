@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createDefaultTemplate } from "@/core/server/budget/goals";
+import { createDefaultTemplate } from "@/screens/budget/goals";
 import type { Schedule } from "@/core/types/models";
 import {
   entriesWithDraft,

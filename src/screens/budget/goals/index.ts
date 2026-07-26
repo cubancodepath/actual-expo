@@ -1,26 +1,19 @@
 /**
- * Goal/template module — barrel re-exports.
+ * Goal editor module — the presentation half of budget templates.
  *
- * Pure functions (parsing, inference, serialization) live in `./parse`.
- * DB/CRDT persistence functions live in `./persist`.
- * This barrel re-exports both for backward compatibility.
+ * Upstream's counterpart is `desktop-client/src/components/budget/goals/`: the
+ * engine (`goal-template`, `category-template-context`, the parser) stays in
+ * core, and everything that exists to describe, shape or validate a template
+ * for a human lives here. Pure `.ts` on purpose — no React, no react-native —
+ * so the whole thing keeps running under vitest's node environment.
+ *
+ * Note what is NOT re-exported: `parseGoalDef` and friends belong to
+ * `@/core/server/budget/goal-template-parser`, and persistence to
+ * `@/core/server/budget/goal-template`. Import those from core directly; the
+ * old barrel passed them through and that indirection is what let core end up
+ * depending on the editor.
  */
 
-export {
-  parseGoalDef,
-  inferGoalFromDef,
-  templateToNoteLine,
-  templatesToNoteText,
-  parseTemplateNotes,
-  hasLegacyTemplateNotes,
-  stripTemplateLines,
-} from "../goal-template-parser";
-export {
-  getGoalTemplates,
-  getCategoryNote,
-  setGoalTemplates,
-  setGoalResult,
-} from "../goal-template";
 export {
   displayTemplateTypes,
   createAutomationEntry,

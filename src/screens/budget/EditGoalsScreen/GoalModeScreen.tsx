@@ -2,7 +2,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useStore } from "@tanstack/react-form";
 import { ScreenHeader } from "@/ui/ScreenHeader";
-import type { FixedTemplate } from "@/core/server/budget/goals";
+import type { FixedTemplate } from "@/screens/budget/goals";
 import { FixedModePane } from "./components/FixedModePane";
 import { useGoalAutomationsContext } from "./context/GoalAutomationsProvider";
 

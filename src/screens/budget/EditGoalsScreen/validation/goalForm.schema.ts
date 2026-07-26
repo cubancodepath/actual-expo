@@ -2,7 +2,7 @@
  * Zod validation for the goal editor form.
  *
  * Zod is only the Standard-Schema adapter TanStack Form consumes — the rules
- * themselves live in `core/server/budget/goals/validate.ts` (the desktop-compatible,
+ * themselves live in `screens/budget/goals/validate.ts` (the desktop-compatible,
  * fully tested source of truth) and are called from `superRefine`. Issue
  * messages carry the error `kind`; the UI never reads them for display — it
  * shows the rich domain error objects from `validateDraft`, computed by the
@@ -19,7 +19,7 @@ import {
   type AutomationErrorKind,
   type DisplayTemplateType,
   type GlobalConflictKind,
-} from "@/core/server/budget/goals";
+} from "@/screens/budget/goals";
 import type { Template } from "@/core/types/models";
 import type { Schedule } from "@/core/types/models";
 

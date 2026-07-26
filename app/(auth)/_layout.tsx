@@ -61,6 +61,7 @@ export default function AuthLayout() {
         options={{ headerShown: false, ...modal, gestureEnabled: false }}
       />
       <Stack.Screen name="budget/edit" options={{ headerShown: false }} />
+      <Stack.Screen name="budget/hidden-categories" options={{ headerShown: false }} />
       <Stack.Screen
         name="budget/rename-category"
         options={{

@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { View } from "react-native";
+import { ListGroup, useThemeColor } from "heroui-native";
+import { ChevronRight, EyeOff } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { EnvelopeSheet } from "@/screens/budget/components/EnvelopeSheet";
@@ -43,7 +45,8 @@ const PLACEHOLDER_HERO_CENTS = 0;
 export function EditBudgetScreen() {
   const { t } = useTranslation("budget");
   const insets = useSafeAreaInsets();
-  const { sections, isLoading } = useBudgetSections();
+  const muted = useThemeColor("muted");
+  const { sections, hiddenCount, isLoading } = useBudgetSections();
   // This screen is structural and has no month picker, but the goal figures on
   // its rows are per-month. It borrows the month the user came in on, which is
   // already inside the spreadsheet's built range.
@@ -84,6 +87,28 @@ export function EditBudgetScreen() {
                 onAddGoal={openGoalEditor}
               />
             ))}
+
+          {/* The only way back for anything hidden — including a hidden group,
+              which no other screen renders at all. */}
+          {!isLoading && hiddenCount > 0 ? (
+            <ListGroup className="mt-4 overflow-hidden rounded-2xl">
+              <ListGroup.Item
+                onPress={() => router.push({ pathname: "/(auth)/budget/hidden-categories" })}
+              >
+                <ListGroup.ItemPrefix>
+                  <EyeOff size={18} color={muted} />
+                </ListGroup.ItemPrefix>
+                <ListGroup.ItemContent>
+                  <ListGroup.ItemTitle>
+                    {t("nHiddenCategories", { count: hiddenCount })}
+                  </ListGroup.ItemTitle>
+                </ListGroup.ItemContent>
+                <ListGroup.ItemSuffix>
+                  <ChevronRight size={18} color={muted} />
+                </ListGroup.ItemSuffix>
+              </ListGroup.Item>
+            </ListGroup>
+          ) : null}
         </View>
       </EnvelopeSheet.Body>
 

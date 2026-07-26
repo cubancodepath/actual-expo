@@ -14,6 +14,7 @@
  */
 import * as db from "@/core/server/db";
 import { undoable } from "@/core/server/undo";
+import { batchMessages } from "@/core/server/sync/batch";
 import { doTransfer, hasBudgetedAmount } from "./actions";
 import type { CategoryGroupRow, CategoryRow } from "@/core/server/db/types";
 import type { Category, CategoryGroup } from "@/core/types/models";
@@ -173,6 +174,35 @@ export const updateCategoryGroup = undoable(async function updateCategoryGroup(
     ...(fields.hidden !== undefined && { hidden: fields.hidden ? 1 : 0 }),
     ...(fields.sort_order !== undefined && { sort_order: fields.sort_order }),
   } as Partial<CategoryGroupRow> & { id: string });
+});
+
+/**
+ * Bring several hidden categories and groups back into view at once.
+ *
+ * One `undoable` around the whole sweep rather than per item, because hiding
+ * happens in sweeps and so should the undo — calling `updateCategory` N times
+ * from the caller would open N undo groups. `batchMessages` inside collapses it
+ * into a single apply, so the spreadsheet recomputes once instead of N times.
+ *
+ * Unhiding a group is what recovers its categories: the budget screens skip a
+ * hidden group before they ever look inside it, so flipping the categories alone
+ * would change nothing.
+ */
+export const unhideItems = undoable(async function unhideItems({
+  categoryIds = [],
+  groupIds = [],
+}: {
+  categoryIds?: string[];
+  groupIds?: string[];
+}): Promise<void> {
+  await batchMessages(async () => {
+    for (const id of groupIds) {
+      await db.updateCategoryGroup({ id, hidden: 0 });
+    }
+    for (const id of categoryIds) {
+      await db.updateCategory({ id, hidden: 0 });
+    }
+  });
 });
 
 export const moveCategoryGroup = undoable(async function moveCategoryGroup(

@@ -50,8 +50,13 @@ const FIRST_SYNC_OVERLAY_TIMEOUT_MS = 30_000;
  * of every budget switch. Does NOT resetAllStores() (see the note in
  * loadBudget). After this, the db handle is null so any late liveQuery
  * refetch no-ops via runQuery's guard instead of racing the native close.
+ *
+ * Also NOT touching budgetContextStore is what keeps the route guards still:
+ * clearing activeBudgetId on its own flips `isConfigured` while the token is
+ * still there, which is the (files) group's condition. signOut() reuses this
+ * for the same reason.
  */
-async function settleAndCloseCurrentBudget(): Promise<void> {
+export async function settleAndCloseCurrentBudget(): Promise<void> {
   await waitForSyncToSettle();
   // Also clears the undo history — it holds this budget's CRDT messages.
   resetSyncState();

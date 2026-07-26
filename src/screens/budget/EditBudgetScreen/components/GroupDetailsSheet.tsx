@@ -12,6 +12,14 @@ import type { BudgetSection } from "@/screens/budget/hooks/useBudgetSections";
  * is the app's only auto-saving form; everywhere else saving is explicit.
  * Hiding and deleting are handed back up: the screen owns the confirmation
  * dialog, and nesting one overlay inside another is asking for trouble.
+ *
+ * **The income group gets neither action**, which is half alignment and half
+ * divergence. Upstream also refuses to *delete* it (`CategoryGroupMenuModal.tsx`
+ * gates the delete item on `!group.is_income`) and we used to allow it — that's
+ * the alignment. But upstream does let you *hide* it: `toggleVisibility` sits
+ * outside every condition there, and `IncomeGroup.tsx` even dims the group at
+ * 50% for the hidden case. Blocking it is our call: a budget with no income
+ * section is hard to read, and hiding it buys nothing.
  */
 export function GroupDetailsSheet({
   group,
@@ -40,16 +48,18 @@ export function GroupDetailsSheet({
       }}
       onClose={onClose}
     >
-      <View className="flex-row gap-3">
-        <Button variant="secondary" className="flex-1" onPress={() => group && onHide(group)}>
-          <EyeOff size={18} color={accent} />
-          <Button.Label>{t("hide")}</Button.Label>
-        </Button>
-        <Button variant="danger" className="flex-1" onPress={() => group && onDelete(group)}>
-          <Trash2 size={18} color={dangerForeground} />
-          <Button.Label>{t("delete")}</Button.Label>
-        </Button>
-      </View>
+      {group?.is_income ? null : (
+        <View className="flex-row gap-3">
+          <Button variant="secondary" className="flex-1" onPress={() => group && onHide(group)}>
+            <EyeOff size={18} color={accent} />
+            <Button.Label>{t("hide")}</Button.Label>
+          </Button>
+          <Button variant="danger" className="flex-1" onPress={() => group && onDelete(group)}>
+            <Trash2 size={18} color={dangerForeground} />
+            <Button.Label>{t("delete")}</Button.Label>
+          </Button>
+        </View>
+      )}
     </NameSheet>
   );
 }

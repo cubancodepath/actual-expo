@@ -177,21 +177,32 @@ export const updateCategoryGroup = undoable(async function updateCategoryGroup(
 });
 
 /**
- * Bring exactly these categories and groups back into view, and nothing else.
+ * Bring hidden categories and groups back into view.
  *
- * The interesting case is a category inside a hidden group. Its own flag is
- * already `0` — it is out of sight only because the group is — so showing it
- * means showing the group. But the group carries its siblings, and they were not
- * asked for. So the group is unhidden and the siblings are pinned `hidden = 1`,
- * which leaves the group holding just the categories that were picked. Ask for
- * the group itself instead and nothing is pinned: it comes back whole, with
- * whatever each category's own flag said.
+ * ## Two rules of scope
  *
- * One `undoable` around the whole sweep rather than per item, because hiding
- * happens in sweeps and so should the undo — calling `updateCategory` N times
- * from the caller would open N undo groups. `batchMessages` inside collapses it
- * into a single apply, so the spreadsheet recomputes once instead of N times.
- * Same shape as upstream's `tags-unhide-all`.
+ * **Ask for a group and it comes back whole** — every one of its categories is
+ * cleared, including any that had been hidden on its own before the group was.
+ * Honouring that older flag would hand back a group with holes in it, for a
+ * decision made weeks ago that nobody remembers making.
+ *
+ * **Ask for one category out of a hidden group and only that one comes back.**
+ * Its own flag is already `0` — it is out of sight solely because the group is,
+ * and setting `0` again does nothing, since `buildBudgetSections` drops the whole
+ * group before it looks at its categories. So the group has to open, and its
+ * siblings get pinned `hidden = 1` or they all reappear uninvited.
+ *
+ * ## Divergence from upstream
+ *
+ * There is no counterpart there: upstream has no bulk unhide for categories, and
+ * more to the point never needs one — hidden things stay reachable inline behind
+ * the `budget.showHiddenCategories` pref, and each row's menu flips its own flag,
+ * one at a time. See {@link HiddenCategoriesScreen} for why this port went a
+ * different way. The *shape* is upstream's though, copied from `tags-unhide-all`
+ * (`loot-core/src/server/tags/app.ts`): one `undoable` around the sweep with
+ * `batchMessages` inside, rather than N calls from the caller — `undoable` opens
+ * an undo group per call, so N calls would mean N steps to undo one action, and
+ * N spreadsheet recomputes instead of one.
  */
 export const unhideItems = undoable(async function unhideItems({
   categoryIds = [],
@@ -235,6 +246,16 @@ export const unhideItems = undoable(async function unhideItems({
     for (const sibling of siblings) {
       if (!wanted.has(sibling.id)) toPin.push(sibling.id);
     }
+  }
+
+  // A group asked for by name comes back whole, so its categories join the
+  // clear list — the opposite of the pinning above, and deliberately so.
+  for (const groupId of askedForGroups) {
+    const members = await db.all<Pick<CategoryRow, "id">>(
+      "SELECT id FROM categories WHERE cat_group = ? AND tombstone = 0",
+      [groupId],
+    );
+    for (const member of members) wanted.add(member.id);
   }
 
   await batchMessages(async () => {

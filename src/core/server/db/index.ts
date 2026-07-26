@@ -205,33 +205,6 @@ export function serializeDbWrite<T>(fn: () => Promise<T>): Promise<T> {
   return result;
 }
 
-/** Wipe all local data by deleting rows from every table. Keeps the DB connection alive. */
-export async function clearLocalData(): Promise<void> {
-  const db = getDb();
-  const tables = [
-    "transactions",
-    "accounts",
-    "categories",
-    "category_groups",
-    "payees",
-    "zero_budgets",
-    "zero_budget_months",
-    "payee_locations",
-    "messages_crdt",
-    "messages_clock",
-    "payee_mapping",
-    "category_mapping",
-    "notes",
-    "preferences",
-    "tags",
-    "schedules",
-    "schedules_next_date",
-    "schedules_json_paths",
-    "rules",
-  ];
-  await db.exec(tables.map((t) => `DELETE FROM ${t};`).join("\n"));
-}
-
 // ── Categories ──
 //
 // Mirrors the category section of upstream's db layer: this is where the SQL,

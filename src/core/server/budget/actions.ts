@@ -852,6 +852,12 @@ export async function budgetTable(): Promise<"zero_budgets" | "reflect_budgets">
  *
  * Not `undoable`: both callers already are, so the transfer and the delete land
  * in a single undo step.
+ *
+ * Lives here rather than in `base.ts` where upstream keeps it. Because this
+ * reads the table instead of the sheet it has nothing to do with the spreadsheet
+ * builder, and importing `budgetTable`/`setBudget` from `base.ts` would add a
+ * `base → actions → sheet → base` cycle. Its structural twin,
+ * `transferMultipleCategories`, is already in this file.
  */
 export async function doTransfer(categoryIds: string[], transferId: string): Promise<void> {
   if (categoryIds.length === 0) return;

@@ -2,21 +2,12 @@ import { Fragment, useCallback, useMemo, useState } from "react";
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
-import {
-  Button,
-  Checkbox,
-  ListGroup,
-  Separator,
-  Typography,
-} from "heroui-native";
+import { Button, Checkbox, ListGroup, Separator, Typography } from "heroui-native";
 import { EmptyState } from "heroui-native-pro";
 import { unhideItems } from "@/core/server/budget";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { ScreenHeader } from "@/ui/ScreenHeader";
-import {
-  useHiddenItems,
-  type HiddenSection,
-} from "@/screens/budget/hooks/useHiddenItems";
+import { useHiddenItems, type HiddenSection } from "@/screens/budget/hooks/useHiddenItems";
 
 /** Which kind of row a selected id refers to — they take different mutations. */
 type Selection = { categories: Set<string>; groups: Set<string> };
@@ -54,13 +45,7 @@ function RowCheckbox({ isSelected }: { isSelected: boolean }) {
  * fill reads as a floating white square — hence transparent, leaning on the
  * border to define it.
  */
-function HeaderCheckbox({
-  isSelected,
-  onPress,
-}: {
-  isSelected: boolean;
-  onPress: () => void;
-}) {
+function HeaderCheckbox({ isSelected, onPress }: { isSelected: boolean; onPress: () => void }) {
   return (
     <Checkbox
       isSelected={isSelected}
@@ -108,10 +93,7 @@ function HiddenGroupSection({
             onPress={onToggleGroup}
           />
         ) : null}
-        <Typography
-          className="flex-1 text-sm font-semibold text-foreground"
-          numberOfLines={1}
-        >
+        <Typography className="flex-1 text-sm font-semibold text-foreground" numberOfLines={1}>
           {section.groupName}
         </Typography>
       </View>
@@ -126,9 +108,7 @@ function HiddenGroupSection({
                   <RowCheckbox isSelected={selection.categories.has(cat.id)} />
                 </ListGroup.ItemPrefix>
                 <ListGroup.ItemContent>
-                  <ListGroup.ItemTitle numberOfLines={1}>
-                    {cat.name}
-                  </ListGroup.ItemTitle>
+                  <ListGroup.ItemTitle numberOfLines={1}>{cat.name}</ListGroup.ItemTitle>
                 </ListGroup.ItemContent>
               </ListGroup.Item>
             </Fragment>
@@ -140,15 +120,29 @@ function HiddenGroupSection({
 }
 
 /**
- * Everything hidden, and the way back.
+ * Everything hidden, and the way back. Reached from the "N hidden categories"
+ * row on the budget table and in the plan editor.
  *
- * Reached from the plan editor's "N hidden categories" row. It exists because
- * hiding used to be a one-way door for *groups*: the budget screens skip a
- * hidden group entirely, so its details sheet was unreachable and nothing in the
- * app ever set a group's `hidden` back to false.
+ * ## Divergence from upstream
+ *
+ * This screen has no counterpart. Upstream keeps hidden things reachable in
+ * place: a `budget.showHiddenCategories` pref, toggled from the budget page menu,
+ * makes hidden groups and categories reappear inline at 50% opacity, and each
+ * row's own menu flips its own flag. Nothing ever becomes unreachable, so there
+ * is nothing to go looking for.
+ *
+ * This port never implemented that. The pref is still declared at
+ * `core/types/prefs.ts` and **nobody reads it**; what shipped instead was a
+ * synthetic `__hidden__` bucket that dropped hidden *groups* on the floor, which
+ * made hiding a group a one-way door — its details sheet unreachable, and no code
+ * path anywhere that set a group's `hidden` back to `0`. This screen replaces
+ * that mechanism rather than complementing it.
+ *
+ * That leaves a loose end worth naming: a **synced** pref that does nothing is a
+ * trap for whoever reads it next. Either implement it or delete it.
  *
  * Selection is multi-shot on purpose — hiding tends to happen in sweeps, so
- * un-hiding should too.
+ * un-hiding should too. What a tick actually means is {@link unhideItems}' call.
  */
 export function HiddenCategoriesScreen() {
   const { t } = useTranslation("budget");
@@ -192,12 +186,8 @@ export function HiddenCategoriesScreen() {
         <View className="flex-1 items-center justify-center px-8 py-16">
           <EmptyState>
             <EmptyState.Header>
-              <EmptyState.Title>
-                {t("noHiddenCategoriesTitle")}
-              </EmptyState.Title>
-              <EmptyState.Description>
-                {t("noHiddenCategoriesMessage")}
-              </EmptyState.Description>
+              <EmptyState.Title>{t("noHiddenCategoriesTitle")}</EmptyState.Title>
+              <EmptyState.Description>{t("noHiddenCategoriesMessage")}</EmptyState.Description>
             </EmptyState.Header>
           </EmptyState>
         </View>
@@ -241,18 +231,13 @@ export function HiddenCategoriesScreen() {
       {/* Labelled FAB, the CoverSourceScreen pattern — only once there's
           something to act on. */}
       {selected > 0 ? (
-        <View
-          className="absolute right-5"
-          style={{ bottom: insets.bottom + 24 }}
-        >
+        <View className="absolute right-5" style={{ bottom: insets.bottom + 24 }}>
           <Button
             isDisabled={saving}
             onPress={() => void unhide()}
             className="h-14 rounded-full px-8 shadow-lg"
           >
-            <Button.Label>
-              {t("unhideSelected", { count: selected })}
-            </Button.Label>
+            <Button.Label>{t("unhideSelected", { count: selected })}</Button.Label>
           </Button>
         </View>
       ) : null}

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { View } from "react-native";
 import Constants from "expo-constants";
 import { useRouter } from "expo-router";
@@ -24,9 +24,9 @@ import { useSessionStore } from "@/stores/sessionStore";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import { useSyncStore } from "@/stores/syncStore";
 import { signOut } from "@/stores/operations/users";
-import { clearSwitchingFlag, loadClock } from "@/core/server/sync";
+import { deleteBudget } from "@/stores/operations/budgetfiles";
+import { clearSwitchingFlag } from "@/core/server/sync";
 import { Timestamp } from "@/core/crdt";
-import { clearLocalData } from "@/core/server/db";
 import { getServerInfo } from "@/core/server/server-info/serverInfo.api";
 import { dialog } from "@/ui/feedback/dialog/dialogStore";
 
@@ -130,11 +130,11 @@ export function SettingsScreen() {
   const [muted, danger, foreground] = useThemeColor(["muted", "danger", "foreground"]);
 
   const serverUrl = useSessionStore((s) => s.serverUrl);
+  const activeBudgetId = useBudgetContextStore((s) => s.activeBudgetId);
   const budgetName = useBudgetContextStore((s) => s.budgetName);
   const lastSyncedTimestamp = useBudgetContextStore((s) => s.lastSyncedTimestamp);
   const isLocalOnly = useBudgetContextStore((s) => s.isLocalOnly);
   const lastSync = useSyncStore((s) => s.lastSync);
-  const [, setLoggingOut] = useState(false);
 
   const appVersion = Constants.expoConfig?.version ?? "0.0.0";
   const serverInfoQuery = useQuery({
@@ -169,17 +169,15 @@ export function SettingsScreen() {
       destructive: true,
     });
     if (!ok) return;
-    setLoggingOut(true);
     try {
-      // signOut() closes the budget (settle sync, close DB, reset stores) and
-      // clears the session; then wipe the on-disk local data and re-init a
-      // clock for the fresh empty state.
+      // Deleting the local data means deleting the budget FILE (upstream's
+      // deleteBudget: close the budget, then remove its directory) — not
+      // emptying tables on a live connection. signOut() afterwards clears the
+      // session, keys and stores; the DB is already closed by then.
+      if (activeBudgetId) await deleteBudget(activeBudgetId);
       await signOut();
-      await clearLocalData();
-      await loadClock();
     } finally {
       clearSwitchingFlag();
-      setLoggingOut(false);
     }
   }
 
@@ -197,12 +195,7 @@ export function SettingsScreen() {
       destructive: true,
     });
     if (!ok) return;
-    setLoggingOut(true);
-    try {
-      await signOut();
-    } finally {
-      setLoggingOut(false);
-    }
+    await signOut();
   }
 
   return (

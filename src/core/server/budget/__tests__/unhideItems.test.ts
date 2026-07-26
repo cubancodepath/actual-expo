@@ -144,14 +144,20 @@ describe("unhideItems — a single category out of a hidden group", () => {
     expect(await hiddenOf("categories", water)).toBe(0);
   });
 
-  it("respects a category's own flag when the group is picked", async () => {
+  /**
+   * Asking for the group means "show me this group", so it comes back whole —
+   * including a category that had been hidden on its own long before the group
+   * was. Respecting that older flag would return a group with holes in it, for a
+   * decision the user made weeks ago and won't remember.
+   */
+  it("clears every category's flag when the group is picked", async () => {
     const { g, rent, gas } = await hiddenGroupOfThree();
     await updateCategory(gas, { hidden: true });
 
     await unhideItems({ groupIds: [g] });
 
     expect(await hiddenOf("categories", rent)).toBe(0);
-    expect(await hiddenOf("categories", gas)).toBe(1);
+    expect(await hiddenOf("categories", gas)).toBe(0);
   });
 
   it("picking both the group and one category leaves the rest alone", async () => {
@@ -179,6 +185,36 @@ describe("unhideItems — a single category out of a hidden group", () => {
 
     expect(await hiddenOf("categories", a)).toBe(0);
     expect(await hiddenOf("categories", b)).toBe(0);
+  });
+
+  /**
+   * The two rules meeting in one sweep. They pull opposite ways — one clears a
+   * group's categories, the other pins them — so the pinning has to be decided
+   * against what was originally asked for, not against the expanded list.
+   */
+  it("applies both rules at once without one bleeding into the other", async () => {
+    await openTestDb();
+    const whole = await createCategoryGroup({ name: "Whole" });
+    const a = await createCategory({ name: "A", groupId: whole });
+    const b = await createCategory({ name: "B", groupId: whole });
+    await updateCategory(b, { hidden: true });
+    await updateCategoryGroup(whole, { hidden: true });
+
+    const partial = await createCategoryGroup({ name: "Partial" });
+    const c = await createCategory({ name: "C", groupId: partial });
+    const d = await createCategory({ name: "D", groupId: partial });
+    await updateCategoryGroup(partial, { hidden: true });
+
+    await unhideItems({ groupIds: [whole], categoryIds: [c] });
+
+    // Asked for by name → comes back whole, B's own flag cleared too.
+    expect(await hiddenOf("category_groups", whole)).toBe(0);
+    expect(await hiddenOf("categories", a)).toBe(0);
+    expect(await hiddenOf("categories", b)).toBe(0);
+    // Opened for one category → D pinned so only C shows.
+    expect(await hiddenOf("category_groups", partial)).toBe(0);
+    expect(await hiddenOf("categories", c)).toBe(0);
+    expect(await hiddenOf("categories", d)).toBe(1);
   });
 
   it("handles two hidden groups independently", async () => {

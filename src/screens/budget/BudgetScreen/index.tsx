@@ -22,6 +22,7 @@ import { LiftMenu } from "@/ui/lift-menu";
 import { BudgetCategoryRow } from "./components/BudgetCategoryRow";
 import { IncomeCategoryRow } from "./components/IncomeCategoryRow";
 import { BudgetGroup } from "./components/BudgetGroup";
+import { HiddenSectionLink } from "./components/HiddenSectionLink";
 import { CategoryRowMenu } from "./components/CategoryRowMenu";
 import { IncomeRowMenu } from "./components/IncomeRowMenu";
 import type { LiftedCategory } from "./components/liftedCategory";
@@ -33,7 +34,7 @@ export function BudgetScreen() {
   const refreshControl = useSyncRefreshControl();
   const { month } = useBudgetMonth();
   const sheet = sheetForMonth(month);
-  const { sections, isLoading } = useBudgetSections();
+  const { sections, hiddenCount, isLoading } = useBudgetSections();
   const goalsEnabled = useFeatureFlag("goalTemplatesEnabled");
   // The structured goal editor is the `goalTemplatesUIEnabled` sub-feature; the
   // chips/progress display stays under the parent `goalsEnabled`.
@@ -307,6 +308,13 @@ export function BudgetScreen() {
                       goalsEnabled={goalsEnabled}
                     />
                   ))}
+
+                  {hiddenCount > 0 ? (
+                    <HiddenSectionLink
+                      count={hiddenCount}
+                      onPress={() => router.push("/(auth)/budget/hidden-categories")}
+                    />
+                  ) : null}
                 </Accordion>
               </Animated.View>
             </Animated.ScrollView>

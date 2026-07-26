@@ -6,7 +6,6 @@ import {
   Button,
   Checkbox,
   ListGroup,
-  PressableFeedback,
   Separator,
   Typography,
 } from "heroui-native";
@@ -14,7 +13,10 @@ import { EmptyState } from "heroui-native-pro";
 import { unhideItems } from "@/core/server/budget";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { ScreenHeader } from "@/ui/ScreenHeader";
-import { useHiddenItems, type HiddenSection } from "@/screens/budget/hooks/useHiddenItems";
+import {
+  useHiddenItems,
+  type HiddenSection,
+} from "@/screens/budget/hooks/useHiddenItems";
 
 /** Which kind of row a selected id refers to — they take different mutations. */
 type Selection = { categories: Set<string>; groups: Set<string> };
@@ -31,14 +33,42 @@ function toggle(set: Set<string>, id: string): Set<string> {
   return next;
 }
 
-/** A checkbox that doesn't fight the row it sits in for the tap. */
+/**
+ * Inside a card row, where the whole row is the tap target — so the box must not
+ * compete for the touch.
+ */
 function RowCheckbox({ isSelected }: { isSelected: boolean }) {
   return (
     <View pointerEvents="none">
-      <Checkbox isSelected={isSelected}>
+      <Checkbox isSelected={isSelected} className="size-5 ">
         <Checkbox.Indicator />
       </Checkbox>
     </View>
+  );
+}
+
+/**
+ * On a group header there is no row to tap, so the box is its own control.
+ *
+ * It also sits on the page background rather than on a card, where the default
+ * fill reads as a floating white square — hence transparent, leaning on the
+ * border to define it.
+ */
+function HeaderCheckbox({
+  isSelected,
+  onPress,
+}: {
+  isSelected: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Checkbox
+      isSelected={isSelected}
+      onSelectedChange={onPress}
+      className="size-5 bg-transparent ml-3"
+    >
+      <Checkbox.Indicator />
+    </Checkbox>
   );
 }
 
@@ -66,24 +96,25 @@ function HiddenGroupSection({
   onToggleGroup: () => void;
   onToggleCategory: (id: string) => void;
 }) {
-  const header = (
-    <View className="flex-row items-center gap-3 px-1 pb-1 pt-4">
-      {section.isGroupHidden ? (
-        <RowCheckbox isSelected={selection.groups.has(section.groupId)} />
-      ) : null}
-      <Typography className="flex-1 text-sm font-semibold text-foreground" numberOfLines={1}>
-        {section.groupName}
-      </Typography>
-    </View>
-  );
-
   return (
     <View>
-      {section.isGroupHidden ? (
-        <PressableFeedback onPress={onToggleGroup}>{header}</PressableFeedback>
-      ) : (
-        header
-      )}
+      {/* Same header as every other grouped list — see EditPlanGroup. Kept as
+          one plain View in both cases so the type can't drift between a group
+          that offers a checkbox and one that doesn't. */}
+      <View className="flex-row items-center gap-3 px-1 pb-1 pt-4">
+        {section.isGroupHidden ? (
+          <HeaderCheckbox
+            isSelected={selection.groups.has(section.groupId)}
+            onPress={onToggleGroup}
+          />
+        ) : null}
+        <Typography
+          className="flex-1 text-sm font-semibold text-foreground"
+          numberOfLines={1}
+        >
+          {section.groupName}
+        </Typography>
+      </View>
 
       {section.categories.length > 0 ? (
         <ListGroup className="overflow-hidden rounded-2xl">
@@ -95,7 +126,9 @@ function HiddenGroupSection({
                   <RowCheckbox isSelected={selection.categories.has(cat.id)} />
                 </ListGroup.ItemPrefix>
                 <ListGroup.ItemContent>
-                  <ListGroup.ItemTitle numberOfLines={1}>{cat.name}</ListGroup.ItemTitle>
+                  <ListGroup.ItemTitle numberOfLines={1}>
+                    {cat.name}
+                  </ListGroup.ItemTitle>
                 </ListGroup.ItemContent>
               </ListGroup.Item>
             </Fragment>
@@ -159,8 +192,12 @@ export function HiddenCategoriesScreen() {
         <View className="flex-1 items-center justify-center px-8 py-16">
           <EmptyState>
             <EmptyState.Header>
-              <EmptyState.Title>{t("noHiddenCategoriesTitle")}</EmptyState.Title>
-              <EmptyState.Description>{t("noHiddenCategoriesMessage")}</EmptyState.Description>
+              <EmptyState.Title>
+                {t("noHiddenCategoriesTitle")}
+              </EmptyState.Title>
+              <EmptyState.Description>
+                {t("noHiddenCategoriesMessage")}
+              </EmptyState.Description>
             </EmptyState.Header>
           </EmptyState>
         </View>
@@ -181,7 +218,10 @@ export function HiddenCategoriesScreen() {
     <ScreenHeader.ScrollArea>
       {/* Bottom padding clears the FAB, so the last row is never stuck under it. */}
       <ScreenHeader.Body
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 120 }}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingBottom: insets.bottom + 120,
+        }}
       >
         {body}
       </ScreenHeader.Body>
@@ -201,13 +241,18 @@ export function HiddenCategoriesScreen() {
       {/* Labelled FAB, the CoverSourceScreen pattern — only once there's
           something to act on. */}
       {selected > 0 ? (
-        <View className="absolute right-5" style={{ bottom: insets.bottom + 24 }}>
+        <View
+          className="absolute right-5"
+          style={{ bottom: insets.bottom + 24 }}
+        >
           <Button
             isDisabled={saving}
             onPress={() => void unhide()}
             className="h-14 rounded-full px-8 shadow-lg"
           >
-            <Button.Label>{t("unhideSelected", { count: selected })}</Button.Label>
+            <Button.Label>
+              {t("unhideSelected", { count: selected })}
+            </Button.Label>
           </Button>
         </View>
       ) : null}

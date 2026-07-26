@@ -21,13 +21,13 @@ import { useSheetValue, useSheetValueNumber } from "@/hooks/useSheetValue";
 import { envelopeBudget, sheetForMonth } from "@/core/server/spreadsheet/bindings";
 import { useCategories } from "@/lib/hooks/useCategories";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
-import { deleteCategory, updateCategory } from "@/core/server/budget";
+import { updateCategory } from "@/core/server/budget";
+import { useDeleteCategory } from "@/screens/budget/hooks/useDeleteCategory";
 import { setNote } from "@/core/server/notes";
 import { getCategoryNote } from "@/core/server/budget/goal-template";
 import { parseGoalDef } from "@/core/server/budget/goal-template-parser";
 import { describeTemplate } from "@/screens/budget/goals";
 import { dialog } from "@/ui/feedback/dialog/dialogStore";
-import { useUndo } from "@/lib/hooks/useUndo";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 
 // ---------------------------------------------------------------------------
@@ -63,7 +63,6 @@ export interface CategoryDetailsScreenProps {
 export function CategoryDetailsScreen({ categoryId }: CategoryDetailsScreenProps) {
   const { t, i18n } = useTranslation("budget");
   const router = useRouter();
-  const { showUndoNotification } = useUndo();
   const foreground = useThemeColor("foreground");
   const muted = useThemeColor("muted");
   const accent = useThemeColor("accent");
@@ -75,8 +74,6 @@ export function CategoryDetailsScreen({ categoryId }: CategoryDetailsScreenProps
   const goalEditorEnabled = useFeatureFlag("goalTemplatesUIEnabled");
 
   const month = useBudgetUIStore((s) => s.month);
-  const pickedCategory = useBudgetUIStore((s) => s.pickedCategory);
-  const setPickedCategory = useBudgetUIStore((s) => s.setPickedCategory);
 
   const { categories, groups } = useCategories();
   const category = categories.find((c) => c.id === categoryId);
@@ -149,47 +146,9 @@ export function CategoryDetailsScreen({ categoryId }: CategoryDetailsScreenProps
     };
   }, []);
 
-  // ── Delete flow: confirm → pick a transfer target → deleteCategory ──
-  const [pendingDelete, setPendingDelete] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-
-  async function handleDelete() {
-    if (deleting) return;
-    const ok = await dialog.confirm({
-      title: t("deleteCategoryTitle"),
-      message: t("deleteCategoryWithTransfers", { name: categoryName }),
-      confirmLabel: t("selectCategory"),
-      destructive: true,
-    });
-    if (!ok) return;
-    setPickedCategory(null);
-    setPendingDelete(true);
-    router.push({
-      pathname: "/(auth)/budget/delete-category-picker",
-      params: { excludeIds: categoryId, moveCatId: categoryId },
-    });
-  }
-
-  useEffect(() => {
-    if (!pendingDelete || !pickedCategory) return;
-    (async () => {
-      setDeleting(true);
-      try {
-        await deleteCategory(categoryId, pickedCategory.catId);
-        showUndoNotification(t("categoryDeleted"));
-        setPickedCategory(null);
-        setPendingDelete(false);
-        router.back();
-      } catch (e) {
-        emitErrorEvent(e);
-        setDeleting(false);
-        setPendingDelete(false);
-        setPickedCategory(null);
-        await dialog.alert({ title: t("errorTitle"), message: t("couldNotDeleteCategory") });
-      }
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pendingDelete, pickedCategory, categoryId]);
+  // Shared with the plan editor — see useDeleteCategory for why the transfer
+  // check happens before the dialog rather than after it.
+  const { requestDelete, isDeleting } = useDeleteCategory({ onDeleted: () => router.back() });
 
   async function handleToggleHidden() {
     if (category?.hidden) {
@@ -329,8 +288,8 @@ export function CategoryDetailsScreen({ categoryId }: CategoryDetailsScreenProps
           <Button
             variant="secondary"
             className="self-stretch"
-            isDisabled={deleting}
-            onPress={handleDelete}
+            isDisabled={isDeleting}
+            onPress={() => void requestDelete({ id: categoryId, name: categoryName })}
           >
             <Trash2 size={18} color={danger} />
             <Button.Label className="text-danger">{t("deleteCategory")}</Button.Label>

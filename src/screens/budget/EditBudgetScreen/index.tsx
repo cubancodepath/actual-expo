@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -11,17 +11,10 @@ import type {
   BudgetSection,
   BudgetSectionCategory,
 } from "@/screens/budget/hooks/useBudgetSections";
-import {
-  deleteCategory,
-  deleteCategoryGroup,
-  isCategoryTransferRequired,
-  updateCategory,
-  updateCategoryGroup,
-} from "@/core/server/budget";
-import { useBudgetUIStore } from "@/stores/budgetUIStore";
-import { useUndo } from "@/lib/hooks/useUndo";
+import { deleteCategoryGroup, updateCategory, updateCategoryGroup } from "@/core/server/budget";
+import { useDeleteCategory } from "@/screens/budget/hooks/useDeleteCategory";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
-import { ConfirmDialog, type ConfirmRequest } from "@/ui/feedback/ConfirmDialog";
+import { dialog } from "@/ui/feedback/dialog/dialogStore";
 import { ScreenHeader } from "@/ui/ScreenHeader";
 import { EditPlanGroup } from "./components/EditPlanGroup";
 import { CategoryDetailsSheet } from "./components/CategoryDetailsSheet";
@@ -56,81 +49,25 @@ export function EditBudgetScreen() {
   const { month } = useBudgetMonth();
   const sheet = sheetForMonth(month);
   const router = useRouter();
-  const { showUndoNotification } = useUndo();
-  const pickedCategory = useBudgetUIStore((s) => s.pickedCategory);
-  const setPickedCategory = useBudgetUIStore((s) => s.setPickedCategory);
 
   const [newItem, setNewItem] = useState<NewItemIntent | null>(null);
   const [details, setDetails] = useState<BudgetSection | null>(null);
   const [categoryDetails, setCategoryDetails] = useState<BudgetSectionCategory | null>(null);
-  const [confirm, setConfirm] = useState<ConfirmRequest | null>(null);
 
-  // ── Deleting a category: only ask for a transfer target when one is needed ──
-  //
-  // A category with transactions can't just vanish — they'd be left
-  // uncategorised — so the picker hands back a destination through
-  // `budgetUIStore.pickedCategory`. One without transactions skips all that.
-  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!pendingDelete || !pickedCategory) return;
-    const categoryId = pendingDelete;
-    void (async () => {
-      try {
-        await deleteCategory(categoryId, pickedCategory.catId);
-        showUndoNotification(t("categoryDeleted"));
-      } catch (e) {
-        emitErrorEvent(e);
-      } finally {
-        setPendingDelete(null);
-        setPickedCategory(null);
-      }
-    })();
-  }, [pendingDelete, pickedCategory, showUndoNotification, setPickedCategory, t]);
+  // The same flow the category details screen offers — transfer check, dialog,
+  // picker when it's needed. See useDeleteCategory.
+  const { requestDelete } = useDeleteCategory();
 
   function openGoalEditor(category: BudgetSectionCategory) {
     setCategoryDetails(null);
     router.push({ pathname: "/(auth)/budget/goal", params: { categoryId: category.id } });
   }
 
-  function confirmDeleteCategory(category: BudgetSectionCategory) {
-    setConfirm({
-      title: t("deleteCategory"),
-      description: t("deleteCategoryMessage", { name: category.name }),
-      actions: [
-        {
-          label: t("delete"),
-          isDestructive: true,
-          onPress: () => {
-            setConfirm(null);
-            void (async () => {
-              try {
-                if (await isCategoryTransferRequired(category.id)) {
-                  setPickedCategory(null);
-                  setPendingDelete(category.id);
-                  router.push({
-                    pathname: "/(auth)/budget/delete-category-picker",
-                    params: { excludeIds: category.id, moveCatId: category.id },
-                  });
-                  return;
-                }
-                await deleteCategory(category.id);
-                showUndoNotification(t("categoryDeleted"));
-              } catch (e) {
-                emitErrorEvent(e);
-              }
-            })();
-          },
-        },
-      ],
-    });
-  }
-
-  function confirmDeleteGroup(group: BudgetSection) {
+  async function confirmDeleteGroup(group: BudgetSection) {
     const count = group.categories.length;
-    setConfirm({
+    const ok = await dialog.confirm({
       title: t("deleteGroupTitle"),
-      description:
+      message:
         count > 0
           ? t("deleteGroupMessageWithCategories", {
               name: group.name,
@@ -138,17 +75,16 @@ export function EditBudgetScreen() {
               suffix: count === 1 ? "y" : "ies",
             })
           : t("deleteGroupMessageEmpty", { name: group.name }),
-      actions: [
-        {
-          label: t("delete"),
-          isDestructive: true,
-          onPress: () => {
-            void deleteCategoryGroup(group.id);
-            setConfirm(null);
-          },
-        },
-      ],
+      confirmLabel: t("delete"),
+      destructive: true,
     });
+    if (!ok) return;
+    try {
+      await deleteCategoryGroup(group.id);
+    } catch (e) {
+      emitErrorEvent(e);
+      await dialog.alert({ title: t("errorTitle"), message: t("couldNotDeleteCategory") });
+    }
   }
 
   return (
@@ -203,7 +139,7 @@ export function EditBudgetScreen() {
         }}
         onDelete={(group) => {
           setDetails(null);
-          confirmDeleteGroup(group);
+          void confirmDeleteGroup(group);
         }}
       />
 
@@ -217,12 +153,10 @@ export function EditBudgetScreen() {
         }}
         onDelete={(category) => {
           setCategoryDetails(null);
-          confirmDeleteCategory(category);
+          void requestDelete(category);
         }}
         onEditGoals={openGoalEditor}
       />
-
-      <ConfirmDialog request={confirm} onClose={() => setConfirm(null)} />
     </EnvelopeSheet>
   );
 }

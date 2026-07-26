@@ -45,6 +45,7 @@ export {
 export type { AutomationErrorKind, GlobalConflictKind } from "./validate";
 export { describeTemplate } from "./describe";
 export type { Translate } from "./describe";
+export { describeTemplateShort } from "./describeShort";
 export {
   fixedConfigFromTemplate,
   templateFromFixedConfig,

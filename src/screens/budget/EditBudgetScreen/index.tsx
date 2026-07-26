@@ -5,6 +5,8 @@ import { useTranslation } from "react-i18next";
 import { EnvelopeSheet } from "@/screens/budget/components/EnvelopeSheet";
 import { useRouter } from "expo-router";
 import { useBudgetSections } from "@/screens/budget/hooks/useBudgetSections";
+import { useBudgetMonth } from "@/screens/budget/hooks/useBudgetMonth";
+import { sheetForMonth } from "@/core/server/spreadsheet/bindings";
 import type {
   BudgetSection,
   BudgetSectionCategory,
@@ -48,6 +50,11 @@ export function EditBudgetScreen() {
   const { t } = useTranslation("budget");
   const insets = useSafeAreaInsets();
   const { sections, isLoading } = useBudgetSections();
+  // This screen is structural and has no month picker, but the goal figures on
+  // its rows are per-month. It borrows the month the user came in on, which is
+  // already inside the spreadsheet's built range.
+  const { month } = useBudgetMonth();
+  const sheet = sheetForMonth(month);
   const router = useRouter();
   const { showUndoNotification } = useUndo();
   const pickedCategory = useBudgetUIStore((s) => s.pickedCategory);
@@ -155,6 +162,7 @@ export function EditBudgetScreen() {
               <EditPlanGroup
                 key={section.id}
                 section={section}
+                sheet={sheet}
                 onAddCategory={() => setNewItem({ kind: "category", group: section })}
                 onOpenDetails={() => setDetails(section)}
                 onOpenCategory={setCategoryDetails}

@@ -1,11 +1,11 @@
 import { Fragment } from "react";
 import { View } from "react-native";
 import { useTranslation } from "react-i18next";
-import { Button, LinkButton, ListGroup, Separator, Typography, useThemeColor } from "heroui-native";
+import { Button, ListGroup, Separator, Typography, useThemeColor } from "heroui-native";
 import { CirclePlus, EllipsisVertical } from "lucide-react-native";
 import { HIDDEN_GROUP_ID } from "@/screens/budget/hooks/useBudgetSections";
-import { parseGoalDef } from "@/core/server/budget/goal-template-parser";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
+import { PlanCategoryRow } from "./PlanCategoryRow";
 import type { BudgetSection } from "@/screens/budget/hooks/useBudgetSections";
 
 /**
@@ -15,12 +15,15 @@ import type { BudgetSection } from "@/screens/budget/hooks/useBudgetSections";
  */
 export function EditPlanGroup({
   section,
+  sheet,
   onAddCategory,
   onOpenDetails,
   onOpenCategory,
   onAddGoal,
 }: {
   section: BudgetSection;
+  /** The month's sheet name — the rows read their goal cell from it. */
+  sheet: string;
   onAddCategory: () => void;
   onOpenDetails: () => void;
   onOpenCategory: (category: BudgetSection["categories"][number]) => void;
@@ -74,20 +77,13 @@ export function EditPlanGroup({
           {section.categories.map((cat, i) => (
             <Fragment key={cat.id}>
               {i > 0 ? <Separator className="mx-4" /> : null}
-              <ListGroup.Item onPress={() => onOpenCategory(cat)}>
-                <ListGroup.ItemContent>
-                  <ListGroup.ItemTitle numberOfLines={1}>{cat.name}</ListGroup.ItemTitle>
-                </ListGroup.ItemContent>
-                {/* Shortcut into the goal editor, only where there's nothing to
-                    show yet. Income categories don't take goals. */}
-                {goalEditorEnabled && !cat.is_income && parseGoalDef(cat.goal_def).length === 0 ? (
-                  <ListGroup.ItemSuffix>
-                    <LinkButton size="sm" onPress={() => onAddGoal(cat)}>
-                      <LinkButton.Label className="text-accent">{t("addGoal")}</LinkButton.Label>
-                    </LinkButton>
-                  </ListGroup.ItemSuffix>
-                ) : null}
-              </ListGroup.Item>
+              <PlanCategoryRow
+                category={cat}
+                sheet={sheet}
+                goalEditorEnabled={goalEditorEnabled}
+                onPress={() => onOpenCategory(cat)}
+                onAddGoal={() => onAddGoal(cat)}
+              />
             </Fragment>
           ))}
         </ListGroup>

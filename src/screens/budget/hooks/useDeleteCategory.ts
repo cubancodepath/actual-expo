@@ -71,7 +71,10 @@ export function useDeleteCategory({ onDeleted }: { onDeleted?: () => void } = {}
           ? t("deleteCategoryWithTransfers", { name: category.name })
           : t("deleteCategoryMessage", { name: category.name }),
         confirmLabel: needsTransfer ? t("selectCategory") : t("delete"),
-        destructive: true,
+        // Only the button that actually deletes gets the destructive styling.
+        // "Select Category" opens a picker and nothing is lost yet — there's
+        // still a screen to back out of, so dressing it in red overstates it.
+        destructive: !needsTransfer,
       });
       if (!ok) return;
 

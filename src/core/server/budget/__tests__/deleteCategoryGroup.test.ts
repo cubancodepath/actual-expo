@@ -4,6 +4,7 @@ import { first } from "@/core/server/db";
 import { sendMessages } from "@/core/server/sync";
 import { Timestamp } from "@/core/crdt";
 import { createCategoryGroup, createCategory, deleteCategoryGroup } from "../index";
+import { setBudget } from "../actions";
 
 /**
  * Deleting a group takes every category with it, so the transfer target has to
@@ -99,5 +100,33 @@ describe("deleteCategoryGroup", () => {
     await deleteCategoryGroup(empty);
 
     expect(await tombstoneOf("category_groups", empty)).toBe(1);
+  });
+
+  it("folds the budget of every category in the group onto the target", async () => {
+    await openTestDb();
+    const keep = await createCategoryGroup({ name: "Keep" });
+    const target = await createCategory({ name: "Target", groupId: keep });
+
+    const doomed = await createCategoryGroup({ name: "Doomed" });
+    const a = await createCategory({ name: "A", groupId: doomed });
+    const b = await createCategory({ name: "B", groupId: doomed });
+
+    await setBudget("2026-03", target, 100);
+    await setBudget("2026-03", a, 300);
+    await setBudget("2026-03", b, 200);
+    await setBudget("2026-04", b, 50);
+
+    await deleteCategoryGroup(doomed, target);
+
+    const march = await first<{ amount: number }>(
+      "SELECT amount FROM zero_budgets WHERE month = ? AND category = ?",
+      [202603, target],
+    );
+    const april = await first<{ amount: number }>(
+      "SELECT amount FROM zero_budgets WHERE month = ? AND category = ?",
+      [202604, target],
+    );
+    expect(march?.amount).toBe(600);
+    expect(april?.amount).toBe(50);
   });
 });

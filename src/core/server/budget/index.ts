@@ -14,6 +14,7 @@
  */
 import * as db from "@/core/server/db";
 import { undoable } from "@/core/server/undo";
+import { doTransfer, hasBudgetedAmount } from "./actions";
 import type { CategoryGroupRow, CategoryRow } from "@/core/server/db/types";
 import type { Category, CategoryGroup } from "@/core/types/models";
 
@@ -137,6 +138,28 @@ export const deleteCategory = undoable(async function deleteCategory(
   id: string,
   transferId?: string,
 ): Promise<void> {
+  const row = await db.first<Pick<CategoryRow, "is_income">>(
+    "SELECT is_income FROM categories WHERE id = ?",
+    [id],
+  );
+  if (!row) throw new Error(`Category with id ${id} not found.`);
+
+  if (transferId) {
+    const transfer = await db.first<Pick<CategoryRow, "is_income">>(
+      "SELECT is_income FROM categories WHERE id = ?",
+      [transferId],
+    );
+    if (!transfer) throw new Error(`Transfer category with id ${transferId} not found.`);
+    // Money can't cross the income/expense line — the two sides aren't the same
+    // kind of number.
+    if (row.is_income !== transfer.is_income) {
+      throw new Error("Cannot transfer between income and expense categories.");
+    }
+
+    // TODO: We should do this for income too if it's a tracking budget.
+    if (row.is_income === 0) await doTransfer([id], transferId);
+  }
+
   await db.deleteCategory({ id }, transferId);
 });
 
@@ -171,6 +194,19 @@ export const deleteCategoryGroup = undoable(async function deleteCategoryGroup(
   id: string,
   transferId?: string,
 ): Promise<void> {
+  if (transferId) {
+    // No is_income guard here, matching upstream: a group delete transfers all
+    // its live categories, and the picker only ever offers expense targets.
+    const groupCategories = await db.all<Pick<CategoryRow, "id">>(
+      "SELECT id FROM categories WHERE cat_group = ? AND tombstone = 0",
+      [id],
+    );
+    await doTransfer(
+      groupCategories.map((c) => c.id),
+      transferId,
+    );
+  }
+
   await db.deleteCategoryGroup({ id }, transferId);
 });
 
@@ -183,9 +219,8 @@ export const deleteCategoryGroup = undoable(async function deleteCategoryGroup(
  * transactions from a deleted one is only reachable through its mapping, and a
  * direct count would wave it through and strand them a second time.
  *
- * Upstream also refuses when the category holds a non-zero budget in any created
- * month. Not ported — that needs `createdMonths`, and the money side of this
- * (`doTransfer`) isn't ported either.
+ * Money already assigned counts too: deleting a category that holds budget
+ * without nominating a destination evaporates it.
  */
 export async function isCategoryTransferRequired(id: string): Promise<boolean> {
   const rows = await db.all<{ count: number }>(
@@ -194,5 +229,7 @@ export async function isCategoryTransferRequired(id: string): Promise<boolean> {
        WHERE cm.transferId = ? AND t.tombstone = 0`,
     [id],
   );
-  return (rows[0]?.count ?? 0) > 0;
+  if ((rows[0]?.count ?? 0) > 0) return true;
+
+  return hasBudgetedAmount(id);
 }

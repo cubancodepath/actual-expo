@@ -834,6 +834,97 @@ export async function budgetTable(): Promise<"zero_budgets" | "reflect_budgets">
   return (await getBudgetType()) === "tracking" ? "reflect_budgets" : "zero_budgets";
 }
 
+/**
+ * Move the money too: fold the budgeted amounts of categories about to be
+ * deleted onto the category taking their place. Upstream's
+ * `loot-core/budget/base.ts::doTransfer`, called from both delete handlers.
+ *
+ * It deliberately does NOT zero the sources — upstream doesn't either. Their
+ * rows are tombstoned by the delete that follows, so debiting them would just
+ * be a write nobody reads.
+ *
+ * **Months come from the database, not from the spreadsheet.** Upstream walks
+ * `meta().createdMonths`; our nearest equivalent, `getBuiltMonths()`, is the
+ * *built window*, which starts deliberately narrow on mobile and grows as the
+ * user navigates. Any amount sitting in a month outside it would be silently
+ * dropped — which is the exact bug this function exists to close. Reading the
+ * table also means it works with no spreadsheet loaded.
+ *
+ * Not `undoable`: both callers already are, so the transfer and the delete land
+ * in a single undo step.
+ */
+export async function doTransfer(categoryIds: string[], transferId: string): Promise<void> {
+  if (categoryIds.length === 0) return;
+
+  const table = await budgetTable();
+  const sourcePlaceholders = categoryIds.map(() => "?").join(",");
+
+  const perMonth = await runQuery<{ month: number; total: number }>(
+    `SELECT month, SUM(amount) AS total FROM ${table}
+      WHERE category IN (${sourcePlaceholders}) AND amount != 0
+      GROUP BY month`,
+    categoryIds,
+  );
+  if (perMonth.length === 0) return;
+
+  const months = perMonth.map((r) => r.month);
+  const targetRows = await runQuery<{ month: number; amount: number }>(
+    `SELECT month, amount FROM ${table}
+      WHERE category = ? AND month IN (${months.map(() => "?").join(",")})`,
+    [transferId, ...months],
+  );
+  const targetByMonth = new Map(targetRows.map((r) => [r.month, r.amount]));
+
+  const messages: Array<{
+    timestamp: Timestamp;
+    dataset: string;
+    row: string;
+    column: string;
+    value: string | number | null;
+  }> = [];
+
+  for (const { month, total } of perMonth) {
+    const rowId = `${month}-${transferId}`;
+    messages.push(
+      { timestamp: Timestamp.send()!, dataset: table, row: rowId, column: "month", value: month },
+      {
+        timestamp: Timestamp.send()!,
+        dataset: table,
+        row: rowId,
+        column: "category",
+        value: transferId,
+      },
+      {
+        timestamp: Timestamp.send()!,
+        dataset: table,
+        row: rowId,
+        column: "amount",
+        value: (targetByMonth.get(month) ?? 0) + total,
+      },
+    );
+  }
+
+  await sendMessages(messages);
+}
+
+/**
+ * Whether this category has money assigned in any month. The second half of
+ * upstream's `must-category-transfer`: money already parked in a category is as
+ * good a reason to demand a destination as transactions are, because deleting
+ * without one evaporates it.
+ *
+ * Upstream reads the `budget-<id>` cell per created month; we read the table, for
+ * the same reason `doTransfer` does.
+ */
+export async function hasBudgetedAmount(categoryId: string): Promise<boolean> {
+  const table = await budgetTable();
+  const row = await first<{ one: number }>(
+    `SELECT 1 AS one FROM ${table} WHERE category = ? AND amount != 0 LIMIT 1`,
+    [categoryId],
+  );
+  return row != null;
+}
+
 /** Set a category's absolute budgeted amount for a month (type-aware). */
 export async function setBudget(month: string, categoryId: string, amount: number): Promise<void> {
   const monthInt = monthToInt(month);

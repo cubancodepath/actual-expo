@@ -12,6 +12,7 @@ import {
   deleteCategory,
   isCategoryTransferRequired,
 } from "../index";
+import { setBudget } from "../actions";
 
 /**
  * Characterization tests for the category_mapping write flow (plan: rules/mappings
@@ -131,5 +132,66 @@ describe("isCategoryTransferRequired", () => {
     await deleteCategory(deleted, target);
 
     expect(await isCategoryTransferRequired(target)).toBe(true);
+  });
+
+  // Money parked in a category is as good a reason to demand a destination as
+  // transactions are — without this it would be deleted away silently.
+  it("is true for a category holding budgeted money and no transactions", async () => {
+    await openTestDb();
+    const g = await createCategoryGroup({ name: "G" });
+    const c = await createCategory({ name: "C", groupId: g });
+    await setBudget("2026-03", c, 5000);
+
+    expect(await isCategoryTransferRequired(c)).toBe(true);
+  });
+
+  it("is false when the budgeted amount is zero", async () => {
+    await openTestDb();
+    const g = await createCategoryGroup({ name: "G" });
+    const c = await createCategory({ name: "C", groupId: g });
+    await setBudget("2026-03", c, 0);
+
+    expect(await isCategoryTransferRequired(c)).toBe(false);
+  });
+});
+
+describe("deleteCategory — the money follows the transactions", () => {
+  afterEach(async () => {
+    await closeTestDb();
+  });
+
+  it("folds the deleted category's budget onto the target", async () => {
+    await openTestDb();
+    const g = await createCategoryGroup({ name: "G" });
+    const target = await createCategory({ name: "Target", groupId: g });
+    const doomed = await createCategory({ name: "Doomed", groupId: g });
+    await setBudget("2026-03", target, 1000);
+    await setBudget("2026-03", doomed, 400);
+
+    await deleteCategory(doomed, target);
+
+    const row = await first<{ amount: number }>(
+      "SELECT amount FROM zero_budgets WHERE month = ? AND category = ?",
+      [202603, target],
+    );
+    expect(row?.amount).toBe(1400);
+  });
+
+  it("refuses to move money across the income/expense line", async () => {
+    await openTestDb();
+    const expenses = await createCategoryGroup({ name: "Expenses" });
+    const income = await createCategoryGroup({ name: "Income", isIncome: true });
+    const doomed = await createCategory({ name: "Doomed", groupId: expenses });
+    const salary = await createCategory({ name: "Salary", groupId: income, isIncome: true });
+
+    await expect(deleteCategory(doomed, salary)).rejects.toThrow(/income and expense categories/i);
+  });
+
+  it("throws when the transfer target doesn't exist", async () => {
+    await openTestDb();
+    const g = await createCategoryGroup({ name: "G" });
+    const doomed = await createCategory({ name: "Doomed", groupId: g });
+
+    await expect(deleteCategory(doomed, "nope")).rejects.toThrow(/not found/i);
   });
 });

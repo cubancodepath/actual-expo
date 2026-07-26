@@ -270,8 +270,15 @@
   "summaryBudgeted": "Budgeted",
   "summarySpent": "Spent",
   "describeShort": {
-    "monthly": "monthly",
-    "upToEach": "up to, each {{period}}",
+    "recurrence": {
+      "day": "daily",
+      "week": "weekly",
+      "month": "monthly",
+      "year": "yearly"
+    },
+    "everyN": "every {{count}} {{period}}",
+    "refillRecurrence": "refill {{recurrence}}",
+    "limitRecurrence": "{{recurrence}} limit",
     "balanceTarget": "balance target",
     "byDate": "by {{date}}",
     "byDateYearly": "by {{date}}, yearly",
@@ -279,10 +286,8 @@
     "percentOfIncome": "{{percent}}% of income",
     "averageMonths": "avg. {{count}} months",
     "copyMonthsAgo": "copy {{count}}m ago",
-    "everyPeriod": "every {{count}} {{period}}",
     "remaining": "remaining budget",
     "refill": "refill to limit",
-    "limitPeriod": "limit per {{period}}",
     "scheduled": "scheduled"
   },
   "nGoals_one": "{{count}} goal",

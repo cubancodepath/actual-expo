@@ -256,8 +256,15 @@
   "summaryBudgeted": "Presupuestado",
   "summarySpent": "Gastado",
   "describeShort": {
-    "monthly": "mensual",
-    "upToEach": "hasta, cada {{period}}",
+    "recurrence": {
+      "day": "diario",
+      "week": "semanal",
+      "month": "mensual",
+      "year": "anual"
+    },
+    "everyN": "cada {{count}} {{period}}",
+    "refillRecurrence": "relleno {{recurrence}}",
+    "limitRecurrence": "límite {{recurrence}}",
     "balanceTarget": "saldo objetivo",
     "byDate": "para {{date}}",
     "byDateYearly": "para {{date}}, anual",
@@ -265,10 +272,8 @@
     "percentOfIncome": "{{percent}}% del ingreso",
     "averageMonths": "prom. {{count}} meses",
     "copyMonthsAgo": "copia de hace {{count}}m",
-    "everyPeriod": "cada {{count}} {{period}}",
     "remaining": "presupuesto restante",
     "refill": "rellenar al límite",
-    "limitPeriod": "límite por {{period}}",
     "scheduled": "programado"
   },
   "nGoals_one": "{{count}} objetivo",

@@ -50,14 +50,16 @@ describe("describeTemplateShort", () => {
     expect(short(tmpl)).toBe("monthly");
   });
 
-  it("simple with a cap and no contribution names the cap's period", () => {
+  // Keeps its noun on purpose: a bare "weekly" would read as a plain weekly
+  // contribution, and a refill is not that.
+  it("simple with a cap and no contribution is a refill, with its cadence", () => {
     const tmpl: SimpleTemplate = {
       type: "simple",
       limit: { amount: 80, hold: false, period: "weekly" },
       priority: 0,
       directive: "template",
     };
-    expect(short(tmpl)).toBe("up to, each week");
+    expect(short(tmpl)).toBe("refill weekly");
   });
 
   it("goal", () => {
@@ -140,7 +142,29 @@ describe("describeTemplateShort", () => {
     expect(short(tmpl)).toBe("copy 2m ago");
   });
 
-  it("periodic pluralises its period", () => {
+  it("periodic every single period collapses to the adverb", () => {
+    const tmpl: PeriodicTemplate = {
+      type: "periodic",
+      amount: 100,
+      period: { period: "week", amount: 1 },
+      priority: 0,
+      directive: "template",
+    };
+    expect(short(tmpl)).toBe("weekly");
+  });
+
+  it("periodic yearly", () => {
+    const tmpl: PeriodicTemplate = {
+      type: "periodic",
+      amount: 900,
+      period: { period: "year", amount: 1 },
+      priority: 0,
+      directive: "template",
+    };
+    expect(short(tmpl)).toBe("yearly");
+  });
+
+  it("periodic every N spells it out, and pluralises", () => {
     const tmpl: PeriodicTemplate = {
       type: "periodic",
       amount: 100,
@@ -161,6 +185,8 @@ describe("describeTemplateShort", () => {
     expect(short(tmpl)).toBe("refill to limit");
   });
 
+  // Also keeps its noun: a limit is a ceiling on spending, the opposite of a
+  // bare "monthly", which reads as money going in.
   it("limit", () => {
     const tmpl: LimitTemplate = {
       type: "limit",
@@ -169,7 +195,18 @@ describe("describeTemplateShort", () => {
       period: "monthly",
       directive: "template",
     };
-    expect(short(tmpl)).toBe("limit per month");
+    expect(short(tmpl)).toBe("monthly limit");
+  });
+
+  it("daily limit", () => {
+    const tmpl: LimitTemplate = {
+      type: "limit",
+      amount: 25,
+      hold: false,
+      period: "daily",
+      directive: "template",
+    };
+    expect(short(tmpl)).toBe("daily limit");
   });
 
   it("schedule", () => {

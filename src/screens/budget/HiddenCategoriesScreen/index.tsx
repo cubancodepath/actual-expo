@@ -2,7 +2,14 @@ import { Fragment, useCallback, useMemo, useState } from "react";
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
-import { Button, Checkbox, ListGroup, Separator } from "heroui-native";
+import {
+  Button,
+  Checkbox,
+  ListGroup,
+  PressableFeedback,
+  Separator,
+  Typography,
+} from "heroui-native";
 import { EmptyState } from "heroui-native-pro";
 import { unhideItems } from "@/core/server/budget";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
@@ -36,12 +43,13 @@ function RowCheckbox({ isSelected }: { isSelected: boolean }) {
 }
 
 /**
- * One group's worth of hidden things: the group as the first row, its categories
- * under it, every row tickable.
+ * One group's worth of hidden things, laid out like every other grouped list in
+ * the app: the group name is a header *outside* the card (`EditPlanGroup`'s
+ * shape), and the card holds the category rows.
  *
- * The group row only gets a checkbox when the group itself is hidden — for a
- * visible group there is nothing about the group to undo, and it's there to say
- * where its categories would come back to.
+ * The header carries the group's own checkbox, and only when the group is hidden
+ * — for a visible group there is nothing about the group to undo, and the name is
+ * there to say where its categories would come back to.
  *
  * Picking a category out of a hidden group is allowed and means what it looks
  * like: the group reappears holding just that category. `unhideItems` does the
@@ -58,40 +66,42 @@ function HiddenGroupSection({
   onToggleGroup: () => void;
   onToggleCategory: (id: string) => void;
 }) {
-  return (
-    <View className="mb-3">
-      <ListGroup className="overflow-hidden rounded-2xl">
-        <ListGroup.Item onPress={section.isGroupHidden ? onToggleGroup : undefined}>
-          <ListGroup.ItemPrefix>
-            <View className="w-5 items-center justify-center">
-              {section.isGroupHidden ? (
-                <RowCheckbox isSelected={selection.groups.has(section.groupId)} />
-              ) : null}
-            </View>
-          </ListGroup.ItemPrefix>
-          <ListGroup.ItemContent>
-            <ListGroup.ItemTitle className="font-semibold" numberOfLines={1}>
-              {section.groupName}
-            </ListGroup.ItemTitle>
-          </ListGroup.ItemContent>
-        </ListGroup.Item>
+  const header = (
+    <View className="flex-row items-center gap-3 px-1 pb-1 pt-4">
+      {section.isGroupHidden ? (
+        <RowCheckbox isSelected={selection.groups.has(section.groupId)} />
+      ) : null}
+      <Typography className="flex-1 text-sm font-semibold text-foreground" numberOfLines={1}>
+        {section.groupName}
+      </Typography>
+    </View>
+  );
 
-        {section.categories.map((cat) => (
-          <Fragment key={cat.id}>
-            <Separator className="mx-4" />
-            <ListGroup.Item onPress={() => onToggleCategory(cat.id)}>
-              <ListGroup.ItemPrefix>
-                <View className="w-5 items-center justify-center">
+  return (
+    <View>
+      {section.isGroupHidden ? (
+        <PressableFeedback onPress={onToggleGroup}>{header}</PressableFeedback>
+      ) : (
+        header
+      )}
+
+      {section.categories.length > 0 ? (
+        <ListGroup className="overflow-hidden rounded-2xl">
+          {section.categories.map((cat, i) => (
+            <Fragment key={cat.id}>
+              {i > 0 ? <Separator className="mx-4" /> : null}
+              <ListGroup.Item onPress={() => onToggleCategory(cat.id)}>
+                <ListGroup.ItemPrefix>
                   <RowCheckbox isSelected={selection.categories.has(cat.id)} />
-                </View>
-              </ListGroup.ItemPrefix>
-              <ListGroup.ItemContent>
-                <ListGroup.ItemTitle numberOfLines={1}>{cat.name}</ListGroup.ItemTitle>
-              </ListGroup.ItemContent>
-            </ListGroup.Item>
-          </Fragment>
-        ))}
-      </ListGroup>
+                </ListGroup.ItemPrefix>
+                <ListGroup.ItemContent>
+                  <ListGroup.ItemTitle numberOfLines={1}>{cat.name}</ListGroup.ItemTitle>
+                </ListGroup.ItemContent>
+              </ListGroup.Item>
+            </Fragment>
+          ))}
+        </ListGroup>
+      ) : null}
     </View>
   );
 }

@@ -3,7 +3,6 @@ import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { Button, ListGroup, Separator, Typography, useThemeColor } from "heroui-native";
 import { CirclePlus, EllipsisVertical } from "lucide-react-native";
-import { HIDDEN_GROUP_ID } from "@/screens/budget/hooks/useBudgetSections";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { PlanCategoryRow } from "./PlanCategoryRow";
 import type { BudgetSection } from "@/screens/budget/hooks/useBudgetSections";
@@ -34,9 +33,6 @@ export function EditPlanGroup({
   // Gates the editor itself, and cascades off with its parent
   // (`goalTemplatesEnabled`), so it's the only flag this shortcut needs.
   const goalEditorEnabled = useFeatureFlag("goalTemplatesUIEnabled");
-  // The hidden bucket is synthetic, not a real group — there's nothing to add
-  // a category to and no group to edit, so it gets the header without actions.
-  const isSynthetic = section.id === HIDDEN_GROUP_ID;
 
   return (
     <View>
@@ -44,32 +40,24 @@ export function EditPlanGroup({
         <Typography className="flex-1 text-sm font-semibold text-foreground" numberOfLines={1}>
           {section.name}
         </Typography>
-        {!isSynthetic && (
-          <>
-            <Button
-              isIconOnly
-              variant="ghost"
-              size="sm"
-              onPress={onAddCategory}
-              accessibilityLabel={t("addGroupAccessibility", {
-                name: section.name,
-              })}
-            >
-              <CirclePlus size={18} color={foreground} />
-            </Button>
-            <Button
-              isIconOnly
-              variant="ghost"
-              size="sm"
-              onPress={onOpenDetails}
-              accessibilityLabel={t("editGroupAccessibility", {
-                name: section.name,
-              })}
-            >
-              <EllipsisVertical size={18} color={foreground} />
-            </Button>
-          </>
-        )}
+        <Button
+          isIconOnly
+          variant="ghost"
+          size="sm"
+          onPress={onAddCategory}
+          accessibilityLabel={t("addGroupAccessibility", { name: section.name })}
+        >
+          <CirclePlus size={18} color={foreground} />
+        </Button>
+        <Button
+          isIconOnly
+          variant="ghost"
+          size="sm"
+          onPress={onOpenDetails}
+          accessibilityLabel={t("editGroupAccessibility", { name: section.name })}
+        >
+          <EllipsisVertical size={18} color={foreground} />
+        </Button>
       </View>
 
       {section.categories.length > 0 && (

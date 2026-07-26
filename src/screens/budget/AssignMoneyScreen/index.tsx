@@ -14,7 +14,7 @@ import { batchMessages } from "@/core/server/sync/batch";
 import { useSheetValueNumber } from "@/hooks/useSheetValue";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { useBudgetMonth } from "@/screens/budget/hooks/useBudgetMonth";
-import { HIDDEN_GROUP_ID, useBudgetSections } from "@/screens/budget/hooks/useBudgetSections";
+import { useBudgetSections } from "@/screens/budget/hooks/useBudgetSections";
 import { BudgetListSkeleton } from "@/screens/budget/components/BudgetListSkeleton";
 import { AmountKeyboard, useAmountKeyboardAvoidance } from "@/ui/amount-keyboard";
 import {
@@ -162,11 +162,11 @@ export function AssignMoneyScreen() {
     [committedFor],
   );
 
-  // Controlled expansion: seed once (all expense groups expanded except hidden).
+  // Controlled expansion: seed once (every expense group expanded).
   const [expandedIds, setExpandedIds] = useState<string[] | null>(null);
   useEffect(() => {
     if (expandedIds === null && groups.length > 0) {
-      setExpandedIds(groups.filter((g) => g.id !== HIDDEN_GROUP_ID).map((g) => g.id));
+      setExpandedIds(groups.map((g) => g.id));
     }
   }, [groups, expandedIds]);
 

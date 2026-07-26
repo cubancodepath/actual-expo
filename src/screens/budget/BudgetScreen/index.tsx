@@ -9,7 +9,7 @@ import { resetHold, setBudgetAmount, setCategoryCarryover } from "@/core/server/
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { useSyncRefreshControl } from "@/lib/hooks/useSyncRefreshControl";
 import { useBudgetMonth } from "@/screens/budget/hooks/useBudgetMonth";
-import { HIDDEN_GROUP_ID, useBudgetSections } from "@/screens/budget/hooks/useBudgetSections";
+import { useBudgetSections } from "@/screens/budget/hooks/useBudgetSections";
 import { BudgetHeader } from "@/screens/budget/components/BudgetHeader";
 import { BudgetListSkeleton } from "@/screens/budget/components/BudgetListSkeleton";
 import { AddTransactionFab } from "@/ui/AddTransactionFab";
@@ -148,12 +148,12 @@ export function BudgetScreen() {
   }, [month, setTabBarHidden]);
   useEffect(() => () => setTabBarHidden(false), [setTabBarHidden]);
 
-  // Controlled expansion: seed once (all groups expanded except hidden) the
-  // first time sections arrive; after that the user drives it.
+  // Controlled expansion: seed once (every group expanded) the first time
+  // sections arrive; after that the user drives it.
   const [expandedIds, setExpandedIds] = useState<string[] | null>(null);
   useEffect(() => {
     if (expandedIds === null && sections.length > 0) {
-      setExpandedIds(sections.filter((s) => s.id !== HIDDEN_GROUP_ID).map((s) => s.id));
+      setExpandedIds(sections.map((s) => s.id));
     }
   }, [sections, expandedIds]);
 

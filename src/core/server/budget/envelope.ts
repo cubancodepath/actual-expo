@@ -19,7 +19,7 @@ import type { Category, CategoryGroup } from "@/core/types/models";
 import { safeNumber } from "@/core/shared/util";
 import { num, createSpentCells, getBudgetRange } from "@/core/server/budget/base";
 import { warmBuffered, warmZeroBudget } from "@/core/server/spreadsheet/warm-cache";
-import { inferGoalFromDef } from "@/core/server/budget/goals";
+import { inferGoalFromDef } from "@/core/server/budget/goal-template-parser";
 
 // ---------------------------------------------------------------------------
 // Create all budget cells for a single month

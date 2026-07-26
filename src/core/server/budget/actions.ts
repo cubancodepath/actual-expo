@@ -6,7 +6,7 @@ import { Timestamp } from "@/core/crdt";
 import { monthToInt } from "@/core/shared/months";
 import type { ZeroBudgetRow, CategoryGroupRow, CategoryRow } from "@/core/server/db/types";
 import type { BudgetMonth, BudgetGroup, BudgetCategory } from "./types";
-import { inferGoalFromDef } from "./goals";
+import { inferGoalFromDef } from "./goal-template-parser";
 import { getBudgetType } from "@/core/server/preferences";
 import { ALIVE_TX_FILTER } from "@/core/server/db/filters";
 import { sheetForMonth, envelopeBudget, trackingBudget } from "@/core/server/spreadsheet/bindings";

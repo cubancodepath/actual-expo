@@ -11,10 +11,11 @@ import type {
   BudgetSection,
   BudgetSectionCategory,
 } from "@/screens/budget/hooks/useBudgetSections";
-import { deleteCategoryGroup, updateCategory, updateCategoryGroup } from "@/core/server/budget";
-import { useDeleteCategory } from "@/screens/budget/hooks/useDeleteCategory";
-import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
-import { dialog } from "@/ui/feedback/dialog/dialogStore";
+import { updateCategory, updateCategoryGroup } from "@/core/server/budget";
+import {
+  useDeleteCategory,
+  useDeleteCategoryGroup,
+} from "@/screens/budget/hooks/useDeleteCategory";
 import { ScreenHeader } from "@/ui/ScreenHeader";
 import { EditPlanGroup } from "./components/EditPlanGroup";
 import { CategoryDetailsSheet } from "./components/CategoryDetailsSheet";
@@ -54,37 +55,15 @@ export function EditBudgetScreen() {
   const [details, setDetails] = useState<BudgetSection | null>(null);
   const [categoryDetails, setCategoryDetails] = useState<BudgetSectionCategory | null>(null);
 
-  // The same flow the category details screen offers — transfer check, dialog,
-  // picker when it's needed. See useDeleteCategory.
+  // Both deletes run the same flow — transfer check, dialog, picker when a
+  // destination is needed. A group is N category deletes, so it needs one just
+  // as much. See useDeleteCategory.
   const { requestDelete } = useDeleteCategory();
+  const { requestDeleteGroup } = useDeleteCategoryGroup();
 
   function openGoalEditor(category: BudgetSectionCategory) {
     setCategoryDetails(null);
     router.push({ pathname: "/(auth)/budget/goal", params: { categoryId: category.id } });
-  }
-
-  async function confirmDeleteGroup(group: BudgetSection) {
-    const count = group.categories.length;
-    const ok = await dialog.confirm({
-      title: t("deleteGroupTitle"),
-      message:
-        count > 0
-          ? t("deleteGroupMessageWithCategories", {
-              name: group.name,
-              count,
-              suffix: count === 1 ? "y" : "ies",
-            })
-          : t("deleteGroupMessageEmpty", { name: group.name }),
-      confirmLabel: t("delete"),
-      destructive: true,
-    });
-    if (!ok) return;
-    try {
-      await deleteCategoryGroup(group.id);
-    } catch (e) {
-      emitErrorEvent(e);
-      await dialog.alert({ title: t("errorTitle"), message: t("couldNotDeleteCategory") });
-    }
   }
 
   return (
@@ -139,7 +118,7 @@ export function EditBudgetScreen() {
         }}
         onDelete={(group) => {
           setDetails(null);
-          void confirmDeleteGroup(group);
+          void requestDeleteGroup(group);
         }}
       />
 

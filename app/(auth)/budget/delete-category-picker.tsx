@@ -25,10 +25,9 @@ interface PickableGroup {
 export default function DeleteCategoryPickerScreen() {
   const { t } = useTranslation("budget");
   const router = useRouter();
-  const { excludeIds, moveCatId } = useLocalSearchParams<{
-    excludeIds: string;
-    moveCatId: string;
-  }>();
+  // Everything being deleted, comma-separated: one category, or every category
+  // in a group. None of them can be the destination.
+  const { excludeIds } = useLocalSearchParams<{ excludeIds: string }>();
   const month = useBudgetUIStore((s) => s.month);
   const setPickedCategory = useBudgetUIStore((s) => s.setPickedCategory);
   const { categories, groups } = useCategories();
@@ -36,8 +35,8 @@ export default function DeleteCategoryPickerScreen() {
   const [query, setQuery] = useState("");
 
   const excludeSet = useMemo(
-    () => new Set([...(excludeIds?.split(",") ?? []), moveCatId].filter(Boolean)),
-    [excludeIds, moveCatId],
+    () => new Set((excludeIds?.split(",") ?? []).filter(Boolean)),
+    [excludeIds],
   );
 
   const grouped = useMemo<PickableGroup[]>(() => {

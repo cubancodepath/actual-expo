@@ -177,10 +177,21 @@ export const deleteCategoryGroup = undoable(async function deleteCategoryGroup(
 /**
  * Whether deleting this category needs the caller to nominate a transfer target
  * first — true once anything still points at it. Upstream's `must-category-transfer`.
+ *
+ * Resolves through `category_mapping` rather than counting `transactions.category`
+ * directly, because nothing ever rewrites that column: a category that inherited
+ * transactions from a deleted one is only reachable through its mapping, and a
+ * direct count would wave it through and strand them a second time.
+ *
+ * Upstream also refuses when the category holds a non-zero budget in any created
+ * month. Not ported — that needs `createdMonths`, and the money side of this
+ * (`doTransfer`) isn't ported either.
  */
 export async function isCategoryTransferRequired(id: string): Promise<boolean> {
   const rows = await db.all<{ count: number }>(
-    `SELECT COUNT(*) as count FROM transactions WHERE category = ? AND tombstone = 0`,
+    `SELECT COUNT(t.id) as count FROM transactions t
+       LEFT JOIN category_mapping cm ON cm.id = t.category
+       WHERE cm.transferId = ? AND t.tombstone = 0`,
     [id],
   );
   return (rows[0]?.count ?? 0) > 0;

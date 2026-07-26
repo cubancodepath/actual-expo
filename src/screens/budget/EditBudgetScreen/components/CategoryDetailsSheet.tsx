@@ -29,16 +29,16 @@ function GoalCard({
   onEditGoals: () => void;
 }) {
   const { t, i18n } = useTranslation("budget");
-  const [muted, accentSoftForeground] = useThemeColor(["muted", "accent-soft-foreground"]);
+  const [muted, accentForeground] = useThemeColor(["muted", "accent-foreground"]);
 
   const templates = parseGoalDef(goalDef);
 
   if (templates.length === 0) {
     if (!canEdit) return null;
     return (
-      <Button variant="ghost" onPress={onEditGoals} className="bg-accent-soft">
-        <Target size={18} color={accentSoftForeground} />
-        <Button.Label className="text-accent-soft-foreground">{t("addGoal")}</Button.Label>
+      <Button variant="primary" onPress={onEditGoals}>
+        <Target size={18} color={accentForeground} />
+        <Button.Label>{t("addGoal")}</Button.Label>
       </Button>
     );
   }
@@ -63,8 +63,8 @@ function GoalCard({
         ))}
       </ListGroup>
       {canEdit ? (
-        <Button variant="ghost" onPress={onEditGoals} className="bg-accent-soft">
-          <Button.Label className="text-accent-soft-foreground">{t("editGoal")}</Button.Label>
+        <Button variant="primary" onPress={onEditGoals}>
+          <Button.Label>{t("editGoal")}</Button.Label>
         </Button>
       ) : null}
     </View>

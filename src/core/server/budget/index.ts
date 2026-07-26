@@ -177,16 +177,21 @@ export const updateCategoryGroup = undoable(async function updateCategoryGroup(
 });
 
 /**
- * Bring several hidden categories and groups back into view at once.
+ * Bring exactly these categories and groups back into view, and nothing else.
+ *
+ * The interesting case is a category inside a hidden group. Its own flag is
+ * already `0` — it is out of sight only because the group is — so showing it
+ * means showing the group. But the group carries its siblings, and they were not
+ * asked for. So the group is unhidden and the siblings are pinned `hidden = 1`,
+ * which leaves the group holding just the categories that were picked. Ask for
+ * the group itself instead and nothing is pinned: it comes back whole, with
+ * whatever each category's own flag said.
  *
  * One `undoable` around the whole sweep rather than per item, because hiding
  * happens in sweeps and so should the undo — calling `updateCategory` N times
  * from the caller would open N undo groups. `batchMessages` inside collapses it
  * into a single apply, so the spreadsheet recomputes once instead of N times.
- *
- * Unhiding a group is what recovers its categories: the budget screens skip a
- * hidden group before they ever look inside it, so flipping the categories alone
- * would change nothing.
+ * Same shape as upstream's `tags-unhide-all`.
  */
 export const unhideItems = undoable(async function unhideItems({
   categoryIds = [],
@@ -195,11 +200,51 @@ export const unhideItems = undoable(async function unhideItems({
   categoryIds?: string[];
   groupIds?: string[];
 }): Promise<void> {
+  const wanted = new Set(categoryIds);
+  const askedForGroups = new Set(groupIds);
+
+  // Which groups have to open for the picked categories to actually show, and
+  // which of those weren't asked for on their own (so their siblings get pinned).
+  const groupsToOpen = new Set(askedForGroups);
+  const groupsOpenedForACategory = new Set<string>();
+
+  for (const id of categoryIds) {
+    const row = await db.first<Pick<CategoryRow, "cat_group">>(
+      "SELECT cat_group FROM categories WHERE id = ?",
+      [id],
+    );
+    const groupId = row?.cat_group;
+    if (!groupId || askedForGroups.has(groupId)) continue;
+
+    const group = await db.first<Pick<CategoryGroupRow, "hidden">>(
+      "SELECT hidden FROM category_groups WHERE id = ?",
+      [groupId],
+    );
+    if (group?.hidden === 1) {
+      groupsToOpen.add(groupId);
+      groupsOpenedForACategory.add(groupId);
+    }
+  }
+
+  const toPin: string[] = [];
+  for (const groupId of groupsOpenedForACategory) {
+    const siblings = await db.all<Pick<CategoryRow, "id">>(
+      "SELECT id FROM categories WHERE cat_group = ? AND tombstone = 0",
+      [groupId],
+    );
+    for (const sibling of siblings) {
+      if (!wanted.has(sibling.id)) toPin.push(sibling.id);
+    }
+  }
+
   await batchMessages(async () => {
-    for (const id of groupIds) {
+    for (const id of groupsToOpen) {
       await db.updateCategoryGroup({ id, hidden: 0 });
     }
-    for (const id of categoryIds) {
+    for (const id of toPin) {
+      await db.updateCategory({ id, hidden: 1 });
+    }
+    for (const id of wanted) {
       await db.updateCategory({ id, hidden: 0 });
     }
   });

@@ -2,10 +2,8 @@ import { Fragment, useCallback, useMemo, useState } from "react";
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
-import { Button, Checkbox, ListGroup, Separator, Typography } from "heroui-native";
+import { Button, Checkbox, ListGroup, Separator } from "heroui-native";
 import { EmptyState } from "heroui-native-pro";
-import { EyeOff } from "lucide-react-native";
-import { useThemeColor } from "heroui-native";
 import { unhideItems } from "@/core/server/budget";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { ScreenHeader } from "@/ui/ScreenHeader";
@@ -26,14 +24,28 @@ function toggle(set: Set<string>, id: string): Set<string> {
   return next;
 }
 
+/** A checkbox that doesn't fight the row it sits in for the tap. */
+function RowCheckbox({ isSelected }: { isSelected: boolean }) {
+  return (
+    <View pointerEvents="none">
+      <Checkbox isSelected={isSelected}>
+        <Checkbox.Indicator />
+      </Checkbox>
+    </View>
+  );
+}
+
 /**
- * One group's worth of hidden things.
+ * One group's worth of hidden things: the group as the first row, its categories
+ * under it, every row tickable.
  *
- * A hidden group gets the checkbox on its own header, and its categories are
- * listed underneath as context without one: their own flag is already `false`,
- * so ticking them would change nothing — `buildBudgetSections` drops the whole
- * group before it looks at them. The exception is a category that is *also*
- * hidden in its own right, which does need its own tick.
+ * The group row only gets a checkbox when the group itself is hidden — for a
+ * visible group there is nothing about the group to undo, and it's there to say
+ * where its categories would come back to.
+ *
+ * Picking a category out of a hidden group is allowed and means what it looks
+ * like: the group reappears holding just that category. `unhideItems` does the
+ * pinning that makes it true.
  */
 function HiddenGroupSection({
   section,
@@ -46,72 +58,40 @@ function HiddenGroupSection({
   onToggleGroup: () => void;
   onToggleCategory: (id: string) => void;
 }) {
-  const { t } = useTranslation("budget");
-  const muted = useThemeColor("muted");
-
   return (
-    <View className="mb-4">
-      <View className="flex-row items-center gap-2 px-1 pb-1">
-        <Typography className="flex-1 text-xs font-semibold uppercase text-muted" numberOfLines={1}>
-          {section.groupName}
-        </Typography>
-        {section.isGroupHidden ? (
-          <EyeOff size={14} color={muted} accessibilityLabel={t("hiddenGroupNote")} />
-        ) : null}
-      </View>
+    <View className="mb-3">
+      <ListGroup className="overflow-hidden rounded-2xl">
+        <ListGroup.Item onPress={section.isGroupHidden ? onToggleGroup : undefined}>
+          <ListGroup.ItemPrefix>
+            <View className="w-5 items-center justify-center">
+              {section.isGroupHidden ? (
+                <RowCheckbox isSelected={selection.groups.has(section.groupId)} />
+              ) : null}
+            </View>
+          </ListGroup.ItemPrefix>
+          <ListGroup.ItemContent>
+            <ListGroup.ItemTitle className="font-semibold" numberOfLines={1}>
+              {section.groupName}
+            </ListGroup.ItemTitle>
+          </ListGroup.ItemContent>
+        </ListGroup.Item>
 
-      {section.isGroupHidden ? (
-        <>
-          <ListGroup className="mb-1 overflow-hidden rounded-2xl">
-            <ListGroup.Item onPress={onToggleGroup}>
+        {section.categories.map((cat) => (
+          <Fragment key={cat.id}>
+            <Separator className="mx-4" />
+            <ListGroup.Item onPress={() => onToggleCategory(cat.id)}>
               <ListGroup.ItemPrefix>
-                <View pointerEvents="none">
-                  <Checkbox isSelected={selection.groups.has(section.groupId)}>
-                    <Checkbox.Indicator />
-                  </Checkbox>
+                <View className="w-5 items-center justify-center">
+                  <RowCheckbox isSelected={selection.categories.has(cat.id)} />
                 </View>
               </ListGroup.ItemPrefix>
               <ListGroup.ItemContent>
-                <ListGroup.ItemTitle>{t("showGroup")}</ListGroup.ItemTitle>
-                <ListGroup.ItemDescription>{t("hiddenGroupNote")}</ListGroup.ItemDescription>
+                <ListGroup.ItemTitle numberOfLines={1}>{cat.name}</ListGroup.ItemTitle>
               </ListGroup.ItemContent>
             </ListGroup.Item>
-          </ListGroup>
-        </>
-      ) : null}
-
-      {section.categories.length > 0 ? (
-        <ListGroup className="overflow-hidden rounded-2xl">
-          {section.categories.map((cat, i) => {
-            // Only a category hidden in its own right can be shown on its own.
-            const selectable = cat.isHiddenItself;
-            return (
-              <Fragment key={cat.id}>
-                {i > 0 ? <Separator className="mx-4" /> : null}
-                <ListGroup.Item
-                  onPress={selectable ? () => onToggleCategory(cat.id) : undefined}
-                  className={selectable ? undefined : "opacity-50"}
-                >
-                  <ListGroup.ItemPrefix>
-                    <View className="w-5 items-center justify-center">
-                      {selectable ? (
-                        <View pointerEvents="none">
-                          <Checkbox isSelected={selection.categories.has(cat.id)}>
-                            <Checkbox.Indicator />
-                          </Checkbox>
-                        </View>
-                      ) : null}
-                    </View>
-                  </ListGroup.ItemPrefix>
-                  <ListGroup.ItemContent>
-                    <ListGroup.ItemTitle numberOfLines={1}>{cat.name}</ListGroup.ItemTitle>
-                  </ListGroup.ItemContent>
-                </ListGroup.Item>
-              </Fragment>
-            );
-          })}
-        </ListGroup>
-      ) : null}
+          </Fragment>
+        ))}
+      </ListGroup>
     </View>
   );
 }

@@ -167,7 +167,7 @@
   "unhideSelected": "Show ({{count}})",
   "noHiddenCategoriesTitle": "Nothing hidden",
   "noHiddenCategoriesMessage": "Categories and groups you hide show up here, so you can bring them back.",
-  "hiddenGroupNote": "The whole group is hidden. Show it to bring its categories back.",
+  "hiddenSection": "Hidden",
   "addGroupAccessibility": "Add category to {{name}}",
   "editGroupAccessibility": "Edit {{name}}",
   "categoryTargetAccessibility": "{{name}}, Target: {{target}}",

@@ -41,33 +41,25 @@ describe("buildHiddenSections", () => {
     expect(sections).toHaveLength(1);
     expect(sections[0].groupName).toBe("Bills");
     expect(sections[0].isGroupHidden).toBe(false);
-    expect(sections[0].categories).toEqual([{ id: "gone", name: "gone", isHiddenItself: true }]);
+    expect(sections[0].categories).toEqual([{ id: "gone", name: "gone" }]);
   });
 
-  // The crux: these carry their own flag as false, so a checkbox on them would
-  // do nothing — the group is what has to come back.
-  it("lists every category of a hidden group, marked as not hidden themselves", () => {
+  // Every category of a hidden group is listed, whatever its own flag says:
+  // picking any of them is allowed, and unhideItems works out that the group has
+  // to open and the rest get pinned.
+  it("lists every category of a hidden group", () => {
     const sections = buildHiddenSections(
-      [category({ id: "a", group: "doomed" }), category({ id: "b", group: "doomed" })],
+      [
+        category({ id: "inherited", group: "doomed" }),
+        category({ id: "both", group: "doomed", hidden: true }),
+      ],
       [group({ id: "doomed", name: "Savings", hidden: true })],
     );
 
     expect(sections[0].isGroupHidden).toBe(true);
-    expect(sections[0].categories.map((c) => c.isHiddenItself)).toEqual([false, false]);
-  });
-
-  it("marks a category hidden inside a hidden group as hidden itself too", () => {
-    const sections = buildHiddenSections(
-      [
-        category({ id: "both", group: "doomed", hidden: true }),
-        category({ id: "inherited", group: "doomed" }),
-      ],
-      [group({ id: "doomed", hidden: true })],
-    );
-
     expect(sections[0].categories).toEqual([
-      { id: "both", name: "both", isHiddenItself: true },
-      { id: "inherited", name: "inherited", isHiddenItself: false },
+      { id: "inherited", name: "inherited" },
+      { id: "both", name: "both" },
     ]);
   });
 

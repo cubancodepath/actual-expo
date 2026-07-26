@@ -171,7 +171,7 @@
   "unhideSelected": "Mostrar ({{count}})",
   "noHiddenCategoriesTitle": "Nada oculto",
   "noHiddenCategoriesMessage": "Las categorías y grupos que ocultes aparecen aquí, para que puedas recuperarlos.",
-  "hiddenGroupNote": "El grupo entero está oculto. Muéstralo para recuperar sus categorías.",
+  "hiddenSection": "Ocultas",
   "addGroupAccessibility": "Agregar categoría a {{name}}",
   "editGroupAccessibility": "Editar {{name}}",
   "categoryTargetAccessibility": "{{name}}, Meta: {{target}}",

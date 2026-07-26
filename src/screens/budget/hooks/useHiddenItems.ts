@@ -5,12 +5,6 @@ import type { Category, CategoryGroup } from "@/core/types/models";
 export interface HiddenCategory {
   id: string;
   name: string;
-  /**
-   * Whether the category's own flag is set. False means it is only out of sight
-   * because its group is — and then showing it alone changes nothing, so it gets
-   * no checkbox.
-   */
-  isHiddenItself: boolean;
 }
 
 export interface HiddenSection {
@@ -24,12 +18,14 @@ export interface HiddenSection {
 /**
  * Everything currently out of sight, grouped by the group it really belongs to.
  *
- * The distinction this exists to make: a category can be hidden *by itself*, or
- * only *by inheritance* from a hidden group, or both. `useBudgetSections` throws
- * that away — it just omits them — but the screen that offers to bring them back
- * needs it, because the two cases have different remedies. Flipping a category
- * whose group is hidden is a no-op: `buildBudgetSections` drops the whole group
- * before it ever looks at its categories.
+ * `useBudgetSections` just omits these; this keeps the group each one came from,
+ * which is what makes the screen readable — a flat list of hidden category names
+ * says nothing about where they'd come back to.
+ *
+ * `isGroupHidden` is the one distinction that survives, because it decides
+ * whether the group itself is something you can ask for. Why a category is out
+ * of sight (its own flag, or its group's) doesn't reach the UI: either way you
+ * can pick it, and `unhideItems` works out what that implies.
  *
  * Pure and exported for testing, like `buildBudgetSections`.
  */
@@ -58,11 +54,7 @@ export function buildHiddenSections(
       groupId: g.id,
       groupName: g.name,
       isGroupHidden: g.hidden,
-      categories: relevant.map((c) => ({
-        id: c.id,
-        name: c.name,
-        isHiddenItself: c.hidden,
-      })),
+      categories: relevant.map((c) => ({ id: c.id, name: c.name })),
     });
   }
 

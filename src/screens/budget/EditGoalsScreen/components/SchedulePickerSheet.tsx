@@ -44,7 +44,7 @@ export function SchedulePickerSheet({
     <BottomSheet isOpen={isOpen} onOpenChange={onOpenChange}>
       <BottomSheet.Portal>
         <BottomSheet.Overlay />
-        <BottomSheet.Content backgroundClassName="bg-background">
+        <BottomSheet.Content>
           <View className="px-4 pb-4">
             <Typography className="mb-3 text-center text-lg font-semibold text-foreground">
               {t("goals.pickSchedule")}
@@ -66,7 +66,10 @@ export function SchedulePickerSheet({
                 </Button>
               </View>
             ) : (
-              <ListGroup>
+              // Inside a BottomSheet the canvas is `--overlay`, which equals
+              // `--surface` in this theme — a default ListGroup would be
+              // invisible, so the rows step down a rung.
+              <ListGroup variant="secondary">
                 {schedules.map((schedule, i) => {
                   const nextDate = schedule.next_date ? strToInt(schedule.next_date) : null;
                   return (

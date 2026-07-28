@@ -113,7 +113,7 @@ src/
 │                           #   handleSyncFileError), resetStores.ts, autoRecoveryGuard.ts.
 │                           #   (No src/services/: side effects live in core/server + core/platform.)
 │
-├── lib/                    # Pure app-level utilities, no React: colors, screenOptions, badge
+├── lib/                    # Pure app-level utilities, no React: colors, badge
 │                           #   (date/currency/format live in @/core/shared: months, util, currencies)
 │   ├── errors/             # ErrorChannel bus (emitErrorEvent, toErrorCode) + install.ts
 │   ├── queries/            # AQL reactive layer: liveQuery, pagedQuery, queryCache (upstream's
@@ -177,8 +177,12 @@ Single alias `@/` for everything under `src/` (the old `@core`/`@ds`/`@features`
 - **Sync on foreground**: AppState listener triggers `fullSync()` when app returns to foreground. Also polls every 60s.
 - **CRDT messages**: Each change = `{timestamp, dataset, row, column, value}`. Values serialized as `'0:'` (null), `'N:123'` (number), `'S:text'` (string).
 - **Theme system**: heroui-native components (`import { Button } from "heroui-native"`, imported directly — no wrapper layer) styled with Uniwind `className`; tokens live in `global.css`. For imperative/non-className colors use `useThemeColor("token")` from `heroui-native`. Light/dark mode via system `useColorScheme()`. (Legacy screens still on `@/design-system/providers/ThemeProvider`'s `useTheme()`/`useThemedStyles` — do not use these patterns in new code.)
-- **Screen options**: Use `themedScreenOptions(theme)` / `themedModalOptions(theme)` from `@/lib/screenOptions`.
+- **Screen options**: Use `useStackOptions()` from `@/lib/hooks/useStackOptions` — returns `screen` / `modal` / `formSheet(detents)`, all built from HeroUI tokens. **Every `<Stack>`/`<Tabs>` must set one**: React Navigation paints its own background behind each screen and falls back to its theme (white) when `contentStyle`/`sceneStyle` is unset.
 - **Modals**: Use Expo Router `presentation: "modal"` on Stack.Screen.
+- **Surfaces**: follow HeroUI's model — don't invent elevation ladders.
+  - A screen, a `fullScreenModal`, a route `modal` and a `formSheet` are all the same rung: canvas `bg-background`, cards `bg-surface` (the `Surface`/`Card`/`ListGroup` default). A route modal's elevation comes from its rounded corners, shadow and dimmed backdrop, not from a different token.
+  - Inside a **floating container** (`BottomSheet`/`Dialog`/`Popover`/`Menu`) the library already paints `bg-overlay` — never override it. Because `--overlay` equals `--surface` in this theme, anything inside must step down: `variant="secondary"` on `ListGroup`/`Surface`, and on `Input`/`TextArea` too (HeroUI's `useIsOnSurface` auto-switch only fires inside a `Surface`, and overlays don't provide one).
+  - `Card` and `ListGroup` have no colour of their own — both render a `Surface`. No component reads `*-foreground` container tokens; all text is `text-foreground`/`text-muted`.
 - **Icons**: `lucide-react-native` on migrated screens (direct import, no wrapper). Legacy screens still use `@expo/vector-icons` (Ionicons) via the `Icon` atom in `@/design-system/atoms/Icon` — don't add new usages of it.
 - **Preferences**: Non-sensitive in MMKV, auth token in expo-secure-store.
 - **i18n**: `useTranslation()` from react-i18next. Keys in `src/i18n/locales/en/` and `src/i18n/locales/es/`.

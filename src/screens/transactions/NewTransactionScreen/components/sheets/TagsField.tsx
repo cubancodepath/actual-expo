@@ -38,7 +38,10 @@ function TagDraftRow({
 
   return (
     <View className="mb-3 flex-row items-center gap-2">
+      {/* Secondary fill: `bg-field` matches `--overlay`, and the BottomSheet
+          provides no Surface for HeroUI's auto-switch to read. */}
       <Input
+        variant="secondary"
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}

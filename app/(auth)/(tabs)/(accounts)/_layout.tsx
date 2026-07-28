@@ -1,19 +1,13 @@
 import { Stack } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { useTheme } from "@/design-system/providers/ThemeProvider";
+import { useStackOptions } from "@/lib/hooks/useStackOptions";
 
 export default function AccountsStack() {
-  const { colors } = useTheme();
+  const { screen } = useStackOptions();
   const { t } = useTranslation("accounts");
 
   return (
-    <Stack
-      screenOptions={{
-        headerTintColor: colors.headerText,
-        headerShadowVisible: false,
-        contentStyle: { backgroundColor: colors.pageBackground },
-      }}
-    >
+    <Stack screenOptions={screen}>
       <Stack.Screen name="index" options={{ headerShown: false }} />
     </Stack>
   );

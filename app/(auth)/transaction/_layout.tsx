@@ -1,11 +1,15 @@
 import { Stack } from "expo-router";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
-import { themedScreenOptions } from "@/lib/screenOptions";
+import { useStackOptions } from "@/lib/hooks/useStackOptions";
 import { TransactionFormProvider } from "@/screens/transactions/NewTransactionScreen/context/TransactionFormProvider";
 
 export default function TransactionLayout() {
-  const theme = useTheme();
-  const screen = themedScreenOptions(theme);
+  const { screen, formSheet } = useStackOptions();
+
+  // LEGACY EXCEPTION — `tags` is still a StyleSheet screen painting
+  // `theme.colors.pageBackground`; keep the route on the same legacy colour
+  // until it migrates, or the sheet's rounded corners show a mismatch.
+  const legacyTheme = useTheme();
 
   return (
     <TransactionFormProvider>
@@ -28,9 +32,11 @@ export default function TransactionLayout() {
         <Stack.Screen
           name="tags"
           options={{
+            ...formSheet([0.5, 1.0]),
             title: "Tags",
-            presentation: "formSheet",
-            sheetAllowedDetents: [0.5, 1.0],
+            // LEGACY EXCEPTION — see `legacyTheme` above.
+            headerStyle: { backgroundColor: legacyTheme.colors.pageBackground },
+            contentStyle: { backgroundColor: legacyTheme.colors.pageBackground },
           }}
         />
       </Stack>

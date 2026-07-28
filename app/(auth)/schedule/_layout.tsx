@@ -1,11 +1,9 @@
 import { Stack } from "expo-router";
-import { useTheme } from "@/design-system/providers/ThemeProvider";
-import { themedScreenOptions } from "@/lib/screenOptions";
+import { useStackOptions } from "@/lib/hooks/useStackOptions";
 import { ScheduleFormProvider } from "@/screens/schedules/ScheduleDetailScreen/context/ScheduleFormProvider";
 
 export default function ScheduleLayout() {
-  const theme = useTheme();
-  const screen = themedScreenOptions(theme);
+  const { screen } = useStackOptions();
 
   // The form provider wraps the whole stack so the detail screen and its
   // payee/category pickers share one schedule form instance.

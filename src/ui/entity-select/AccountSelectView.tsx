@@ -1,7 +1,13 @@
 import { Fragment, useMemo } from "react";
 import { View } from "react-native";
 import { useTranslation } from "react-i18next";
-import { ListGroup, Separator, Typography, useThemeColor } from "heroui-native";
+import {
+  ListGroup,
+  Separator,
+  Typography,
+  useThemeColor,
+  type SurfaceVariant,
+} from "heroui-native";
 import { Banknote, ChartSpline, Check } from "lucide-react-native";
 import type { Account } from "@/core/types/models";
 import { Money } from "@/ui/Money";
@@ -20,6 +26,13 @@ interface AccountSelectViewProps {
   enabled?: boolean;
   /** Hide this account from the list (e.g. the account being closed). */
   excludeAccountId?: string;
+  /**
+   * Fill of the row groups. Defaults to `"default"` (`bg-surface`), right on a
+   * screen. A host that renders this inside a floating container — where the
+   * canvas is `--overlay`, which equals `--surface` — must pass `"secondary"`
+   * or the groups vanish into the sheet.
+   */
+  variant?: SurfaceVariant;
 }
 
 /**
@@ -34,6 +47,7 @@ export function AccountSelectView({
   onPick,
   enabled = true,
   excludeAccountId,
+  variant = "default",
 }: AccountSelectViewProps) {
   const { t } = useTranslation("transactions");
   const accent = useThemeColor("accent");
@@ -61,7 +75,7 @@ export function AccountSelectView({
           <Typography className="mb-1 ml-2 text-xs font-semibold uppercase text-muted">
             {section.title}
           </Typography>
-          <ListGroup>
+          <ListGroup variant={variant}>
             {section.accounts.map((a, i) => (
               <Fragment key={a.id}>
                 {i > 0 ? <Separator className="mx-4" /> : null}

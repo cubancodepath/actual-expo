@@ -72,7 +72,8 @@ src/
 │                           #   resetStores.ts = resetAllStores (fan-out)
 │                           # (Ya NO hay src/services/: los side effects viven en core/server + core/platform.)
 │
-├── lib/                    # Utilidades puras sin React (currency, date, format, colors, screenOptions)
+├── lib/                    # Utilidades puras sin React (currency, date, format, colors)
+│                           #   lib/hooks/ = hooks globales (useStackOptions, useQuery…)
 │   ├── errors/             # bus de errores de la app (ErrorChannel, emitErrorEvent, toErrorCode)
 │   │                       # + install.ts (handler global). core NO emite: solo lanza ActualError.
 │   ├── queries/            # capa reactiva de AQL: liveQuery, pagedQuery, queryCache (espejo del
@@ -127,7 +128,7 @@ app → screens → (ui | stores | lib) → core   (core/server + core/platform 
   StrictMode/Fast-Refresh safe). El 401 tiene un único dueño: `lib/errors/authPolicy.ts` (subscriber
   del ErrorChannel: `auth/token-expired` → `signOut`); nadie más desloguea. Fuera del root, en import
   time: `Sentry.init` + `installGlobalHandlers` (crash handlers) y el singleton `queryClient`.
-- `app/` solo importa de `screens/` y `lib/screenOptions`.
+- `app/` solo importa de `screens/` y `lib/hooks/useStackOptions`.
 - Prohibido crear imports nuevos hacia `@/features/`, `@/shared/`, `@/components/`, `@/design-system/` (legacy).
 
 ## Mapa de migración: dónde va lo que existe hoy

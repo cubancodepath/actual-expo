@@ -17,21 +17,19 @@
 const LEGACY_GRANDFATHERED = [
   "^src/ui/feedback/ErrorBoundary\\.tsx$",
   "^src/screens/budget/components/BudgetListSkeleton\\.tsx$",
-  "^src/lib/screenOptions\\.ts$",
   "^src/hooks/useSharedAmountInput\\.ts$",
   "^src/hooks/useCursorBlink\\.tsx$",
   "^app/_layout\\.tsx$",
+  // Keeps `useTheme` ONLY to hold `schedules` on the legacy page colour until
+  // that screen migrates off StyleSheet. Drop with the exception there.
   "^app/\\(auth\\)/_layout\\.tsx$",
-  "^app/\\(auth\\)/\\(tabs\\)/\\(accounts\\)/_layout\\.tsx$",
-  "^app/\\(auth\\)/\\(tabs\\)/\\(budget\\)/_layout\\.tsx$",
-  "^app/\\(auth\\)/schedule/_layout\\.tsx$",
   "^app/\\(auth\\)/schedule/new\\.tsx$",
   "^app/\\(auth\\)/schedule/recurrence-custom\\.tsx$",
   "^app/\\(auth\\)/schedule/recurrence\\.tsx$",
   "^app/\\(auth\\)/schedules\\.tsx$",
-  "^app/\\(auth\\)/settings/_layout\\.tsx$",
   "^app/\\(auth\\)/settings/payees\\.tsx$",
   "^app/\\(auth\\)/settings/rules\\.tsx$",
+  // Same as `(auth)/_layout.tsx`: `useTheme` only pins the legacy `tags` sheet.
   "^app/\\(auth\\)/transaction/_layout\\.tsx$",
   "^app/\\(auth\\)/transaction/account-picker\\.tsx$",
   "^app/\\(auth\\)/transaction/split-category-picker\\.tsx$",

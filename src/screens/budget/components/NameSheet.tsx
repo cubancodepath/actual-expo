@@ -84,7 +84,12 @@ function NameSheetForm({
     <View className="gap-4">
       <TextField isInvalid={save.error != null}>
         <Label>{label}</Label>
+        {/* `bg-field` equals `--overlay` in this theme, and HeroUI's
+            `useIsOnSurface` auto-switch only fires inside a Surface — a
+            BottomSheet provides none. Pick the secondary fill by hand or the
+            field is invisible against the sheet. */}
         <Input
+          variant="secondary"
           ref={inputRef}
           value={name}
           onChangeText={(next) => {
@@ -187,7 +192,6 @@ export function NameSheet({
       <BottomSheet.Portal>
         <BottomSheet.Overlay />
         <BottomSheet.Content
-          backgroundClassName="bg-background"
           keyboardBehavior="interactive"
           keyboardBlurBehavior="restore"
           onChange={(index) => {

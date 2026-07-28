@@ -1,5 +1,5 @@
 import { Redirect, Stack } from "expo-router";
-import { useThemeColor } from "heroui-native";
+import { useStackOptions } from "@/lib/hooks/useStackOptions";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { GoalAutomationsProvider } from "@/screens/budget/EditGoalsScreen/context/GoalAutomationsProvider";
 
@@ -15,19 +15,14 @@ import { GoalAutomationsProvider } from "@/screens/budget/EditGoalsScreen/contex
  * parent `goalTemplatesEnabled`, authored via category-note directives).
  */
 export default function GoalLayout() {
-  const background = useThemeColor("background");
+  const { screen } = useStackOptions();
   const goalEditorEnabled = useFeatureFlag("goalTemplatesUIEnabled");
 
   if (!goalEditorEnabled) return <Redirect href="/(auth)/budget" />;
 
   return (
     <GoalAutomationsProvider>
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: background },
-        }}
-      >
+      <Stack screenOptions={{ ...screen, headerShown: false }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="editor" />
         <Stack.Screen name="mode" />

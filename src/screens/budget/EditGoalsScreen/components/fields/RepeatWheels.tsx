@@ -73,7 +73,7 @@ export function RepeatWheels({
       <BottomSheet isOpen={open} onOpenChange={setOpen}>
         <BottomSheet.Portal>
           <BottomSheet.Overlay />
-          <BottomSheet.Content backgroundClassName="bg-background">
+          <BottomSheet.Content>
             <View className="px-4 pb-2">
               <Typography className="mb-2 text-center text-lg font-semibold text-foreground">
                 {t("goals.fixed.repeatEveryTitle")}

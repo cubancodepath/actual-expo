@@ -35,7 +35,6 @@ export function AccountField({ accountId, accountName, onSelect }: AccountFieldP
             snapPoints={["55%", "90%"]}
             enableDynamicSizing={false}
             enableOverDrag={false}
-            backgroundClassName="bg-background"
             contentContainerClassName="h-full px-0 pt-0"
           >
             <ScreenHeader.ScrollArea className="bg-transparent">
@@ -88,7 +87,15 @@ function AccountSheetBody({
         paddingBottom: 24,
       }}
     >
-      <AccountSelectView enabled={open} selectedAccountId={accountId} onPick={onSelect} />
+      {/* This host is a BottomSheet, whose canvas is `--overlay` — the same
+          value as `--surface` in this theme. The groups step down a rung so
+          they don't vanish into the sheet. */}
+      <AccountSelectView
+        variant="secondary"
+        enabled={open}
+        selectedAccountId={accountId}
+        onPick={onSelect}
+      />
     </BottomSheetScrollView>
   );
 }

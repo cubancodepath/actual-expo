@@ -54,10 +54,7 @@ export function RecurrenceField({ value, onChange }: RecurrenceFieldProps) {
       <BottomSheet isOpen={open} onOpenChange={setOpen}>
         <BottomSheet.Portal>
           <BottomSheet.Overlay />
-          <BottomSheet.Content
-            backgroundClassName="bg-background"
-            contentContainerClassName="px-0 pt-0"
-          >
+          <BottomSheet.Content contentContainerClassName="px-0 pt-0">
             <ScreenHeader>
               <ScreenHeader.Back>
                 <CloseButton onPress={() => setOpen(false)} />
@@ -65,7 +62,10 @@ export function RecurrenceField({ value, onChange }: RecurrenceFieldProps) {
               <ScreenHeader.Title>{t("repeat")}</ScreenHeader.Title>
             </ScreenHeader>
             <View className="px-4 pb-4">
-              <ListGroup>
+              {/* Inside a BottomSheet the canvas is `--overlay`, which equals
+                `--surface` in this theme — a default ListGroup would be
+                invisible, so the rows step down a rung. */}
+              <ListGroup variant="secondary">
                 {options.map((o, i) => (
                   <Fragment key={o.value ?? "never"}>
                     {i > 0 ? <Separator className="mx-4" /> : null}

@@ -1,18 +1,11 @@
 import { Stack } from "expo-router";
-import { useTheme } from "@/design-system/providers/ThemeProvider";
+import { useStackOptions } from "@/lib/hooks/useStackOptions";
 
 export default function BudgetStack() {
-  const { colors } = useTheme();
+  const { screen } = useStackOptions();
 
   return (
-    <Stack
-      screenOptions={{
-        headerStyle: { backgroundColor: colors.pageBackground },
-        headerTintColor: colors.headerText,
-        headerShadowVisible: false,
-        contentStyle: { backgroundColor: colors.pageBackground },
-      }}
-    >
+    <Stack screenOptions={screen}>
       {/* The budget header is now a custom in-body component (BudgetHeader). */}
       <Stack.Screen name="index" options={{ headerShown: false }} />
     </Stack>

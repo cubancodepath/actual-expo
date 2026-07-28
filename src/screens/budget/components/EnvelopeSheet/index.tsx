@@ -5,6 +5,7 @@ import {
   EnvelopeSheetBody,
   EnvelopeSheetCaption,
   EnvelopeSheetClose,
+  EnvelopeSheetFab,
   EnvelopeSheetHero,
   EnvelopeSheetPinned,
   EnvelopeSheetRoot,
@@ -28,6 +29,8 @@ export const EnvelopeSheet = Object.assign(EnvelopeSheetRoot, {
   Close: EnvelopeSheetClose,
   /** Top-right corner, opposite Close — an overflow menu, typically. */
   Actions: EnvelopeSheetActions,
+  /** Bottom-right corner: the primary action, on a layer above the body. */
+  Fab: EnvelopeSheetFab,
 });
 
 export type { EnvelopeSheetPresentation, EnvelopeSheetTone } from "./context";

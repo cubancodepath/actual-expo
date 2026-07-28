@@ -30,6 +30,12 @@ const heroRadii = { borderBottomLeftRadius: 56, borderBottomRightRadius: 56 };
  *   hero      z-10        opaque, holds the title + amount
  *   pinned    z-15        the card that stays in the curve
  *   close     z-20        always reachable
+ *   actions   z-20        top-right corner, opposite close
+ *   fab       z-20        the primary action, over the body
+ *
+ * Anything a screen positions over the body MUST come from a part in this list.
+ * The body is a full-height ScrollView with a z of its own, so a bare
+ * `absolute` sibling lands below it: painted, but never touchable.
  */
 
 /**
@@ -176,7 +182,7 @@ export function EnvelopeSheetBody({
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
       {...rest}
-      className="z-1 flex-1 "
+      className="z-1 flex-1"
       style={[{ opacity: ready ? 1 : 0 }, style]}
       contentContainerStyle={[
         {
@@ -333,4 +339,20 @@ export function EnvelopeSheetActions({ children }: { children: ReactNode }) {
       {children}
     </View>
   );
+}
+
+/**
+ * Bottom-right corner: the sheet's primary action. Like {@link EnvelopeSheetClose}
+ * and {@link EnvelopeSheetActions} it owns only the position and the layer —
+ * bring your own control.
+ *
+ * The layer is the point. {@link EnvelopeSheetBody} is a full-height ScrollView
+ * carrying its own z, so a screen that positions a button here by hand gets one
+ * that is painted but never touchable — the scroll swallows the tap.
+ *
+ * No `useCornerStyle()`: that pays the safe-area inset the TOP corners need on a
+ * pushed sheet, and the bottom has no equivalent.
+ */
+export function EnvelopeSheetFab({ children }: { children: ReactNode }) {
+  return <View className="absolute bottom-8 right-5 z-20">{children}</View>;
 }

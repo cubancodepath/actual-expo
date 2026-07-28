@@ -65,7 +65,7 @@ export function CoverSourceScreen() {
         {/* Cover as a labelled FAB (AddTransactionFab pattern), hidden while the
           amount pad is open. */}
         {flow.editingId == null && (
-          <View className="absolute bottom-8 right-5">
+          <EnvelopeSheet.Fab>
             <Button
               isDisabled={flow.total === 0 || flow.saving}
               // Closes cover-source + cover-overspent.
@@ -74,7 +74,7 @@ export function CoverSourceScreen() {
             >
               <Button.Label>{t(flow.saving ? "coveringEllipsis" : "cover")}</Button.Label>
             </Button>
-          </View>
+          </EnvelopeSheet.Fab>
         )}
 
         {/* Rows are their own triggers (tap switches), so no Overlay/DismissArea. */}

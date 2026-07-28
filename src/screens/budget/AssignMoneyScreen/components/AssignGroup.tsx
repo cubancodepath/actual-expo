@@ -10,6 +10,7 @@ import { COL_ASSIGNED, NumericCell } from "@/screens/budget/BudgetScreen/compone
 import type { BudgetSection } from "@/screens/budget/hooks/useBudgetSections";
 import type { PendingEdits } from "../types";
 import { AssignCategoryRow } from "./AssignCategoryRow";
+import { useSurfaceLevel } from "@/ui/surface-level";
 
 interface AssignGroupProps {
   group: BudgetSection;
@@ -35,6 +36,7 @@ export function AssignGroup({
   pending,
   onPressRow,
 }: AssignGroupProps) {
+  const { itemVariant } = useSurfaceLevel();
   const { t } = useTranslation("budget");
   const budgeted = useSheetValueNumber(sheet, envelopeBudget.groupBudgeted(group.id));
 
@@ -77,7 +79,7 @@ export function AssignGroup({
       </Accordion.Trigger>
 
       <Accordion.Content className="px-0 pb-0">
-        <Surface className="w-full overflow-hidden rounded-none p-0">
+        <Surface variant={itemVariant} className="w-full overflow-hidden rounded-none p-0">
           {group.categories.map((cat, i) => (
             <Fragment key={cat.id}>
               {i > 0 && <Separator className="ml-4" />}

@@ -6,6 +6,7 @@ import { Button, Input, Label, TextField, useThemeColor } from "heroui-native";
 import { Check, X } from "lucide-react-native";
 import { ScreenHeader } from "@/ui/ScreenHeader";
 import { updateCategory } from "@/core/server/budget";
+import { SurfaceCanvas } from "@/ui/surface-level";
 
 export interface RenameCategoryScreenProps {
   categoryId: string;
@@ -41,7 +42,7 @@ export function RenameCategoryScreen({ categoryId, currentName }: RenameCategory
   }
 
   return (
-    <View className="flex-1">
+    <SurfaceCanvas context="sheet" className="flex-1">
       <ScreenHeader>
         <ScreenHeader.Back>
           <Button
@@ -79,6 +80,6 @@ export function RenameCategoryScreen({ categoryId, currentName }: RenameCategory
           />
         </TextField>
       </View>
-    </View>
+    </SurfaceCanvas>
   );
 }

@@ -6,6 +6,7 @@ import type { Account } from "@/core/types/models";
 import { Money } from "@/ui/Money";
 import { useAccountBalance } from "@/lib/hooks/useAccounts";
 import { LiftMenu, type RowRect } from "@/ui/lift-menu";
+import { useSurfaceLevel } from "@/ui/surface-level";
 
 /**
  * The visual content of an account row — icon · name · balance · chevron.
@@ -13,6 +14,7 @@ import { LiftMenu, type RowRect } from "@/ui/lift-menu";
  * renders over it, so the two match pixel-for-pixel.
  */
 export function AccountRowContent({ account }: { account: Account }) {
+  const { nested } = useSurfaceLevel();
   const foreground = useThemeColor("foreground");
   const muted = useThemeColor("muted");
   const balance = useAccountBalance(account.id);
@@ -20,7 +22,7 @@ export function AccountRowContent({ account }: { account: Account }) {
   return (
     <ListGroup.Item disabled>
       <ListGroup.ItemPrefix>
-        <View className="size-9 items-center justify-center rounded-full bg-background">
+        <View className={`size-9 items-center justify-center rounded-full ${nested}`}>
           {account.offbudget ? (
             <ChartSpline size={18} color={foreground} />
           ) : (

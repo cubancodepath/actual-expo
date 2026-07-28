@@ -10,6 +10,7 @@ import { useTabBarStore } from "@/stores/tabBarStore";
 export default function TabsLayout() {
   const accent = useThemeColor("accent");
   const muted = useThemeColor("muted");
+  const background = useThemeColor("background");
   const tabBarHidden = useTabBarStore((s) => s.hidden);
   const { t } = useTranslation();
 
@@ -28,7 +29,14 @@ export default function TabsLayout() {
 
   return (
     <Tabs
-      screenOptions={{ headerShown: false, tabBarStyle: { display: "none" } }}
+      // A tab navigator paints its own scene background, independent of the
+      // Stack inside each tab — without `sceneStyle` it falls back to the
+      // navigation theme instead of our token.
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: { display: "none" },
+        sceneStyle: { backgroundColor: background },
+      }}
       tabBar={(props) => <FloatingTabBar {...props} />}
     >
       {TABS.map((tab) => (

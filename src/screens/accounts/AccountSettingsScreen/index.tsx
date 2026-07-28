@@ -21,6 +21,7 @@ import { useAccounts } from "@/lib/hooks/useAccounts";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { ScreenHeader } from "@/ui/ScreenHeader";
 import { useAccountSettingsForm } from "./hooks/useAccountSettingsForm";
+import { SurfaceCanvas } from "@/ui/surface-level";
 
 /** Edit-account modal: rename, notes, and a close/reopen action. */
 export function AccountSettingsScreen() {
@@ -38,9 +39,9 @@ export function AccountSettingsScreen() {
 
   if (!account || noteQuery.isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-background">
+      <SurfaceCanvas context="sheet" className="flex-1 items-center justify-center">
         <Spinner color={accent} />
-      </View>
+      </SurfaceCanvas>
     );
   }
   return <AccountSettingsForm account={account} initialNote={noteQuery.data ?? ""} />;
@@ -77,7 +78,7 @@ function AccountSettingsForm({ account, initialNote }: { account: Account; initi
   }
 
   return (
-    <View className="flex-1 bg-background">
+    <SurfaceCanvas context="sheet" className="flex-1">
       <ScreenHeader>
         <ScreenHeader.Back>
           <Button
@@ -138,6 +139,6 @@ function AccountSettingsForm({ account, initialNote }: { account: Account; initi
           </Button.Label>
         </Button>
       </ScrollView>
-    </View>
+    </SurfaceCanvas>
   );
 }

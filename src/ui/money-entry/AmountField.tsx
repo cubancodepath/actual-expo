@@ -13,6 +13,7 @@ import { AmountKeyboard, useAmountKeyboardState } from "@/ui/amount-keyboard";
 import { Money } from "@/ui/Money";
 import { BlinkingCursor } from "@/ui/BlinkingCursor";
 import { lightHaptic } from "@/ui/haptics";
+import { useSurfaceLevel } from "@/ui/surface-level";
 
 type AmountFieldProps = {
   /** Money tone (default "plain"). */
@@ -87,6 +88,7 @@ const SLIDE = { duration: 180, easing: Easing.out(Easing.cubic) };
  * `<AmountField><AmountField.Sign .../></AmountField>`.
  */
 function AmountFieldSign({ isNegative, onToggle }: AmountFieldSignProps) {
+  const { nested } = useSurfaceLevel();
   const reducedMotion = useReducedMotion();
   const progress = useSharedValue(isNegative ? 1 : 0);
 
@@ -115,7 +117,7 @@ function AmountFieldSign({ isNegative, onToggle }: AmountFieldSignProps) {
         style={{ width: TRACK_W, height: TRACK_H, paddingLeft: PAD }}
       >
         <Animated.View
-          className="items-center justify-center rounded-full bg-surface shadow-sm"
+          className={`items-center justify-center rounded-full shadow-sm ${nested}`}
           style={[{ width: THUMB, height: THUMB }, thumbStyle]}
         >
           <Typography

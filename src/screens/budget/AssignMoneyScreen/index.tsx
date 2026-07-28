@@ -28,6 +28,7 @@ import { AssignGroup } from "./components/AssignGroup";
 import { AutoAssignButton } from "./components/AutoAssignButton";
 import { ProjectedToAssignBar } from "./components/ProjectedToAssignBar";
 import type { PendingEdits } from "./types";
+import { SurfaceCanvas, SURFACE_LEVELS } from "@/ui/surface-level";
 
 /** Goal indicators (goal/longGoal) staged by auto-assign, written on save. */
 type GoalMeta = Record<string, { goal: number | null; longGoal: boolean }>;
@@ -237,7 +238,7 @@ export function AssignMoneyScreen() {
   const dataReady = !isLoading || groups.length > 0;
 
   return (
-    <View className="flex-1 bg-background">
+    <SurfaceCanvas context="sheet" className="flex-1">
       <ScreenHeaderRoot>
         <ScreenHeaderBack>
           <CloseButton onPress={handleClose} />
@@ -307,8 +308,10 @@ export function AssignMoneyScreen() {
       </AmountKeyboard>
 
       {editingCatId == null && (
+        // A pinned bar sitting ON the canvas — same role as AmountKeyboard's
+        // panel, so it takes the `item` rung, not the canvas token.
         <View
-          className="absolute inset-x-0 bottom-0 border-t border-border bg-background px-4 pt-3"
+          className={`absolute inset-x-0 bottom-0 border-t border-border px-4 pt-3 ${SURFACE_LEVELS.sheet.item}`}
           style={{ paddingBottom: insets.bottom + 12 }}
         >
           <Button isDisabled={!isDirty || saving} onPress={handleSave}>
@@ -316,6 +319,6 @@ export function AssignMoneyScreen() {
           </Button>
         </View>
       )}
-    </View>
+    </SurfaceCanvas>
   );
 }

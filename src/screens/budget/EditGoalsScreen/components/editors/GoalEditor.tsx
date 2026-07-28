@@ -41,6 +41,7 @@ import { HistoricalRows } from "./HistoricalEditor";
 import { PercentageRows } from "./PercentageEditor";
 import { RemainderRows } from "./RemainderEditor";
 import { ScheduleRows } from "./ScheduleEditor";
+import { useSurfaceLevel } from "@/ui/surface-level";
 
 /** Where a Custom goal's amount comes from. "fixed" = the user types it. */
 type AmountSource = "fixed" | "percentage" | "historical" | "schedule" | "remainder";
@@ -81,6 +82,7 @@ export function GoalEditor({
   /** Open the "Next time I want to…" pane; `custom` = editor is on Custom. */
   onOpenModePane: (custom: boolean) => void;
 }) {
+  const { itemVariant } = useSurfaceLevel();
   const { t, i18n } = useTranslation("budget");
   const muted = useThemeColor("muted");
 
@@ -198,7 +200,7 @@ export function GoalEditor({
 
   return (
     <View className="gap-3">
-      <ListGroup>
+      <ListGroup variant={itemVariant}>
         <View className="px-3 pt-3 pb-2">
           <Segment value={segment} onValueChange={(v) => selectSegment(v as RecurrenceSegment)}>
             <Segment.Group>
@@ -325,7 +327,7 @@ export function GoalEditor({
       </ListGroup>
 
       {config?.segment === "custom" ? (
-        <ListGroup>
+        <ListGroup variant={itemVariant}>
           <DateFieldRow
             icon={CalendarDays}
             label={t("goals.fixed.dueOn")}

@@ -6,6 +6,7 @@ import { promptToEnableEncryption } from "@/ui/feedback/EncryptionPasswordPrompt
 import { useMetadataPref } from "@/lib/hooks/useMetadataPref";
 import { useSessionStore } from "@/stores/sessionStore";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
+import { useSurfaceLevel } from "@/ui/surface-level";
 
 /**
  * Encryption group — mirrors upstream's `settings/Encryption.tsx` states,
@@ -14,6 +15,7 @@ import { useBudgetContextStore } from "@/stores/budgetContextStore";
  * Always visible; the switch is disabled without a server.
  */
 export function EncryptionGroup() {
+  const { itemVariant } = useSurfaceLevel();
   const { t } = useTranslation("settings");
 
   const [encryptKeyId] = useMetadataPref("encryptKeyId");
@@ -39,7 +41,7 @@ export function EncryptionGroup() {
 
   return (
     <>
-      <ListGroup>
+      <ListGroup variant={itemVariant}>
         <ListGroup.Item>
           <ListGroup.ItemContent>
             <ListGroup.ItemTitle>{t("enableEncryption")}</ListGroup.ItemTitle>

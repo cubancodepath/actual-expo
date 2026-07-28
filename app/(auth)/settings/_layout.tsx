@@ -1,10 +1,10 @@
 import { Stack } from "expo-router";
-import { useTheme } from "@/design-system/providers/ThemeProvider";
-import { themedScreenOptions } from "@/lib/screenOptions";
+import { useStackOptions } from "@/lib/hooks/useStackOptions";
 
 export default function SettingsLayout() {
-  const theme = useTheme();
-  const screen = themedScreenOptions(theme);
+  // Presented as a `fullScreenModal` — it covers everything, so it IS the
+  // canvas and stays on the base `screen` rung.
+  const { screen } = useStackOptions();
 
   return (
     <Stack screenOptions={{ ...screen, headerBackButtonDisplayMode: "minimal" }}>

@@ -7,6 +7,7 @@ import { groupByInitial } from "@/lib/groupByInitial";
 import { PickerScreen } from "@/ui/PickerScreen";
 import { usePayees } from "@/lib/hooks/usePayees";
 import type { Payee } from "@/core/types/models";
+import { useSurfaceLevel } from "@/ui/surface-level";
 
 /** A payee choice: a real payee (`id`) or a free-text created one (`id: null`). */
 export type PayeePick = { id: string | null; name: string; transferAcct?: string | null };
@@ -35,6 +36,7 @@ export function PayeeSelectView({
   selectedPayeeName = "",
   onPick,
 }: PayeeSelectViewProps) {
+  const { itemVariant } = useSurfaceLevel();
   const { t } = useTranslation("transactions");
   const accent = useThemeColor("accent");
   const { payees } = usePayees();
@@ -75,7 +77,7 @@ export function PayeeSelectView({
   };
 
   const payeeGroup = (items: Payee[]) => (
-    <ListGroup>
+    <ListGroup variant={itemVariant}>
       {items.map((p, i) => (
         <Fragment key={p.id}>
           {i > 0 ? <Separator className="mx-4" /> : null}
@@ -102,7 +104,7 @@ export function PayeeSelectView({
       searchPlaceholder={t("searchPayees")}
     >
       {searching && !exact ? (
-        <ListGroup className="mb-3">
+        <ListGroup variant={itemVariant} className="mb-3">
           <ListGroup.Item onPress={onCreateRow}>
             <ListGroup.ItemPrefix>
               <CirclePlus size={18} color={accent} />

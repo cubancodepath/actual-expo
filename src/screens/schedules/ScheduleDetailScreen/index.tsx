@@ -41,11 +41,13 @@ import { DateField } from "@/ui/money-entry/DateField";
 import { RecurrencePatternField } from "@/ui/money-entry/RecurrencePatternField";
 import { useScheduleFormContext } from "./context/ScheduleFormProvider";
 import type { AmountOp } from "./hooks/useScheduleForm";
+import { useSurfaceLevel } from "@/ui/surface-level";
 
 const CARD_OVERLAP = 36;
 const AMOUNT_OPS: AmountOp[] = ["is", "isapprox", "isbetween"];
 
 export function ScheduleDetailScreen() {
+  const { itemVariant, canvas, item } = useSurfaceLevel();
   const router = useRouter();
   const { t } = useTranslation(["schedules", "transactions"]);
   const [danger, muted, foreground, accent] = useThemeColor([
@@ -95,7 +97,7 @@ export function ScheduleDetailScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
-      className="flex-1 bg-background"
+      className={`flex-1 ${canvas}`}
     >
       <AmountKeyboard
         isOpen={amountEditing}
@@ -165,7 +167,7 @@ export function ScheduleDetailScreen() {
                   <View
                     className={cn(
                       "flex-row items-center gap-1.5 rounded-full px-3.5 py-1.5",
-                      opOpen ? "bg-accent-soft" : "bg-surface",
+                      opOpen ? "bg-accent-soft" : item,
                     )}
                   >
                     <Typography
@@ -191,7 +193,7 @@ export function ScheduleDetailScreen() {
             </View>
 
             <AmountKeyboard.DismissArea className="gap-2 px-4" style={{ marginTop: -CARD_OVERLAP }}>
-              <Surface className="overflow-hidden rounded-2xl">
+              <Surface variant={itemVariant} className="overflow-hidden rounded-2xl">
                 <FieldRow
                   icon={Tag}
                   label={t("scheduleName")}

@@ -14,6 +14,7 @@ import { Plus, Tags as TagsIcon } from "lucide-react-native";
 import { extractTagsFromNotes } from "@/core/shared/tags";
 import type { Tag } from "@/core/types/models";
 import { FieldRow } from "@/ui/money-entry/FieldRow";
+import { SurfaceLevel } from "@/ui/surface-level";
 
 /**
  * The draft-tag input row. Its own component so it can call
@@ -111,31 +112,33 @@ export function TagsField({ notes, tags, onChangeNotes }: TagsFieldProps) {
             keyboardBehavior="extend"
             contentContainerClassName="h-full"
           >
-            <BottomSheet.Title className="mb-3">{t("tags")}</BottomSheet.Title>
-            <TagDraftRow
-              value={draft}
-              onChangeText={setDraft}
-              onAdd={addDraft}
-              placeholder={t("addTag")}
-              accent={accent}
-            />
-            <BottomSheetScrollView keyboardShouldPersistTaps="handled">
-              <View className="flex-row flex-wrap gap-2">
-                {all.map((tag) => {
-                  const on = current.includes(tag);
-                  return (
-                    <Chip
-                      key={tag}
-                      variant={on ? "primary" : "secondary"}
-                      color={on ? "accent" : "default"}
-                      onPress={() => toggle(tag)}
-                    >
-                      <Chip.Label>#{tag}</Chip.Label>
-                    </Chip>
-                  );
-                })}
-              </View>
-            </BottomSheetScrollView>
+            <SurfaceLevel context="sheet">
+              <BottomSheet.Title className="mb-3">{t("tags")}</BottomSheet.Title>
+              <TagDraftRow
+                value={draft}
+                onChangeText={setDraft}
+                onAdd={addDraft}
+                placeholder={t("addTag")}
+                accent={accent}
+              />
+              <BottomSheetScrollView keyboardShouldPersistTaps="handled">
+                <View className="flex-row flex-wrap gap-2">
+                  {all.map((tag) => {
+                    const on = current.includes(tag);
+                    return (
+                      <Chip
+                        key={tag}
+                        variant={on ? "primary" : "secondary"}
+                        color={on ? "accent" : "default"}
+                        onPress={() => toggle(tag)}
+                      >
+                        <Chip.Label>#{tag}</Chip.Label>
+                      </Chip>
+                    );
+                  })}
+                </View>
+              </BottomSheetScrollView>
+            </SurfaceLevel>
           </BottomSheet.Content>
         </BottomSheet.Portal>
       </BottomSheet>

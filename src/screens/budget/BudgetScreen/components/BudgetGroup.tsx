@@ -12,6 +12,7 @@ import { BudgetCategoryRow } from "./BudgetCategoryRow";
 import { IncomeCategoryRow } from "./IncomeCategoryRow";
 import { COL_ASSIGNED, COL_AVAILABLE, NumericCell } from "./columns";
 import type { LiftedCategory } from "./liftedCategory";
+import { useSurfaceLevel } from "@/ui/surface-level";
 
 interface BudgetGroupProps {
   group: BudgetSection;
@@ -53,6 +54,7 @@ export const BudgetGroup = memo(function BudgetGroup({
   liftedCatId,
   goalsEnabled,
 }: BudgetGroupProps) {
+  const { itemVariant } = useSurfaceLevel();
   const { t } = useTranslation("budget");
   const budgeted = useSheetValueNumber(sheet, envelopeBudget.groupBudgeted(group.id));
   const spent = useSheetValueNumber(sheet, envelopeBudget.groupSpent(group.id));
@@ -105,7 +107,7 @@ export const BudgetGroup = memo(function BudgetGroup({
       </Accordion.Trigger>
 
       <Accordion.Content className="px-0 pb-0">
-        <Surface className="w-full overflow-hidden rounded-none p-0">
+        <Surface variant={itemVariant} className="w-full overflow-hidden rounded-none p-0">
           {group.categories.map((cat, i) => (
             <Fragment key={cat.id}>
               {i > 0 && <Separator className="ml-4" />}

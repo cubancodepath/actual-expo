@@ -8,6 +8,7 @@ import { parseGoalDef } from "@/core/server/budget/goal-template-parser";
 import { describeTemplate } from "@/screens/budget/goals";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import type { BudgetSectionCategory } from "@/screens/budget/hooks/useBudgetSections";
+import { useSurfaceLevel } from "@/ui/surface-level";
 
 /**
  * The category's saved goals in plain language, with a way into the editor.
@@ -28,6 +29,8 @@ function GoalCard({
   canEdit: boolean;
   onEditGoals: () => void;
 }) {
+  // The card itself is the `item`; the list nested inside it drops another rung.
+  const { item, nestedVariant } = useSurfaceLevel();
   const { t, i18n } = useTranslation("budget");
   const [muted, accentForeground] = useThemeColor(["muted", "accent-foreground"]);
 
@@ -44,8 +47,8 @@ function GoalCard({
   }
 
   return (
-    <View className="gap-3 p-4 bg-surface rounded-2xl shadow-xs">
-      <ListGroup className="overflow-hidden rounded-2xl shadow-none">
+    <View className={`gap-3 p-4 rounded-2xl shadow-xs ${item}`}>
+      <ListGroup variant={nestedVariant} className="overflow-hidden rounded-2xl shadow-none">
         {templates.map((tmpl, i) => (
           <Fragment key={i}>
             {i > 0 ? <Separator className="mx-4" /> : null}

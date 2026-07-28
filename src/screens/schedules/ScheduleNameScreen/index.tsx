@@ -6,6 +6,7 @@ import { Button, Input, Label, TextField, useThemeColor } from "heroui-native";
 import { Check, X } from "lucide-react-native";
 import { ScreenHeader } from "@/ui/ScreenHeader";
 import { useScheduleFormContext } from "@/screens/schedules/ScheduleDetailScreen/context/ScheduleFormProvider";
+import { SurfaceCanvas } from "@/ui/surface-level";
 
 /**
  * Edit the schedule name in a full modal (same shape as RenameCategoryScreen),
@@ -30,7 +31,7 @@ export function ScheduleNameScreen() {
   }
 
   return (
-    <View className="flex-1">
+    <SurfaceCanvas context="sheet" className="flex-1">
       <ScreenHeader>
         <ScreenHeader.Back>
           <Button
@@ -68,6 +69,6 @@ export function ScheduleNameScreen() {
           />
         </TextField>
       </View>
-    </View>
+    </SurfaceCanvas>
   );
 }

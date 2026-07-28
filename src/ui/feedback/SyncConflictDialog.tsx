@@ -5,6 +5,7 @@ import { Button, Dialog, Spinner, useThemeColor } from "heroui-native";
 import { useSyncStore } from "@/stores/syncStore";
 import { resetSync, redownloadBudget } from "@/stores/operations/syncRecovery";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
+import { SurfaceLevel } from "@/ui/surface-level";
 
 type ConflictAction = "download" | "upload";
 
@@ -57,40 +58,42 @@ export function SyncConflictDialog() {
       <Dialog.Portal>
         <Dialog.Overlay />
         <Dialog.Content>
-          <View className="mb-5 gap-1.5">
-            <Dialog.Title>
-              {isOldVersion ? t("syncConflict.oldVersionTitle") : t("syncConflict.resetTitle")}
-            </Dialog.Title>
-            <Dialog.Description>
-              {isOldVersion
-                ? t("syncConflict.oldVersionDescription")
-                : t("syncConflict.resetDescription")}
-            </Dialog.Description>
-          </View>
+          <SurfaceLevel context="sheet">
+            <View className="mb-5 gap-1.5">
+              <Dialog.Title>
+                {isOldVersion ? t("syncConflict.oldVersionTitle") : t("syncConflict.resetTitle")}
+              </Dialog.Title>
+              <Dialog.Description>
+                {isOldVersion
+                  ? t("syncConflict.oldVersionDescription")
+                  : t("syncConflict.resetDescription")}
+              </Dialog.Description>
+            </View>
 
-          <View className="gap-3">
-            {!isOldVersion && (
-              <Button variant="danger" onPress={() => run("download")} isDisabled={!!busy}>
-                {busy === "download" && <Spinner size="sm" color={accentForeground} />}
-                <Button.Label>{t("syncConflict.revertToServer")}</Button.Label>
+            <View className="gap-3">
+              {!isOldVersion && (
+                <Button variant="danger" onPress={() => run("download")} isDisabled={!!busy}>
+                  {busy === "download" && <Spinner size="sm" color={accentForeground} />}
+                  <Button.Label>{t("syncConflict.revertToServer")}</Button.Label>
+                </Button>
+              )}
+              <Button variant="primary" onPress={() => run("upload")} isDisabled={!!busy}>
+                {busy === "upload" && <Spinner size="sm" color={accentForeground} />}
+                <Button.Label>
+                  {isOldVersion ? t("syncConflict.resetSync") : t("syncConflict.uploadThisDevice")}
+                </Button.Label>
               </Button>
-            )}
-            <Button variant="primary" onPress={() => run("upload")} isDisabled={!!busy}>
-              {busy === "upload" && <Spinner size="sm" color={accentForeground} />}
-              <Button.Label>
-                {isOldVersion ? t("syncConflict.resetSync") : t("syncConflict.uploadThisDevice")}
-              </Button.Label>
-            </Button>
-            <Button variant="ghost" onPress={() => setDismissed(true)} isDisabled={!!busy}>
-              <Button.Label>{t("cancel")}</Button.Label>
-            </Button>
-          </View>
+              <Button variant="ghost" onPress={() => setDismissed(true)} isDisabled={!!busy}>
+                <Button.Label>{t("cancel")}</Button.Label>
+              </Button>
+            </View>
 
-          {failed && (
-            <Dialog.Description className="mt-3">
-              {t("syncConflict.actionFailed")}
-            </Dialog.Description>
-          )}
+            {failed && (
+              <Dialog.Description className="mt-3">
+                {t("syncConflict.actionFailed")}
+              </Dialog.Description>
+            )}
+          </SurfaceLevel>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog>

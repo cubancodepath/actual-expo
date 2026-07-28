@@ -2,6 +2,7 @@ import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { Accordion, PressableFeedback, Surface, Typography } from "heroui-native";
 import { CollapsibleIndicator } from "@/ui/CollapsibleIndicator";
+import { useSurfaceLevel } from "@/ui/surface-level";
 
 /**
  * Accordion value for the hidden section. Not a group id — no such group exists —
@@ -23,6 +24,7 @@ export const HIDDEN_SECTION_VALUE = "__hidden__";
  * this room.
  */
 export function HiddenSectionLink({ count, onPress }: { count: number; onPress: () => void }) {
+  const { itemVariant } = useSurfaceLevel();
   const { t } = useTranslation("budget");
 
   return (
@@ -37,7 +39,7 @@ export function HiddenSectionLink({ count, onPress }: { count: number; onPress: 
       </Accordion.Trigger>
 
       <Accordion.Content className="px-0 pb-0">
-        <Surface className="w-full overflow-hidden rounded-none p-0">
+        <Surface variant={itemVariant} className="w-full overflow-hidden rounded-none p-0">
           <PressableFeedback onPress={onPress} className="flex-row items-center px-4 py-2.5">
             <Typography className="flex-1 text-base text-foreground" numberOfLines={1}>
               {t("nHiddenCategories", { count })}

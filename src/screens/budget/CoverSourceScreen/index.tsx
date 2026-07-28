@@ -6,6 +6,7 @@ import { EnvelopeSheet } from "@/screens/budget/components/EnvelopeSheet";
 import { TransferEntryList } from "@/screens/budget/components/TransferEntryList";
 import { useTransferFlow } from "@/screens/budget/hooks/useTransferFlow";
 import { AmountKeyboard } from "@/ui/amount-keyboard";
+import { SurfaceLevel } from "@/ui/surface-level";
 
 /**
  * Cover-source screen: pick funding sources and how much to take from each to
@@ -32,59 +33,62 @@ export function CoverSourceScreen() {
 
   const isCovered = flow.projected >= 0 && flow.entries.length > 0;
 
+  // Presented as a formSheet: the budget list stays visible behind it.
   return (
-    <EnvelopeSheet tone={isCovered ? "success" : "danger"}>
-      <EnvelopeSheet.Backdrop />
+    <SurfaceLevel context="sheet">
+      <EnvelopeSheet tone={isCovered ? "success" : "danger"}>
+        <EnvelopeSheet.Backdrop />
 
-      <EnvelopeSheet.Body
-        ref={flow.scrollRef}
-        {...flow.scrollProps}
-        contentContainerStyle={{ paddingBottom: flow.bottomPadding }}
-      >
-        <View className="gap-2 px-4">
-          <TransferEntryList
-            entries={flow.entries}
-            flow="gives"
-            editingId={flow.editingId}
-            onPressAmount={flow.onPressAmount}
-            onAddCategory={flow.handleAddCategory}
-          />
-        </View>
-      </EnvelopeSheet.Body>
+        <EnvelopeSheet.Body
+          ref={flow.scrollRef}
+          {...flow.scrollProps}
+          contentContainerStyle={{ paddingBottom: flow.bottomPadding }}
+        >
+          <View className="gap-2 px-4">
+            <TransferEntryList
+              entries={flow.entries}
+              flow="gives"
+              editingId={flow.editingId}
+              onPressAmount={flow.onPressAmount}
+              onAddCategory={flow.handleAddCategory}
+            />
+          </View>
+        </EnvelopeSheet.Body>
 
-      <EnvelopeSheet.Hero>
-        <EnvelopeSheet.Title>{catName}</EnvelopeSheet.Title>
-        <EnvelopeSheet.Amount cents={flow.projected} />
-      </EnvelopeSheet.Hero>
+        <EnvelopeSheet.Hero>
+          <EnvelopeSheet.Title>{catName}</EnvelopeSheet.Title>
+          <EnvelopeSheet.Amount cents={flow.projected} />
+        </EnvelopeSheet.Hero>
 
-      <EnvelopeSheet.Close onPress={() => router.back()} />
+        <EnvelopeSheet.Close onPress={() => router.back()} />
 
-      {/* Cover as a labelled FAB (AddTransactionFab pattern), hidden while the
+        {/* Cover as a labelled FAB (AddTransactionFab pattern), hidden while the
           amount pad is open. */}
-      {flow.editingId == null && (
-        <View className="absolute bottom-8 right-5">
-          <Button
-            isDisabled={flow.total === 0 || flow.saving}
-            // Closes cover-source + cover-overspent.
-            onPress={() => flow.handleSave(() => router.dismiss(2))}
-            className="h-14 rounded-full px-8 shadow-lg"
-          >
-            <Button.Label>{t(flow.saving ? "coveringEllipsis" : "cover")}</Button.Label>
-          </Button>
-        </View>
-      )}
+        {flow.editingId == null && (
+          <View className="absolute bottom-8 right-5">
+            <Button
+              isDisabled={flow.total === 0 || flow.saving}
+              // Closes cover-source + cover-overspent.
+              onPress={() => flow.handleSave(() => router.dismiss(2))}
+              className="h-14 rounded-full px-8 shadow-lg"
+            >
+              <Button.Label>{t(flow.saving ? "coveringEllipsis" : "cover")}</Button.Label>
+            </Button>
+          </View>
+        )}
 
-      {/* Rows are their own triggers (tap switches), so no Overlay/DismissArea. */}
-      <AmountKeyboard
-        isOpen={flow.editingId != null}
-        onClose={flow.closePad}
-        value={flow.editingAmount}
-        onValueChange={flow.setEditingAmount}
-      >
-        <AmountKeyboard.Portal>
-          <AmountKeyboard.Panel onHeightChange={flow.onKeyboardHeightChange} />
-        </AmountKeyboard.Portal>
-      </AmountKeyboard>
-    </EnvelopeSheet>
+        {/* Rows are their own triggers (tap switches), so no Overlay/DismissArea. */}
+        <AmountKeyboard
+          isOpen={flow.editingId != null}
+          onClose={flow.closePad}
+          value={flow.editingAmount}
+          onValueChange={flow.setEditingAmount}
+        >
+          <AmountKeyboard.Portal>
+            <AmountKeyboard.Panel onHeightChange={flow.onKeyboardHeightChange} />
+          </AmountKeyboard.Portal>
+        </AmountKeyboard>
+      </EnvelopeSheet>
+    </SurfaceLevel>
   );
 }

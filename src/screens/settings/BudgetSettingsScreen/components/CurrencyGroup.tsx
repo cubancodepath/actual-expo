@@ -6,6 +6,7 @@ import { ListGroup, Separator, Switch, Typography, useThemeColor } from "heroui-
 import { ChevronRight } from "lucide-react-native";
 import { useSyncedPref } from "@/lib/hooks/useSyncedPref";
 import { getCurrency } from "@/core/shared/currencies";
+import { useSurfaceLevel } from "@/ui/surface-level";
 
 /** Row with a current value that drills into a picker sub-screen. */
 function NavValueRow({
@@ -41,6 +42,7 @@ function NavValueRow({
  * experimental flag (gated by the parent screen).
  */
 export function CurrencyGroup() {
+  const { itemVariant } = useSurfaceLevel();
   const router = useRouter();
   const { t } = useTranslation("settings");
   const muted = useThemeColor("muted");
@@ -64,7 +66,7 @@ export function CurrencyGroup() {
 
   return (
     <>
-      <ListGroup>
+      <ListGroup variant={itemVariant}>
         {wrap(
           <NavValueRow
             title={t("defaultCurrency")}

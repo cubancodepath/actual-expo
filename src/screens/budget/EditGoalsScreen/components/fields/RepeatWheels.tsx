@@ -11,6 +11,7 @@ import { WheelPicker, WheelPickerGroup } from "heroui-native-pro";
 import { Repeat2 } from "lucide-react-native";
 import { REPEAT_MAX, type CustomRepeat, type RepeatUnit } from "@/screens/budget/goals";
 import { FieldRow } from "./FieldRow";
+import { SurfaceLevel } from "@/ui/surface-level";
 
 const UNITS: RepeatUnit[] = ["day", "week", "month", "year"];
 
@@ -73,37 +74,39 @@ export function RepeatWheels({
       <BottomSheet isOpen={open} onOpenChange={setOpen}>
         <BottomSheet.Portal>
           <BottomSheet.Overlay />
-          <BottomSheet.Content backgroundClassName="bg-background">
-            <View className="px-4 pb-2">
-              <Typography className="mb-2 text-center text-lg font-semibold text-foreground">
-                {t("goals.fixed.repeatEveryTitle")}
-              </Typography>
-              <VirtualizedListContextResetter>
-                <WheelPickerGroup
-                  values={{ interval: value.interval, unit: value.unit }}
-                  onValuesChange={(next) => {
-                    const unit = next.unit as RepeatUnit;
-                    const interval = Math.min(next.interval as number, REPEAT_MAX[unit]);
-                    if (unit !== value.unit || interval !== value.interval) {
-                      onChange({ unit, interval });
-                    }
-                  }}
-                >
-                  <WheelPicker
-                    name="interval"
-                    items={intervalItems}
-                    classNames={{ itemLabel: "tabular-nums" }}
-                  />
-                  <WheelPicker name="unit" items={unitItems} />
-                  <WheelPickerGroup.Indicator />
-                  <WheelPickerGroup.Mask />
-                </WheelPickerGroup>
-              </VirtualizedListContextResetter>
+          <BottomSheet.Content>
+            <SurfaceLevel context="sheet">
+              <View className="px-4 pb-2">
+                <Typography className="mb-2 text-center text-lg font-semibold text-foreground">
+                  {t("goals.fixed.repeatEveryTitle")}
+                </Typography>
+                <VirtualizedListContextResetter>
+                  <WheelPickerGroup
+                    values={{ interval: value.interval, unit: value.unit }}
+                    onValuesChange={(next) => {
+                      const unit = next.unit as RepeatUnit;
+                      const interval = Math.min(next.interval as number, REPEAT_MAX[unit]);
+                      if (unit !== value.unit || interval !== value.interval) {
+                        onChange({ unit, interval });
+                      }
+                    }}
+                  >
+                    <WheelPicker
+                      name="interval"
+                      items={intervalItems}
+                      classNames={{ itemLabel: "tabular-nums" }}
+                    />
+                    <WheelPicker name="unit" items={unitItems} />
+                    <WheelPickerGroup.Indicator />
+                    <WheelPickerGroup.Mask />
+                  </WheelPickerGroup>
+                </VirtualizedListContextResetter>
 
-              <Button variant="secondary" className="mt-2" onPress={() => setOpen(false)}>
-                <Button.Label>{t("goals.done")}</Button.Label>
-              </Button>
-            </View>
+                <Button variant="secondary" className="mt-2" onPress={() => setOpen(false)}>
+                  <Button.Label>{t("goals.done")}</Button.Label>
+                </Button>
+              </View>
+            </SurfaceLevel>
           </BottomSheet.Content>
         </BottomSheet.Portal>
       </BottomSheet>

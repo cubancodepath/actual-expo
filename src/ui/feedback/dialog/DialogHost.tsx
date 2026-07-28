@@ -5,6 +5,7 @@ import type { TFunction } from "i18next";
 import { Button, Dialog } from "heroui-native";
 import { dismissDialog, settleDialog, useDialogStore } from "./dialogStore";
 import type { DialogRequest } from "./types";
+import { SurfaceLevel } from "@/ui/surface-level";
 
 type CommonT = TFunction<"common">;
 type ContentProps = React.ComponentProps<typeof Dialog.Content>;
@@ -53,7 +54,9 @@ function renderContent(current: DialogRequest, t: CommonT) {
     const { opts } = current;
     const content = (
       <Dialog.Content {...(opts.contentProps as ContentProps)}>
-        {opts.render({ close: (value) => settleDialog(value) })}
+        <SurfaceLevel context="sheet">
+          {opts.render({ close: (value) => settleDialog(value) })}
+        </SurfaceLevel>
       </Dialog.Content>
     );
     if (opts.keyboardAvoiding) {
@@ -66,7 +69,11 @@ function renderContent(current: DialogRequest, t: CommonT) {
     return content;
   }
 
-  return <Dialog.Content>{renderBuiltIn(current, t)}</Dialog.Content>;
+  return (
+    <Dialog.Content>
+      <SurfaceLevel context="sheet">{renderBuiltIn(current, t)}</SurfaceLevel>
+    </Dialog.Content>
+  );
 }
 
 function renderBuiltIn(current: DialogRequest, t: CommonT) {

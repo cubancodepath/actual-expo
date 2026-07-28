@@ -6,6 +6,7 @@ import { Money } from "@/ui/Money";
 import { LiftMenu, type RowRect } from "@/ui/lift-menu";
 import type { PreviewTransaction } from "@/core/server/schedules";
 import type { ScheduleStatus } from "@/core/types/models";
+import { useSurfaceLevel } from "@/ui/surface-level";
 
 interface PreviewRowProps {
   preview: PreviewTransaction;
@@ -30,9 +31,9 @@ const STATUS_PILL: Partial<Record<ScheduleStatus, PillDef>> = {
 
 /**
  * Read-only ledger row for an upcoming (scheduled) transaction inside the
- * "Schedules" accordion. Mirrors TransactionRow's structure — a `bg-surface`
+ * "Schedules" accordion. Mirrors TransactionRow's structure — an `item`-rung
  * strip with a hairline separator above (so consecutive rows read as one card
- * and the date headers break onto the page background) — reads muted to signal
+ * and the date headers break onto the canvas) — reads muted to signal
  * it hasn't posted yet, and carries a status pill (Due / Missed / Upcoming).
  * Long-press actions are wired by the parent (UpcomingSection).
  */
@@ -42,12 +43,13 @@ export const PreviewRow = memo(function PreviewRow({
   onLongPress,
   isLifted = false,
 }: PreviewRowProps) {
+  const { item } = useSurfaceLevel();
   const { t } = useTranslation(["transactions", "schedules"]);
   // Previews always read as due / missed / upcoming; default to upcoming.
   const statusPill = STATUS_PILL[preview.status] ?? STATUS_PILL.upcoming!;
 
   return (
-    <View className="bg-surface">
+    <View className={item}>
       {!isFirst && <Separator className="ml-4" />}
       <LiftMenu.Row
         isDisabled={!onLongPress}

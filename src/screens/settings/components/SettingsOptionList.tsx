@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ListGroup, Separator, useThemeColor } from "heroui-native";
 import { Check } from "lucide-react-native";
 import { ScreenHeader } from "@/ui/ScreenHeader";
+import { useSurfaceLevel } from "@/ui/surface-level";
 
 export type SettingsOption = {
   value: string;
@@ -28,6 +29,7 @@ type SettingsOptionListProps = {
  * sub-screens (Date Format, Number Format, First Day of Week).
  */
 export function SettingsOptionList({ title, options, value, onSelect }: SettingsOptionListProps) {
+  const { itemVariant } = useSurfaceLevel();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const accent = useThemeColor("accent");
@@ -44,7 +46,7 @@ export function SettingsOptionList({ title, options, value, onSelect }: Settings
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 32 }}
       >
         <View className="mb-6">
-          <ListGroup>
+          <ListGroup variant={itemVariant}>
             {options.map((opt, index) => (
               <Fragment key={opt.value}>
                 {index > 0 && <Separator className="mx-4" />}

@@ -25,6 +25,7 @@ import type { RowRect } from "@/ui/lift-menu";
 import type { TransactionDisplay } from "@/core/types/models";
 import type { TransactionsListContext } from "../types";
 import { useTransactionsListQuery } from "../hooks/useTransactionsListQuery";
+import { useSurfaceLevel } from "@/ui/surface-level";
 
 interface TransactionsShellProps {
   /** Drives the query (all accounts / one account / one category+month). */
@@ -67,6 +68,7 @@ export function TransactionsShell({
   topInset = false,
   rowComponent = LedgerRow,
 }: TransactionsShellProps) {
+  const { canvas } = useSurfaceLevel();
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -78,7 +80,7 @@ export function TransactionsShell({
   );
 
   return (
-    <TransactionRowMenuHost className="flex-1 bg-background" rowComponent={rowComponent}>
+    <TransactionRowMenuHost className={`flex-1 ${canvas}`} rowComponent={rowComponent}>
       {({ liftedTxnId, onLongPressRow, isIncomeTxn }) => {
         const listProps = {
           context,

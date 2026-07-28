@@ -4,6 +4,7 @@ import { ListGroup, Separator } from "heroui-native";
 import { useAmountKeyboardState } from "@/ui/amount-keyboard";
 import { Money } from "@/ui/Money";
 import { IncomeField, INCOME_FIELD_PADDING } from "./IncomeField";
+import { useSurfaceLevel } from "@/ui/surface-level";
 
 /**
  * The read-only amount pays the income field's own horizontal padding, so both
@@ -46,6 +47,7 @@ export function PlanSummaryCard({
   /** The hero's figure, and what income is measured against. */
   costCents: number;
 }) {
+  const { itemVariant } = useSurfaceLevel();
   const { t } = useTranslation("budget");
   const { value: income } = useAmountKeyboardState();
 
@@ -65,7 +67,7 @@ export function PlanSummaryCard({
 
   return (
     <View className="px-4">
-      <ListGroup className="overflow-hidden rounded-2xl shadow-md">
+      <ListGroup variant={itemVariant} className="overflow-hidden rounded-2xl shadow-md">
         {/* No `onPress` on the row: the field is the only tap target, which is
             what makes it read as a field rather than as a row that happens to
             lead somewhere. `IncomeField` brings its own Trigger. */}

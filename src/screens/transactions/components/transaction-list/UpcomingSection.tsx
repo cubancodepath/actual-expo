@@ -121,8 +121,8 @@ export function UpcomingSection({ previews }: UpcomingSectionProps) {
             <Accordion.Content className="px-0 pb-0">
               {previews.map((preview, i) => {
                 // Previews come date-descending; start a new date block whenever the
-                // date changes. Date headers sit on the page background and the rows
-                // on bg-surface, exactly like the real ledger.
+                // date changes. Date headers sit on the canvas and the rows one rung
+                // up (the `item` level), exactly like the real ledger.
                 const isNewDate = i === 0 || previews[i - 1].date !== preview.date;
                 return (
                   <Fragment key={preview.id}>

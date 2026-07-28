@@ -6,6 +6,7 @@ import { CirclePlus, EllipsisVertical } from "lucide-react-native";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { PlanCategoryRow } from "./PlanCategoryRow";
 import type { BudgetSection } from "@/screens/budget/hooks/useBudgetSections";
+import { useSurfaceLevel } from "@/ui/surface-level";
 
 /**
  * One group in the plan editor: a header row outside the card (name + actions)
@@ -28,6 +29,7 @@ export function EditPlanGroup({
   onOpenCategory: (category: BudgetSection["categories"][number]) => void;
   onAddGoal: (category: BudgetSection["categories"][number]) => void;
 }) {
+  const { itemVariant } = useSurfaceLevel();
   const { t } = useTranslation("budget");
   const foreground = useThemeColor("foreground");
   // Gates the editor itself, and cascades off with its parent
@@ -61,7 +63,7 @@ export function EditPlanGroup({
       </View>
 
       {section.categories.length > 0 && (
-        <ListGroup className="overflow-hidden rounded-2xl">
+        <ListGroup variant={itemVariant} className="overflow-hidden rounded-2xl">
           {section.categories.map((cat, i) => (
             <Fragment key={cat.id}>
               {i > 0 ? <Separator className="mx-4" /> : null}

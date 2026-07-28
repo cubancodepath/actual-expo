@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Typography } from "heroui-native";
 import { CloseButton } from "@/ui/CloseButton";
 import { Money } from "@/ui/Money";
+import { useSurfaceLevel } from "@/ui/surface-level";
 import {
   EnvelopeSheetContext,
   TINT,
@@ -73,6 +74,11 @@ export function EnvelopeSheetRoot({
   children: ReactNode;
 }) {
   const insets = useSafeAreaInsets();
+  // Deliberately NOT derived from the `presentation` prop above: that prop is
+  // about layout (safe-area inset), while the canvas is about elevation. A
+  // pushed EnvelopeSheet on a regular route is a screen; a formSheet one is a
+  // sheet — and only the caller's <SurfaceLevel> knows which.
+  const { canvas } = useSurfaceLevel();
   const [heroHeight, setHeroHeight] = useState<number | null>(null);
   const [pinnedHeight, setPinnedHeight] = useState<number | null>(null);
   const [hasPinned, setHasPinned] = useState(false);
@@ -103,7 +109,7 @@ export function EnvelopeSheetRoot({
 
   return (
     <EnvelopeSheetContext value={value}>
-      <View className="flex-1 bg-background">{children}</View>
+      <View className={`flex-1 ${canvas}`}>{children}</View>
     </EnvelopeSheetContext>
   );
 }
@@ -127,13 +133,16 @@ export function EnvelopeSheetRoot({
 export function EnvelopeSheetBackdrop() {
   const { tint, heroHeight, hasPinned } = useEnvelopeSheetContext();
   const ready = useEnvelopeSheetReady();
+  // The opaque base UNDER the tint: it must equal the sheet root's canvas
+  // exactly, or a seam shows where the hero's square edge meets the backdrop.
+  const { canvas } = useSurfaceLevel();
 
   return (
     <View
       className={hasPinned ? "absolute inset-x-0 top-0 z-10" : "absolute inset-x-0 top-0 z-0"}
       style={{ height: (heroHeight ?? 0) + HERO_CURVE, opacity: ready ? 1 : 0 }}
     >
-      <View className="absolute inset-0 bg-background" style={heroRadii} />
+      <View className={`absolute inset-0 ${canvas}`} style={heroRadii} />
       <View className={`absolute inset-0 ${tint}`} style={heroRadii} />
     </View>
   );
@@ -223,6 +232,8 @@ export function EnvelopeSheetPinned({ children }: { children: ReactNode }) {
 export function EnvelopeSheetHero({ children }: { children: ReactNode }) {
   const { tint, topInset, setHeroHeight } = useEnvelopeSheetContext();
   const ready = useEnvelopeSheetReady();
+  // Same base as the backdrop — see EnvelopeSheetBackdrop.
+  const { canvas } = useSurfaceLevel();
 
   return (
     <View
@@ -230,7 +241,7 @@ export function EnvelopeSheetHero({ children }: { children: ReactNode }) {
       style={{ opacity: ready ? 1 : 0 }}
       onLayout={(e) => setHeroHeight(e.nativeEvent.layout.height)}
     >
-      <View className="absolute inset-0 bg-background" />
+      <View className={`absolute inset-0 ${canvas}`} />
       <View className={`absolute inset-0 ${tint}`} />
       {/* `pt-18` is the form-sheet figure; a pushed sheet swaps in its own inset. */}
       <View

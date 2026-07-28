@@ -16,6 +16,7 @@ import { LoadingScreen } from "@/ui/LoadingScreen";
 import { CloseButton } from "@/ui/CloseButton";
 import { ScreenHeader } from "@/ui/ScreenHeader";
 import { AccountSelectView } from "@/ui/entity-select/AccountSelectView";
+import { useSurfaceLevel } from "@/ui/surface-level";
 
 /**
  * Close account — migrated to the new arch. Self-contained (no pickerStore): the
@@ -184,6 +185,7 @@ function ForceCloseButton({ danger, onPress }: { danger: string; onPress: () => 
 
 /** Bare grouped list of expense categories, picked inline (no pickerStore). */
 function ExpenseCategoryList({ onPick }: { onPick: (categoryId: string) => void }) {
+  const { itemVariant } = useSurfaceLevel();
   const { t } = useTranslation("accounts");
   const { categories, groups } = useCategories();
 
@@ -208,7 +210,7 @@ function ExpenseCategoryList({ onPick }: { onPick: (categoryId: string) => void 
           <Typography className="mb-1 ml-2 text-xs font-semibold uppercase text-muted">
             {group.name}
           </Typography>
-          <ListGroup>
+          <ListGroup variant={itemVariant}>
             {group.categories.map((c, i) => (
               <Fragment key={c.id}>
                 {i > 0 ? <Separator className="mx-4" /> : null}

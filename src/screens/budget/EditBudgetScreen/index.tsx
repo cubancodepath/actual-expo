@@ -28,6 +28,7 @@ import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { AmountKeyboard } from "@/ui/amount-keyboard";
 import { usePlanTarget, useSpendingAverage } from "./hooks/usePlanCost";
 import { useIncomeEditor } from "./hooks/useIncomeEditor";
+import { useSurfaceLevel } from "@/ui/surface-level";
 
 /**
  * Plan editor: the whole set of groups and categories on one screen, for
@@ -48,6 +49,7 @@ import { useIncomeEditor } from "./hooks/useIncomeEditor";
  * sometimes the transfer picker, and nesting overlays is asking for trouble.
  */
 export function EditBudgetScreen() {
+  const { itemVariant } = useSurfaceLevel();
   const { t } = useTranslation("budget");
   const insets = useSafeAreaInsets();
   const { sections, hiddenCount, isLoading } = useBudgetSections();
@@ -146,7 +148,7 @@ export function EditBudgetScreen() {
                     {t("hiddenSection")}
                   </Typography>
                 </View>
-                <ListGroup className="overflow-hidden rounded-2xl">
+                <ListGroup variant={itemVariant} className="overflow-hidden rounded-2xl">
                   <ListGroup.Item
                     onPress={() =>
                       router.push({

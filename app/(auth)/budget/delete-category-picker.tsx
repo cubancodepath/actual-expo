@@ -9,6 +9,7 @@ import { sheetForMonth, envelopeBudget } from "@/core/server/spreadsheet/binding
 import { getSpreadsheet } from "@/core/server/sheet";
 import { Money } from "@/ui/Money";
 import { PickerScreen } from "@/ui/PickerScreen";
+import { SurfaceLevel } from "@/ui/surface-level";
 
 interface PickableCategory {
   id: string;
@@ -81,41 +82,45 @@ export default function DeleteCategoryPickerScreen() {
     ]);
   };
 
+  // Presented as a card modal — PickerScreen is also used as a pushed route
+  // elsewhere, so the context is what tells it which rung to paint.
   return (
-    <PickerScreen
-      title={t("moveTransactionsTo")}
-      query={query}
-      onQueryChange={setQuery}
-      searchPlaceholder={t("searchCategories")}
-    >
-      {grouped.map((group) => (
-        <View key={group.id} className="mb-3">
-          <Typography className="mb-1 ml-2 text-xs font-semibold uppercase text-muted">
-            {group.name}
-          </Typography>
-          <ListGroup>
-            {group.categories.map((c, i) => (
-              <Fragment key={c.id}>
-                {i > 0 ? <Separator className="mx-4" /> : null}
-                <ListGroup.Item onPress={() => select(c)}>
-                  <ListGroup.ItemContent>
-                    <ListGroup.ItemTitle>{c.name}</ListGroup.ItemTitle>
-                  </ListGroup.ItemContent>
-                  <ListGroup.ItemSuffix>
-                    <Money cents={c.balance} className="text-sm" />
-                  </ListGroup.ItemSuffix>
-                </ListGroup.Item>
-              </Fragment>
-            ))}
-          </ListGroup>
-        </View>
-      ))}
+    <SurfaceLevel context="sheet">
+      <PickerScreen
+        title={t("moveTransactionsTo")}
+        query={query}
+        onQueryChange={setQuery}
+        searchPlaceholder={t("searchCategories")}
+      >
+        {grouped.map((group) => (
+          <View key={group.id} className="mb-3">
+            <Typography className="mb-1 ml-2 text-xs font-semibold uppercase text-muted">
+              {group.name}
+            </Typography>
+            <ListGroup>
+              {group.categories.map((c, i) => (
+                <Fragment key={c.id}>
+                  {i > 0 ? <Separator className="mx-4" /> : null}
+                  <ListGroup.Item onPress={() => select(c)}>
+                    <ListGroup.ItemContent>
+                      <ListGroup.ItemTitle>{c.name}</ListGroup.ItemTitle>
+                    </ListGroup.ItemContent>
+                    <ListGroup.ItemSuffix>
+                      <Money cents={c.balance} className="text-sm" />
+                    </ListGroup.ItemSuffix>
+                  </ListGroup.Item>
+                </Fragment>
+              ))}
+            </ListGroup>
+          </View>
+        ))}
 
-      {grouped.length === 0 ? (
-        <Typography className="py-6 text-center text-base text-muted">
-          {t("noCategoriesWithBalance")}
-        </Typography>
-      ) : null}
-    </PickerScreen>
+        {grouped.length === 0 ? (
+          <Typography className="py-6 text-center text-base text-muted">
+            {t("noCategoriesWithBalance")}
+          </Typography>
+        ) : null}
+      </PickerScreen>
+    </SurfaceLevel>
   );
 }

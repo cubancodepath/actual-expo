@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { cn, Popover, PressableFeedback, Typography, useThemeColor } from "heroui-native";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react-native";
 import { currentMonth, formatMonth, monthKey, monthShortNames } from "@/core/shared/months";
+import { SurfaceLevel } from "@/ui/surface-level";
 
 interface MonthYearPickerProps {
   /** Selected budget month, "YYYY-MM". */
@@ -66,54 +67,56 @@ export function MonthYearPicker({ value, onChange, triggerClassName }: MonthYear
       <Popover.Portal>
         <Popover.Overlay />
         <Popover.Content presentation="popover" placement="bottom" align="start" width={288}>
-          {/* Year navigator */}
-          <View className="flex-row items-center justify-between px-1 pb-3">
-            <PressableFeedback
-              className="h-9 w-9 items-center justify-center rounded-full"
-              onPress={() => setYear((y) => y - 1)}
-              accessibilityLabel="Previous year"
-            >
-              <ChevronLeft size={20} color={foreground} />
-            </PressableFeedback>
-            <Typography className="text-base font-semibold text-foreground">{year}</Typography>
-            <PressableFeedback
-              className="h-9 w-9 items-center justify-center rounded-full"
-              onPress={() => setYear((y) => y + 1)}
-              accessibilityLabel="Next year"
-            >
-              <ChevronRight size={20} color={foreground} />
-            </PressableFeedback>
-          </View>
+          <SurfaceLevel context="sheet">
+            {/* Year navigator */}
+            <View className="flex-row items-center justify-between px-1 pb-3">
+              <PressableFeedback
+                className="h-9 w-9 items-center justify-center rounded-full"
+                onPress={() => setYear((y) => y - 1)}
+                accessibilityLabel="Previous year"
+              >
+                <ChevronLeft size={20} color={foreground} />
+              </PressableFeedback>
+              <Typography className="text-base font-semibold text-foreground">{year}</Typography>
+              <PressableFeedback
+                className="h-9 w-9 items-center justify-center rounded-full"
+                onPress={() => setYear((y) => y + 1)}
+                accessibilityLabel="Next year"
+              >
+                <ChevronRight size={20} color={foreground} />
+              </PressableFeedback>
+            </View>
 
-          {/* Month grid (3 rows × 4 cols) */}
-          <View className="flex-row flex-wrap">
-            {names.map((name, i) => {
-              const month1 = i + 1;
-              const isSelected = year === selectedYear && month1 === selectedMonth1;
-              const isCurrent = year === curYear && month1 === curMonth1;
-              return (
-                <View key={month1} className="w-1/4 p-1">
-                  <PressableFeedback
-                    onPress={() => pick(month1)}
-                    className={cn(
-                      "h-10 items-center justify-center rounded-lg",
-                      isSelected && "bg-accent",
-                      !isSelected && isCurrent && "border border-accent",
-                    )}
-                  >
-                    <Typography
+            {/* Month grid (3 rows × 4 cols) */}
+            <View className="flex-row flex-wrap">
+              {names.map((name, i) => {
+                const month1 = i + 1;
+                const isSelected = year === selectedYear && month1 === selectedMonth1;
+                const isCurrent = year === curYear && month1 === curMonth1;
+                return (
+                  <View key={month1} className="w-1/4 p-1">
+                    <PressableFeedback
+                      onPress={() => pick(month1)}
                       className={cn(
-                        "text-sm font-medium capitalize",
-                        isSelected ? "text-accent-foreground" : "text-foreground",
+                        "h-10 items-center justify-center rounded-lg",
+                        isSelected && "bg-accent",
+                        !isSelected && isCurrent && "border border-accent",
                       )}
                     >
-                      {name}
-                    </Typography>
-                  </PressableFeedback>
-                </View>
-              );
-            })}
-          </View>
+                      <Typography
+                        className={cn(
+                          "text-sm font-medium capitalize",
+                          isSelected ? "text-accent-foreground" : "text-foreground",
+                        )}
+                      >
+                        {name}
+                      </Typography>
+                    </PressableFeedback>
+                  </View>
+                );
+              })}
+            </View>
+          </SurfaceLevel>
         </Popover.Content>
       </Popover.Portal>
     </Popover>

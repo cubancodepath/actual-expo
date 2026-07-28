@@ -9,6 +9,7 @@ import { useCategories } from "@/lib/hooks/useCategories";
 import { useCategoryBalances } from "@/ui/hooks/useCategoryBalances";
 import { useGroupedCategories } from "@/ui/hooks/useGroupedCategories";
 import type { CategoryRef } from "./types";
+import { useSurfaceLevel } from "@/ui/surface-level";
 
 interface CategorySelectViewProps {
   /** YYYYMMDD — month used for the balance column. */
@@ -40,6 +41,7 @@ export function CategorySelectView({
   onPick,
   onSplitNext,
 }: CategorySelectViewProps) {
+  const { itemVariant } = useSurfaceLevel();
   const { t } = useTranslation("transactions");
   const accent = useThemeColor("accent");
   const muted = useThemeColor("muted");
@@ -97,7 +99,7 @@ export function CategorySelectView({
       }
     >
       {allowSplit && !searching && !splitMode ? (
-        <ListGroup className="mb-3">
+        <ListGroup variant={itemVariant} className="mb-3">
           <ListGroup.Item onPress={enterSplit}>
             <ListGroup.ItemPrefix>
               <View className="rotate-90">
@@ -118,7 +120,7 @@ export function CategorySelectView({
           <Typography className="mb-1 ml-2 text-xs font-semibold uppercase text-muted">
             {group.name}
           </Typography>
-          <ListGroup>
+          <ListGroup variant={itemVariant}>
             {items.map((c, i) => {
               const isSel = c.id === selectedCategoryId;
               const isChecked = selectedIds.includes(c.id);

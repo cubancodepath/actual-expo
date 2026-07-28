@@ -9,6 +9,7 @@ import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import { loadBudget } from "@/stores/operations/budgetfiles";
 import { BudgetFileRow } from "@/ui/BudgetFileRow";
 import { NewBudgetScreen } from "@/screens/auth/NewBudgetScreen";
+import { useSurfaceLevel } from "@/ui/surface-level";
 
 type ScreenState = "loading" | "picker" | "wizard";
 
@@ -25,6 +26,7 @@ function metadataToFile(meta: BudgetMetadata): ReconciledBudgetFile {
 
 /** Local-only setup: pick an existing on-device budget or create a new one. */
 export function LocalSetupScreen() {
+  const { itemVariant } = useSurfaceLevel();
   const router = useRouter();
   const { t } = useTranslation("auth");
   const accent = useThemeColor("accent");
@@ -95,7 +97,7 @@ export function LocalSetupScreen() {
       >
         {t("yourBudgets")}
       </Typography>
-      <ListGroup className="overflow-hidden">
+      <ListGroup variant={itemVariant} className="overflow-hidden">
         {files.map((file, index) => (
           <BudgetFileRow
             key={file.localId}

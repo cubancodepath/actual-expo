@@ -1,5 +1,6 @@
 import { View } from "react-native";
 import { Typography } from "heroui-native";
+import { useSurfaceLevel } from "@/ui/surface-level";
 
 /**
  * Editor body for goals with nothing to configure beyond their amount —
@@ -7,8 +8,9 @@ import { Typography } from "heroui-native";
  * goal (a balance target, edited entirely through the amount headline).
  */
 export function InfoEditor({ message }: { message: string }) {
+  const { item } = useSurfaceLevel();
   return (
-    <View className="rounded-xl bg-surface p-4">
+    <View className={`rounded-xl p-4 ${item}`}>
       <Typography className="text-sm text-muted">{message}</Typography>
     </View>
   );

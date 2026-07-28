@@ -11,6 +11,7 @@ import { format, getDate, getDay, getDaysInMonth, getMonth, setDay, setMonth } f
 import type { RecurConfig } from "@/core/types/models";
 import { parseDate, dayFromDate } from "@/core/shared/schedules";
 import { FieldRow } from "./FieldRow";
+import { SurfaceLevel } from "@/ui/surface-level";
 
 type Props = {
   value: RecurConfig;
@@ -75,74 +76,79 @@ export function RecurrencePatternField({ value, onChange }: Props) {
       <BottomSheet isOpen={open} onOpenChange={setOpen}>
         <BottomSheet.Portal>
           <BottomSheet.Overlay />
-          <BottomSheet.Content backgroundClassName="bg-background">
-            <View className="px-4 pb-2">
-              <Typography className="mb-2 text-center text-lg font-semibold text-foreground">
-                {t("repeatOn")}
-              </Typography>
-              <VirtualizedListContextResetter>
-                {value.frequency === "weekly" && (
-                  <WheelPickerGroup
-                    values={{ weekday: getDay(start) }}
-                    onValuesChange={(next) =>
-                      onChange({
-                        ...value,
-                        start: dayFromDate(setDay(start, next.weekday as number)),
-                      })
-                    }
-                  >
-                    <WheelPicker name="weekday" items={weekdayItems} />
-                    <WheelPickerGroup.Indicator />
-                    <WheelPickerGroup.Mask />
-                  </WheelPickerGroup>
-                )}
+          <BottomSheet.Content>
+            <SurfaceLevel context="sheet">
+              <View className="px-4 pb-2">
+                <Typography className="mb-2 text-center text-lg font-semibold text-foreground">
+                  {t("repeatOn")}
+                </Typography>
+                <VirtualizedListContextResetter>
+                  {value.frequency === "weekly" && (
+                    <WheelPickerGroup
+                      values={{ weekday: getDay(start) }}
+                      onValuesChange={(next) =>
+                        onChange({
+                          ...value,
+                          start: dayFromDate(setDay(start, next.weekday as number)),
+                        })
+                      }
+                    >
+                      <WheelPicker name="weekday" items={weekdayItems} />
+                      <WheelPickerGroup.Indicator />
+                      <WheelPickerGroup.Mask />
+                    </WheelPickerGroup>
+                  )}
 
-                {value.frequency === "monthly" && (
-                  <WheelPickerGroup
-                    values={{ day: monthlyDay }}
-                    onValuesChange={(next) =>
-                      onChange({ ...value, patterns: [{ type: "day", value: next.day as number }] })
-                    }
-                  >
-                    <WheelPicker
-                      name="day"
-                      items={monthlyItems}
-                      classNames={{ itemLabel: "tabular-nums" }}
-                    />
-                    <WheelPickerGroup.Indicator />
-                    <WheelPickerGroup.Mask />
-                  </WheelPickerGroup>
-                )}
+                  {value.frequency === "monthly" && (
+                    <WheelPickerGroup
+                      values={{ day: monthlyDay }}
+                      onValuesChange={(next) =>
+                        onChange({
+                          ...value,
+                          patterns: [{ type: "day", value: next.day as number }],
+                        })
+                      }
+                    >
+                      <WheelPicker
+                        name="day"
+                        items={monthlyItems}
+                        classNames={{ itemLabel: "tabular-nums" }}
+                      />
+                      <WheelPickerGroup.Indicator />
+                      <WheelPickerGroup.Mask />
+                    </WheelPickerGroup>
+                  )}
 
-                {value.frequency === "yearly" && (
-                  <WheelPickerGroup
-                    values={{ month: yearMonth, day: yearDay }}
-                    onValuesChange={(next) => {
-                      const month = next.month as number;
-                      // Clamp the day to the chosen month's length (Feb → 28/29).
-                      const day = Math.min(
-                        next.day as number,
-                        getDaysInMonth(new Date(year, month, 1)),
-                      );
-                      onChange({ ...value, start: dayFromDate(new Date(year, month, day)) });
-                    }}
-                  >
-                    <WheelPicker name="month" items={monthItems} />
-                    <WheelPicker
-                      name="day"
-                      items={yearDayItems}
-                      classNames={{ itemLabel: "tabular-nums" }}
-                    />
-                    <WheelPickerGroup.Indicator />
-                    <WheelPickerGroup.Mask />
-                  </WheelPickerGroup>
-                )}
-              </VirtualizedListContextResetter>
+                  {value.frequency === "yearly" && (
+                    <WheelPickerGroup
+                      values={{ month: yearMonth, day: yearDay }}
+                      onValuesChange={(next) => {
+                        const month = next.month as number;
+                        // Clamp the day to the chosen month's length (Feb → 28/29).
+                        const day = Math.min(
+                          next.day as number,
+                          getDaysInMonth(new Date(year, month, 1)),
+                        );
+                        onChange({ ...value, start: dayFromDate(new Date(year, month, day)) });
+                      }}
+                    >
+                      <WheelPicker name="month" items={monthItems} />
+                      <WheelPicker
+                        name="day"
+                        items={yearDayItems}
+                        classNames={{ itemLabel: "tabular-nums" }}
+                      />
+                      <WheelPickerGroup.Indicator />
+                      <WheelPickerGroup.Mask />
+                    </WheelPickerGroup>
+                  )}
+                </VirtualizedListContextResetter>
 
-              <Button variant="secondary" className="mt-2" onPress={() => setOpen(false)}>
-                <Button.Label>{t("done", { ns: "common" })}</Button.Label>
-              </Button>
-            </View>
+                <Button variant="secondary" className="mt-2" onPress={() => setOpen(false)}>
+                  <Button.Label>{t("done", { ns: "common" })}</Button.Label>
+                </Button>
+              </View>
+            </SurfaceLevel>
           </BottomSheet.Content>
         </BottomSheet.Portal>
       </BottomSheet>

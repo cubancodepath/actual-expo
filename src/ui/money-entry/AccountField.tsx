@@ -7,6 +7,7 @@ import { CloseButton } from "@/ui/CloseButton";
 import { ScreenHeader, useScreenHeaderScroll } from "@/ui/ScreenHeader";
 import { AccountSelectView } from "@/ui/entity-select/AccountSelectView";
 import { FieldRow } from "./FieldRow";
+import { SurfaceLevel } from "@/ui/surface-level";
 
 type AccountFieldProps = {
   accountId: string | null;
@@ -35,27 +36,28 @@ export function AccountField({ accountId, accountName, onSelect }: AccountFieldP
             snapPoints={["55%", "90%"]}
             enableDynamicSizing={false}
             enableOverDrag={false}
-            backgroundClassName="bg-background"
             contentContainerClassName="h-full px-0 pt-0"
           >
-            <ScreenHeader.ScrollArea className="bg-transparent">
-              <AccountSheetBody
-                open={open}
-                accountId={accountId}
-                onSelect={(account) => {
-                  onSelect(account);
-                  setOpen(false);
-                }}
-              />
-              <ScreenHeader.Floating>
-                <ScreenHeader>
-                  <ScreenHeader.Back>
-                    <CloseButton onPress={() => setOpen(false)} />
-                  </ScreenHeader.Back>
-                  <ScreenHeader.Title>{t("account")}</ScreenHeader.Title>
-                </ScreenHeader>
-              </ScreenHeader.Floating>
-            </ScreenHeader.ScrollArea>
+            <SurfaceLevel context="sheet">
+              <ScreenHeader.ScrollArea className="bg-transparent">
+                <AccountSheetBody
+                  open={open}
+                  accountId={accountId}
+                  onSelect={(account) => {
+                    onSelect(account);
+                    setOpen(false);
+                  }}
+                />
+                <ScreenHeader.Floating>
+                  <ScreenHeader>
+                    <ScreenHeader.Back>
+                      <CloseButton onPress={() => setOpen(false)} />
+                    </ScreenHeader.Back>
+                    <ScreenHeader.Title>{t("account")}</ScreenHeader.Title>
+                  </ScreenHeader>
+                </ScreenHeader.Floating>
+              </ScreenHeader.ScrollArea>
+            </SurfaceLevel>
           </BottomSheet.Content>
         </BottomSheet.Portal>
       </BottomSheet>

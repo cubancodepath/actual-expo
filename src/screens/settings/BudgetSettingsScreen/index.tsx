@@ -9,7 +9,6 @@ import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { FormattingGroup } from "./components/FormattingGroup";
 import { CurrencyGroup } from "./components/CurrencyGroup";
 import { EncryptionGroup } from "./components/EncryptionGroup";
-import { useSurfaceLevel } from "@/ui/surface-level";
 
 /** A muted section label above a group card. */
 function SectionLabel({ children }: { children: React.ReactNode }) {
@@ -23,7 +22,6 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
  * actions live one tap deeper in the Advanced sub-screen.
  */
 export function BudgetSettingsScreen() {
-  const { itemVariant } = useSurfaceLevel();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t } = useTranslation("settings");
@@ -53,7 +51,7 @@ export function BudgetSettingsScreen() {
         </View>
 
         <View className="mb-6">
-          <ListGroup variant={itemVariant}>
+          <ListGroup>
             <ListGroup.Item onPress={() => router.push("/(auth)/settings/advanced")}>
               <ListGroup.ItemContent>
                 <ListGroup.ItemTitle>{t("advanced")}</ListGroup.ItemTitle>

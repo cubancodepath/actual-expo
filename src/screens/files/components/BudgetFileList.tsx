@@ -15,7 +15,6 @@ import type { FileAction } from "./fileActions";
 import type { ReconciledBudgetFile } from "@/core/server/budgetfiles/app";
 import { EmptyState } from "heroui-native-pro";
 import { Landmark, SquareChartGantt } from "lucide-react-native";
-import { useSurfaceLevel } from "@/ui/surface-level";
 
 interface BudgetFileListProps {
   /** Content rendered inside `ScreenHeader.Floating` (insets spacer + `ScreenHeader`). */
@@ -51,7 +50,6 @@ export function BudgetFileList({
   showDetachedAlert,
   emptyExtra,
 }: BudgetFileListProps) {
-  const { itemVariant, item } = useSurfaceLevel();
   const insets = useSafeAreaInsets();
   const { t: ta } = useTranslation("auth");
   const { t: tc } = useTranslation("common");
@@ -117,7 +115,7 @@ export function BudgetFileList({
         >
           {title}
         </Typography>
-        <ListGroup variant={itemVariant} className="overflow-hidden">
+        <ListGroup className="overflow-hidden">
           {files.map((file, index) => (
             <BudgetFileRow
               key={fileKey(file)}
@@ -161,7 +159,7 @@ export function BudgetFileList({
               </View>
 
               {loading ? (
-                <View className={`mt-4 items-center gap-3 rounded-2xl py-8 ${item}`}>
+                <View className="mt-4 items-center gap-3 rounded-2xl bg-surface py-8">
                   <Spinner color={accent} />
                   <Typography type="body-sm" color="muted">
                     {tc("loading")}

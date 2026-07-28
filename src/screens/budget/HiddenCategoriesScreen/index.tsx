@@ -8,7 +8,6 @@ import { unhideItems } from "@/core/server/budget";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { ScreenHeader } from "@/ui/ScreenHeader";
 import { useHiddenItems, type HiddenSection } from "@/screens/budget/hooks/useHiddenItems";
-import { useSurfaceLevel } from "@/ui/surface-level";
 
 /** Which kind of row a selected id refers to — they take different mutations. */
 type Selection = { categories: Set<string>; groups: Set<string> };
@@ -82,7 +81,6 @@ function HiddenGroupSection({
   onToggleGroup: () => void;
   onToggleCategory: (id: string) => void;
 }) {
-  const { itemVariant } = useSurfaceLevel();
   return (
     <View>
       {/* Same header as every other grouped list — see EditPlanGroup. Kept as
@@ -101,7 +99,7 @@ function HiddenGroupSection({
       </View>
 
       {section.categories.length > 0 ? (
-        <ListGroup variant={itemVariant} className="overflow-hidden rounded-2xl">
+        <ListGroup className="overflow-hidden rounded-2xl">
           {section.categories.map((cat, i) => (
             <Fragment key={cat.id}>
               {i > 0 ? <Separator className="mx-4" /> : null}

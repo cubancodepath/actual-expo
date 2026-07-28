@@ -13,7 +13,6 @@ import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
 import { useSelector } from "@tanstack/react-store";
 import { z } from "zod";
-import { SurfaceLevel } from "@/ui/surface-level";
 
 const schema = z.object({ name: z.string().trim().min(1) });
 
@@ -188,30 +187,29 @@ export function NameSheet({
       <BottomSheet.Portal>
         <BottomSheet.Overlay />
         <BottomSheet.Content
+          backgroundClassName="bg-background"
           keyboardBehavior="interactive"
           keyboardBlurBehavior="restore"
           onChange={(index) => {
             if (autoFocus && index >= 0) formRef.current?.focus();
           }}
         >
-          <SurfaceLevel context="sheet">
-            {target ? (
-              <View className="gap-4">
-                <BottomSheet.Title>{title}</BottomSheet.Title>
-                <NameSheetForm
-                  key={target.id}
-                  ref={formRef}
-                  label={label}
-                  placeholder={placeholder}
-                  initialValue={initialValue}
-                  submitLabel={submitLabel}
-                  onSave={onSave}
-                >
-                  {children}
-                </NameSheetForm>
-              </View>
-            ) : null}
-          </SurfaceLevel>
+          {target ? (
+            <View className="gap-4">
+              <BottomSheet.Title>{title}</BottomSheet.Title>
+              <NameSheetForm
+                key={target.id}
+                ref={formRef}
+                label={label}
+                placeholder={placeholder}
+                initialValue={initialValue}
+                submitLabel={submitLabel}
+                onSave={onSave}
+              >
+                {children}
+              </NameSheetForm>
+            </View>
+          ) : null}
         </BottomSheet.Content>
       </BottomSheet.Portal>
     </BottomSheet>

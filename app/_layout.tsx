@@ -2,7 +2,7 @@ import "../global.css";
 import "@/i18n/config";
 import * as Sentry from "@sentry/react-native";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AppState, Settings, useColorScheme } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
@@ -21,7 +21,7 @@ import {
   Inter_600SemiBold,
 } from "@expo-google-fonts/inter";
 import i18n from "@/i18n/config";
-import { HeroUINativeProvider, useThemeColor } from "heroui-native";
+import { HeroUINativeProvider } from "heroui-native";
 import { Uniwind } from "uniwind";
 import { ThemeProvider } from "@/design-system/providers/ThemeProvider";
 import { useSessionStore } from "@/stores/sessionStore";
@@ -85,36 +85,6 @@ function RootLayout() {
   useEffect(() => {
     Uniwind.setTheme(themeMode);
   }, [themeMode]);
-
-  // React Navigation paints its own background BEHIND every screen, and falls
-  // back to the navigation theme's `colors.background` whenever a navigator
-  // leaves `contentStyle` unset. `DefaultTheme`/`DarkTheme` ship rgb(242,242,242)
-  // and pure white — unrelated to our tokens — which is where the white flashes
-  // between screens came from. Rebuild the theme from the same CSS variables
-  // HeroUI screens use, so both layers always agree.
-  // DO NOT pass `DefaultTheme`/`DarkTheme` straight through again.
-  const [background, foreground, surface, border, accent] = useThemeColor([
-    "background",
-    "foreground",
-    "surface",
-    "border",
-    "accent",
-  ]);
-  const navigationTheme = useMemo(() => {
-    const base = colorScheme === "dark" ? DarkTheme : DefaultTheme;
-    return {
-      ...base,
-      colors: {
-        ...base.colors,
-        background,
-        card: surface,
-        text: foreground,
-        border,
-        primary: accent,
-      },
-    };
-  }, [colorScheme, background, surface, foreground, border, accent]);
-
   const router = useRouter();
   const hasToken = useSessionStore((s) => s.hasToken);
   const isConfigured = useIsConfigured();
@@ -339,7 +309,7 @@ function RootLayout() {
       <QueryClientProvider client={queryClient}>
         <GestureHandlerRootView style={{ flex: 1 }}>
           <KeyboardProvider>
-            <NavigationThemeProvider value={navigationTheme}>
+            <NavigationThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
               <ThemeProvider>
                 <HeroUINativeProvider
                   config={{
@@ -351,7 +321,7 @@ function RootLayout() {
                     },
                   }}
                 >
-                  <Stack screenOptions={{ contentStyle: { backgroundColor: background } }}>
+                  <Stack>
                     <Stack.Protected guard={!hasToken && !isLocalOnly}>
                       <Stack.Screen name="(public)" options={{ headerShown: false }} />
                     </Stack.Protected>

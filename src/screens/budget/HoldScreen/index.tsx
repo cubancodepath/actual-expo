@@ -9,7 +9,6 @@ import { formatCents } from "@/core/shared/util";
 import { AmountKeyboard } from "@/ui/amount-keyboard";
 import { AmountField } from "@/ui/money-entry/AmountField";
 import { ScreenHeader } from "@/ui/ScreenHeader";
-import { SurfaceCanvas } from "@/ui/surface-level";
 
 /**
  * Reserve leftover To Budget money for next month — a compact modal shaped like
@@ -50,7 +49,7 @@ export function HoldScreen() {
       value={amount}
       onValueChange={setAmount}
     >
-      <SurfaceCanvas context="sheet" className="flex-1">
+      <View className="flex-1">
         <ScreenHeader>
           <ScreenHeader.Back>
             <Button
@@ -87,7 +86,7 @@ export function HoldScreen() {
             </Typography>
           </View>
         </AmountKeyboard.DismissArea>
-      </SurfaceCanvas>
+      </View>
 
       <AmountKeyboard.Portal>
         <AmountKeyboard.Panel />

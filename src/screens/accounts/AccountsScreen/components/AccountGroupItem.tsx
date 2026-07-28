@@ -9,7 +9,6 @@ import { useAccountGroupBalance } from "@/lib/hooks/useAccounts";
 import { CollapsibleIndicator } from "@/ui/CollapsibleIndicator";
 import type { RowRect } from "@/ui/lift-menu";
 import { AccountRow } from "./AccountRow";
-import { useSurfaceLevel } from "@/ui/surface-level";
 
 interface AccountGroupItemProps {
   group: AccountGroup;
@@ -30,7 +29,6 @@ export const AccountGroupItem = memo(function AccountGroupItem({
   onLongPressAccount,
   liftedAccountId,
 }: AccountGroupItemProps) {
-  const { itemVariant } = useSurfaceLevel();
   const { t } = useTranslation("accounts");
   const accountIds = useMemo(() => group.accounts.map((a) => a.id), [group.accounts]);
   const total = useAccountGroupBalance(accountIds);
@@ -60,7 +58,7 @@ export const AccountGroupItem = memo(function AccountGroupItem({
       </Accordion.Trigger>
 
       <Accordion.Content className="px-0 pb-0">
-        <ListGroup variant={itemVariant}>
+        <ListGroup>
           {group.accounts.map((account, i) => (
             <Fragment key={account.id}>
               {i > 0 ? <Separator className="mx-4" /> : null}

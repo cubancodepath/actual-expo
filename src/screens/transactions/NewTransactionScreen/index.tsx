@@ -21,12 +21,10 @@ import { RecurrenceField } from "@/ui/money-entry/RecurrenceField";
 import { RecurrencePatternField } from "@/ui/money-entry/RecurrencePatternField";
 import { CloseButton } from "@/ui/CloseButton";
 import { LoadingScreen } from "@/ui/LoadingScreen";
-import { useSurfaceLevel } from "@/ui/surface-level";
 
 const CARD_OVERLAP = 36;
 
 export function NewTransactionScreen() {
-  const { itemVariant, canvas } = useSurfaceLevel();
   const router = useRouter();
   const { t } = useTranslation("transactions");
   const danger = useThemeColor("danger");
@@ -65,7 +63,7 @@ export function NewTransactionScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
-      className={`flex-1 ${canvas}`}
+      className="flex-1 bg-background"
     >
       <AmountKeyboard
         isOpen={amountEditing}
@@ -98,7 +96,7 @@ export function NewTransactionScreen() {
             </View>
 
             <AmountKeyboard.DismissArea className="gap-2 px-4" style={{ marginTop: -CARD_OVERLAP }}>
-              <Surface variant={itemVariant} className="overflow-hidden rounded-2xl">
+              <Surface className="overflow-hidden rounded-2xl">
                 <FieldRow
                   icon={ArrowLeftRight}
                   label={t("payee")}
@@ -144,7 +142,7 @@ export function NewTransactionScreen() {
                 onChangeText={(n) => form.setFieldValue("notes", n)}
               />
 
-              <Surface variant={itemVariant} className="overflow-hidden rounded-2xl">
+              <Surface className="overflow-hidden rounded-2xl">
                 <ClearedField
                   value={values.cleared}
                   onValueChange={(v) => form.setFieldValue("cleared", v)}

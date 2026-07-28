@@ -1,6 +1,5 @@
 import { Redirect, Stack } from "expo-router";
-import { useStackOptions } from "@/lib/hooks/useStackOptions";
-import { SurfaceLevel } from "@/ui/surface-level";
+import { useThemeColor } from "heroui-native";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { GoalAutomationsProvider } from "@/screens/budget/EditGoalsScreen/context/GoalAutomationsProvider";
 
@@ -16,22 +15,23 @@ import { GoalAutomationsProvider } from "@/screens/budget/EditGoalsScreen/contex
  * parent `goalTemplatesEnabled`, authored via category-note directives).
  */
 export default function GoalLayout() {
-  // The stack is presented as a card modal, so its canvas is the overlay rung,
-  // not the app background.
-  const { sheet } = useStackOptions();
+  const background = useThemeColor("background");
   const goalEditorEnabled = useFeatureFlag("goalTemplatesUIEnabled");
 
   if (!goalEditorEnabled) return <Redirect href="/(auth)/budget" />;
 
   return (
     <GoalAutomationsProvider>
-      <SurfaceLevel context="sheet">
-        <Stack screenOptions={{ ...sheet, headerShown: false }}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="editor" />
-          <Stack.Screen name="mode" />
-        </Stack>
-      </SurfaceLevel>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: background },
+        }}
+      >
+        <Stack.Screen name="index" />
+        <Stack.Screen name="editor" />
+        <Stack.Screen name="mode" />
+      </Stack>
     </GoalAutomationsProvider>
   );
 }

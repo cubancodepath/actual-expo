@@ -13,7 +13,6 @@ import {
   settleEncryptionPrompt,
   useEncryptionPromptStore,
 } from "@/ui/feedback/EncryptionPasswordPrompt";
-import { SurfaceCanvas } from "@/ui/surface-level";
 
 /**
  * Password sheet for the encryption flows (unlock / enable) — a route form-sheet
@@ -138,7 +137,7 @@ export function EncryptionPasswordScreen() {
     : password.trim().length > 0;
 
   return (
-    <SurfaceCanvas context="sheet" className="flex-1">
+    <View className="flex-1 bg-background">
       <ScreenHeader>
         <ScreenHeader.Back>
           <Button
@@ -214,6 +213,6 @@ export function EncryptionPasswordScreen() {
           <Button.Label>{isEnable ? t("encryption.enable") : t("encryption.unlock")}</Button.Label>
         </Button>
       </View>
-    </SurfaceCanvas>
+    </View>
   );
 }

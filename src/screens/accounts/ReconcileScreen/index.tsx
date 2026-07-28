@@ -10,7 +10,6 @@ import { AmountKeyboard } from "@/ui/amount-keyboard";
 import { AmountField } from "@/ui/money-entry/AmountField";
 import { ScreenHeader } from "@/ui/ScreenHeader";
 import { successHaptic } from "@/ui/haptics";
-import { SurfaceCanvas } from "@/ui/surface-level";
 
 /** Human-readable "x ago (Mon d)" for the last-reconciled timestamp param. */
 function formatLastReconciled(raw: string | undefined): string | null {
@@ -82,7 +81,7 @@ export function ReconcileScreen() {
       value={cents}
       onValueChange={setCents}
     >
-      <SurfaceCanvas context="sheet" className="flex-1">
+      <View className="flex-1">
         <ScreenHeader>
           <ScreenHeader.Back>
             <Button
@@ -120,7 +119,7 @@ export function ReconcileScreen() {
             ) : null}
           </View>
         </AmountKeyboard.DismissArea>
-      </SurfaceCanvas>
+      </View>
 
       <AmountKeyboard.Portal>
         <AmountKeyboard.Panel />

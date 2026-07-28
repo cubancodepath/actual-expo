@@ -1,12 +1,10 @@
 import { Stack } from "expo-router";
 import { useThemeColor } from "heroui-native";
 import { useUiPrefsStore } from "@/stores/uiPrefsStore";
-import { useStackOptions } from "@/lib/hooks/useStackOptions";
 
 export default function PublicLayout() {
   const hasSeenOnboarding = useUiPrefsStore((s) => s.hasSeenOnboarding);
   const foreground = useThemeColor("foreground");
-  const { screen } = useStackOptions();
 
   // Native minimal chevron floating over the screen content (fitness-app template pattern).
   const backChevron = {
@@ -18,7 +16,7 @@ export default function PublicLayout() {
   };
 
   return (
-    <Stack screenOptions={screen}>
+    <Stack>
       <Stack.Protected guard={!hasSeenOnboarding}>
         <Stack.Screen name="onboarding" options={{ headerShown: false }} />
       </Stack.Protected>

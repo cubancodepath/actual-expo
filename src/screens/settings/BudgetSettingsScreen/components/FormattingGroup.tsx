@@ -7,7 +7,6 @@ import { ChevronRight } from "lucide-react-native";
 import { useSyncedPref } from "@/lib/hooks/useSyncedPref";
 import { DATE_FORMAT_OPTIONS, NUMBER_FORMAT_OPTIONS } from "@/core/server/preferences/types";
 import { useDaysOfWeek } from "@/screens/settings/lib/useDaysOfWeek";
-import { useSurfaceLevel } from "@/ui/surface-level";
 
 /** A row that shows the current value and drills into a picker sub-screen. */
 function NavValueRow({
@@ -64,7 +63,6 @@ function SwitchRow({
  * First Day of Week. Each format pref is a SyncedPref (per-file, CRDT).
  */
 export function FormattingGroup() {
-  const { itemVariant } = useSurfaceLevel();
   const router = useRouter();
   const { t } = useTranslation("settings");
   const muted = useThemeColor("muted");
@@ -91,7 +89,7 @@ export function FormattingGroup() {
 
   return (
     <>
-      <ListGroup variant={itemVariant}>
+      <ListGroup>
         {wrap(
           <NavValueRow
             title={t("numberFormat")}

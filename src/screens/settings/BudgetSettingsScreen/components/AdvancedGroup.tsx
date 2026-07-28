@@ -10,7 +10,6 @@ import { dialog } from "@/ui/feedback/dialog/dialogStore";
 import { useMetadataPref } from "@/lib/hooks/useMetadataPref";
 import { useSessionStore } from "@/stores/sessionStore";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
-import { useSurfaceLevel } from "@/ui/surface-level";
 
 type Busy = null | "cache" | "sync" | "repair";
 
@@ -59,7 +58,6 @@ function ActionRow({
  * other devices to re-download).
  */
 export function AdvancedGroup() {
-  const { itemVariant } = useSurfaceLevel();
   const { t } = useTranslation("settings");
   const [busy, setBusy] = useState<Busy>(null);
 
@@ -133,7 +131,7 @@ export function AdvancedGroup() {
 
   return (
     <>
-      <ListGroup variant={itemVariant}>
+      <ListGroup>
         <ActionRow
           title={t("resetBudgetCache")}
           onPress={handleResetCache}

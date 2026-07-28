@@ -17,7 +17,6 @@ import { useCSSVariable } from "uniwind";
 import { Money } from "@/ui/Money";
 import { LiftMenu, type RowRect } from "@/ui/lift-menu";
 import type { TransactionDisplay } from "@/core/types/models";
-import { useSurfaceLevel } from "@/ui/surface-level";
 
 /** What every piece of the row reads; provided by `TransactionRow.Root`. */
 interface TransactionRowContextValue {
@@ -79,14 +78,11 @@ function Root({
   scheduleKind = null,
   children,
 }: RootProps) {
-  // The same row renders in the accounts tab (a screen) and inside the
-  // category-transactions modal (a sheet) — the context picks the rung.
-  const { item } = useSurfaceLevel();
   const value = useMemo(() => ({ txn, isIncome, scheduleKind }), [txn, isIncome, scheduleKind]);
 
   return (
     <TransactionRowContext value={value}>
-      <View className={item}>
+      <View className="bg-surface">
         {!isFirst && <Separator className="ml-4" />}
         <LiftMenu.Row
           onPress={onPress && (() => onPress(txn))}

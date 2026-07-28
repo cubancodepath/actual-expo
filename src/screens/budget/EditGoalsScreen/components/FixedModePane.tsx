@@ -11,7 +11,6 @@ import {
 } from "@/screens/budget/goals";
 import type { Template } from "@/core/types/models";
 import { formatCents } from "@/core/shared/util";
-import { useSurfaceLevel } from "@/ui/surface-level";
 
 /**
  * "Next time I want to…" — what the goal does each period. Three readings of
@@ -37,7 +36,6 @@ export function FixedModePane({
   /** Return to the editor pane. */
   onDone: () => void;
 }) {
-  const { itemVariant } = useSurfaceLevel();
   const { t } = useTranslation("budget");
   const accent = useThemeColor("accent");
 
@@ -78,7 +76,7 @@ export function FixedModePane({
 
   return (
     <View className="px-4 pb-8">
-      <ListGroup variant={itemVariant}>
+      <ListGroup>
         {options.map((option, i) => (
           <View key={option.mode}>
             {i > 0 ? <Separator className="mx-4" /> : null}

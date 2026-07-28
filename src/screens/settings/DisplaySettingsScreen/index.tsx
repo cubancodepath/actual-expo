@@ -6,7 +6,6 @@ import { ListGroup, Separator, Typography, useThemeColor } from "heroui-native";
 import { Check } from "lucide-react-native";
 import { ScreenHeader } from "@/ui/ScreenHeader";
 import { useGlobalPref } from "@/lib/hooks/useGlobalPref";
-import { useSurfaceLevel } from "@/ui/surface-level";
 
 const THEME_OPTIONS = [
   // "auto" = follow the OS ("System default"), matching upstream's theme
@@ -18,7 +17,6 @@ const THEME_OPTIONS = [
 
 /** App appearance (theme) picker. HeroUI replacement for the legacy display screen. */
 export function DisplaySettingsScreen() {
-  const { itemVariant } = useSurfaceLevel();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation("settings");
   const accent = useThemeColor("accent");
@@ -33,7 +31,7 @@ export function DisplaySettingsScreen() {
       >
         <View className="mb-6">
           <Typography className="mb-2 ml-2 text-sm font-medium text-muted">{t("theme")}</Typography>
-          <ListGroup variant={itemVariant}>
+          <ListGroup>
             {THEME_OPTIONS.map((opt, index) => (
               <Fragment key={opt.value}>
                 {index > 0 && <Separator className="mx-4" />}

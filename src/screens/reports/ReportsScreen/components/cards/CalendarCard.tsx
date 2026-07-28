@@ -12,7 +12,6 @@ import type { CalendarWidget } from "@/core/types/models/dashboard";
 import { ReportWidget } from "../ReportWidget";
 import { useReport } from "../../hooks/useReport";
 import { useLatestTransactionDate } from "../../hooks/useTransactionBounds";
-import { SurfaceLevel } from "@/ui/surface-level";
 import {
   calendarSpreadsheet,
   type CalendarDayValue,
@@ -146,24 +145,22 @@ function CalendarDayCell({ renderProps }: { renderProps: DayCellRenderProps }) {
           width={200}
           className="gap-2 rounded-xl border border-border px-4 py-3"
         >
-          <SurfaceLevel context="sheet">
-            <Popover.Arrow />
-            <Popover.Title className="text-sm">{label}</Popover.Title>
-            <View className="gap-1">
-              <View className="flex-row items-center justify-between">
-                <Text className="text-xs text-muted">{t("series.income")}</Text>
-                <Text className="text-xs font-medium text-positive">
-                  {format(income, "financial")}
-                </Text>
-              </View>
-              <View className="flex-row items-center justify-between">
-                <Text className="text-xs text-muted">{t("series.expenses")}</Text>
-                <Text className="text-xs font-medium text-danger">
-                  {format(-expense, "financial")}
-                </Text>
-              </View>
+          <Popover.Arrow />
+          <Popover.Title className="text-sm">{label}</Popover.Title>
+          <View className="gap-1">
+            <View className="flex-row items-center justify-between">
+              <Text className="text-xs text-muted">{t("series.income")}</Text>
+              <Text className="text-xs font-medium text-positive">
+                {format(income, "financial")}
+              </Text>
             </View>
-          </SurfaceLevel>
+            <View className="flex-row items-center justify-between">
+              <Text className="text-xs text-muted">{t("series.expenses")}</Text>
+              <Text className="text-xs font-medium text-danger">
+                {format(-expense, "financial")}
+              </Text>
+            </View>
+          </View>
         </Popover.Content>
       </Popover.Portal>
     </Popover>

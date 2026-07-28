@@ -1,24 +1,18 @@
 import { Stack } from "expo-router";
 import { useQuickActionRouting } from "expo-quick-actions/router";
 import { useTranslation } from "react-i18next";
-import { useStackOptions } from "@/lib/hooks/useStackOptions";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
+import { themedScreenOptions, themedModalOptions } from "@/lib/screenOptions";
 
 export default function AuthLayout() {
   useQuickActionRouting();
-  const { screen, modal, formSheet } = useStackOptions();
+  const theme = useTheme();
+  const screen = themedScreenOptions(theme);
+  const modal = themedModalOptions(theme);
   const { t } = useTranslation();
 
-  // LEGACY EXCEPTION — `schedules` and `transaction/tags` are still StyleSheet
-  // screens painting `theme.colors.pageBackground` themselves. Until they move
-  // to HeroUI they need the route to keep painting the same legacy color, or a
-  // mismatched crescent shows behind the sheet's rounded corners. Delete this
-  // (and the two `legacyContentStyle` usages) when those screens migrate.
-  const legacyTheme = useTheme();
-  const legacyContentStyle = { backgroundColor: legacyTheme.colors.pageBackground };
-
   return (
-    <Stack screenOptions={screen}>
+    <Stack>
       <Stack.Screen name="(tabs)" options={{ headerShown: false, title: "" }} />
       <Stack.Screen name="account/new" options={{ headerShown: false, ...modal }} />
       <Stack.Screen name="account/[id]" options={{ ...screen, headerShown: false }} />
@@ -31,10 +25,34 @@ export default function AuthLayout() {
           headerShown: false,
         }}
       />
-      <Stack.Screen name="account/reconcile" options={{ headerShown: false, ...formSheet() }} />
-      <Stack.Screen name="encryption-password" options={{ headerShown: false, ...formSheet() }} />
+      <Stack.Screen
+        name="account/reconcile"
+        options={{
+          headerShown: false,
+          presentation: "formSheet",
+          sheetAllowedDetents: [1.0],
+          contentStyle: { backgroundColor: theme.colors.pageBackground },
+        }}
+      />
+      <Stack.Screen
+        name="encryption-password"
+        options={{
+          headerShown: false,
+          presentation: "formSheet",
+          sheetAllowedDetents: [1.0],
+          contentStyle: { backgroundColor: theme.colors.pageBackground },
+        }}
+      />
       <Stack.Screen name="account/settings" options={{ headerShown: false, ...modal }} />
-      <Stack.Screen name="account/close" options={{ headerShown: false, ...formSheet() }} />
+      <Stack.Screen
+        name="account/close"
+        options={{
+          headerShown: false,
+          presentation: "formSheet",
+          sheetAllowedDetents: [1.0],
+          contentStyle: { backgroundColor: theme.colors.pageBackground },
+        }}
+      />
       <Stack.Screen name="transaction" options={{ headerShown: false, ...modal }} />
       <Stack.Screen name="transaction-categorize" options={{ headerShown: false, ...modal }} />
       <Stack.Screen name="transaction-move" options={{ headerShown: false, ...modal }} />
@@ -42,8 +60,8 @@ export default function AuthLayout() {
         name="budget/assign-money"
         options={{ headerShown: false, ...modal, gestureEnabled: false }}
       />
-      <Stack.Screen name="budget/edit" options={{ ...screen, headerShown: false }} />
-      <Stack.Screen name="budget/hidden-categories" options={{ ...screen, headerShown: false }} />
+      <Stack.Screen name="budget/edit" options={{ headerShown: false }} />
+      <Stack.Screen name="budget/hidden-categories" options={{ headerShown: false }} />
       <Stack.Screen
         name="budget/rename-category"
         options={{
@@ -67,19 +85,50 @@ export default function AuthLayout() {
       />
       <Stack.Screen
         name="budget/cover-overspent"
-        options={{ headerShown: false, ...formSheet([0.45]) }}
+        options={{
+          headerShown: false,
+          presentation: "formSheet",
+          sheetAllowedDetents: [0.45],
+          contentStyle: { backgroundColor: theme.colors.pageBackground },
+        }}
       />
-      <Stack.Screen name="budget/cover-source" options={{ headerShown: false, ...formSheet() }} />
-      <Stack.Screen name="budget/move-money" options={{ headerShown: false, ...formSheet() }} />
+      <Stack.Screen
+        name="budget/cover-source"
+        options={{
+          headerShown: false,
+          presentation: "formSheet",
+          sheetAllowedDetents: [1.0],
+          contentStyle: { backgroundColor: theme.colors.pageBackground },
+        }}
+      />
+      <Stack.Screen
+        name="budget/move-money"
+        options={{
+          headerShown: false,
+          presentation: "formSheet",
+          sheetAllowedDetents: [1.0],
+          contentStyle: { backgroundColor: theme.colors.pageBackground },
+        }}
+      />
       <Stack.Screen
         name="budget/category-picker"
         options={{
           headerShown: false,
-          ...formSheet([0.5, 1.0]),
+          presentation: "formSheet",
+          sheetAllowedDetents: [0.5, 1.0],
           sheetGrabberVisible: true,
+          contentStyle: { backgroundColor: theme.colors.pageBackground },
         }}
       />
-      <Stack.Screen name="budget/hold" options={{ headerShown: false, ...formSheet() }} />
+      <Stack.Screen
+        name="budget/hold"
+        options={{
+          headerShown: false,
+          presentation: "formSheet",
+          sheetAllowedDetents: [1.0],
+          contentStyle: { backgroundColor: theme.colors.pageBackground },
+        }}
+      />
       <Stack.Screen
         name="budget/delete-category-picker"
         options={{
@@ -87,25 +136,15 @@ export default function AuthLayout() {
           ...modal,
         }}
       />
-      <Stack.Screen
-        name="schedules"
-        options={{
-          title: t("nav.schedules"),
-          ...modal,
-          // LEGACY EXCEPTION — see `legacyContentStyle` above.
-          headerStyle: { backgroundColor: legacyTheme.colors.pageBackground },
-          contentStyle: legacyContentStyle,
-        }}
-      />
+      <Stack.Screen name="schedules" options={{ title: t("nav.schedules"), ...modal }} />
       <Stack.Screen name="schedule" options={{ headerShown: false, ...modal }} />
-      {/* fullScreenModal covers everything, so it stays on the `screen` rung. */}
       <Stack.Screen
         name="settings"
-        options={{ ...screen, headerShown: false, presentation: "fullScreenModal" }}
+        options={{ headerShown: false, presentation: "fullScreenModal" }}
       />
       <Stack.Screen
         name="new-budget"
-        options={{ ...screen, headerShown: false, presentation: "fullScreenModal" }}
+        options={{ headerShown: false, presentation: "fullScreenModal" }}
       />
     </Stack>
   );

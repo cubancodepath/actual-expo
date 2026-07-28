@@ -15,7 +15,6 @@ import type { Schedule } from "@/core/types/models";
 import { GoalListRow } from "./GoalListRow";
 import { displayTypeMeta } from "../displayTypeMeta";
 import { conflictMessageKey, isSilentError } from "../messages";
-import { useSurfaceLevel } from "@/ui/surface-level";
 
 /**
  * Two parallel sections, always both: the goals that budget money (a tappable
@@ -47,7 +46,6 @@ export function GoalListPane({
   /** Switch it off: remove it (persists at once). */
   onRemoveOption: (entryId: string) => void;
 }) {
-  const { itemVariant, item } = useSurfaceLevel();
   const { t, i18n } = useTranslation("budget");
   const muted = useThemeColor("muted");
   const foreground = useThemeColor("foreground");
@@ -122,7 +120,7 @@ export function GoalListPane({
   return (
     <View className="gap-6 px-4 pt-2 pb-8">
       {importedFromNotes ? (
-        <View className={`flex-row gap-2 rounded-xl p-3 ${item}`}>
+        <View className="flex-row gap-2 rounded-xl bg-surface p-3">
           <Info size={18} color={muted} />
           <Typography className="flex-1 text-sm text-muted">
             {t("goals.importedFromNotes")}
@@ -131,7 +129,7 @@ export function GoalListPane({
       ) : null}
 
       {conflicts.map((conflict) => (
-        <View key={conflict.kind} className={`flex-row gap-2 rounded-xl p-3 ${item}`}>
+        <View key={conflict.kind} className="flex-row gap-2 rounded-xl bg-surface p-3">
           <TriangleAlert size={18} color={danger} />
           <Typography className="flex-1 text-sm text-danger">
             {t(conflictMessageKey(conflict), conflict as Record<string, unknown>)}
@@ -144,7 +142,7 @@ export function GoalListPane({
           {t("goals.sectionGoals")}
         </Typography>
         {goals.length > 0 || strayOptions.length > 0 ? (
-          <ListGroup variant={itemVariant}>
+          <ListGroup>
             {[...goals, ...strayOptions].map((entry, i) => (
               <Fragment key={entry.id}>
                 {i > 0 ? <Separator className="mx-4" /> : null}
@@ -182,7 +180,7 @@ export function GoalListPane({
         <Typography className="mb-1 ml-2 text-xs font-semibold uppercase text-muted">
           {t("goals.sectionTracking")}
         </Typography>
-        <ListGroup variant={itemVariant}>
+        <ListGroup>
           {renderOptionSlot("limit", capEntry, goals.length === 0 && capEntry == null)}
           <Separator className="mx-4" />
           {renderOptionSlot("goal", targetEntry)}

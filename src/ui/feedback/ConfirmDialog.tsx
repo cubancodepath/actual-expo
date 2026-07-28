@@ -1,7 +1,6 @@
 import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { Button, Dialog } from "heroui-native";
-import { SurfaceLevel } from "@/ui/surface-level";
 
 export type ConfirmAction = {
   label: string;
@@ -33,29 +32,27 @@ export function ConfirmDialog({ request, onClose }: ConfirmDialogProps) {
       <Dialog.Portal>
         <Dialog.Overlay />
         <Dialog.Content>
-          <SurfaceLevel context="sheet">
-            <View className="mb-5 gap-1.5">
-              <Dialog.Title>{request?.title}</Dialog.Title>
-              <Dialog.Description>{request?.description}</Dialog.Description>
-            </View>
-            <View className="gap-2">
-              {request?.actions.map((action) => (
-                <Button
-                  key={action.label}
-                  variant={action.isDestructive ? "danger" : "primary"}
-                  onPress={() => {
-                    onClose();
-                    action.onPress();
-                  }}
-                >
-                  <Button.Label>{action.label}</Button.Label>
-                </Button>
-              ))}
-              <Button variant="ghost" onPress={onClose}>
-                <Button.Label>{t("cancel")}</Button.Label>
+          <View className="mb-5 gap-1.5">
+            <Dialog.Title>{request?.title}</Dialog.Title>
+            <Dialog.Description>{request?.description}</Dialog.Description>
+          </View>
+          <View className="gap-2">
+            {request?.actions.map((action) => (
+              <Button
+                key={action.label}
+                variant={action.isDestructive ? "danger" : "primary"}
+                onPress={() => {
+                  onClose();
+                  action.onPress();
+                }}
+              >
+                <Button.Label>{action.label}</Button.Label>
               </Button>
-            </View>
-          </SurfaceLevel>
+            ))}
+            <Button variant="ghost" onPress={onClose}>
+              <Button.Label>{t("cancel")}</Button.Label>
+            </Button>
+          </View>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog>

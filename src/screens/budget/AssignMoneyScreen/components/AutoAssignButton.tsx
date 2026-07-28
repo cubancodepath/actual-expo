@@ -17,7 +17,6 @@ import type { GoalAllocation } from "@/core/server/budget/goal-template";
 import { Money } from "@/ui/Money";
 import { useAutoAssign, type ModeSummary } from "../hooks/useAutoAssign";
 import type { PendingEdits } from "../types";
-import { SurfaceLevel } from "@/ui/surface-level";
 
 /**
  * "Auto-assign": a full-width tertiary button that opens a downward popover of
@@ -83,36 +82,34 @@ export function AutoAssignButton({
           offset={insets.top + 16}
           className="border border-border p-1"
         >
-          <SurfaceLevel context="sheet">
-            <Popover.Arrow />
-            {loading || !computed ? (
-              <View className="items-center py-6">
-                <Spinner />
-              </View>
-            ) : !computed.hasGoals ? (
-              <View className="px-4 py-5">
-                <Typography className="text-center text-sm text-muted">
-                  {t("autoAssign.noGoals")}
-                </Typography>
-              </View>
-            ) : (
-              <>
-                <AutoAssignOption
-                  title={t("autoAssign.fill")}
-                  description={t("autoAssign.fillHint")}
-                  summary={computed.fill}
-                  onPress={() => pick(computed.fill)}
-                />
-                <Separator className="mx-2" />
-                <AutoAssignOption
-                  title={t("autoAssign.recalculate")}
-                  description={t("autoAssign.recalculateHint")}
-                  summary={computed.recalc}
-                  onPress={() => pick(computed.recalc)}
-                />
-              </>
-            )}
-          </SurfaceLevel>
+          <Popover.Arrow />
+          {loading || !computed ? (
+            <View className="items-center py-6">
+              <Spinner />
+            </View>
+          ) : !computed.hasGoals ? (
+            <View className="px-4 py-5">
+              <Typography className="text-center text-sm text-muted">
+                {t("autoAssign.noGoals")}
+              </Typography>
+            </View>
+          ) : (
+            <>
+              <AutoAssignOption
+                title={t("autoAssign.fill")}
+                description={t("autoAssign.fillHint")}
+                summary={computed.fill}
+                onPress={() => pick(computed.fill)}
+              />
+              <Separator className="mx-2" />
+              <AutoAssignOption
+                title={t("autoAssign.recalculate")}
+                description={t("autoAssign.recalculateHint")}
+                summary={computed.recalc}
+                onPress={() => pick(computed.recalc)}
+              />
+            </>
+          )}
         </Popover.Content>
       </Popover.Portal>
     </Popover>

@@ -8,7 +8,6 @@ import { NumberPad } from "heroui-native-pro";
 import { Check } from "lucide-react-native";
 import { MAX_CENTS } from "@/core/shared/util";
 import { useKeyboardStore } from "@/stores/keyboardStore";
-import { SurfaceLevel, useSurfaceLevel } from "@/ui/surface-level";
 import {
   AmountKeyboardActionsContext,
   AmountKeyboardStateContext,
@@ -133,24 +132,19 @@ function AmountKeyboardTrigger({ children, className }: AmountKeyboardTriggerPro
  * additionally wrapped in a FullWindowOverlay so it covers the native tabs.
  * Always mounted so exit animations can play.
  *
- * The portal host mounts the children in a different tree, so every context the
- * children need is re-provided inside (same as HeroUI's own portaled compounds
- * do) — including the surface level, or the Panel would paint the screen rung
- * while sitting inside a sheet.
+ * The portal host mounts the children in a different tree, so both contexts are
+ * re-provided inside (same as HeroUI's own portaled compounds do).
  */
 function AmountKeyboardPortal({ children }: { children: ReactNode }) {
   const name = useId();
   const actions = useAmountKeyboardActions();
   const state = useAmountKeyboardState();
-  const { context: surfaceContext } = useSurfaceLevel();
   const content = (
     <AmountKeyboardActionsContext value={actions}>
       <AmountKeyboardStateContext value={state}>
-        <SurfaceLevel context={surfaceContext}>
-          <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-            {children}
-          </View>
-        </SurfaceLevel>
+        <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+          {children}
+        </View>
       </AmountKeyboardStateContext>
     </AmountKeyboardActionsContext>
   );
@@ -206,7 +200,6 @@ interface AmountKeyboardPanelProps {
  * the slide-in and slide-out animations play. Defaults to the `Pad`.
  */
 function AmountKeyboardPanel({ children, onHeightChange }: AmountKeyboardPanelProps) {
-  const { item } = useSurfaceLevel();
   const insets = useSafeAreaInsets();
   const { isOpen } = useAmountKeyboardState();
 
@@ -223,7 +216,7 @@ function AmountKeyboardPanel({ children, onHeightChange }: AmountKeyboardPanelPr
     <Animated.View
       entering={SlideInDown}
       exiting={SlideOutDown}
-      className={`absolute inset-x-0 bottom-0 border-t border-border px-4 pt-3 ${item}`}
+      className="absolute inset-x-0 bottom-0 border-t border-border bg-surface px-4 pt-3"
       style={{ paddingBottom: insets.bottom + 8 }}
       onLayout={(e) => {
         const height = e.nativeEvent.layout.height;

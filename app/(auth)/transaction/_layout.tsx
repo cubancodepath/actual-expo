@@ -1,50 +1,39 @@
 import { Stack } from "expo-router";
 import { useTheme } from "@/design-system/providers/ThemeProvider";
-import { useStackOptions } from "@/lib/hooks/useStackOptions";
-import { SurfaceLevel } from "@/ui/surface-level";
+import { themedScreenOptions } from "@/lib/screenOptions";
 import { TransactionFormProvider } from "@/screens/transactions/NewTransactionScreen/context/TransactionFormProvider";
 
 export default function TransactionLayout() {
-  // This whole stack is presented as a card `modal` from `(auth)/_layout.tsx`,
-  // so every screen in it floats over the visible parent — the `sheet` rung.
-  const { sheet, formSheet } = useStackOptions();
-
-  // LEGACY EXCEPTION — `tags` is still a StyleSheet screen painting
-  // `theme.colors.pageBackground`; keep the route on the same legacy color
-  // until it migrates, or the sheet's rounded corners show a mismatch.
-  const legacyTheme = useTheme();
+  const theme = useTheme();
+  const screen = themedScreenOptions(theme);
 
   return (
     <TransactionFormProvider>
-      <SurfaceLevel context="sheet">
-        <Stack screenOptions={{ ...sheet, headerBackButtonDisplayMode: "minimal" }}>
-          <Stack.Screen name="new" options={{ title: "New Transaction", headerShown: false }} />
-          <Stack.Screen name="category-picker" options={{ headerShown: false }} />
-          <Stack.Screen name="payee-select" options={{ headerShown: false }} />
-          <Stack.Screen name="category-select" options={{ headerShown: false }} />
-          <Stack.Screen name="split-amounts" options={{ headerShown: false }} />
-          <Stack.Screen name="split-add-category" options={{ headerShown: false }} />
-          <Stack.Screen name="account-picker" options={{ headerShown: false }} />
-          <Stack.Screen name="split" options={{ title: "Split Transaction", headerShown: false }} />
-          <Stack.Screen
-            name="split-category-picker"
-            options={{ title: "Category", headerShown: false }}
-          />
-          <Stack.Screen name="notes" options={{ headerShown: false, presentation: "modal" }} />
-          <Stack.Screen name="recurrence" options={{ headerShown: false }} />
-          <Stack.Screen name="recurrence-custom" options={{ headerShown: false }} />
-          <Stack.Screen
-            name="tags"
-            options={{
-              ...formSheet([0.5, 1.0]),
-              title: "Tags",
-              // LEGACY EXCEPTION — see `legacyTheme` above.
-              headerStyle: { backgroundColor: legacyTheme.colors.pageBackground },
-              contentStyle: { backgroundColor: legacyTheme.colors.pageBackground },
-            }}
-          />
-        </Stack>
-      </SurfaceLevel>
+      <Stack screenOptions={{ ...screen, headerBackButtonDisplayMode: "minimal" }}>
+        <Stack.Screen name="new" options={{ title: "New Transaction", headerShown: false }} />
+        <Stack.Screen name="category-picker" options={{ headerShown: false }} />
+        <Stack.Screen name="payee-select" options={{ headerShown: false }} />
+        <Stack.Screen name="category-select" options={{ headerShown: false }} />
+        <Stack.Screen name="split-amounts" options={{ headerShown: false }} />
+        <Stack.Screen name="split-add-category" options={{ headerShown: false }} />
+        <Stack.Screen name="account-picker" options={{ headerShown: false }} />
+        <Stack.Screen name="split" options={{ title: "Split Transaction", headerShown: false }} />
+        <Stack.Screen
+          name="split-category-picker"
+          options={{ title: "Category", headerShown: false }}
+        />
+        <Stack.Screen name="notes" options={{ headerShown: false, presentation: "modal" }} />
+        <Stack.Screen name="recurrence" options={{ headerShown: false }} />
+        <Stack.Screen name="recurrence-custom" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="tags"
+          options={{
+            title: "Tags",
+            presentation: "formSheet",
+            sheetAllowedDetents: [0.5, 1.0],
+          }}
+        />
+      </Stack>
     </TransactionFormProvider>
   );
 }

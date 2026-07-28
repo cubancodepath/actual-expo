@@ -5,7 +5,6 @@ import { Button, ListGroup, Separator, Typography, useThemeColor } from "heroui-
 import { CirclePlus, Plus } from "lucide-react-native";
 import type { TransferEntry } from "@/screens/budget/hooks/useTransferFlow";
 import { SourceRow } from "./SourceRow";
-import { useSurfaceLevel } from "@/ui/surface-level";
 
 interface TransferEntryListProps {
   entries: TransferEntry[];
@@ -28,7 +27,6 @@ export function TransferEntryList({
   onPressAmount,
   onAddCategory,
 }: TransferEntryListProps) {
-  const { itemVariant } = useSurfaceLevel();
   const { t } = useTranslation("budget");
   const foreground = useThemeColor("foreground");
   const accent = useThemeColor("accent");
@@ -43,7 +41,7 @@ export function TransferEntryList({
   }
 
   return (
-    <ListGroup variant={itemVariant} className="overflow-hidden rounded-2xl">
+    <ListGroup className="overflow-hidden rounded-2xl">
       {entries.map((e, i) => (
         <Fragment key={e.id}>
           {i > 0 ? <Separator className="mx-4" /> : null}

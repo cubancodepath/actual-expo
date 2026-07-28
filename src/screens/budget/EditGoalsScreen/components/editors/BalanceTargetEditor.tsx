@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { ListGroup, Typography } from "heroui-native";
 import type { GoalTemplate } from "@/core/types/models";
 import { AmountRow } from "../fields/AmountRow";
-import { useSurfaceLevel } from "@/ui/surface-level";
 
 /**
  * A balance to work toward. Budgets nothing on its own — it turns the
@@ -11,11 +10,10 @@ import { useSurfaceLevel } from "@/ui/surface-level";
  * when to fund it. One field is the whole editor.
  */
 export function BalanceTargetEditor({ template }: { template: GoalTemplate }) {
-  const { itemVariant } = useSurfaceLevel();
   const { t } = useTranslation("budget");
   return (
     <View className="gap-3">
-      <ListGroup variant={itemVariant}>
+      <ListGroup>
         <AmountRow
           label={t("goals.fields.targetBalance")}
           cents={Math.round(template.amount * 100)}

@@ -8,7 +8,6 @@ import { intToStr, todayInt } from "@/core/shared/months";
 import { CloseButton } from "@/ui/CloseButton";
 import { ScreenHeader } from "@/ui/ScreenHeader";
 import { FieldRow } from "./FieldRow";
-import { SURFACE_LEVELS, SurfaceLevel } from "@/ui/surface-level";
 
 const FREQUENCIES = ["daily", "weekly", "monthly", "yearly"] as const;
 
@@ -19,9 +18,6 @@ type RecurrenceFieldProps = {
 
 /** Recurrence picker row + bottom sheet with common presets. */
 export function RecurrenceField({ value, onChange }: RecurrenceFieldProps) {
-  // Consumed inside the portaled <SurfaceLevel context="sheet"> below: the
-  // portal re-roots the tree, so the hook here would read the OUTER context.
-  const { itemVariant } = SURFACE_LEVELS.sheet;
   const { t } = useTranslation("transactions");
   const [open, setOpen] = useState(false);
   const accent = useThemeColor("accent");
@@ -58,34 +54,35 @@ export function RecurrenceField({ value, onChange }: RecurrenceFieldProps) {
       <BottomSheet isOpen={open} onOpenChange={setOpen}>
         <BottomSheet.Portal>
           <BottomSheet.Overlay />
-          <BottomSheet.Content contentContainerClassName="px-0 pt-0">
-            <SurfaceLevel context="sheet">
-              <ScreenHeader>
-                <ScreenHeader.Back>
-                  <CloseButton onPress={() => setOpen(false)} />
-                </ScreenHeader.Back>
-                <ScreenHeader.Title>{t("repeat")}</ScreenHeader.Title>
-              </ScreenHeader>
-              <View className="px-4 pb-4">
-                <ListGroup variant={itemVariant}>
-                  {options.map((o, i) => (
-                    <Fragment key={o.value ?? "never"}>
-                      {i > 0 ? <Separator className="mx-4" /> : null}
-                      <ListGroup.Item onPress={() => select(o.value)}>
-                        <ListGroup.ItemContent>
-                          <ListGroup.ItemTitle>{o.label}</ListGroup.ItemTitle>
-                        </ListGroup.ItemContent>
-                        {(value?.frequency ?? null) === o.value ? (
-                          <ListGroup.ItemSuffix>
-                            <Check size={18} color={accent} />
-                          </ListGroup.ItemSuffix>
-                        ) : null}
-                      </ListGroup.Item>
-                    </Fragment>
-                  ))}
-                </ListGroup>
-              </View>
-            </SurfaceLevel>
+          <BottomSheet.Content
+            backgroundClassName="bg-background"
+            contentContainerClassName="px-0 pt-0"
+          >
+            <ScreenHeader>
+              <ScreenHeader.Back>
+                <CloseButton onPress={() => setOpen(false)} />
+              </ScreenHeader.Back>
+              <ScreenHeader.Title>{t("repeat")}</ScreenHeader.Title>
+            </ScreenHeader>
+            <View className="px-4 pb-4">
+              <ListGroup>
+                {options.map((o, i) => (
+                  <Fragment key={o.value ?? "never"}>
+                    {i > 0 ? <Separator className="mx-4" /> : null}
+                    <ListGroup.Item onPress={() => select(o.value)}>
+                      <ListGroup.ItemContent>
+                        <ListGroup.ItemTitle>{o.label}</ListGroup.ItemTitle>
+                      </ListGroup.ItemContent>
+                      {(value?.frequency ?? null) === o.value ? (
+                        <ListGroup.ItemSuffix>
+                          <Check size={18} color={accent} />
+                        </ListGroup.ItemSuffix>
+                      ) : null}
+                    </ListGroup.Item>
+                  </Fragment>
+                ))}
+              </ListGroup>
+            </View>
           </BottomSheet.Content>
         </BottomSheet.Portal>
       </BottomSheet>

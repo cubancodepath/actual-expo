@@ -8,7 +8,6 @@ import { AmountRow } from "../fields/AmountRow";
 import { DateFieldRow } from "../fields/DateFieldRow";
 import { FieldRow } from "../fields/FieldRow";
 import { SelectFieldRow } from "../fields/SelectFieldRow";
-import { useSurfaceLevel } from "@/ui/surface-level";
 
 type Period = LimitTemplate["period"];
 
@@ -26,7 +25,6 @@ export function LimitEditor({
   template: LimitTemplate;
   onChange: (next: LimitTemplate) => void;
 }) {
-  const { itemVariant } = useSurfaceLevel();
   const { t } = useTranslation("budget");
 
   const setPeriod = (period: Period) => {
@@ -40,7 +38,7 @@ export function LimitEditor({
   };
 
   return (
-    <ListGroup variant={itemVariant}>
+    <ListGroup>
       <AmountRow label={t("goals.fields.capAmount")} cents={Math.round(template.amount * 100)} />
       <Separator className="mx-4" />
 

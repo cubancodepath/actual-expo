@@ -10,7 +10,6 @@ import { useCategories } from "@/lib/hooks/useCategories";
 import { getCategoryBalancesForMonth } from "@/core/server/budget/actions";
 import { usePickerStore } from "@/stores/pickerStore";
 import { currentMonth } from "@/core/shared/months";
-import { useSurfaceLevel } from "@/ui/surface-level";
 
 interface PickableCategory {
   id: string;
@@ -33,7 +32,6 @@ interface PickableGroup {
  * `usePickerStore().selectedCategory` after the route resolves).
  */
 export function CategoryAssignPickerScreen() {
-  const { itemVariant } = useSurfaceLevel();
   const { t } = useTranslation("transactions");
   const router = useRouter();
   const accent = useThemeColor("accent");
@@ -118,7 +116,7 @@ export function CategoryAssignPickerScreen() {
         ) : undefined
       }
     >
-      <ListGroup variant={itemVariant} className="mb-3">
+      <ListGroup className="mb-3">
         <ListGroup.Item onPress={() => select(null, "")}>
           <ListGroup.ItemPrefix>
             <View className="w-5 items-center justify-center">
@@ -136,7 +134,7 @@ export function CategoryAssignPickerScreen() {
           <Typography className="mb-1 ml-2 text-xs font-semibold uppercase text-muted">
             {group.name}
           </Typography>
-          <ListGroup variant={itemVariant}>
+          <ListGroup>
             {group.categories.map((c, i) => {
               const isSel = c.id === selectedId;
               return (

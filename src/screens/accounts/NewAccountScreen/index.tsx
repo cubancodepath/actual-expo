@@ -18,7 +18,6 @@ import { AmountKeyboard } from "@/ui/amount-keyboard";
 import { AmountField } from "@/ui/money-entry/AmountField";
 import { ScreenHeader } from "@/ui/ScreenHeader";
 import { useNewAccountForm } from "./hooks/useNewAccountForm";
-import { SurfaceCanvas } from "@/ui/surface-level";
 
 /**
  * Create-account modal: our HeroUI header (close left), a TanStack Form body
@@ -43,7 +42,7 @@ export function NewAccountScreen() {
       value={values.startingBalance}
       onValueChange={(cents) => form.setFieldValue("startingBalance", cents)}
     >
-      <SurfaceCanvas context="sheet" className="flex-1">
+      <View className="flex-1 bg-background">
         <ScreenHeader>
           <ScreenHeader.Back>
             <Button
@@ -106,7 +105,7 @@ export function NewAccountScreen() {
             {isSaving ? <Spinner /> : <Button.Label>{t("newAccount.createAccount")}</Button.Label>}
           </Button>
         </ScrollView>
-      </SurfaceCanvas>
+      </View>
 
       <AmountKeyboard.Portal>
         <AmountKeyboard.Panel />

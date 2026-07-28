@@ -2,7 +2,6 @@ import { Fragment } from "react";
 import { useTranslation } from "react-i18next";
 import { ListGroup, Separator, Switch, Typography } from "heroui-native";
 import { useFeatureFlag, useSetFeatureFlag } from "@/hooks/useFeatureFlag";
-import { useSurfaceLevel } from "@/ui/surface-level";
 import {
   FEATURE_FLAG_REQUIRES,
   SUPPORTED_FEATURE_FLAGS,
@@ -74,12 +73,11 @@ function childOf(flag: FeatureFlag): FeatureFlag | undefined {
 
 /** Experimental Features group — synced feature-flag toggles (upstream parity). */
 export function ExperimentalGroup() {
-  const { itemVariant } = useSurfaceLevel();
   const { t } = useTranslation("settings");
 
   return (
     <>
-      <ListGroup variant={itemVariant}>
+      <ListGroup>
         {SUPPORTED_FEATURE_FLAGS.map((flag, index) => (
           <Fragment key={flag}>
             {index > 0 && <Separator className="mx-4" />}

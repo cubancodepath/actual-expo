@@ -11,7 +11,6 @@ import { envelopeBudget, sheetForMonth } from "@/core/server/spreadsheet/binding
 import { getSpreadsheet } from "@/core/server/sheet";
 import { TO_BUDGET_ID } from "@/screens/budget/constants";
 import { Money } from "@/ui/Money";
-import { SURFACE_LEVELS, SurfaceCanvas, useSurfaceLevel } from "@/ui/surface-level";
 
 /**
  * Which side of a transfer the picked category will be on. A `funder` gives
@@ -43,7 +42,6 @@ interface PickableGroup {
  * `budgetUIStore.setPickedCategory`, consumed by the calling screen.
  */
 export function CategoryPickerScreen() {
-  const { itemVariant } = useSurfaceLevel();
   const { t } = useTranslation("budget");
   const router = useRouter();
   const { excludeIds, role, title } = useLocalSearchParams<{
@@ -109,16 +107,16 @@ export function CategoryPickerScreen() {
   };
 
   return (
-    <SurfaceCanvas context="sheet" className="flex-1">
+    <>
       <ScrollView
-        className="flex-1"
+        className="flex-1 bg-background"
         contentContainerClassName="px-4 pb-10"
         contentContainerStyle={{ paddingTop: headerHeight }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
         {showToBudget && (
-          <ListGroup variant={itemVariant} className="mb-3 overflow-hidden">
+          <ListGroup className="mb-3 overflow-hidden">
             <ListGroup.Item onPress={() => select(TO_BUDGET_ID, t("readyToAssignLabel"), toBudget)}>
               <ListGroup.ItemContent>
                 <ListGroup.ItemTitle className="font-semibold">
@@ -137,7 +135,7 @@ export function CategoryPickerScreen() {
             <Typography className="mb-1 ml-2 text-xs font-semibold uppercase text-muted">
               {group.name}
             </Typography>
-            <ListGroup variant={itemVariant} className="overflow-hidden">
+            <ListGroup className="overflow-hidden">
               {group.categories.map((c, i) => (
                 <Fragment key={c.id}>
                   {i > 0 ? <Separator className="mx-4" /> : null}
@@ -163,10 +161,9 @@ export function CategoryPickerScreen() {
       </ScrollView>
 
       {/* Fixed header (title + search): an opaque absolute overlay the list
-          scrolls behind; the ScrollView reserves its measured height. It must
-          paint the same canvas as the sheet root or the seam shows on scroll. */}
+          scrolls behind; the ScrollView reserves its measured height. */}
       <View
-        className={`absolute inset-x-0 top-0 z-10 px-4 pb-3 pt-5 ${SURFACE_LEVELS.sheet.canvas}`}
+        className="absolute inset-x-0 top-0 z-10 bg-background px-4 pb-3 pt-5"
         onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
       >
         <Typography className="pb-3 text-lg font-semibold text-foreground">{title}</Typography>
@@ -178,6 +175,6 @@ export function CategoryPickerScreen() {
           </SearchField.Group>
         </SearchField>
       </View>
-    </SurfaceCanvas>
+    </>
   );
 }

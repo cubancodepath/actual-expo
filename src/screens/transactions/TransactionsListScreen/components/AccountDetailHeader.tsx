@@ -7,7 +7,6 @@ import type { Account } from "@/core/types/models";
 import { SearchButton } from "./SearchButton";
 import { AccountDetailMenu } from "./AccountDetailMenu";
 import { AccountSummary } from "./AccountSummary";
-import { useSurfaceLevel } from "@/ui/surface-level";
 
 interface AccountDetailHeaderProps {
   accountId: string;
@@ -36,13 +35,12 @@ export function AccountDetailHeader({
   setShowReconciled,
   onSearch,
 }: AccountDetailHeaderProps) {
-  const { canvas } = useSurfaceLevel();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const foreground = useThemeColor("foreground");
 
   return (
-    <View className={canvas}>
+    <View className="bg-background">
       <View className="px-4 pb-3" style={{ paddingTop: insets.top + 4 }}>
         <View className="flex-row items-center gap-2">
           <Button

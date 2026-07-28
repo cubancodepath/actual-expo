@@ -29,7 +29,6 @@ import { parseGoalDef } from "@/core/server/budget/goal-template-parser";
 import { describeTemplate } from "@/screens/budget/goals";
 import { dialog } from "@/ui/feedback/dialog/dialogStore";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
-import { useSurfaceLevel } from "@/ui/surface-level";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -62,7 +61,6 @@ export interface CategoryDetailsScreenProps {
  * The heroui replacement for the legacy `EditCategoryScreen`.
  */
 export function CategoryDetailsScreen({ categoryId }: CategoryDetailsScreenProps) {
-  const { itemVariant } = useSurfaceLevel();
   const { t, i18n } = useTranslation("budget");
   const router = useRouter();
   const foreground = useThemeColor("foreground");
@@ -177,7 +175,7 @@ export function CategoryDetailsScreen({ categoryId }: CategoryDetailsScreenProps
         keyboardAware
       >
         {/* ── Balance card ── */}
-        <ListGroup variant={itemVariant} className="mb-6">
+        <ListGroup className="mb-6">
           {!isIncome ? (
             <>
               <BalanceRow label={t("fromMonth", { month: previousMonth })} cents={carryIn} />
@@ -219,7 +217,7 @@ export function CategoryDetailsScreen({ categoryId }: CategoryDetailsScreenProps
             <Typography className="mb-2 ml-2 text-sm font-medium text-muted">
               {t("goalSection")}
             </Typography>
-            <Surface variant={itemVariant} className="items-center gap-3 rounded-2xl p-4">
+            <Surface className="items-center gap-3 rounded-2xl p-4">
               <Target size={26} color={hasGoal ? foreground : muted} />
               {hasGoal ? (
                 goalDescription ? (

@@ -6,7 +6,6 @@ import { Banknote, ChartSpline, Check } from "lucide-react-native";
 import type { Account } from "@/core/types/models";
 import { Money } from "@/ui/Money";
 import { useAccountsWithBalances } from "@/ui/hooks/useAccountsWithBalances";
-import { useSurfaceLevel } from "@/ui/surface-level";
 
 type Section = { key: "budget" | "offbudget"; title: string; accounts: Account[] };
 
@@ -36,7 +35,6 @@ export function AccountSelectView({
   enabled = true,
   excludeAccountId,
 }: AccountSelectViewProps) {
-  const { itemVariant, nested } = useSurfaceLevel();
   const { t } = useTranslation("transactions");
   const accent = useThemeColor("accent");
   const foreground = useThemeColor("foreground");
@@ -63,7 +61,7 @@ export function AccountSelectView({
           <Typography className="mb-1 ml-2 text-xs font-semibold uppercase text-muted">
             {section.title}
           </Typography>
-          <ListGroup variant={itemVariant}>
+          <ListGroup>
             {section.accounts.map((a, i) => (
               <Fragment key={a.id}>
                 {i > 0 ? <Separator className="mx-4" /> : null}
@@ -73,7 +71,7 @@ export function AccountSelectView({
                       <View className="w-5 items-center justify-center">
                         {a.id === selectedAccountId ? <Check size={18} color={accent} /> : null}
                       </View>
-                      <View className={`size-9 items-center justify-center rounded-full ${nested}`}>
+                      <View className="size-9 items-center justify-center rounded-full bg-background">
                         {a.offbudget ? (
                           <ChartSpline size={18} color={foreground} />
                         ) : (

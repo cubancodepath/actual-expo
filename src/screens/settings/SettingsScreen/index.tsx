@@ -29,7 +29,6 @@ import { clearSwitchingFlag } from "@/core/server/sync";
 import { Timestamp } from "@/core/crdt";
 import { getServerInfo } from "@/core/server/server-info/serverInfo.api";
 import { dialog } from "@/ui/feedback/dialog/dialogStore";
-import { useSurfaceLevel } from "@/ui/surface-level";
 
 const ICON_SIZE = 20;
 
@@ -124,7 +123,6 @@ function ActionRow({
  * mode section. HeroUI replacement for the legacy `app/(auth)/settings/index`.
  */
 export function SettingsScreen() {
-  const { itemVariant } = useSurfaceLevel();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation("settings");
@@ -213,7 +211,7 @@ export function SettingsScreen() {
           <Typography className="mb-2 ml-2 text-lg font-bold text-foreground">
             {budgetName || t("defaultBudgetName")}
           </Typography>
-          <ListGroup variant={itemVariant}>
+          <ListGroup>
             <NavRow
               icon={mutedIcon(SlidersHorizontal)}
               title={t("budgetSettings")}
@@ -237,7 +235,7 @@ export function SettingsScreen() {
         {/* App */}
         <View className="mb-6">
           <SectionLabel>{t("app")}</SectionLabel>
-          <ListGroup variant={itemVariant}>
+          <ListGroup>
             <NavRow
               icon={mutedIcon(Palette)}
               title={t("display")}
@@ -256,7 +254,7 @@ export function SettingsScreen() {
         {isLocalOnly ? (
           <View className="mb-6">
             <SectionLabel>{t("mode")}</SectionLabel>
-            <ListGroup variant={itemVariant}>
+            <ListGroup>
               <ActionRow
                 icon={mutedIcon(Smartphone)}
                 title={t("localOnly")}
@@ -281,7 +279,7 @@ export function SettingsScreen() {
         ) : (
           <View className="mb-6">
             <SectionLabel>{t("server")}</SectionLabel>
-            <ListGroup variant={itemVariant}>
+            <ListGroup>
               <ValueRow icon={mutedIcon(LinkIcon)} label={t("url")} value={serverUrl} />
               <Separator className="mx-4" />
               <ActionRow

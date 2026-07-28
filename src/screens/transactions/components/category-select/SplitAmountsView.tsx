@@ -11,7 +11,6 @@ import { BlinkingCursor } from "@/ui/BlinkingCursor";
 import { AmountKeyboard, useAmountKeyboardAvoidance } from "@/ui/amount-keyboard";
 import { Money } from "@/ui/Money";
 import type { CategoryRef, SplitLineForm } from "@/ui/entity-select/types";
-import { useSurfaceLevel } from "@/ui/surface-level";
 
 /** A split line plus its UI-only direction (money in vs out). */
 type DraftLine = SplitLineForm & { inflow: boolean };
@@ -54,7 +53,6 @@ export function SplitAmountsView({
   pendingCategory,
   onPendingConsumed,
 }: SplitAmountsViewProps) {
-  const { itemVariant } = useSurfaceLevel();
   const { t } = useTranslation("transactions");
   const accentForeground = useThemeColor("accent-foreground");
   const accent = useThemeColor("accent");
@@ -167,7 +165,7 @@ export function SplitAmountsView({
         >
           {/* Payee card — info only (not tappable): the payee (or a placeholder)
             with the transaction total on the right. */}
-          <ListGroup variant={itemVariant} className="mb-4">
+          <ListGroup className="mb-4">
             <ListGroup.Item>
               <ListGroup.ItemContent>
                 <ListGroup.ItemTitle className={payeeName ? undefined : "text-muted"}>
@@ -194,7 +192,7 @@ export function SplitAmountsView({
             ) : null}
           </View>
 
-          <ListGroup variant={itemVariant}>
+          <ListGroup>
             {draft.map((line, i) => (
               <Fragment key={line.categoryId ?? i}>
                 {i > 0 ? <Separator className="mx-4" /> : null}

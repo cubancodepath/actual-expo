@@ -11,7 +11,6 @@ import { Typography, useThemeColor } from "heroui-native";
 import { ArrowDown } from "lucide-react-native";
 import type { TransferDirection } from "@/screens/budget/hooks/useTransferFlow";
 import { lightHaptic } from "@/ui/haptics";
-import { useSurfaceLevel } from "@/ui/surface-level";
 
 const TRACK_W = 34;
 const TRACK_H = 58;
@@ -41,11 +40,10 @@ interface DirectionToggleProps {
  * Colours are derived from the theme rather than fixed: the hero behind this
  * switch takes three different tints (danger/success/balanced), so the track is
  * a foreground wash (reading as a darker shade of whichever tint is live) and
- * the thumb takes the `item` rung — untinted, so it punches a clean hole through
+ * the thumb is `bg-background` — untinted, so it punches a clean hole through
  * all three, in both light and dark mode.
  */
 export function DirectionToggle({ value, onChange }: DirectionToggleProps) {
-  const { item } = useSurfaceLevel();
   const { t } = useTranslation("budget");
   const foreground = useThemeColor("foreground");
   const reducedMotion = useReducedMotion();
@@ -84,7 +82,7 @@ export function DirectionToggle({ value, onChange }: DirectionToggleProps) {
         style={{ width: TRACK_W, height: TRACK_H, padding: PAD }}
       >
         <Animated.View
-          className={`items-center justify-center rounded-full shadow-md ${item}`}
+          className="items-center justify-center rounded-full bg-background shadow-md"
           style={[{ width: THUMB, height: THUMB }, thumbStyle]}
         >
           <Animated.View style={arrowStyle}>

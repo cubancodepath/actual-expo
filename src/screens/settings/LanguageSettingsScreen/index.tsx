@@ -7,7 +7,6 @@ import { Check } from "lucide-react-native";
 import { ScreenHeader } from "@/ui/ScreenHeader";
 import { useGlobalPref } from "@/lib/hooks/useGlobalPref";
 import { availableLanguages, setI18NextLanguage } from "@/i18n/config";
-import { useSurfaceLevel } from "@/ui/surface-level";
 
 // Native display names when the JS engine lacks Intl.DisplayNames (Hermes).
 const NATIVE_NAME_FALLBACK: Record<string, string> = { en: "English", es: "Español" };
@@ -32,7 +31,6 @@ function nativeLanguageName(lang: string): string {
  * locale is shown by its native name.
  */
 export function LanguageSettingsScreen() {
-  const { itemVariant } = useSurfaceLevel();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation("settings");
   const accent = useThemeColor("accent");
@@ -59,7 +57,7 @@ export function LanguageSettingsScreen() {
           <Typography className="mb-2 ml-2 text-sm font-medium text-muted">
             {t("language")}
           </Typography>
-          <ListGroup variant={itemVariant}>
+          <ListGroup>
             {options.map((opt, index) => (
               <Fragment key={opt.value || "system"}>
                 {index > 0 && <Separator className="mx-4" />}

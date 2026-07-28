@@ -64,9 +64,6 @@ export function NewBudgetScreen({ mode, onCancel, onComplete }: Props) {
   }
 
   return (
-    // `bg-background` on purpose: this screen is a `fullScreenModal`, which
-    // covers everything and so IS the canvas — the base rung of the ladder,
-    // not a sheet. See `@/ui/surface-level`.
     <View className="flex-1 bg-background">
       <ScreenHeader.ScrollArea>
         <ScreenHeader.Body

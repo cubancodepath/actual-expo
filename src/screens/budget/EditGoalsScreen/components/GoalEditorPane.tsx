@@ -15,7 +15,6 @@ import { GoalEditor } from "./editors/GoalEditor";
 import { InfoEditor } from "./editors/InfoEditor";
 import { LimitEditor } from "./editors/LimitEditor";
 import { conflictMessageKey, errorMessageKey, isSilentError } from "../messages";
-import { useSurfaceLevel } from "@/ui/surface-level";
 
 /**
  * Editor for one automation. Everything that budgets money goes through the
@@ -48,7 +47,6 @@ export function GoalEditorPane({
   /** Open the "Next time I want to…" pane; `custom` = editor on Custom. */
   onOpenModePane: (custom: boolean) => void;
 }) {
-  const { item } = useSurfaceLevel();
   const { t } = useTranslation("budget");
   const danger = useThemeColor("danger");
 
@@ -94,7 +92,7 @@ export function GoalEditorPane({
         {renderFields()}
 
         {messages.map(({ key, text }) => (
-          <View key={key} className={`mt-3 flex-row gap-2 rounded-xl p-3 ${item}`}>
+          <View key={key} className="mt-3 flex-row gap-2 rounded-xl bg-surface p-3">
             <TriangleAlert size={18} color={danger} />
             <Typography className="flex-1 text-sm text-danger">{text}</Typography>
           </View>

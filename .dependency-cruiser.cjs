@@ -10,34 +10,6 @@
  * Run: `npm run check:arch`. Wired into husky pre-commit.
  */
 
-/** Files that were already importing legacy layers when the freeze went in.
- *  Listed exactly, one per file — a broad glob here would let NEW debt in
- *  alongside the old, which is how `@/lib/number` slipped past the previous
- *  guardrail. REMOVE entries as they migrate; never add. */
-const LEGACY_GRANDFATHERED = [
-  "^src/ui/feedback/ErrorBoundary\\.tsx$",
-  "^src/screens/budget/components/BudgetListSkeleton\\.tsx$",
-  "^src/hooks/useSharedAmountInput\\.ts$",
-  "^src/hooks/useCursorBlink\\.tsx$",
-  "^app/_layout\\.tsx$",
-  // Keeps `useTheme` ONLY to hold `schedules` on the legacy page colour until
-  // that screen migrates off StyleSheet. Drop with the exception there.
-  "^app/\\(auth\\)/_layout\\.tsx$",
-  "^app/\\(auth\\)/schedule/new\\.tsx$",
-  "^app/\\(auth\\)/schedule/recurrence-custom\\.tsx$",
-  "^app/\\(auth\\)/schedule/recurrence\\.tsx$",
-  "^app/\\(auth\\)/schedules\\.tsx$",
-  "^app/\\(auth\\)/settings/payees\\.tsx$",
-  "^app/\\(auth\\)/settings/rules\\.tsx$",
-  // Same as `(auth)/_layout.tsx`: `useTheme` only pins the legacy `tags` sheet.
-  "^app/\\(auth\\)/transaction/_layout\\.tsx$",
-  "^app/\\(auth\\)/transaction/account-picker\\.tsx$",
-  "^app/\\(auth\\)/transaction/split-category-picker\\.tsx$",
-  "^app/\\(auth\\)/transaction/split\\.tsx$",
-  "^app/\\(auth\\)/transaction/tags\\.tsx$",
-  "^app/\\(public\\)/onboarding\\.tsx$",
-];
-
 /** Stores allowed to reach sideways: read-only composition + the persistence adapter. */
 const STORE_EXEMPT = "^src/stores/(session\\.selectors|prefsStorage)\\.ts$";
 
@@ -49,7 +21,7 @@ module.exports = {
       comment:
         "core must stay pure logic, testable in Node. Move shared UI to ui/, screen-specific UI to screens/.",
       from: { path: "^src/core", pathNot: "\\.test\\.ts" },
-      to: { path: "^src/(screens|ui|features|components|design-system)" },
+      to: { path: "^src/(screens|ui|components)" },
     },
     {
       name: "core-no-lib",
@@ -82,7 +54,7 @@ module.exports = {
       severity: "error",
       comment: "Shared UI must not depend on screens — it stays screen-agnostic.",
       from: { path: "^src/ui" },
-      to: { path: "^src/(screens|features)" },
+      to: { path: "^src/screens" },
     },
     {
       name: "no-src-components",
@@ -100,14 +72,11 @@ module.exports = {
       to: { path: "^src/screens/([^/]+)/", pathNot: "^src/screens/$1/" },
     },
     {
-      name: "no-new-legacy-imports",
+      name: "no-legacy-layers",
       severity: "error",
       comment:
-        "@/features and @/design-system are frozen. Migrate the file to its ARCHITECTURE.md home instead.",
-      from: {
-        path: "^(src/(ui|screens|lib|hooks|stores)|app)/",
-        pathNot: LEGACY_GRANDFATHERED,
-      },
+        "src/features and src/design-system were deleted. Nothing may recreate them — UI belongs in screens/ or ui/.",
+      from: { path: "^(src|app)/" },
       to: { path: "^src/(features|design-system)" },
     },
     {

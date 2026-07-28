@@ -11,14 +11,10 @@ export default function ScheduleLayout() {
     <ScheduleFormProvider>
       <Stack screenOptions={{ ...screen, headerBackButtonDisplayMode: "minimal" }}>
         <Stack.Screen name="[id]" options={{ title: "Schedule", headerShown: false }} />
-        <Stack.Screen name="new" options={{ title: "New Schedule", headerShown: false }} />
         <Stack.Screen name="name" options={{ headerShown: false, presentation: "modal" }} />
         <Stack.Screen name="payee-select" options={{ headerShown: false }} />
         <Stack.Screen name="category-select" options={{ headerShown: false }} />
-        <Stack.Screen name="account-picker" options={{ headerShown: false }} />
         <Stack.Screen name="category-picker" options={{ headerShown: false }} />
-        <Stack.Screen name="recurrence" options={{ headerShown: false }} />
-        <Stack.Screen name="recurrence-custom" options={{ headerShown: false }} />
       </Stack>
     </ScheduleFormProvider>
   );

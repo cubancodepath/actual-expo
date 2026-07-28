@@ -2,18 +2,11 @@ import { Stack } from "expo-router";
 import { useQuickActionRouting } from "expo-quick-actions/router";
 import { useTranslation } from "react-i18next";
 import { useStackOptions } from "@/lib/hooks/useStackOptions";
-import { useTheme } from "@/design-system/providers/ThemeProvider";
 
 export default function AuthLayout() {
   useQuickActionRouting();
   const { screen, modal, formSheet } = useStackOptions();
   const { t } = useTranslation();
-
-  // LEGACY EXCEPTION — `schedules` is still a StyleSheet screen painting
-  // `theme.colors.pageBackground` itself. Until it moves to HeroUI the route has
-  // to keep painting the same legacy color, or a mismatched crescent shows
-  // behind the sheet's rounded corners. Delete with that screen's migration.
-  const legacyTheme = useTheme();
 
   return (
     <Stack screenOptions={screen}>
@@ -95,16 +88,6 @@ export default function AuthLayout() {
         options={{
           headerShown: false,
           ...modal,
-        }}
-      />
-      <Stack.Screen
-        name="schedules"
-        options={{
-          title: t("nav.schedules"),
-          ...modal,
-          // LEGACY EXCEPTION — see `legacyTheme` above.
-          headerStyle: { backgroundColor: legacyTheme.colors.pageBackground },
-          contentStyle: { backgroundColor: legacyTheme.colors.pageBackground },
         }}
       />
       <Stack.Screen name="schedule" options={{ headerShown: false, ...modal }} />

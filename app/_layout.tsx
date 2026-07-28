@@ -23,7 +23,6 @@ import {
 import i18n from "@/i18n/config";
 import { HeroUINativeProvider, useThemeColor } from "heroui-native";
 import { Uniwind } from "uniwind";
-import { ThemeProvider } from "@/design-system/providers/ThemeProvider";
 import { useSessionStore } from "@/stores/sessionStore";
 import { useBudgetContextStore } from "@/stores/budgetContextStore";
 import { loadBudget } from "@/stores/operations/budgetfiles";
@@ -340,34 +339,32 @@ function RootLayout() {
         <GestureHandlerRootView style={{ flex: 1 }}>
           <KeyboardProvider>
             <NavigationThemeProvider value={navigationTheme}>
-              <ThemeProvider>
-                <HeroUINativeProvider
-                  config={{
-                    toast: {
-                      defaultProps: { placement: "bottom" },
-                      contentWrapper: (children) => (
-                        <ToastKeyboardAvoider>{children}</ToastKeyboardAvoider>
-                      ),
-                    },
-                  }}
-                >
-                  <Stack screenOptions={{ contentStyle: { backgroundColor: background } }}>
-                    <Stack.Protected guard={!hasToken && !isLocalOnly}>
-                      <Stack.Screen name="(public)" options={{ headerShown: false }} />
-                    </Stack.Protected>
-                    <Stack.Protected guard={hasToken && !isConfigured}>
-                      <Stack.Screen name="(files)" options={{ headerShown: false }} />
-                    </Stack.Protected>
-                    <Stack.Protected guard={isConfigured}>
-                      <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-                    </Stack.Protected>
-                  </Stack>
-                  <SyncConflictDialog />
-                  <DialogHost />
+              <HeroUINativeProvider
+                config={{
+                  toast: {
+                    defaultProps: { placement: "bottom" },
+                    contentWrapper: (children) => (
+                      <ToastKeyboardAvoider>{children}</ToastKeyboardAvoider>
+                    ),
+                  },
+                }}
+              >
+                <Stack screenOptions={{ contentStyle: { backgroundColor: background } }}>
+                  <Stack.Protected guard={!hasToken && !isLocalOnly}>
+                    <Stack.Screen name="(public)" options={{ headerShown: false }} />
+                  </Stack.Protected>
+                  <Stack.Protected guard={hasToken && !isConfigured}>
+                    <Stack.Screen name="(files)" options={{ headerShown: false }} />
+                  </Stack.Protected>
+                  <Stack.Protected guard={isConfigured}>
+                    <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                  </Stack.Protected>
+                </Stack>
+                <SyncConflictDialog />
+                <DialogHost />
 
-                  <BusyOverlayHost />
-                </HeroUINativeProvider>
-              </ThemeProvider>
+                <BusyOverlayHost />
+              </HeroUINativeProvider>
             </NavigationThemeProvider>
           </KeyboardProvider>
         </GestureHandlerRootView>

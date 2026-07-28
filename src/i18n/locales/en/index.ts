@@ -1,6 +1,5 @@
 import common from "./common.json";
 import auth from "./auth.json";
-import onboarding from "./onboarding.json";
 import settings from "./settings.json";
 import transactions from "./transactions.json";
 import accounts from "./accounts.json";
@@ -13,7 +12,6 @@ import reports from "./reports.json";
 export default {
   common,
   auth,
-  onboarding,
   settings,
   transactions,
   accounts,

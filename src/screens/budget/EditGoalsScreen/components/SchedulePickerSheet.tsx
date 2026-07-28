@@ -1,15 +1,7 @@
 import { Fragment } from "react";
 import { View } from "react-native";
-import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import {
-  BottomSheet,
-  Button,
-  ListGroup,
-  Separator,
-  Typography,
-  useThemeColor,
-} from "heroui-native";
+import { BottomSheet, ListGroup, Separator, Typography, useThemeColor } from "heroui-native";
 import { Check } from "lucide-react-native";
 import { Money } from "@/ui/Money";
 import { formatDateHuman, strToInt } from "@/core/shared/months";
@@ -37,7 +29,6 @@ export function SchedulePickerSheet({
   onSelect: (schedule: Schedule) => void;
 }) {
   const { t, i18n } = useTranslation("budget");
-  const router = useRouter();
   const accent = useThemeColor("accent");
 
   return (
@@ -55,15 +46,6 @@ export function SchedulePickerSheet({
                 <Typography className="text-center text-sm text-muted">
                   {t("goals.noSchedules")}
                 </Typography>
-                <Button
-                  variant="secondary"
-                  onPress={() => {
-                    onOpenChange(false);
-                    router.push("/(auth)/schedules");
-                  }}
-                >
-                  <Button.Label>{t("goals.manageSchedules")}</Button.Label>
-                </Button>
               </View>
             ) : (
               // Inside a BottomSheet the canvas is `--overlay`, which equals

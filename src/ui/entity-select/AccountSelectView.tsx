@@ -13,7 +13,11 @@ import type { Account } from "@/core/types/models";
 import { Money } from "@/ui/Money";
 import { useAccountsWithBalances } from "@/ui/hooks/useAccountsWithBalances";
 
-type Section = { key: "budget" | "offbudget"; title: string; accounts: Account[] };
+type Section = {
+  key: "budget" | "offbudget";
+  title: string;
+  accounts: Account[];
+};
 
 interface AccountSelectViewProps {
   /** Currently assigned account — renders the check. */
@@ -47,7 +51,6 @@ export function AccountSelectView({
   onPick,
   enabled = true,
   excludeAccountId,
-  variant = "default",
 }: AccountSelectViewProps) {
   const { t } = useTranslation("transactions");
   const accent = useThemeColor("accent");
@@ -60,10 +63,18 @@ export function AccountSelectView({
     const budget = visible.filter((a) => !a.offbudget);
     const offbudget = visible.filter((a) => a.offbudget);
     if (budget.length > 0) {
-      result.push({ key: "budget", title: t("budgetAccounts"), accounts: budget });
+      result.push({
+        key: "budget",
+        title: t("budgetAccounts"),
+        accounts: budget,
+      });
     }
     if (offbudget.length > 0) {
-      result.push({ key: "offbudget", title: t("offBudgetAccounts"), accounts: offbudget });
+      result.push({
+        key: "offbudget",
+        title: t("offBudgetAccounts"),
+        accounts: offbudget,
+      });
     }
     return result;
   }, [accounts, t, excludeAccountId]);
@@ -75,7 +86,7 @@ export function AccountSelectView({
           <Typography className="mb-1 ml-2 text-xs font-semibold uppercase text-muted">
             {section.title}
           </Typography>
-          <ListGroup variant={variant}>
+          <ListGroup className="">
             {section.accounts.map((a, i) => (
               <Fragment key={a.id}>
                 {i > 0 ? <Separator className="mx-4" /> : null}

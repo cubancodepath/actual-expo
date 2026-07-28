@@ -1,59 +1,38 @@
+import { Fragment } from "react";
 import { View } from "react-native";
-import { useTheme } from "@/design-system/providers/ThemeProvider";
-import { Skeleton } from "@/design-system/atoms/Skeleton";
-import { Card } from "@/design-system/atoms/Card";
+import { ListGroup, Separator, Skeleton } from "heroui-native";
 
 const GROUPS = 2;
 const CATS_PER_GROUP = 3;
 
+/** One collapsed group: a header line plus placeholder category rows. */
 function GroupSkeleton() {
-  const { spacing, borderRadius: br } = useTheme();
-
   return (
     <View>
-      {/* Group header */}
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          paddingHorizontal: spacing.lg + spacing.lg,
-          paddingTop: spacing.lg + spacing.md,
-          paddingBottom: spacing.md,
-          gap: 6,
-        }}
-      >
-        <Skeleton width="40%" height={12} />
-        <View style={{ flex: 1 }} />
-        <Skeleton width={60} height={12} />
+      <View className="flex-row items-center gap-1.5 px-8 pb-2 pt-6">
+        <Skeleton className="h-3 w-2/5 rounded-md" />
+        <View className="flex-1" />
+        <Skeleton className="h-3 w-16 rounded-md" />
       </View>
 
-      {/* Category rows */}
-      <Card style={{ marginHorizontal: spacing.lg }}>
+      <ListGroup className="mx-4">
         {Array.from({ length: CATS_PER_GROUP }).map((_, i) => (
-          <View
-            key={i}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              paddingHorizontal: spacing.lg,
-              paddingVertical: 12,
-              minHeight: 44,
-              gap: spacing.sm,
-              borderBottomWidth: i < CATS_PER_GROUP - 1 ? 0.5 : 0,
-              borderBottomColor: "rgba(255,255,255,0.06)",
-            }}
-          >
-            <Skeleton width="45%" height={14} />
-            <View style={{ flex: 1 }} />
-            <Skeleton width={55} height={14} />
-            <Skeleton width={50} height={22} borderRadius={br.full} />
-          </View>
+          <Fragment key={i}>
+            {i > 0 ? <Separator className="mx-4" /> : null}
+            <View className="min-h-11 flex-row items-center gap-2 px-4 py-3">
+              <Skeleton className="h-3.5 w-[45%] rounded-md" />
+              <View className="flex-1" />
+              <Skeleton className="h-3.5 w-14 rounded-md" />
+              <Skeleton className="h-5 w-12 rounded-full" />
+            </View>
+          </Fragment>
         ))}
-      </Card>
+      </ListGroup>
     </View>
   );
 }
 
+/** Placeholder for the budget table while the month's sheet is still loading. */
 export function BudgetListSkeleton() {
   return (
     <View>

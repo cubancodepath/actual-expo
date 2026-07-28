@@ -30,11 +30,10 @@ Mobile client for [Actual Budget](https://actualbudget.com/) — local-first bud
 
 ### Source Layout
 
-> **Screens-first is the current direction.** [`ARCHITECTURE.md`](./ARCHITECTURE.md) is the source
-> of truth for folder organization. This is a **strangler migration**: every NEW file is born at
-> its ARCHITECTURE.md destination; touching an existing legacy file means moving it there and
-> updating imports. `src/features/` and `src/design-system/` are LEGACY — do not add new imports
-> to either; files only leave them when touched and moved to their destination.
+> **Screens-first.** [`ARCHITECTURE.md`](./ARCHITECTURE.md) is the source of truth for folder
+> organization. The strangler migration is **finished**: `src/features/` and
+> `src/design-system/` were deleted, along with the routes that still depended on them.
+> All UI is HeroUI Native under `src/screens/` and `src/ui/`.
 
 ```
 src/
@@ -90,14 +89,12 @@ src/
 │   ├── auth/               # OpenIdSignInScreen/, PasswordSignInScreen/, ServerConnectScreen/ — migrated
 │   ├── budget/, transactions/, accounts/, files/  # each: <ScreenName>/ (index.tsx + private
 │   │                       #   components/ + hooks/) plus a domain-shared components/ and hooks/
-│   └── reports/, spending/, schedules/, settings/, onboarding/  # not yet migrated (still in legacy
-│                           #   src/features/, see below) — migrate opportunistically when touched
+│   └── reports/, spending/, schedules/, settings/  # all HeroUI Native
 │
 ├── ui/                     # Cross-domain custom pieces ONLY — heroui-native components are
 │   │                       # imported directly in screens (no wrapper layer). e.g.:
 │   ├── Money.tsx, PickerScreen.tsx, ScreenHeader/, amount-keyboard/, navigation/
-│   ├── feedback/           # ErrorBoundary, ErrorChannelConsumer, EncryptionPasswordPrompt, InlineError
-│   └── swift-ui/           # Native SwiftUI bridge components (SText, SAmount, SPill...)
+│   └── feedback/           # ErrorBoundary, ErrorChannelConsumer, EncryptionPasswordPrompt, InlineError
 │
 ├── stores/                 # Zustand — PURE STATE slices (own state + actions that only touch
 │   │                       #   own state or core). A store NEVER imports another store.
@@ -125,15 +122,8 @@ src/
 │
 ├── i18n/                   # react-i18next config + locale files (en/, es/)
 │
-├── hooks/                  # LEGACY top-level cross-feature hooks — being strangled: globals move
-│                           #   to `lib/hooks/`, single-domain ones move to `screens/<domain>/hooks/`.
-├── features/               # LEGACY (Feature-Sliced) — being strangled, do not add new imports.
-│                           #   Still holds: reports/, spending/, schedules/, settings/ hooks,
-│                           #   plus components not yet moved for budget/transactions/accounts.
-├── design-system/          # LEGACY — being strangled, do not add new imports. Replaced by
-│                           #   heroui-native components used directly in screens; only pieces
-│                           #   heroui doesn't offer AND 2+ domains use graduate to `src/ui/`.
-│                           #   (tokens/, atoms/, molecules/, swift-ui/, providers/ThemeProvider)
+├── hooks/                  # Top-level cross-feature hooks — globals move to `lib/hooks/`,
+│                           #   single-domain ones to `screens/<domain>/hooks/`
 │
 └── __mocks__/              # Vitest stubs for native modules
 ```
@@ -155,7 +145,7 @@ Auth guard uses `<Stack.Protected guard={condition}>` in root `_layout.tsx`.
 3. **`src/stores/` holds pure state slices** — a store never queries the DB and **never imports another store**; cross-store workflows live in `src/stores/operations/` (thunks: `operations → stores → core`)
 4. **`app/` routes are thin re-exports** — `export { BudgetScreen as default } from '@/screens/budget/BudgetScreen'`; no business logic in `app/`, all UI lives under `src/screens/<domain>/`
 5. **`src/ui/` never imports `@/screens/` or `@/stores/`** — stays screen-agnostic
-6. **No new imports to legacy** — `@/features/`, `@/design-system/` may not gain new import sites; only removed as files migrate out
+6. **The legacy layers are gone** — `src/features/` and `src/design-system/` were deleted; `check:arch` fails if anything recreates them
 
 Dependency direction: `app → screens → (ui | stores | lib) → core`. Enforced by `dependency-cruiser` (`npm run check:arch`, husky pre-commit) against the real module graph — dynamic `import()` and type-only imports included. Rules live in `.dependency-cruiser.cjs`.
 
@@ -166,7 +156,7 @@ Dependency direction: `app → screens → (ui | stores | lib) → core`. Enforc
 @modules/*   → modules/*
 ```
 
-Single alias `@/` for everything under `src/` (the old `@core`/`@ds`/`@features`/`@shared` aliases were removed — they had zero usages). Import specific files (`@/screens/budget/BudgetScreen`, `@/ui/Money`, `@/lib/hooks/useQuery`); legacy `@/design-system` and `@/features` imports are frozen, not a target for new usage.
+Single alias `@/` for everything under `src/` (the old `@core`/`@ds`/`@features`/`@shared` aliases were removed — they had zero usages). Import specific files (`@/screens/budget/BudgetScreen`, `@/ui/Money`, `@/lib/hooks/useQuery`).
 
 ### Key Patterns
 
@@ -176,13 +166,13 @@ Single alias `@/` for everything under `src/` (the old `@core`/`@ds`/`@features`
 - **Bootstrap flow** (`app/_layout.tsx`): Load prefs → open DB → load CRDT clock → open budget → show UI. Sync runs in background after ready.
 - **Sync on foreground**: AppState listener triggers `fullSync()` when app returns to foreground. Also polls every 60s.
 - **CRDT messages**: Each change = `{timestamp, dataset, row, column, value}`. Values serialized as `'0:'` (null), `'N:123'` (number), `'S:text'` (string).
-- **Theme system**: heroui-native components (`import { Button } from "heroui-native"`, imported directly — no wrapper layer) styled with Uniwind `className`; tokens live in `global.css`. For imperative/non-className colors use `useThemeColor("token")` from `heroui-native`. Light/dark mode via system `useColorScheme()`. (Legacy screens still on `@/design-system/providers/ThemeProvider`'s `useTheme()`/`useThemedStyles` — do not use these patterns in new code.)
+- **Theme system**: heroui-native components (`import { Button } from "heroui-native"`, imported directly — no wrapper layer) styled with Uniwind `className`; tokens live in `global.css`. For imperative/non-className colors use `useThemeColor("token")` from `heroui-native`. Light/dark mode via system `useColorScheme()`.
 - **Screen options**: Use `useStackOptions()` from `@/lib/hooks/useStackOptions` — returns `screen` / `modal` / `formSheet(detents)`, all built from HeroUI tokens. **Every `<Stack>`/`<Tabs>` must set one**: React Navigation paints its own background behind each screen and falls back to its theme (white) when `contentStyle`/`sceneStyle` is unset.
 - **Modals**: Use Expo Router `presentation: "modal"` on Stack.Screen.
 - **Surfaces**: follow HeroUI's model — don't invent elevation ladders.
   - A screen, a `fullScreenModal`, a route `modal` and a `formSheet` are all the same rung: canvas `bg-background`, cards `bg-surface` (the `Surface`/`Card`/`ListGroup` default). A route modal's elevation comes from its rounded corners, shadow and dimmed backdrop, not from a different token.
   - Inside a **floating container** (`BottomSheet`/`Dialog`/`Popover`/`Menu`) the library already paints `bg-overlay` — never override it. Because `--overlay` equals `--surface` in this theme, anything inside must step down: `variant="secondary"` on `ListGroup`/`Surface`, and on `Input`/`TextArea` too (HeroUI's `useIsOnSurface` auto-switch only fires inside a `Surface`, and overlays don't provide one).
   - `Card` and `ListGroup` have no colour of their own — both render a `Surface`. No component reads `*-foreground` container tokens; all text is `text-foreground`/`text-muted`.
-- **Icons**: `lucide-react-native` on migrated screens (direct import, no wrapper). Legacy screens still use `@expo/vector-icons` (Ionicons) via the `Icon` atom in `@/design-system/atoms/Icon` — don't add new usages of it.
+- **Icons**: `lucide-react-native`, imported directly — no wrapper.
 - **Preferences**: Non-sensitive in MMKV, auth token in expo-secure-store.
 - **i18n**: `useTranslation()` from react-i18next. Keys in `src/i18n/locales/en/` and `src/i18n/locales/es/`.

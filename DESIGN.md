@@ -113,6 +113,7 @@ budget information scannable. Light and dark appearances are first-class: the sa
 semantic hierarchy survives by changing tonal values, not by inverting a light palette.
 
 **Key Characteristics:**
+
 - Calm, cool-neutral canvases with semantic tonal layering.
 - Inter typography that stays quiet while financial values carry emphasis.
 - Violet reserved for interaction, selection, and focused product identity.
@@ -126,14 +127,17 @@ semantic signal palette. Colors are defined in OKLCH and resolve through HeroUI/
 theme variables for light and dark appearance.
 
 ### Primary
+
 - **Measured Electric Violet** (`oklch(65.69% 0.1759 286.11)`): The interactive tint for selected navigation, primary actions, focus, and the brand's most important active state.
 
 ### Secondary
+
 - **Positive Green** (`oklch(58% 0.17 122.94)` light, `oklch(82% 0.2 122.94)` dark): Readable positive financial state such as money ready to assign or income.
 - **Warning Amber** (`oklch(78.19% 0.1584 72.32)` light, `oklch(83.69% 0.1643 84.43)` dark): Caution and attention states without implying failure.
 - **Danger Red** (`oklch(65.32% 0.2328 25.73)` light, `oklch(69.4% 0.1918 11.32)` dark): Overspending, invalid, or destructive financial states.
 
 ### Tertiary
+
 - **Chart Blue** (`oklch(70% 0.14 220)`): A distinct report series.
 - **Chart Teal** (`oklch(72% 0.15 160)`): A distinct report series.
 - **Chart Amber** (`oklch(80% 0.14 85)`): A distinct report series.
@@ -141,6 +145,7 @@ theme variables for light and dark appearance.
 - **Chart Green** (`oklch(75% 0.12 120)`): A distinct report series.
 
 ### Neutral
+
 - **Light Canvas** (`oklch(97.02% 0.006 286.11)`): The primary light-mode screen background.
 - **Dark Canvas** (`oklch(12% 0.006 286.11)`): The primary dark-mode screen background.
 - **Dark Surface** (`oklch(21.03% 0.012 286.11)`): The primary dark-mode container and field surface.
@@ -151,6 +156,7 @@ theme variables for light and dark appearance.
 - **Separator** (`oklch(92% 0.006 286.11)` light, `oklch(25% 0.006 286.11)` dark): List-row dividers.
 
 ### Named Rules
+
 **The One Tint Rule.** Violet is a signal, not decoration. Keep it for actions,
 selection, focus, and the active navigation destination; let financial semantic colors
 carry financial meaning.
@@ -168,6 +174,7 @@ with enough human softness to make frequent mobile decisions feel approachable. 
 does the hierarchy work; the interface does not rely on decorative type treatments.
 
 ### Hierarchy
+
 - **Title** (600, 18px, 1.3): Centered screen titles and important compact headings.
 - **Body** (400, 16px, 1.4): Category names, field values, and readable app content.
 - **Body Medium** (500, 16px, 1.4): Actions, selected labels, and controls that need a little more authority.
@@ -175,6 +182,7 @@ does the hierarchy work; the interface does not rely on decorative type treatmen
 - **Financial Value** (500-700, screen-local size): Amounts may step up in size or weight when they are the decision being made, while retaining Inter and semantic color.
 
 ### Named Rules
+
 **The Quiet Type Rule.** Typography should clarify the ledger, never compete with it.
 Use weight, alignment, and numeric columns before adding size or expressive styling.
 
@@ -205,12 +213,14 @@ the floating tab bar, FABs, lifted long-press previews, and overlays. Do not tur
 card into a raised object.
 
 ### Shadow Vocabulary
+
 - **Floating navigation:** semantic `shadow-overlay` on the rounded tab-bar surface.
 - **Primary floating action:** semantic `shadow-lg` on the circular add-transaction action.
 - **Lifted interaction:** semantic `shadow-overlay` on the long-press menu preview.
 - **Field affordance:** platform-aware `shadow-field` on iOS and a restrained `shadow-sm` on Android where the component defines it.
 
 ### Named Rules
+
 **The Tonal First Rule.** If a surface can be understood through a tonal step, do not
 add a shadow. Shadows explain floating behavior, not hierarchy by default.
 
@@ -229,16 +239,19 @@ and pressed states follow the same rounded silhouette as the control they affect
 ## Components
 
 ### Buttons
+
 - **Shape:** Full-round controls for primary actions and icon buttons (`9999px`); height and hit area must support comfortable mobile touch.
 - **Primary:** Violet background with a contrasting foreground; use for the main action of a screen or focused flow.
 - **Hover / Focus:** Native pressed/highlight feedback and visible focus treatment; do not depend on hover for meaning.
 - **Secondary / Ghost / Tertiary:** Tonal secondary surfaces or transparent controls with foreground/muted text; use when the action is supportive or navigational.
 
 ### Chips
+
 - **Style:** Rounded, compact financial signals with semantic positive, danger, or balanced color; secondary chips use a tonal surface and foreground text.
 - **State:** Use selected/active color to communicate a current financial state, not merely to decorate a label. Large summary chips may stretch full width and justify amount against label.
 
 ### Cards / Containers
+
 - **Corner Style:** 16px for grouped cards and lists; square outer edges for continuous budget ledger rows.
 - **Background:** `surface`, `surface-secondary`, or `surface-tertiary` by tonal depth; never invent per-screen surfaces.
 - **Shadow Strategy:** Flat at rest; semantic shadow only for floating or lifted elements.
@@ -246,17 +259,20 @@ and pressed states follow the same rounded silhouette as the control they affect
 - **Internal Padding:** Common rhythm is 12px to 16px, with 16px screen insets.
 
 ### Inputs / Fields
+
 - **Style:** HeroUI Native `TextField`/`Input` patterns with semantic field background, a 12px field radius, 48px minimum height, and labels outside the field.
 - **Focus:** Semantic border/outline and platform-aware field treatment; focus must remain visible in light and dark themes.
 - **Error / Disabled:** Use the danger semantic role for errors and muted/disabled contrast for unavailable fields. Preserve the label and explain the correction.
 
 ### Navigation
+
 - **Style:** Native stack and tabs where the platform provides them. Android's custom floating tab bar is a rounded tonal surface with 6px inner padding and 44px by 56px destinations.
 - **Default:** Inactive destinations use muted icon color and transparent background.
 - **Active:** The selected destination uses the violet tint, contrasting icon foreground, and a full-round selection shape.
 - **Mobile treatment:** Keep the tab bar above the safe-area inset with a fade behind it; never obscure scrollable or keyboard-driven content.
 
 ### Budget Summary Bar
+
 The ready-to-assign indicator is a signature component: a full-width, large rounded
 financial chip that makes the next decision obvious. Positive assignable money uses
 the positive role; over-assignment uses danger. A secondary held-money chip sits below
@@ -266,6 +282,7 @@ performing a destructive or irreversible operation.
 ## Do's and Don'ts
 
 ### Do:
+
 - **Do** use the semantic HeroUI/Uniwind tokens from `global.css` so light and dark themes stay coherent.
 - **Do** reserve measured electric violet for interactive focus, selection, and primary action.
 - **Do** align money values in stable right-justified columns and let numeric emphasis carry the hierarchy.
@@ -274,6 +291,7 @@ performing a destructive or irreversible operation.
 - **Do** keep financial signals semantic: positive for healthy/assignable, danger for over/invalid, warning for caution.
 
 ### Don't:
+
 - **Don't** introduce gradients, decorative color washes, or per-screen accent colors into the quiet financial canvas.
 - **Don't** turn every list group into a raised card; continuous ledger rows should read as one surface.
 - **Don't** use raw hex colors where semantic light/dark tokens already exist.

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Platform, View } from "react-native";
 import { useRouter } from "expo-router";
 import Animated from "react-native-reanimated";
@@ -22,7 +22,7 @@ import { LiftMenu } from "@/ui/lift-menu";
 import { BudgetCategoryRow } from "./components/BudgetCategoryRow";
 import { IncomeCategoryRow } from "./components/IncomeCategoryRow";
 import { BudgetGroup } from "./components/BudgetGroup";
-import { HiddenSectionLink } from "./components/HiddenSectionLink";
+import { HIDDEN_SECTION_VALUE, HiddenSectionLink } from "./components/HiddenSectionLink";
 import { CategoryRowMenu } from "./components/CategoryRowMenu";
 import { IncomeRowMenu } from "./components/IncomeRowMenu";
 import type { LiftedCategory } from "./components/liftedCategory";
@@ -149,21 +149,31 @@ export function BudgetScreen() {
   }, [month, setTabBarHidden]);
   useEffect(() => () => setTabBarHidden(false), [setTabBarHidden]);
 
-  // Controlled expansion: seed once (every group expanded) the first time
-  // sections arrive; after that the user drives it.
-  const [expandedIds, setExpandedIds] = useState<string[] | null>(null);
-  useEffect(() => {
-    if (expandedIds === null && sections.length > 0) {
-      setExpandedIds(sections.map((s) => s.id));
-    }
-  }, [sections, expandedIds]);
+  // Inverted expansion model: we remember what the user CLOSED, and everything
+  // else renders expanded. Group ids are per budget file — after a file switch
+  // the stale ids simply match nothing, so the new file starts fully expanded.
+  // (An expanded-set model froze here: this screen never unmounts on a switch,
+  // and the new file's sections arrive async, so any seed/reseed either kept or
+  // recaptured the old file's ids and rendered everything collapsed.) A freshly
+  // created group is expanded by absence too. The hidden section is the one
+  // item whose default is collapsed, so it gets its own flag.
+  const [collapsedIds, setCollapsedIds] = useState<readonly string[]>([]);
+  const [hiddenOpen, setHiddenOpen] = useState(false);
+
+  const expandedIds = useMemo(() => {
+    const open = sections.filter((s) => !collapsedIds.includes(s.id)).map((s) => s.id);
+    if (hiddenOpen) open.push(HIDDEN_SECTION_VALUE);
+    return open;
+  }, [sections, collapsedIds, hiddenOpen]);
 
   const handleValueChange = useCallback(
     (v: string | string[] | undefined) => {
       closeEditing();
-      setExpandedIds(Array.isArray(v) ? v : v ? [v] : []);
+      const open = new Set(Array.isArray(v) ? v : v ? [v] : []);
+      setCollapsedIds(sections.map((s) => s.id).filter((id) => !open.has(id)));
+      setHiddenOpen(open.has(HIDDEN_SECTION_VALUE));
     },
-    [closeEditing],
+    [closeEditing, sections],
   );
 
   const dataReady = !isLoading || sections.length > 0;
@@ -292,7 +302,7 @@ export function BudgetScreen() {
                 <Accordion
                   selectionMode="multiple"
                   hideSeparator
-                  value={expandedIds ?? []}
+                  value={expandedIds}
                   onValueChange={handleValueChange}
                 >
                   {sections.map((group) => (

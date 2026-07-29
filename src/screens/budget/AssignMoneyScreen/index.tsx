@@ -162,20 +162,23 @@ export function AssignMoneyScreen() {
     [committedFor],
   );
 
-  // Controlled expansion: seed once (every expense group expanded).
-  const [expandedIds, setExpandedIds] = useState<string[] | null>(null);
-  useEffect(() => {
-    if (expandedIds === null && groups.length > 0) {
-      setExpandedIds(groups.map((g) => g.id));
-    }
-  }, [groups, expandedIds]);
+  // Inverted expansion model (same as BudgetScreen): remember what the user
+  // CLOSED, expand everything else. Immune to stale per-file group ids and
+  // needs no seeding effect.
+  const [collapsedIds, setCollapsedIds] = useState<readonly string[]>([]);
+
+  const expandedIds = useMemo(
+    () => groups.filter((g) => !collapsedIds.includes(g.id)).map((g) => g.id),
+    [groups, collapsedIds],
+  );
 
   const handleValueChange = useCallback(
     (v: string | string[] | undefined) => {
       closeEditing();
-      setExpandedIds(Array.isArray(v) ? v : v ? [v] : []);
+      const open = new Set(Array.isArray(v) ? v : v ? [v] : []);
+      setCollapsedIds(groups.map((g) => g.id).filter((id) => !open.has(id)));
     },
-    [closeEditing],
+    [closeEditing, groups],
   );
 
   const liveToBudget = useSheetValueNumber(sheet, envelopeBudget.toBudget);
@@ -275,7 +278,7 @@ export function AssignMoneyScreen() {
             <Accordion
               selectionMode="multiple"
               hideSeparator
-              value={expandedIds ?? []}
+              value={expandedIds}
               onValueChange={handleValueChange}
             >
               {groups.map((group) => (

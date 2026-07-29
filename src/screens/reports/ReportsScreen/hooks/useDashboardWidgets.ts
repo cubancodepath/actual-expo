@@ -7,7 +7,8 @@
  *   have widgets with a null `dashboard_page_id`; those are kept when there is
  *   no page yet.
  * - When the budget has no widgets at all, renders `DEFAULT_DASHBOARD_STATE`
- *   read-only with synthetic ids (never written back to the table).
+ *   read-only with synthetic ids (never written back to the table), using the
+ *   pulse-first semantic order.
  * - Sorts by (y, x) and forces a single column; height comes from the upstream
  *   min-height table × ROW_HEIGHT.
  *
@@ -115,7 +116,7 @@ export function useDashboardWidgets(): UseDashboardWidgetsResult {
             tombstone: false,
           }) as DashboardWidgetEntity,
       );
-      return { widgets: sortWidgets(widgets), isLoading, isDefault: true };
+      return { widgets: sortDefaultWidgets(widgets), isLoading, isDefault: true };
     }
 
     const widgets = pageWidgets.map(parseWidget);
@@ -124,6 +125,36 @@ export function useDashboardWidgets(): UseDashboardWidgetsResult {
 }
 
 /** Single-column order: y ascending, then x ascending (upstream mobile). */
-function sortWidgets(widgets: DashboardWidgetEntity[]): DashboardWidgetEntity[] {
+export function sortWidgets(widgets: DashboardWidgetEntity[]): DashboardWidgetEntity[] {
   return [...widgets].sort((a, b) => (a.y === b.y ? a.x - b.x : a.y - b.y));
+}
+
+/**
+ * Initial dashboard order for a daily financial pulse. This applies only to
+ * synthetic defaults; persisted widget coordinates remain authoritative.
+ */
+const PULSE_FIRST_ORDER: Partial<Record<DashboardWidgetEntity["type"], number>> = {
+  "net-worth-card": 1,
+  "cash-flow-card": 2,
+  "spending-card": 3,
+  "budget-analysis-card": 4,
+  "age-of-money-card": 5,
+  "calendar-card": 6,
+  "markdown-card": 8,
+};
+
+export function sortDefaultWidgets(widgets: DashboardWidgetEntity[]): DashboardWidgetEntity[] {
+  return [...widgets].sort((a, b) => {
+    const rankA = getPulseFirstRank(a);
+    const rankB = getPulseFirstRank(b);
+    if (rankA !== rankB) return rankA - rankB;
+    return a.y === b.y ? a.x - b.x : a.y - b.y;
+  });
+}
+
+function getPulseFirstRank(widget: DashboardWidgetEntity): number {
+  // The default summary row is the first pulse; later summary cards keep their
+  // contextual position after the trend and analysis widgets.
+  if (widget.type === "summary-card") return widget.y === 0 ? 0 : 7;
+  return PULSE_FIRST_ORDER[widget.type] ?? Number.MAX_SAFE_INTEGER;
 }

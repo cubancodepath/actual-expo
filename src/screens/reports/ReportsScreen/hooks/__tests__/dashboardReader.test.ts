@@ -5,7 +5,13 @@ import { openTestDb, closeTestDb } from "@/core/server/db/__tests__/testDb";
 import { run } from "@/core/server/db";
 import { executeQuery } from "@/lib/queries";
 import { q } from "@/core/shared/query";
-import { widgetPixelHeight, getWidgetMinHeight, ROW_HEIGHT } from "../useDashboardWidgets";
+import {
+  widgetPixelHeight,
+  getWidgetMinHeight,
+  ROW_HEIGHT,
+  sortDefaultWidgets,
+  sortWidgets,
+} from "../useDashboardWidgets";
 
 describe("dashboard reader (real DB)", () => {
   beforeEach(async () => {
@@ -48,5 +54,37 @@ describe("dashboard reader (real DB)", () => {
     // height honors max(widget.height, minHeight) * ROW_HEIGHT
     expect(widgetPixelHeight({ type: "net-worth-card", height: 2 } as never)).toBe(2 * ROW_HEIGHT);
     expect(widgetPixelHeight({ type: "sankey-card", height: 1 } as never)).toBe(3 * ROW_HEIGHT);
+  });
+
+  it("uses pulse-first order for synthetic default widgets", () => {
+    const widgets = [
+      { id: "calendar", type: "calendar-card", x: 0, y: 0 },
+      { id: "spending", type: "spending-card", x: 0, y: 0 },
+      { id: "summary", type: "summary-card", x: 0, y: 0 },
+      { id: "net-worth", type: "net-worth-card", x: 0, y: 0 },
+      { id: "cash-flow", type: "cash-flow-card", x: 0, y: 0 },
+      { id: "secondary-summary", type: "summary-card", x: 0, y: 8 },
+    ] as never[];
+
+    expect(sortDefaultWidgets(widgets).map((widget) => widget.id)).toEqual([
+      "summary",
+      "net-worth",
+      "cash-flow",
+      "spending",
+      "calendar",
+      "secondary-summary",
+    ]);
+  });
+
+  it("keeps persisted widget coordinates authoritative", () => {
+    const widgets = [
+      { id: "custom-first", type: "calendar-card", x: 0, y: 0 },
+      { id: "custom-second", type: "summary-card", x: 0, y: 1 },
+    ] as never[];
+
+    expect(sortWidgets(widgets).map((widget) => widget.id)).toEqual([
+      "custom-first",
+      "custom-second",
+    ]);
   });
 });

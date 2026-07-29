@@ -54,6 +54,7 @@ export function SplitAmountsView({
   onPendingConsumed,
 }: SplitAmountsViewProps) {
   const { t } = useTranslation("transactions");
+  const { t: tc } = useTranslation("common");
   const accentForeground = useThemeColor("accent-foreground");
   const accent = useThemeColor("accent");
   const foreground = useThemeColor("foreground");
@@ -222,7 +223,13 @@ export function SplitAmountsView({
                       ) : null}
                       <Menu>
                         <Menu.Trigger asChild>
-                          <Button isIconOnly variant="ghost" size="sm" className="rounded-full">
+                          <Button
+                            isIconOnly
+                            variant="ghost"
+                            size="sm"
+                            className="rounded-full"
+                            accessibilityLabel={tc("a11y.moreOptions")}
+                          >
                             <MoreHorizontal size={18} color={muted} />
                           </Button>
                         </Menu.Trigger>
@@ -273,7 +280,12 @@ export function SplitAmountsView({
             <ScreenHeader.Back />
             <ScreenHeader.Title>{t("splitTransaction")}</ScreenHeader.Title>
             <ScreenHeader.Actions>
-              <Button isIconOnly className="rounded-full" onPress={save}>
+              <Button
+                isIconOnly
+                className="rounded-full"
+                onPress={save}
+                accessibilityLabel={tc("save")}
+              >
                 <Check size={22} color={accentForeground} />
               </Button>
             </ScreenHeader.Actions>

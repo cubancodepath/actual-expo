@@ -19,6 +19,7 @@ export interface RenameCategoryScreenProps {
  */
 export function RenameCategoryScreen({ categoryId, currentName }: RenameCategoryScreenProps) {
   const { t } = useTranslation("budget");
+  const { t: tc } = useTranslation("common");
   const router = useRouter();
   const accentForeground = useThemeColor("accent-foreground");
   const foreground = useThemeColor("foreground");
@@ -49,13 +50,20 @@ export function RenameCategoryScreen({ categoryId, currentName }: RenameCategory
             isIconOnly
             className="rounded-full"
             onPress={() => router.back()}
+            accessibilityLabel={tc("close")}
           >
             <X size={24} color={foreground} />
           </Button>
         </ScreenHeader.Back>
         <ScreenHeader.Title>{t("renameCategory")}</ScreenHeader.Title>
         <ScreenHeader.Actions>
-          <Button isIconOnly className="rounded-full" isDisabled={!canSave} onPress={handleSave}>
+          <Button
+            isIconOnly
+            className="rounded-full"
+            isDisabled={!canSave}
+            onPress={handleSave}
+            accessibilityLabel={tc("save")}
+          >
             <Check size={22} color={accentForeground} />
           </Button>
         </ScreenHeader.Actions>

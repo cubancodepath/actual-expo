@@ -85,6 +85,7 @@ function AccountSettingsForm({ account, initialNote }: { account: Account; initi
             isIconOnly
             className="rounded-full"
             onPress={() => router.back()}
+            accessibilityLabel={tc("close")}
           >
             <X size={24} color={foreground} />
           </Button>

@@ -35,6 +35,7 @@ function TagDraftRow({
   accent: string;
 }) {
   const { onFocus, onBlur } = useBottomSheetAwareHandlers();
+  const { t: tc } = useTranslation("common");
 
   return (
     <View className="mb-3 flex-row items-center gap-2">
@@ -51,7 +52,13 @@ function TagDraftRow({
         onFocus={onFocus}
         onBlur={onBlur}
       />
-      <Button size="sm" variant="secondary" isIconOnly onPress={onAdd}>
+      <Button
+        size="sm"
+        variant="secondary"
+        isIconOnly
+        onPress={onAdd}
+        accessibilityLabel={tc("a11y.addTag")}
+      >
         <Plus size={20} color={accent} />
       </Button>
     </View>

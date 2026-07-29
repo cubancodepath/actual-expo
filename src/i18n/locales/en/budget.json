@@ -503,5 +503,17 @@
   },
   "newCategoryGroup": "New Category Group",
   "reorderCategories": "Reorder Categories",
-  "details": "Details"
+  "details": "Details",
+
+  "a11y": {
+    "categoryRow": "{{name}}, budgeted {{assigned}}, available {{available}}",
+    "incomeRow": "{{name}}, received {{received}}",
+    "amountHidden": "amount hidden",
+    "overspent": "overspent",
+    "underfunded": "underfunded",
+    "rollsOver": "rolls over to next month",
+    "autoHold": "held for next month",
+    "editAssignedHint": "Edits the budgeted amount",
+    "incomeRowHint": "Long press for options"
+  }
 }

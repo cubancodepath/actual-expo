@@ -14,6 +14,7 @@ import { useScheduleFormContext } from "@/screens/schedules/ScheduleDetailScreen
  */
 export function ScheduleNameScreen() {
   const { t } = useTranslation("schedules");
+  const { t: tc } = useTranslation("common");
   const router = useRouter();
   const [accentForeground, foreground] = useThemeColor(["accent-foreground", "foreground"]);
   const { form } = useScheduleFormContext();
@@ -38,13 +39,19 @@ export function ScheduleNameScreen() {
             isIconOnly
             className="rounded-full"
             onPress={() => router.back()}
+            accessibilityLabel={tc("close")}
           >
             <X size={24} color={foreground} />
           </Button>
         </ScreenHeader.Back>
         <ScreenHeader.Title>{t("scheduleName")}</ScreenHeader.Title>
         <ScreenHeader.Actions>
-          <Button isIconOnly className="rounded-full" onPress={handleSave}>
+          <Button
+            isIconOnly
+            className="rounded-full"
+            onPress={handleSave}
+            accessibilityLabel={tc("save")}
+          >
             <Check size={22} color={accentForeground} />
           </Button>
         </ScreenHeader.Actions>

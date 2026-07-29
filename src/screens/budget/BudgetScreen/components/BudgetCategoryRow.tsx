@@ -1,9 +1,13 @@
 import { memo } from "react";
 import { View } from "react-native";
+import { useTranslation } from "react-i18next";
 import { cn, Typography } from "heroui-native";
 import { useSheetValue, useSheetValueNumber } from "@/hooks/useSheetValue";
 import { envelopeBudget } from "@/core/server/spreadsheet/bindings";
+import { useFormat } from "@/lib/hooks/useFormat";
+import { usePrivacyMode } from "@/lib/hooks/usePrivacyMode";
 import { LiftMenu, type RowRect } from "@/ui/lift-menu";
+import { moneyText } from "@/ui/moneyText";
 import { categoryChipStatus } from "../chipStatus";
 import { AvailableChip } from "./AvailableChip";
 import { BudgetAssignedField } from "./BudgetAssignedField";
@@ -63,6 +67,44 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
   const longGoalRaw = useSheetValue(sheet, envelopeBudget.catLongGoal(catId));
   const carryover = useSheetValue(sheet, envelopeBudget.catCarryover(catId)) === true;
 
+  const status = categoryChipStatus({
+    balance,
+    budgeted,
+    goal,
+    longGoal: longGoalRaw === true || longGoalRaw === 1,
+    goalsEnabled,
+  });
+
+  const { t } = useTranslation("budget");
+  const format = useFormat();
+  const [privacyMode] = usePrivacyMode();
+
+  // The chip carries funding state in colour alone, which is exactly what a
+  // screen reader cannot see — so the state joins the label as a word, but only
+  // when it says something the figures don't. "success" without a goal just
+  // means a positive balance, and announcing "funded" there would be a claim
+  // the data doesn't support.
+  const stateWord =
+    status === "danger" ? t("a11y.overspent") : status === "warning" ? t("a11y.underfunded") : null;
+
+  // Privacy mode redacts the figures visually; the row label has to redact them
+  // too, or "Hide Amounts" would leak through the very label meant to describe
+  // the hidden row.
+  const spoken = (cents: number) =>
+    privacyMode ? t("a11y.amountHidden") : moneyText(cents, format);
+
+  const label = [
+    t("a11y.categoryRow", {
+      name: catName,
+      assigned: spoken(budgeted),
+      available: spoken(balance),
+    }),
+    stateWord,
+    carryover ? t("a11y.rollsOver") : null,
+  ]
+    .filter(Boolean)
+    .join(", ");
+
   return (
     <LiftMenu.Row
       onPress={(e) => onPressRow(catId, budgeted, e.nativeEvent.pageY)}
@@ -71,6 +113,9 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
       }
       isLifted={isLifted}
       contentClassName={cn("flex-row items-center gap-2 px-4 py-2.5", isEditing && "bg-accent/10")}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityHint={t("a11y.editAssignedHint")}
     >
       <View className="flex-1">
         <Typography className="text-base text-foreground" numberOfLines={1}>
@@ -81,17 +126,7 @@ export const BudgetCategoryRow = memo(function BudgetCategoryRow({
         <BudgetAssignedField value={budgeted} draft={draft} isEditing={isEditing} />
       </NumericCell>
       <NumericCell width={COL_AVAILABLE}>
-        <AvailableChip
-          cents={balance}
-          carryover={carryover}
-          status={categoryChipStatus({
-            balance,
-            budgeted,
-            goal,
-            longGoal: longGoalRaw === true || longGoalRaw === 1,
-            goalsEnabled,
-          })}
-        />
+        <AvailableChip cents={balance} carryover={carryover} status={status} />
       </NumericCell>
     </LiftMenu.Row>
   );

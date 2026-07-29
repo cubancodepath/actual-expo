@@ -210,6 +210,11 @@
     "syncing": "Sincronizando",
     "syncFailed": "Sincronización fallida, toca para reintentar",
     "synced": "Sincronizado",
-    "delete": "Eliminar"
+    "delete": "Eliminar",
+    "amountHidden": "Importe oculto",
+    "moreOptions": "Más opciones",
+    "addTag": "Añadir etiqueta",
+    "closeSearch": "Cerrar búsqueda",
+    "search": "Buscar"
   }
 }

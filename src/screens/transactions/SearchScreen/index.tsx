@@ -44,6 +44,7 @@ export interface SearchScreenProps {
 export function SearchScreen({ accountId, initialFilter }: SearchScreenProps) {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation("transactions");
+  const { t: tc } = useTranslation("common");
   const foreground = useThemeColor("foreground");
   const search = useSearchController({ accountId, initialFilter });
 
@@ -74,7 +75,13 @@ export function SearchScreen({ accountId, initialFilter }: SearchScreenProps) {
                   <SearchField.ClearButton />
                 </SearchField.Group>
               </SearchField>
-              <Button isIconOnly variant="secondary" size="sm" onPress={search.close}>
+              <Button
+                isIconOnly
+                variant="secondary"
+                size="sm"
+                onPress={search.close}
+                accessibilityLabel={tc("a11y.closeSearch")}
+              >
                 <X size={20} color={foreground} />
               </Button>
             </View>

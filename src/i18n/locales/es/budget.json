@@ -490,5 +490,17 @@
   },
   "newCategoryGroup": "Nuevo grupo de categorías",
   "reorderCategories": "Reordenar categorías",
-  "details": "Detalles"
+  "details": "Detalles",
+
+  "a11y": {
+    "categoryRow": "{{name}}, presupuestado {{assigned}}, disponible {{available}}",
+    "incomeRow": "{{name}}, recibido {{received}}",
+    "amountHidden": "importe oculto",
+    "overspent": "sobregastado",
+    "underfunded": "sin financiar del todo",
+    "rollsOver": "se arrastra al mes siguiente",
+    "autoHold": "reservado para el mes siguiente",
+    "editAssignedHint": "Edita el importe presupuestado",
+    "incomeRowHint": "Mantén pulsado para ver opciones"
+  }
 }

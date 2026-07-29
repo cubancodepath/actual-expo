@@ -27,6 +27,7 @@ import { useNewAccountForm } from "./hooks/useNewAccountForm";
  */
 export function NewAccountScreen() {
   const { t } = useTranslation("accounts");
+  const { t: tc } = useTranslation("common");
   const router = useRouter();
   const foreground = useThemeColor("foreground");
   const { form, submit, isSaving } = useNewAccountForm();
@@ -50,6 +51,7 @@ export function NewAccountScreen() {
               isIconOnly
               className="rounded-full"
               onPress={() => router.back()}
+              accessibilityLabel={tc("close")}
             >
               <X size={24} color={foreground} />
             </Button>

@@ -211,6 +211,11 @@
     "syncing": "Syncing",
     "syncFailed": "Sync failed, tap to retry",
     "synced": "Synced",
-    "delete": "Delete"
+    "delete": "Delete",
+    "amountHidden": "Amount hidden",
+    "moreOptions": "More options",
+    "addTag": "Add tag",
+    "closeSearch": "Close search",
+    "search": "Search"
   }
 }

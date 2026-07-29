@@ -21,6 +21,7 @@ import { ScreenHeader } from "@/ui/ScreenHeader";
  */
 export function HoldScreen() {
   const { t } = useTranslation("budget");
+  const { t: tc } = useTranslation("common");
   const router = useRouter();
   const foreground = useThemeColor("foreground");
   const accentForeground = useThemeColor("accent-foreground");
@@ -57,6 +58,7 @@ export function HoldScreen() {
               isIconOnly
               className="rounded-full"
               onPress={() => router.back()}
+              accessibilityLabel={tc("close")}
             >
               <X size={24} color={foreground} />
             </Button>
@@ -68,6 +70,7 @@ export function HoldScreen() {
               className="rounded-full"
               isDisabled={amount === 0 || saving}
               onPress={handleHold}
+              accessibilityLabel={tc("confirm")}
             >
               <Check size={22} color={accentForeground} />
             </Button>

@@ -45,6 +45,7 @@ export function ChangeBudgetScreen() {
                 variant="tertiary"
                 isIconOnly
                 onPress={() => router.push("/(auth)/new-budget")}
+                accessibilityLabel={t("budget.createNewBudget")}
               >
                 <Plus color={accent} />
               </Button>

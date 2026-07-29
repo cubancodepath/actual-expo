@@ -44,6 +44,7 @@ export function AccountDetailMenu({
   setShowReconciled,
 }: AccountDetailMenuProps) {
   const { t } = useTranslation("accounts");
+  const { t: tc } = useTranslation("common");
   const router = useRouter();
   const foreground = useThemeColor("foreground");
   const danger = useThemeColor("danger");
@@ -58,7 +59,12 @@ export function AccountDetailMenu({
   return (
     <Menu>
       <Menu.Trigger asChild>
-        <Button variant="secondary" isIconOnly className="rounded-full">
+        <Button
+          variant="secondary"
+          isIconOnly
+          className="rounded-full"
+          accessibilityLabel={tc("a11y.moreOptions")}
+        >
           <MoreHorizontal size={20} color={foreground} />
         </Button>
       </Menu.Trigger>

@@ -319,6 +319,7 @@ export function SettingsScreen() {
               isIconOnly
               className="rounded-full"
               onPress={() => router.dismissAll()}
+              accessibilityLabel={tc("close")}
             >
               <X size={24} color={foreground} />
             </Button>

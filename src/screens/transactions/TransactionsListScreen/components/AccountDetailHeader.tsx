@@ -1,4 +1,5 @@
 import { View } from "react-native";
+import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button, Separator, Typography, useThemeColor } from "heroui-native";
@@ -38,6 +39,7 @@ export function AccountDetailHeader({
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const foreground = useThemeColor("foreground");
+  const { t } = useTranslation("common");
 
   return (
     <View className="bg-background">
@@ -48,6 +50,7 @@ export function AccountDetailHeader({
             isIconOnly
             className="rounded-full"
             onPress={() => router.back()}
+            accessibilityLabel={t("back")}
           >
             <ChevronLeft size={24} color={foreground} />
           </Button>

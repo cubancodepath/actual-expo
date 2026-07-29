@@ -25,6 +25,7 @@ type Props = {
 export function NewBudgetScreen({ mode, onCancel, onComplete }: Props) {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation("setup");
+  const { t: tc } = useTranslation("common");
   const foreground = useThemeColor("foreground");
 
   const [name, setName] = useState("My Budget");
@@ -114,6 +115,7 @@ export function NewBudgetScreen({ mode, onCancel, onComplete }: Props) {
                 className="rounded-full"
                 isDisabled={saving}
                 onPress={onCancel}
+                accessibilityLabel={tc("cancel")}
               >
                 <X size={24} color={foreground} />
               </Button>

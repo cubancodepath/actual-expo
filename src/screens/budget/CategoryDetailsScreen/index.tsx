@@ -62,6 +62,7 @@ export interface CategoryDetailsScreenProps {
  */
 export function CategoryDetailsScreen({ categoryId }: CategoryDetailsScreenProps) {
   const { t, i18n } = useTranslation("budget");
+  const { t: tc } = useTranslation("common");
   const router = useRouter();
   const foreground = useThemeColor("foreground");
   const muted = useThemeColor("muted");
@@ -305,6 +306,7 @@ export function CategoryDetailsScreen({ categoryId }: CategoryDetailsScreenProps
               isIconOnly
               className="rounded-full"
               onPress={() => router.back()}
+              accessibilityLabel={tc("close")}
             >
               <X size={24} color={foreground} />
             </Button>

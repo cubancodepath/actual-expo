@@ -145,6 +145,7 @@ export function EncryptionPasswordScreen() {
             isIconOnly
             className="rounded-full"
             onPress={() => router.back()}
+            accessibilityLabel={t("close")}
           >
             <X size={24} color={foreground} />
           </Button>

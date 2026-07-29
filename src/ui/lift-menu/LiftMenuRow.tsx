@@ -1,5 +1,5 @@
 import { useCallback, useRef, type ReactNode } from "react";
-import { View, type GestureResponderEvent } from "react-native";
+import { View, type AccessibilityRole, type GestureResponderEvent } from "react-native";
 import { cn, PressableFeedback } from "heroui-native";
 import { mediumHaptic } from "@/ui/haptics";
 import type { RowRect } from "./types";
@@ -45,6 +45,17 @@ interface LiftMenuRowProps {
   isDisabled?: boolean;
   /** Classes for the inner measured view (padding, layout, base opacity…). */
   contentClassName?: string;
+  /**
+   * What a screen reader announces for the whole row. A row is a table of cells
+   * to the eye but a single control to the ear, so pass one composed sentence
+   * ("Groceries, assigned 120 euros, available 45 euros") rather than letting
+   * the cells be read as unrelated fragments. Setting it takes the children out
+   * of the accessibility tree.
+   */
+  accessibilityLabel?: string;
+  /** What tapping does, when the label alone doesn't imply it. */
+  accessibilityHint?: string;
+  accessibilityRole?: AccessibilityRole;
   children: ReactNode;
 }
 
@@ -61,9 +72,13 @@ export function LiftMenuRow({
   isLifted = false,
   isDisabled = false,
   contentClassName,
+  accessibilityLabel,
+  accessibilityHint,
+  accessibilityRole,
   children,
 }: LiftMenuRowProps) {
   const { rowRef, handleLongPress } = useLiftLongPress(onLongPress);
+  const labelled = accessibilityLabel !== undefined;
 
   return (
     <PressableFeedback
@@ -71,9 +86,27 @@ export function LiftMenuRow({
       onPress={onPress}
       onLongPress={handleLongPress}
       isDisabled={isDisabled}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityHint={accessibilityHint}
+      accessibilityRole={accessibilityRole}
+      // The menu behind the long-press is otherwise unreachable with a screen
+      // reader on: holding a finger down is exactly the gesture VoiceOver and
+      // TalkBack intercept. `longpress` is a standard action, so both systems
+      // surface it in their own rotor/menu without us naming it.
+      accessibilityActions={onLongPress ? [{ name: "longpress" }] : undefined}
+      onAccessibilityAction={(event) => {
+        if (event.nativeEvent.actionName === "longpress") handleLongPress?.();
+      }}
     >
       {/* `opacity-0` last so it wins over any base opacity in contentClassName. */}
-      <View ref={rowRef} className={cn("w-full", contentClassName, isLifted && "opacity-0")}>
+      <View
+        ref={rowRef}
+        className={cn("w-full", contentClassName, isLifted && "opacity-0")}
+        // With a composed row label the cells are already spoken; leaving them
+        // reachable would repeat every figure a second time, unlabelled.
+        accessibilityElementsHidden={labelled}
+        importantForAccessibility={labelled ? "no-hide-descendants" : undefined}
+      >
         {children}
       </View>
     </PressableFeedback>

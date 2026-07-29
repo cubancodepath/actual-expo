@@ -10,12 +10,18 @@ import { noop } from "@/screens/budget/constants";
  */
 export function PlanActionsMenu({ onNewGroup }: { onNewGroup: () => void }) {
   const { t } = useTranslation("budget");
+  const { t: tc } = useTranslation("common");
   const foreground = useThemeColor("foreground");
 
   return (
     <Menu>
       <Menu.Trigger asChild>
-        <Button isIconOnly variant="secondary" className="rounded-full">
+        <Button
+          isIconOnly
+          variant="secondary"
+          className="rounded-full"
+          accessibilityLabel={tc("a11y.moreOptions")}
+        >
           <MoreHorizontal size={22} color={foreground} />
         </Button>
       </Menu.Trigger>

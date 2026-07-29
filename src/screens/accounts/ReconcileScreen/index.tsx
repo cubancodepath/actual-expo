@@ -29,6 +29,7 @@ function formatLastReconciled(raw: string | undefined): string | null {
  */
 export function ReconcileScreen() {
   const { t } = useTranslation("accounts");
+  const { t: tc } = useTranslation("common");
   const router = useRouter();
   const foreground = useThemeColor("foreground");
   const accentForeground = useThemeColor("accent-foreground");
@@ -89,6 +90,7 @@ export function ReconcileScreen() {
               isIconOnly
               className="rounded-full"
               onPress={() => router.dismiss()}
+              accessibilityLabel={tc("close")}
             >
               <X size={24} color={foreground} />
             </Button>
@@ -100,6 +102,7 @@ export function ReconcileScreen() {
               className="rounded-full"
               isDisabled={cents === 0 || saving}
               onPress={handleReconcile}
+              accessibilityLabel={tc("confirm")}
             >
               <Check size={22} color={accentForeground} />
             </Button>

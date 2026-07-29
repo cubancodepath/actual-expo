@@ -57,6 +57,7 @@ function CloseAccountForm({
   numTransactions: number;
 }) {
   const { t } = useTranslation("accounts");
+  const { t: tc } = useTranslation("common");
   const router = useRouter();
   const { showUndoNotification } = useUndo();
   const foreground = useThemeColor("foreground");
@@ -159,6 +160,7 @@ function CloseAccountForm({
                 isIconOnly
                 className="rounded-full"
                 onPress={() => setInCategoryStep(false)}
+                accessibilityLabel={tc("back")}
               >
                 <ChevronLeft size={24} color={foreground} />
               </Button>

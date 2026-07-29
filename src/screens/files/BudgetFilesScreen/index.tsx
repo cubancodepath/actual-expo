@@ -15,6 +15,7 @@ export function BudgetFilesScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation("auth");
+  const { t: tc } = useTranslation("common");
   const accent = useThemeColor("accent");
 
   async function handleLogout() {
@@ -59,6 +60,7 @@ export function BudgetFilesScreen() {
                 variant="secondary"
                 isIconOnly
                 onPress={() => router.push("/(files)/new-budget")}
+                accessibilityLabel={tc("budget.createNewBudget")}
               >
                 <Plus color={accent} />
               </Button>

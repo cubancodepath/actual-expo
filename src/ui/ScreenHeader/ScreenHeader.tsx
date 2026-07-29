@@ -1,5 +1,6 @@
 import { Children, isValidElement, type ReactElement, type ReactNode } from "react";
 import { View } from "react-native";
+import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
 import { Button, Typography, useThemeColor } from "heroui-native";
 import { ChevronLeft } from "lucide-react-native";
@@ -31,12 +32,16 @@ import { ChevronLeft } from "lucide-react-native";
 export function ScreenHeaderBack({
   onPress,
   children,
+  /** Override when the control does something more specific than going back. */
+  accessibilityLabel,
 }: {
   onPress?: () => void;
   children?: ReactNode;
+  accessibilityLabel?: string;
 }) {
   const router = useRouter();
   const foreground = useThemeColor("foreground");
+  const { t } = useTranslation("common");
   if (children) return <>{children}</>;
   return (
     <Button
@@ -44,6 +49,7 @@ export function ScreenHeaderBack({
       isIconOnly
       className="rounded-full"
       onPress={onPress ?? (() => router.back())}
+      accessibilityLabel={accessibilityLabel ?? t("back")}
     >
       <ChevronLeft size={32} color={foreground} />
     </Button>

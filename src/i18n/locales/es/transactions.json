@@ -1,5 +1,6 @@
 {
   "addTransaction": "Agregar Transacción",
+  "newTransaction": "Nueva Transacción",
   "editTransaction": "Editar Transacción",
   "saveChanges": "Guardar Cambios",
   "deleteTransaction": "Eliminar Transacción",

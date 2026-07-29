@@ -1,12 +1,28 @@
-import { useEffect, useState } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
-import { LinearTransition } from "react-native-reanimated";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { KeyboardAvoidingView, Platform, View } from "react-native";
+import Animated, {
+  Extrapolation,
+  interpolate,
+  LinearTransition,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+} from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTranslation } from "react-i18next";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import type { NativeStackNavigationOptions } from "@react-navigation/native-stack";
 import { useSelector } from "@tanstack/react-store";
-import { Button, ScrollShadow, Separator, Spinner, Surface, useThemeColor } from "heroui-native";
-import { ArrowLeftRight, Inbox, Trash2 } from "lucide-react-native";
+import {
+  Button,
+  ScrollShadow,
+  Separator,
+  Spinner,
+  Surface,
+  Typography,
+  useThemeColor,
+} from "heroui-native";
+import { ArrowLeftRight, Inbox, Trash2, X } from "lucide-react-native";
 import { AmountKeyboard } from "@/ui/amount-keyboard";
 import { useTransactionForm } from "./context/TransactionFormProvider";
 import type { NewTransactionParams } from "./hooks/useNewTransactionForm";
@@ -20,14 +36,22 @@ import { FieldRow } from "@/ui/money-entry/FieldRow";
 import { AccountField } from "@/ui/money-entry/AccountField";
 import { RecurrenceField } from "@/ui/money-entry/RecurrenceField";
 import { RecurrencePatternField } from "@/ui/money-entry/RecurrencePatternField";
-import { CloseButton } from "@/ui/CloseButton";
+import { useHeaderActionOptions } from "@/ui/header-actions/useHeaderActionOptions";
+import type { HeaderAction } from "@/ui/header-actions/types";
 import { LoadingScreen } from "@/ui/LoadingScreen";
 
 const CARD_OVERLAP = 36;
 
+// The hero is 448 tall pulled up 224, so ~224px of it are visible, and its
+// `pt-70` puts the amount around y≈56-180. Fading the title across this band
+// hands it over just as the amount slides under the bar.
+const TITLE_FADE_START = 80;
+const TITLE_FADE_END = 140;
+
 export function NewTransactionScreen() {
   const router = useRouter();
   const { t } = useTranslation("transactions");
+  const { t: tc } = useTranslation("common");
   const [danger, accentForeground] = useThemeColor(["danger", "accent-foreground"]);
 
   const { form, isEdit, isHydrating, initialize, actions, submit, remove, isSaving } =
@@ -51,6 +75,53 @@ export function NewTransactionScreen() {
   // Edit: keep it closed; you usually came to tweak some other field.
   const [amountEditing, setAmountEditing] = useState(() => !params.transactionId);
 
+  // The bar carries no title at rest — the hero already says what this is. It
+  // fades in as the hero scrolls away. Driven by a shared value so the whole
+  // thing runs on the UI thread: `headerTitle` mounts a real RN view inside the
+  // native header, so re-rendering it (or calling setOptions) per scroll frame
+  // would commit native props every frame and drop them.
+  const scrollY = useSharedValue(0);
+  const onScroll = useAnimatedScrollHandler((e) => {
+    scrollY.value = e.contentOffset.y;
+  });
+
+  const titleStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(
+      scrollY.value,
+      [TITLE_FADE_START, TITLE_FADE_END],
+      [0, 1],
+      Extrapolation.CLAMP,
+    ),
+  }));
+
+  const titleText = isEdit ? t("editTransaction") : t("newTransaction");
+
+  const headerTitle = useCallback(
+    () => (
+      <Animated.View style={titleStyle}>
+        <Typography className="text-lg font-semibold text-foreground" numberOfLines={1}>
+          {titleText}
+        </Typography>
+      </Animated.View>
+    ),
+    [titleStyle, titleText],
+  );
+
+  const closeAction = useMemo<HeaderAction>(
+    () => ({
+      label: tc("close"),
+      icon: { sfSymbol: "xmark", lucide: X },
+      onPress: () => router.dismiss(),
+    }),
+    [tc, router],
+  );
+  const actionOptions = useHeaderActionOptions({ left: closeAction });
+
+  const headerOptions = useMemo<NativeStackNavigationOptions>(
+    () => ({ ...actionOptions, headerTitle }),
+    [actionOptions, headerTitle],
+  );
+
   const heroTint = values.type === "income" ? "bg-success/70" : "bg-muted/15";
   const split = isSplitLines(values.splitLines);
   const splitSummary = split ? t("splitCategories", { count: values.splitLines?.length ?? 0 }) : "";
@@ -66,6 +137,8 @@ export function NewTransactionScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       className="flex-1 bg-background"
     >
+      <Stack.Screen options={headerOptions} />
+
       <AmountKeyboard
         isOpen={amountEditing}
         onOpenChange={setAmountEditing}
@@ -73,9 +146,14 @@ export function NewTransactionScreen() {
         onValueChange={(cents) => form.setFieldValue("amount", cents)}
       >
         <ScrollShadow LinearGradientComponent={LinearGradient} className="flex-1">
-          <ScrollView
+          <Animated.ScrollView
             contentContainerClassName="pb-10"
+            // Stays "never": the hero is built to bleed up under the
+            // transparent header (-mt-56 pt-70), so the content must keep
+            // starting at y=0 instead of being inset below the bar.
             contentInsetAdjustmentBehavior="never"
+            onScroll={onScroll}
+            scrollEventThrottle={16}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="interactive"
             showsVerticalScrollIndicator={false}
@@ -185,13 +263,8 @@ export function NewTransactionScreen() {
                 ) : null}
               </View>
             </AmountKeyboard.DismissArea>
-          </ScrollView>
+          </Animated.ScrollView>
         </ScrollShadow>
-
-        {/* Floating close button — top-left, always visible (does not scroll). */}
-        <View className="absolute left-4 top-4 z-20">
-          <CloseButton onPress={() => router.dismiss()} />
-        </View>
 
         <AmountKeyboard.Portal>
           <AmountKeyboard.Panel />

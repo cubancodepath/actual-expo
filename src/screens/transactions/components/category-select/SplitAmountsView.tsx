@@ -1,12 +1,22 @@
-import { Fragment, useCallback, useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from "react-native";
-import { useFocusEffect } from "expo-router";
+import { Fragment, useCallback, useMemo, useState } from "react";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
+import { Stack, useFocusEffect } from "expo-router";
+import type { NativeStackNavigationOptions } from "@react-navigation/native-stack";
 import { useTranslation } from "react-i18next";
 import { Button, ListGroup, Menu, Separator, Typography, useThemeColor } from "heroui-native";
 import { Check, CircleMinus, Minus, MoreHorizontal, Plus } from "lucide-react-native";
 import { formatCents, signedCents } from "@/core/shared/util";
 import { dialog } from "@/ui/feedback/dialog";
-import { ScreenHeader } from "@/ui/ScreenHeader";
+import { Screen } from "@/ui/Screen";
+import { useHeaderActionOptions } from "@/ui/header-actions/useHeaderActionOptions";
+import type { HeaderAction } from "@/ui/header-actions/types";
 import { BlinkingCursor } from "@/ui/BlinkingCursor";
 import { AmountKeyboard, useAmountKeyboardAvoidance } from "@/ui/amount-keyboard";
 import { Money } from "@/ui/Money";
@@ -55,7 +65,6 @@ export function SplitAmountsView({
 }: SplitAmountsViewProps) {
   const { t } = useTranslation("transactions");
   const { t: tc } = useTranslation("common");
-  const accentForeground = useThemeColor("accent-foreground");
   const accent = useThemeColor("accent");
   const foreground = useThemeColor("foreground");
   const muted = useThemeColor("muted");
@@ -78,18 +87,15 @@ export function SplitAmountsView({
   const [editingLine, setEditingLine] = useState<number | null>(null);
   const closePad = useCallback(() => setEditingLine(null), []);
 
-  const {
-    scrollRef,
-    scrollProps,
-    setScrollY,
-    bottomPadding,
-    scrollIntoView,
-    onKeyboardHeightChange,
-  } = useAmountKeyboardAvoidance({
-    basePadding: 24,
-    editingPadding: 380,
-    editing: editingLine != null,
-  });
+  // A plain ScrollView owns its own `onScroll`, so `scrollProps` can be spread
+  // whole — the `setScrollY` bridge only existed because ScreenHeader.Body took
+  // `onScroll` over for its blur.
+  const { scrollRef, scrollProps, bottomPadding, scrollIntoView, onKeyboardHeightChange } =
+    useAmountKeyboardAvoidance({
+      basePadding: 24,
+      editingPadding: 380,
+      editing: editingLine != null,
+    });
 
   // Signed maths so `remaining` conveys direction, not just magnitude: inflow
   // adds, outflow subtracts, and the total's sign follows the transaction type.
@@ -150,19 +156,41 @@ export function SplitAmountsView({
     );
   };
 
+  // Back is the stack's own chevron; only the save action is ours. Memoised
+  // because expo-router re-runs setOptions on every options identity change.
+  const saveAction = useMemo<HeaderAction>(
+    () => ({
+      label: tc("save"),
+      icon: { sfSymbol: "checkmark", lucide: Check },
+      emphasis: "done",
+      onPress: save,
+    }),
+    // `save` closes over the draft, so it must be re-read on every change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tc, draft, remaining],
+  );
+  const actionOptions = useHeaderActionOptions({ right: saveAction });
+
+  const headerOptions = useMemo<NativeStackNavigationOptions>(
+    () => ({ ...actionOptions, title: t("splitTransaction") }),
+    [actionOptions, t],
+  );
+
   return (
     <KeyboardAvoidingView
       className="flex-1"
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <ScreenHeader.ScrollArea>
-        <ScreenHeader.Body
+      <Stack.Screen options={headerOptions} />
+
+      <Screen>
+        <ScrollView
           ref={scrollRef}
-          onScrollY={setScrollY}
-          onContentSizeChange={scrollProps.onContentSizeChange}
-          scrollEventThrottle={scrollProps.scrollEventThrottle}
+          {...scrollProps}
+          contentInsetAdjustmentBehavior="automatic"
           contentContainerStyle={[styles.content, { paddingBottom: bottomPadding }]}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
           {/* Payee card — info only (not tappable): the payee (or a placeholder)
             with the transaction total on the right. */}
@@ -273,25 +301,8 @@ export function SplitAmountsView({
             <Plus size={18} color={foreground} />
             <Button.Label>{t("addCategory")}</Button.Label>
           </Button>
-        </ScreenHeader.Body>
-
-        <ScreenHeader.Floating>
-          <ScreenHeader>
-            <ScreenHeader.Back />
-            <ScreenHeader.Title>{t("splitTransaction")}</ScreenHeader.Title>
-            <ScreenHeader.Actions>
-              <Button
-                isIconOnly
-                className="rounded-full"
-                onPress={save}
-                accessibilityLabel={tc("save")}
-              >
-                <Check size={22} color={accentForeground} />
-              </Button>
-            </ScreenHeader.Actions>
-          </ScreenHeader>
-        </ScreenHeader.Floating>
-      </ScreenHeader.ScrollArea>
+        </ScrollView>
+      </Screen>
 
       {/* Multi-field screen: rows are their own triggers (tap switches), and only
           explicit actions close the pad — so no Overlay/DismissArea. */}

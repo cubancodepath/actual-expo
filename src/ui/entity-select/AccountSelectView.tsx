@@ -51,6 +51,7 @@ export function AccountSelectView({
   onPick,
   enabled = true,
   excludeAccountId,
+  variant = "default",
 }: AccountSelectViewProps) {
   const { t } = useTranslation("transactions");
   const accent = useThemeColor("accent");
@@ -86,7 +87,7 @@ export function AccountSelectView({
           <Typography className="mb-1 ml-2 text-xs font-semibold uppercase text-muted">
             {section.title}
           </Typography>
-          <ListGroup className="bg-surface">
+          <ListGroup variant={variant}>
             {section.accounts.map((a, i) => (
               <Fragment key={a.id}>
                 {i > 0 ? <Separator className="mx-4" /> : null}

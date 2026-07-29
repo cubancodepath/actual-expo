@@ -1,13 +1,19 @@
-import { Fragment, useState } from "react";
+import { useMemo } from "react";
 import { View } from "react-native";
+import Animated, { FadeIn, FadeOut, LinearTransition } from "react-native-reanimated";
 import { useTranslation } from "react-i18next";
-import { Button, Checkbox, ListGroup, Separator, Typography, useThemeColor } from "heroui-native";
-import { Check, Split } from "lucide-react-native";
-import { Money } from "@/ui/Money";
-import { PickerScreen } from "@/ui/PickerScreen";
+import { Checkbox, useThemeColor } from "heroui-native";
+import { Split } from "lucide-react-native";
+import type { HeaderAction } from "@/ui/header-actions/types";
+import { NativePickerScreen } from "@/ui/NativePickerScreen";
+import { PickerSection } from "@/ui/picker/PickerSection";
+import { PickerBalance, PickerCheck, PickerRow } from "@/ui/picker/PickerRow";
+import { PickerActionRow, PickerEmptyState } from "@/ui/picker/PickerActionRow";
+import { usePickerSearch } from "@/ui/picker/usePickerSearch";
 import { useCategories } from "@/lib/hooks/useCategories";
 import { useCategoryBalances } from "@/ui/hooks/useCategoryBalances";
-import { useGroupedCategories } from "@/ui/hooks/useGroupedCategories";
+import { useCategoryPickerSections } from "@/ui/hooks/useCategoryPickerSections";
+import { useSplitSelection } from "./useSplitSelection";
 import type { CategoryRef } from "./types";
 
 interface CategorySelectViewProps {
@@ -19,12 +25,22 @@ interface CategorySelectViewProps {
   allowSplit?: boolean;
   /**
    * Single pick. `null` = the user tapped the already-selected category
-   * (deselect). The view never navigates — the caller decides what happens.
+   * (deselect), or chose the "no category" row. The view never navigates — the
+   * caller decides what happens.
    */
   onPick: (category: CategoryRef | null) => void;
   /** Split multi-select confirmed via the header "Next". Required with `allowSplit`. */
   onSplitNext?: (categoryIds: string[]) => void;
+  /** Adds a leading row that clears the category (assign flows). */
+  showNoCategoryRow?: boolean;
 }
+
+// Entering/exiting the split mode swaps rows in and out; without these the list
+// jumps. Named at module scope like SearchScreen's, the other screen whose own
+// header changes shape in place.
+const SPLIT_ROW_IN = FadeIn.duration(180);
+const SPLIT_ROW_OUT = FadeOut.duration(120);
+const LIST_LAYOUT = LinearTransition.duration(180);
 
 /**
  * THE category selector: full-screen searchable grouped picker with monthly
@@ -39,136 +55,131 @@ export function CategorySelectView({
   allowSplit = false,
   onPick,
   onSplitNext,
+  showNoCategoryRow = false,
 }: CategorySelectViewProps) {
   const { t } = useTranslation("transactions");
+  const { t: tc } = useTranslation("common");
   const accent = useThemeColor("accent");
-  const muted = useThemeColor("muted");
 
   const { categories, groups } = useCategories();
-
-  // Multi-select mode: tapping "Split" turns the left check into a checkbox so
-  // several categories can be picked, then "Next" hands the ids to the caller.
-  const [splitMode, setSplitMode] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-
-  const toggleId = (id: string) =>
-    setSelectedIds((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]));
-
-  // Enter split mode, pre-seeding the current single category (one less tap).
-  const enterSplit = () => {
-    setSplitMode(true);
-    setSelectedIds(selectedCategoryId ? [selectedCategoryId] : []);
-  };
-
-  const exitSplit = () => {
-    setSplitMode(false);
-    setSelectedIds([]);
-  };
-
-  // Category available balance for the transaction's month.
   const balances = useCategoryBalances(date);
+  const { query, setQuery, q, searching } = usePickerSearch();
+  const sections = useCategoryPickerSections(groups, categories, { q, balances });
 
-  const [query, setQuery] = useState("");
-  const grouped = useGroupedCategories(groups, categories, query);
-  const searching = query.trim() !== "";
+  const { splitMode, selectedIds, toggleId, enterSplit, exitSplit } =
+    useSplitSelection(selectedCategoryId);
 
-  const select = (category: CategoryRef) => {
-    // Toggle semantics: tapping the selected category reports a deselect.
+  // Toggle semantics: tapping the selected category reports a deselect.
+  const select = (category: CategoryRef) =>
     onPick(category.id === selectedCategoryId ? null : category);
-  };
 
   // Pure single-select pickers with no current selection (e.g. adding a split
   // line) render without the leading check column, like the original screen.
-  const showPrefix = allowSplit || selectedCategoryId != null;
+  const showPrefix = allowSplit || showNoCategoryRow || selectedCategoryId != null;
+
+  // In split mode the back control cancels the mode instead of popping the
+  // screen, so it reads as Cancel rather than the stack's chevron. Memoised:
+  // expo-router re-runs setOptions on every options identity change.
+  const cancelAction = useMemo<HeaderAction | undefined>(
+    () => (splitMode ? { label: tc("cancel"), onPress: exitSplit } : undefined),
+    [splitMode, tc, exitSplit],
+  );
+
+  const nextAction = useMemo<HeaderAction | undefined>(
+    () =>
+      splitMode
+        ? {
+            label: t("next"),
+            emphasis: "done",
+            // Without this the filled capsule iOS 26 draws for a "done" action
+            // comes out system blue.
+            tintColor: accent,
+            disabled: selectedIds.length < 1,
+            onPress: () => onSplitNext?.(selectedIds),
+          }
+        : undefined,
+    [splitMode, t, accent, selectedIds, onSplitNext],
+  );
 
   return (
-    <PickerScreen
+    <NativePickerScreen
       title={t("category")}
       query={query}
       onQueryChange={setQuery}
       searchPlaceholder={t("searchCategories")}
-      onBack={splitMode ? exitSplit : undefined}
-      headerActions={
-        splitMode ? (
-          <Button isDisabled={selectedIds.length < 1} onPress={() => onSplitNext?.(selectedIds)}>
-            <Button.Label>{t("next")}</Button.Label>
-          </Button>
-        ) : undefined
-      }
+      // Categories keep the search within thumb reach at the bottom; payees
+      // keep theirs stacked at the top.
+      searchPlacement="integrated"
+      headerLeft={cancelAction}
+      headerRight={nextAction}
     >
+      {/* Entering split mode unmounts these rows. Fading them out, and letting
+          the sections below slide up into the gap, keeps the whole mode switch
+          from happening in one hard frame. (The native chevron→Cancel swap is
+          UIKit's own and can't be animated from here.) */}
+      {showNoCategoryRow && !splitMode ? (
+        <Animated.View entering={SPLIT_ROW_IN} exiting={SPLIT_ROW_OUT}>
+          <PickerActionRow
+            title={t("noCategoryOption")}
+            accent={false}
+            prefix={<PickerCheck isSelected={!selectedCategoryId} />}
+            onPress={() => onPick(null)}
+          />
+        </Animated.View>
+      ) : null}
+
       {allowSplit && !searching && !splitMode ? (
-        <ListGroup className="mb-3">
-          <ListGroup.Item onPress={enterSplit}>
-            <ListGroup.ItemPrefix>
+        <Animated.View entering={SPLIT_ROW_IN} exiting={SPLIT_ROW_OUT}>
+          <PickerActionRow
+            title={t("splitTransaction")}
+            prefix={
               <View className="rotate-90">
                 <Split size={18} color={accent} />
               </View>
-            </ListGroup.ItemPrefix>
-            <ListGroup.ItemContent>
-              <ListGroup.ItemTitle className="text-accent">
-                {t("splitTransaction")}
-              </ListGroup.ItemTitle>
-            </ListGroup.ItemContent>
-          </ListGroup.Item>
-        </ListGroup>
+            }
+            onPress={enterSplit}
+          />
+        </Animated.View>
       ) : null}
 
-      {grouped.map(({ group, items }) => (
-        <View key={group.id} className="mb-3">
-          <Typography className="mb-1 ml-2 text-xs font-semibold uppercase text-muted">
-            {group.name}
-          </Typography>
-          <ListGroup>
-            {items.map((c, i) => {
-              const isSel = c.id === selectedCategoryId;
-              const isChecked = selectedIds.includes(c.id);
-              const bal = balances.get(c.id);
-              return (
-                <Fragment key={c.id}>
-                  {i > 0 ? <Separator className="mx-4" /> : null}
-                  <ListGroup.Item
-                    onPress={() =>
-                      splitMode ? toggleId(c.id) : select({ id: c.id, name: c.name })
-                    }
-                  >
-                    {showPrefix ? (
-                      <ListGroup.ItemPrefix>
-                        <View className="w-5 items-center justify-center">
-                          {splitMode ? (
-                            <View pointerEvents="none">
-                              <Checkbox isSelected={isChecked} className="rounded-full">
-                                <Checkbox.Indicator
-                                  className="rounded-full"
-                                  animation={{
-                                    borderRadius: { value: [999, 999] },
-                                  }}
-                                />
-                              </Checkbox>
-                            </View>
-                          ) : isSel ? (
-                            <Check size={18} color={accent} />
-                          ) : null}
+      {sections.map(({ group, items }) => (
+        <Animated.View key={group.id} layout={LIST_LAYOUT}>
+          <PickerSection title={group.name}>
+            {items.map((c, i) => (
+              <PickerRow
+                key={c.id}
+                index={i}
+                title={c.name}
+                onPress={() => (splitMode ? toggleId(c.id) : select({ id: c.id, name: c.name }))}
+                prefix={
+                  showPrefix ? (
+                    <PickerCheck isSelected={c.id === selectedCategoryId}>
+                      {splitMode ? (
+                        <View pointerEvents="none">
+                          <Checkbox
+                            isSelected={selectedIds.includes(c.id)}
+                            className="rounded-full"
+                          >
+                            <Checkbox.Indicator
+                              className="rounded-full"
+                              animation={{ borderRadius: { value: [999, 999] } }}
+                            />
+                          </Checkbox>
                         </View>
-                      </ListGroup.ItemPrefix>
-                    ) : null}
-                    <ListGroup.ItemContent>
-                      <ListGroup.ItemTitle>{c.name}</ListGroup.ItemTitle>
-                    </ListGroup.ItemContent>
-                    <ListGroup.ItemSuffix>
-                      {bal !== undefined ? <Money cents={bal} className="text-sm" /> : <View />}
-                    </ListGroup.ItemSuffix>
-                  </ListGroup.Item>
-                </Fragment>
-              );
-            })}
-          </ListGroup>
-        </View>
+                      ) : undefined}
+                    </PickerCheck>
+                  ) : undefined
+                }
+                suffix={c.balance !== undefined ? <PickerBalance cents={c.balance} /> : undefined}
+              />
+            ))}
+          </PickerSection>
+        </Animated.View>
       ))}
-      {grouped.length === 0 ? (
-        <Typography className="py-6 text-center text-base" style={{ color: muted }}>
-          {searching ? t("noResults") : t("uncategorized")}
-        </Typography>
+
+      {sections.length === 0 ? (
+        <PickerEmptyState message={searching ? t("noResults") : t("uncategorized")} />
       ) : null}
-    </PickerScreen>
+    </NativePickerScreen>
   );
 }

@@ -1,10 +1,13 @@
-import { Fragment, useMemo, useState } from "react";
-import { View } from "react-native";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { ListGroup, Separator, Typography, useThemeColor } from "heroui-native";
-import { Check, CirclePlus } from "lucide-react-native";
+import { useThemeColor } from "heroui-native";
+import { CirclePlus } from "lucide-react-native";
 import { groupByInitial } from "@/lib/groupByInitial";
-import { PickerScreen } from "@/ui/PickerScreen";
+import { NativePickerScreen } from "@/ui/NativePickerScreen";
+import { PickerSection } from "@/ui/picker/PickerSection";
+import { PickerCheck, PickerRow } from "@/ui/picker/PickerRow";
+import { PickerActionRow } from "@/ui/picker/PickerActionRow";
+import { usePickerSearch } from "@/ui/picker/usePickerSearch";
 import { usePayees } from "@/lib/hooks/usePayees";
 import type { Payee } from "@/core/types/models";
 
@@ -41,10 +44,9 @@ export function PayeeSelectView({
 
   /** A free-text payee (created via "Create X"): no id, but a name. */
   const isCreatedPayee = selectedPayeeId == null && selectedPayeeName.trim() !== "";
-
-  const [query, setQuery] = useState(() => (isCreatedPayee ? selectedPayeeName : ""));
-  const q = query.trim().toLowerCase();
-  const searching = q !== "";
+  const { query, setQuery, q, searching, clear } = usePickerSearch(
+    isCreatedPayee ? selectedPayeeName : "",
+  );
 
   const list = useMemo(
     () => payees.filter((p) => !p.tombstone && (q === "" || p.name.toLowerCase().includes(q))),
@@ -68,71 +70,50 @@ export function PayeeSelectView({
   const onCreateRow = () => {
     if (createIsSelected) {
       onPick(null);
-      setQuery("");
+      clear();
     } else {
       onPick({ id: null, name: query.trim() });
     }
   };
 
-  const payeeGroup = (items: Payee[]) => (
-    <ListGroup>
-      {items.map((p, i) => (
-        <Fragment key={p.id}>
-          {i > 0 ? <Separator className="mx-4" /> : null}
-          <ListGroup.Item onPress={() => toggleReal(p)}>
-            <ListGroup.ItemContent>
-              <ListGroup.ItemTitle>{p.name}</ListGroup.ItemTitle>
-            </ListGroup.ItemContent>
-            {p.id === selectedPayeeId ? (
-              <ListGroup.ItemSuffix>
-                <Check size={18} color={accent} />
-              </ListGroup.ItemSuffix>
-            ) : null}
-          </ListGroup.Item>
-        </Fragment>
-      ))}
-    </ListGroup>
-  );
+  const payeeRows = (items: Payee[]) =>
+    items.map((p, i) => (
+      <PickerRow
+        key={p.id}
+        index={i}
+        title={p.name}
+        onPress={() => toggleReal(p)}
+        suffix={p.id === selectedPayeeId ? <PickerCheck isSelected /> : undefined}
+      />
+    ));
 
   return (
-    <PickerScreen
+    <NativePickerScreen
       title={t("payee")}
       query={query}
       onQueryChange={setQuery}
       searchPlaceholder={t("searchPayees")}
     >
       {searching && !exact ? (
-        <ListGroup className="mb-3">
-          <ListGroup.Item onPress={onCreateRow}>
-            <ListGroup.ItemPrefix>
-              <CirclePlus size={18} color={accent} />
-            </ListGroup.ItemPrefix>
-            <ListGroup.ItemContent>
-              <ListGroup.ItemTitle className="text-accent">
-                {t("createPayee", { name: query.trim() })}
-              </ListGroup.ItemTitle>
-            </ListGroup.ItemContent>
-            {createIsSelected ? (
-              <ListGroup.ItemSuffix>
-                <Check size={18} color={accent} />
-              </ListGroup.ItemSuffix>
-            ) : null}
-          </ListGroup.Item>
-        </ListGroup>
+        <PickerActionRow
+          title={t("createPayee", { name: query.trim() })}
+          prefix={<CirclePlus size={18} color={accent} />}
+          suffix={createIsSelected ? <PickerCheck isSelected /> : undefined}
+          onPress={onCreateRow}
+        />
       ) : null}
 
-      {searching
-        ? list.length > 0
-          ? payeeGroup(list)
-          : null
-        : sections.map((section) => (
-            <View key={section.letter} className="mb-3">
-              <Typography className="mb-1 ml-2 text-xs font-semibold uppercase text-muted">
-                {section.letter}
-              </Typography>
-              {payeeGroup(section.items)}
-            </View>
-          ))}
-    </PickerScreen>
+      {searching ? (
+        list.length > 0 ? (
+          <PickerSection>{payeeRows(list)}</PickerSection>
+        ) : null
+      ) : (
+        sections.map((section) => (
+          <PickerSection key={section.letter} title={section.letter}>
+            {payeeRows(section.items)}
+          </PickerSection>
+        ))
+      )}
+    </NativePickerScreen>
   );
 }

@@ -5,6 +5,8 @@ import { useTranslation } from "react-i18next";
 import { ListGroup, Separator, Typography } from "heroui-native";
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
 import { useCategories } from "@/lib/hooks/useCategories";
+import { useSpreadsheetVersionWhere } from "@/hooks/useSheetValue";
+import { makeCategoryCellMatcher } from "@/screens/budget/hooks/useOverspentCategories";
 import { sheetForMonth, envelopeBudget } from "@/core/server/spreadsheet/bindings";
 import { getSpreadsheet } from "@/core/server/sheet";
 import { Money } from "@/ui/Money";
@@ -39,6 +41,13 @@ export default function DeleteCategoryPickerScreen() {
     [excludeIds],
   );
 
+  // Balances below are read straight off the spreadsheet, which mutates in
+  // place — without this the rows would keep showing stale amounts after a
+  // recompute. Same wiring as CategoryPickerScreen.
+  const ssVersion = useSpreadsheetVersionWhere(
+    useMemo(() => makeCategoryCellMatcher(sheet), [sheet]),
+  );
+
   const grouped = useMemo<PickableGroup[]>(() => {
     const ss = getSpreadsheet();
     const needle = query.trim().toLowerCase();
@@ -65,7 +74,10 @@ export default function DeleteCategoryPickerScreen() {
         };
       })
       .filter((g) => g.categories.length > 0);
-  }, [categories, groups, excludeSet, sheet, query]);
+    // ssVersion is what makes this recompute on a spreadsheet change; the rule
+    // can't see it because the balances are read imperatively above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categories, groups, excludeSet, sheet, query, ssVersion]);
 
   const select = (cat: PickableCategory) => {
     Alert.alert(t("confirmDeleteTitle"), t("confirmDeleteMessage", { name: cat.name }), [

@@ -1,5 +1,6 @@
 {
   "addTransaction": "Add Transaction",
+  "newTransaction": "New Transaction",
   "editTransaction": "Edit Transaction",
   "saveChanges": "Save Changes",
   "deleteTransaction": "Delete Transaction",

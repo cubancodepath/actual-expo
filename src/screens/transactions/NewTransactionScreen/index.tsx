@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
+import { LinearTransition } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTranslation } from "react-i18next";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -27,7 +28,7 @@ const CARD_OVERLAP = 36;
 export function NewTransactionScreen() {
   const router = useRouter();
   const { t } = useTranslation("transactions");
-  const danger = useThemeColor("danger");
+  const [danger, accentForeground] = useThemeColor(["danger", "accent-foreground"]);
 
   const { form, isEdit, isHydrating, initialize, actions, submit, remove, isSaving } =
     useTransactionForm();
@@ -168,12 +169,13 @@ export function NewTransactionScreen() {
               </Surface>
 
               <View className="gap-2">
-                <Button onPress={submit} isDisabled={!canSubmit || isSaving}>
-                  {isSaving ? (
-                    <Spinner />
-                  ) : (
-                    <Button.Label>{isEdit ? t("saveChanges") : t("addTransaction")}</Button.Label>
-                  )}
+                <Button
+                  layout={LinearTransition.springify()}
+                  onPress={submit}
+                  isDisabled={!canSubmit || isSaving}
+                >
+                  {isSaving && <Spinner size="sm" color={accentForeground} />}
+                  <Button.Label>{isEdit ? t("saveChanges") : t("addTransaction")}</Button.Label>
                 </Button>
                 {isEdit ? (
                   <Button variant="ghost" onPress={remove}>

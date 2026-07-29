@@ -91,7 +91,7 @@ function AccountSheetBody({
           value as `--surface` in this theme. The groups step down a rung so
           they don't vanish into the sheet. */}
       <AccountSelectView
-        variant="secondary"
+        variant="transparent"
         enabled={open}
         selectedAccountId={accountId}
         onPick={onSelect}

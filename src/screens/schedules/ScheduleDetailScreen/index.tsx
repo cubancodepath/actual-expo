@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
+import { LinearTransition } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTranslation } from "react-i18next";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -48,11 +49,12 @@ const AMOUNT_OPS: AmountOp[] = ["is", "isapprox", "isbetween"];
 export function ScheduleDetailScreen() {
   const router = useRouter();
   const { t } = useTranslation(["schedules", "transactions"]);
-  const [danger, muted, foreground, accent] = useThemeColor([
+  const [danger, muted, foreground, accent, accentForeground] = useThemeColor([
     "danger",
     "muted",
     "foreground",
     "accent",
+    "accent-foreground",
   ]);
   const { id } = useLocalSearchParams<{ id: string }>();
 
@@ -263,12 +265,13 @@ export function ScheduleDetailScreen() {
               </Surface>
 
               <View className="gap-2">
-                <Button onPress={submit} isDisabled={!canSave || isSaving}>
-                  {isSaving ? (
-                    <Spinner />
-                  ) : (
-                    <Button.Label>{t("saveChanges", { ns: "transactions" })}</Button.Label>
-                  )}
+                <Button
+                  layout={LinearTransition.springify()}
+                  onPress={submit}
+                  isDisabled={!canSave || isSaving}
+                >
+                  {isSaving && <Spinner size="sm" color={accentForeground} />}
+                  <Button.Label>{t("saveChanges", { ns: "transactions" })}</Button.Label>
                 </Button>
                 <Button variant="tertiary" onPress={post}>
                   <ArrowDownToLine size={18} color={foreground} />

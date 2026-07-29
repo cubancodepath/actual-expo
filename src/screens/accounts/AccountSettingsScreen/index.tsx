@@ -1,4 +1,5 @@
 import { Alert, ScrollView, View } from "react-native";
+import { LinearTransition } from "react-native-reanimated";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "@tanstack/react-store";
@@ -51,8 +52,11 @@ function AccountSettingsForm({ account, initialNote }: { account: Account; initi
   const { t } = useTranslation("accounts");
   const { t: tc } = useTranslation("common");
   const router = useRouter();
-  const foreground = useThemeColor("foreground");
-  const danger = useThemeColor("danger");
+  const [foreground, danger, accentForeground] = useThemeColor([
+    "foreground",
+    "danger",
+    "accent-foreground",
+  ]);
   const { form, submit, isSaving } = useAccountSettingsForm(account, initialNote);
 
   const values = useSelector(form.store, (s) => s.values);
@@ -122,10 +126,12 @@ function AccountSettingsForm({ account, initialNote }: { account: Account; initi
 
         <Button
           className="mt-2"
+          layout={LinearTransition.springify()}
           onPress={submit}
           isDisabled={!canSubmit || !hasChanges || isSaving}
         >
-          {isSaving ? <Spinner /> : <Button.Label>{tc("save")}</Button.Label>}
+          {isSaving && <Spinner size="sm" color={accentForeground} />}
+          <Button.Label>{tc("save")}</Button.Label>
         </Button>
 
         <Button variant="ghost" onPress={handleCloseReopen}>

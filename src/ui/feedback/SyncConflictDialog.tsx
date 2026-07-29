@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { View } from "react-native";
+import { LinearTransition } from "react-native-reanimated";
 import { useTranslation } from "react-i18next";
 import { Button, Dialog, Spinner, useThemeColor } from "heroui-native";
 import { useSyncStore } from "@/stores/syncStore";
@@ -17,7 +18,10 @@ type ConflictAction = "download" | "upload";
  */
 export function SyncConflictDialog() {
   const { t } = useTranslation("common");
-  const accentForeground = useThemeColor("accent-foreground");
+  const [accentForeground, dangerForeground] = useThemeColor([
+    "accent-foreground",
+    "danger-foreground",
+  ]);
 
   const conflictCode = useSyncStore((s) => s.conflictCode);
   // Cancel hides the dialog but keeps the conflict (sync stays paused);
@@ -70,12 +74,22 @@ export function SyncConflictDialog() {
 
           <View className="gap-3">
             {!isOldVersion && (
-              <Button variant="danger" onPress={() => run("download")} isDisabled={!!busy}>
-                {busy === "download" && <Spinner size="sm" color={accentForeground} />}
+              <Button
+                variant="danger"
+                layout={LinearTransition.springify()}
+                onPress={() => run("download")}
+                isDisabled={!!busy}
+              >
+                {busy === "download" && <Spinner size="sm" color={dangerForeground} />}
                 <Button.Label>{t("syncConflict.revertToServer")}</Button.Label>
               </Button>
             )}
-            <Button variant="primary" onPress={() => run("upload")} isDisabled={!!busy}>
+            <Button
+              variant="primary"
+              layout={LinearTransition.springify()}
+              onPress={() => run("upload")}
+              isDisabled={!!busy}
+            >
               {busy === "upload" && <Spinner size="sm" color={accentForeground} />}
               <Button.Label>
                 {isOldVersion ? t("syncConflict.resetSync") : t("syncConflict.uploadThisDevice")}

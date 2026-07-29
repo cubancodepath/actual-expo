@@ -1,3 +1,4 @@
+import { LinearTransition } from "react-native-reanimated";
 import { useLocalSearchParams } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Lock } from "lucide-react-native";
@@ -32,12 +33,13 @@ export function PasswordSignInScreen() {
       <Button
         variant="primary"
         size="lg"
+        layout={LinearTransition.springify()}
         onPress={signIn}
         isDisabled={!password || loading}
         className="mt-4"
       >
         {loading && <Spinner size="sm" color={accentForeground} />}
-        <Button.Label>{loading ? t("signingIn") : t("signIn")}</Button.Label>
+        <Button.Label>{t("signIn")}</Button.Label>
       </Button>
     </AuthShell>
   );

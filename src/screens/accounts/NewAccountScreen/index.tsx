@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ScrollView, View } from "react-native";
+import { LinearTransition } from "react-native-reanimated";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "@tanstack/react-store";
@@ -29,7 +30,7 @@ export function NewAccountScreen() {
   const { t } = useTranslation("accounts");
   const { t: tc } = useTranslation("common");
   const router = useRouter();
-  const foreground = useThemeColor("foreground");
+  const [foreground, accentForeground] = useThemeColor(["foreground", "accent-foreground"]);
   const { form, submit, isSaving } = useNewAccountForm();
 
   const values = useSelector(form.store, (s) => s.values);
@@ -103,8 +104,14 @@ export function NewAccountScreen() {
           </View>
 
           {/* Create */}
-          <Button className="mt-2" onPress={submit} isDisabled={!canSubmit || isSaving}>
-            {isSaving ? <Spinner /> : <Button.Label>{t("newAccount.createAccount")}</Button.Label>}
+          <Button
+            className="mt-2"
+            layout={LinearTransition.springify()}
+            onPress={submit}
+            isDisabled={!canSubmit || isSaving}
+          >
+            {isSaving && <Spinner size="sm" color={accentForeground} />}
+            <Button.Label>{t("newAccount.createAccount")}</Button.Label>
           </Button>
         </ScrollView>
       </View>

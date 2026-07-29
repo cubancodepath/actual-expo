@@ -1,0 +1,182 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-29T00:00:00.000Z",
+  "title": "Design System: Actual Expo",
+  "extensions": {
+    "colorMeta": {
+      "measured-electric-violet": {
+        "role": "primary",
+        "displayName": "Measured Electric Violet",
+        "canonical": "oklch(65.69% 0.1759 286.11)",
+        "tonalRamp": [
+          "oklch(18% 0.12 286.11)",
+          "oklch(27% 0.14 286.11)",
+          "oklch(36% 0.16 286.11)",
+          "oklch(46% 0.18 286.11)",
+          "oklch(65.69% 0.1759 286.11)",
+          "oklch(75% 0.14 286.11)",
+          "oklch(85% 0.09 286.11)",
+          "oklch(95% 0.04 286.11)"
+        ]
+      },
+      "background-light": {
+        "role": "neutral",
+        "displayName": "Light Canvas",
+        "canonical": "oklch(97.02% 0.006 286.11)",
+        "tonalRamp": [
+          "oklch(15% 0.006 286.11)",
+          "oklch(25% 0.006 286.11)",
+          "oklch(35% 0.006 286.11)",
+          "oklch(50% 0.006 286.11)",
+          "oklch(65% 0.006 286.11)",
+          "oklch(78% 0.006 286.11)",
+          "oklch(88% 0.006 286.11)",
+          "oklch(97.02% 0.006 286.11)"
+        ]
+      },
+      "background-dark": {
+        "role": "neutral",
+        "displayName": "Dark Canvas",
+        "canonical": "oklch(12% 0.006 286.11)",
+        "tonalRamp": [
+          "oklch(12% 0.006 286.11)",
+          "oklch(20% 0.006 286.11)",
+          "oklch(28% 0.006 286.11)",
+          "oklch(38% 0.006 286.11)",
+          "oklch(50% 0.006 286.11)",
+          "oklch(64% 0.006 286.11)",
+          "oklch(78% 0.006 286.11)",
+          "oklch(92% 0.006 286.11)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "body": {
+        "displayName": "Warm Utility",
+        "purpose": "Default readable text, labels, and financial records."
+      },
+      "label": {
+        "displayName": "Quiet Ledger Label",
+        "purpose": "Compact column labels and metadata; use sparingly."
+      }
+    },
+    "shadows": [
+      {
+        "name": "semantic-overlay",
+        "value": "semantic shadow-overlay token",
+        "purpose": "Floating tab bar, overlay, and lifted long-press preview."
+      },
+      {
+        "name": "semantic-floating-action",
+        "value": "semantic shadow-lg token",
+        "purpose": "Primary floating action button and other intentionally lifted primary actions."
+      }
+    ],
+    "motion": [
+      {
+        "name": "native-transition",
+        "value": "platform-native transition",
+        "purpose": "Use native push, sheet, dismiss, and system feedback behavior."
+      },
+      {
+        "name": "reduce-motion-fallback",
+        "value": "crossfade or instant state change",
+        "purpose": "Honor the platform's Reduce Motion or Remove Animations setting."
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The focused action uses measured violet, a full-round silhouette, and a comfortable mobile target.",
+      "html": "<button class=\"ds-button-primary\">Assign money</button>",
+      "css": ".ds-button-primary { background: oklch(65.69% 0.1759 286.11); color: white; padding: 12px 16px; min-height: 48px; border: 0; border-radius: 9999px; font: 500 16px/1.4 Inter, system-ui, sans-serif; transition: opacity 160ms ease, transform 160ms ease; } .ds-button-primary:hover { opacity: .9; } .ds-button-primary:focus-visible { outline: 3px solid oklch(85% 0.09 286.11); outline-offset: 2px; } .ds-button-primary:active { transform: scale(.98); }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "A tonal control for supportive actions and navigation.",
+      "html": "<button class=\"ds-button-secondary\">Cancel</button>",
+      "css": ".ds-button-secondary { background: oklch(95.24% 0.009 286.11); color: oklch(24% 0.012 286.11); padding: 12px 16px; min-height: 48px; border: 0; border-radius: 9999px; font: 500 16px/1.4 Inter, system-ui, sans-serif; transition: background 160ms ease, transform 160ms ease; } .ds-button-secondary:hover { background: oklch(93.73% 0.009 286.11); } .ds-button-secondary:focus-visible { outline: 3px solid oklch(65.69% 0.1759 286.11); outline-offset: 2px; } .ds-button-secondary:active { transform: scale(.98); }"
+    },
+    {
+      "name": "Input Field",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "A labeled field with semantic surface, quiet border, and a visible focus state.",
+      "html": "<label class=\"ds-field\"><span>Email</span><input type=\"email\" placeholder=\"you@example.com\" /></label>",
+      "css": ".ds-field { display: grid; gap: 6px; color: oklch(55.17% 0.012 286.11); font: 600 11px/1.2 Inter, system-ui, sans-serif; letter-spacing: .06em; text-transform: uppercase; } .ds-field input { min-height: 48px; padding: 12px; border: 1px solid oklch(90% 0.006 286.11); border-radius: 12px; background: oklch(97.02% 0.006 286.11); color: oklch(24% 0.012 286.11); font: 400 16px/1.4 Inter, system-ui, sans-serif; outline: 0; } .ds-field input:focus { border-color: oklch(65.69% 0.1759 286.11); box-shadow: 0 0 0 3px oklch(65.69% 0.1759 286.11 / .22); }"
+    },
+    {
+      "name": "Financial Signal Chip",
+      "kind": "chip",
+      "refersTo": "financial-signal-positive",
+      "description": "A large rounded summary signal that makes financial status immediately scannable.",
+      "html": "<div class=\"ds-signal-positive\"><strong>$1,240</strong><span>Ready to assign</span></div>",
+      "css": ".ds-signal-positive { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 48px; padding: 12px 16px; border-radius: 9999px; background: oklch(58% 0.17 122.94); color: white; font: 500 16px/1.4 Inter, system-ui, sans-serif; } .ds-signal-positive strong { font-size: 20px; font-weight: 700; } .ds-signal-positive:focus-visible { outline: 3px solid oklch(65.69% 0.1759 286.11); outline-offset: 2px; }"
+    },
+    {
+      "name": "Floating Tab Bar",
+      "kind": "nav",
+      "refersTo": "floating-tab-selected",
+      "description": "A rounded tonal navigation surface with one violet selected destination.",
+      "html": "<nav class=\"ds-tab-bar\"><a href=\"#budget\" class=\"ds-tab-selected\" aria-current=\"page\">Budget</a><a href=\"#accounts\" class=\"ds-tab\">Accounts</a></nav>",
+      "css": ".ds-tab-bar { display: flex; gap: 4px; width: max-content; padding: 6px; border-radius: 9999px; background: oklch(95.24% 0.009 286.11); box-shadow: 0 8px 30px rgb(0 0 0 / .14); } .ds-tab-bar a { display: grid; min-width: 56px; min-height: 44px; place-items: center; padding: 0 12px; border-radius: 9999px; color: oklch(55.17% 0.012 286.11); font: 600 11px/1.2 Inter, system-ui, sans-serif; text-decoration: none; } .ds-tab-bar a:hover { color: oklch(65.69% 0.1759 286.11); } .ds-tab-bar .ds-tab-selected { background: oklch(65.69% 0.1759 286.11); color: white; } .ds-tab-bar a:focus-visible { outline: 3px solid oklch(65.69% 0.1759 286.11); outline-offset: 2px; }"
+    },
+    {
+      "name": "Budget Ledger Surface",
+      "kind": "card",
+      "refersTo": "surface-dark",
+      "description": "A continuous full-width surface for category rows, divided by quiet separators rather than card stacking.",
+      "html": "<section class=\"ds-ledger\"><div>Groceries <strong>$420</strong></div><div>Transport <strong>$180</strong></div></section>",
+      "css": ".ds-ledger { overflow: hidden; background: oklch(95.24% 0.009 286.11); border-radius: 16px; color: oklch(24% 0.012 286.11); font: 400 16px/1.4 Inter, system-ui, sans-serif; } .ds-ledger div { display: flex; justify-content: space-between; gap: 16px; min-height: 48px; align-items: center; padding: 0 16px; } .ds-ledger div + div { border-top: 1px solid oklch(92% 0.006 286.11); } .ds-ledger strong { font-weight: 600; } .ds-ledger div:focus-within { background: oklch(93.73% 0.009 286.11); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Quiet Financial Instrument",
+    "overview": "Actual Expo is designed like a precise financial instrument that belongs in the hand: calm, legible, responsive, and confident without becoming loud. The interface keeps the canvas quiet so the user's money, categories, and state changes remain the visual authority. Its visual character comes from cool tonal surfaces, strong numeric rhythm, and a single measured electric violet tint for interaction and selection.\n\nThe system is tactile and deliberate rather than ornamental. Rounded controls make frequent mobile decisions feel forgiving, while lists, separators, and aligned columns keep budget information scannable. Light and dark appearances are first-class: the same semantic hierarchy survives by changing tonal values, not by inverting a light palette.",
+    "keyCharacteristics": [
+      "Calm, cool-neutral canvases with semantic tonal layering.",
+      "Inter typography that stays quiet while financial values carry emphasis.",
+      "Violet reserved for interaction, selection, and focused product identity.",
+      "Rounded touch controls paired with flat, full-width financial list surfaces.",
+      "Financial meaning expressed through positive, warning, danger, and chart roles."
+    ],
+    "rules": [
+      {
+        "name": "The One Tint Rule",
+        "body": "Violet is a signal, not decoration. Keep it for actions, selection, focus, and the active navigation destination; let financial semantic colors carry financial meaning.",
+        "section": "colors"
+      },
+      {
+        "name": "The Quiet Type Rule",
+        "body": "Typography should clarify the ledger, never compete with it. Use weight, alignment, and numeric columns before adding size or expressive styling.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tonal First Rule",
+        "body": "If a surface can be understood through a tonal step, do not add a shadow. Shadows explain floating behavior, not hierarchy by default.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do use the semantic HeroUI/Uniwind tokens from global.css so light and dark themes stay coherent.",
+      "Do reserve measured electric violet for interactive focus, selection, and primary action.",
+      "Do align money values in stable right-justified columns and let numeric emphasis carry the hierarchy.",
+      "Do use tonal surfaces before shadows and keep floating elevation meaningful.",
+      "Do preserve native navigation, safe areas, edge-swipe back, sheets, and platform touch conventions.",
+      "Do keep financial signals semantic: positive for healthy/assignable, danger for over/invalid, warning for caution."
+    ],
+    "donts": [
+      "Don't introduce gradients, decorative color washes, or per-screen accent colors into the quiet financial canvas.",
+      "Don't turn every list group into a raised card; continuous ledger rows should read as one surface.",
+      "Don't use raw hex colors where semantic light/dark tokens already exist.",
+      "Don't use hover-only affordances or controls smaller than the platform's accessible touch target.",
+      "Don't replace native iOS/Android navigation and system gestures with web-shaped interaction patterns.",
+      "Don't use color alone to communicate financial state; pair it with labels, amounts, or icons."
+    ]
+  }
+}

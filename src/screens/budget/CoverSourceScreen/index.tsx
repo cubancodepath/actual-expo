@@ -1,7 +1,8 @@
 import { View } from "react-native";
+import { LinearTransition } from "react-native-reanimated";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { Button } from "heroui-native";
+import { Button, Spinner, useThemeColor } from "heroui-native";
 import { EnvelopeSheet } from "@/screens/budget/components/EnvelopeSheet";
 import { TransferEntryList } from "@/screens/budget/components/TransferEntryList";
 import { useTransferFlow } from "@/screens/budget/hooks/useTransferFlow";
@@ -16,6 +17,7 @@ import { AmountKeyboard } from "@/ui/amount-keyboard";
 export function CoverSourceScreen() {
   const { t } = useTranslation("budget");
   const router = useRouter();
+  const accentForeground = useThemeColor("accent-foreground");
   const { catId, catName, balance } = useLocalSearchParams<{
     catId: string;
     catName: string;
@@ -64,12 +66,14 @@ export function CoverSourceScreen() {
       {flow.editingId == null && (
         <EnvelopeSheet.Fab>
           <Button
+            layout={LinearTransition.springify()}
             isDisabled={flow.total === 0 || flow.saving}
             // Closes cover-source + cover-overspent.
             onPress={() => flow.handleSave(() => router.dismiss(2))}
             className="h-14 rounded-full px-8 shadow-lg"
           >
-            <Button.Label>{t(flow.saving ? "coveringEllipsis" : "cover")}</Button.Label>
+            {flow.saving && <Spinner size="sm" color={accentForeground} />}
+            <Button.Label>{t("cover")}</Button.Label>
           </Button>
         </EnvelopeSheet.Fab>
       )}

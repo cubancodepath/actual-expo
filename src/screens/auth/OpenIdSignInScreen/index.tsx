@@ -1,3 +1,4 @@
+import { LinearTransition } from "react-native-reanimated";
 import { useLocalSearchParams } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { useTranslation } from "react-i18next";
@@ -23,9 +24,16 @@ export function OpenIdSignInScreen() {
         </Alert.Content>
       </Alert>
 
-      <Button variant="primary" size="lg" onPress={signIn} isDisabled={loading} className="mt-4">
+      <Button
+        variant="primary"
+        size="lg"
+        layout={LinearTransition.springify()}
+        onPress={signIn}
+        isDisabled={loading}
+        className="mt-4"
+      >
         {loading && <Spinner size="sm" color={accentForeground} />}
-        <Button.Label>{loading ? t("signingIn") : t("signInWithOpenId")}</Button.Label>
+        <Button.Label>{t("signInWithOpenId")}</Button.Label>
       </Button>
     </AuthShell>
   );

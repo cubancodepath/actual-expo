@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { View } from "react-native";
+import { LinearTransition } from "react-native-reanimated";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { Button } from "heroui-native";
+import { Button, Spinner, useThemeColor } from "heroui-native";
 import { EnvelopeSheet } from "@/screens/budget/components/EnvelopeSheet";
 import { TransferEntryList } from "@/screens/budget/components/TransferEntryList";
 import { useTransferFlow, type TransferDirection } from "@/screens/budget/hooks/useTransferFlow";
@@ -20,6 +21,7 @@ import { DirectionToggle } from "./components/DirectionToggle";
 export function MoveMoneyScreen() {
   const { t } = useTranslation("budget");
   const router = useRouter();
+  const accentForeground = useThemeColor("accent-foreground");
   const { catId, catName, balance } = useLocalSearchParams<{
     catId: string;
     catName: string;
@@ -77,11 +79,13 @@ export function MoveMoneyScreen() {
       {flow.editingId == null && (
         <EnvelopeSheet.Fab>
           <Button
+            layout={LinearTransition.springify()}
             isDisabled={flow.total === 0 || flow.saving}
             onPress={() => flow.handleSave(() => router.back())}
             className="h-14 rounded-full px-8 shadow-lg"
           >
-            <Button.Label>{t(flow.saving ? "movingEllipsis" : "move")}</Button.Label>
+            {flow.saving && <Spinner size="sm" color={accentForeground} />}
+            <Button.Label>{t("move")}</Button.Label>
           </Button>
         </EnvelopeSheet.Fab>
       )}

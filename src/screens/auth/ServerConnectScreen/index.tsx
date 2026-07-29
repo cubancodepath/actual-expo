@@ -1,3 +1,4 @@
+import { LinearTransition } from "react-native-reanimated";
 import { useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { useTranslation } from "react-i18next";
@@ -50,11 +51,13 @@ export function ServerConnectScreen() {
       <Button
         variant="primary"
         size="lg"
+        layout={LinearTransition.springify()}
         onPress={probe}
         isDisabled={!serverUrl.trim() || probing}
         className="mt-4"
       >
-        {probing ? <Spinner size="sm" color={accentForeground} /> : t("continue")}
+        {probing && <Spinner size="sm" color={accentForeground} />}
+        <Button.Label>{t("continue")}</Button.Label>
       </Button>
 
       <LinkButton size="sm" onPress={handleUseWithoutServer} className="mt-8 self-center">

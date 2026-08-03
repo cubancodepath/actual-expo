@@ -1,4 +1,5 @@
 import { useBudgetUIStore } from "@/stores/budgetUIStore";
+import { useLastTransactionStore } from "@/stores/lastTransactionStore";
 import { usePickerStore } from "@/stores/pickerStore";
 import { useSyncStore } from "@/stores/syncStore";
 import { useSyncedPrefsStore } from "@/hooks/useSyncedPrefs";
@@ -21,6 +22,8 @@ export function resetAllStores(): void {
   clearQueryCache();
   unloadSpreadsheet();
   useBudgetUIStore.setState({ month: currentMonth(), pickedCategory: null });
+  // The remembered account is one budget file's id and means nothing in the next.
+  useLastTransactionStore.getState().reset();
   usePickerStore.getState().clear();
   useSyncStore.setState({
     status: "idle",

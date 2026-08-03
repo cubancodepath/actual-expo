@@ -6,13 +6,15 @@
  * (`emitErrorEvent`); the visual feedback is deferred to a global bus consumer.
  */
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
+import { useLastTransactionStore } from "@/stores/lastTransactionStore";
+import { resolveInitialAccount } from "../lib/initialAccount";
 import { deleteTransaction } from "@/core/server/transactions";
 import { loadTransactionWithSplitLines } from "@/screens/transactions/components/category-select/loadTransaction";
 import { saveTransaction, type SaveTransactionInput } from "@/core/server/transactions/save";
@@ -85,6 +87,12 @@ export function useNewTransactionForm({ accounts, categories, rules }: Transacti
 
   // Tracks fields the user set manually so auto-suggestions don't clobber them.
   const userOverrides = useRef<Set<string>>(new Set());
+
+  // `initialize` runs once per screen and must see whatever accounts exist at
+  // that moment without taking them as a dependency — a new array identity from
+  // the liveQuery must never re-seed a form the user is already filling in.
+  const accountsRef = useRef(accounts);
+  accountsRef.current = accounts;
 
   // useForm re-applies its options' defaultValues on EVERY render when the form
   // isn't touched (form-core `update()`), and `form.reset(values)` moves the
@@ -164,17 +172,27 @@ export function useNewTransactionForm({ accounts, categories, rules }: Transacti
     [applyValues],
   );
 
-  const initializedRef = useRef(false);
-
   /**
    * Seed the form from the `new` screen's route params — edit hydration when
-   * `transactionId` is present, create-mode seeds (account/category/payee/
-   * amount) otherwise. Idempotent: picker navigation never re-initializes.
+   * `transactionId` is present, create-mode seeds otherwise.
+   *
+   * Every call starts from a clean slate. This provider spans the whole
+   * transaction stack, so it outlives any one `new` screen: pushing a second
+   * one (the iOS shortcut does exactly that when the modal is already open)
+   * used to find the form already initialised and leave it alone — which meant
+   * the shortcut's params were dropped, and, far worse, `editingIdRef` still
+   * pointed at the transaction being edited underneath, so saving the "new"
+   * one overwrote it. Resetting here makes a second screen a second form.
+   *
+   * Calling it once per screen is the caller's job, and the `new` leaf's
+   * mount-only effect does it. Pushing a picker doesn't re-initialise: pickers
+   * are sibling routes, so `new` never unmounts and its effect never re-runs.
    */
   const initialize = useCallback(
     (params: NewTransactionParams) => {
-      if (initializedRef.current) return;
-      initializedRef.current = true;
+      editingIdRef.current = null;
+      userOverrides.current.clear();
+      setIsEdit(false);
 
       if (params.transactionId) {
         editingIdRef.current = params.transactionId;
@@ -184,16 +202,24 @@ export function useNewTransactionForm({ accounts, categories, rules }: Transacti
         return;
       }
 
+      setIsHydrating(false);
       if (params.categoryId) userOverrides.current.add("category");
+      // Only an account the caller asked for counts as the user's choice; the
+      // remembered one is a suggestion and must not block the automations.
       if (params.accountId) userOverrides.current.add("account");
-      if (!params.accountId && !params.categoryId && !params.payeeName && !params.amount) return;
 
-      const initialAccount = accounts.find((a) => a.id === params.accountId);
+      const account = resolveInitialAccount({
+        paramAccountId: params.accountId,
+        paramAccountName: params.accountName,
+        lastAccountId: useLastTransactionStore.getState().accountId,
+        accounts: accountsRef.current,
+      });
+
       applyValues({
         ...makeBaseline(),
         amount: params.amount ? Number(params.amount) : 0,
-        accountId: params.accountId ?? null,
-        accountName: params.accountName ?? initialAccount?.name ?? "",
+        accountId: account.accountId,
+        accountName: account.accountName,
         payeeName: params.payeeName ?? "",
         categoryId: params.categoryId ?? null,
         categoryName: params.categoryName ?? "",
@@ -202,6 +228,24 @@ export function useNewTransactionForm({ accounts, categories, rules }: Transacti
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [applyValues, hydrateFromTransaction],
   );
+
+  /**
+   * Fill in the account's name once the accounts arrive.
+   *
+   * An entry point may hand over an id alone (the shortcut can, and the FAB did
+   * until it learned to pass the name), and the accounts it would be resolved
+   * from come from a liveQuery that starts empty whenever the query cache has
+   * no entry — which is any time a sync has touched the accounts table. Seeding
+   * happens once, on mount, so without this the row keeps rendering blank: the
+   * account IS selected and saving works, but nothing on screen says so.
+   */
+  useEffect(() => {
+    const { accountId, accountName } = form.state.values;
+    if (!accountId || accountName) return;
+    const name = accounts.find((a) => a.id === accountId)?.name;
+    if (name) form.setFieldValue("accountName", name);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accounts]);
 
   // ── Persist ───────────────────────────────────────────────────────────────
   const performSave = useCallback(
@@ -252,6 +296,13 @@ export function useNewTransactionForm({ accounts, categories, rules }: Transacti
 
       // Errors are reported to the bus by the global MutationCache.onError.
       await saveMutation.mutateAsync(input);
+
+      // Remember where a NEW transaction went, so the next one opened from a
+      // screen that knows no account starts here. Editing an old transaction
+      // says nothing about what you're doing now, so it doesn't count.
+      if (editingIdRef.current == null) {
+        useLastTransactionStore.getState().setLastAccount(value.accountId);
+      }
     },
     [saveMutation, t],
   );

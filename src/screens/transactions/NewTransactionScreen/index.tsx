@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, View } from "react-native";
 import Animated, {
   Extrapolation,
@@ -62,7 +62,15 @@ export function NewTransactionScreen() {
   // here is populated synchronously from this route's own params. Seed once —
   // pushing pickers changes the URL but must never re-initialize the form.
   const params = useLocalSearchParams() as NewTransactionParams;
+  // The guard belongs here, not in the provider: the provider spans the whole
+  // stack and outlives this screen, so a guard living there would also block
+  // the NEXT `new` screen pushed onto the same stack — which is how a shortcut
+  // fired over an open editor used to inherit its state. Once per instance is
+  // exactly right; the ref only covers StrictMode's double-invoke in dev.
+  const seeded = useRef(false);
   useEffect(() => {
+    if (seeded.current) return;
+    seeded.current = true;
     initialize(params);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

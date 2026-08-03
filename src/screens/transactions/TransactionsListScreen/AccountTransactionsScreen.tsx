@@ -40,7 +40,7 @@ export function AccountTransactionsScreen({ accountId }: { accountId: string }) 
           }
         />
       }
-      fab={<AddTransactionFab accountId={accountId} bottom={28} />}
+      fab={<AddTransactionFab accountId={accountId} accountName={account?.name} bottom={28} />}
     />
   );
 }

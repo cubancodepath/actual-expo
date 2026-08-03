@@ -6,6 +6,13 @@ import { Plus } from "lucide-react-native";
 interface AddTransactionFabProps {
   /** When set, the new transaction is pre-filled for this account. */
   accountId?: string;
+  /**
+   * Pass it when you have it. The form can resolve the name from the id, but
+   * only against accounts it may not have loaded yet — and it resolves once, so
+   * a late arrival leaves the row looking empty while the account is in fact
+   * selected. Handing the name over sidesteps the race entirely.
+   */
+  accountName?: string;
   /** Distance from the bottom edge (px). Defaults to clear the tab bar. */
   bottom?: number;
 }
@@ -16,14 +23,18 @@ interface AddTransactionFabProps {
  * the HeroUI Pro FAB component isn't in a published release yet, and a menu
  * isn't needed here since this is a single direct action.
  */
-export function AddTransactionFab({ accountId, bottom = 100 }: AddTransactionFabProps) {
+export function AddTransactionFab({
+  accountId,
+  accountName,
+  bottom = 100,
+}: AddTransactionFabProps) {
   const router = useRouter();
   const accentForeground = useThemeColor("accent-foreground");
 
   function handlePress() {
     router.push({
       pathname: "/(auth)/transaction/new",
-      params: accountId ? { accountId } : undefined,
+      params: accountId ? { accountId, ...(accountName ? { accountName } : null) } : undefined,
     });
   }
 

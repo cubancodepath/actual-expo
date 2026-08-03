@@ -65,7 +65,10 @@ export function MonthYearPicker({ value, onChange, triggerClassName }: MonthYear
 
       <Popover.Portal>
         <Popover.Overlay />
-        <Popover.Content presentation="popover" placement="bottom" align="start" width={288}>
+        {/* Centre-aligned: the trigger lives in the navigation bar's title slot
+            now, so the panel hangs symmetrically under it instead of spilling
+            off to one side. */}
+        <Popover.Content presentation="popover" placement="bottom" align="center" width={288}>
           {/* Year navigator */}
           <View className="flex-row items-center justify-between px-1 pb-3">
             <PressableFeedback

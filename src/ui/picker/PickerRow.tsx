@@ -1,6 +1,6 @@
 import { Fragment, type ReactNode } from "react";
 import { View } from "react-native";
-import { ListGroup, Separator, useThemeColor } from "heroui-native";
+import { Checkbox, ListGroup, Separator, useThemeColor } from "heroui-native";
 import { Check } from "lucide-react-native";
 import { Money } from "@/ui/Money";
 
@@ -59,6 +59,42 @@ export function PickerCheck({
       {children ?? (isSelected ? <Check size={18} color={accent} /> : null)}
     </View>
   );
+}
+
+/**
+ * The multi-select checkbox every picker shares — round, so ticking several
+ * reads as selection rather than as a form.
+ *
+ * The indicator's borderRadius is pinned through the check animation: heroui
+ * animates it as part of the tick, which would momentarily square off a circle.
+ *
+ * Without `onPress` it is purely visual (`pointerEvents="none"`) and the row
+ * underneath is the tap target; with it, the box is its own control — for
+ * headers and other places that have no row to tap.
+ */
+export function PickerCheckbox({
+  isSelected,
+  onPress,
+  className,
+}: {
+  isSelected: boolean;
+  onPress?: () => void;
+  className?: string;
+}) {
+  const checkbox = (
+    <Checkbox
+      isSelected={isSelected}
+      onSelectedChange={onPress}
+      className={`rounded-full ${className ?? ""}`}
+    >
+      <Checkbox.Indicator
+        className="rounded-full"
+        animation={{ borderRadius: { value: [999, 999] } }}
+      />
+    </Checkbox>
+  );
+  if (onPress) return checkbox;
+  return <View pointerEvents="none">{checkbox}</View>;
 }
 
 /** The trailing balance column. */

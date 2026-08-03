@@ -22,8 +22,8 @@ interface AccountDetailHeaderProps {
 }
 
 /**
- * Dedicated solid header for the account-detail screen (like BudgetHeader for
- * the budget tab — self-contained, no shared ScreenHeader scaffold). Back +
+ * Dedicated solid header for the account-detail screen — self-contained, no
+ * shared ScreenHeader scaffold. Back +
  * account name + search + overflow menu, with the balance summary pinned below.
  * Rendered as the shell's `stickyHeader`, so it never scrolls.
  */

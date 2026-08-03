@@ -46,7 +46,10 @@ export default function AuthLayout() {
         name="budget/edit"
         options={{ ...HERO_HEADER_OPTIONS, headerBackButtonDisplayMode: "minimal" }}
       />
-      <Stack.Screen name="budget/hidden-categories" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="budget/hidden-categories"
+        options={{ ...TRANSLUCENT_HEADER_OPTIONS, headerBackButtonDisplayMode: "minimal" }}
+      />
       {/* The only budget screen on the native bar so far: its header carries the
           action that commits the new order, and the list floats under it. */}
       <Stack.Screen

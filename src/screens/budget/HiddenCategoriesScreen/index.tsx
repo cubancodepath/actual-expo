@@ -1,12 +1,13 @@
 import { Fragment, useCallback, useMemo, useState } from "react";
-import { View } from "react-native";
+import { ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
-import { Button, Checkbox, ListGroup, Separator, Typography } from "heroui-native";
+import { Stack } from "expo-router";
+import { Button, ListGroup, Separator, Typography } from "heroui-native";
 import { EmptyState } from "heroui-native-pro";
 import { unhideItems } from "@/core/server/budget";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
-import { ScreenHeader } from "@/ui/ScreenHeader";
+import { PickerCheckbox } from "@/ui/picker/PickerRow";
 import { useHiddenItems, type HiddenSection } from "@/screens/budget/hooks/useHiddenItems";
 
 /** Which kind of row a selected id refers to — they take different mutations. */
@@ -22,39 +23,6 @@ function toggle(set: Set<string>, id: string): Set<string> {
   const next = new Set(set);
   if (!next.delete(id)) next.add(id);
   return next;
-}
-
-/**
- * Inside a card row, where the whole row is the tap target — so the box must not
- * compete for the touch.
- */
-function RowCheckbox({ isSelected }: { isSelected: boolean }) {
-  return (
-    <View pointerEvents="none">
-      <Checkbox isSelected={isSelected} className="size-5 ">
-        <Checkbox.Indicator />
-      </Checkbox>
-    </View>
-  );
-}
-
-/**
- * On a group header there is no row to tap, so the box is its own control.
- *
- * It also sits on the page background rather than on a card, where the default
- * fill reads as a floating white square — hence transparent, leaning on the
- * border to define it.
- */
-function HeaderCheckbox({ isSelected, onPress }: { isSelected: boolean; onPress: () => void }) {
-  return (
-    <Checkbox
-      isSelected={isSelected}
-      onSelectedChange={onPress}
-      className="size-5 bg-transparent ml-3"
-    >
-      <Checkbox.Indicator />
-    </Checkbox>
-  );
 }
 
 /**
@@ -86,11 +54,18 @@ function HiddenGroupSection({
       {/* Same header as every other grouped list — see EditPlanGroup. Kept as
           one plain View in both cases so the type can't drift between a group
           that offers a checkbox and one that doesn't. */}
-      <View className="flex-row items-center gap-3 px-1 pb-1 pt-4">
+      <View className="flex-row items-center gap-3 px-1 pb-1 pt-4 mb-1">
         {section.isGroupHidden ? (
-          <HeaderCheckbox
+          // On a header there is no row to tap, so the box is its own control
+          // (the onPress makes it interactive). Transparent because it sits on
+          // the page background, where the default fill reads as a floating
+          // white square — and with a ring of its own, because the field-width
+          // hairline in the field-border tone is tuned for cards and vanishes
+          // against the canvas.
+          <PickerCheckbox
             isSelected={selection.groups.has(section.groupId)}
             onPress={onToggleGroup}
+            className="ml-3 bg-transparent border border-muted"
           />
         ) : null}
         <Typography className="flex-1 text-sm font-semibold text-foreground" numberOfLines={1}>
@@ -105,7 +80,8 @@ function HiddenGroupSection({
               {i > 0 ? <Separator className="mx-4" /> : null}
               <ListGroup.Item onPress={() => onToggleCategory(cat.id)}>
                 <ListGroup.ItemPrefix>
-                  <RowCheckbox isSelected={selection.categories.has(cat.id)} />
+                  {/* The whole row is the tap target; the box is visual only. */}
+                  <PickerCheckbox isSelected={selection.categories.has(cat.id)} />
                 </ListGroup.ItemPrefix>
                 <ListGroup.ItemContent>
                   <ListGroup.ItemTitle numberOfLines={1}>{cat.name}</ListGroup.ItemTitle>
@@ -205,28 +181,24 @@ export function HiddenCategoriesScreen() {
   }, [isLoading, sections, selection, t, toggleGroup, toggleCategory]);
 
   return (
-    <ScreenHeader.ScrollArea>
-      {/* Bottom padding clears the FAB, so the last row is never stuck under it. */}
-      <ScreenHeader.Body
+    <View className="flex-1 bg-background">
+      <Stack.Screen options={{ title: t("hiddenCategories") }} />
+
+      <ScrollView
+        // The native bar is translucent and the list floats under it; this is
+        // what supplies the top inset (same as NativePickerScreen).
+        contentInsetAdjustmentBehavior="automatic"
+        showsVerticalScrollIndicator={false}
+        // Bottom padding clears the FAB, so the last row is never stuck under
+        // it; flexGrow lets the empty state centre itself in the viewport.
         contentContainerStyle={{
+          flexGrow: 1,
           paddingHorizontal: 16,
           paddingBottom: insets.bottom + 120,
         }}
       >
         {body}
-      </ScreenHeader.Body>
-
-      <ScreenHeader.Floating>
-        {/* ScreenHeader adds no safe-area padding of its own — its other call
-            sites sit inside a modal card that already clears the status bar.
-            This screen is a plain push, so it pays for its own, the way
-            SettingsScreen does. */}
-        <View style={{ height: insets.top }} />
-        <ScreenHeader>
-          <ScreenHeader.Back />
-          <ScreenHeader.Title>{t("hiddenCategories")}</ScreenHeader.Title>
-        </ScreenHeader>
-      </ScreenHeader.Floating>
+      </ScrollView>
 
       {/* Labelled FAB, the CoverSourceScreen pattern — only once there's
           something to act on. */}
@@ -241,6 +213,6 @@ export function HiddenCategoriesScreen() {
           </Button>
         </View>
       ) : null}
-    </ScreenHeader.ScrollArea>
+    </View>
   );
 }

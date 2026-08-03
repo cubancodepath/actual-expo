@@ -8,20 +8,11 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
 } from "react-native-reanimated";
-import { LinearGradient } from "expo-linear-gradient";
 import { useTranslation } from "react-i18next";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import type { NativeStackNavigationOptions } from "@react-navigation/native-stack";
 import { useSelector } from "@tanstack/react-store";
-import {
-  Button,
-  ScrollShadow,
-  Separator,
-  Spinner,
-  Surface,
-  Typography,
-  useThemeColor,
-} from "heroui-native";
+import { Button, Separator, Spinner, Surface, Typography, useThemeColor } from "heroui-native";
 import { ArrowLeftRight, Inbox, Trash2, X } from "lucide-react-native";
 import { AmountKeyboard } from "@/ui/amount-keyboard";
 import { useTransactionForm } from "./context/TransactionFormProvider";
@@ -153,7 +144,7 @@ export function NewTransactionScreen() {
         value={values.amount}
         onValueChange={(cents) => form.setFieldValue("amount", cents)}
       >
-        <ScrollShadow LinearGradientComponent={LinearGradient} className="flex-1">
+        <View className="flex-1">
           <Animated.ScrollView
             contentContainerClassName="pb-10"
             // Stays "never": the hero is built to bleed up under the
@@ -272,7 +263,7 @@ export function NewTransactionScreen() {
               </View>
             </AmountKeyboard.DismissArea>
           </Animated.ScrollView>
-        </ScrollShadow>
+        </View>
 
         <AmountKeyboard.Portal>
           <AmountKeyboard.Panel />

@@ -1,16 +1,22 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Platform, View } from "react-native";
-import { useRouter } from "expo-router";
+import { Stack, useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import Animated from "react-native-reanimated";
 import { Accordion, AccordionLayoutTransition } from "heroui-native";
+import type { NativeStackNavigationOptions } from "@react-navigation/native-stack";
+import { Eye, EyeOff, MoreHorizontal, NotebookPen, Settings, Undo2 } from "lucide-react-native";
 import { envelopeBudget, sheetForMonth } from "@/core/server/spreadsheet/bindings";
 import { getSpreadsheet } from "@/core/server/sheet";
 import { resetHold, setBudgetAmount, setCategoryCarryover } from "@/core/server/budget/actions";
 import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { useSyncRefreshControl } from "@/lib/hooks/useSyncRefreshControl";
+import { usePrivacyMode } from "@/lib/hooks/usePrivacyMode";
+import { useHeaderActionOptions } from "@/ui/header-actions/useHeaderActionOptions";
+import type { HeaderAction } from "@/ui/header-actions/types";
 import { useBudgetMonth } from "@/screens/budget/hooks/useBudgetMonth";
 import { useBudgetSections } from "@/screens/budget/hooks/useBudgetSections";
-import { BudgetHeader } from "@/screens/budget/components/BudgetHeader";
+import { MonthYearPicker } from "@/screens/budget/components/MonthYearPicker";
 import { BudgetListSkeleton } from "@/screens/budget/components/BudgetListSkeleton";
 import { AddTransactionFab } from "@/ui/AddTransactionFab";
 import { AmountKeyboard, useAmountKeyboardAvoidance } from "@/ui/amount-keyboard";
@@ -31,8 +37,11 @@ import { ReadyToAssignBar } from "./components/ReadyToAssignBar";
 
 export function BudgetScreen() {
   const router = useRouter();
+  const { t } = useTranslation("budget");
+  const { t: tCommon } = useTranslation("common");
   const refreshControl = useSyncRefreshControl();
-  const { month } = useBudgetMonth();
+  const [privacyMode, togglePrivacy] = usePrivacyMode();
+  const { month, setMonth } = useBudgetMonth();
   const sheet = sheetForMonth(month);
   const { sections, hiddenCount, isLoading } = useBudgetSections();
   const goalsEnabled = useFeatureFlag("goalTemplatesEnabled");
@@ -178,6 +187,61 @@ export function BudgetScreen() {
 
   const dataReady = !isLoading || sections.length > 0;
 
+  // The month picker rides in the native bar as its title view — same popover,
+  // same mechanics, just re-anchored. Memoised: `headerTitle` mounts a real RN
+  // view inside the bar, and a new identity re-runs setOptions.
+  const headerTitle = useCallback(
+    () => <MonthYearPicker value={month} onChange={setMonth} />,
+    [month, setMonth],
+  );
+
+  // Edit-plan on the left, month dead centre, overflow on the right — the bar
+  // reads as balanced instead of stacking both controls against one edge.
+  // There's no back button for `left` to displace: this is a tab root.
+  const editAction = useMemo<HeaderAction>(
+    () => ({
+      label: t("editBudget"),
+      icon: { sfSymbol: "square.and.pencil", lucide: NotebookPen },
+      onPress: () => router.push("/(auth)/budget/edit"),
+    }),
+    [t, router],
+  );
+
+  const overflowAction = useMemo<HeaderAction>(
+    () => ({
+      label: tCommon("a11y.moreOptions"),
+      icon: { sfSymbol: "ellipsis", lucide: MoreHorizontal },
+      items: [
+        {
+          label: t("undo"),
+          icon: { sfSymbol: "arrow.uturn.backward", lucide: Undo2 },
+          // Not wired yet. Disabled is honest; the old menu's no-op was not.
+          disabled: true,
+          onPress: noop,
+        },
+        {
+          label: privacyMode ? t("showAmounts") : t("hideAmounts"),
+          icon: privacyMode
+            ? { sfSymbol: "eye", lucide: Eye }
+            : { sfSymbol: "eye.slash", lucide: EyeOff },
+          onPress: togglePrivacy,
+        },
+        {
+          label: t("settings"),
+          icon: { sfSymbol: "gearshape", lucide: Settings },
+          onPress: () => router.push("/(auth)/settings"),
+        },
+      ],
+    }),
+    [t, tCommon, router, privacyMode, togglePrivacy],
+  );
+
+  const actionOptions = useHeaderActionOptions({ left: editAction, right: overflowAction });
+  const headerOptions = useMemo<NativeStackNavigationOptions>(
+    () => ({ ...actionOptions, headerTitle }),
+    [actionOptions, headerTitle],
+  );
+
   return (
     <LiftMenu.Host<LiftedCategory>
       getId={(cat) => cat.catId}
@@ -266,7 +330,7 @@ export function BudgetScreen() {
     >
       {({ liftedId, onLongPressRow }) => (
         <>
-          <BudgetHeader />
+          <Stack.Screen options={headerOptions} />
 
           <View className="px-4 pt-1 pb-2">
             <ReadyToAssignBar

@@ -68,13 +68,15 @@ export function useHeaderActionOptions({
   left,
   right,
 }: HeaderActions): NativeStackNavigationOptions {
-  return useMemo(
-    () => ({
+  return useMemo(() => {
+    const rights = right ? (Array.isArray(right) ? right : [right]) : [];
+    return {
       // A custom left action stands in for the back button, not beside it.
       headerBackVisible: !left,
       unstable_headerLeftItems: left ? () => [toItem(left)] : undefined,
-      unstable_headerRightItems: right ? () => [toItem(right)] : undefined,
-    }),
-    [left, right],
-  );
+      // Reversed: UIKit places rightBarButtonItems[0] at the screen edge, but
+      // the API reads left-to-right (see HeaderActions.right).
+      unstable_headerRightItems: rights.length > 0 ? () => rights.map(toItem).reverse() : undefined,
+    };
+  }, [left, right]);
 }

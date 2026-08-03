@@ -1,3 +1,4 @@
+import { View } from "react-native";
 import { Button, Menu } from "heroui-native";
 import type { HeaderAction } from "./types";
 
@@ -65,5 +66,17 @@ export function renderHeaderAction(action: HeaderAction, tintColor?: string) {
         </Menu.Content>
       </Menu.Portal>
     </Menu>
+  );
+}
+
+/** Several actions side by side, in the order given. */
+export function renderHeaderActionRow(actions: HeaderAction[], tintColor?: string) {
+  if (actions.length === 1) return renderHeaderAction(actions[0], tintColor);
+  return (
+    <View className="flex-row items-center">
+      {actions.map((action) => (
+        <View key={action.label}>{renderHeaderAction(action, tintColor)}</View>
+      ))}
+    </View>
   );
 }

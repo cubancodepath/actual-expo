@@ -6,8 +6,9 @@ export default function BudgetStack() {
 
   return (
     <Stack screenOptions={screen}>
-      {/* The budget header is now a custom in-body component (BudgetHeader). */}
-      <Stack.Screen name="index" options={{ headerShown: false }} />
+      {/* Native bar, opaque (the `screen` defaults). The screen itself puts the
+          month picker in as `headerTitle` and the actions as bar items. */}
+      <Stack.Screen name="index" />
     </Stack>
   );
 }

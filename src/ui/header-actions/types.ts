@@ -52,5 +52,10 @@ export type HeaderAction = HeaderActionBase &
 export type HeaderActions = {
   /** Replaces the back button when present. */
   left?: HeaderAction;
-  right?: HeaderAction;
+  /**
+   * One action, or several in visual reading order — first renders closest to
+   * the title, last at the screen edge. (UIKit numbers its items from the edge
+   * inwards; the iOS hook reverses so callers never have to know that.)
+   */
+  right?: HeaderAction | HeaderAction[];
 };

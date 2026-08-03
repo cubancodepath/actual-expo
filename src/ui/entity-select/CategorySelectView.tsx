@@ -2,12 +2,12 @@ import { useMemo } from "react";
 import { View } from "react-native";
 import Animated, { FadeIn, FadeOut, LinearTransition } from "react-native-reanimated";
 import { useTranslation } from "react-i18next";
-import { Checkbox, useThemeColor } from "heroui-native";
+import { useThemeColor } from "heroui-native";
 import { Split } from "lucide-react-native";
 import type { HeaderAction } from "@/ui/header-actions/types";
 import { NativePickerScreen } from "@/ui/NativePickerScreen";
 import { PickerSection } from "@/ui/picker/PickerSection";
-import { PickerBalance, PickerCheck, PickerRow } from "@/ui/picker/PickerRow";
+import { PickerBalance, PickerCheck, PickerCheckbox, PickerRow } from "@/ui/picker/PickerRow";
 import { PickerActionRow, PickerEmptyState } from "@/ui/picker/PickerActionRow";
 import { usePickerSearch } from "@/ui/picker/usePickerSearch";
 import { useCategories } from "@/lib/hooks/useCategories";
@@ -156,17 +156,7 @@ export function CategorySelectView({
                   showPrefix ? (
                     <PickerCheck isSelected={c.id === selectedCategoryId}>
                       {splitMode ? (
-                        <View pointerEvents="none">
-                          <Checkbox
-                            isSelected={selectedIds.includes(c.id)}
-                            className="rounded-full"
-                          >
-                            <Checkbox.Indicator
-                              className="rounded-full"
-                              animation={{ borderRadius: { value: [999, 999] } }}
-                            />
-                          </Checkbox>
-                        </View>
+                        <PickerCheckbox isSelected={selectedIds.includes(c.id)} />
                       ) : undefined}
                     </PickerCheck>
                   ) : undefined

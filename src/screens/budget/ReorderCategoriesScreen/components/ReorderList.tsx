@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef } from "react";
-import { StyleSheet, View, type DimensionValue } from "react-native";
+import { Platform, StyleSheet, View, type DimensionValue } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { ListGroup, Typography, useToast } from "heroui-native";
@@ -9,25 +9,20 @@ import ReorderableList, {
   type ReorderableListReorderEvent,
 } from "react-native-reorderable-list";
 import { lightHaptic, selectionHaptic, warningHaptic } from "@/ui/haptics";
-import { moveCategory, moveCategoryGroup } from "@/core/server/budget";
 import { useCategories } from "@/lib/hooks/useCategories";
-import { useScreenHeaderAnimatedScroll } from "@/ui/ScreenHeader";
 import {
   cornersAt,
-  flattenSections,
   hasDuplicateName,
   moveRow,
   resolveCategoryDrop,
   resolveGroupDrop,
-  sortSectionsByGroupOrder,
-  toGroupRows,
   withGroupPatched,
   type UnifiedRow,
 } from "../lib/reorderModel";
-import { useOptimisticOrder } from "../hooks/useOptimisticOrder";
 import { ReorderCategoryRow } from "./ReorderCategoryRow";
 import { ReorderGroupHeader } from "./ReorderGroupHeader";
 import { ReorderGroupRow } from "./ReorderGroupRow";
+import type { LocalOrder } from "../hooks/useLocalOrder";
 import type { BudgetSection } from "@/screens/budget/hooks/useBudgetSections";
 
 /** Where the finger was, and on which group, when group mode was entered. */
@@ -51,6 +46,21 @@ const SETTLE_DURATION = 220;
 const TICK_INTERVAL = 60;
 
 /**
+ * How far the navigation bar reaches down the screen.
+ *
+ * The list runs full-bleed under a translucent header, so the top of its own
+ * frame is not the top of what you can see — and the autoscroll trigger is
+ * measured from that frame (`computeThresholdArea`), which would put the upward
+ * trigger behind the bar, over rows that are hidden by it. Offsetting it by the
+ * bar brings it back onto visible content.
+ *
+ * Standard bar metrics rather than the measured height, because reading the real
+ * one means taking on `@react-navigation/elements` for a single number; being a
+ * couple of points out just shifts where autoscroll begins.
+ */
+const NAV_BAR_HEIGHT = Platform.select({ ios: 44, default: 56 });
+
+/**
  * Everything reorderable, in one list, in one of two shapes.
  *
  * Normally it shows every category with its group's name above it, and a drag
@@ -63,18 +73,23 @@ const TICK_INTERVAL = 60;
  * group row rather than blinking, and — because the cell is still there — the
  * long press that collapsed the list can go straight on to drag it.
  *
- * A drop is committed on release: one {@link moveCategory} / {@link moveCategoryGroup}
- * per drop, each its own undo step, the way upstream's reorder mutation behaves.
- * There is no Save button to miss, and leaving the screen can't lose a move.
+ * Nothing here writes. A drop rearranges {@link LocalOrder} and stops; the screen's
+ * header is what commits the arrangement. What a drop *does* decide is whether it
+ * is allowed at all — a category can't cross the income line, land outside a
+ * group, or join a group that already has its name — so a refused drop snaps back
+ * and never enters the order in the first place.
  */
 export function ReorderList({
   sections,
+  order,
   groupMode,
   grab,
   onEnterGroupMode,
   onExitGroupMode,
+  hint,
 }: {
   sections: BudgetSection[];
+  order: LocalOrder;
   groupMode: boolean;
   /**
    * The press that opened group mode, for the group's row to take over. Held
@@ -84,36 +99,17 @@ export function ReorderList({
   grab: GroupGrab | null;
   onEnterGroupMode: (groupId: string, fingerY: number | null) => void;
   onExitGroupMode: () => void;
+  /** One line above the list saying what the current mode can do. */
+  hint: string;
 }) {
   const { t } = useTranslation("budget");
   const insets = useSafeAreaInsets();
   const { toast } = useToast();
-  const { onScroll, contentPaddingTop } = useScreenHeaderAnimatedScroll();
   // Raw categories, hidden ones included — the duplicate-name check has to see
   // namesakes the sections leave out.
   const { categories } = useCategories();
 
-  const groupDerived = useMemo(() => toGroupRows(sections), [sections]);
-  const { rows: groupRows, commit: commitGroup } = useOptimisticOrder(groupDerived);
-
-  // Categories are rebuilt against the group order the list is *showing*, not the
-  // one the database has yet: expanding right after a group move would otherwise
-  // flash the old order until the CRDT write comes back around.
-  const categoryDerived = useMemo(
-    () =>
-      flattenSections(
-        sortSectionsByGroupOrder(
-          sections,
-          groupRows.map((r) => r.id),
-        ),
-      ),
-    [sections, groupRows],
-  );
-  const {
-    rows: categoryRows,
-    revert: revertCategory,
-    commit: commitCategory,
-  } = useOptimisticOrder(categoryDerived);
+  const { groups: groupRows, categories: categoryRows, moveCategories, moveGroups, revert } = order;
 
   const rows: UnifiedRow[] = groupMode ? groupRows : categoryRows;
   // One group has nowhere to go, so its name doesn't offer to be held.
@@ -138,10 +134,10 @@ export function ReorderList({
   const refuse = useCallback(
     (message: string) => {
       warningHaptic();
-      revertCategory();
+      revert();
       toast.show({ placement: "bottom", variant: "warning", label: message });
     },
-    [revertCategory, toast],
+    [revert, toast],
   );
 
   /**
@@ -171,11 +167,9 @@ export function ReorderList({
       }
 
       lightHaptic();
-      commitCategory(withGroupPatched(next, to, drop.groupId), () =>
-        moveCategory(drop.categoryId, drop.groupId, drop.targetId),
-      );
+      moveCategories(withGroupPatched(next, to, drop.groupId));
     },
-    [categoryRows, commitCategory, categories, refuse, t],
+    [categoryRows, moveCategories, categories, refuse, t],
   );
 
   /** Turn a landed group into a move. Nothing here can be refused. */
@@ -186,12 +180,12 @@ export function ReorderList({
       const drop = resolveGroupDrop(next, to);
       if (!drop) return;
       lightHaptic();
-      commitGroup(next, () => moveCategoryGroup(drop.id, drop.targetId));
+      moveGroups(next);
     },
-    [groupRows, commitGroup],
+    [groupRows, moveGroups],
   );
 
-  /** A dragged group landed: persist it, then give the categories back. */
+  /** A dragged group landed: keep it, then give the categories back. */
   const reorderGroup = useCallback(
     ({ from, to }: ReorderableListReorderEvent) => {
       moveGroup(from, to);
@@ -321,20 +315,17 @@ export function ReorderList({
       onReorder={reorder}
       onDragEnd={onDragEnd}
       onIndexChange={onIndexChange}
-      onScroll={onScroll}
       cellAnimations={cellAnimations}
       // Lets a row know it's the one in flight (`useIsActive`), which is how it
       // rounds itself off into a card instead of staying a slice of one.
       shouldUpdateActiveItem
+      // The native header is translucent and the list floats under it, so the
+      // top inset comes from the navigator rather than from a measured height.
+      contentInsetAdjustmentBehavior="automatic"
       style={styles.fill}
-      contentContainerStyle={{
-        paddingTop: contentPaddingTop,
-        paddingHorizontal: 16,
-        paddingBottom: insets.bottom + 24,
-      }}
-      // The floating header covers the top of the list, so autoscroll has to
-      // start below it rather than at y=0 where the rows are hidden anyway.
-      autoscrollThresholdOffset={{ start: contentPaddingTop }}
+      contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 24 }}
+      autoscrollThresholdOffset={{ start: insets.top + NAV_BAR_HEIGHT }}
+      ListHeaderComponent={<Typography className="px-1 pb-2 text-xs text-muted">{hint}</Typography>}
       ListFooterComponent={
         // Income sorts last no matter what its `sort_order` says
         // (`buildBudgetSections`), so it isn't in the draggable set — but a group

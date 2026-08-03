@@ -3,7 +3,9 @@ import { openTestDb, closeTestDb } from "./testDb";
 import * as db from "@/core/server/db";
 import { SORT_INCREMENT } from "@/core/server/db/sort";
 import { createCategory, createCategoryGroup } from "@/core/server/budget";
+import { applyCategoryOrder } from "@/core/server/budget/apply-order";
 import { sortCategories } from "@/core/server/budget/sort-categories";
+import { undo } from "@/core/server/undo";
 
 /**
  * The rules the DB layer owns — duplicate names, sort_order, the self-mapping —
@@ -292,6 +294,98 @@ describe("db categories", () => {
       await db.moveCategoryGroup(a, null);
 
       expect(await groupNames()).toEqual(["B", "A"]);
+    });
+  });
+
+  describe("applyCategoryOrder", () => {
+    async function groupNames(): Promise<string[]> {
+      const rows = await db.all<{ name: string }>(
+        "SELECT name FROM category_groups WHERE tombstone = 0 ORDER BY sort_order, id",
+      );
+      return rows.map((r) => r.name);
+    }
+
+    /** Bills[Rent, Food] · Fun[Games] — ids keyed by name for readable asserts. */
+    async function budget() {
+      const bills = await createCategoryGroup({ name: "Bills" });
+      const fun = await createCategoryGroup({ name: "Fun" });
+      const food = await createCategory({ name: "Food", groupId: bills });
+      const rent = await createCategory({ name: "Rent", groupId: bills });
+      const games = await createCategory({ name: "Games", groupId: fun });
+      return { bills, fun, food, rent, games };
+    }
+
+    it("reorders groups and categories in one call", async () => {
+      await openTestDb();
+      const { bills, fun, food, rent, games } = await budget();
+
+      await applyCategoryOrder({
+        groups: [fun, bills],
+        categories: { [bills]: [food, rent], [fun]: [games] },
+      });
+
+      expect(await groupNames()).toEqual(["Fun", "Bills"]);
+      expect(await namesInGroup(bills)).toEqual(["Food", "Rent"]);
+    });
+
+    it("moves a category into another group", async () => {
+      await openTestDb();
+      const { bills, fun, food, rent, games } = await budget();
+
+      await applyCategoryOrder({
+        groups: [bills, fun],
+        categories: { [bills]: [food], [fun]: [rent, games] },
+      });
+
+      expect(await namesInGroup(bills)).toEqual(["Food"]);
+      expect(await namesInGroup(fun)).toEqual(["Rent", "Games"]);
+    });
+
+    it("leaves the sort_order alone when nothing moved", async () => {
+      await openTestDb();
+      const { bills, fun, rent, food, games } = await budget();
+      const before = await db.all<{ id: string; sort_order: number }>(
+        "SELECT id, sort_order FROM categories WHERE tombstone = 0 ORDER BY id",
+      );
+
+      await applyCategoryOrder({
+        groups: [bills, fun],
+        categories: { [bills]: [rent, food], [fun]: [games] },
+      });
+
+      const after = await db.all<{ id: string; sort_order: number }>(
+        "SELECT id, sort_order FROM categories WHERE tombstone = 0 ORDER BY id",
+      );
+      expect(after).toEqual(before);
+    });
+
+    it("ignores hidden categories the screen never listed", async () => {
+      await openTestDb();
+      const group = await createCategoryGroup({ name: "G" });
+      await createCategory({ name: "Hidden", groupId: group, hidden: true });
+      const b = await createCategory({ name: "B", groupId: group });
+      const a = await createCategory({ name: "A", groupId: group });
+
+      // Only the visible two are listed, and they're already in that order.
+      await applyCategoryOrder({ groups: [group], categories: { [group]: [a, b] } });
+
+      expect(await namesInGroup(group)).toContain("Hidden");
+      const visible = (await namesInGroup(group)).filter((n) => n !== "Hidden");
+      expect(visible).toEqual(["A", "B"]);
+    });
+
+    it("undoes the whole arrangement as one step", async () => {
+      await openTestDb();
+      const { bills, fun, food, rent, games } = await budget();
+
+      await applyCategoryOrder({
+        groups: [fun, bills],
+        categories: { [bills]: [food, rent], [fun]: [games] },
+      });
+      await undo();
+
+      expect(await groupNames()).toEqual(["Bills", "Fun"]);
+      expect(await namesInGroup(bills)).toEqual(["Rent", "Food"]);
     });
   });
 });

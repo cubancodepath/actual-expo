@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode, type Ref } from "react";
-import { ScrollView, View, type ScrollViewProps } from "react-native";
+import { Platform, ScrollView, View, type ScrollViewProps } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Typography } from "heroui-native";
 import { CloseButton } from "@/ui/CloseButton";
@@ -12,6 +12,17 @@ import {
   type EnvelopeSheetPresentation,
   type EnvelopeSheetTone,
 } from "./context";
+
+/**
+ * How far a navigation bar reaches below the safe area, for `presentation:
+ * "header"` to keep the hero out from under it.
+ *
+ * Standard bar metrics rather than the measured height: reading the real one
+ * means taking on `@react-navigation/elements` for a single number, and the bar
+ * this clears is a plain one with no title or search field, whose height is the
+ * platform constant.
+ */
+const NAV_BAR_HEIGHT = Platform.select({ ios: 44, default: 56 });
 
 /** How far the pinned/scrolling cards overlap the backdrop's curved bottom. */
 const CARD_OVERLAP = 36;
@@ -70,11 +81,7 @@ export function EnvelopeSheetRoot({
 }: {
   /** Drives the tint of the backdrop and the hero. */
   tone: EnvelopeSheetTone;
-  /**
-   * `"sheet"` (default) for a form sheet, which the system already places below
-   * the notch. `"push"` for a pushed card, which starts at the very top of the
-   * window and so needs the parts to pay the safe-area inset themselves.
-   */
+  /** Where the sheet starts — see {@link EnvelopeSheetPresentation}. */
   presentation?: EnvelopeSheetPresentation;
   children: ReactNode;
 }) {
@@ -95,7 +102,10 @@ export function EnvelopeSheetRoot({
     () => ({
       tint: TINT[tone],
       presentation,
-      topInset: presentation === "push" ? insets.top : 0,
+      topInset:
+        presentation === "sheet"
+          ? 0
+          : insets.top + (presentation === "header" ? NAV_BAR_HEIGHT : 0),
       heroHeight,
       setHeroHeight,
       // No pinned part means nothing to wait for and nothing to clear.

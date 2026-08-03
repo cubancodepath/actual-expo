@@ -17,6 +17,7 @@ import type { Query } from "@/core/shared/query";
 import { executeQuery } from "@/core/server/aql/execute";
 import { getQueryDependencies } from "@/core/server/aql";
 import { listen } from "@/core/server/sync/syncEvents";
+import { setQueryCache } from "./queryCache";
 
 let _nextId = 0;
 
@@ -79,6 +80,10 @@ export function liveQuery<T = Record<string, unknown>>(
       prevData = data;
       data = result.data;
       dependencies = result.dependencies;
+      // Write the result back so the cache holds the last-known-good value,
+      // not the bootstrap snapshot: the next mount of this same query paints
+      // fresh data on its first frame instead of flashing the old state.
+      setQueryCache(query.serializeAsString(), data as unknown[]);
       options.onData(data, prevData);
     } catch (err) {
       if (inflightId !== currentId || isUnsubscribed) return;

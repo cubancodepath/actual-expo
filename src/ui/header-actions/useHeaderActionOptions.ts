@@ -6,18 +6,45 @@ import type {
 import type { HeaderAction, HeaderActions } from "./types";
 
 function toItem(action: HeaderAction): NativeStackHeaderItem {
-  return {
-    type: "button",
+  const shared = {
     label: action.label,
-    onPress: action.onPress,
     disabled: action.disabled,
-    variant: action.emphasis ?? "plain",
     // Only written natively when present (RNSBarButtonItem.mm), so actions
     // without one keep inheriting the navigation bar's tint.
     tintColor: action.tintColor,
     ...(action.icon
-      ? { icon: { type: "sfSymbol", name: action.icon.sfSymbol }, accessibilityLabel: action.label }
+      ? {
+          icon: { type: "sfSymbol" as const, name: action.icon.sfSymbol },
+          accessibilityLabel: action.label,
+        }
       : null),
+  };
+
+  // An overflow menu is a UIMenu hung off the bar button item, so UIKit presents
+  // it — anchored, dismissed and animated like every other menu in the system,
+  // which a JS popover drawn over the bar can only imitate.
+  if (action.items) {
+    return {
+      ...shared,
+      type: "menu",
+      menu: {
+        items: action.items.map((item) => ({
+          type: "action" as const,
+          label: item.label,
+          onPress: item.onPress,
+          disabled: item.disabled,
+          destructive: item.destructive,
+          ...(item.icon ? { icon: { type: "sfSymbol" as const, name: item.icon.sfSymbol } } : null),
+        })),
+      },
+    };
+  }
+
+  return {
+    ...shared,
+    type: "button",
+    onPress: action.onPress,
+    variant: action.emphasis ?? "plain",
   };
 }
 

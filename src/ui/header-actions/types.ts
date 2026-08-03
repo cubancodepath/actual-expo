@@ -2,21 +2,28 @@ import type { LucideIcon } from "lucide-react-native";
 import type { SFSymbol } from "sf-symbols-typescript";
 
 /**
- * A header action described declaratively rather than as JSX, so each platform
- * can render it the way that platform expects: a real `UIBarButtonItem` on iOS,
- * a tinted pressable on Android.
+ * Both platforms are required because neither icon set is portable: iOS draws
+ * the SF Symbol so the glyph matches the rest of the system bar, Android draws
+ * the lucide component.
  */
-export type HeaderAction = {
-  /** Visible text, and the accessibility label when `icon` is set. */
+export type HeaderIcon = { sfSymbol: SFSymbol; lucide: LucideIcon };
+
+/** One entry in a header action's menu. */
+export type HeaderMenuItem = {
   label: string;
   onPress: () => void;
+  icon?: HeaderIcon;
+  /** Renders in the system's destructive style — red, and last by convention. */
+  destructive?: boolean;
   disabled?: boolean;
-  /**
-   * Makes this an icon-only action. Both platforms are required because neither
-   * icon set is portable: iOS draws the SF Symbol so the glyph matches the rest
-   * of the system bar, Android draws the lucide component.
-   */
-  icon?: { sfSymbol: SFSymbol; lucide: LucideIcon };
+};
+
+type HeaderActionBase = {
+  /** Visible text, and the accessibility label when `icon` is set. */
+  label: string;
+  disabled?: boolean;
+  /** Makes this an icon-only action. */
+  icon?: HeaderIcon;
   /** `"done"` is the bold confirming action; `"plain"` is everything else. */
   emphasis?: "plain" | "done";
   /**
@@ -28,6 +35,19 @@ export type HeaderAction = {
    */
   tintColor?: string;
 };
+
+/**
+ * A header action described declaratively rather than as JSX, so each platform
+ * can render it the way that platform expects: a real `UIBarButtonItem` on iOS,
+ * a tinted pressable on Android.
+ *
+ * An action either does something (`onPress`) or offers a choice of things
+ * (`items`) — an overflow menu. The menu is native on iOS too, a `UIMenu` hung
+ * off the bar button item, so it inherits the system's presentation rather than
+ * being a popover drawn over the bar.
+ */
+export type HeaderAction = HeaderActionBase &
+  ({ onPress: () => void; items?: never } | { items: HeaderMenuItem[]; onPress?: never });
 
 export type HeaderActions = {
   /** Replaces the back button when present. */

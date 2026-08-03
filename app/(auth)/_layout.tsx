@@ -1,6 +1,7 @@
 import { Stack } from "expo-router";
 import { useQuickActionRouting } from "expo-quick-actions/router";
 import { useTranslation } from "react-i18next";
+import { HERO_HEADER_OPTIONS, TRANSLUCENT_HEADER_OPTIONS } from "@/lib/hooks/screenHeaderOptions";
 import { useStackOptions } from "@/lib/hooks/useStackOptions";
 
 export default function AuthLayout() {
@@ -39,9 +40,19 @@ export default function AuthLayout() {
         name="budget/assign-money"
         options={{ headerShown: false, ...modal, gestureEnabled: false }}
       />
-      <Stack.Screen name="budget/edit" options={{ headerShown: false }} />
+      {/* Transparent on both platforms: the plan editor's tinted hero bleeds up
+          under the bar, and an opaque one would slice its top off. */}
+      <Stack.Screen
+        name="budget/edit"
+        options={{ ...HERO_HEADER_OPTIONS, headerBackButtonDisplayMode: "minimal" }}
+      />
       <Stack.Screen name="budget/hidden-categories" options={{ headerShown: false }} />
-      <Stack.Screen name="budget/reorder-categories" options={{ headerShown: false }} />
+      {/* The only budget screen on the native bar so far: its header carries the
+          action that commits the new order, and the list floats under it. */}
+      <Stack.Screen
+        name="budget/reorder-categories"
+        options={{ ...TRANSLUCENT_HEADER_OPTIONS, headerBackButtonDisplayMode: "minimal" }}
+      />
       <Stack.Screen
         name="budget/rename-category"
         options={{

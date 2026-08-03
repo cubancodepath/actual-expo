@@ -17,8 +17,17 @@ export const TINT: Record<EnvelopeSheetTone, string> = {
   accent: "bg-accent/70",
 };
 
-/** Whether the sheet is a form sheet (already below the notch) or a pushed card. */
-export type EnvelopeSheetPresentation = "sheet" | "push";
+/**
+ * Where the sheet starts, which is the single answer to every safe-area question
+ * its parts have:
+ * - `"sheet"` — a form sheet, which the system already places below the notch.
+ * - `"push"` — a pushed card that owns the whole window, so the parts pay the
+ *   safe-area inset themselves.
+ * - `"header"` — pushed under a *transparent* navigation bar. The hero still
+ *   bleeds to the very top, but its content has to clear the bar as well as the
+ *   status bar, or the centred amount would sit behind the back button.
+ */
+export type EnvelopeSheetPresentation = "sheet" | "push" | "header";
 
 /**
  * Shared state for the sheet's layers. Lifted into the root so the (sibling)

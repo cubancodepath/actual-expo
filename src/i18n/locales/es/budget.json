@@ -194,7 +194,10 @@
     "noGroupThere": "Suelta la categoría dentro de un grupo.",
     "duplicateName": "Ese grupo ya tiene una categoría llamada «{{name}}».",
     "incomeLast": "Siempre al final",
-    "groupsHint": "Los ingresos se quedan al final del presupuesto, así que no se pueden mover."
+    "groupsHint": "Los ingresos se quedan al final del presupuesto, así que no se pueden mover.",
+    "discardTitle": "¿Descartar el nuevo orden?",
+    "discardMessage": "El orden que has hecho todavía no se ha aplicado.",
+    "discard": "Descartar"
   },
   "fromMonth": "De {{month}}",
   "assignedForMonth": "Presupuestado para {{month}}",

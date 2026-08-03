@@ -1,3 +1,4 @@
+import type { CategoryOrder } from "@/core/server/budget/apply-order";
 import type { BudgetSection } from "@/screens/budget/hooks/useBudgetSections";
 
 /**
@@ -225,25 +226,58 @@ export function toGroupRows(sections: BudgetSection[]): ReorderGroupRowData[] {
 }
 
 /**
- * Re-sort the sections into the order the collapsed list is currently showing.
+ * Re-lay the flat list so its groups run in `groupIds` order, each group taking
+ * its categories with it.
  *
- * A group move is optimistic: the list is already in the new order while the CRDT
- * write is in flight. Expanding straight after a drop would otherwise re-read the
- * groups from `liveQuery` and flash the old order for a frame, so the categories
- * are rebuilt against the order the user just made instead. Income is pinned last
- * either way, matching `buildBudgetSections`.
+ * Moving a group is a move of everything under it, but the expanded list is flat
+ * and the collapsed one only holds the group rows — so when the categories come
+ * back they have to be regrouped rather than rebuilt, or the category order the
+ * user made before opening group mode would be thrown away.
+ *
+ * Income (and any group the order doesn't mention) keeps its place at the end:
+ * the sort is stable and unlisted groups all share a rank past the last listed
+ * one.
  */
-export function sortSectionsByGroupOrder(
-  sections: BudgetSection[],
-  orderedIds: string[],
-): BudgetSection[] {
-  const rank = new Map(orderedIds.map((id, i) => [id, i]));
-  // Anything the order doesn't mention (income, or a group that arrived since)
-  // sorts after everything it does, keeping its relative place — hence a rank
-  // past the end rather than Infinity, whose difference with itself is NaN.
-  const unranked = orderedIds.length;
-  const at = (s: BudgetSection) => (s.is_income ? unranked : (rank.get(s.id) ?? unranked));
-  return [...sections].sort((a, b) => at(a) - at(b));
+export function reflowByGroupOrder(rows: ReorderRow[], groupIds: string[]): ReorderRow[] {
+  const blocks = new Map<string, ReorderRow[]>();
+  const seen: string[] = [];
+  let current: string | null = null;
+  for (const row of rows) {
+    if (row.kind === "header") {
+      current = row.groupId;
+      blocks.set(current, [row]);
+      seen.push(current);
+    } else if (current) {
+      blocks.get(current)?.push(row);
+    }
+  }
+
+  const rank = new Map(groupIds.map((id, i) => [id, i]));
+  const unranked = groupIds.length;
+  const ordered = [...seen].sort((a, b) => (rank.get(a) ?? unranked) - (rank.get(b) ?? unranked));
+  return ordered.flatMap((id) => blocks.get(id) ?? []);
+}
+
+/**
+ * Read the arrangement out of the rows, in the shape {@link applyCategoryOrder}
+ * takes. The income group is absent from `groups` (it can't be moved) but very
+ * much present in `categories` — its own categories reorder like any other's.
+ */
+export function toCategoryOrder(
+  groupRows: ReorderGroupRowData[],
+  rows: ReorderRow[],
+): CategoryOrder {
+  const categories: Record<string, string[]> = {};
+  let current: string | null = null;
+  for (const row of rows) {
+    if (row.kind === "header") {
+      current = row.groupId;
+      categories[current] = [];
+    } else if (current) {
+      categories[current].push(row.id);
+    }
+  }
+  return { groups: groupRows.map((r) => r.id), categories };
 }
 
 /** Same "insert before, null appends" contract as {@link resolveCategoryDrop}. */

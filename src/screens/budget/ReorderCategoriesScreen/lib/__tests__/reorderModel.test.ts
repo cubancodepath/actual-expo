@@ -4,9 +4,10 @@ import {
   flattenSections,
   hasDuplicateName,
   moveRow,
+  reflowByGroupOrder,
   resolveCategoryDrop,
   resolveGroupDrop,
-  sortSectionsByGroupOrder,
+  toCategoryOrder,
   toGroupRows,
   withGroupPatched,
   type ReorderRow,
@@ -229,42 +230,82 @@ describe("toGroupRows", () => {
   });
 });
 
-describe("sortSectionsByGroupOrder", () => {
-  const ids = (sections: BudgetSection[]) => sections.map((s) => s.id);
+describe("reflowByGroupOrder", () => {
+  const rows = flattenSections(SECTIONS);
 
-  it("re-sorts the sections into the order the collapsed list is showing", () => {
-    expect(ids(sortSectionsByGroupOrder(SECTIONS, ["fun", "bills"]))).toEqual([
-      "fun",
-      "bills",
-      "income",
+  it("moves a group's categories with it", () => {
+    expect(reflowByGroupOrder(rows, ["fun", "bills"]).map((r) => r.key)).toEqual([
+      "group:fun",
+      "cat:games",
+      "group:bills",
+      "cat:food",
+      "cat:rent",
+      "group:income",
+      "cat:salary",
     ]);
   });
 
-  it("keeps income last however the groups were ordered", () => {
-    expect(ids(sortSectionsByGroupOrder(SECTIONS, ["income", "fun", "bills"]))).toEqual([
-      "fun",
-      "bills",
-      "income",
-    ]);
+  it("keeps income last, since the order never mentions it", () => {
+    const flowed = reflowByGroupOrder(rows, ["fun", "bills"]);
+    expect(flowed[flowed.length - 2].key).toBe("group:income");
   });
 
-  it("leaves a group the order doesn't mention at the end, in the order it came", () => {
-    const withNew = [...SECTIONS, section("new", [])];
-    expect(ids(sortSectionsByGroupOrder(withNew, ["fun", "bills"]))).toEqual([
-      "fun",
-      "bills",
-      "income",
-      "new",
+  it("keeps a category order made before the groups moved", () => {
+    // Swap food and rent inside Bills, then move Bills after Fun.
+    const swapped = moveRow(rows, 2, 1);
+    expect(reflowByGroupOrder(swapped, ["fun", "bills"]).map((r) => r.key)).toEqual([
+      "group:fun",
+      "cat:games",
+      "group:bills",
+      "cat:rent",
+      "cat:food",
+      "group:income",
+      "cat:salary",
     ]);
   });
 
   it("is a no-op against the order it already has", () => {
-    expect(ids(sortSectionsByGroupOrder(SECTIONS, ["bills", "fun"]))).toEqual(ids(SECTIONS));
+    expect(reflowByGroupOrder(rows, ["bills", "fun"]).map((r) => r.key)).toEqual(
+      rows.map((r) => r.key),
+    );
   });
 
-  it("doesn't mutate the sections it was given", () => {
-    const input = [...SECTIONS];
-    sortSectionsByGroupOrder(input, ["fun", "bills"]);
-    expect(ids(input)).toEqual(["bills", "fun", "income"]);
+  it("carries an empty group across", () => {
+    const withEmpty = flattenSections([section("bills", ["food"]), section("empty", [])]);
+    expect(reflowByGroupOrder(withEmpty, ["empty", "bills"]).map((r) => r.key)).toEqual([
+      "group:empty",
+      "group:bills",
+      "cat:food",
+    ]);
+  });
+});
+
+describe("toCategoryOrder", () => {
+  it("reads the arrangement out of the rows", () => {
+    expect(toCategoryOrder(toGroupRows(SECTIONS), flattenSections(SECTIONS))).toEqual({
+      groups: ["bills", "fun"],
+      categories: { bills: ["food", "rent"], fun: ["games"], income: ["salary"] },
+    });
+  });
+
+  it("keeps the income group's own categories, though the group can't move", () => {
+    const order = toCategoryOrder(toGroupRows(SECTIONS), flattenSections(SECTIONS));
+    expect(order.groups).not.toContain("income");
+    expect(order.categories.income).toEqual(["salary"]);
+  });
+
+  it("reports a category under the group it was dragged into", () => {
+    // food (1) → index 3, which puts it below the Fun header.
+    const moved = withGroupPatched(moveRow(flattenSections(SECTIONS), 1, 3), 3, "fun");
+    const order = toCategoryOrder(toGroupRows(SECTIONS), moved);
+    expect(order.categories).toMatchObject({ bills: ["rent"], fun: ["food", "games"] });
+  });
+
+  it("lists an empty group with no categories", () => {
+    const sections = [section("empty", [])];
+    expect(toCategoryOrder(toGroupRows(sections), flattenSections(sections))).toEqual({
+      groups: ["empty"],
+      categories: { empty: [] },
+    });
   });
 });

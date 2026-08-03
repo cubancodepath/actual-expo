@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { View } from "react-native";
 import { ListGroup, Typography } from "heroui-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
+import { ArrowUpDown, FolderPlus, MoreHorizontal } from "lucide-react-native";
+import type { NativeStackNavigationOptions } from "@react-navigation/native-stack";
 import { EnvelopeSheet } from "@/screens/budget/components/EnvelopeSheet";
-import { useRouter } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import { useBudgetSections } from "@/screens/budget/hooks/useBudgetSections";
 import { useBudgetMonth } from "@/screens/budget/hooks/useBudgetMonth";
 import { sheetForMonth } from "@/core/server/spreadsheet/bindings";
@@ -17,12 +19,12 @@ import {
   useDeleteCategory,
   useDeleteCategoryGroup,
 } from "@/screens/budget/hooks/useDeleteCategory";
-import { ScreenHeader } from "@/ui/ScreenHeader";
+import { useHeaderActionOptions } from "@/ui/header-actions/useHeaderActionOptions";
+import type { HeaderAction } from "@/ui/header-actions/types";
 import { EditPlanGroup } from "./components/EditPlanGroup";
 import { CategoryDetailsSheet } from "./components/CategoryDetailsSheet";
 import { GroupDetailsSheet } from "./components/GroupDetailsSheet";
 import { NewItemSheet, type NewItemIntent } from "./components/NewItemSheet";
-import { PlanActionsMenu } from "./components/PlanActionsMenu";
 import { PlanSummaryCard } from "./components/PlanSummaryCard";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { AmountKeyboard } from "@/ui/amount-keyboard";
@@ -49,6 +51,7 @@ import { useIncomeEditor } from "./hooks/useIncomeEditor";
  */
 export function EditBudgetScreen() {
   const { t } = useTranslation("budget");
+  const { t: tc } = useTranslation("common");
   const insets = useSafeAreaInsets();
   const { sections, hiddenCount, isLoading } = useBudgetSections();
   // This screen is structural and has no month picker, but the goal figures on
@@ -101,6 +104,37 @@ export function EditBudgetScreen() {
     });
   }
 
+  // Actions that belong to the whole plan rather than to one group. An overflow
+  // menu in the bar rather than a control on the hero: neither is something the
+  // user does often enough to spend hero space on.
+  const actions = useMemo<HeaderAction>(
+    () => ({
+      label: tc("a11y.moreOptions"),
+      icon: { sfSymbol: "ellipsis", lucide: MoreHorizontal },
+      items: [
+        {
+          label: t("newCategoryGroup"),
+          icon: { sfSymbol: "folder.badge.plus", lucide: FolderPlus },
+          onPress: () => setNewItem({ kind: "group" }),
+        },
+        {
+          label: t("reorderCategories"),
+          icon: { sfSymbol: "arrow.up.arrow.down", lucide: ArrowUpDown },
+          onPress: () => router.push("/(auth)/budget/reorder-categories"),
+        },
+      ],
+    }),
+    [t, tc, router],
+  );
+
+  const actionOptions = useHeaderActionOptions({ right: actions });
+  // No title: the hero already says what the screen is, and one centred over the
+  // amount would be competing with it.
+  const headerOptions = useMemo<NativeStackNavigationOptions>(
+    () => ({ ...actionOptions, title: "" }),
+    [actionOptions],
+  );
+
   return (
     <AmountKeyboard
       isOpen={incomeEditor.isEditing}
@@ -108,7 +142,8 @@ export function EditBudgetScreen() {
       value={incomeEditor.value}
       onValueChange={incomeEditor.setValue}
     >
-      <EnvelopeSheet tone="accent" presentation="push">
+      <Stack.Screen options={headerOptions} />
+      <EnvelopeSheet tone="accent" presentation="header">
         <EnvelopeSheet.Backdrop />
 
         <EnvelopeSheet.Body
@@ -178,14 +213,6 @@ export function EditBudgetScreen() {
           <EnvelopeSheet.Title>{t("planHeroQuestion")}</EnvelopeSheet.Title>
           {heroCaption ? <EnvelopeSheet.Caption>{heroCaption}</EnvelopeSheet.Caption> : null}
         </EnvelopeSheet.Hero>
-
-        <EnvelopeSheet.Close>
-          <ScreenHeader.Back />
-        </EnvelopeSheet.Close>
-
-        <EnvelopeSheet.Actions>
-          <PlanActionsMenu onNewGroup={() => setNewItem({ kind: "group" })} />
-        </EnvelopeSheet.Actions>
 
         <NewItemSheet intent={newItem} onClose={() => setNewItem(null)} />
 

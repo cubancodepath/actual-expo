@@ -190,7 +190,10 @@
     "noGroupThere": "Drop a category inside a group.",
     "duplicateName": "That group already has a category called \"{{name}}\".",
     "incomeLast": "Always last",
-    "groupsHint": "Income stays at the bottom of the budget, so it can't be moved."
+    "groupsHint": "Income stays at the bottom of the budget, so it can't be moved.",
+    "discardTitle": "Discard new order?",
+    "discardMessage": "The order you arranged hasn't been applied yet.",
+    "discard": "Discard"
   },
   "fromMonth": "From {{month}}",
   "assignedForMonth": "Budgeted for {{month}}",

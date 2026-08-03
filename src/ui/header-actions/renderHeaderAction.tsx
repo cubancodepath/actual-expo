@@ -1,4 +1,4 @@
-import { Button } from "heroui-native";
+import { Button, Menu } from "heroui-native";
 import type { HeaderAction } from "./types";
 
 /**
@@ -14,7 +14,7 @@ export function renderHeaderAction(action: HeaderAction, tintColor?: string) {
   // The action's own colour wins; the header's tint is the fallback.
   const color = action.tintColor ?? tintColor;
 
-  return (
+  const trigger = (
     <Button
       variant="ghost"
       size="sm"
@@ -35,5 +35,35 @@ export function renderHeaderAction(action: HeaderAction, tintColor?: string) {
         </Button.Label>
       )}
     </Button>
+  );
+
+  // No UIMenu to hang the items off here, so the button opens a popover instead.
+  // Anchored to the trigger and aligned to the bar's end, which is where an
+  // overflow menu is expected to come from.
+  if (!action.items) return trigger;
+
+  return (
+    <Menu>
+      <Menu.Trigger asChild>{trigger}</Menu.Trigger>
+      <Menu.Portal>
+        <Menu.Overlay />
+        <Menu.Content presentation="popover" width={240} placement="bottom" align="end">
+          {action.items.map((item) => {
+            const ItemIcon = item.icon?.lucide;
+            return (
+              <Menu.Item
+                key={item.label}
+                className="gap-3"
+                onPress={item.onPress}
+                isDisabled={item.disabled}
+              >
+                {ItemIcon ? <ItemIcon size={18} color={color} /> : null}
+                <Menu.ItemTitle>{item.label}</Menu.ItemTitle>
+              </Menu.Item>
+            );
+          })}
+        </Menu.Content>
+      </Menu.Portal>
+    </Menu>
   );
 }

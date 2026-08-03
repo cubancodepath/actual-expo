@@ -1,5 +1,5 @@
 import { useCallback, useMemo, type ReactNode } from "react";
-import { View, type NativeScrollEvent, type NativeSyntheticEvent } from "react-native";
+import { Platform, View, type NativeScrollEvent, type NativeSyntheticEvent } from "react-native";
 import { LegendList } from "@legendapp/list";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -26,21 +26,30 @@ import type { TransactionDisplay } from "@/core/types/models";
 import type { TransactionsListContext } from "../types";
 import { useTransactionsListQuery } from "../hooks/useTransactionsListQuery";
 
+/**
+ * How far a plain navigation bar reaches below the safe area.
+ *
+ * Standard bar metrics rather than a measured height: reading the real one
+ * means taking on `@react-navigation/elements` for a single number, and the
+ * bars this clears carry a title and bar items, nothing taller.
+ */
+const NAV_BAR_HEIGHT = Platform.select({ ios: 44, default: 56 });
+
 interface TransactionsShellProps {
   /** Drives the query (all accounts / one account / one category+month). */
   context: TransactionsListContext;
   /**
    * The `<ScreenHeader>` row rendered in the frosted floating overlay (blur
-   * ramps on scroll). Mutually exclusive with `stickyHeader`.
+   * ramps on scroll). The legacy path — only the category screen is left on it,
+   * and it's mutually exclusive with `banner`.
    */
   header?: ReactNode;
   /**
-   * A dedicated solid header rendered as a normal flex child above the list
-   * (no ScreenHeader scaffold, no blur, never scrolls). Used by the account
-   * detail screen for its pinned balance summary. Mutually exclusive with
-   * `header`.
+   * A solid block pinned between the native bar and the list; never scrolls.
+   * The account ledger's balance summary, in the shape the budget screen's
+   * ReadyToAssign banner established.
    */
-  stickyHeader?: ReactNode;
+  banner?: ReactNode;
   /** Floating action button, when the variant has one. */
   fab?: ReactNode;
   /** Reserve the status bar height above the header (frosted variants). */
@@ -55,20 +64,30 @@ interface TransactionsShellProps {
 /**
  * Shared machinery of every transactions-list variant: the virtualized
  * date-grouped list, the long-press lift menu with its actions, and the header
- * scaffold. Variants compose their header and FAB explicitly: `header` renders
- * a frosted floating overlay (all / category), while `stickyHeader` renders a
- * solid pinned header above the list (account detail).
+ * scaffold.
+ *
+ * Two shapes. The native one — a `banner` (or nothing) under a real navigation
+ * bar, optionally searching in place — is where the ledgers live. The frosted
+ * one (`header` inside a `ScreenHeader.Floating`) is what the category screen
+ * still uses; it stays until that screen migrates too.
  */
 export function TransactionsShell({
   context,
   header,
-  stickyHeader,
+  banner,
   fab,
   topInset = false,
   rowComponent = LedgerRow,
 }: TransactionsShellProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+
+  // A translucent bar floats OVER the content instead of occupying layout, so
+  // whatever comes first has to clear it by hand. Deliberately padding rather
+  // than `contentInsetAdjustmentBehavior`: an adjusted content offset is read
+  // as a scroll position by the virtualized list, which then computes its
+  // window off the end of the data and renders nothing.
+  const topPad = insets.top + NAV_BAR_HEIGHT;
 
   const onPressRow = useCallback(
     (txn: TransactionDisplay) => {
@@ -90,12 +109,7 @@ export function TransactionsShell({
         };
         return (
           <>
-            {stickyHeader ? (
-              <>
-                {stickyHeader}
-                <ListBody {...listProps} contentPaddingTop={0} />
-              </>
-            ) : (
+            {header ? (
               <ScreenHeader.ScrollArea>
                 <FrostedList {...listProps}>
                   <ScreenHeader.Floating>
@@ -104,6 +118,12 @@ export function TransactionsShell({
                   </ScreenHeader.Floating>
                 </FrostedList>
               </ScreenHeader.ScrollArea>
+            ) : (
+              <>
+                {/* Whichever is on top pays for the bar; the other starts at 0. */}
+                {banner ? <View style={{ paddingTop: topPad }}>{banner}</View> : null}
+                <ListBody {...listProps} contentPaddingTop={banner ? 0 : topPad} />
+              </>
             )}
 
             {fab}
@@ -138,14 +158,13 @@ interface ListBodyProps {
   rowComponent: LedgerRowComponent;
   /** Header-blur scroll handler (frosted mode only). */
   onScroll?: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
-  /** Top padding reserved for the floating header (0 in sticky mode). */
+  /** Top padding reserved for the floating header. */
   contentPaddingTop?: number;
 }
 
 /**
- * The virtualized list. Header-scroll wiring is injected via props so the same
- * list serves both the frosted (floating header) and sticky (solid header)
- * modes without touching the shared ScreenHeader.
+ * The virtualized list. Header wiring is injected via props so the same list
+ * serves the frosted overlay and the native bar without touching either.
  */
 function ListBody({
   context,
@@ -158,7 +177,7 @@ function ListBody({
   contentPaddingTop = 0,
 }: ListBodyProps) {
   const accent = useThemeColor("accent");
-  const refreshControl = useSyncRefreshControl();
+  const refreshControl = useSyncRefreshControl(contentPaddingTop);
 
   // The category context defaults to the budget UI store's month.
   const storeMonth = useBudgetUIStore((s) => s.month);
@@ -214,6 +233,9 @@ function ListBody({
       // maintainVisibleContentPosition (for chat-style prepend lists) fights the
       // async header paddingTop, opening the list slightly scrolled. Disable it.
       maintainVisibleContentPosition={false}
+      // Tapping a result while the keyboard is still animating out must land on
+      // the first tap.
+      keyboardShouldPersistTaps="handled"
       contentContainerStyle={{ paddingTop: contentPaddingTop, paddingBottom: 80 }}
       ListHeaderComponent={
         previews.length > 0 ? <UpcomingSection previews={previews} /> : undefined

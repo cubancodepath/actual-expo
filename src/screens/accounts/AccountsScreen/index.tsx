@@ -1,24 +1,38 @@
-import { useEffect, useState } from "react";
-import { View } from "react-native";
-import { useRouter } from "expo-router";
+import { useEffect, useMemo, useState } from "react";
+import { ScrollView, View } from "react-native";
+import { Stack, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import Animated from "react-native-reanimated";
 import { Accordion, AccordionLayoutTransition, Button, useThemeColor } from "heroui-native";
-import { CirclePlus, Landmark } from "lucide-react-native";
+import type { NativeStackNavigationOptions } from "@react-navigation/native-stack";
+import {
+  CirclePlus,
+  Eye,
+  EyeOff,
+  Landmark,
+  MoreHorizontal,
+  Plus,
+  Settings,
+  Undo2,
+} from "lucide-react-native";
 import { groupAccounts, updateAccount } from "@/core/server/accounts";
 import type { Account } from "@/core/types/models";
 import { useAccounts } from "@/lib/hooks/useAccounts";
+import { usePrivacyMode } from "@/lib/hooks/usePrivacyMode";
 import { useSyncRefreshControl } from "@/lib/hooks/useSyncRefreshControl";
-import { ScreenHeader } from "@/ui/ScreenHeader";
+import type { HeaderAction } from "@/ui/header-actions/types";
+import { useHeaderActionOptions } from "@/ui/header-actions/useHeaderActionOptions";
 import { LiftMenu } from "@/ui/lift-menu";
-import { AccountsHeader } from "./components/AccountsHeader";
 import { AccountGroupItem } from "./components/AccountGroupItem";
 import { AccountRowContent } from "./components/AccountRow";
 import { AccountRowMenu, type AccountMenuAction } from "./components/AccountRowMenu";
 import { EmptyState } from "heroui-native-pro";
 
+const noop = () => {};
+
 export function AccountsScreen() {
   const { t } = useTranslation("accounts");
+  const { t: tCommon } = useTranslation("common");
   const router = useRouter();
   const [accentForeground, foreground, accent] = useThemeColor([
     "accent-foreground",
@@ -26,6 +40,10 @@ export function AccountsScreen() {
     "accent",
   ]);
   const { accounts, hasLoaded } = useAccounts();
+  const [privacyMode, togglePrivacy] = usePrivacyMode();
+
+  // No `progressViewOffset`: the scroll view takes its inset from UIKit, and the
+  // refresh spinner is positioned from that same adjusted top.
   const refreshControl = useSyncRefreshControl();
 
   // Closed accounts always show as their own group; it just starts collapsed.
@@ -67,10 +85,56 @@ export function AccountsScreen() {
     }
   }
 
+  // Add on the inside, overflow at the edge. Memoised: expo-router re-runs
+  // setOptions on every options identity change. This is a tab root, so there's
+  // no back button for a `left` action to displace.
+  const addAction = useMemo<HeaderAction>(
+    () => ({
+      label: t("addAccount"),
+      icon: { sfSymbol: "plus", lucide: Plus },
+      onPress: () => router.push("/(auth)/account/new"),
+    }),
+    [t, router],
+  );
+
+  const overflowAction = useMemo<HeaderAction>(
+    () => ({
+      label: tCommon("a11y.moreOptions"),
+      icon: { sfSymbol: "ellipsis", lucide: MoreHorizontal },
+      items: [
+        {
+          label: t("menu.undo"),
+          icon: { sfSymbol: "arrow.uturn.backward", lucide: Undo2 },
+          // Not wired yet. Disabled is honest; the old menu's no-op was not.
+          disabled: true,
+          onPress: noop,
+        },
+        {
+          label: privacyMode ? t("menu.showAmounts") : t("menu.hideAmounts"),
+          icon: privacyMode
+            ? { sfSymbol: "eye", lucide: Eye }
+            : { sfSymbol: "eye.slash", lucide: EyeOff },
+          onPress: togglePrivacy,
+        },
+        {
+          label: t("menu.settings"),
+          icon: { sfSymbol: "gearshape", lucide: Settings },
+          onPress: () => router.push("/(auth)/settings"),
+        },
+      ],
+    }),
+    [t, tCommon, router, privacyMode, togglePrivacy],
+  );
+
+  const headerOptions = useHeaderActionOptions({
+    right: [addAction, overflowAction],
+  }) as NativeStackNavigationOptions;
+
   const isEmpty = hasLoaded && groups.length === 0;
 
   return (
-    <ScreenHeader.ScrollArea>
+    <>
+      <Stack.Screen options={headerOptions} />
       <LiftMenu.Host<Account>
         getId={(account) => account.id}
         className="flex-1"
@@ -84,7 +148,7 @@ export function AccountsScreen() {
       >
         {({ liftedId, onLongPressRow }) =>
           isEmpty ? (
-            <View className="flex-1 items-center justify-center gap-6 px-8 ">
+            <View className="flex-1 items-center justify-center gap-6 px-8">
               <EmptyState>
                 <EmptyState.Header>
                   <EmptyState.Media variant="icon">
@@ -102,11 +166,17 @@ export function AccountsScreen() {
               </EmptyState>
             </View>
           ) : (
-            <ScreenHeader.Body
+            <ScrollView
+              // The native bar is translucent and this floats under it; UIKit
+              // supplies the top inset (same as NativePickerScreen). Padding it
+              // by hand would land on TOP of that inset, not instead of it.
+              contentInsetAdjustmentBehavior="automatic"
               contentContainerStyle={{
+                flexGrow: 1,
                 paddingHorizontal: 16,
                 paddingBottom: 120,
               }}
+              showsVerticalScrollIndicator={false}
               refreshControl={refreshControl}
             >
               <Animated.View layout={AccordionLayoutTransition}>
@@ -136,14 +206,10 @@ export function AccountsScreen() {
                   <Button.Label>{t("addAccount")}</Button.Label>
                 </Button>
               </View>
-            </ScreenHeader.Body>
+            </ScrollView>
           )
         }
       </LiftMenu.Host>
-
-      <ScreenHeader.Floating>
-        <AccountsHeader />
-      </ScreenHeader.Floating>
-    </ScreenHeader.ScrollArea>
+    </>
   );
 }

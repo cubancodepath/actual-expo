@@ -11,6 +11,8 @@ export type HeaderIcon = { sfSymbol: SFSymbol; lucide: LucideIcon };
 /** One entry in a header action's menu. */
 export type HeaderMenuItem = {
   label: string;
+  /** Secondary text beside the label — UIKit renders it under the title. */
+  description?: string;
   onPress: () => void;
   icon?: HeaderIcon;
   /** Renders in the system's destructive style — red, and last by convention. */

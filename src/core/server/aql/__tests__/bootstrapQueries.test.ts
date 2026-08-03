@@ -9,7 +9,7 @@ import { run } from "@/core/server/db";
 import { executeQuery } from "@/core/server/aql/execute";
 import { q } from "@/core/shared/query";
 import { getTags } from "@/core/server/tags";
-import { buildSearchQuery } from "@/screens/transactions/SearchScreen/searchParams";
+import { buildSearchQuery } from "@/screens/transactions/search/searchParams";
 import { buildTransactionsListQuery } from "@/screens/transactions/TransactionsListScreen/hooks/useTransactionsListQuery";
 
 async function seed() {

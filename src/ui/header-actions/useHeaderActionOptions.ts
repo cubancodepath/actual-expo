@@ -31,6 +31,7 @@ function toItem(action: HeaderAction): NativeStackHeaderItem {
         items: action.items.map((item) => ({
           type: "action" as const,
           label: item.label,
+          description: item.description,
           onPress: item.onPress,
           disabled: item.disabled,
           destructive: item.destructive,
@@ -74,9 +75,11 @@ export function useHeaderActionOptions({
       // A custom left action stands in for the back button, not beside it.
       headerBackVisible: !left,
       unstable_headerLeftItems: left ? () => [toItem(left)] : undefined,
-      // Reversed: UIKit places rightBarButtonItems[0] at the screen edge, but
-      // the API reads left-to-right (see HeaderActions.right).
-      unstable_headerRightItems: rights.length > 0 ? () => rights.map(toItem).reverse() : undefined,
+      // Passed in reading order, NOT reversed: UIKit does place
+      // rightBarButtonItems[0] at the screen edge, but native-stack already
+      // flips the array for that (useHeaderConfigProps.tsx, "iOS renders right
+      // items in reverse order"). Reversing here too would cancel it out.
+      unstable_headerRightItems: rights.length > 0 ? () => rights.map(toItem) : undefined,
     };
   }, [left, right]);
 }

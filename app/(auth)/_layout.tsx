@@ -1,7 +1,11 @@
 import { Stack } from "expo-router";
 import { useQuickActionRouting } from "expo-quick-actions/router";
 import { useTranslation } from "react-i18next";
-import { HERO_HEADER_OPTIONS, TRANSLUCENT_HEADER_OPTIONS } from "@/lib/hooks/screenHeaderOptions";
+import {
+  HERO_HEADER_OPTIONS,
+  pickerHeaderOptions,
+  TRANSLUCENT_HEADER_OPTIONS,
+} from "@/lib/hooks/screenHeaderOptions";
 import { useStackOptions } from "@/lib/hooks/useStackOptions";
 
 export default function AuthLayout() {
@@ -13,14 +17,16 @@ export default function AuthLayout() {
     <Stack screenOptions={screen}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false, title: "" }} />
       <Stack.Screen name="account/new" options={{ headerShown: false, ...modal }} />
-      <Stack.Screen name="account/[id]" options={{ ...screen, headerShown: false }} />
+      {/* The screen supplies the title (the account's name) and its bar items;
+          the ledger scrolls under a translucent bar like the rest. */}
+      <Stack.Screen name="account/[id]" options={{ ...screen, ...TRANSLUCENT_HEADER_OPTIONS }} />
       <Stack.Screen
         name="account/search"
         options={{
           ...screen,
+          ...pickerHeaderOptions("stacked"),
           animation: "fade",
           animationDuration: 150,
-          headerShown: false,
         }}
       />
       <Stack.Screen

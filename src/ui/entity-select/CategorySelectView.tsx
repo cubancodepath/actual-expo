@@ -36,7 +36,7 @@ interface CategorySelectViewProps {
 }
 
 // Entering/exiting the split mode swaps rows in and out; without these the list
-// jumps. Named at module scope like SearchScreen's, the other screen whose own
+// jumps. Named at module scope like the search overlay's, the other place whose
 // header changes shape in place.
 const SPLIT_ROW_IN = FadeIn.duration(180);
 const SPLIT_ROW_OUT = FadeOut.duration(120);

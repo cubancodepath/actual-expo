@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useTransactions } from "@/lib/hooks/useTransactions";
 import { useTransactionEnrichment } from "@/lib/hooks/useTransactionEnrichment";
-import { buildSearchQuery, type SearchParams } from "../searchParams";
+import { buildSearchQuery, type SearchParams } from "./searchParams";
 
 /**
  * Paged search results for a submitted set of params. `null` keeps the query

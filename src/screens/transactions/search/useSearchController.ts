@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { TextInput } from "react-native";
+import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useAccounts } from "@/lib/hooks/useAccounts";
@@ -8,10 +7,10 @@ import { usePayees } from "@/lib/hooks/usePayees";
 import { useTags } from "@/screens/transactions/hooks/useTags";
 import { buildTxListItems } from "@/screens/transactions/components/transaction-list/listItems";
 import type { TransactionDisplay } from "@/core/types/models";
-import { addToken, initialTokensFromFilter, tokenKey, STATUS_LABEL_KEYS } from "../searchTokens";
-import type { SearchToken } from "../searchTokens";
-import { buildSearchParams } from "../searchParams";
-import { buildSuggestions } from "../suggestionEngine";
+import { addToken, initialTokensFromFilter, tokenKey, STATUS_LABEL_KEYS } from "./searchTokens";
+import type { SearchToken } from "./searchTokens";
+import { buildSearchParams } from "./searchParams";
+import { buildSuggestions } from "./suggestionEngine";
 import { useTransactionSearch } from "./useTransactionSearch";
 
 interface UseSearchControllerArgs {
@@ -36,30 +35,22 @@ export function useSearchController({ accountId, initialFilter }: UseSearchContr
   const { payees } = usePayees();
   const { tags } = useTags();
 
-  const searchInputRef = useRef<TextInput>(null);
   const [searchText, setSearchText] = useState("");
-  const [searchFocused, setSearchFocused] = useState(false);
+  // Starts focused because the screen opens focused (`SearchScreen` calls
+  // `focus()` on the bar). Waiting for the native `onFocus` to land would leave
+  // the suggestion curtain shut for the first frames.
+  const [searchFocused, setSearchFocused] = useState(true);
   const [tokens, setTokens] = useState<SearchToken[]>(() => initialTokensFromFilter(initialFilter));
-
-  // Auto-focus on mount, unless an initial filter already runs a search.
-  useEffect(() => {
-    if (!initialFilter) {
-      const timer = setTimeout(() => searchInputRef.current?.focus(), 100);
-      return () => clearTimeout(timer);
-    }
-  }, [initialFilter]);
 
   // Picking a filter closes the autocomplete. Drop `searchFocused` in the same
   // synchronous batch as clearing the text — relying on the async `onBlur`
   // instead leaves one frame where the curtain is still shown but the text is
   // already empty, so it repaints with the no-text suggestion list right
-  // before the exit animation (the visible "double render"). `blur()` still
-  // dismisses the keyboard.
+  // before the exit animation (the visible "double render").
   const addFilterToken = useCallback((token: SearchToken) => {
     setTokens((prev) => addToken(prev, token));
     setSearchText("");
     setSearchFocused(false);
-    searchInputRef.current?.blur();
   }, []);
 
   const submitText = useCallback(() => {
@@ -67,24 +58,11 @@ export function useSearchController({ accountId, initialFilter }: UseSearchContr
     if (value) addFilterToken({ type: "text", value });
   }, [searchText, addFilterToken]);
 
-  // Removing the last filter puts the screen back in "start a search" mode:
-  // refocus the input so the suggestions come right back.
   const removeTokensByKey = useCallback(
     (keys: Set<string | number>) => {
-      const next = tokens.filter((token) => !keys.has(tokenKey(token)));
-      setTokens(next);
-      if (next.length === 0) searchInputRef.current?.focus();
+      setTokens(tokens.filter((token) => !keys.has(tokenKey(token))));
     },
     [tokens],
-  );
-
-  const removeLastTokenOnBackspace = useCallback(
-    (e: { nativeEvent: { key: string } }) => {
-      if (e.nativeEvent.key === "Backspace" && searchText === "") {
-        setTokens((prev) => prev.slice(0, -1));
-      }
-    },
-    [searchText],
   );
 
   // Live search: the params derive straight from the tokens.
@@ -162,18 +140,34 @@ export function useSearchController({ accountId, initialFilter }: UseSearchContr
     [router],
   );
 
-  const close = useCallback(() => router.back(), [router]);
+  /**
+   * Leave the search.
+   *
+   * Guarded rather than a bare `back()`: this screen is pushed from two
+   * different stacks, and if it ever ends up as the only route in its own
+   * navigator — a deep link, a restored session — `back()` is a silent no-op
+   * and the search becomes a screen with no way out. `dismissTo` gives it one.
+   */
+  const close = useCallback(() => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.dismissTo(
+      accountId
+        ? { pathname: "/(auth)/account/[id]", params: { id: accountId } }
+        : "/(auth)/(tabs)/(spending)",
+    );
+  }, [router, accountId]);
 
   return {
     // search bar
-    searchInputRef,
     searchText,
     setSearchText,
     searchFocused,
     setSearchFocused,
     placeholderKey,
     onSubmitText: submitText,
-    onBackspace: removeLastTokenOnBackspace,
     // tokens + suggestions
     tokens,
     suggestions,

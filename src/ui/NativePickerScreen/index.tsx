@@ -39,38 +39,40 @@ export function NativePickerScreen({
   const { searchBarRef, onChangeText } = useSearchBridge(query, onQueryChange);
   const controlOptions = useHeaderActionOptions({ left: headerLeft, right: headerRight });
 
-  // `query` and `onQueryChange` must stay OUT of these deps: expo-router's
-  // Screen re-runs setOptions whenever the options object changes identity, and
-  // a new headerSearchBarOptions rebuilds the native bar and drops the keyboard.
-  const searchOptions = useMemo<NativeStackNavigationOptions>(
-    () => ({
-      title,
-      headerSearchBarOptions: {
-        ref: searchBarRef,
-        placeholder: searchPlaceholder,
-        // Per-screen, because the pickers disagree: payees want the bar up top
-        // in its own row, categories want it integrated. Never left at the
-        // native default (`automatic`), which decides for us and on iOS 26 can
-        // move a bar we meant to keep on top down into the toolbar.
-        placement: searchPlacement,
-        hideWhenScrolling: false,
-        // UIKit hides the nav bar while the search field is active (the prop
-        // defaults to true before iOS 26), which would drop the title and the
-        // header actions — Cancel/Next/Split — exactly when they're needed.
-        hideNavigationBar: false,
-        autoCapitalize: "none",
-        textColor: foreground,
-        tintColor: accent,
-        onChangeText,
-      },
-    }),
-    [title, searchPlaceholder, searchPlacement, foreground, accent, searchBarRef, onChangeText],
+  // One options object, not two: each one expo-router applies is another
+  // `setOptions` pass, and every pass reconfigures the native header.
+  const screenOptions = useMemo<NativeStackNavigationOptions>(
+    () => ({ title, ...controlOptions }),
+    [title, controlOptions],
   );
 
   return (
     <Screen>
-      <Stack.Screen options={searchOptions} />
-      <Stack.Screen options={controlOptions} />
+      <Stack.Screen options={screenOptions} />
+
+      {/*
+       * Declarative, so it lands as one merged options update rather than as a
+       * `setOptions` that attaches a search bar to a header already configured
+       * without one — the route seeds `placement` for the first frame (see
+       * `pickerHeaderOptions`) and this replaces it with the full config.
+       *
+       * `query` and `onQueryChange` deliberately do NOT feed these props: the
+       * bridge keeps `searchBarRef` and `onChangeText` stable so typing never
+       * re-registers the bar, which would rebuild it natively and drop the
+       * keyboard.
+       */}
+      <Stack.SearchBar
+        ref={searchBarRef}
+        placeholder={searchPlaceholder}
+        placement={searchPlacement}
+        allowToolbarIntegration={searchPlacement === "integrated"}
+        hideWhenScrolling={false}
+        hideNavigationBar={false}
+        autoCapitalize="none"
+        textColor={foreground}
+        tintColor={accent}
+        onChangeText={onChangeText}
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}

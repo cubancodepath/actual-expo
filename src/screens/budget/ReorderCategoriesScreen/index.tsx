@@ -12,7 +12,7 @@ import { emitErrorEvent } from "@/lib/errors/ErrorChannel";
 import { dialog } from "@/ui/feedback/dialog";
 import { useHeaderActionOptions } from "@/ui/header-actions/useHeaderActionOptions";
 import type { HeaderAction } from "@/ui/header-actions/types";
-import { lightHaptic, mediumHaptic, successHaptic } from "@/ui/haptics";
+import { mediumHaptic, successHaptic } from "@/ui/haptics";
 import { useBudgetSections } from "@/screens/budget/hooks/useBudgetSections";
 import { toCategoryOrder } from "./lib/reorderModel";
 import { useLocalOrder } from "./hooks/useLocalOrder";
@@ -66,11 +66,6 @@ export function ReorderCategoriesScreen() {
     setGroupMode(false);
   }, []);
 
-  const done = useCallback(() => {
-    lightHaptic();
-    exitGroupMode();
-  }, [exitGroupMode]);
-
   /**
    * Leave once the order is safely written — as an effect rather than straight
    * after the await, so the render that clears `dirty` lands first. Going back in
@@ -114,12 +109,11 @@ export function ReorderCategoriesScreen() {
   // only points back the way the user came.
   const isEmpty = !isLoading && sections.length === 0;
 
+  // One action, one meaning: the check commits the arrangement, in either mode.
+  // Group mode used to put a "Done" button here, but a second header button
+  // that looks the same and does something else is a trap — and group mode
+  // already ends by itself the moment a group is dropped, moved or not.
   const action = useMemo<HeaderAction | undefined>(() => {
-    // While the groups are what's moving, the header's job is to put the
-    // categories back — committing is one step further out than that.
-    if (groupMode) {
-      return { label: tCommon("done"), emphasis: "done", tintColor: accent, onPress: done };
-    }
     if (isEmpty) return undefined;
     return {
       label: tCommon("save"),
@@ -131,7 +125,7 @@ export function ReorderCategoriesScreen() {
       disabled: !order.dirty,
       onPress: apply,
     };
-  }, [groupMode, isEmpty, tCommon, accent, done, order.dirty, apply]);
+  }, [isEmpty, tCommon, accent, order.dirty, apply]);
 
   const actionOptions = useHeaderActionOptions({ right: action });
   const headerOptions = useMemo<NativeStackNavigationOptions>(

@@ -31,28 +31,27 @@ export function NativePickerScreen({
   const { searchBarRef, onChangeText } = useSearchBridge(query, onQueryChange);
   const controlOptions = useHeaderActionOptions({ left: headerLeft, right: headerRight });
 
-  // `query` and `onQueryChange` must stay OUT of these deps: expo-router's
-  // Screen re-runs setOptions whenever the options object changes identity, and
-  // a new headerSearchBarOptions rebuilds the native bar and drops the keyboard.
-  const searchOptions = useMemo<NativeStackNavigationOptions>(
-    () => ({
-      title,
-      headerSearchBarOptions: {
-        ref: searchBarRef,
-        placeholder: searchPlaceholder,
-        autoCapitalize: "none",
-        hintTextColor: muted,
-        headerIconColor: muted,
-        onChangeText,
-      },
-    }),
-    [title, searchPlaceholder, muted, searchBarRef, onChangeText],
+  // See the base file: one options object, and the search bar declared rather
+  // than pushed through `setOptions`.
+  const screenOptions = useMemo<NativeStackNavigationOptions>(
+    () => ({ title, ...controlOptions }),
+    [title, controlOptions],
   );
 
   return (
     <Screen>
-      <Stack.Screen options={searchOptions} />
-      <Stack.Screen options={controlOptions} />
+      <Stack.Screen options={screenOptions} />
+
+      {/* No `placement` — that's an iOS concept; Android puts the field where
+          the platform puts it. */}
+      <Stack.SearchBar
+        ref={searchBarRef}
+        placeholder={searchPlaceholder}
+        autoCapitalize="none"
+        hintTextColor={muted}
+        headerIconColor={muted}
+        onChangeText={onChangeText}
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}

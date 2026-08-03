@@ -62,7 +62,8 @@ export function CategorySelectView({
   const accent = useThemeColor("accent");
 
   const { categories, groups } = useCategories();
-  const balances = useCategoryBalances(date);
+  const categoryIds = useMemo(() => categories.map((c) => c.id), [categories]);
+  const balances = useCategoryBalances(date, categoryIds);
   const { query, setQuery, q, searching } = usePickerSearch();
   const sections = useCategoryPickerSections(groups, categories, { q, balances });
 

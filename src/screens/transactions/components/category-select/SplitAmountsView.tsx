@@ -163,11 +163,14 @@ export function SplitAmountsView({
       label: tc("save"),
       icon: { sfSymbol: "checkmark", lucide: Check },
       emphasis: "done",
+      // Without this the filled capsule iOS 26 draws for a "done" action comes
+      // out system blue instead of the app's accent.
+      tintColor: accent,
       onPress: save,
     }),
     // `save` closes over the draft, so it must be re-read on every change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [tc, draft, remaining],
+    [tc, accent, draft, remaining],
   );
   const actionOptions = useHeaderActionOptions({ right: saveAction });
 

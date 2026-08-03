@@ -1,6 +1,6 @@
-import { createContext, use, useCallback } from "react";
+import { createContext, use, useCallback, useEffect } from "react";
 import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
-import type { SharedValue } from "react-native-reanimated";
+import { useAnimatedScrollHandler, type SharedValue } from "react-native-reanimated";
 
 /**
  * Shared state for the scroll-aware header scaffold. Lifted into
@@ -41,5 +41,29 @@ export function useScreenHeaderScroll() {
     },
     [scrollOffset],
   );
+  return { onScroll, contentPaddingTop: headerHeight };
+}
+
+/**
+ * The same escape hatch as {@link useScreenHeaderScroll}, for lists that demand a
+ * Reanimated scroll handler instead of a JS callback — `ReorderableList` is one:
+ * it drives autoscroll from the offset on the UI thread, so it types `onScroll`
+ * as `useAnimatedScrollHandler`'s return and refuses anything else.
+ */
+export function useScreenHeaderAnimatedScroll() {
+  const { scrollOffset, headerHeight } = useScreenHeaderScrollContext();
+  const onScroll = useAnimatedScrollHandler((e) => {
+    scrollOffset.value = e.contentOffset.y;
+  });
+
+  // Unlike ScreenHeader.Body, a bring-your-own list can be swapped for another
+  // one under the same header (a segmented control switching lists). The
+  // offset lives in the ScrollArea above them, so without this the new list —
+  // which mounts at the top — would inherit the old one's scroll position and
+  // wear a blur it hasn't earned.
+  useEffect(() => {
+    scrollOffset.value = 0;
+  }, [scrollOffset]);
+
   return { onScroll, contentPaddingTop: headerHeight };
 }

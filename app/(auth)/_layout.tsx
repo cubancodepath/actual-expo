@@ -41,6 +41,7 @@ export default function AuthLayout() {
       />
       <Stack.Screen name="budget/edit" options={{ headerShown: false }} />
       <Stack.Screen name="budget/hidden-categories" options={{ headerShown: false }} />
+      <Stack.Screen name="budget/reorder-categories" options={{ headerShown: false }} />
       <Stack.Screen
         name="budget/rename-category"
         options={{

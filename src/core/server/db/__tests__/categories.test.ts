@@ -194,4 +194,104 @@ describe("db categories", () => {
       await expect(sortCategories({ groupId: g, direction: "asc" })).resolves.toBeUndefined();
     });
   });
+
+  /**
+   * The contract the reorder screen is written against: `targetId` names the row
+   * to land *before*, and null appends. Everything else about a move — the
+   * midpoint arithmetic, the cascading shove — is `shoveSortOrders`' own tests;
+   * these cover what a caller can observe.
+   */
+  describe("moveCategory", () => {
+    /** Categories are inserted at the START of a group, so this reads A, B, C. */
+    async function groupOfThree(): Promise<{ group: string; ids: string[] }> {
+      const group = await createCategoryGroup({ name: "G" });
+      const c = await createCategory({ name: "C", groupId: group });
+      const b = await createCategory({ name: "B", groupId: group });
+      const a = await createCategory({ name: "A", groupId: group });
+      return { group, ids: [a, b, c] };
+    }
+
+    it("moves a category before its target within a group", async () => {
+      await openTestDb();
+      const { group, ids } = await groupOfThree();
+
+      await db.moveCategory(ids[2], group, ids[0]);
+
+      expect(await namesInGroup(group)).toEqual(["C", "A", "B"]);
+    });
+
+    it("appends to the end of the group when there is no target", async () => {
+      await openTestDb();
+      const { group, ids } = await groupOfThree();
+
+      await db.moveCategory(ids[0], group, null);
+
+      expect(await namesInGroup(group)).toEqual(["B", "C", "A"]);
+    });
+
+    it("rewrites cat_group when the target is in another group", async () => {
+      await openTestDb();
+      const from = await createCategoryGroup({ name: "From" });
+      const to = await createCategoryGroup({ name: "To" });
+      const moved = await createCategory({ name: "Rent", groupId: from });
+      const anchor = await createCategory({ name: "Water", groupId: to });
+
+      await db.moveCategory(moved, to, anchor);
+
+      expect(await namesInGroup(from)).toEqual([]);
+      expect(await namesInGroup(to)).toEqual(["Rent", "Water"]);
+    });
+
+    it("keeps the order when the gap runs out and siblings have to be shoved", async () => {
+      await openTestDb();
+      const group = await createCategoryGroup({ name: "G" });
+      const first = await createCategory({ name: "First", groupId: group });
+      const second = await createCategory({ name: "Second", groupId: group });
+      // Adjacent sort orders leave no midpoint, which is the shove's trigger.
+      await db.updateCategory({ id: first, sort_order: 1 });
+      await db.updateCategory({ id: second, sort_order: 2 });
+
+      await db.moveCategory(second, group, first);
+
+      expect(await namesInGroup(group)).toEqual(["Second", "First"]);
+    });
+
+    it("refuses a move with no group to move into", async () => {
+      await openTestDb();
+      const group = await createCategoryGroup({ name: "G" });
+      const c = await createCategory({ name: "Rent", groupId: group });
+
+      await expect(db.moveCategory(c, "", null)).rejects.toThrow(/groupId is required/);
+    });
+  });
+
+  describe("moveCategoryGroup", () => {
+    async function groupNames(): Promise<string[]> {
+      const rows = await db.all<{ name: string }>(
+        "SELECT name FROM category_groups WHERE tombstone = 0 ORDER BY sort_order, id",
+      );
+      return rows.map((r) => r.name);
+    }
+
+    it("moves a group before its target", async () => {
+      await openTestDb();
+      const a = await createCategoryGroup({ name: "A" });
+      await createCategoryGroup({ name: "B" });
+      const c = await createCategoryGroup({ name: "C" });
+
+      await db.moveCategoryGroup(c, a);
+
+      expect(await groupNames()).toEqual(["C", "A", "B"]);
+    });
+
+    it("appends when there is no target", async () => {
+      await openTestDb();
+      const a = await createCategoryGroup({ name: "A" });
+      await createCategoryGroup({ name: "B" });
+
+      await db.moveCategoryGroup(a, null);
+
+      expect(await groupNames()).toEqual(["B", "A"]);
+    });
+  });
 });

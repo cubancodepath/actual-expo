@@ -3,18 +3,6 @@
     "appVersionSource": "remote"
   },
   "build": {
-    "development": {
-      "developmentClient": true,
-      "distribution": "internal",
-      "ios": {
-        "buildConfiguration": "Debug",
-        "simulator": false
-      },
-      "env": {
-        "APP_VARIANT": "development",
-        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
-      }
-    },
     "preview": {
       "distribution": "internal",
       "ios": {

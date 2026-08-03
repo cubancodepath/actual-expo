@@ -18,4 +18,4 @@ export const ScreenHeader = Object.assign(ScreenHeaderRoot, {
   Floating: ScreenHeaderFloating,
 });
 
-export { useScreenHeaderScroll } from "./context";
+export { useScreenHeaderScroll, useScreenHeaderAnimatedScroll } from "./context";

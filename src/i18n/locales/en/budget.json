@@ -175,6 +175,23 @@
   "noCategoryGroupsYet": "No category groups yet",
   "organizeByCreating": "Organize your budget by creating groups",
   "reorder": "Reorder",
+  "reorderScreen": {
+    "headerHint": "Hold a group's name to reorder groups",
+    "groupModeHint": "Drag to reorder groups",
+    "groupModeOn": "Groups only. Drag to reorder them.",
+    "groupModeOff": "Categories shown again.",
+    "reorderGroups": "Reorder groups",
+    "nCategories_one": "{{count}} category",
+    "nCategories_other": "{{count}} categories",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "rowHint": "Drag to reorder",
+    "incomeBoundary": "Income and expense categories can't swap groups.",
+    "noGroupThere": "Drop a category inside a group.",
+    "duplicateName": "That group already has a category called \"{{name}}\".",
+    "incomeLast": "Always last",
+    "groupsHint": "Income stays at the bottom of the budget, so it can't be moved."
+  },
   "fromMonth": "From {{month}}",
   "assignedForMonth": "Budgeted for {{month}}",
   "activityInMonth": "Activity in {{month}}",
@@ -502,7 +519,6 @@
   "newCategoryGroup": "New Category Group",
   "reorderCategories": "Reorder Categories",
   "details": "Details",
-
   "a11y": {
     "categoryRow": "{{name}}, budgeted {{assigned}}, available {{available}}",
     "incomeRow": "{{name}}, received {{received}}",

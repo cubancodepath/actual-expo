@@ -1,11 +1,9 @@
 import { ExpoConfig, ConfigContext } from "expo/config";
 
-const IS_DEV = process.env.APP_VARIANT === "development";
-
 const config = ({ config }: ConfigContext): ExpoConfig => ({
-  name: IS_DEV ? "Actual (Dev)" : "Actual",
+  name: "Actual",
   slug: "actual-expo",
-  scheme: IS_DEV ? "actualbudget-dev" : "actualbudget",
+  scheme: "actualbudget",
   version: "1.0.1",
   orientation: "portrait",
   icon: "./assets/icon.png",
@@ -19,11 +17,9 @@ const config = ({ config }: ConfigContext): ExpoConfig => ({
   ios: {
     supportsTablet: false,
     appleTeamId: "8668UQNRKV",
-    bundleIdentifier: IS_DEV ? "com.cubancodepath.actual.dev" : "com.cubancodepath.actual",
+    bundleIdentifier: "com.cubancodepath.actual",
     entitlements: {
-      "com.apple.security.application-groups": [
-        IS_DEV ? "group.com.cubancodepath.actual.dev" : "group.com.cubancodepath.actual",
-      ],
+      "com.apple.security.application-groups": ["group.com.cubancodepath.actual"],
     },
     infoPlist: {
       NSLocalNetworkUsageDescription:

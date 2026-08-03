@@ -6,8 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 npm start              # Start Expo dev server (Metro bundler only)
-npm run ios            # Build & run dev variant on iOS simulator (APP_VARIANT=development)
-npm run ios:prod       # Build & run production variant on iOS simulator
+npm run ios            # Build & run on iOS simulator (single variant — no more dev/prod split)
 npx tsc --noEmit       # Type check (clean — 0 errors)
 docker-compose up      # Local Actual Budget server on http://localhost:5006
 npm run lint           # Lint with oxlint

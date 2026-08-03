@@ -9,7 +9,19 @@ import * as Haptics from "expo-haptics";
  * awaiting, so the promise is swallowed rather than left unhandled.
  */
 
-/** Selection-weight tap: toggles, tab switches, crossing a swipe threshold. */
+/**
+ * The lightest tick there is, and the only one meant to fire over and over: the
+ * selection generator, for a value that changes continuously under the finger —
+ * a picker rolling past its options, a dragged row crossing the one below it.
+ *
+ * Deliberately weaker than {@link lightHaptic}. Impact-Light repeated a dozen
+ * times a second reads as a rattle; this reads as detents.
+ */
+export function selectionHaptic() {
+  Haptics.selectionAsync().catch(() => {});
+}
+
+/** Light confirmation: a toggle, a tab switch, a gesture landing and sticking. */
 export function lightHaptic() {
   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
 }
@@ -22,4 +34,9 @@ export function mediumHaptic() {
 /** Success notification: an action completed in the background (e.g. duplicate). */
 export function successHaptic() {
   Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+}
+
+/** Refusal: a gesture that landed somewhere it isn't allowed and snapped back. */
+export function warningHaptic() {
+  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
 }

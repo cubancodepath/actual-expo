@@ -179,6 +179,23 @@
   "noCategoryGroupsYet": "Aún no hay grupos de categorías",
   "organizeByCreating": "Organiza tu presupuesto creando grupos",
   "reorder": "Reordenar",
+  "reorderScreen": {
+    "headerHint": "Mantén pulsado un grupo para reordenarlos",
+    "groupModeHint": "Arrastra para reordenar los grupos",
+    "groupModeOn": "Solo grupos. Arrástralos para reordenarlos.",
+    "groupModeOff": "Las categorías vuelven a estar visibles.",
+    "reorderGroups": "Reordenar grupos",
+    "nCategories_one": "{{count}} categoría",
+    "nCategories_other": "{{count}} categorías",
+    "moveUp": "Subir",
+    "moveDown": "Bajar",
+    "rowHint": "Arrastra para reordenar",
+    "incomeBoundary": "Las categorías de ingresos y de gastos no pueden cambiar de grupo entre sí.",
+    "noGroupThere": "Suelta la categoría dentro de un grupo.",
+    "duplicateName": "Ese grupo ya tiene una categoría llamada «{{name}}».",
+    "incomeLast": "Siempre al final",
+    "groupsHint": "Los ingresos se quedan al final del presupuesto, así que no se pueden mover."
+  },
   "fromMonth": "De {{month}}",
   "assignedForMonth": "Presupuestado para {{month}}",
   "activityInMonth": "Actividad en {{month}}",
@@ -489,7 +506,6 @@
   "newCategoryGroup": "Nuevo grupo de categorías",
   "reorderCategories": "Reordenar categorías",
   "details": "Detalles",
-
   "a11y": {
     "categoryRow": "{{name}}, presupuestado {{assigned}}, disponible {{available}}",
     "incomeRow": "{{name}}, recibido {{received}}",

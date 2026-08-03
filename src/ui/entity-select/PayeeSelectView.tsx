@@ -4,6 +4,7 @@ import { useThemeColor } from "heroui-native";
 import { CirclePlus } from "lucide-react-native";
 import { groupByInitial } from "@/lib/groupByInitial";
 import { NativePickerScreen } from "@/ui/NativePickerScreen";
+import { PAYEE_SEARCH } from "@/lib/config/pickerSearch";
 import { PickerSection } from "@/ui/picker/PickerSection";
 import { PickerCheck, PickerRow } from "@/ui/picker/PickerRow";
 import { PickerActionRow } from "@/ui/picker/PickerActionRow";
@@ -92,7 +93,10 @@ export function PayeeSelectView({
       title={t("payee")}
       query={query}
       onQueryChange={setQuery}
-      searchPlaceholder={t("searchPayees")}
+      search={PAYEE_SEARCH}
+      // Payees are typed, not browsed — there are hundreds and the list is
+      // alphabetical, so scrolling to one is never the fast path.
+      autoFocus
     >
       {searching && !exact ? (
         <PickerActionRow

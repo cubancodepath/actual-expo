@@ -1,4 +1,8 @@
+import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
+import { useThemeColor } from "heroui-native";
 import type { NativeStackNavigationOptions } from "@react-navigation/native-stack";
+import type { PickerSearch } from "@/lib/config/pickerSearch";
 
 /**
  * Header chrome for scrolling list screens (pickers, split amounts) — declared
@@ -22,37 +26,44 @@ export const TRANSLUCENT_HEADER_OPTIONS: NativeStackNavigationOptions = {
 /**
  * A picker's chrome, search bar included, declared by the navigator.
  *
- * The geometry is here rather than only on the screen because it has to be
- * right in the FIRST native commit. A screen that adds `headerSearchBarOptions`
- * from its own body — however it does it — is applying them after the header
- * has already been configured once without a search bar, and UIKit gets to
- * decide where to put the field it just received: it lands on the navigation
- * bar's trailing edge and then slides down into the toolbar once it settles on
- * integration. That relocation is visible, and react-native-screens' own source
- * warns that reconfiguring a search bar repeatedly misbehaves on iOS 26.
+ * This has to be right in the FIRST native commit. A screen that only adds
+ * `headerSearchBarOptions` from its own body is applying them after the header
+ * has already been configured once without them, so the bar — and, on a route
+ * the navigator left `headerShown: false`, the entire header — appears a frame
+ * late and shoves the content down.
  *
- * So the navigator declares WHERE the bar goes and the screen declares what it
- * does (placeholder, colours, `onChangeText`) via `Stack.SearchBar`, whose
- * options replace this whole key once they register.
+ * It returns the bar's COMPLETE configuration rather than just the geometry
+ * because the screen's `Stack.SearchBar` replaces this key rather than merging
+ * into it: anything left out here would still be arriving late. Both sides
+ * build it from the same {@link PickerSearch} so they cannot drift.
  */
-export function pickerHeaderOptions(
-  placement: "stacked" | "integrated",
-): NativeStackNavigationOptions {
-  return {
-    ...TRANSLUCENT_HEADER_OPTIONS,
-    headerSearchBarOptions: {
-      placement,
-      // Only an integrated bar may fall through to the bottom toolbar. Left at
-      // its default (true) a stacked bar can be moved down by UIKit, which is
-      // the opposite of what "stacked" asks for.
-      allowToolbarIntegration: placement === "integrated",
-      hideWhenScrolling: false,
-      // UIKit hides the nav bar while the search field is active (the prop
-      // defaults to true before iOS 26), which would drop the title and the
-      // header actions — Cancel/Next/Split — exactly when they're needed.
-      hideNavigationBar: false,
-    },
-  };
+export function usePickerHeaderOptions(search: PickerSearch): NativeStackNavigationOptions {
+  const { t } = useTranslation("transactions");
+  const [foreground, accent] = useThemeColor(["foreground", "accent"]);
+  const { placement, placeholderKey } = search;
+
+  return useMemo(
+    () => ({
+      ...TRANSLUCENT_HEADER_OPTIONS,
+      headerSearchBarOptions: {
+        placement,
+        // Only an integrated bar may fall through to the bottom toolbar. Left at
+        // its default (true) a stacked bar can be moved down by UIKit, which is
+        // the opposite of what "stacked" asks for.
+        allowToolbarIntegration: placement === "integrated",
+        hideWhenScrolling: false,
+        // UIKit hides the nav bar while the search field is active (the prop
+        // defaults to true before iOS 26), which would drop the title and the
+        // header actions — Cancel/Next/Split — exactly when they're needed.
+        hideNavigationBar: false,
+        placeholder: t(placeholderKey),
+        autoCapitalize: "none" as const,
+        textColor: foreground,
+        tintColor: accent,
+      },
+    }),
+    [placement, placeholderKey, t, foreground, accent],
+  );
 }
 
 /**

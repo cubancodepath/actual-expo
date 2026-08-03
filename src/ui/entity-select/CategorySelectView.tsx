@@ -6,6 +6,7 @@ import { useThemeColor } from "heroui-native";
 import { Split } from "lucide-react-native";
 import type { HeaderAction } from "@/ui/header-actions/types";
 import { NativePickerScreen } from "@/ui/NativePickerScreen";
+import { CATEGORY_SEARCH } from "@/lib/config/pickerSearch";
 import { PickerSection } from "@/ui/picker/PickerSection";
 import { PickerBalance, PickerCheck, PickerCheckbox, PickerRow } from "@/ui/picker/PickerRow";
 import { PickerActionRow, PickerEmptyState } from "@/ui/picker/PickerActionRow";
@@ -107,10 +108,7 @@ export function CategorySelectView({
       title={t("category")}
       query={query}
       onQueryChange={setQuery}
-      searchPlaceholder={t("searchCategories")}
-      // Categories keep the search within thumb reach at the bottom; payees
-      // keep theirs stacked at the top.
-      searchPlacement="integrated"
+      search={CATEGORY_SEARCH}
       headerLeft={cancelAction}
       headerRight={nextAction}
     >

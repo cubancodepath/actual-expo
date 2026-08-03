@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { ScrollView } from "react-native";
 import { Stack } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { useThemeColor } from "heroui-native";
 import type { NativeStackNavigationOptions } from "@react-navigation/native-stack";
 import { Screen } from "@/ui/Screen";
@@ -22,11 +23,13 @@ export function NativePickerScreen({
   title,
   query,
   onQueryChange,
-  searchPlaceholder,
+  search,
+  autoFocus = false,
   headerLeft,
   headerRight,
   children,
 }: NativePickerScreenProps) {
+  const { t } = useTranslation("transactions");
   const muted = useThemeColor("muted");
   const { searchBarRef, onChangeText } = useSearchBridge(query, onQueryChange);
   const controlOptions = useHeaderActionOptions({ left: headerLeft, right: headerRight });
@@ -46,7 +49,10 @@ export function NativePickerScreen({
           the platform puts it. */}
       <Stack.SearchBar
         ref={searchBarRef}
-        placeholder={searchPlaceholder}
+        placeholder={t(search.placeholderKey)}
+        // The real prop, unlike on iOS: `autoFocus` is implemented in the
+        // Android search bar (SearchBarView.kt), so there is nothing to retry.
+        autoFocus={autoFocus}
         autoCapitalize="none"
         hintTextColor={muted}
         headerIconColor={muted}

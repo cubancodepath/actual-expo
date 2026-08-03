@@ -1,11 +1,16 @@
 import { Stack } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { pickerHeaderOptions, TRANSLUCENT_HEADER_OPTIONS } from "@/lib/hooks/screenHeaderOptions";
+import {
+  TRANSLUCENT_HEADER_OPTIONS,
+  usePickerHeaderOptions,
+} from "@/lib/hooks/screenHeaderOptions";
+import { TRANSACTION_SEARCH } from "@/lib/config/pickerSearch";
 import { useStackOptions } from "@/lib/hooks/useStackOptions";
 
 export default function SpendingStack() {
   const { screen } = useStackOptions();
   const { t } = useTranslation("transactions");
+  const searchOptions = usePickerHeaderOptions(TRANSACTION_SEARCH);
 
   return (
     <Stack screenOptions={screen}>
@@ -23,7 +28,7 @@ export default function SpendingStack() {
           Cancel is the way out. */}
       <Stack.Screen
         name="search"
-        options={{ ...pickerHeaderOptions("stacked"), animation: "fade", animationDuration: 150 }}
+        options={{ ...searchOptions, animation: "fade", animationDuration: 150 }}
       />
     </Stack>
   );

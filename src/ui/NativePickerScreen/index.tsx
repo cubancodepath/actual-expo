@@ -1,12 +1,15 @@
 import { useMemo } from "react";
 import { ScrollView } from "react-native";
 import { Stack } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { useThemeColor } from "heroui-native";
 import type { NativeStackNavigationOptions } from "@react-navigation/native-stack";
 import { Screen } from "@/ui/Screen";
 import { ScreenFade } from "@/ui/ScreenFade";
 import { useHeaderActionOptions } from "@/ui/header-actions/useHeaderActionOptions";
+import { useKeyboardInset } from "@/lib/hooks/useKeyboardInset";
 import { useSearchBridge } from "./useSearchBridge";
+import { useSearchBarAutoFocus } from "./useSearchBarAutoFocus";
 import type { NativePickerScreenProps } from "./types";
 
 /**
@@ -29,14 +32,17 @@ export function NativePickerScreen({
   title,
   query,
   onQueryChange,
-  searchPlaceholder,
-  searchPlacement = "stacked",
+  search,
+  autoFocus = false,
   headerLeft,
   headerRight,
   children,
 }: NativePickerScreenProps) {
+  const { t } = useTranslation("transactions");
   const [foreground, accent] = useThemeColor(["foreground", "accent"]);
   const { searchBarRef, onChangeText } = useSearchBridge(query, onQueryChange);
+  const focusTracking = useSearchBarAutoFocus(searchBarRef, autoFocus);
+  const keyboardInset = useKeyboardInset();
   const controlOptions = useHeaderActionOptions({ left: headerLeft, right: headerRight });
 
   // One options object, not two: each one expo-router applies is another
@@ -51,10 +57,10 @@ export function NativePickerScreen({
       <Stack.Screen options={screenOptions} />
 
       {/*
-       * Declarative, so it lands as one merged options update rather than as a
-       * `setOptions` that attaches a search bar to a header already configured
-       * without one — the route seeds `placement` for the first frame (see
-       * `pickerHeaderOptions`) and this replaces it with the full config.
+       * Built from the same `search` object the route seeded (see
+       * `usePickerHeaderOptions`). These props REPLACE the seeded ones instead
+       * of merging, so anything the route set and this leaves out would go
+       * back to arriving a frame late.
        *
        * `query` and `onQueryChange` deliberately do NOT feed these props: the
        * bridge keeps `searchBarRef` and `onChangeText` stable so typing never
@@ -63,15 +69,17 @@ export function NativePickerScreen({
        */}
       <Stack.SearchBar
         ref={searchBarRef}
-        placeholder={searchPlaceholder}
-        placement={searchPlacement}
-        allowToolbarIntegration={searchPlacement === "integrated"}
+        placeholder={t(search.placeholderKey)}
+        placement={search.placement}
+        allowToolbarIntegration={search.placement === "integrated"}
         hideWhenScrolling={false}
         hideNavigationBar={false}
         autoCapitalize="none"
         textColor={foreground}
         tintColor={accent}
         onChangeText={onChangeText}
+        onFocus={focusTracking.onFocus}
+        onBlur={focusTracking.onBlur}
       />
 
       <ScrollView
@@ -79,19 +87,19 @@ export function NativePickerScreen({
         // Required by headerSearchBarOptions, and what gives the list its top
         // inset under the transparent header.
         contentInsetAdjustmentBehavior="automatic"
-        // The search field lives in the native header, OUTSIDE this scroll
-        // view. That rules out KeyboardAwareScrollView, whose auto-scroll is
-        // gated on the focused input belonging to the scroll view — for a
-        // header-owned field it silently degrades to a padding spacer. UIKit's
-        // own adjustment derives the inset from geometry alone (scroll view's
-        // bottom edge vs. keyboard frame), so it works regardless of who holds
-        // first responder, and it moves the scroll indicators too.
-        automaticallyAdjustKeyboardInsets
-        // Dragging the list puts the keyboard away, like every native
-        // search-and-pick screen.
+        // Deliberately NOT `automaticallyAdjustKeyboardInsets`. The search field
+        // lives in the native header, outside this scroll view, and React
+        // Native's implementation looks for a text input among the scroll
+        // view's own descendants to keep visible. Finding none, it takes its
+        // "keyboard opened for other reason" branch and scrolls the content
+        // down by the whole keyboard height (`RCTScrollView.m`,
+        // `_keyboardWillChangeFrame`) — which, with nothing to reveal, just
+        // shoved the first rows up under the header the moment you started
+        // typing. Padding gives the same reach and cannot move the offset.
         keyboardDismissMode="interactive"
         keyboardShouldPersistTaps="handled"
-        contentContainerClassName="px-4 pb-10"
+        contentContainerClassName="px-4"
+        contentContainerStyle={{ paddingBottom: keyboardInset + 40 }}
       >
         {children}
       </ScrollView>

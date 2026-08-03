@@ -1,4 +1,5 @@
 import type { NativeStackNavigationOptions } from "@react-navigation/native-stack";
+import type { PickerSearch } from "@/lib/config/pickerSearch";
 
 /**
  * Android list-screen header: nothing to add — it inherits the navigator's
@@ -12,11 +13,10 @@ export const TRANSLUCENT_HEADER_OPTIONS: NativeStackNavigationOptions = {};
 /**
  * Nothing to seed: `placement` is an iOS concept (there is no toolbar for a
  * search bar to be integrated into), so Android's bar is fully described by the
- * screen and appears where the platform puts it.
+ * screen and appears where the platform puts it — and with nowhere for the
+ * field to be relocated to, the second configuration pass costs nothing.
  */
-export function pickerHeaderOptions(
-  _placement: "stacked" | "integrated",
-): NativeStackNavigationOptions {
+export function usePickerHeaderOptions(_search: PickerSearch): NativeStackNavigationOptions {
   return {};
 }
 

@@ -3,15 +3,17 @@ import { useQuickActionRouting } from "expo-quick-actions/router";
 import { useTranslation } from "react-i18next";
 import {
   HERO_HEADER_OPTIONS,
-  pickerHeaderOptions,
   TRANSLUCENT_HEADER_OPTIONS,
+  usePickerHeaderOptions,
 } from "@/lib/hooks/screenHeaderOptions";
+import { TRANSACTION_SEARCH } from "@/lib/config/pickerSearch";
 import { useStackOptions } from "@/lib/hooks/useStackOptions";
 
 export default function AuthLayout() {
   useQuickActionRouting();
   const { screen, modal, formSheet } = useStackOptions();
   const { t } = useTranslation();
+  const searchOptions = usePickerHeaderOptions(TRANSACTION_SEARCH);
 
   return (
     <Stack screenOptions={screen}>
@@ -24,7 +26,7 @@ export default function AuthLayout() {
         name="account/search"
         options={{
           ...screen,
-          ...pickerHeaderOptions("stacked"),
+          ...searchOptions,
           animation: "fade",
           animationDuration: 150,
         }}

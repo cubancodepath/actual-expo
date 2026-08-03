@@ -1,7 +1,7 @@
-import { useCallback, useMemo, useRef } from "react";
+import { useMemo } from "react";
 import { FlatList, ScrollView, View } from "react-native";
 import Animated, { FadeInUp, FadeOut } from "react-native-reanimated";
-import { Stack, useFocusEffect } from "expo-router";
+import { Stack } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Spinner, useThemeColor } from "heroui-native";
 import type { NativeStackNavigationOptions } from "@react-navigation/native-stack";
@@ -11,6 +11,7 @@ import { LedgerRow } from "@/screens/transactions/components/transaction-list/Le
 import { TransactionRowMenuHost } from "@/screens/transactions/components/transaction-list/TransactionRowMenuHost";
 import type { TxListItem } from "@/screens/transactions/components/transaction-list/listItems";
 import { useSearchBridge } from "@/ui/NativePickerScreen/useSearchBridge";
+import { useSearchBarAutoFocus } from "@/ui/NativePickerScreen/useSearchBarAutoFocus";
 import { SearchSuggestions } from "./components/SearchSuggestions";
 import { SearchTags } from "./components/SearchTags";
 import { NoSearchResults } from "./components/NoSearchResults";
@@ -33,11 +34,6 @@ const SUGGESTIONS_IN = FadeInUp.duration(180).withInitialValues({
 // hide on the way out.
 const SUGGESTIONS_OUT = FadeOut.duration(140);
 
-// Long enough to outlast a push transition (~400ms) plus a slow first frame,
-// short enough that a bar which will never take focus stops being poked.
-const FOCUS_RETRY_MS = 120;
-const FOCUS_MAX_ATTEMPTS = 12;
-
 export interface SearchScreenProps {
   /** Fixed account scope when opened from one account's ledger. */
   accountId?: string;
@@ -57,7 +53,7 @@ export interface SearchScreenProps {
  * No back button: the field's own Cancel is the way out, sitting right beside
  * what you're typing in.
  *
- * The bar is translucent (the route seeds `pickerHeaderOptions`), so it does not
+ * The bar is translucent (the route seeds `usePickerHeaderOptions`), so it does not
  * occupy layout — everything below has to take its top inset from UIKit via
  * `contentInsetAdjustmentBehavior`, or it renders underneath the bar. That is
  * also why the results are a plain `FlatList`: `LegendList` reads the raw
@@ -85,53 +81,19 @@ export function SearchScreen({ accountId, initialFilter }: SearchScreenProps) {
   // typing never re-registers it (which would rebuild it and drop the keyboard).
   const { searchBarRef, onChangeText } = useSearchBridge(search.searchText, search.setSearchText);
 
-  // A ref, not `search.searchFocused`: the retry loop below runs from inside an
-  // interval closure, which would keep reading the state value it was created
-  // with and never stop.
-  const focusedRef = useRef(false);
+  // This screen opens straight into typing, so the field takes focus itself —
+  // and again on the way back from a transaction opened out of the results.
+  const autoFocus = useSearchBarAutoFocus(searchBarRef);
 
   const onFieldFocus = () => {
-    focusedRef.current = true;
+    autoFocus.onFocus();
     search.setSearchFocused(true);
   };
 
   const onFieldBlur = () => {
-    focusedRef.current = false;
+    autoFocus.onBlur();
     search.setSearchFocused(false);
   };
-
-  /**
-   * Focus the field every time the screen is shown.
-   *
-   * Imperative because `SearchBar`'s `autoFocus` prop is declared in its types
-   * and its Fabric spec but is only implemented on Android — there is no
-   * reference to it anywhere in `react-native-screens/ios`.
-   *
-   * Retried rather than fired once because the native `focus()` is a bare
-   * `[searchBar becomeFirstResponder]` (RNSSearchBar.mm), which returns NO —
-   * silently, no throw, no log — while the bar is not yet in a window. That is
-   * the whole push transition, so any single delay is a race we lose. There is
-   * no success signal from native either; the only proof focus landed is the
-   * bar's own `onFocus`, so we keep asking until it fires.
-   *
-   * On navigation focus rather than on mount: the screen stays mounted while a
-   * transaction is opened from a result, so a mount effect would fire once and
-   * never again on the way back.
-   */
-  useFocusEffect(
-    useCallback(() => {
-      let attempts = 0;
-      const timer = setInterval(() => {
-        if (focusedRef.current || attempts >= FOCUS_MAX_ATTEMPTS) {
-          clearInterval(timer);
-          return;
-        }
-        attempts += 1;
-        searchBarRef.current?.focus();
-      }, FOCUS_RETRY_MS);
-      return () => clearInterval(timer);
-    }, [searchBarRef, focusedRef]),
-  );
 
   /**
    * Picking a suggestion also drops the keyboard. The controller flips its own

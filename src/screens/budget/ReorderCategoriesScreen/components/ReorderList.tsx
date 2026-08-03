@@ -1,9 +1,15 @@
 import { useCallback, useMemo, useRef } from "react";
-import { Platform, StyleSheet, View, type DimensionValue } from "react-native";
+import { Platform, StyleSheet, View, type DimensionValue, type FlatList } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { ListGroup, Typography, useToast } from "heroui-native";
-import { Easing, runOnJS, useSharedValue, withTiming } from "react-native-reanimated";
+import {
+  Easing,
+  runOnJS,
+  useAnimatedScrollHandler,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import ReorderableList, {
   type ReorderableListDragEndEvent,
   type ReorderableListReorderEvent,
@@ -131,6 +137,17 @@ export function ReorderList({
   const settle = useSharedValue<DimensionValue | undefined>(0);
   const cellAnimations = useMemo(() => ({ top: settle }), [settle]);
 
+  /**
+   * Where the list is scrolled to, so a grabbed group can be scrolled under the
+   * finger (see `alignToFinger`). Tracked through the list's own `onScroll`,
+   * which the library composes with its internal one rather than replacing.
+   */
+  const listRef = useRef<FlatList<UnifiedRow>>(null);
+  const scrollY = useSharedValue(0);
+  const onScroll = useAnimatedScrollHandler((event) => {
+    scrollY.value = event.contentOffset.y;
+  });
+
   const refuse = useCallback(
     (message: string) => {
       warningHaptic();
@@ -238,6 +255,9 @@ export function ReorderList({
   /**
    * The collapsed row measured itself against the finger and is about to pick
    * itself up. `offset` is how far it has to be pushed to sit under the hand.
+   *
+   * Only the remainder the scroll below couldn't cover ever gets here, so at the
+   * ends of the list this is a small glide instead of the whole collapse.
    */
   const onAutoGrab = useCallback(
     (offset: number) => {
@@ -245,6 +265,26 @@ export function ReorderList({
       settle.value = withTiming(0, { duration: SETTLE_DURATION, easing: Easing.out(Easing.quad) });
     },
     [settle],
+  );
+
+  /**
+   * Scroll the collapsed list so the group that's being grabbed sits under the
+   * finger for real, rather than being drawn there and gliding away.
+   *
+   * This is the only moment it can be done: once `startDrag` runs, the library
+   * snapshots the scroll offset and adds every later scroll back into the
+   * dragged row's position, so the row travels with the content and scrolling
+   * can no longer move it relative to the hand.
+   *
+   * The target is absolute, which is what makes the caller's retry loop safe —
+   * asking twice for the same position is a no-op, where a relative "scroll by"
+   * would double up whenever a frame passed before the first one landed.
+   */
+  const alignToFinger = useCallback(
+    (delta: number) => {
+      listRef.current?.scrollToOffset({ offset: scrollY.value - delta, animated: false });
+    },
+    [scrollY],
   );
 
   /**
@@ -274,6 +314,7 @@ export function ReorderList({
             onMove={onMove}
             // Only the group the user is still holding picks itself up.
             grabFingerY={grab?.groupId === item.id ? grab.fingerY : null}
+            onAlignToFinger={alignToFinger}
             onAutoGrab={onAutoGrab}
           />
         );
@@ -304,17 +345,28 @@ export function ReorderList({
         />
       );
     },
-    [rows, categoryRows, onMove, grab, onAutoGrab, canReorderGroups, onEnterGroupMode],
+    [
+      rows,
+      categoryRows,
+      onMove,
+      grab,
+      alignToFinger,
+      onAutoGrab,
+      canReorderGroups,
+      onEnterGroupMode,
+    ],
   );
 
   return (
     <ReorderableList
+      ref={listRef}
       data={rows}
       keyExtractor={keyExtractor}
       renderItem={renderItem}
       onReorder={reorder}
       onDragEnd={onDragEnd}
       onIndexChange={onIndexChange}
+      onScroll={onScroll}
       cellAnimations={cellAnimations}
       // Lets a row know it's the one in flight (`useIsActive`), which is how it
       // rounds itself off into a card instead of staying a slice of one.

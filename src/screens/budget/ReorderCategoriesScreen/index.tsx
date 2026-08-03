@@ -129,7 +129,15 @@ export function ReorderCategoriesScreen() {
 
   const actionOptions = useHeaderActionOptions({ right: action });
   const headerOptions = useMemo<NativeStackNavigationOptions>(
-    () => ({ ...actionOptions, title: t("reorder") }),
+    () => ({
+      ...actionOptions,
+      title: t("reorder"),
+      // This screen is dragged across, and the back-swipe starts at the same
+      // edge — a drag that begins slightly too far left would leave instead of
+      // moving a row. The chevron and the check are the ways out; the discard
+      // prompt above still guards the chevron.
+      gestureEnabled: false,
+    }),
     [actionOptions, t],
   );
 

@@ -65,7 +65,7 @@ function HiddenGroupSection({
           <PickerCheckbox
             isSelected={selection.groups.has(section.groupId)}
             onPress={onToggleGroup}
-            className="ml-3 bg-transparent border border-muted"
+            className="ml-3 bg-transparent border-[0.3px] border-muted"
           />
         ) : null}
         <Typography className="flex-1 text-sm font-semibold text-foreground" numberOfLines={1}>
